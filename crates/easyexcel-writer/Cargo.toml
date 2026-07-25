@@ -16,7 +16,7 @@ easyexcel-core = { path = "../easyexcel-core" }
 csv.workspace = true
 encoding_rs.workspace = true
 flate2.workspace = true
-getrandom = "0.2"
+getrandom.workspace = true
 md-5.workspace = true
 ms-offcrypto-writer.workspace = true
 rand.workspace = true
