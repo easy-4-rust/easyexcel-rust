@@ -25,6 +25,8 @@ pub trait AbstractMergeStrategy: WriteHandler {
 
 #[cfg(test)]
 mod tests {
+    use easyexcel_core::CellValue;
+
     use super::*;
 
     struct TestMergeStrategy {
@@ -57,27 +59,18 @@ mod tests {
     }
 
     #[test]
-    fn abstract_merge_strategy_merge_is_called() {
-        let mut strategy = TestMergeStrategy::new();
+    fn abstract_merge_strategy_trait_compiles() {
+        let strategy = TestMergeStrategy::new();
+        assert!(!strategy.merge_called);
+        assert!(strategy.last_sheet_name.is_none());
+    }
 
-        // Create a minimal context for testing
-        let context = WriteCellContext {
-            sheet_name: "TestSheet".to_owned(),
-            row_index: 0,
-            column_index: 0,
-            field: None,
-            column: None,
-            head_name: None,
-            is_head: false,
-            relative_row_index: None,
-            original_value: None,
-            original_field_type: None,
-            pending_original_value: None,
-            pending_original_field_type: None,
-            cell_data: None,
-            cell: None,
-            skip: false,
-        };
+    #[test]
+    fn abstract_merge_strategy_merge_updates_state() {
+        let mut strategy = TestMergeStrategy::new();
+        assert!(!strategy.merge_called);
+
+        let context = WriteCellContext::new("TestSheet", 0, 0, CellValue::Empty);
 
         strategy.merge("Sheet1", &context, None, Some(0));
 
@@ -88,24 +81,7 @@ mod tests {
     #[test]
     fn abstract_merge_strategy_merge_with_none_relative_row_index() {
         let mut strategy = TestMergeStrategy::new();
-
-        let context = WriteCellContext {
-            sheet_name: "TestSheet".to_owned(),
-            row_index: 0,
-            column_index: 0,
-            field: None,
-            column: None,
-            head_name: None,
-            is_head: false,
-            relative_row_index: None,
-            original_value: None,
-            original_field_type: None,
-            pending_original_value: None,
-            pending_original_field_type: None,
-            cell_data: None,
-            cell: None,
-            skip: false,
-        };
+        let context = WriteCellContext::new("TestSheet", 0, 0, CellValue::Empty);
 
         strategy.merge("Sheet3", &context, None, None);
 
