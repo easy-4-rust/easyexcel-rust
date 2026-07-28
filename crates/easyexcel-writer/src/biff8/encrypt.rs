@@ -79,8 +79,8 @@ pub fn encrypt_biff8_stream(
 ) -> (Vec<u8>, [u8; 16], [u8; 16]) {
     let mut salt = [0u8; 16];
     let mut verifier = [0u8; 16];
-    getrandom::getrandom(&mut salt).expect("getrandom");
-    getrandom::getrandom(&mut verifier).expect("getrandom");
+    getrandom::fill(&mut salt).expect("getrandom");
+    getrandom::fill(&mut verifier).expect("getrandom");
 
     let full_key = derive_key(password, &salt);
     let rc4_key = &full_key[..5.min(full_key.len())]; // 40-bit export
