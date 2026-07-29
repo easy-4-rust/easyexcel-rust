@@ -27,3 +27,114 @@ pub trait AbstractVerticalCellStyleStrategy: AbstractCellStyleStrategy {
         ExcelCellStyle::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use easyexcel_core::{
+        CellValue, ExcelCellStyle, ExcelHorizontalAlignment, WriteCellContext, WriteHandler,
+    };
+
+    use super::*;
+    use crate::style::abstract_cell_style_strategy::AbstractCellStyleStrategy;
+
+    struct TestVerticalStrategy {
+        head_style: ExcelCellStyle,
+        content_style: ExcelCellStyle,
+    }
+
+    impl WriteHandler for TestVerticalStrategy {}
+
+    impl AbstractCellStyleStrategy for TestVerticalStrategy {
+        fn cell_style(&self, _context: &WriteCellContext) -> ExcelCellStyle {
+            ExcelCellStyle::new()
+        }
+    }
+
+    impl AbstractVerticalCellStyleStrategy for TestVerticalStrategy {
+        fn head_cell_style(&self, _context: &WriteCellContext) -> ExcelCellStyle {
+            self.head_style
+        }
+        fn content_cell_style(&self, _context: &WriteCellContext) -> ExcelCellStyle {
+            self.content_style
+        }
+    }
+
+    struct DefaultStrategy;
+
+    impl WriteHandler for DefaultStrategy {}
+
+    impl AbstractCellStyleStrategy for DefaultStrategy {
+        fn cell_style(&self, _context: &WriteCellContext) -> ExcelCellStyle {
+            ExcelCellStyle::new()
+        }
+    }
+
+    impl AbstractVerticalCellStyleStrategy for DefaultStrategy {}
+
+    #[test]
+    fn default_head_cell_style_is_empty() {
+        let strategy = DefaultStrategy;
+        let context = WriteCellContext::new("Sheet1", 0, 0, CellValue::Empty);
+        let style = strategy.head_cell_style(&context);
+        assert_eq!(style, ExcelCellStyle::new());
+    }
+
+    #[test]
+    fn default_content_cell_style_is_empty() {
+        let strategy = DefaultStrategy;
+        let context = WriteCellContext::new("Sheet1", 0, 0, CellValue::Empty);
+        let style = strategy.content_cell_style(&context);
+        assert_eq!(style, ExcelCellStyle::new());
+    }
+
+    #[test]
+    fn custom_head_cell_style_is_returned() {
+        let head_style = ExcelCellStyle {
+            horizontal_alignment: Some(ExcelHorizontalAlignment::Center),
+            ..ExcelCellStyle::new()
+        };
+        let strategy = TestVerticalStrategy {
+            head_style,
+            content_style: ExcelCellStyle::new(),
+        };
+        let context = WriteCellContext::new("Sheet1", 0, 0, CellValue::Empty);
+        let style = strategy.head_cell_style(&context);
+        assert_eq!(style.horizontal_alignment, Some(ExcelHorizontalAlignment::Center));
+    }
+
+    #[test]
+    fn custom_content_cell_style_is_returned() {
+        let content_style = ExcelCellStyle {
+            wrapped: Some(true),
+            ..ExcelCellStyle::new()
+        };
+        let strategy = TestVerticalStrategy {
+            head_style: ExcelCellStyle::new(),
+            content_style,
+        };
+        let context = WriteCellContext::new("Sheet1", 0, 0, CellValue::Empty);
+        let style = strategy.content_cell_style(&context);
+        assert_eq!(style.wrapped, Some(true));
+    }
+
+    #[test]
+    fn different_styles_for_head_and_content() {
+        let head_style = ExcelCellStyle {
+            horizontal_alignment: Some(ExcelHorizontalAlignment::Center),
+            ..ExcelCellStyle::new()
+        };
+        let content_style = ExcelCellStyle {
+            wrapped: Some(true),
+            ..ExcelCellStyle::new()
+        };
+        let strategy = TestVerticalStrategy { head_style, content_style };
+        let context = WriteCellContext::new("Sheet1", 0, 0, CellValue::Empty);
+
+        let head = strategy.head_cell_style(&context);
+        let content = strategy.content_cell_style(&context);
+
+        assert_ne!(head, content);
+        assert_eq!(head.horizontal_alignment, Some(ExcelHorizontalAlignment::Center));
+        assert_eq!(content.wrapped, Some(true));
+    }
+}

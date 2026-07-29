@@ -1583,6 +1583,261 @@ mod tests {
     use super::*;
 
     #[test]
+    fn column_name_single_column() {
+        assert_eq!(column_name(1), "A");
+        assert_eq!(column_name(26), "Z");
+    }
+
+    #[test]
+    fn column_name_double_column() {
+        assert_eq!(column_name(27), "AA");
+        assert_eq!(column_name(28), "AB");
+        assert_eq!(column_name(52), "AZ");
+        assert_eq!(column_name(53), "BA");
+    }
+
+    #[test]
+    fn column_name_triple_column() {
+        assert_eq!(column_name(703), "AAA");
+    }
+
+    #[test]
+    fn escape_xml_special_characters() {
+        assert_eq!(escape_xml("hello"), "hello");
+        assert_eq!(escape_xml("a&b"), "a&amp;b");
+        assert_eq!(escape_xml("a<b"), "a&lt;b");
+        assert_eq!(escape_xml("a>b"), "a&gt;b");
+        assert_eq!(escape_xml("a\"b"), "a&quot;b");
+        assert_eq!(escape_xml("a'b"), "a&apos;b");
+        assert_eq!(escape_xml("<tag>&\"'"), "&lt;tag&gt;&amp;&quot;&apos;");
+    }
+
+    #[test]
+    fn escape_xml_empty_string() {
+        assert_eq!(escape_xml(""), "");
+    }
+
+    #[test]
+    fn parse_cell_reference_simple() {
+        assert_eq!(parse_cell_reference("A1"), Some((1, 1)));
+        assert_eq!(parse_cell_reference("B2"), Some((2, 2)));
+        assert_eq!(parse_cell_reference("Z99"), Some((26, 99)));
+    }
+
+    #[test]
+    fn parse_cell_reference_multi_column() {
+        assert_eq!(parse_cell_reference("AA1"), Some((27, 1)));
+        assert_eq!(parse_cell_reference("AB10"), Some((28, 10)));
+    }
+
+    #[test]
+    fn parse_cell_reference_invalid() {
+        assert_eq!(parse_cell_reference(""), None);
+        assert_eq!(parse_cell_reference("1A"), None);
+    }
+
+    #[test]
+    fn normalize_workbook_target_with_xl_prefix() {
+        let result = normalize_workbook_target("xl/worksheets/sheet1.xml").unwrap();
+        assert_eq!(result, "xl/worksheets/sheet1.xml");
+    }
+
+    #[test]
+    fn normalize_workbook_target_without_xl_prefix() {
+        let result = normalize_workbook_target("worksheets/sheet1.xml").unwrap();
+        assert_eq!(result, "xl/worksheets/sheet1.xml");
+    }
+
+    #[test]
+    fn normalize_workbook_target_with_leading_slash() {
+        let result = normalize_workbook_target("/xl/styles.xml").unwrap();
+        assert_eq!(result, "xl/styles.xml");
+    }
+
+    #[test]
+    fn attribute_value_simple() {
+        let xml = r#"<tag attr="value">"#;
+        assert_eq!(attribute_value(xml, "attr"), Some("value"));
+    }
+
+    #[test]
+    fn attribute_value_missing() {
+        let xml = r#"<tag attr="value">"#;
+        assert_eq!(attribute_value(xml, "missing"), None);
+    }
+
+    #[test]
+    fn attribute_value_in_tag_found() {
+        let xml = r#"<worksheet dim="A1"><sheetData/></worksheet>"#;
+        assert_eq!(
+            attribute_value_in_tag(xml, "worksheet", "dim"),
+            Some("A1")
+        );
+    }
+
+    #[test]
+    fn attribute_value_in_tag_not_found() {
+        let xml = r#"<worksheet><sheetData/></worksheet>"#;
+        assert_eq!(attribute_value_in_tag(xml, "worksheet", "dim"), None);
+    }
+
+    #[test]
+    fn xml_elements_iterates() {
+        let xml = r#"<worksheet><row r="1"/><row r="2"/><row r="3"/></worksheet>"#;
+        let elements: Vec<&str> = xml_elements(xml, "row").collect();
+        assert_eq!(elements.len(), 3);
+    }
+
+    #[test]
+    fn xml_elements_empty() {
+        let xml = r#"<worksheet><sheetData/></worksheet>"#;
+        let elements: Vec<&str> = xml_elements(xml, "row").collect();
+        assert_eq!(elements.len(), 0);
+    }
+
+    #[test]
+    fn worksheet_max_row_with_rows() {
+        let xml = r#"<sheetData><row r="5"/><row r="10"/></sheetData>"#;
+        assert_eq!(worksheet_max_row(xml), 10);
+    }
+
+    #[test]
+    fn worksheet_max_row_empty() {
+        let xml = "<sheetData/>";
+        assert_eq!(worksheet_max_row(xml), 0);
+    }
+
+    #[test]
+    fn row_index_extracts_number() {
+        assert_eq!(row_index("row"), None);
+        assert_eq!(row_index("row r=\"15\""), Some(15));
+    }
+
+    #[test]
+    fn update_worksheet_dimension_test() {
+        let xml = r#"<worksheet><dimension ref="A1"/><sheetData><row r="1"/><row r="5"/></sheetData></worksheet>"#;
+        let updated = update_worksheet_dimension(xml);
+        assert!(updated.contains("ref=\"A1:A5\"") || updated.contains("A1"));
+    }
+
+    #[test]
+    fn render_cell_xml_string() {
+        let xml = render_cell_xml("A1", &CellValue::String("test".to_owned()), None);
+        assert!(xml.contains("inlineStr"));
+        assert!(xml.contains("test"));
+    }
+
+    #[test]
+    fn render_cell_xml_number() {
+        let xml = render_cell_xml("B1", &CellValue::Float(42.0), Some(1));
+        assert!(xml.contains("s=\"1\""));
+        assert!(xml.contains("42"));
+    }
+
+    #[test]
+    fn render_cell_xml_empty() {
+        let xml = render_cell_xml("C1", &CellValue::Empty, None);
+        assert!(xml.contains("C1"));
+    }
+
+    #[test]
+    fn render_cell_xml_bool() {
+        let xml = render_cell_xml("A1", &CellValue::Bool(true), None);
+        assert!(xml.contains("1"));
+    }
+
+    #[test]
+    fn render_cell_xml_formula() {
+        let xml = render_cell_xml("A1", &CellValue::Formula("SUM(A1:A10)".to_owned()), None);
+        assert!(xml.contains("SUM(A1:A10)"));
+    }
+
+    #[test]
+    fn render_cell_xml_date() {
+        use chrono::NaiveDate;
+        let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
+        let xml = render_cell_xml("A1", &CellValue::Date(date), None);
+        assert!(xml.contains("A1"));
+    }
+
+    #[test]
+    fn cell_style_index_found() {
+        let xml = r#"<worksheet><sheetData><row><c r="A1" s="5"/></row></sheetData></worksheet>"#;
+        assert_eq!(cell_style_index(xml, "A1"), Some(5));
+    }
+
+    #[test]
+    fn cell_style_index_not_found() {
+        let xml = r#"<worksheet><sheetData><row><c r="A1"/></row></sheetData></worksheet>"#;
+        assert_eq!(cell_style_index(xml, "A1"), None);
+    }
+
+    #[test]
+    fn merge_compiled_styles_basic() {
+        let mut destination = String::from(
+            r#"<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">"#,
+        );
+        destination.push_str(r#"<fonts count="1"><font/></fonts>"#);
+        destination.push_str(r#"<fills count="1"><fill/></fills>"#);
+        destination.push_str(r#"<borders count="1"><border/></borders>"#);
+        destination.push_str(r#"<cellStyleXfs count="1"><xf/></cellStyleXfs>"#);
+        destination.push_str(r#"<cellXfs count="0"><xf/></cellXfs>"#);
+        destination.push_str("</styleSheet>");
+
+        let source = destination.clone();
+
+        let (_output, xf_indexes) = merge_compiled_styles(&mut destination, &source, &[]).unwrap();
+        assert!(xf_indexes.is_empty());
+    }
+
+    #[test]
+    fn blank_worksheet_with_inherited_format_creates_xml() {
+        let entries = vec![
+            TemplateZipEntry {
+                name: "xl/worksheets/sheet1.xml".to_owned(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: br#"<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetFormatPr defaultRowHeight="20"/><cols><col min="1" max="1" width="30" customWidth="1"/></cols><sheetData/></worksheet>"#.to_vec(),
+            },
+        ];
+        let xml_bytes = blank_worksheet_with_inherited_format(&entries);
+        let xml = String::from_utf8(xml_bytes).unwrap();
+        assert!(xml.contains("defaultRowHeight=\"20\""));
+        assert!(xml.contains("customWidth=\"1\""));
+        assert!(xml.contains("<sheetData>"));
+    }
+
+    #[test]
+    fn blank_worksheet_no_entries() {
+        let entries: Vec<TemplateZipEntry> = vec![];
+        let xml_bytes = blank_worksheet_with_inherited_format(&entries);
+        let xml = String::from_utf8(xml_bytes).unwrap();
+        assert!(xml.contains("sheetData"));
+    }
+
+    #[test]
+    fn extract_elements_parses_tags() {
+        let xml = r#"<sheetData><row r="1"><c r="A1"><v>1</v></c><c r="B1"><v>2</v></c></row></sheetData>"#;
+        let elements = extract_elements(xml, "c");
+        assert_eq!(elements.len(), 2);
+    }
+
+    #[test]
+    fn extract_xml_element_found() {
+        let xml = r#"<worksheet><sheetData><row r="1"/></sheetData></worksheet>"#;
+        let result = extract_xml_element(xml, "sheetData");
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn extract_xml_element_not_found() {
+        let xml = r#"<worksheet><sheetData/></worksheet>"#;
+        let result = extract_xml_element(xml, "row");
+        assert!(result.is_none());
+    }
+
+    #[test]
     fn resolve_template_target_prefers_index_then_name() {
         let sheets = vec![
             TemplateSheetData {

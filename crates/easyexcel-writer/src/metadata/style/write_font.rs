@@ -115,6 +115,39 @@ mod tests {
     }
 
     #[test]
+    fn merge_write_font_with_subscript() {
+        let source = WriteFont::new()
+            .type_offset(ExcelFontScript::Subscript);
+        let target = WriteFont::new();
+        let merged = merge_write_font(&source, target);
+        assert_eq!(merged.get_type_offset(), Some(ExcelFontScript::Subscript));
+    }
+
+    #[test]
+    fn merge_write_font_with_none_type_offset() {
+        let source = WriteFont::new();
+        let target = WriteFont::new().type_offset(ExcelFontScript::Superscript);
+        let merged = merge_write_font(&source, target);
+        assert_eq!(merged.get_type_offset(), Some(ExcelFontScript::Superscript));
+    }
+
+    #[test]
+    fn merge_write_font_with_double_underline() {
+        let source = WriteFont::new().underline(ExcelUnderline::Double);
+        let target = WriteFont::new();
+        let merged = merge_write_font(&source, target);
+        assert_eq!(merged.get_underline(), Some(ExcelUnderline::Double));
+    }
+
+    #[test]
+    fn merge_write_font_with_color() {
+        let source = WriteFont::new().color(ExcelColor::Rgb(0xFF0000));
+        let target = WriteFont::new();
+        let merged = merge_write_font(&source, target);
+        assert_eq!(merged.get_color(), Some(ExcelColor::Rgb(0xFF0000)));
+    }
+
+    #[test]
     fn merge_write_font_copies_all_non_none_fields() {
         let source = WriteFont::new()
             .font_name("Arial")
