@@ -124,20 +124,24 @@ impl CellCreator for XlsxRow<'_> {
 /// BIFF8 (`.xls`) writer — Java `ExcelTypeEnum.XLS` / POI HSSF subset.
 pub mod biff8;
 pub mod builder;
+pub mod cell_style;
 mod excel_builder;
 pub mod executor;
 pub mod global_configuration;
 /// SXSSF `GZIPSheetDataWriter` equivalent — gzip row spill for `compress_temp_files`.
 pub mod gzip_spill;
 pub mod handler;
+pub mod horizontal_alignment;
 pub mod holder;
 pub mod merge;
+pub mod merge_range;
 pub mod metadata;
 pub mod property;
 pub mod style;
 mod template_write;
 /// Java `com.alibaba.excel.write` package-compatible API paths.
 pub mod write;
+pub mod vertical_alignment;
 
 use biff8::{
     Biff8Book, Biff8Cell, Biff8Merge, Biff8Sheet, Biff8StyleRequest, Biff8StyleTable, Biff8Value,
@@ -224,7 +228,11 @@ impl Biff8CellHandle<'_> {
 }
 pub use builder::abstract_excel_writer_parameter_builder::AbstractExcelWriterParameterBuilder;
 pub use builder::excel_writer_table_builder::ExcelWriterTableBuilder;
+pub use cell_style::CellStyle;
 pub use excel_builder::{ExcelBuilder, ExcelBuilderImpl, FillConfig as BuilderFillConfig};
+pub use horizontal_alignment::HorizontalAlignment;
+pub use merge_range::MergeRange;
+pub use vertical_alignment::VerticalAlignment;
 pub use executor::abstract_excel_write_executor::AbstractExcelWriteExecutor;
 pub use executor::excel_write_add_executor::ExcelWriteAddExecutor;
 pub use executor::excel_write_executor::ExcelWriteExecutor;
@@ -384,211 +392,6 @@ where
     }
 }
 
-/// Horizontal cell alignment.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum HorizontalAlignment {
-    /// Excel's type-dependent default.
-    General,
-    /// Left aligned.
-    Left,
-    /// Centered.
-    Center,
-    /// Right aligned.
-    Right,
-    /// Repeats content across the cell.
-    Fill,
-    /// Justified.
-    Justify,
-    /// Centered across adjacent cells.
-    CenterAcross,
-}
-
-/// Vertical cell alignment.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum VerticalAlignment {
-    /// Top aligned.
-    Top,
-    /// Vertically centered.
-    Center,
-    /// Bottom aligned.
-    Bottom,
-    /// Vertically justified.
-    Justify,
-    /// Vertically distributed.
-    Distributed,
-}
-
-/// Backend-neutral write style for headers or content rows.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct CellStyle {
-    /// Bold font.
-    pub bold: bool,
-    /// Italic font.
-    pub italic: bool,
-    /// RGB font color, for example `0xFF0000`.
-    pub font_color: Option<u32>,
-    /// Solid RGB background color.
-    pub background_color: Option<u32>,
-    /// Horizontal alignment.
-    pub horizontal_alignment: Option<HorizontalAlignment>,
-    /// Vertical alignment.
-    pub vertical_alignment: Option<VerticalAlignment>,
-    /// Wrap cell text.
-    pub wrap_text: bool,
-    /// Excel number format string.
-    pub number_format: Option<String>,
-}
-
-impl CellStyle {
-    /// Creates an empty style.
-    #[must_use]
-    pub const fn new() -> Self {
-        Self {
-            bold: false,
-            italic: false,
-            font_color: None,
-            background_color: None,
-            horizontal_alignment: None,
-            vertical_alignment: None,
-            wrap_text: false,
-            number_format: None,
-        }
-    }
-
-    /// Sets bold font rendering.
-    #[must_use]
-    pub const fn bold(mut self, enabled: bool) -> Self {
-        self.bold = enabled;
-        self
-    }
-
-    /// Sets italic font rendering.
-    #[must_use]
-    pub const fn italic(mut self, enabled: bool) -> Self {
-        self.italic = enabled;
-        self
-    }
-
-    /// Sets the RGB font color.
-    #[must_use]
-    pub const fn font_color(mut self, color: u32) -> Self {
-        self.font_color = Some(color);
-        self
-    }
-
-    /// Sets a solid RGB background color.
-    #[must_use]
-    pub const fn background_color(mut self, color: u32) -> Self {
-        self.background_color = Some(color);
-        self
-    }
-
-    /// Sets horizontal alignment.
-    #[must_use]
-    pub const fn horizontal_alignment(mut self, alignment: HorizontalAlignment) -> Self {
-        self.horizontal_alignment = Some(alignment);
-        self
-    }
-
-    /// Sets vertical alignment.
-    #[must_use]
-    pub const fn vertical_alignment(mut self, alignment: VerticalAlignment) -> Self {
-        self.vertical_alignment = Some(alignment);
-        self
-    }
-
-    /// Enables or disables text wrapping.
-    #[must_use]
-    pub const fn wrap_text(mut self, enabled: bool) -> Self {
-        self.wrap_text = enabled;
-        self
-    }
-
-    /// Sets an Excel number format string.
-    #[must_use]
-    pub fn number_format(mut self, format: impl Into<String>) -> Self {
-        self.number_format = Some(format.into());
-        self
-    }
-}
-
-/// One absolute merged-cell range using zero-based inclusive coordinates.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct MergeRange {
-    /// First row.
-    pub first_row: u32,
-    /// Last row.
-    pub last_row: u32,
-    /// First column.
-    pub first_column: u16,
-    /// Last column.
-    pub last_column: u16,
-}
-
-impl MergeRange {
-    /// Creates an absolute merge range.
-    #[must_use]
-    pub const fn new(first_row: u32, last_row: u32, first_column: u16, last_column: u16) -> Self {
-        Self {
-            first_row,
-            last_row,
-            first_column,
-            last_column,
-        }
-    }
-}
-
-/// Repeating merge strategy equivalent to Java `LoopMergeStrategy`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct LoopMergeStrategy {
-    each_rows: u32,
-    column_extend: u16,
-    column_index: u16,
-}
-
-impl LoopMergeStrategy {
-    /// Creates a repeating merge strategy.
-    ///
-    /// # Errors
-    ///
-    /// Returns a format error when dimensions are zero or no range would be merged.
-    pub fn new(each_rows: u32, column_extend: u16, column_index: u16) -> Result<Self> {
-        if each_rows == 0 || column_extend == 0 {
-            return Err(ExcelError::Format(
-                "loop merge row and column spans must be greater than zero".to_owned(),
-            ));
-        }
-        if each_rows == 1 && column_extend == 1 {
-            return Err(ExcelError::Format(
-                "loop merge must span multiple rows or columns".to_owned(),
-            ));
-        }
-        Ok(Self {
-            each_rows,
-            column_extend,
-            column_index,
-        })
-    }
-
-    /// Number of rows in each merge group.
-    #[must_use]
-    pub const fn each_rows(self) -> u32 {
-        self.each_rows
-    }
-
-    /// Number of columns in each merge group.
-    #[must_use]
-    pub const fn column_extend(self) -> u16 {
-        self.column_extend
-    }
-
-    /// Zero-based first column.
-    #[must_use]
-    pub const fn column_index(self) -> u16 {
-        self.column_index
-    }
-}
-
 /// XLSX write configuration.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[allow(clippy::struct_excessive_bools)]
@@ -665,7 +468,7 @@ pub struct WriteOptions {
     /// Content styles cycled by relative data-row index.
     pub content_styles: Vec<CellStyle>,
     /// Repeating merge strategies applied to data rows.
-    pub loop_merges: Vec<LoopMergeStrategy>,
+    pub loop_merges: Vec<MirroredLoopMergeStrategy>,
     /// Optional dynamic multi-level head paths, one path per selected column.
     pub dynamic_head: Option<Vec<Vec<String>>>,
     /// Password used for ECMA-376 Agile Encryption of XLSX output.
@@ -945,7 +748,7 @@ impl<T> WriteSheet<T> {
 
     /// Registers a repeating data-row merge strategy.
     #[must_use]
-    pub fn loop_merge(mut self, strategy: LoopMergeStrategy) -> Self {
+    pub fn loop_merge(mut self, strategy: MirroredLoopMergeStrategy) -> Self {
         self.options.loop_merges.push(strategy);
         self
     }
@@ -3898,7 +3701,7 @@ fn apply_biff8_loop_merges(
     sheet: &mut Biff8Sheet,
     row_index: u32,
     data_index: usize,
-    strategies: &[LoopMergeStrategy],
+    strategies: &[MirroredLoopMergeStrategy],
 ) -> Result<()> {
     for strategy in strategies {
         #[allow(clippy::cast_possible_truncation)]
@@ -6160,7 +5963,7 @@ fn apply_loop_merges(
     worksheet: &mut Worksheet,
     row_index: u32,
     data_index: usize,
-    strategies: &[LoopMergeStrategy],
+    strategies: &[MirroredLoopMergeStrategy],
 ) -> Result<()> {
     for strategy in strategies {
         #[allow(clippy::cast_possible_truncation)]
@@ -6638,13 +6441,13 @@ fn apply_once_absolute_merge_property(
 /// Builds loop-merge strategies from field-level `@ContentLoopMerge` metadata.
 fn annotation_loop_merges_from_columns(
     columns: &[(usize, usize, &'static ExcelColumn)],
-) -> Result<Vec<LoopMergeStrategy>> {
+) -> Result<Vec<MirroredLoopMergeStrategy>> {
     let mut strategies = Vec::new();
     for (physical_index, _, column) in columns {
         let Some(property) = column.loop_merge else {
             continue;
         };
-        strategies.push(LoopMergeStrategy::new(
+        strategies.push(MirroredLoopMergeStrategy::new(
             property.each_row,
             property.column_extend,
             to_column(*physical_index)?,
@@ -6657,7 +6460,7 @@ fn effective_loop_merges(
     columns: &[(usize, usize, &'static ExcelColumn)],
     options: &WriteOptions,
     handlers: &[Box<dyn WriteHandler>],
-) -> Result<Vec<LoopMergeStrategy>> {
+) -> Result<Vec<MirroredLoopMergeStrategy>> {
     let mut strategies = options.loop_merges.clone();
     for strategy in annotation_loop_merges_from_columns(columns)? {
         if !strategies.contains(&strategy) {
@@ -6668,7 +6471,7 @@ fn effective_loop_merges(
         let Some((property, column_index)) = handler.style_loop_merge() else {
             continue;
         };
-        let strategy = LoopMergeStrategy::new(
+        let strategy = MirroredLoopMergeStrategy::new(
             property.each_row,
             property.column_extend,
             to_column(column_index)?,

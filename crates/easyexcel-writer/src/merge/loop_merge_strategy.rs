@@ -7,10 +7,11 @@ use easyexcel_core::{
 use crate::merge::abstract_merge_strategy::AbstractMergeStrategy;
 
 /// Mirrors Java `LoopMergeStrategy` (3 constructors + `afterRowDispose`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LoopMergeStrategy {
-    each_rows: u32,
-    column_extend: u16,
-    column_index: u16,
+    pub(crate) each_rows: u32,
+    pub(crate) column_extend: u16,
+    pub(crate) column_index: u16,
 }
 
 impl LoopMergeStrategy {
@@ -51,19 +52,19 @@ impl LoopMergeStrategy {
 
     /// Returns the per-group row count. (Java `getEachRow()`)
     #[must_use]
-    pub const fn each_rows(&self) -> u32 {
+    pub const fn each_rows(self) -> u32 {
         self.each_rows
     }
 
     /// Returns the per-group column count. (Java `getColumnExtend()`)
     #[must_use]
-    pub const fn column_extend(&self) -> u16 {
+    pub const fn column_extend(self) -> u16 {
         self.column_extend
     }
 
     /// Returns the zero-based column index. (Java `getColumnIndex()`)
     #[must_use]
-    pub const fn column_index(&self) -> u16 {
+    pub const fn column_index(self) -> u16 {
         self.column_index
     }
 }

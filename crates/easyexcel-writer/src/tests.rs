@@ -1270,10 +1270,10 @@ fn default_options_and_helpers_are_deterministic() {
         format_error("broken").to_string(),
         "excel format error: broken"
     );
-    assert!(LoopMergeStrategy::new(0, 1, 0).is_err());
-    assert!(LoopMergeStrategy::new(1, 0, 0).is_err());
-    assert!(LoopMergeStrategy::new(1, 1, 0).is_err());
-    let strategy = LoopMergeStrategy::new(2, 3, 4).expect("valid loop merge");
+    assert!(MirroredLoopMergeStrategy::new(0, 1, 0).is_err());
+    assert!(MirroredLoopMergeStrategy::new(1, 0, 0).is_err());
+    assert!(MirroredLoopMergeStrategy::new(1, 1, 0).is_err());
+    let strategy = MirroredLoopMergeStrategy::new(2, 3, 4).expect("valid loop merge");
     assert_eq!(strategy.each_rows(), 2);
     assert_eq!(strategy.column_extend(), 3);
     assert_eq!(strategy.column_index(), 4);
@@ -4889,7 +4889,7 @@ fn stateful_writer_supports_multiple_sheets_and_idempotent_finish() -> Result<()
         .head_style(CellStyle::new().italic(true))
         .content_style(CellStyle::new().bold(true))
         .content_styles([CellStyle::new().wrap_text(true)])
-        .loop_merge(LoopMergeStrategy::new(2, 1, 0)?);
+        .loop_merge(MirroredLoopMergeStrategy::new(2, 1, 0)?);
     let second = WriteSheet::<EveryCell>::new("Archive")
         .sheet_index(9)
         .need_head(false)
@@ -5483,17 +5483,17 @@ fn conversion_configuration_column_and_save_failures_propagate() -> Result<()> {
         .is_err()
     );
     assert!(
-        apply_loop_merges(worksheet, u32::MAX, 0, &[LoopMergeStrategy::new(2, 1, 0)?]).is_err()
+        apply_loop_merges(worksheet, u32::MAX, 0, &[MirroredLoopMergeStrategy::new(2, 1, 0)?]).is_err()
     );
     assert!(
-        apply_loop_merges(worksheet, 0, 0, &[LoopMergeStrategy::new(1, 2, u16::MAX)?]).is_err()
+        apply_loop_merges(worksheet, 0, 0, &[MirroredLoopMergeStrategy::new(1, 2, u16::MAX)?]).is_err()
     );
-    assert!(apply_loop_merges(worksheet, 0, 0, &[LoopMergeStrategy::new(1, 2, 16_383)?]).is_err());
+    assert!(apply_loop_merges(worksheet, 0, 0, &[MirroredLoopMergeStrategy::new(1, 2, 16_383)?]).is_err());
     assert!(
         write_xlsx::<EveryCell, _>(
             &directory.path().join("bad-loop-merge.xlsx"),
             &WriteOptions {
-                loop_merges: vec![LoopMergeStrategy::new(1, 2, 16_383)?],
+                loop_merges: vec![MirroredLoopMergeStrategy::new(1, 2, 16_383)?],
                 ..WriteOptions::default()
             },
             vec![every_cell()]
@@ -6426,7 +6426,7 @@ fn write_xls_style_merge_round_trip() -> Result<()> {
         head_style: CellStyle::new().bold(true).background_color(0x00_FF_FF_00),
         content_styles: vec![CellStyle::new().background_color(0x00_00_80_80)],
         merge_ranges: vec![MergeRange::new(3, 4, 0, 0)],
-        loop_merges: vec![LoopMergeStrategy::new(2, 1, 0)?],
+        loop_merges: vec![MirroredLoopMergeStrategy::new(2, 1, 0)?],
         need_head: true,
         ..WriteOptions::default()
     };
@@ -6543,3 +6543,321 @@ fn workbook_util_creator_chain_materializes_real_xlsx_cells() -> Result<()> {
     ));
     Ok(())
 }
+
+#[test]
+fn biff8_halign_returns_general() {
+    assert_eq!(biff8_halign(HorizontalAlignment::General), 0);
+}
+
+#[test]
+fn biff8_halign_returns_left() {
+    assert_eq!(biff8_halign(HorizontalAlignment::Left), 1);
+}
+
+#[test]
+fn biff8_halign_returns_center() {
+    assert_eq!(biff8_halign(HorizontalAlignment::Center), 2);
+}
+
+#[test]
+fn biff8_halign_returns_right() {
+    assert_eq!(biff8_halign(HorizontalAlignment::Right), 3);
+}
+
+#[test]
+fn biff8_halign_returns_fill() {
+    assert_eq!(biff8_halign(HorizontalAlignment::Fill), 4);
+}
+
+#[test]
+fn biff8_halign_returns_justify() {
+    assert_eq!(biff8_halign(HorizontalAlignment::Justify), 5);
+}
+
+#[test]
+fn biff8_halign_returns_center_across() {
+    assert_eq!(biff8_halign(HorizontalAlignment::CenterAcross), 6);
+}
+
+#[test]
+fn biff8_valign_returns_top() {
+    assert_eq!(biff8_valign(VerticalAlignment::Top), 0);
+}
+
+#[test]
+fn biff8_valign_returns_center() {
+    assert_eq!(biff8_valign(VerticalAlignment::Center), 1);
+}
+
+#[test]
+fn biff8_valign_returns_bottom() {
+    assert_eq!(biff8_valign(VerticalAlignment::Bottom), 2);
+}
+
+#[test]
+fn biff8_valign_returns_justify() {
+    assert_eq!(biff8_valign(VerticalAlignment::Justify), 3);
+}
+
+#[test]
+fn biff8_valign_returns_distributed() {
+    assert_eq!(biff8_valign(VerticalAlignment::Distributed), 4);
+}
+
+#[test]
+fn is_scientific_magnitude_large_positive() {
+    assert!(is_scientific_magnitude(1e11));
+}
+
+#[test]
+fn is_scientific_magnitude_large_negative() {
+    assert!(is_scientific_magnitude(-1e12));
+}
+
+#[test]
+fn is_scientific_magnitude_small_positive() {
+    assert!(is_scientific_magnitude(1e-11));
+}
+
+#[test]
+fn is_scientific_magnitude_small_negative() {
+    assert!(is_scientific_magnitude(-1e-11));
+}
+
+#[test]
+fn is_scientific_magnitude_zero_is_false() {
+    assert!(!is_scientific_magnitude(0.0));
+}
+
+#[test]
+fn is_scientific_magnitude_normal_positive() {
+    assert!(!is_scientific_magnitude(1.0));
+}
+
+#[test]
+fn is_scientific_magnitude_normal_negative() {
+    assert!(!is_scientific_magnitude(-100.0));
+}
+
+#[test]
+fn is_scientific_magnitude_boundary_1e11() {
+    assert!(is_scientific_magnitude(1e11));
+}
+
+#[test]
+fn is_scientific_magnitude_boundary_1e_10() {
+    assert!(is_scientific_magnitude(1e-10));
+}
+
+#[test]
+fn biff8_sheet_creator_duplicate_name_fails() {
+    let mut book = Biff8Book::default();
+    let _ = book.create_sheet("Sheet1");
+    let result = book.create_sheet("Sheet1");
+    assert!(result.is_err());
+}
+
+
+
+#[test]
+fn excel_writer_output_path_returns_correct_path() {
+    let dir = tempdir().unwrap();
+    let path = dir.path().join("output.xlsx");
+    let writer = ExcelWriter::new(&path);
+    assert_eq!(writer.output_path(), path);
+}
+
+#[test]
+fn excel_writer_template_file_returns_none_by_default() {
+    let dir = tempdir().unwrap();
+    let path = dir.path().join("test.xlsx");
+    let writer = ExcelWriter::new(&path);
+    assert!(writer.template_file().is_none());
+}
+
+#[test]
+fn excel_writer_template_bytes_returns_none_by_default() {
+    let dir = tempdir().unwrap();
+    let path = dir.path().join("test.xlsx");
+    let writer = ExcelWriter::new(&path);
+    assert!(writer.template_bytes().is_none());
+}
+
+#[test]
+fn excel_writer_has_template_configured_false_by_default() {
+    let dir = tempdir().unwrap();
+    let path = dir.path().join("test.xlsx");
+    let writer = ExcelWriter::new(&path);
+    assert!(!writer.has_template_configured());
+}
+
+#[test]
+fn excel_writer_set_compress_temp_files_true() {
+    let dir = tempdir().unwrap();
+    let path = dir.path().join("compress.xlsx");
+    let mut writer = ExcelWriter::new(&path);
+    writer.set_compress_temp_files(true);
+    assert!(writer.compress_temp_files_enabled());
+}
+
+#[test]
+fn excel_writer_set_compress_temp_files_false() {
+    let dir = tempdir().unwrap();
+    let path = dir.path().join("no_compress.xlsx");
+    let mut writer = ExcelWriter::new(&path);
+    writer.set_compress_temp_files(false);
+    assert!(!writer.compress_temp_files_enabled());
+}
+
+
+struct NoOpHandler;
+
+impl WriteHandler for NoOpHandler {}
+
+#[test]
+fn register_write_handler_after_first_write_fails() -> Result<()> {
+    let dir = tempdir()?;
+    let path = dir.path().join("handler_after.xlsx");
+    let mut writer = ExcelWriter::new(&path);
+    let data = vec![DynamicRow::default()];
+    let sheet = WriteSheet::new("Sheet1");
+    writer.write(data, &sheet)?;
+    let handler: Box<dyn WriteHandler> = Box::new(NoOpHandler);
+    let result = writer.register_write_handler(handler);
+    assert!(result.is_err());
+    Ok(())
+}
+
+#[test]
+fn prepend_write_handlers_after_first_write_fails() -> Result<()> {
+    let dir = tempdir()?;
+    let path = dir.path().join("prepend_after.xlsx");
+    let mut writer = ExcelWriter::new(&path);
+    let data = vec![DynamicRow::default()];
+    let sheet = WriteSheet::new("Sheet1");
+    writer.write(data, &sheet)?;
+    let handlers: Vec<Box<dyn WriteHandler>> = vec![Box::new(NoOpHandler)];
+    let result = writer.prepend_write_handlers(handlers);
+    assert!(result.is_err());
+    Ok(())
+}
+
+#[test]
+fn register_write_handler_before_first_write_succeeds() -> Result<()> {
+    let dir = tempdir()?;
+    let path = dir.path().join("handler_before.xlsx");
+    let mut writer = ExcelWriter::new(&path);
+    let handler: Box<dyn WriteHandler> = Box::new(NoOpHandler);
+    let result = writer.register_write_handler(handler);
+    assert!(result.is_ok());
+    Ok(())
+}
+
+#[test]
+fn prepend_write_handlers_before_first_write_succeeds() -> Result<()> {
+    let dir = tempdir()?;
+    let path = dir.path().join("prepend_before.xlsx");
+    let mut writer = ExcelWriter::new(&path);
+    let handlers: Vec<Box<dyn WriteHandler>> = vec![Box::new(NoOpHandler)];
+    let result = writer.prepend_write_handlers(handlers);
+    assert!(result.is_ok());
+    Ok(())
+}
+
+
+#[test]
+fn write_xlsx_with_handlers_creates_file() -> Result<()> {
+    let dir = tempdir()?;
+    let path = dir.path().join("with_handlers.xlsx");
+    let data = vec![DynamicRow::default()];
+    let mut handlers: Vec<Box<dyn WriteHandler>> = vec![Box::new(NoOpHandler)];
+    let options = WriteOptions::default();
+    write_xlsx_with_handlers::<DynamicRow, _>(path.as_path(), &options, data, &mut handlers)?;
+    assert!(path.exists());
+    Ok(())
+}
+
+#[test]
+fn write_xls_with_handlers_creates_file() -> Result<()> {
+    let dir = tempdir()?;
+    let path = dir.path().join("with_handlers.xls");
+    let data = vec![DynamicRow::default()];
+    let mut handlers: Vec<Box<dyn WriteHandler>> = vec![Box::new(NoOpHandler)];
+    let options = WriteOptions::default();
+    write_xls_with_handlers::<DynamicRow, _>(path.as_path(), &options, data, &mut handlers)?;
+    assert!(path.exists());
+    Ok(())
+}
+
+#[test]
+fn write_csv_with_handlers_creates_file() -> Result<()> {
+    let dir = tempdir()?;
+    let path = dir.path().join("with_handlers.csv");
+    let data = vec![DynamicRow::default()];
+    let mut handlers: Vec<Box<dyn WriteHandler>> = vec![Box::new(NoOpHandler)];
+    let options = WriteOptions::default();
+    write_csv_with_handlers::<DynamicRow, _>(path.as_path(), &options, data, &mut handlers)?;
+    assert!(path.exists());
+    Ok(())
+}
+
+
+#[test]
+
+#[test]
+fn write_xlsx_to_writer_creates_file() -> Result<()> {
+    let dir = tempdir()?;
+    let path = dir.path().join("writer.xlsx");
+    let data = vec![DynamicRow::default()];
+    let mut handlers: Vec<Box<dyn WriteHandler>> = vec![];
+    let options = WriteOptions::default();
+    let file = std::fs::File::create(&path).map_err(test_error)?;
+    write_xlsx_to_writer::<DynamicRow, _, _>(
+        path.as_path(),
+        file,
+        &options,
+        data,
+        &mut handlers,
+    )?;
+    assert!(path.exists());
+    Ok(())
+}
+
+#[test]
+fn write_xls_to_writer_creates_file() -> Result<()> {
+    let dir = tempdir()?;
+    let path = dir.path().join("writer.xls");
+    let data = vec![DynamicRow::default()];
+    let mut handlers: Vec<Box<dyn WriteHandler>> = vec![];
+    let options = WriteOptions::default();
+    let file = std::fs::File::create(&path).map_err(test_error)?;
+    write_xls_to_writer::<DynamicRow, _, _>(
+        path.as_path(),
+        file,
+        &options,
+        data,
+        &mut handlers,
+    )?;
+    assert!(path.exists());
+    Ok(())
+}
+
+#[test]
+fn write_csv_to_writer_creates_file() -> Result<()> {
+    let dir = tempdir()?;
+    let path = dir.path().join("writer.csv");
+    let data = vec![DynamicRow::default()];
+    let mut handlers: Vec<Box<dyn WriteHandler>> = vec![];
+    let options = WriteOptions::default();
+    let file = std::fs::File::create(&path).map_err(test_error)?;
+    write_csv_to_writer::<DynamicRow, _, _>(
+        path.as_path(),
+        file,
+        &options,
+        data,
+        &mut handlers,
+    )?;
+    assert!(path.exists());
+    Ok(())
+}
+

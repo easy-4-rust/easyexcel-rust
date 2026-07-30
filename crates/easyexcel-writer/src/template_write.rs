@@ -2062,4 +2062,43 @@ mod tests {
         assert_eq!(first, second);
         assert_eq!(after_first, after_second);
     }
+
+    #[test]
+    fn validate_template_source_xlsx_file_succeeds() {
+        let result = validate_template_source(Some(Path::new("nonexistent.xlsx")), None);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn validate_template_source_csv_file_fails() {
+        let result = validate_template_source(Some(Path::new("template.csv")), None);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn validate_template_source_xls_file_fails() {
+        let result = validate_template_source(Some(Path::new("template.xls")), None);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn validate_template_source_no_source_succeeds() {
+        let result = validate_template_source(None, None);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn has_template_returns_false_for_none() {
+        assert!(!has_template(None, None));
+    }
+
+    #[test]
+    fn has_template_returns_true_for_file() {
+        assert!(has_template(Some(Path::new("template.xlsx")), None));
+    }
+
+    #[test]
+    fn has_template_returns_true_for_bytes() {
+        assert!(has_template(None, Some(b"fake bytes")));
+    }
 }

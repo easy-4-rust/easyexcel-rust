@@ -11,7 +11,7 @@ use super::*;
 #[test]
 fn repetition_loop_merge_basic_each_2() {
     // Java: @ContentLoopMerge(eachRow = 2, columnExtend = 1)
-    let strategy = LoopMergeStrategy::new(2, 1, 0).unwrap();
+    let strategy = MirroredLoopMergeStrategy::new(2, 1, 0).unwrap();
     assert_eq!(strategy.each_rows(), 2);
     assert_eq!(strategy.column_extend(), 1);
     assert_eq!(strategy.column_index(), 0);
@@ -19,40 +19,40 @@ fn repetition_loop_merge_basic_each_2() {
 
 #[test]
 fn repetition_loop_merge_each_3_extend_2() {
-    let strategy = LoopMergeStrategy::new(3, 2, 1).unwrap();
+    let strategy = MirroredLoopMergeStrategy::new(3, 2, 1).unwrap();
     assert_eq!(strategy.each_rows(), 3);
     assert_eq!(strategy.column_extend(), 2);
 }
 
 #[test]
 fn repetition_loop_merge_zero_index() {
-    let strategy = LoopMergeStrategy::new(2, 1, 0).unwrap();
+    let strategy = MirroredLoopMergeStrategy::new(2, 1, 0).unwrap();
     assert_eq!(strategy.column_index(), 0);
 }
 
 #[test]
 fn repetition_loop_merge_high_index() {
-    let strategy = LoopMergeStrategy::new(2, 1, 99).unwrap();
+    let strategy = MirroredLoopMergeStrategy::new(2, 1, 99).unwrap();
     assert_eq!(strategy.column_index(), 99);
 }
 
 #[test]
 fn repetition_loop_merge_max_extend() {
-    let strategy = LoopMergeStrategy::new(2, u16::MAX, 0).unwrap();
+    let strategy = MirroredLoopMergeStrategy::new(2, u16::MAX, 0).unwrap();
     assert_eq!(strategy.column_extend(), u16::MAX);
 }
 
 #[test]
 fn repetition_loop_merge_large_each() {
-    let strategy = LoopMergeStrategy::new(1000, 5, 0).unwrap();
+    let strategy = MirroredLoopMergeStrategy::new(1000, 5, 0).unwrap();
     assert_eq!(strategy.each_rows(), 1000);
     assert_eq!(strategy.column_extend(), 5);
 }
 
 #[test]
 fn repetition_loop_merge_all_fields_distinct() {
-    let s1 = LoopMergeStrategy::new(2, 1, 0).unwrap();
-    let s2 = LoopMergeStrategy::new(3, 2, 1).unwrap();
+    let s1 = MirroredLoopMergeStrategy::new(2, 1, 0).unwrap();
+    let s2 = MirroredLoopMergeStrategy::new(3, 2, 1).unwrap();
     assert_ne!(s1.each_rows(), s2.each_rows());
     assert_ne!(s1.column_extend(), s2.column_extend());
     assert_ne!(s1.column_index(), s2.column_index());
