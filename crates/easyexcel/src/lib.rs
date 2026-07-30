@@ -31,7 +31,7 @@ pub use easyexcel_writer::{
     CellStyle, CompatibleExcelWriterBuilder, CompatibleExcelWriterOutputStreamBuilder,
     CompatibleExcelWriterSheetBuilder, CsvEncodingWriter, ExcelBuilder, ExcelBuilderImpl,
     ExcelOutputStream, ExcelWriter, HorizontalAlignment, HorizontalCellStyleStrategy,
-    LongestMatchColumnWidthStyleStrategy, LoopMergeStrategy, MergeRange,
+    LongestMatchColumnWidthStyleStrategy, MirroredLoopMergeStrategy as LoopMergeStrategy, MergeRange,
     SimpleColumnWidthStyleStrategy, SimpleRowHeightStyleStrategy, VerticalAlignment,
     VerticalCellStyleStrategy, WriteOptions, WriteSheet, write_csv_to_buffer, write_csv_to_writer,
     write_xls, write_xls_to_writer, write_xlsx_to_writer,
