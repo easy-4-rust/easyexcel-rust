@@ -125,7 +125,9 @@ impl CellCreator for XlsxRow<'_> {
 pub mod biff8;
 pub mod builder;
 pub mod cell_style;
+pub mod csv_encoding_writer;
 mod excel_builder;
+pub mod excel_output_stream;
 pub mod executor;
 pub mod global_configuration;
 /// SXSSF `GZIPSheetDataWriter` equivalent — gzip row spill for `compress_temp_files`.
@@ -142,6 +144,7 @@ mod template_write;
 /// Java `com.alibaba.excel.write` package-compatible API paths.
 pub mod write;
 pub mod vertical_alignment;
+pub mod write_progress;
 
 use biff8::{
     Biff8Book, Biff8Cell, Biff8Merge, Biff8Sheet, Biff8StyleRequest, Biff8StyleTable, Biff8Value,
@@ -229,10 +232,13 @@ impl Biff8CellHandle<'_> {
 pub use builder::abstract_excel_writer_parameter_builder::AbstractExcelWriterParameterBuilder;
 pub use builder::excel_writer_table_builder::ExcelWriterTableBuilder;
 pub use cell_style::CellStyle;
+pub use csv_encoding_writer::{CsvEncoding, CsvEncodingWriter, csv_bom, csv_encoding};
 pub use excel_builder::{ExcelBuilder, ExcelBuilderImpl, FillConfig as BuilderFillConfig};
+pub use excel_output_stream::ExcelOutputStream;
 pub use horizontal_alignment::HorizontalAlignment;
 pub use merge_range::MergeRange;
 pub use vertical_alignment::VerticalAlignment;
+pub use write_progress::WriteProgress;
 pub use executor::abstract_excel_write_executor::AbstractExcelWriteExecutor;
 pub use executor::excel_write_add_executor::ExcelWriteAddExecutor;
 pub use executor::excel_write_executor::ExcelWriteExecutor;
@@ -288,109 +294,6 @@ pub use style::vertical_cell_style_strategy::VerticalCellStyleStrategy;
 pub use write::builder::excel_writer_builder::ExcelWriterBuilder as CompatibleExcelWriterBuilder;
 pub use write::builder::excel_writer_builder::ExcelWriterOutputStreamBuilder as CompatibleExcelWriterOutputStreamBuilder;
 pub use write::builder::excel_writer_sheet_builder::ExcelWriterSheetBuilder as CompatibleExcelWriterSheetBuilder;
-
-/// Cloneable, explicitly closeable output stream used by stateful writers.
-///
-/// Clones address the same underlying writer. Closing any clone drops the
-/// underlying writer and makes subsequent writes fail with `BrokenPipe`, which
-/// gives Rust callers an observable equivalent of Java `OutputStream.close()`.
-pub struct ExcelOutputStream<W> {
-    inner: Arc<Mutex<Option<W>>>,
-}
-
-impl<W> ExcelOutputStream<W> {
-    /// Wraps an owned byte writer.
-    #[must_use]
-    pub fn new(writer: W) -> Self {
-        Self {
-            inner: Arc::new(Mutex::new(Some(writer))),
-        }
-    }
-
-    /// Closes the shared stream, flushing it before ownership is released.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error when the lock is poisoned or the final flush fails.
-    pub fn close(&self) -> std::io::Result<()>
-    where
-        W: Write,
-    {
-        let mut guard = self
-            .inner
-            .lock()
-            .map_err(|_| std::io::Error::other("output stream lock poisoned"))?;
-        if let Some(mut writer) = guard.take() {
-            writer.flush()?;
-        }
-        Ok(())
-    }
-
-    /// Returns whether the stream has been closed.
-    #[must_use]
-    pub fn is_closed(&self) -> bool {
-        self.inner.lock().map_or(true, |writer| writer.is_none())
-    }
-
-    /// Runs a read-only callback against the underlying writer.
-    ///
-    /// Returns `None` after the stream is closed or if its lock was poisoned.
-    pub fn with_inner<R>(&self, inspect: impl FnOnce(&W) -> R) -> Option<R> {
-        self.inner
-            .lock()
-            .ok()
-            .and_then(|writer| writer.as_ref().map(inspect))
-    }
-
-    /// Recovers the underlying writer when this is its only handle and it is open.
-    ///
-    /// # Errors
-    ///
-    /// Returns the handle when another clone exists, the stream is closed, or
-    /// its lock was poisoned.
-    pub fn into_inner(self) -> std::result::Result<W, Self> {
-        match Arc::try_unwrap(self.inner) {
-            Ok(inner) => match inner.into_inner() {
-                Ok(Some(writer)) => Ok(writer),
-                Ok(None) | Err(_) => Err(Self {
-                    inner: Arc::new(Mutex::new(None)),
-                }),
-            },
-            Err(inner) => Err(Self { inner }),
-        }
-    }
-}
-
-impl<W> Clone for ExcelOutputStream<W> {
-    fn clone(&self) -> Self {
-        Self {
-            inner: Arc::clone(&self.inner),
-        }
-    }
-}
-
-impl<W> Write for ExcelOutputStream<W>
-where
-    W: Write,
-{
-    fn write(&mut self, buffer: &[u8]) -> std::io::Result<usize> {
-        self.inner
-            .lock()
-            .map_err(|_| std::io::Error::other("output stream lock poisoned"))?
-            .as_mut()
-            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::BrokenPipe, "stream closed"))?
-            .write(buffer)
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        self.inner
-            .lock()
-            .map_err(|_| std::io::Error::other("output stream lock poisoned"))?
-            .as_mut()
-            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::BrokenPipe, "stream closed"))?
-            .flush()
-    }
-}
 
 /// XLSX write configuration.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -4298,167 +4201,6 @@ fn validate_csv_options(options: &WriteOptions) -> Result<()> {
     Ok(())
 }
 
-fn csv_encoding(charset: &CsvCharset) -> Result<CsvEncoding> {
-    let encoding = Encoding::for_label(charset.name().as_bytes()).ok_or_else(|| {
-        ExcelError::Unsupported(format!("unsupported CSV charset: {}", charset.name()))
-    })?;
-    Ok(if encoding == UTF_16LE {
-        CsvEncoding::Utf16Le
-    } else if encoding == UTF_16BE {
-        CsvEncoding::Utf16Be
-    } else {
-        CsvEncoding::Standard(encoding)
-    })
-}
-
-fn csv_bom(encoding: CsvEncoding) -> &'static [u8] {
-    match encoding {
-        CsvEncoding::Standard(encoding) if encoding == UTF_8 => b"\xEF\xBB\xBF",
-        CsvEncoding::Utf16Le => b"\xFF\xFE",
-        CsvEncoding::Utf16Be => b"\xFE\xFF",
-        CsvEncoding::Standard(_) => b"",
-    }
-}
-
-#[derive(Clone, Copy)]
-enum CsvEncoding {
-    Standard(&'static Encoding),
-    Utf16Le,
-    Utf16Be,
-}
-
-enum CsvEncoder {
-    Standard(encoding_rs::Encoder),
-    Utf16Le,
-    Utf16Be,
-}
-
-/// Incremental UTF-8 to configured CSV charset transcoder.
-///
-/// This is the low-level counterpart of Java's charset-aware CSV output path.
-/// Call [`Self::finish`] after the last chunk so incomplete UTF-8 and encoder
-/// finalization errors are reported.
-pub struct CsvEncodingWriter {
-    output: Box<dyn Write + Send>,
-    encoder: CsvEncoder,
-    pending_utf8: Vec<u8>,
-}
-
-impl CsvEncodingWriter {
-    /// Creates a transcoding writer for a Java-style charset name.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error when the charset is unsupported.
-    pub fn with_charset<W>(output: W, charset: &CsvCharset) -> Result<Self>
-    where
-        W: Write + Send + 'static,
-    {
-        Ok(Self::new(Box::new(output), csv_encoding(charset)?))
-    }
-
-    fn new(output: Box<dyn Write + Send>, encoding: CsvEncoding) -> Self {
-        Self {
-            output,
-            encoder: match encoding {
-                CsvEncoding::Standard(encoding) => CsvEncoder::Standard(encoding.new_encoder()),
-                CsvEncoding::Utf16Le => CsvEncoder::Utf16Le,
-                CsvEncoding::Utf16Be => CsvEncoder::Utf16Be,
-            },
-            pending_utf8: Vec::new(),
-        }
-    }
-
-    fn encode_text(&mut self, text: &str, last: bool) -> std::io::Result<()> {
-        match &mut self.encoder {
-            CsvEncoder::Standard(encoder) => {
-                Self::encode_standard(&mut self.output, encoder, text, last)
-            }
-            CsvEncoder::Utf16Le => Self::encode_utf16(&mut self.output, text, u16::to_le_bytes),
-            CsvEncoder::Utf16Be => Self::encode_utf16(&mut self.output, text, u16::to_be_bytes),
-        }
-    }
-
-    fn encode_standard(
-        output: &mut dyn Write,
-        encoder: &mut encoding_rs::Encoder,
-        mut text: &str,
-        last: bool,
-    ) -> std::io::Result<()> {
-        loop {
-            // Keep the transcoder chunk below csv's internal buffer so a
-            // single upstream write can be continued without accumulating
-            // the complete record in memory.
-            let mut buffer = [0_u8; 4 * 1_024];
-            let (result, read, written, _) = encoder.encode_from_utf8(text, &mut buffer, last);
-            output.write_all(&buffer[..written])?;
-            text = &text[read..];
-            if result == CoderResult::InputEmpty {
-                return Ok(());
-            }
-        }
-    }
-
-    fn encode_utf16(
-        output: &mut dyn Write,
-        text: &str,
-        to_bytes: fn(u16) -> [u8; 2],
-    ) -> std::io::Result<()> {
-        let mut encoded = [0_u8; 8 * 1_024];
-        let mut length = 0;
-        for unit in text.encode_utf16() {
-            if length == encoded.len() {
-                output.write_all(&encoded)?;
-                length = 0;
-            }
-            let bytes = to_bytes(unit);
-            encoded[length] = bytes[0];
-            encoded[length + 1] = bytes[1];
-            length += 2;
-        }
-        output.write_all(&encoded[..length])
-    }
-
-    /// Finalizes the charset encoder and flushes the underlying output.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error for incomplete UTF-8 or an underlying output failure.
-    pub fn finish(&mut self) -> std::io::Result<()> {
-        if !self.pending_utf8.is_empty() {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                "CSV writer ended with incomplete UTF-8",
-            ));
-        }
-        self.encode_text("", true)?;
-        self.output.flush()
-    }
-}
-
-impl Write for CsvEncodingWriter {
-    fn write(&mut self, buffer: &[u8]) -> std::io::Result<usize> {
-        self.pending_utf8.extend_from_slice(buffer);
-        let valid_length = match std::str::from_utf8(&self.pending_utf8) {
-            Ok(_) => self.pending_utf8.len(),
-            Err(error) if error.error_len().is_none() => error.valid_up_to(),
-            Err(error) => {
-                return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, error));
-            }
-        };
-        if valid_length > 0 {
-            let valid = self.pending_utf8.drain(..valid_length).collect::<Vec<_>>();
-            let text = String::from_utf8_lossy(&valid);
-            self.encode_text(text.as_ref(), false)?;
-        }
-        Ok(buffer.len())
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        self.output.flush()
-    }
-}
-
 /// Saves a workbook to `path` (optionally password-protected).
 ///
 /// `pub(crate)` so executor integration tests can persist worksheets built via
@@ -4655,16 +4397,6 @@ fn after_csv_cell(
 
 /// Tracks the next physical row / data-row index while appending.
 ///
-/// Used by [`ExcelWriteAddExecutor`] and the stateful [`ExcelWriter`] path that
-/// both delegate to [`append_rows_to_worksheet`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct WriteProgress {
-    /// Next 0-based physical worksheet row to write.
-    pub next_row: u32,
-    /// Next 0-based data-row index (excludes header rows).
-    pub next_data_index: usize,
-}
-
 /// Immutable Java-holder state shared by row/cell callback construction.
 #[derive(Debug, Clone)]
 struct HandlerHolderScope {
