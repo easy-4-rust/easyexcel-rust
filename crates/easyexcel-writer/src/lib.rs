@@ -128,6 +128,7 @@ pub mod cell_style;
 pub mod csv_encoding_writer;
 mod excel_builder;
 pub mod excel_output_stream;
+pub mod excel_writer;
 pub mod executor;
 pub mod global_configuration;
 /// SXSSF `GZIPSheetDataWriter` equivalent — gzip row spill for `compress_temp_files`.
@@ -144,6 +145,7 @@ mod template_write;
 /// Java `com.alibaba.excel.write` package-compatible API paths.
 pub mod write;
 pub mod vertical_alignment;
+pub(crate) mod writer_helpers;
 pub mod write_options;
 pub mod write_progress;
 pub mod write_sheet;
