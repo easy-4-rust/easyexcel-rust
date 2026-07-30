@@ -7,9 +7,10 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
+use easyexcel_core::event::NotRepeatExecutor;
 use easyexcel_core::{
     CellValue, ConverterRegistry, ExcelColumn, ExcelError, ExcelRow, ExcelWriteMetadata,
-    NotRepeatExecutor, Result, WriteCellContext, WriteHandler, WriteWorkbookContext,
+    Result, WriteCellContext, WriteHandler, WriteWorkbookContext,
 };
 
 use crate::merge_range::MergeRange;
@@ -260,5 +261,27 @@ impl HandlerExecutionScope {
 
     pub(crate) fn own_boxed(&self) -> Vec<Box<dyn WriteHandler>> {
         boxed_handlers(&self.own)
+    }
+
+    pub(crate) fn effective_boxed(&self) -> Vec<Box<dyn WriteHandler>> {
+        boxed_handlers(&self.effective)
+    }
+}
+
+/// 用于 CSV 捕获输出的包装器。
+#[derive(Clone, Default)]
+pub(crate) struct CapturedOutput(pub(crate) Arc<Mutex<Vec<u8>>>);
+
+impl std::io::Write for CapturedOutput {
+    fn write(&mut self, buffer: &[u8]) -> std::io::Result<usize> {
+        self.0
+            .lock()
+            .map_err(|_| std::io::Error::other("CSV capture lock poisoned"))?
+            .extend_from_slice(buffer);
+        Ok(buffer.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
     }
 }
