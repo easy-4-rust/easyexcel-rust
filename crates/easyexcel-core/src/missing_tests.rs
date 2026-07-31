@@ -1,8 +1,6 @@
 //! Missing test coverage to match Java easyexcel test suite.
 
-use bigdecimal::BigDecimal;
-use chrono::{NaiveDate, NaiveDateTime};
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 
 use super::*;
 
@@ -40,8 +38,7 @@ fn include_column_field_names_option() {
 
 #[test]
 fn order_by_include_column_bool() {
-    let mut flag = false;
-    flag = true;
+    let mut flag = true;
     assert!(flag);
     flag = false;
     assert!(!flag);
@@ -137,7 +134,7 @@ fn include_column_field_names_50() {
 
 #[test]
 fn order_by_include_column_with_exclude() {
-    let mut flag = true;
+    let flag = true;
     let exclude: Vec<usize> = vec![99];
     assert!(flag);
     assert_eq!(exclude.len(), 1);

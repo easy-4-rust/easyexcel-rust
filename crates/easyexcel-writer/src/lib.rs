@@ -34,6 +34,9 @@ pub mod write_xls;
 pub mod xlsx_write;
 
 pub use excel_writer_core::*;
+#[allow(unused_imports)]
 pub use write_csv::*;
+#[allow(unused_imports)]
 pub use write_xls::*;
+#[allow(unused_imports)]
 pub use xlsx_write::*;

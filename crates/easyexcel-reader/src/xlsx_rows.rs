@@ -28,9 +28,11 @@ use crate::analysis::v07::handlers::sax::shared_strings_table_handler::{
 };
 use crate::analysis::v07::handlers::xlsx_tag_handler::XlsxTagHandler;
 use crate::cache::resolve_read_cache_mode;
+#[cfg(test)]
+use crate::read_cache::ReadCacheMode;
 use crate::read_cache::{
-    ReadCacheMode, SharedStringCache, SharedStringCacheReader, SharedStringCacheWriter,
-    create_cache, memory_cache,
+    SharedStringCache, SharedStringCacheReader, SharedStringCacheWriter, create_cache,
+    memory_cache,
 };
 
 /// Prefer EasyExcel BuiltinFormats over ssfmt ECMA table (Java locale-aware codes).

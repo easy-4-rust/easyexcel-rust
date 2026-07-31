@@ -3,6 +3,7 @@
 use crate::processor::analysis_event_processor::AnalysisEventProcessor;
 use easyexcel_core::AnalysisContext;
 
+/// 默认分析事件处理器，对应 Java `DefaultAnalysisEventProcessor`。
 #[derive(Debug, Clone, Default)]
 pub struct DefaultAnalysisEventProcessor;
 

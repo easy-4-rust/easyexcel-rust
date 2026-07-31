@@ -13,8 +13,8 @@ use easyexcel_core::{
 };
 
 use super::encode::{
-    ICV_AUTO, ICV_PATTERN_BG_DEFAULT, XF_CUSTOM_BASE, XF_DATE, XF_DATETIME, XF_GENERAL,
-    pack_cell_xf, pack_font,
+    ICV_AUTO, ICV_PATTERN_BG_DEFAULT, XF_CUSTOM_BASE, XF_DATE, XF_DATETIME, pack_cell_xf,
+    pack_font,
 };
 
 /// Resolved write-style inputs used when allocating an XF index.
@@ -409,6 +409,7 @@ fn excel_valign(align: ExcelVerticalAlignment) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::biff8::encode::XF_GENERAL;
 
     #[test]
     fn resolve_default_keeps_general_xf() {

@@ -312,7 +312,7 @@ impl Biff8TemplatePackage {
         // Always use LABEL (inline string) for replacements, even when
         // the original was LABELSST — this avoids SST mutation and
         // ensures the replacement text is self-contained.
-        let cell = Biff8Cell {
+        let _cell = Biff8Cell {
             value: Biff8Value::Text(replacement.to_owned()),
             xf,
         };
@@ -771,6 +771,7 @@ fn decode_label_payload(data: &[u8]) -> (u16, u8, Option<String>) {
 /// LABELSST references the Shared String Table — since we don't have
 /// the SST available here, we return None for the text and let the
 /// caller handle SST lookups separately.
+#[allow(dead_code)]
 fn decode_labelsst_payload(data: &[u8]) -> (u16, u8, Option<String>) {
     if data.len() < 8 {
         return (0, 0, None);

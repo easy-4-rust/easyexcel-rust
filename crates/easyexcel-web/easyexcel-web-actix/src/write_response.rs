@@ -5,8 +5,6 @@ use easyexcel::{EasyExcel, ExcelRow};
 use easyexcel_core::{ExcelDownloadErrorBody, Result};
 use serde_json;
 
-use crate::headers::excel_xlsx_attachment_headers;
-
 /// 将 [`ExcelRow`] 行序列化为 XLSX 字节数组。
 ///
 /// # Errors

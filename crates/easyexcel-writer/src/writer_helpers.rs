@@ -3,22 +3,19 @@
 //! 对应 Java：内部辅助类型。
 //! 原文件：easyexcel-writer 内部辅助类型。
 
-use std::collections::{HashMap, HashSet};
-use std::path::Path;
+use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
 use easyexcel_core::event::NotRepeatExecutor;
 use easyexcel_core::{
-    CellValue, ConverterRegistry, ExcelColumn, ExcelError, ExcelRow, ExcelWriteMetadata,
-    Result, WriteCellContext, WriteHandler, WriteWorkbookContext,
+    ExcelColumn, ExcelWriteMetadata, Result, WriteCellContext, WriteHandler, WriteWorkbookContext,
 };
 
-use crate::merge_range::MergeRange;
 use crate::write_options::WriteOptions;
-use crate::write_progress::WriteProgress;
 
 /// Global write flags copied from [`WriteOptions`] for cell emission.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[allow(dead_code)]
 pub(crate) struct WriteGlobalFlags {
     pub(crate) auto_trim: bool,
     pub(crate) use_1904_windowing: bool,
@@ -36,6 +33,7 @@ impl From<&WriteOptions> for WriteGlobalFlags {
 }
 
 /// Returns the worksheet name after applying [`WriteOptions::auto_trim`].
+#[allow(dead_code)]
 pub(crate) fn effective_sheet_name(options: &WriteOptions) -> String {
     if options.auto_trim {
         options.sheet_name.trim().to_owned()
@@ -45,6 +43,7 @@ pub(crate) fn effective_sheet_name(options: &WriteOptions) -> String {
 }
 
 /// Trims string cell text when auto-trim is enabled.
+#[allow(dead_code)]
 pub(crate) fn maybe_trim_cell_string(value: &str, auto_trim: bool) -> String {
     if auto_trim {
         value.trim().to_owned()
@@ -54,6 +53,7 @@ pub(crate) fn maybe_trim_cell_string(value: &str, auto_trim: bool) -> String {
 }
 
 /// Mirrors Java/reader extreme-magnitude scientific formatting threshold.
+#[allow(dead_code)]
 pub(crate) fn is_scientific_magnitude(value: f64) -> bool {
     let absolute = value.abs();
     absolute >= 1E11 || (absolute <= 1E-10 && absolute > 0.0)
@@ -61,6 +61,7 @@ pub(crate) fn is_scientific_magnitude(value: f64) -> bool {
 
 /// Immutable Java-holder state shared by row/cell callback construction.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub(crate) struct StatefulSheetState {
     pub(crate) schema: &'static [ExcelColumn],
     pub(crate) metadata: ExcelWriteMetadata,
@@ -70,6 +71,7 @@ pub(crate) struct StatefulSheetState {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub(crate) struct SharedHandlerUniqueValue(String);
 
 impl NotRepeatExecutor for SharedHandlerUniqueValue {
@@ -80,6 +82,7 @@ impl NotRepeatExecutor for SharedHandlerUniqueValue {
 
 /// Shared ownership for one real handler instance.
 #[derive(Clone)]
+#[allow(dead_code)]
 pub(crate) struct SharedWriteHandler {
     pub(crate) inner: Arc<Mutex<Box<dyn WriteHandler>>>,
     pub(crate) order: i32,
@@ -87,6 +90,7 @@ pub(crate) struct SharedWriteHandler {
 }
 
 impl SharedWriteHandler {
+    #[allow(dead_code)]
     pub(crate) fn new(handler: Box<dyn WriteHandler>) -> Self {
         let order = handler.order();
         let unique_value = handler
@@ -99,6 +103,7 @@ impl SharedWriteHandler {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn with_mut<R>(&self, action: impl FnOnce(&mut dyn WriteHandler) -> R) -> R {
         let mut handler = self
             .inner
@@ -107,6 +112,7 @@ impl SharedWriteHandler {
         action(handler.as_mut())
     }
 
+    #[allow(dead_code)]
     pub(crate) fn with_ref<R>(&self, action: impl FnOnce(&dyn WriteHandler) -> R) -> R {
         let handler = self
             .inner
@@ -208,10 +214,12 @@ impl WriteHandler for SharedWriteHandler {
     }
 }
 
+#[allow(dead_code)]
 pub(crate) fn share_handlers(handlers: Vec<Box<dyn WriteHandler>>) -> Vec<SharedWriteHandler> {
     handlers.into_iter().map(SharedWriteHandler::new).collect()
 }
 
+#[allow(dead_code)]
 pub(crate) fn boxed_handlers(handlers: &[SharedWriteHandler]) -> Vec<Box<dyn WriteHandler>> {
     handlers
         .iter()
@@ -220,6 +228,7 @@ pub(crate) fn boxed_handlers(handlers: &[SharedWriteHandler]) -> Vec<Box<dyn Wri
         .collect()
 }
 
+#[allow(dead_code)]
 pub(crate) fn normalized_shared_handlers(mut handlers: Vec<SharedWriteHandler>) -> Vec<SharedWriteHandler> {
     handlers.sort_by_key(SharedWriteHandler::order);
     let mut unique_values = HashSet::new();
@@ -234,12 +243,14 @@ pub(crate) fn normalized_shared_handlers(mut handlers: Vec<SharedWriteHandler>) 
 
 /// Java `AbstractWriteHolder`'s own/effective execution-chain pair.
 #[derive(Clone, Default)]
+#[allow(dead_code)]
 pub(crate) struct HandlerExecutionScope {
     pub(crate) own: Vec<SharedWriteHandler>,
     pub(crate) effective: Vec<SharedWriteHandler>,
 }
 
 impl HandlerExecutionScope {
+    #[allow(dead_code)]
     pub(crate) fn root(handlers: &[SharedWriteHandler]) -> Self {
         let own = normalized_shared_handlers(handlers.to_vec());
         Self {
@@ -248,6 +259,7 @@ impl HandlerExecutionScope {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn child(own_handlers: &[SharedWriteHandler], parent: &Self) -> Self {
         let own_candidates = own_handlers.to_vec();
         let own = normalized_shared_handlers(own_candidates.clone());
@@ -259,10 +271,12 @@ impl HandlerExecutionScope {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn own_boxed(&self) -> Vec<Box<dyn WriteHandler>> {
         boxed_handlers(&self.own)
     }
 
+    #[allow(dead_code)]
     pub(crate) fn effective_boxed(&self) -> Vec<Box<dyn WriteHandler>> {
         boxed_handlers(&self.effective)
     }

@@ -6,24 +6,31 @@ use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
 use std::sync::Mutex;
+#[allow(unused_imports)]
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
+#[allow(unused_imports)]
 use calamine::{Data, DataType, Dimensions, Reader, Xls, Xlsx, open_workbook};
 use chrono::NaiveDate;
+#[allow(unused_imports)]
 use easyexcel_core::metadata::{CellRange, RowHeightProperty};
+#[allow(unused_imports)]
 use easyexcel_core::{
     BigDecimal, ClientAnchorData, CoordinateData, DynamicRow, DynamicValue, HeadKind, ImageData,
     ImageType, IntoExcelCell, OnceAbsoluteMergeProperty, WriteCellData,
 };
+#[allow(unused_imports)]
 use tempfile::tempdir;
 use zip::ZipArchive;
 
 use super::*;
 
+#[allow(dead_code)]
 fn test_error(error: impl std::fmt::Display) -> ExcelError {
     ExcelError::Format(error.to_string())
 }
 
+#[allow(dead_code)]
 struct FaultyWrite {
     fail_write_at: Option<usize>,
     fail_flush: bool,
@@ -31,6 +38,7 @@ struct FaultyWrite {
 }
 
 impl FaultyWrite {
+    #[allow(dead_code)]
     const fn writing(fail_at: usize) -> Self {
         Self {
             fail_write_at: Some(fail_at),
@@ -39,6 +47,7 @@ impl FaultyWrite {
         }
     }
 
+    #[allow(dead_code)]
     const fn flushing() -> Self {
         Self {
             fail_write_at: None,
@@ -67,6 +76,7 @@ impl Write for FaultyWrite {
 }
 
 #[derive(Default)]
+#[allow(dead_code)]
 struct StreamProbe {
     bytes: Vec<u8>,
     fail_write: bool,
@@ -93,6 +103,7 @@ impl Write for StreamProbe {
 }
 
 #[derive(Default)]
+#[allow(dead_code)]
 struct FailThirdFlush {
     flushes: usize,
 }
@@ -114,6 +125,7 @@ impl Write for FailThirdFlush {
 }
 
 #[derive(Default)]
+#[allow(dead_code)]
 struct FailSecondFlush {
     flushes: usize,
 }
@@ -134,12 +146,14 @@ impl Write for FailSecondFlush {
     }
 }
 
+#[allow(dead_code)]
 struct LimitedCursor {
     inner: Cursor<Vec<u8>>,
     max_len: u64,
 }
 
 impl LimitedCursor {
+    #[allow(dead_code)]
     const fn new(max_len: u64) -> Self {
         Self {
             inner: Cursor::new(Vec::new()),
@@ -171,6 +185,7 @@ impl Write for LimitedCursor {
     }
 }
 
+#[allow(dead_code)]
 struct ToggleFlushFailure {
     fail: Arc<AtomicBool>,
 }
@@ -189,6 +204,7 @@ impl Write for ToggleFlushFailure {
     }
 }
 
+#[allow(dead_code)]
 struct EnableFlushFailure(Arc<AtomicBool>);
 
 impl WriteHandler for EnableFlushFailure {
@@ -204,6 +220,7 @@ impl Seek for LimitedCursor {
     }
 }
 
+#[allow(dead_code)]
 fn zip_entry(path: &Path, name: &str) -> Result<String> {
     let file = File::open(path)?;
     let mut archive = ZipArchive::new(file).map_err(test_error)?;
@@ -213,6 +230,7 @@ fn zip_entry(path: &Path, name: &str) -> Result<String> {
     Ok(value)
 }
 
+#[allow(dead_code)]
 fn zip_names(path: &Path) -> Result<Vec<String>> {
     let file = File::open(path)?;
     let mut archive = ZipArchive::new(file).map_err(test_error)?;
@@ -226,6 +244,7 @@ fn zip_names(path: &Path) -> Result<Vec<String>> {
         .collect::<Result<Vec<_>>>()
 }
 
+#[allow(dead_code)]
 fn cell_style_id(sheet_xml: &str, cell: &str) -> Option<String> {
     let marker = format!("<c r=\"{cell}\" s=\"");
     sheet_xml
@@ -234,6 +253,7 @@ fn cell_style_id(sheet_xml: &str, cell: &str) -> Option<String> {
         .map(|(style, _)| style.to_owned())
 }
 
+#[allow(dead_code)]
 fn sheet_column_width(sheet_xml: &str, one_based_column: u16) -> Result<f64> {
     let marker = format!("<col min=\"{one_based_column}\"");
     let (_, column) = sheet_xml
@@ -248,6 +268,7 @@ fn sheet_column_width(sheet_xml: &str, one_based_column: u16) -> Result<f64> {
     width.parse::<f64>().map_err(test_error)
 }
 
+#[allow(dead_code)]
 fn sheet_row_height(sheet_xml: &str, one_based_row: u32) -> Result<f64> {
     let marker = format!("<row r=\"{one_based_row}\"");
     let (_, row) = sheet_xml
@@ -266,6 +287,7 @@ fn sheet_row_height(sheet_xml: &str, one_based_row: u32) -> Result<f64> {
 }
 
 #[derive(Clone)]
+#[allow(dead_code)]
 struct EveryCell {
     cells: Vec<CellValue>,
     fail: bool,
@@ -277,14 +299,19 @@ thread_local! {
     static USE_BACKEND_WIDE_SCHEMA: Cell<bool> = const { Cell::new(false) };
 }
 
+#[allow(dead_code)]
 const TEST_COLUMN: ExcelColumn = ExcelColumn::new("value", "Value", Some(0), 0, None);
 
+#[allow(dead_code)]
 struct SparseRow;
 
+#[allow(dead_code)]
 struct DimensionRow;
 
+#[allow(dead_code)]
 struct StyledAnnotationRow;
 
+#[allow(dead_code)]
 struct AnnotationHandlerRow(&'static str);
 
 impl ExcelRow for AnnotationHandlerRow {
@@ -390,6 +417,7 @@ impl ExcelRow for StyledAnnotationRow {
     }
 }
 
+#[allow(dead_code)]
 struct OverrideAnnotationDimensions;
 
 impl WriteHandler for OverrideAnnotationDimensions {
@@ -411,6 +439,7 @@ impl WriteHandler for OverrideAnnotationDimensions {
 }
 
 #[derive(Clone, Copy)]
+#[allow(dead_code)]
 struct ContextStringConverter(&'static str);
 
 impl Converter<String> for ContextStringConverter {
@@ -427,6 +456,7 @@ impl Converter<String> for ContextStringConverter {
 }
 
 #[derive(Clone, Copy)]
+#[allow(dead_code)]
 struct ContextI32Converter(&'static str);
 
 impl Converter<i32> for ContextI32Converter {
@@ -442,6 +472,7 @@ impl Converter<i32> for ContextI32Converter {
     }
 }
 
+#[allow(dead_code)]
 struct ConverterMapProbe(Arc<Mutex<Vec<(String, String)>>>);
 
 impl WriteHandler for ConverterMapProbe {
@@ -480,6 +511,7 @@ impl WriteHandler for ConverterMapProbe {
     }
 }
 
+#[allow(dead_code)]
 struct ConverterContextRow(String);
 
 impl ExcelRow for ConverterContextRow {
@@ -519,6 +551,7 @@ impl ExcelRow for ConverterContextRow {
     }
 }
 
+#[allow(dead_code)]
 struct NumericConverterContextRow(i32);
 
 impl ExcelRow for NumericConverterContextRow {
@@ -558,6 +591,7 @@ impl ExcelRow for NumericConverterContextRow {
     }
 }
 
+#[allow(dead_code)]
 struct DefaultRegistryRequiredRow;
 
 impl ExcelRow for DefaultRegistryRequiredRow {
@@ -582,6 +616,7 @@ impl ExcelRow for DefaultRegistryRequiredRow {
     }
 }
 
+#[allow(dead_code)]
 struct ConvertedTypeProbe(Arc<Mutex<Vec<easyexcel_core::CellDataType>>>);
 
 impl WriteHandler for ConvertedTypeProbe {
@@ -883,6 +918,7 @@ impl ExcelRow for SparseRow {
     }
 }
 
+#[allow(dead_code)]
 struct AnchoredImageRow {
     cell: WriteCellData,
 }
@@ -921,6 +957,7 @@ impl ExcelRow for AnchoredImageRow {
     }
 }
 
+#[allow(dead_code)]
 struct RichTextRow {
     value: RichTextStringData,
 }
@@ -1000,6 +1037,7 @@ impl ExcelRow for EveryCell {
     }
 }
 
+#[allow(dead_code)]
 fn every_cell() -> EveryCell {
     let date = NaiveDate::from_ymd_opt(2026, 7, 17).expect("valid date");
     EveryCell {
@@ -1030,6 +1068,7 @@ fn every_cell() -> EveryCell {
     }
 }
 
+#[allow(dead_code)]
 fn tiny_png() -> Vec<u8> {
     vec![
         0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44,
@@ -1040,6 +1079,7 @@ fn tiny_png() -> Vec<u8> {
     ]
 }
 
+#[allow(dead_code)]
 struct RecordingHandler {
     order: i32,
     events: Rc<RefCell<Vec<String>>>,
@@ -1127,6 +1167,7 @@ impl WriteHandler for RecordingHandler {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 enum FailureStage {
     BeforeWorkbook,
     BeforeSheet,
@@ -1142,8 +1183,10 @@ enum FailureStage {
     AfterWorkbook,
 }
 
+#[allow(dead_code)]
 struct FailingHandler(FailureStage);
 
+#[allow(dead_code)]
 struct InvalidHeaderValueHandler;
 
 impl WriteHandler for InvalidHeaderValueHandler {
@@ -1155,6 +1198,7 @@ impl WriteHandler for InvalidHeaderValueHandler {
 }
 
 impl FailingHandler {
+    #[allow(dead_code)]
     fn result(&self, stage: FailureStage) -> Result<()> {
         if self.0 == stage {
             Err(ExcelError::Format("handler failed".to_owned()))
@@ -6710,6 +6754,7 @@ fn excel_writer_set_compress_temp_files_false() {
 }
 
 
+#[allow(dead_code)]
 struct NoOpHandler;
 
 impl WriteHandler for NoOpHandler {}
@@ -6800,9 +6845,6 @@ fn write_csv_with_handlers_creates_file() -> Result<()> {
     assert!(path.exists());
     Ok(())
 }
-
-
-#[test]
 
 #[test]
 fn write_xlsx_to_writer_creates_file() -> Result<()> {

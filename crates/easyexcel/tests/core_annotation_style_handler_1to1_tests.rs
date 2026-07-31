@@ -28,6 +28,7 @@ fn temp_path(name: &str) -> std::path::PathBuf {
     dir.keep().join(name)
 }
 
+#[allow(dead_code)]
 fn fixture(name: &str) -> std::path::PathBuf {
     std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures")
@@ -35,6 +36,7 @@ fn fixture(name: &str) -> std::path::PathBuf {
 }
 
 /// Assert a Java-generated fixture exists (no soft-skip).
+#[allow(dead_code)]
 fn require_fixture(name: &str) -> std::path::PathBuf {
     let path = fixture(name);
     assert!(

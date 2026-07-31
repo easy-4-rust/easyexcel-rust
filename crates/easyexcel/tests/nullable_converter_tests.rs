@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use easyexcel::{
     CellValue, Converter, EasyExcel, ExcelRow, NullableObjectConverter, Result, WriteCellData,
     WriteConverterContext,

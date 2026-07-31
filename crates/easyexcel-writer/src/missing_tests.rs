@@ -65,8 +65,7 @@ fn repetition_loop_merge_all_fields_distinct() {
 #[test]
 fn fill_style_data_head_background() {
     use easyexcel_core::{
-        ExcelBorderStyle, ExcelCellStyle, ExcelColor, ExcelFillPattern, ExcelFontStyle,
-        ExcelHorizontalAlignment, ExcelVerticalAlignment,
+        ExcelCellStyle, ExcelColor, ExcelFillPattern,
     };
     let style = ExcelCellStyle {
         fill_pattern: Some(ExcelFillPattern::Solid),
@@ -113,7 +112,7 @@ fn fill_style_data_border() {
 
 #[test]
 fn fill_style_data_font_combined() {
-    use easyexcel_core::{ExcelCellStyle, ExcelFontStyle};
+    use easyexcel_core::ExcelFontStyle;
     let fs = ExcelFontStyle {
         bold: Some(true),
         italic: Some(true),

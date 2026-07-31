@@ -5,7 +5,7 @@ use easyexcel_core::Result;
 use crate::cache::selector::ReadCacheSelector;
 use crate::read_cache::{
     DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES, ReadCacheMode, SharedStringCache,
-    SharedStringCacheReader, SharedStringCacheWriter, create_cache,
+    SharedStringCacheReader, create_cache,
 };
 
 /// Shared-string cache contract matching Java `ReadCache`.
@@ -108,7 +108,9 @@ impl SharedStringCacheAdapter {
     /// # Panics
     ///
     /// Panics when called before [`ReadCache::put_finished`].
+    // 内部缓存 API 脚手架，暂未在 crate 内直接调用。
     #[must_use]
+    #[allow(dead_code)]
     pub fn into_reader(self) -> Box<dyn SharedStringCacheReader> {
         self.reader
             .expect("ReadCache.put_finished must run before into_reader")

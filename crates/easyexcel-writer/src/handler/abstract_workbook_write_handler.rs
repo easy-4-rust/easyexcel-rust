@@ -9,10 +9,12 @@ use crate::handler::workbook_write_handler::WorkbookWriteHandler;
 #[deprecated(note = "Use `easyexcel_core::WriteHandler` directly")]
 pub struct AbstractWorkbookWriteHandler;
 
+#[allow(deprecated)]
 impl WriteHandler for AbstractWorkbookWriteHandler {
     fn order(&self) -> i32 {
         0
     }
 }
 
+#[allow(deprecated)]
 impl WorkbookWriteHandler for AbstractWorkbookWriteHandler {}

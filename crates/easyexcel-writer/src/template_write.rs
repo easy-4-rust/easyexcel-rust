@@ -236,6 +236,7 @@ impl TemplatePackage {
     /// # Errors
     ///
     /// Returns a format error when the worksheet XML cannot be updated.
+    #[allow(dead_code)]
     pub(crate) fn append_rows(
         &mut self,
         sheet_name: &str,
@@ -246,6 +247,7 @@ impl TemplatePackage {
 
     /// Appends rows and applies optional per-row heights to the newly created
     /// row elements.
+    #[allow(dead_code)]
     pub(crate) fn append_rows_with_heights(
         &mut self,
         sheet_name: &str,
@@ -256,6 +258,7 @@ impl TemplatePackage {
     }
 
     /// Appends rows with optional row heights and per-cell workbook style indexes.
+    #[allow(dead_code)]
     pub(crate) fn append_rows_with_layout(
         &mut self,
         sheet_name: &str,
@@ -404,6 +407,7 @@ impl TemplatePackage {
     /// # Errors
     ///
     /// Returns an I/O or format error.
+    #[allow(dead_code)]
     pub(crate) fn save_to_path(&self, path: &Path) -> Result<()> {
         let bytes = self.to_bytes()?;
         std::fs::write(path, bytes).map_err(ExcelError::from)
@@ -414,6 +418,7 @@ impl TemplatePackage {
     /// # Errors
     ///
     /// Returns an I/O or format error.
+    #[allow(dead_code)]
     pub(crate) fn save_to_writer(&self, output: &mut dyn Write) -> Result<()> {
         let bytes = self.to_bytes()?;
         output.write_all(&bytes)?;

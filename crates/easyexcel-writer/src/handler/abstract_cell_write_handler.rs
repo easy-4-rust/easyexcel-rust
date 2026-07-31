@@ -13,12 +13,14 @@ use crate::handler::cell_write_handler::CellWriteHandler;
 #[deprecated(note = "Use `easyexcel_core::WriteHandler` directly")]
 pub struct AbstractCellWriteHandler;
 
+#[allow(deprecated)]
 impl WriteHandler for AbstractCellWriteHandler {
     fn order(&self) -> i32 {
         0
     }
 }
 
+#[allow(deprecated)]
 impl CellWriteHandler for AbstractCellWriteHandler {
     // All three callbacks remain no-ops — the trait provides sensible
     // defaults; we just need a concrete type for the deprecated shim.

@@ -14,11 +14,6 @@
 //!
 //! Naming follows: `mod <java_class_snake>` + `fn <java_method_snake>`.
 
-use easyexcel::{CellValue, WriteCellData};
-// ExcelRow trait is aliased as ExcelRowTrait to avoid name clash with the
-// `easyexcel_macro::ExcelRow` derive macro.
-use easyexcel_core::ExcelRow as ExcelRowTrait;
-
 // ---------------------------------------------------------------------------
 // AnnotationData (mirrors com.alibaba.easyexcel.test.core.annotation.AnnotationData)
 // ---------------------------------------------------------------------------

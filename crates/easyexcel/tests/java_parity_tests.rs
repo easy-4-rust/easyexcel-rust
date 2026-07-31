@@ -24,7 +24,7 @@ use tempfile::tempdir;
 
 fn temp_path(name: &str) -> std::path::PathBuf {
     let dir = tempdir().unwrap();
-    dir.into_path().join(name)
+    dir.keep().join(name)
 }
 
 fn fixture(name: &str) -> std::path::PathBuf {

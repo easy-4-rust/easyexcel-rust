@@ -8,9 +8,7 @@ use std::path::Path;
 
 use easyexcel_core::{ExcelRow, Result, WriteHandler, WriteWorkbookContext};
 use rust_xlsxwriter::Workbook;
-use crate::handler::default_write_handler_loader::DefaultWriteHandlerLoader;
 use crate::write_options::WriteOptions;
-use crate::writer_helpers::share_handlers;
 use crate::excel_writer_core::{
     before_workbook, after_workbook, after_workbook_create, save_workbook, save_workbook_to_writer,
     sort_handlers, validate_excel_row_schema, with_default_write_converters,
@@ -18,6 +16,11 @@ use crate::excel_writer_core::{
     HandlerHolderScope,
 };
 
+/// 将类型化行写入 XLSX 文件。
+///
+/// # Errors
+///
+/// 返回转换、校验、XLSX 格式或 I/O 错误。
 pub fn write_xlsx<T, I>(path: &Path, options: &WriteOptions, rows: I) -> Result<()>
 where
     T: ExcelRow,

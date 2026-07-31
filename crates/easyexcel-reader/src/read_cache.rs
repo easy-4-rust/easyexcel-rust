@@ -25,23 +25,30 @@ pub enum ReadCacheMode {
 pub(crate) const DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES: u64 = 5_000_000;
 
 /// Write-phase cache: sequential `put` calls.
-pub(crate) trait SharedStringCacheWriter {
+pub trait SharedStringCacheWriter {
+    /// 写入一条共享字符串。
     fn put(&mut self, value: String) -> Result<()>;
+    /// 结束写入阶段并返回只读缓存视图。
     fn finish(self: Box<Self>) -> Result<Box<dyn SharedStringCacheReader>>;
 }
 
 /// Read-phase cache: concurrent `get` calls via `&self` (no `&mut`).
-pub(crate) trait SharedStringCacheReader: Send + Sync {
+pub trait SharedStringCacheReader: Send + Sync {
+    /// 按下标读取共享字符串。
     fn get(&self, index: usize) -> Result<String>;
+    /// 返回缓存中共享字符串的数量（仅供测试使用）。
     #[cfg(test)]
     fn len(&self) -> usize;
 }
 
-/// Unified trait for backward compatibility in tests.
-pub(crate) trait SharedStringCache:
+/// 统一的共享字符串缓存抽象：组合写入与读取两个阶段。
+pub trait SharedStringCache:
     SharedStringCacheWriter + SharedStringCacheReader
 {
-    fn put_and_finish(mut self: Box<Self>) -> Result<Box<dyn SharedStringCacheReader>>
+    /// 一次性写入并结束写入阶段，返回只读缓存视图（内部缓存 API 脚手架）。
+    // 内部缓存 API 脚手架，暂未在 crate 内直接调用。
+    #[allow(dead_code)]
+    fn put_and_finish(self: Box<Self>) -> Result<Box<dyn SharedStringCacheReader>>
     where
         Self: Sized,
     {
@@ -481,7 +488,7 @@ mod tests {
     #[test]
     fn disk_cache_propagates_read_failures() {
         let temporary_file = NamedTempFile::new().expect("temporary file");
-        let path = temporary_file.path().to_path_buf();
+        let _path = temporary_file.path().to_path_buf();
         let mut cache = ConcurrentDiskCache::new().expect("disk cache");
         cache.put("x".to_owned()).expect("cache value");
 

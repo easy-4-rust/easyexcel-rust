@@ -798,7 +798,7 @@ mod encrypt_data_test {
     #[test]
     fn t02_read_and_write03() {
         let path = temp_path("encrypt03.xls");
-        let err = EasyExcel::write::<EncryptData>(&path)
+        let _err = EasyExcel::write::<EncryptData>(&path)
             .password("123456")
             .sheet("Sheet1")
             .do_write(encrypt_data())
@@ -815,7 +815,7 @@ mod encrypt_data_test {
     #[test]
     fn t04_read_and_write_stream03() {
         let path = temp_path("encryptOutputStream03.xls");
-        let err = EasyExcel::write::<EncryptData>(&path)
+        let _err = EasyExcel::write::<EncryptData>(&path)
             .password("123456")
             .sheet("Sheet1")
             .do_write(encrypt_data())

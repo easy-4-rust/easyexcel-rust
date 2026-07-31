@@ -7,17 +7,19 @@ use std::io::Write;
 use std::path::Path;
 
 use easyexcel_core::{ExcelError, ExcelRow, Result, WriteHandler, WriteWorkbookContext};
-use rust_xlsxwriter::Workbook;
 use crate::biff8::Biff8Book;
-use crate::handler::default_write_handler_loader::DefaultWriteHandlerLoader;
 use crate::write_options::WriteOptions;
-use crate::writer_helpers::share_handlers;
 use crate::excel_writer_core::{
-    before_workbook, after_workbook, after_workbook_create, save_xls_book, biff8_halign, biff8_valign,
+    before_workbook, after_workbook, after_workbook_create, save_xls_book,
     sort_handlers, validate_excel_row_schema, validate_xls_options, with_default_write_converters,
     HandlerHolderScope, write_xls_onto_template, write_sheet_to_biff8_book,
 };
 
+/// 将类型化行写入 BIFF8 (`.xls`) 文件。
+///
+/// # Errors
+///
+/// 返回转换、校验、BIFF8 格式或 I/O 错误。
 pub fn write_xls<T, I>(path: &Path, options: &WriteOptions, rows: I) -> Result<()>
 where
     T: ExcelRow,

@@ -8,7 +8,6 @@ use std::any::type_name;
 use std::collections::{HashMap, HashSet};
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, Write};
-use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -29,7 +28,6 @@ pub use easyexcel_core::{
     WriteSheetContext, WriteSheetHolderView, WriteTableHolderView, WriteWorkbookContext,
     WriteWorkbookHolderView,
 };
-use encoding_rs::{CoderResult, Encoding, UTF_8, UTF_16BE, UTF_16LE};
 use ms_offcrypto_writer::Ecma376AgileWriter;
 use rust_xlsxwriter::{
     Color, Format, FormatAlign, FormatBorder, FormatPattern, FormatScript, FormatUnderline, Image,
@@ -128,8 +126,7 @@ impl CellCreator for XlsxRow<'_> {
 
 use crate::biff8::{
     Biff8Book, Biff8Cell, Biff8Merge, Biff8Sheet, Biff8StyleRequest, Biff8StyleTable, Biff8Value,
-    date_to_excel_serial, date_to_excel_serial_with_windowing, datetime_to_excel_serial,
-    datetime_to_excel_serial_with_windowing,
+    date_to_excel_serial_with_windowing, datetime_to_excel_serial_with_windowing,
 };
 
 struct Biff8RowCreator<'a> {
@@ -229,9 +226,13 @@ pub use crate::global_configuration::{
     apply_global_configuration_to_write_options, global_configuration_from_write_options,
 };
 pub use crate::gzip_spill::{GZIP_MAGIC, GzipSpillSnapshot, file_has_gzip_magic};
+#[allow(deprecated)]
 pub use crate::handler::abstract_cell_write_handler::AbstractCellWriteHandler;
+#[allow(deprecated)]
 pub use crate::handler::abstract_row_write_handler::AbstractRowWriteHandler;
+#[allow(deprecated)]
 pub use crate::handler::abstract_sheet_write_handler::AbstractSheetWriteHandler;
+#[allow(deprecated)]
 pub use crate::handler::abstract_workbook_write_handler::AbstractWorkbookWriteHandler;
 pub use crate::handler::cell_write_handler::CellWriteHandler;
 pub use crate::handler::default_write_handler_loader::DefaultWriteHandlerLoader;
@@ -279,7 +280,7 @@ pub use crate::write::builder::excel_writer_sheet_builder::ExcelWriterSheetBuild
 
 /// Global write flags copied from [`WriteOptions`] for cell emission.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-struct WriteGlobalFlags {
+pub(crate) struct WriteGlobalFlags {
     /// Automatic trim for sheet names and string cells.
     auto_trim: bool,
     /// Whether Excel 1904 date windowing is enabled.
@@ -2422,7 +2423,7 @@ pub(crate) fn with_default_write_converters(options: &WriteOptions) -> WriteOpti
 /// Returns a conversion, worksheet-configuration, BIFF8-format, or I/O error.
 
 #[derive(Clone, Default)]
-struct CapturedOutput(Arc<Mutex<Vec<u8>>>);
+pub(crate) struct CapturedOutput(Arc<Mutex<Vec<u8>>>);
 
 impl Write for CapturedOutput {
     fn write(&mut self, buffer: &[u8]) -> std::io::Result<usize> {
@@ -2446,7 +2447,7 @@ pub(crate) fn take_captured_output(output: &CapturedOutput) -> Result<Vec<u8>> {
     Ok(std::mem::take(&mut *bytes))
 }
 
-struct PreparedWriteRow {
+pub(crate) struct PreparedWriteRow {
     absent: bool,
     original_cells: Vec<CellValue>,
     cells: Vec<WriteCellData>,
@@ -2833,7 +2834,7 @@ pub(crate) fn save_workbook_to_writer(
     Ok(())
 }
 
-trait ReadWriteSeek: Read + Write + Seek {}
+pub(crate) trait ReadWriteSeek: Read + Write + Seek {}
 
 impl<T> ReadWriteSeek for T where T: Read + Write + Seek {}
 
@@ -3853,7 +3854,7 @@ impl<'a> SheetStyleContext<'a> {
 }
 
 #[derive(Clone, Copy)]
-struct CellFormatContext<'a> {
+pub(crate) struct CellFormatContext<'a> {
     explicit: Option<&'a CellStyle>,
     cell: Option<ExcelCellStyle>,
     font: Option<ExcelFontStyle>,
@@ -4286,7 +4287,7 @@ where
         .collect())
 }
 
-struct TemplateHandlerEffects {
+pub(crate) struct TemplateHandlerEffects {
     ignore_styles: Vec<Vec<bool>>,
     requested_styles: Vec<Vec<Option<ExcelCellStyle>>>,
     requested_row_heights: Vec<Option<u16>>,

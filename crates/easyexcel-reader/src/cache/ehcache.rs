@@ -18,6 +18,8 @@ use super::read_cache::{ReadCache, SharedStringCacheAdapter, new_disk_cache};
 use crate::read_cache::SharedStringCache;
 
 /// Batch count used by Java `Ehcache.BATCH_COUNT`.
+// 内部缓存 API 脚手架，暂未在 crate 内直接使用。
+#[allow(dead_code)]
 pub const BATCH_COUNT: usize = 100;
 
 /// Default active batch count used by Java `SimpleReadCacheSelector`.

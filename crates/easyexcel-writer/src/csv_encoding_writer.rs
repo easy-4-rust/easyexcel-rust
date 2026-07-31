@@ -31,8 +31,11 @@ pub enum CsvEncoding {
 
 /// CSV 编码器。
 pub enum CsvEncoder {
+    /// 使用标准编码（由 `encoding_rs` 驱动）的增量编码器。
     Standard(encoding_rs::Encoder),
+    /// UTF-16 LE 编码。
     Utf16Le,
+    /// UTF-16 BE 编码。
     Utf16Be,
 }
 
@@ -88,6 +91,11 @@ impl CsvEncodingWriter {
         }
     }
 
+    /// 将 UTF-16 码元序列按给定的字节序写入输出流。
+    ///
+    /// # Errors
+    ///
+    /// 当底层输出写入失败时返回错误。
     pub fn encode_utf16(
         output: &mut dyn Write,
         text: &str,
@@ -148,6 +156,11 @@ impl Write for CsvEncodingWriter {
     }
 }
 
+/// 将字符集名称解析为对应的 CSV 编码。
+///
+/// # Errors
+///
+/// 当字符集不支持时返回错误。
 pub fn csv_encoding(charset: &CsvCharset) -> Result<CsvEncoding> {
     let encoding = Encoding::for_label(charset.name().as_bytes()).ok_or_else(|| {
         easyexcel_core::ExcelError::Unsupported(format!("unsupported CSV charset: {}", charset.name()))
@@ -161,6 +174,7 @@ pub fn csv_encoding(charset: &CsvCharset) -> Result<CsvEncoding> {
     })
 }
 
+/// 返回给定 CSV 编码对应的 BOM 字节序列。
 pub fn csv_bom(encoding: CsvEncoding) -> &'static [u8] {
     match encoding {
         CsvEncoding::Standard(encoding) if encoding == UTF_8 => b"\xEF\xBB\xBF",

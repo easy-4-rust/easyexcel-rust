@@ -9,7 +9,7 @@ use std::path::Path;
 
 use easyexcel_core::{ExcelError, ExcelRow, Result, WriteHandler};
 use crate::write_options::WriteOptions;
-use crate::writer_helpers::{share_handlers, CapturedOutput};
+use crate::writer_helpers::CapturedOutput;
 use crate::excel_writer_core::{
     write_csv_to, validate_csv_options, validate_excel_row_schema,
 };
@@ -22,6 +22,11 @@ fn take_captured_output(output: &CapturedOutput) -> Result<Vec<u8>> {
     Ok(std::mem::take(&mut *bytes))
 }
 
+/// 使用自定义处理器将类型化行写入 CSV 文件。
+///
+/// # Errors
+///
+/// 返回转换、校验、处理器或文件 I/O 错误。
 pub fn write_csv_with_handlers<T, I>(
     path: &Path,
     options: &WriteOptions,

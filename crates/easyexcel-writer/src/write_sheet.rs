@@ -6,7 +6,7 @@
 use std::marker::PhantomData;
 
 use easyexcel_core::{
-    Converter, ExcelColumn, ExcelRow, NullableObjectConverter, Result,
+    Converter, NullableObjectConverter,
 };
 
 use crate::cell_style::CellStyle;

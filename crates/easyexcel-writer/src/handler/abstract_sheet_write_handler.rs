@@ -9,10 +9,12 @@ use crate::handler::sheet_write_handler::SheetWriteHandler;
 #[deprecated(note = "Use `easyexcel_core::WriteHandler` directly")]
 pub struct AbstractSheetWriteHandler;
 
+#[allow(deprecated)]
 impl WriteHandler for AbstractSheetWriteHandler {
     fn order(&self) -> i32 {
         0
     }
 }
 
+#[allow(deprecated)]
 impl SheetWriteHandler for AbstractSheetWriteHandler {}

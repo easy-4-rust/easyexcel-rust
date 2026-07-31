@@ -11,9 +11,9 @@ use calamine::{Data, ExcelDateTime, ExcelDateTimeType, Range, Reader, Xls, open_
 use calamine::{DataRef, Xlsx};
 use easyexcel_core::converter::default_converter_loader::load_default_read_converter;
 use easyexcel_core::{
-    AnalysisContext, CellExtra, CellExtraType, CellValue, ConverterRegistry, CsvCharset,
-    CustomReadObject, ErrorAction, ExcelError, ExcelRow, FormulaData, ReadDefaultReturn,
-    ReadListener, Result, RowData,
+    AnalysisContext, CellExtra, CellValue, ConverterRegistry, CsvCharset, CustomReadObject,
+    ErrorAction, ExcelError, ExcelRow, FormulaData, ReadDefaultReturn, ReadListener, Result,
+    RowData,
 };
 use encoding_rs::Encoding;
 use encoding_rs_io::DecodeReaderBytesBuilder;

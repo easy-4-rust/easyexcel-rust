@@ -9,10 +9,12 @@ use crate::handler::row_write_handler::RowWriteHandler;
 #[deprecated(note = "Use `easyexcel_core::WriteHandler` directly")]
 pub struct AbstractRowWriteHandler;
 
+#[allow(deprecated)]
 impl WriteHandler for AbstractRowWriteHandler {
     fn order(&self) -> i32 {
         0
     }
 }
 
+#[allow(deprecated)]
 impl RowWriteHandler for AbstractRowWriteHandler {}

@@ -15,7 +15,7 @@ use std::path::Path;
 
 use chrono::NaiveDate;
 use easyexcel::{
-    AnalysisContext, CellExtraType, CellStyle, DynamicRow, DynamicValue, EasyExcel, ErrorAction,
+    AnalysisContext, CellExtraType, DynamicRow, DynamicValue, EasyExcel, ErrorAction,
     ExcelCellStyle, ExcelColor, ExcelError, ExcelFillPattern, ExcelRow,
     HorizontalCellStyleStrategy, LoopMergeStrategy, PageReadListener, ReadDefaultReturn,
     ReadListener, SimpleColumnWidthStyleStrategy, SimpleRowHeightStyleStrategy,
@@ -30,7 +30,7 @@ use zip::ZipArchive;
 
 fn temp_path(name: &str) -> std::path::PathBuf {
     let dir = tempdir().unwrap();
-    dir.into_path().join(name)
+    dir.keep().join(name)
 }
 
 fn fixture(name: &str) -> std::path::PathBuf {
@@ -448,7 +448,7 @@ fn assert_exception_read_and_write(path: &std::path::Path) {
         fn has_next(&mut self, _context: &AnalysisContext) -> bool {
             self.list.len() != 8
         }
-        fn do_after_all_analysed(&mut self, context: &AnalysisContext) -> easyexcel::Result<()> {
+        fn do_after_all_analysed(&mut self, _context: &AnalysisContext) -> easyexcel::Result<()> {
             assert_eq!(self.list.len(), 8);
             assert_eq!(self.list[0].name, "姓名0");
             Ok(())
@@ -786,7 +786,7 @@ fn converter_t22_write_image_xls() {
     let row = ImageRow {
         file: WriteCellData::from_image(vec![0xFF, 0xD8, 0xFF, 0xD9]),
     };
-    let err = EasyExcel::write::<ImageRow>(&path)
+    let _err = EasyExcel::write::<ImageRow>(&path)
         .sheet("Sheet1")
         .do_write(vec![row])
         .expect("XLS image write must succeed (Phase 5.6)");

@@ -210,7 +210,7 @@ impl Biff8Book {
     /// Encodes image bytes as BIFF8 Obj + MSODrawing records (Escher BSE
     /// container) and appends them to extra_bytes. This produces output
     /// compatible with POI's HSSFWorkbook image writing.
-    pub fn write_image(&mut self, image_data: &[u8], col: u8, row: u32) {
+    pub fn write_image(&mut self, image_data: &[u8], _col: u8, _row: u32) {
         // Determine image type from magic bytes
         let blip_type: u8 = if image_data.len() >= 2 {
             match &image_data[..2] {

@@ -11,7 +11,7 @@
 
 use chrono::NaiveDate;
 use easyexcel::{
-    CellValue, DynamicRow, DynamicValue, EasyExcel, ExcelError, ExcelRow, FillConfig,
+    CellValue, DynamicRow, DynamicValue, EasyExcel, ExcelRow, FillConfig,
     FillDirection, FillWrapper, TemplateData, TemplateSheet,
 };
 
