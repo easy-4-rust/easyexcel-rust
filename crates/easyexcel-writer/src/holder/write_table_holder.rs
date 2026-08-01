@@ -193,5 +193,4 @@ mod tests_extra {
         let target: &mut crate::holder::abstract_write_holder::AbstractWriteHolder = &mut holder;
         assert!(target.need_head());
     }
-
 }

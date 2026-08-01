@@ -163,7 +163,10 @@ impl Write for CsvEncodingWriter {
 /// 当字符集不支持时返回错误。
 pub fn csv_encoding(charset: &CsvCharset) -> Result<CsvEncoding> {
     let encoding = Encoding::for_label(charset.name().as_bytes()).ok_or_else(|| {
-        easyexcel_core::ExcelError::Unsupported(format!("unsupported CSV charset: {}", charset.name()))
+        easyexcel_core::ExcelError::Unsupported(format!(
+            "unsupported CSV charset: {}",
+            charset.name()
+        ))
     })?;
     Ok(if encoding == UTF_16LE {
         CsvEncoding::Utf16Le
@@ -188,8 +191,8 @@ pub fn csv_bom(encoding: CsvEncoding) -> &'static [u8] {
 mod tests_extra {
     use super::*;
 
-    use std::io::Cursor;
     use easyexcel_core::CsvCharset;
+    use std::io::Cursor;
 
     #[test]
     fn csv_encoding_writer_with_charset_transcodes() {
@@ -201,5 +204,4 @@ mod tests_extra {
             .expect("write must succeed");
         writer.flush().expect("flush must succeed");
     }
-
 }

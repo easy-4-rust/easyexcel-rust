@@ -116,8 +116,7 @@ mod tests {
 
     #[test]
     fn merge_write_font_with_subscript() {
-        let source = WriteFont::new()
-            .type_offset(ExcelFontScript::Subscript);
+        let source = WriteFont::new().type_offset(ExcelFontScript::Subscript);
         let target = WriteFont::new();
         let merged = merge_write_font(&source, target);
         assert_eq!(merged.get_type_offset(), Some(ExcelFontScript::Subscript));
@@ -199,7 +198,9 @@ mod tests {
     #[test]
     fn merge_write_font_preserves_target_when_source_is_empty() {
         let source = WriteFont::new();
-        let target = WriteFont::new().font_name("Helvetica").font_height_in_points(14.0);
+        let target = WriteFont::new()
+            .font_name("Helvetica")
+            .font_height_in_points(14.0);
         let merged = merge_write_font(&source, target);
 
         assert_eq!(merged.get_font_name(), Some("Helvetica"));

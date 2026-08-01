@@ -183,5 +183,4 @@ mod tests_extra {
         holder.advance_row();
         assert!(holder.has_data());
     }
-
 }

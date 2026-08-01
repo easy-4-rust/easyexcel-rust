@@ -7,12 +7,10 @@ use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 
-use easyexcel_core::{ExcelError, ExcelRow, Result, WriteHandler};
+use crate::excel_writer_core::{validate_csv_options, validate_excel_row_schema, write_csv_to};
 use crate::write_options::WriteOptions;
 use crate::writer_helpers::CapturedOutput;
-use crate::excel_writer_core::{
-    write_csv_to, validate_csv_options, validate_excel_row_schema,
-};
+use easyexcel_core::{ExcelError, ExcelRow, Result, WriteHandler};
 
 fn take_captured_output(output: &CapturedOutput) -> Result<Vec<u8>> {
     let mut bytes = output

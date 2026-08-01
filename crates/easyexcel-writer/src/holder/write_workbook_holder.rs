@@ -135,7 +135,9 @@ mod tests {
         /// No-op WriteHandler for testing.
         struct NoopHandler;
         impl WriteHandler for NoopHandler {
-            fn order(&self) -> i32 { 0 }
+            fn order(&self) -> i32 {
+                0
+            }
         }
         let mut holder = WriteWorkbookHolder::new("/tmp/c.xlsx");
         holder.push_handler(Box::new(NoopHandler));
@@ -165,5 +167,4 @@ mod tests_extra {
         holder.set_excel_write_head_property(ExcelWriteHeadProperty::new());
         assert_eq!(NoopHandler.order(), 0);
     }
-
 }

@@ -82,12 +82,7 @@ mod tests {
     #[test]
     fn fill_style_cell_write_handler_before_cell() {
         let mut handler = FillStyleCellWriteHandler::new();
-        let mut context = WriteCellContext::new(
-            "Sheet1",
-            0,
-            0,
-            CellValue::Empty,
-        );
+        let mut context = WriteCellContext::new("Sheet1", 0, 0, CellValue::Empty);
         handler.before_cell(&mut context).unwrap();
         assert!(handler.last_style().is_none());
     }

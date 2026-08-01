@@ -6,14 +6,14 @@
 use std::io::Write;
 use std::path::Path;
 
-use easyexcel_core::{ExcelError, ExcelRow, Result, WriteHandler, WriteWorkbookContext};
 use crate::biff8::Biff8Book;
-use crate::write_options::WriteOptions;
 use crate::excel_writer_core::{
-    before_workbook, after_workbook, after_workbook_create, save_xls_book,
+    HandlerHolderScope, after_workbook, after_workbook_create, before_workbook, save_xls_book,
     sort_handlers, validate_excel_row_schema, validate_xls_options, with_default_write_converters,
-    HandlerHolderScope, write_xls_onto_template, write_sheet_to_biff8_book,
+    write_sheet_to_biff8_book, write_xls_onto_template,
 };
+use crate::write_options::WriteOptions;
+use easyexcel_core::{ExcelError, ExcelRow, Result, WriteHandler, WriteWorkbookContext};
 
 /// 将类型化行写入 BIFF8 (`.xls`) 文件。
 ///
@@ -66,7 +66,12 @@ where
     }
 
     let mut book = Biff8Book::default();
-    let holder_scope = HandlerHolderScope::new_resolved::<T>(path, i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX), None, options)?;
+    let holder_scope = HandlerHolderScope::new_resolved::<T>(
+        path,
+        i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX),
+        None,
+        options,
+    )?;
     write_sheet_to_biff8_book::<T, I>(&mut book, options, rows, handlers, Some(&holder_scope))?;
     // Phase 5.3: BIFF8 RC4 encryption
     if let Some(password) = &options.password {
@@ -117,7 +122,12 @@ where
     }
 
     let mut book = Biff8Book::default();
-    let holder_scope = HandlerHolderScope::new_resolved::<T>(logical_path, i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX), None, options)?;
+    let holder_scope = HandlerHolderScope::new_resolved::<T>(
+        logical_path,
+        i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX),
+        None,
+        options,
+    )?;
     write_sheet_to_biff8_book::<T, I>(&mut book, options, rows, handlers, Some(&holder_scope))?;
     book.write_to(&mut output)?;
     output.flush()?;
@@ -125,16 +135,14 @@ where
     Ok(())
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    use crate::write_options::WriteOptions;
+    use easyexcel_core::{DynamicRow, DynamicValue};
     use std::collections::BTreeMap;
     use std::io::Cursor;
-    use easyexcel_core::{DynamicRow, DynamicValue};
-    use crate::write_options::WriteOptions;
 
     fn dynamic_row() -> DynamicRow {
         let mut values = BTreeMap::new();
@@ -157,18 +165,17 @@ mod tests {
         .expect("write must succeed");
         assert!(output.get_ref().len() > 0);
     }
-
 }
 
 #[cfg(test)]
 mod tests_extra {
     use super::*;
 
-    use std::collections::BTreeMap;
-    use std::io::Cursor;
-    use easyexcel_core::{DynamicRow, DynamicValue};
     use crate::biff8::Biff8Book;
     use crate::write_options::WriteOptions;
+    use easyexcel_core::{DynamicRow, DynamicValue};
+    use std::collections::BTreeMap;
+    use std::io::Cursor;
 
     fn dynamic_row() -> DynamicRow {
         let mut values = BTreeMap::new();
@@ -195,5 +202,4 @@ mod tests_extra {
         .expect("template write must succeed");
         assert!(output.get_ref().len() > 0);
     }
-
 }

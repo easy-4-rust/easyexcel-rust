@@ -231,7 +231,9 @@ mod tests {
 
     struct NoopHandler;
     impl WriteHandler for NoopHandler {
-        fn order(&self) -> i32 { 0 }
+        fn order(&self) -> i32 {
+            0
+        }
     }
 
     #[test]

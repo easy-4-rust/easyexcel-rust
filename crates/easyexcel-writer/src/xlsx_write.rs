@@ -6,15 +6,14 @@
 use std::io::Write;
 use std::path::Path;
 
+use crate::excel_writer_core::{
+    HandlerHolderScope, after_workbook, after_workbook_create, before_workbook, save_workbook,
+    save_workbook_to_writer, sort_handlers, validate_excel_row_schema,
+    with_default_write_converters, write_sheet_to_workbook, write_xlsx_onto_template_package,
+};
+use crate::write_options::WriteOptions;
 use easyexcel_core::{ExcelRow, Result, WriteHandler, WriteWorkbookContext};
 use rust_xlsxwriter::Workbook;
-use crate::write_options::WriteOptions;
-use crate::excel_writer_core::{
-    before_workbook, after_workbook, after_workbook_create, save_workbook, save_workbook_to_writer,
-    sort_handlers, validate_excel_row_schema, with_default_write_converters,
-    write_sheet_to_workbook, write_xlsx_onto_template_package,
-    HandlerHolderScope,
-};
 
 /// 将类型化行写入 XLSX 文件。
 ///
@@ -121,7 +120,12 @@ where
         )?;
     } else {
         let mut workbook = Workbook::new();
-        let holder_scope = HandlerHolderScope::new_resolved::<T>(logical_path, i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX), None, options)?;
+        let holder_scope = HandlerHolderScope::new_resolved::<T>(
+            logical_path,
+            i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX),
+            None,
+            options,
+        )?;
         write_sheet_to_workbook::<T, I>(
             &mut workbook,
             options,
@@ -138,10 +142,10 @@ where
 mod tests {
     use super::*;
 
+    use crate::write_options::WriteOptions;
+    use easyexcel_core::{DynamicRow, DynamicValue};
     use std::collections::BTreeMap;
     use std::io::Cursor;
-    use easyexcel_core::{DynamicRow, DynamicValue};
-    use crate::write_options::WriteOptions;
 
     fn dynamic_row() -> DynamicRow {
         let mut values = BTreeMap::new();
@@ -164,17 +168,16 @@ mod tests {
         .expect("write must succeed");
         assert!(output.get_ref().len() > 0);
     }
-
 }
 
 #[cfg(test)]
 mod tests_extra {
     use super::*;
 
+    use crate::write_options::WriteOptions;
+    use easyexcel_core::{DynamicRow, DynamicValue};
     use std::collections::BTreeMap;
     use std::io::Cursor;
-    use easyexcel_core::{DynamicRow, DynamicValue};
-    use crate::write_options::WriteOptions;
 
     fn dynamic_row() -> DynamicRow {
         let mut values = BTreeMap::new();
@@ -202,5 +205,4 @@ mod tests_extra {
         .expect("template write must succeed");
         assert!(output.get_ref().len() > 0);
     }
-
 }

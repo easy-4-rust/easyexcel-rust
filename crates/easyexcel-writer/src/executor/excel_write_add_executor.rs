@@ -606,7 +606,10 @@ mod tests {
                 &options,
                 data,
                 &mut handlers,
-                WriteProgress { next_row: 0, next_data_index: 0 },
+                WriteProgress {
+                    next_row: 0,
+                    next_data_index: 0,
+                },
                 false,
                 &metadata,
             )
@@ -647,7 +650,10 @@ mod tests {
                 &options,
                 data,
                 &mut [],
-                WriteProgress { next_row: 0, next_data_index: 0 },
+                WriteProgress {
+                    next_row: 0,
+                    next_data_index: 0,
+                },
                 false,
                 &ExcelWriteMetadata::default(),
             )
@@ -695,7 +701,15 @@ mod tests {
 
         let empty_map = MapRowData::new(BTreeMap::new());
         let progress = executor
-            .add_basic_type_to_excel_with_map(worksheet, &options, &empty_map, 8, 9, &mut [], &metadata)
+            .add_basic_type_to_excel_with_map(
+                worksheet,
+                &options,
+                &empty_map,
+                8,
+                9,
+                &mut [],
+                &metadata,
+            )
             .expect("empty map row");
         assert_eq!(progress.next_row, 8);
         assert_eq!(progress.next_data_index, 9);
@@ -742,7 +756,12 @@ mod tests {
             path: PathBuf::from("surface.xlsx"),
         };
         assert_eq!(context.holder_type(), easyexcel_core::Holder::Workbook);
-        assert!(context.excel_write_head_property().head_cell_range_list().is_empty());
+        assert!(
+            context
+                .excel_write_head_property()
+                .head_cell_range_list()
+                .is_empty()
+        );
         assert!(context.converter_map().is_empty());
         assert!(context.need_head());
         assert!(context.automatic_merge_head());

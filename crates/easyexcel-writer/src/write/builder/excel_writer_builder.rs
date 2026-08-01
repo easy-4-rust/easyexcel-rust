@@ -1016,4 +1016,18 @@ mod tests {
         assert_eq!(parsed.1, "");
         Ok(())
     }
+
+    #[test]
+    fn builder_sheet_without_file_propagates_build_error() {
+        // Exercises the `?` unwind edges of sheet()/sheet_no/sheet_name/sheet_with.
+        for result in [
+            ExcelWriterBuilder::new().sheet(),
+            ExcelWriterBuilder::new().sheet_no(0),
+            ExcelWriterBuilder::new().sheet_name("Users"),
+            ExcelWriterBuilder::new().sheet_with(0, "Users"),
+        ] {
+            let error = result.err().expect("builder without a file must fail");
+            assert!(matches!(error, ExcelError::Format(_)));
+        }
+    }
 }

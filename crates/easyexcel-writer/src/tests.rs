@@ -5527,12 +5527,32 @@ fn conversion_configuration_column_and_save_failures_propagate() -> Result<()> {
         .is_err()
     );
     assert!(
-        apply_loop_merges(worksheet, u32::MAX, 0, &[MirroredLoopMergeStrategy::new(2, 1, 0)?]).is_err()
+        apply_loop_merges(
+            worksheet,
+            u32::MAX,
+            0,
+            &[MirroredLoopMergeStrategy::new(2, 1, 0)?]
+        )
+        .is_err()
     );
     assert!(
-        apply_loop_merges(worksheet, 0, 0, &[MirroredLoopMergeStrategy::new(1, 2, u16::MAX)?]).is_err()
+        apply_loop_merges(
+            worksheet,
+            0,
+            0,
+            &[MirroredLoopMergeStrategy::new(1, 2, u16::MAX)?]
+        )
+        .is_err()
     );
-    assert!(apply_loop_merges(worksheet, 0, 0, &[MirroredLoopMergeStrategy::new(1, 2, 16_383)?]).is_err());
+    assert!(
+        apply_loop_merges(
+            worksheet,
+            0,
+            0,
+            &[MirroredLoopMergeStrategy::new(1, 2, 16_383)?]
+        )
+        .is_err()
+    );
     assert!(
         write_xlsx::<EveryCell, _>(
             &directory.path().join("bad-loop-merge.xlsx"),
@@ -6701,8 +6721,6 @@ fn biff8_sheet_creator_duplicate_name_fails() {
     assert!(result.is_err());
 }
 
-
-
 #[test]
 fn excel_writer_output_path_returns_correct_path() {
     let dir = tempdir().unwrap();
@@ -6752,7 +6770,6 @@ fn excel_writer_set_compress_temp_files_false() {
     writer.set_compress_temp_files(false);
     assert!(!writer.compress_temp_files_enabled());
 }
-
 
 #[allow(dead_code)]
 struct NoOpHandler;
@@ -6809,7 +6826,6 @@ fn prepend_write_handlers_before_first_write_succeeds() -> Result<()> {
     Ok(())
 }
 
-
 #[test]
 fn write_xlsx_with_handlers_creates_file() -> Result<()> {
     let dir = tempdir()?;
@@ -6854,13 +6870,7 @@ fn write_xlsx_to_writer_creates_file() -> Result<()> {
     let mut handlers: Vec<Box<dyn WriteHandler>> = vec![];
     let options = WriteOptions::default();
     let file = std::fs::File::create(&path).map_err(test_error)?;
-    write_xlsx_to_writer::<DynamicRow, _, _>(
-        path.as_path(),
-        file,
-        &options,
-        data,
-        &mut handlers,
-    )?;
+    write_xlsx_to_writer::<DynamicRow, _, _>(path.as_path(), file, &options, data, &mut handlers)?;
     assert!(path.exists());
     Ok(())
 }
@@ -6873,13 +6883,7 @@ fn write_xls_to_writer_creates_file() -> Result<()> {
     let mut handlers: Vec<Box<dyn WriteHandler>> = vec![];
     let options = WriteOptions::default();
     let file = std::fs::File::create(&path).map_err(test_error)?;
-    write_xls_to_writer::<DynamicRow, _, _>(
-        path.as_path(),
-        file,
-        &options,
-        data,
-        &mut handlers,
-    )?;
+    write_xls_to_writer::<DynamicRow, _, _>(path.as_path(), file, &options, data, &mut handlers)?;
     assert!(path.exists());
     Ok(())
 }
@@ -6892,14 +6896,7 @@ fn write_csv_to_writer_creates_file() -> Result<()> {
     let mut handlers: Vec<Box<dyn WriteHandler>> = vec![];
     let options = WriteOptions::default();
     let file = std::fs::File::create(&path).map_err(test_error)?;
-    write_csv_to_writer::<DynamicRow, _, _>(
-        path.as_path(),
-        file,
-        &options,
-        data,
-        &mut handlers,
-    )?;
+    write_csv_to_writer::<DynamicRow, _, _>(path.as_path(), file, &options, data, &mut handlers)?;
     assert!(path.exists());
     Ok(())
 }
-

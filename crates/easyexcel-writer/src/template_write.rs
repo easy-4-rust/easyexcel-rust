@@ -1674,10 +1674,7 @@ mod tests {
     #[test]
     fn attribute_value_in_tag_found() {
         let xml = r#"<worksheet dim="A1"><sheetData/></worksheet>"#;
-        assert_eq!(
-            attribute_value_in_tag(xml, "worksheet", "dim"),
-            Some("A1")
-        );
+        assert_eq!(attribute_value_in_tag(xml, "worksheet", "dim"), Some("A1"));
     }
 
     #[test]
@@ -2105,5 +2102,850 @@ mod tests {
     #[test]
     fn has_template_returns_true_for_bytes() {
         assert!(has_template(None, Some(b"fake bytes")));
+    }
+}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    use bigdecimal::BigDecimal;
+    use calamine::{CellErrorType, ExcelDateTime, ExcelDateTimeType};
+    use chrono::NaiveDate;
+    use easyexcel_core::RichTextStringData;
+    use std::str::FromStr;
+
+    /// Package entries mirroring a minimal template with one styled sheet.
+    fn sample_entries() -> Vec<TemplateZipEntry> {
+        vec![
+            TemplateZipEntry {
+                name: "[Content_Types].xml".to_owned(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: br#"<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>"#.to_vec(),
+            },
+            TemplateZipEntry {
+                name: "xl/workbook.xml".to_owned(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: br#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Styled" sheetId="1" r:id="rId1"/></sheets></workbook>"#.to_vec(),
+            },
+            TemplateZipEntry {
+                name: "xl/_rels/workbook.xml.rels".to_owned(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: br#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>"#.to_vec(),
+            },
+            TemplateZipEntry {
+                name: "xl/styles.xml".to_owned(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: br#"<?xml version="1.0"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="1"><font><b/></font></fonts></styleSheet>"#.to_vec(),
+            },
+            TemplateZipEntry {
+                name: "xl/worksheets/sheet1.xml".to_owned(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: br#"<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetFormatPr defaultRowHeight="18"/><cols><col min="1" max="1" width="20" customWidth="1"/></cols><sheetData><row r="1"><c r="A1" s="1"><v>1</v></c></row></sheetData><mergeCells count="1"><mergeCell ref="A1:B1"/></mergeCells></worksheet>"#.to_vec(),
+            },
+        ]
+    }
+
+    fn sample_package() -> TemplatePackage {
+        TemplatePackage {
+            entries: sample_entries(),
+        }
+    }
+
+    fn workbook_package(rows: usize) -> TemplatePackage {
+        let mut workbook = Workbook::new();
+        let worksheet = workbook.add_worksheet();
+        for row in 0..rows {
+            worksheet
+                .write_string(row as u32, 0, format!("seed-{row}"))
+                .expect("seed cell");
+        }
+        let bytes = workbook.save_to_buffer().expect("template bytes");
+        TemplatePackage::from_bytes(&bytes).expect("template package")
+    }
+
+    fn styles_xml(fonts: &str, fills: &str, borders: &str, xfs: &str) -> String {
+        format!(
+            r#"<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">{fonts}{fills}{borders}{xfs}</styleSheet>"#
+        )
+    }
+
+    fn standard_styles() -> String {
+        styles_xml(
+            r#"<fonts count="1"><font/></fonts>"#,
+            r#"<fills count="1"><fill/></fills>"#,
+            r#"<borders count="1"><border/></borders>"#,
+            r#"<cellXfs count="1"><xf/></cellXfs>"#,
+        )
+    }
+
+    #[test]
+    fn from_bytes_reads_directory_entries_and_unix_mode() {
+        let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
+        let options = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
+        writer
+            .add_directory("xl/dir/", options.unix_permissions(0o755))
+            .expect("directory entry");
+        writer
+            .start_file("xl/workbook.xml", options)
+            .expect("file entry");
+        writer
+            .write_all(b"<workbook/>")
+            .expect("write workbook bytes");
+        let bytes = writer.finish().expect("finish zip").into_inner();
+
+        let package = TemplatePackage::from_bytes(&bytes).expect("package");
+        assert_eq!(package.entries.len(), 2);
+        let directory = &package.entries[0];
+        assert!(directory.is_dir);
+        assert!(directory.bytes.is_empty());
+        assert!(directory.unix_mode.is_some());
+        // Round-trips through the ZIP writer, covering the directory branch.
+        let output = package.to_bytes().expect("reserialize");
+        assert!(output.starts_with(b"PK"));
+    }
+
+    #[test]
+    fn next_row_for_sheet_empty_and_populated() {
+        let empty = workbook_package(0);
+        assert_eq!(empty.next_row_for_sheet("Sheet1").expect("next"), 0);
+
+        let populated = workbook_package(2);
+        assert_eq!(
+            populated.next_row_for_sheet("Sheet1").expect("next"),
+            3,
+            "last row index 1 (zero-based) + 1 = 2 rows"
+        );
+    }
+
+    #[test]
+    fn ensure_sheet_existing_and_creates_new() {
+        let mut package = sample_package();
+        package.ensure_sheet("Styled").expect("existing sheet");
+        package.ensure_sheet("Extra").expect("created sheet");
+        let names = package.sheet_names().expect("names");
+        assert!(names.iter().any(|name| name == "Extra"));
+        assert!(
+            package
+                .entry_xml("xl/worksheets/sheet2.xml")
+                .expect("new part")
+                .contains("<sheetData>")
+        );
+    }
+
+    #[test]
+    fn create_sheet_error_paths() {
+        let mut no_rels = sample_package();
+        no_rels
+            .entries
+            .retain(|entry| entry.name != "xl/_rels/workbook.xml.rels");
+        let error = no_rels.create_sheet("X").expect_err("missing rels");
+        assert!(error.to_string().contains("workbook.xml.rels"));
+
+        let mut no_types = sample_package();
+        no_types
+            .entries
+            .retain(|entry| entry.name != "[Content_Types].xml");
+        let error = no_types.create_sheet("X").expect_err("missing types");
+        assert!(error.to_string().contains("[Content_Types].xml"));
+
+        let mut no_sheets_close = sample_package();
+        let workbook = no_sheets_close
+            .entries
+            .iter_mut()
+            .find(|entry| entry.name == "xl/workbook.xml")
+            .expect("workbook entry");
+        workbook.bytes = br#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Styled" sheetId="1" r:id="rId1"/></workbook>"#.to_vec();
+        let error = no_sheets_close
+            .create_sheet("X")
+            .expect_err("missing </sheets>");
+        assert!(error.to_string().contains("</sheets>"));
+    }
+
+    #[test]
+    fn append_rows_validation_errors() {
+        let mut package = sample_package();
+        // Empty rows delegates to the next-row computation.
+        assert_eq!(
+            package
+                .append_rows_with_layout_and_absent("Styled", &[], &[], &[], &[])
+                .expect("empty rows"),
+            2
+        );
+        let rows = vec![vec![(0usize, CellValue::String("x".to_owned()))]];
+        let error = package
+            .append_rows_with_layout_and_absent("Styled", &rows, &[], &[], &[true, false])
+            .expect_err("absent count mismatch");
+        assert!(error.to_string().contains("absent-row count"));
+        let error = package
+            .append_rows_with_layout_and_absent("Styled", &rows, &[Some(10), Some(11)], &[], &[])
+            .expect_err("height count mismatch");
+        assert!(error.to_string().contains("row-height count"));
+        let error = package
+            .append_rows_with_layout_and_absent(
+                "Styled",
+                &rows,
+                &[],
+                &[vec![Some(0u32)], vec![Some(0u32)]],
+                &[],
+            )
+            .expect_err("style row count mismatch");
+        assert!(error.to_string().contains("cell-style shape"));
+        let two_cell_row = vec![vec![
+            (0usize, CellValue::String("x".to_owned())),
+            (1usize, CellValue::Int(1)),
+        ]];
+        let error = package
+            .append_rows_with_layout_and_absent(
+                "Styled",
+                &two_cell_row,
+                &[],
+                &[vec![Some(0u32)]],
+                &[],
+            )
+            .expect_err("style shape mismatch");
+        assert!(error.to_string().contains("cell-style shape"));
+    }
+
+    #[test]
+    fn append_sparse_rows_absent_and_heights() {
+        let xml = "<worksheet><sheetData></sheetData></worksheet>";
+        let rows = vec![
+            vec![(0usize, CellValue::String("a".to_owned()))],
+            vec![(0usize, CellValue::Int(1))],
+        ];
+        let (updated, next) =
+            append_sparse_rows_to_xml(xml, &rows, &[Some(22)], &[], &[false, true])
+                .expect("append");
+        assert_eq!(next, 3);
+        assert!(updated.contains("ht=\"22\""));
+        assert!(updated.contains("<row r=\"1\" ht=\"22\" customHeight=\"1\">"));
+        assert!(!updated.contains("r=\"2\""), "absent row must be skipped");
+    }
+
+    #[test]
+    fn apply_sheet_layout_variants() {
+        let mut package = sample_package();
+        package
+            .apply_sheet_layout("Styled", &[], &[])
+            .expect("no-op layout");
+        package
+            .apply_sheet_layout("Styled", &[(0, 30)], &[MergeRange::new(0, 1, 2, 2)])
+            .expect("layout");
+        let sheet = package
+            .entry_xml("xl/worksheets/sheet1.xml")
+            .expect("sheet xml");
+        assert!(sheet.contains("width=\"30\""));
+        assert!(sheet.contains("ref=\"C1:C2\""));
+        assert!(sheet.contains("count=\"2\""));
+    }
+
+    #[test]
+    fn apply_column_widths_to_xml_variants() {
+        let with_close_cols = "<worksheet><cols><col min=\"1\" max=\"1\" width=\"10\"/></cols><sheetData/></worksheet>";
+        let updated = apply_column_widths_to_xml(with_close_cols, &[(1, 20)]).expect("close cols");
+        assert!(updated.contains("width=\"20\""));
+
+        let self_closing = "<worksheet><cols/><sheetData/></worksheet>";
+        let updated =
+            apply_column_widths_to_xml(self_closing, &[(0, 15)]).expect("self closing cols");
+        assert!(updated.contains("<cols><col"));
+
+        let error =
+            apply_column_widths_to_xml("<worksheet><cols", &[(0, 10)]).expect_err("malformed cols");
+        assert!(error.to_string().contains("malformed cols"));
+
+        let no_cols = "<worksheet><sheetData></sheetData></worksheet>";
+        let updated = apply_column_widths_to_xml(no_cols, &[(0, 10)]).expect("insert cols");
+        assert!(updated.contains("<cols>"));
+
+        let error =
+            apply_column_widths_to_xml("<worksheet/>", &[(0, 10)]).expect_err("missing sheetData");
+        assert!(error.to_string().contains("sheetData"));
+    }
+
+    #[test]
+    fn apply_merge_ranges_to_xml_variants() {
+        let existing = "<worksheet><mergeCells count=\"1\"><mergeCell ref=\"A1:B1\"/></mergeCells></worksheet>";
+        let unchanged = apply_merge_ranges_to_xml(existing, &[MergeRange::new(0, 0, 0, 1)])
+            .expect("already merged");
+        assert_eq!(unchanged, existing);
+
+        let with_count = "<worksheet><sheetData></sheetData><mergeCells count=\"1\"><mergeCell ref=\"A1:B1\"/></mergeCells></worksheet>";
+        let updated =
+            apply_merge_ranges_to_xml(with_count, &[MergeRange::new(2, 2, 0, 0)]).expect("append");
+        assert!(updated.contains("count=\"2\""));
+        assert!(updated.contains("ref=\"A3:A3\""));
+
+        let no_count = "<worksheet><mergeCells><mergeCell ref=\"A1:B1\"/></mergeCells></worksheet>";
+        let updated =
+            apply_merge_ranges_to_xml(no_count, &[MergeRange::new(2, 2, 0, 0)]).expect("append");
+        assert!(updated.contains("ref=\"A3:A3\""));
+
+        let error =
+            apply_merge_ranges_to_xml("<worksheet><mergeCells", &[MergeRange::new(0, 0, 0, 0)])
+                .expect_err("unterminated open");
+        assert!(error.to_string().contains("malformed mergeCells"));
+
+        let error =
+            apply_merge_ranges_to_xml("<worksheet><mergeCells>", &[MergeRange::new(0, 0, 0, 0)])
+                .expect_err("missing close");
+        assert!(error.to_string().contains("malformed mergeCells"));
+
+        let no_merges = "<worksheet><sheetData></sheetData></worksheet>";
+        let updated =
+            apply_merge_ranges_to_xml(no_merges, &[MergeRange::new(0, 0, 0, 1)]).expect("insert");
+        assert!(updated.contains("<mergeCells count=\"1\">"));
+
+        let error = apply_merge_ranges_to_xml("<worksheet/>", &[MergeRange::new(0, 0, 0, 0)])
+            .expect_err("missing sheetData");
+        assert!(error.to_string().contains("sheetData"));
+    }
+
+    #[test]
+    fn expand_self_closing_sheet_data_errors() {
+        let error = expand_self_closing_sheet_data("<worksheet/>").expect_err("no sheetData");
+        assert!(error.to_string().contains("sheetData"));
+        let error =
+            expand_self_closing_sheet_data("<worksheet><sheetData").expect_err("no self close");
+        assert!(error.to_string().contains("sheetData"));
+        let error =
+            expand_self_closing_sheet_data("<worksheet><sheetData><row r=\"1\"/></worksheet>")
+                .expect_err("self close belongs to sibling");
+        assert!(error.to_string().contains("sheetData"));
+    }
+
+    #[test]
+    fn render_cell_xml_extra_variants() {
+        let rich = render_cell_xml(
+            "A1",
+            &CellValue::RichText(RichTextStringData::new("rt")),
+            None,
+        );
+        assert!(rich.contains("rt"));
+
+        let int = render_cell_xml("A1", &CellValue::Int(42), None);
+        assert!(int.contains("<v>42</v>"));
+
+        let big_integer = render_cell_xml(
+            "A1",
+            &CellValue::Decimal(BigDecimal::from(100_000_000_000_000_000_000i128)),
+            None,
+        );
+        assert!(big_integer.contains("inlineStr"));
+
+        let fraction = render_cell_xml(
+            "A1",
+            &CellValue::Decimal(BigDecimal::from_str("1.5").expect("decimal")),
+            None,
+        );
+        assert!(fraction.contains("<v>1.5</v>"));
+
+        let datetime = render_cell_xml(
+            "A1",
+            &CellValue::DateTime(
+                NaiveDate::from_ymd_opt(2024, 1, 2)
+                    .expect("date")
+                    .and_hms_opt(3, 4, 5)
+                    .expect("time"),
+            ),
+            None,
+        );
+        assert!(datetime.contains("2024-01-02T03:04:05"));
+
+        let comment = render_cell_xml(
+            "A1",
+            &CellValue::Comment {
+                value: Box::new(CellValue::Int(7)),
+                text: "note".to_owned(),
+            },
+            None,
+        );
+        assert!(comment.contains("<v>7</v>"));
+
+        let images = render_cell_xml(
+            "A1",
+            &CellValue::Images {
+                value: Box::new(CellValue::String("img".to_owned())),
+                images: Vec::new(),
+            },
+            None,
+        );
+        assert!(images.contains("img"));
+    }
+
+    #[test]
+    fn write_template_cell_all_variants() {
+        let mut workbook = Workbook::new();
+        let worksheet = workbook.add_worksheet();
+        write_template_cell(worksheet, 0, 0, &Data::Empty).expect("empty");
+        write_template_cell(worksheet, 0, 1, &Data::String("s".to_owned())).expect("string");
+        write_template_cell(
+            worksheet,
+            0,
+            2,
+            &Data::DateTimeIso("2024-01-01T00:00:00".to_owned()),
+        )
+        .expect("datetime iso");
+        write_template_cell(worksheet, 0, 3, &Data::DurationIso("PT1H".to_owned()))
+            .expect("duration iso");
+        write_template_cell(worksheet, 0, 4, &Data::Bool(true)).expect("bool");
+        write_template_cell(worksheet, 0, 5, &Data::Int(42)).expect("int");
+        write_template_cell(worksheet, 0, 6, &Data::Float(1.5)).expect("float");
+        write_template_cell(
+            worksheet,
+            0,
+            7,
+            &Data::DateTime(ExcelDateTime::new(
+                45943.5,
+                ExcelDateTimeType::DateTime,
+                false,
+            )),
+        )
+        .expect("datetime");
+        write_template_cell(
+            worksheet,
+            0,
+            8,
+            &Data::DateTime(ExcelDateTime::new(
+                1e300,
+                ExcelDateTimeType::DateTime,
+                false,
+            )),
+        )
+        .expect("datetime outside chrono range");
+        write_template_cell(worksheet, 0, 9, &Data::Error(CellErrorType::Div0)).expect("error");
+        workbook.save_to_buffer().expect("save");
+    }
+
+    #[test]
+    fn seed_workbook_from_template_writes_sheets() {
+        let sheets = vec![TemplateSheetData {
+            name: "S1".to_owned(),
+            cells: vec![
+                (0u32, 0u16, Data::String("a".to_owned())),
+                (1u32, 1u16, Data::Int(5)),
+                (2u32, 0u16, Data::Bool(true)),
+            ],
+            next_row: 3,
+        }];
+        let mut workbook = Workbook::new();
+        seed_workbook_from_template(&mut workbook, &sheets).expect("seed");
+        workbook.save_to_buffer().expect("save");
+    }
+
+    #[test]
+    fn load_template_sheets_reads_workbook_and_errors() {
+        let mut workbook = Workbook::new();
+        let worksheet = workbook.add_worksheet();
+        worksheet.write_string(0, 0, "alpha").expect("cell");
+        worksheet.write_number(2, 1, 5.0).expect("cell");
+        let bytes = workbook.save_to_buffer().expect("bytes");
+
+        let sheets = load_template_sheets(&bytes).expect("sheets");
+        assert_eq!(sheets.len(), 1);
+        assert_eq!(sheets[0].name, "Sheet1");
+        assert_eq!(
+            sheets[0].cells.len(),
+            2,
+            "empty gaps inside the used range are skipped"
+        );
+        assert_eq!(sheets[0].next_row, 3);
+
+        let error = load_template_sheets(b"not a zip file").expect_err("invalid package");
+        assert!(error.to_string().contains("withTemplate"));
+    }
+
+    #[test]
+    fn apply_sheet_layout_widths_only_and_merges_only() {
+        let mut package = sample_package();
+        package
+            .apply_sheet_layout("Styled", &[(1, 12)], &[])
+            .expect("widths only");
+        package
+            .apply_sheet_layout("Styled", &[], &[MergeRange::new(3, 3, 0, 0)])
+            .expect("merges only");
+    }
+
+    /// Minimal OOXML package with a configurable `<sheets>` body; the
+    /// worksheet part referenced by `rId1` is intentionally absent.
+    fn minimal_xlsx_with_sheets(sheet_tag: &str) -> Vec<u8> {
+        let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
+        let options = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
+        writer
+            .start_file("[Content_Types].xml", options)
+            .expect("content types");
+        writer
+            .write_all(
+                br#"<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/></Types>"#,
+            )
+            .expect("write");
+        writer
+            .start_file("_rels/.rels", options)
+            .expect("package rels");
+        writer
+            .write_all(
+                br#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>"#,
+            )
+            .expect("write");
+        writer
+            .start_file("xl/workbook.xml", options)
+            .expect("workbook");
+        writer
+            .write_all(
+                format!(
+                    r#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>{sheet_tag}</sheets></workbook>"#
+                )
+                .as_bytes(),
+            )
+            .expect("write");
+        writer
+            .start_file("xl/_rels/workbook.xml.rels", options)
+            .expect("workbook rels");
+        writer
+            .write_all(
+                br#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/ghost.xml"/></Relationships>"#,
+            )
+            .expect("write");
+        writer.finish().expect("finish").into_inner()
+    }
+
+    #[test]
+    fn load_template_sheets_empty_and_missing_part() {
+        let empty = minimal_xlsx_with_sheets("");
+        let error = load_template_sheets(&empty).expect_err("no worksheets");
+        assert!(error.to_string().contains("no worksheets"));
+
+        let ghost = minimal_xlsx_with_sheets(r#"<sheet name="Ghost" sheetId="1" r:id="rId1"/>"#);
+        let error = load_template_sheets(&ghost).expect_err("worksheet part missing");
+        assert!(
+            error
+                .to_string()
+                .contains("failed to read withTemplate sheet")
+        );
+    }
+
+    #[test]
+    fn load_template_bytes_branches() {
+        let data = b"template-bytes";
+        assert_eq!(
+            load_template_bytes(None, Some(data)).expect("bytes"),
+            data.to_vec()
+        );
+        let directory = tempfile::tempdir().expect("tempdir");
+        let path = directory.path().join("template.xlsx");
+        std::fs::write(&path, data).expect("write file");
+        assert_eq!(
+            load_template_bytes(Some(&path), None).expect("file"),
+            data.to_vec()
+        );
+        let error = load_template_bytes(None, None).expect_err("no source");
+        assert!(error.to_string().contains("with_template"));
+    }
+
+    #[test]
+    fn validate_template_source_xlsx_and_xls_bytes() {
+        let mut workbook = Workbook::new();
+        workbook.add_worksheet();
+        let xlsx = workbook.save_to_buffer().expect("xlsx");
+        assert!(
+            validate_template_source(None, Some(&xlsx)).is_ok(),
+            "xlsx bytes are not CSV-like"
+        );
+        let xls = [0xD0u8, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1, 0, 0];
+        let error = validate_template_source(None, Some(&xls)).expect_err("xls bytes");
+        assert!(error.to_string().contains("legacy XLS"));
+    }
+
+    #[test]
+    fn resolve_targets_out_of_range_and_by_name() {
+        let sheets = vec![TemplateSheetData {
+            name: "A".to_owned(),
+            cells: Vec::new(),
+            next_row: 0,
+        }];
+        let (index, name, create_new) = resolve_template_target(&sheets, Some(7), "Z");
+        assert_eq!((index, name.as_str(), create_new), (7, "Z", true));
+
+        let names = vec!["A".to_owned()];
+        let (index, name, create_new) = resolve_package_target(&names, Some(0), "ignored");
+        assert_eq!((index, name.as_str(), create_new), (0, "A", false));
+        let (index, name, create_new) = resolve_package_target(&names, Some(3), "ignored");
+        assert_eq!((index, name.as_str(), create_new), (3, "ignored", true));
+        let (index, name, create_new) = resolve_package_target(&names, None, "A");
+        assert_eq!((index, name.as_str(), create_new), (0, "A", false));
+        let (index, name, create_new) = resolve_package_target(&names, None, "B");
+        assert_eq!((index, name.as_str(), create_new), (1, "B", true));
+    }
+
+    #[test]
+    fn merge_compiled_styles_duplicate_and_out_of_range() {
+        let source = styles_xml(
+            r#"<fonts count="1"><font/></fonts>"#,
+            r#"<fills count="1"><fill/></fills>"#,
+            r#"<borders count="1"><border/></borders>"#,
+            r#"<cellXfs count="2"><xf fontId="0" fillId="0" borderId="0" numFmtId="0"/><xf fontId="0" fillId="0" borderId="0" numFmtId="0" applyFont="1"/></cellXfs>"#,
+        );
+        let (_, mapped) =
+            merge_compiled_styles(&standard_styles(), &source, &[1, 1]).expect("duplicate import");
+        assert_eq!(mapped, vec![1, 1]);
+
+        let error =
+            merge_compiled_styles(&standard_styles(), &source, &[9]).expect_err("out of range");
+        assert!(error.to_string().contains("out of range"));
+    }
+
+    #[test]
+    fn merge_compiled_styles_attribute_paths() {
+        let plain = styles_xml(
+            r#"<fonts count="1"><font/></fonts>"#,
+            r#"<fills count="1"><fill/></fills>"#,
+            r#"<borders count="1"><border/></borders>"#,
+            r#"<cellXfs count="1"><xf/></cellXfs>"#,
+        );
+        let (_, mapped) = merge_compiled_styles(&standard_styles(), &plain, &[0]).expect("plain");
+        assert_eq!(mapped, vec![0]);
+
+        let builtin_format = styles_xml(
+            r#"<fonts count="1"><font/></fonts>"#,
+            r#"<fills count="1"><fill/></fills>"#,
+            r#"<borders count="1"><border/></borders>"#,
+            r#"<cellXfs count="1"><xf numFmtId="10"/></cellXfs>"#,
+        );
+        merge_compiled_styles(&standard_styles(), &builtin_format, &[0]).expect("builtin numFmtId");
+
+        let invalid_font = styles_xml(
+            r#"<fonts count="1"><font/></fonts>"#,
+            r#"<fills count="1"><fill/></fills>"#,
+            r#"<borders count="1"><border/></borders>"#,
+            r#"<cellXfs count="1"><xf fontId="abc"/></cellXfs>"#,
+        );
+        let error = merge_compiled_styles(&standard_styles(), &invalid_font, &[0])
+            .expect_err("invalid fontId");
+        assert!(error.to_string().contains("invalid fontId"));
+
+        let range_font = styles_xml(
+            r#"<fonts count="1"><font/></fonts>"#,
+            r#"<fills count="1"><fill/></fills>"#,
+            r#"<borders count="1"><border/></borders>"#,
+            r#"<cellXfs count="1"><xf fontId="9"/></cellXfs>"#,
+        );
+        let error = merge_compiled_styles(&standard_styles(), &range_font, &[0])
+            .expect_err("fontId out of range");
+        assert!(error.to_string().contains("out of range"));
+
+        let custom_format = styles_xml(
+            r#"<fonts count="1"><font/></fonts>"#,
+            r#"<fills count="1"><fill/></fills>"#,
+            r#"<borders count="1"><border/></borders>"#,
+            r#"<cellXfs count="1"><xf numFmtId="165"/></cellXfs>"#,
+        );
+        let error = merge_compiled_styles(&standard_styles(), &custom_format, &[0])
+            .expect_err("missing source numFmt");
+        assert!(error.to_string().contains("missing numFmtId 165"));
+    }
+
+    #[test]
+    fn merge_compiled_styles_numfmt_dedup_and_append() {
+        let with_numfmts = styles_xml(
+            r#"<fonts count="1"><font/></fonts>"#,
+            r#"<fills count="1"><fill/></fills>"#,
+            r#"<borders count="1"><border/></borders>"#,
+            r#"<numFmts count="1"><numFmt numFmtId="164" formatCode="0"/></numFmts><cellXfs count="1"><xf/></cellXfs>"#,
+        );
+        let new_format = styles_xml(
+            r#"<fonts count="1"><font/></fonts>"#,
+            r#"<fills count="1"><fill/></fills>"#,
+            r#"<borders count="1"><border/></borders>"#,
+            r#"<numFmts count="1"><numFmt numFmtId="165" formatCode="0.00"/></numFmts><cellXfs count="1"><xf numFmtId="165"/></cellXfs>"#,
+        );
+        let (updated, _) =
+            merge_compiled_styles(&with_numfmts, &new_format, &[0]).expect("append numFmt");
+        assert!(updated.contains("numFmtId=\"165\""));
+        assert!(updated.contains("formatCode=\"0.00\""));
+
+        let matching_format = styles_xml(
+            r#"<fonts count="1"><font/></fonts>"#,
+            r#"<fills count="1"><fill/></fills>"#,
+            r#"<borders count="1"><border/></borders>"#,
+            r#"<numFmts count="1"><numFmt numFmtId="200" formatCode="0"/></numFmts><cellXfs count="1"><xf numFmtId="200"/></cellXfs>"#,
+        );
+        let (updated, _) =
+            merge_compiled_styles(&with_numfmts, &matching_format, &[0]).expect("reuse numFmt");
+        assert!(updated.contains("numFmtId=\"164\""));
+    }
+
+    #[test]
+    fn merge_compiled_styles_fonts_without_count() {
+        let without_count = styles_xml(
+            r#"<fonts><font/></fonts>"#,
+            r#"<fills count="1"><fill/></fills>"#,
+            r#"<borders count="1"><border/></borders>"#,
+            r#"<cellXfs count="1"><xf/></cellXfs>"#,
+        );
+        let source = styles_xml(
+            r#"<fonts count="1"><font><b/></font></fonts>"#,
+            r#"<fills count="1"><fill/></fills>"#,
+            r#"<borders count="1"><border/></borders>"#,
+            r#"<cellXfs count="1"><xf fontId="0" fillId="0" borderId="0" numFmtId="0"/></cellXfs>"#,
+        );
+        let (updated, _) =
+            merge_compiled_styles(&without_count, &source, &[0]).expect("count injected");
+        assert!(updated.contains("count=\"2\""));
+    }
+
+    #[test]
+    fn merge_compiled_styles_missing_collection() {
+        let missing_fonts = "<styleSheet><fills count=\"1\"><fill/></fills><borders count=\"1\"><border/></borders><cellXfs count=\"1\"><xf/></cellXfs></styleSheet>";
+        let error = merge_compiled_styles(&missing_fonts, &standard_styles(), &[0])
+            .expect_err("missing fonts");
+        assert!(error.to_string().contains("fonts"));
+    }
+
+    #[test]
+    fn import_compiled_styles_zero_and_missing_style() {
+        let mut package = sample_package();
+        assert!(
+            package
+                .import_compiled_styles(b"", 0)
+                .expect("zero styles")
+                .is_empty()
+        );
+
+        let mut compiler = Workbook::new();
+        compiler
+            .add_worksheet()
+            .write_string(0, 0, "plain")
+            .expect("unstyled cell");
+        let compiled = compiler.save_to_buffer().expect("compiled bytes");
+        let error = package
+            .import_compiled_styles(&compiled, 1)
+            .expect_err("A1 has no style");
+        assert!(error.to_string().contains("has no style index"));
+    }
+
+    #[test]
+    fn package_serialization_paths() {
+        let package = sample_package();
+        let bytes = package.to_bytes().expect("to bytes");
+        assert!(bytes.starts_with(b"PK"));
+
+        let mut output = Vec::new();
+        package.save_to_writer(&mut output).expect("to writer");
+        assert!(output.starts_with(b"PK"));
+
+        let directory = tempfile::tempdir().expect("tempdir");
+        let path = directory.path().join("out.xlsx");
+        package.save_to_path(&path).expect("to path");
+        assert!(path.exists());
+    }
+
+    #[test]
+    fn worksheet_path_error_paths() {
+        let mut no_rels = sample_package();
+        no_rels
+            .entries
+            .retain(|entry| entry.name != "xl/_rels/workbook.xml.rels");
+        let error = no_rels
+            .worksheet_path_by_name("Styled")
+            .expect_err("missing rels");
+        assert!(error.to_string().contains("workbook.xml.rels"));
+
+        let mut missing_relationship = sample_package();
+        let rels = missing_relationship
+            .entries
+            .iter_mut()
+            .find(|entry| entry.name == "xl/_rels/workbook.xml.rels")
+            .expect("rels entry");
+        rels.bytes = br#"<Relationships><Relationship Id="rId2" Type="x" Target="styles.xml"/></Relationships>"#.to_vec();
+        let error = missing_relationship
+            .worksheet_path_by_name("Styled")
+            .expect_err("missing relationship");
+        assert!(error.to_string().contains("relationship"));
+
+        let mut missing_part = sample_package();
+        let rels = missing_part
+            .entries
+            .iter_mut()
+            .find(|entry| entry.name == "xl/_rels/workbook.xml.rels")
+            .expect("rels entry");
+        rels.bytes = br#"<Relationships><Relationship Id="rId1" Type="x" Target="worksheets/ghost.xml"/></Relationships>"#.to_vec();
+        let error = missing_part
+            .worksheet_path_by_name("Styled")
+            .expect_err("missing worksheet part");
+        assert!(error.to_string().contains("is missing"));
+    }
+
+    #[test]
+    fn extract_elements_break_paths() {
+        assert!(extract_elements("<font", "font").is_empty());
+        assert!(extract_elements("<font>x</font", "font").is_empty());
+    }
+
+    #[test]
+    fn worksheet_max_row_unterminated() {
+        assert_eq!(worksheet_max_row("<row"), 0);
+    }
+
+    #[test]
+    fn update_worksheet_dimension_without_dimension() {
+        let updated = update_worksheet_dimension("<c r=\"A1\"><v>1</v></c>");
+        assert!(updated.contains("A1"));
+        // Unterminated `<c ` tag: loop breaks and the xml is returned untouched.
+        assert_eq!(update_worksheet_dimension("<c "), "<c ");
+    }
+
+    #[test]
+    fn parse_cell_reference_non_alpha() {
+        assert_eq!(parse_cell_reference("A!1"), None);
+    }
+
+    #[test]
+    fn blank_worksheet_edge_cases() {
+        let invalid_utf8 = vec![TemplateZipEntry {
+            name: "xl/worksheets/sheet1.xml".to_owned(),
+            is_dir: false,
+            compression: CompressionMethod::Stored,
+            unix_mode: None,
+            bytes: vec![0xFF, 0xFE, 0x00],
+        }];
+        let xml =
+            String::from_utf8(blank_worksheet_with_inherited_format(&invalid_utf8)).expect("xml");
+        assert!(xml.contains("sheetData"));
+
+        let bare = vec![TemplateZipEntry {
+            name: "xl/worksheets/sheet1.xml".to_owned(),
+            is_dir: false,
+            compression: CompressionMethod::Stored,
+            unix_mode: None,
+            bytes: br#"<worksheet><sheetData/></worksheet>"#.to_vec(),
+        }];
+        let xml = String::from_utf8(blank_worksheet_with_inherited_format(&bare)).expect("xml");
+        assert!(xml.contains("sheetData"));
+    }
+
+    #[test]
+    fn extract_xml_element_self_closing_paths() {
+        assert!(
+            extract_xml_element("<sheetData><row r=\"1\"/>", "sheetData").is_none(),
+            "self-closing marker belongs to a nested sibling"
+        );
+        assert!(extract_xml_element("<sheetData", "sheetData").is_none());
+    }
+
+    #[test]
+    fn insert_before_close_tag_missing_tag() {
+        let error = insert_before_close_tag("<a/>", "</b>", "x").expect_err("missing tag");
+        assert!(error.to_string().contains("missing </b>"));
     }
 }

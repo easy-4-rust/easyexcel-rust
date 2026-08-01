@@ -64,9 +64,7 @@ fn repetition_loop_merge_all_fields_distinct() {
 
 #[test]
 fn fill_style_data_head_background() {
-    use easyexcel_core::{
-        ExcelCellStyle, ExcelColor, ExcelFillPattern,
-    };
+    use easyexcel_core::{ExcelCellStyle, ExcelColor, ExcelFillPattern};
     let style = ExcelCellStyle {
         fill_pattern: Some(ExcelFillPattern::Solid),
         fill_foreground_color: Some(ExcelColor::Rgb(0x0000FF)),
@@ -345,13 +343,19 @@ fn normalized_shared_handlers_sorts_by_order_and_dedups() {
     struct HandlerB;
     struct HandlerC;
     impl WriteHandler for HandlerA {
-        fn order(&self) -> i32 { 2 }
+        fn order(&self) -> i32 {
+            2
+        }
     }
     impl WriteHandler for HandlerB {
-        fn order(&self) -> i32 { 1 }
+        fn order(&self) -> i32 {
+            1
+        }
     }
     impl WriteHandler for HandlerC {
-        fn order(&self) -> i32 { 3 }
+        fn order(&self) -> i32 {
+            3
+        }
     }
     let shared = crate::writer_helpers::share_handlers(vec![
         Box::new(HandlerA),
@@ -395,8 +399,8 @@ fn handler_execution_scope_child_inherits_parent() {
 
 #[test]
 fn stateful_sheet_state_construction() {
-    use easyexcel_core::ExcelWriteMetadata;
     use crate::metadata::write_sheet::WriteSheet as MirroredWriteSheet;
+    use easyexcel_core::ExcelWriteMetadata;
     let sheet = MirroredWriteSheet::new();
     let options = WriteOptions::default();
     let metadata = ExcelWriteMetadata::default();
@@ -418,7 +422,9 @@ fn shared_write_handler_clone() {
     use easyexcel_core::WriteHandler;
     struct HandlerA;
     impl WriteHandler for HandlerA {
-        fn order(&self) -> i32 { 0 }
+        fn order(&self) -> i32 {
+            0
+        }
     }
     let handler: Box<dyn WriteHandler> = Box::new(HandlerA);
     let shared = crate::writer_helpers::share_handlers(vec![handler]);
@@ -427,13 +433,15 @@ fn shared_write_handler_clone() {
 
 #[test]
 fn shared_write_handler_with_mut() {
-    use easyexcel_core::{Result, WriteHandler};
     use easyexcel_core::WriteWorkbookContext;
+    use easyexcel_core::{Result, WriteHandler};
     struct CountingHandler {
         count: i32,
     }
     impl WriteHandler for CountingHandler {
-        fn order(&self) -> i32 { 0 }
+        fn order(&self) -> i32 {
+            0
+        }
         fn before_workbook_create(&mut self, _context: &WriteWorkbookContext) -> Result<()> {
             Ok(())
         }
@@ -451,7 +459,9 @@ fn shared_write_handler_with_ref() {
     use easyexcel_core::WriteHandler;
     struct HandlerA;
     impl WriteHandler for HandlerA {
-        fn order(&self) -> i32 { 0 }
+        fn order(&self) -> i32 {
+            0
+        }
     }
     let handler: Box<dyn WriteHandler> = Box::new(HandlerA);
     let shared = crate::writer_helpers::share_handlers(vec![handler]);
@@ -464,7 +474,9 @@ fn shared_write_handler_not_repeat_executor() {
     use easyexcel_core::WriteHandler;
     struct HandlerA;
     impl WriteHandler for HandlerA {
-        fn order(&self) -> i32 { 0 }
+        fn order(&self) -> i32 {
+            0
+        }
     }
     let handler: Box<dyn WriteHandler> = Box::new(HandlerA);
     let shared = crate::writer_helpers::share_handlers(vec![handler]);

@@ -254,8 +254,8 @@ impl Biff8Book {
         drawing.extend_from_slice(&1u32.to_le_bytes()); // cSavedDrawings
         drawing.extend_from_slice(&1u32.to_le_bytes()); // cSavedShapes
         let dgg_end = drawing.len();
-        let dgg_len = (dgg_end - dgg_start - 8) as u32;
-        drawing[dgg_start + 4..dgg_start + 8].copy_from_slice(&dgg_len.to_le_bytes());
+        let dgg_len = (dgg_end - dgg_start - 4) as u32;
+        drawing[dgg_start..dgg_start + 4].copy_from_slice(&dgg_len.to_le_bytes());
 
         // === MsofbtDgContainer ===
         drawing.extend_from_slice(&[0x0F, 0x00, 0x02, 0xF0]); // ver+inst+type
@@ -279,8 +279,8 @@ impl Biff8Book {
         drawing.extend_from_slice(&obj_id.to_le_bytes()); // shapeId
         drawing.extend_from_slice(&0x0A00u16.to_le_bytes()); // flags
         let sp_end = drawing.len();
-        let sp_len = (sp_end - sp_start - 8) as u32;
-        drawing[sp_start + 4..sp_start + 8].copy_from_slice(&sp_len.to_le_bytes());
+        let sp_len = (sp_end - sp_start - 4) as u32;
+        drawing[sp_start..sp_start + 4].copy_from_slice(&sp_len.to_le_bytes());
 
         // MsofbtClientAnchor
         drawing.extend_from_slice(&[0x00, 0x00, 0x10, 0xF0]); // ver+inst+type
@@ -293,14 +293,14 @@ impl Biff8Book {
 
         // Close spgr
         let spgr_end = drawing.len();
-        let spgr_len = (spgr_end - spgr_start - 8) as u32;
-        drawing[spgr_start + 4..spgr_start + 8].copy_from_slice(&spgr_len.to_le_bytes());
+        let spgr_len = (spgr_end - spgr_start - 4) as u32;
+        drawing[spgr_start..spgr_start + 4].copy_from_slice(&spgr_len.to_le_bytes());
 
         // Close Dg
         let dg_end2 = drawing.len();
         let dg_start2 = dgg_end; // dg container starts right after dgg
-        let dg_len2 = (dg_end2 - dg_start2 - 8) as u32;
-        drawing[dg_start2 + 4..dg_start2 + 8].copy_from_slice(&dg_len2.to_le_bytes());
+        let dg_len2 = (dg_end2 - dg_start2 - 4) as u32;
+        drawing[dg_start2..dg_start2 + 4].copy_from_slice(&dg_len2.to_le_bytes());
 
         // === MsofbtBSE (Blip Store Entry) with embedded image ===
         drawing.extend_from_slice(&[0x02, 0x00, 0x07, 0xF0]); // ver+inst+type (BlipType depends)
@@ -322,8 +322,8 @@ impl Biff8Book {
             drawing.push(0x00);
         }
         let bse_end = drawing.len();
-        let bse_len = (bse_end - bse_start - 8) as u32;
-        drawing[bse_start + 4..bse_start + 8].copy_from_slice(&bse_len.to_le_bytes());
+        let bse_len = (bse_end - bse_start - 4) as u32;
+        drawing[bse_start..bse_start + 4].copy_from_slice(&bse_len.to_le_bytes());
 
         // Write as BIFF records
         let mut record_data = Vec::new();
@@ -356,16 +356,24 @@ impl Biff8Book {
         let stream = build_workbook_stream(self)?;
         let mut mem = Cursor::new(Vec::<u8>::new());
         {
-            let mut cf = cfb::CompoundFile::create(&mut mem).map_err(|error| ExcelError::Format(format!("cannot create OLE2 container: {error}")))?;
+            let mut cf = cfb::CompoundFile::create(&mut mem).map_err(|error| {
+                ExcelError::Format(format!("cannot create OLE2 container: {error}"))
+            })?;
             {
-                let mut workbook = cf.create_stream("Workbook").map_err(|error| ExcelError::Format(format!("cannot create Workbook stream: {error}")))?;
+                let mut workbook = cf.create_stream("Workbook").map_err(|error| {
+                    ExcelError::Format(format!("cannot create Workbook stream: {error}"))
+                })?;
                 workbook.write_all(&stream)?;
             }
             if !self.extra_bytes.is_empty() {
-                let mut images = cf.create_stream("Images").map_err(|error| ExcelError::Format(format!("cannot create Images stream: {error}")))?;
+                let mut images = cf.create_stream("Images").map_err(|error| {
+                    ExcelError::Format(format!("cannot create Images stream: {error}"))
+                })?;
                 images.write_all(&self.extra_bytes)?;
             }
-            cf.flush().map_err(|error| ExcelError::Format(format!("cannot flush OLE2 container: {error}")))?;
+            cf.flush().map_err(|error| {
+                ExcelError::Format(format!("cannot flush OLE2 container: {error}"))
+            })?;
         }
         Ok(mem.into_inner())
     }

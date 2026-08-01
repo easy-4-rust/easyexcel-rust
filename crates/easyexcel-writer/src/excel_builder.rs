@@ -498,14 +498,16 @@ mod tests {
         let path = directory.path().join("builder-facade.xlsx");
         let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
         let mut builder = ExcelBuilderImpl::from_options(&path, WriteOptions::default());
-        builder.add_content(
-            [DynamicRow::new({
-                let mut cells = std::collections::BTreeMap::new();
-                cells.insert(0, easyexcel_core::DynamicValue::String("alpha".to_owned()));
-                cells
-            })],
-            &sheet,
-        ).expect("add_content should succeed");
+        builder
+            .add_content(
+                [DynamicRow::new({
+                    let mut cells = std::collections::BTreeMap::new();
+                    cells.insert(0, easyexcel_core::DynamicValue::String("alpha".to_owned()));
+                    cells
+                })],
+                &sheet,
+            )
+            .expect("add_content should succeed");
         finish_write_context(&mut builder, false)?;
         finish_write_context(&mut builder, false)?;
         assert!(path.exists());
@@ -519,14 +521,16 @@ mod tests {
         let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
         let mut builder = ExcelBuilderImpl::from_options(&path, WriteOptions::default());
         builder.merge(0, 0, 0, 1)?;
-        builder.add_content(
-            [DynamicRow::new({
-                let mut cells = std::collections::BTreeMap::new();
-                cells.insert(0, easyexcel_core::DynamicValue::String("merged".to_owned()));
-                cells
-            })],
-            &sheet,
-        ).expect("add_content should succeed");
+        builder
+            .add_content(
+                [DynamicRow::new({
+                    let mut cells = std::collections::BTreeMap::new();
+                    cells.insert(0, easyexcel_core::DynamicValue::String("merged".to_owned()));
+                    cells
+                })],
+                &sheet,
+            )
+            .expect("add_content should succeed");
         builder.finish(false)?;
         assert!(path.exists());
         Ok(())
@@ -837,7 +841,8 @@ mod tests {
     /// `fill` without a configured template stream is rejected.
     #[test]
     fn fill_without_template_is_rejected() {
-        let mut builder = ExcelBuilderImpl::from_options("no-template.xlsx", WriteOptions::default());
+        let mut builder =
+            ExcelBuilderImpl::from_options("no-template.xlsx", WriteOptions::default());
         let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
         let error = builder
             .fill(&DynamicRow::default(), FillConfig::new(), &sheet)

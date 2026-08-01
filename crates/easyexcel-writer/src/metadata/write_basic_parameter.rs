@@ -114,7 +114,10 @@ mod tests {
         };
 
         assert_eq!(param.exclude_column_indexes, Some(vec![0, 2]));
-        assert_eq!(param.exclude_column_field_names, Some(vec!["id".to_owned()]));
+        assert_eq!(
+            param.exclude_column_field_names,
+            Some(vec!["id".to_owned()])
+        );
         assert_eq!(param.include_column_indexes, Some(vec![1, 3]));
         assert_eq!(
             param.include_column_field_names,

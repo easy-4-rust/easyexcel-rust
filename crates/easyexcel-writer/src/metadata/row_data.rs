@@ -43,20 +43,14 @@ mod tests {
 
     #[test]
     fn slice_row_data_returns_cell_value_at_index() {
-        let cells = vec![
-            CellValue::String("name".to_owned()),
-            CellValue::Float(42.0),
-        ];
+        let cells = vec![CellValue::String("name".to_owned()), CellValue::Float(42.0)];
         let slice: &[CellValue] = &cells;
 
         assert_eq!(
             slice.get_cell_value(0),
             Some(&CellValue::String("name".to_owned()))
         );
-        assert_eq!(
-            slice.get_cell_value(1),
-            Some(&CellValue::Float(42.0))
-        );
+        assert_eq!(slice.get_cell_value(1), Some(&CellValue::Float(42.0)));
         assert_eq!(slice.get_cell_value(2), None);
     }
 
@@ -76,19 +70,13 @@ mod tests {
 
     #[test]
     fn vec_row_data_returns_cell_value_at_index() {
-        let cells = vec![
-            CellValue::String("name".to_owned()),
-            CellValue::Float(42.0),
-        ];
+        let cells = vec![CellValue::String("name".to_owned()), CellValue::Float(42.0)];
 
         assert_eq!(
             cells.get_cell_value(0),
             Some(&CellValue::String("name".to_owned()))
         );
-        assert_eq!(
-            cells.get_cell_value(1),
-            Some(&CellValue::Float(42.0))
-        );
+        assert_eq!(cells.get_cell_value(1), Some(&CellValue::Float(42.0)));
         assert_eq!(cells.get_cell_value(2), None);
     }
 
@@ -135,5 +123,4 @@ mod tests_extra {
         let slice: &[CellValue] = &non_empty;
         assert!(!<[CellValue] as RowData>::is_empty(slice));
     }
-
 }

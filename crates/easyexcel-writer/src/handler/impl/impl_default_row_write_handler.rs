@@ -82,11 +82,11 @@ mod tests {
 
     #[test]
     fn new_default_row_write_handler_factory() {
+        use easyexcel_core::ConverterRegistry;
+        use easyexcel_core::ExcelWriteHeadProperty;
+        use easyexcel_core::Holder;
         use easyexcel_core::WriteContext;
         use easyexcel_core::WriteContextHolder;
-        use easyexcel_core::Holder;
-        use easyexcel_core::ExcelWriteHeadProperty;
-        use easyexcel_core::ConverterRegistry;
 
         struct TestCtx;
         impl WriteContext for TestCtx {
@@ -95,8 +95,12 @@ mod tests {
             }
         }
         impl easyexcel_core::WriteContextHolder for TestCtx {
-            fn path(&self) -> &std::path::Path { std::path::Path::new("/tmp/x") }
-            fn holder_type(&self) -> Holder { Holder::Workbook }
+            fn path(&self) -> &std::path::Path {
+                std::path::Path::new("/tmp/x")
+            }
+            fn holder_type(&self) -> Holder {
+                Holder::Workbook
+            }
             fn excel_write_head_property(&self) -> &ExcelWriteHeadProperty {
                 static P: std::sync::OnceLock<ExcelWriteHeadProperty> = std::sync::OnceLock::new();
                 P.get_or_init(ExcelWriteHeadProperty::new)
@@ -105,14 +109,30 @@ mod tests {
                 static R: std::sync::OnceLock<ConverterRegistry> = std::sync::OnceLock::new();
                 R.get_or_init(ConverterRegistry::default)
             }
-            fn need_head(&self) -> bool { true }
-            fn automatic_merge_head(&self) -> bool { true }
-            fn relative_head_row_index(&self) -> i32 { 0 }
-            fn order_by_include_column(&self) -> bool { false }
-            fn include_column_indexes(&self) -> Option<&[usize]> { None }
-            fn include_column_field_names(&self) -> Option<&[String]> { None }
-            fn exclude_column_indexes(&self) -> &[usize] { &[] }
-            fn exclude_column_field_names(&self) -> &[String] { &[] }
+            fn need_head(&self) -> bool {
+                true
+            }
+            fn automatic_merge_head(&self) -> bool {
+                true
+            }
+            fn relative_head_row_index(&self) -> i32 {
+                0
+            }
+            fn order_by_include_column(&self) -> bool {
+                false
+            }
+            fn include_column_indexes(&self) -> Option<&[usize]> {
+                None
+            }
+            fn include_column_field_names(&self) -> Option<&[String]> {
+                None
+            }
+            fn exclude_column_indexes(&self) -> &[usize] {
+                &[]
+            }
+            fn exclude_column_field_names(&self) -> &[String] {
+                &[]
+            }
         }
         let ctx = TestCtx;
         let _ = ctx.current_write_holder();

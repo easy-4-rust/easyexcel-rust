@@ -13,8 +13,7 @@ use easyexcel_core::{
 };
 
 use super::encode::{
-    ICV_AUTO, ICV_PATTERN_BG_DEFAULT, XF_CUSTOM_BASE, XF_DATE, XF_DATETIME, pack_cell_xf,
-    pack_font,
+    ICV_AUTO, ICV_PATTERN_BG_DEFAULT, XF_CUSTOM_BASE, XF_DATE, XF_DATETIME, pack_cell_xf, pack_font,
 };
 
 /// Resolved write-style inputs used when allocating an XF index.

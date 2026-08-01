@@ -185,7 +185,10 @@ impl WriteHandler for SharedWriteHandler {
         self.with_mut(|handler| handler.after_cell_dispose(context))
     }
 
-    fn style_cell_style(&self, context: &WriteCellContext) -> Option<easyexcel_core::ExcelCellStyle> {
+    fn style_cell_style(
+        &self,
+        context: &WriteCellContext,
+    ) -> Option<easyexcel_core::ExcelCellStyle> {
         self.with_ref(|handler| handler.style_cell_style(context))
     }
 
@@ -205,11 +208,15 @@ impl WriteHandler for SharedWriteHandler {
         self.with_ref(|handler| handler.style_auto_column_width())
     }
 
-    fn style_once_absolute_merge(&self) -> Option<easyexcel_core::metadata::property::OnceAbsoluteMergeProperty> {
+    fn style_once_absolute_merge(
+        &self,
+    ) -> Option<easyexcel_core::metadata::property::OnceAbsoluteMergeProperty> {
         self.with_ref(|handler| handler.style_once_absolute_merge())
     }
 
-    fn style_loop_merge(&self) -> Option<(easyexcel_core::metadata::property::LoopMergeProperty, usize)> {
+    fn style_loop_merge(
+        &self,
+    ) -> Option<(easyexcel_core::metadata::property::LoopMergeProperty, usize)> {
         self.with_ref(|handler| handler.style_loop_merge())
     }
 }
@@ -229,7 +236,9 @@ pub(crate) fn boxed_handlers(handlers: &[SharedWriteHandler]) -> Vec<Box<dyn Wri
 }
 
 #[allow(dead_code)]
-pub(crate) fn normalized_shared_handlers(mut handlers: Vec<SharedWriteHandler>) -> Vec<SharedWriteHandler> {
+pub(crate) fn normalized_shared_handlers(
+    mut handlers: Vec<SharedWriteHandler>,
+) -> Vec<SharedWriteHandler> {
     handlers.sort_by_key(SharedWriteHandler::order);
     let mut unique_values = HashSet::new();
     handlers.retain(|handler| {
@@ -413,9 +422,7 @@ mod tests {
             true
         }
 
-        fn style_once_absolute_merge(
-            &self,
-        ) -> Option<OnceAbsoluteMergeProperty> {
+        fn style_once_absolute_merge(&self) -> Option<OnceAbsoluteMergeProperty> {
             Some(OnceAbsoluteMergeProperty {
                 first_row_index: 0,
                 last_row_index: 1,
@@ -438,8 +445,7 @@ mod tests {
     #[test]
     fn shared_handler_forwards_all_callbacks_and_style_queries() {
         let events = Arc::new(Mutex::new(Vec::new()));
-        let mut shared =
-            SharedWriteHandler::new(Box::new(RecordingHandler(Arc::clone(&events))));
+        let mut shared = SharedWriteHandler::new(Box::new(RecordingHandler(Arc::clone(&events))));
 
         let workbook_context = WriteWorkbookContext::new("out.xlsx");
         let sheet_context = WriteSheetContext::new("Sheet1");

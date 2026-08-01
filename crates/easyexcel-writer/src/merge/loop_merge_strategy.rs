@@ -110,5 +110,4 @@ mod tests_extra {
         let context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
         strategy.merge("Sheet1", &context, None, Some(0));
     }
-
 }

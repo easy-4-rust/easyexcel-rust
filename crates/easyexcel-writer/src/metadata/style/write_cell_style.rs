@@ -77,7 +77,10 @@ mod tests {
 
     #[test]
     fn merge_copies_hidden_field() {
-        let source = ExcelCellStyle { hidden: Some(true), ..ExcelCellStyle::new() };
+        let source = ExcelCellStyle {
+            hidden: Some(true),
+            ..ExcelCellStyle::new()
+        };
         let target = ExcelCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.hidden, Some(true));
@@ -85,7 +88,10 @@ mod tests {
 
     #[test]
     fn merge_copies_locked_field() {
-        let source = ExcelCellStyle { locked: Some(true), ..ExcelCellStyle::new() };
+        let source = ExcelCellStyle {
+            locked: Some(true),
+            ..ExcelCellStyle::new()
+        };
         let target = ExcelCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.locked, Some(true));
@@ -93,7 +99,10 @@ mod tests {
 
     #[test]
     fn merge_copies_quote_prefix_field() {
-        let source = ExcelCellStyle { quote_prefix: Some(true), ..ExcelCellStyle::new() };
+        let source = ExcelCellStyle {
+            quote_prefix: Some(true),
+            ..ExcelCellStyle::new()
+        };
         let target = ExcelCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.quote_prefix, Some(true));
@@ -107,12 +116,18 @@ mod tests {
         };
         let target = ExcelCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
-        assert_eq!(merged.horizontal_alignment, Some(ExcelHorizontalAlignment::Center));
+        assert_eq!(
+            merged.horizontal_alignment,
+            Some(ExcelHorizontalAlignment::Center)
+        );
     }
 
     #[test]
     fn merge_copies_wrapped_field() {
-        let source = ExcelCellStyle { wrapped: Some(true), ..ExcelCellStyle::new() };
+        let source = ExcelCellStyle {
+            wrapped: Some(true),
+            ..ExcelCellStyle::new()
+        };
         let target = ExcelCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.wrapped, Some(true));
@@ -126,12 +141,18 @@ mod tests {
         };
         let target = ExcelCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
-        assert_eq!(merged.vertical_alignment, Some(ExcelVerticalAlignment::Center));
+        assert_eq!(
+            merged.vertical_alignment,
+            Some(ExcelVerticalAlignment::Center)
+        );
     }
 
     #[test]
     fn merge_copies_rotation_field() {
-        let source = ExcelCellStyle { rotation: Some(45), ..ExcelCellStyle::new() };
+        let source = ExcelCellStyle {
+            rotation: Some(45),
+            ..ExcelCellStyle::new()
+        };
         let target = ExcelCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.rotation, Some(45));
@@ -139,7 +160,10 @@ mod tests {
 
     #[test]
     fn merge_copies_indent_field() {
-        let source = ExcelCellStyle { indent: Some(2), ..ExcelCellStyle::new() };
+        let source = ExcelCellStyle {
+            indent: Some(2),
+            ..ExcelCellStyle::new()
+        };
         let target = ExcelCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.indent, Some(2));
@@ -196,7 +220,10 @@ mod tests {
 
     #[test]
     fn merge_copies_shrink_to_fit() {
-        let source = ExcelCellStyle { shrink_to_fit: Some(true), ..ExcelCellStyle::new() };
+        let source = ExcelCellStyle {
+            shrink_to_fit: Some(true),
+            ..ExcelCellStyle::new()
+        };
         let target = ExcelCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.shrink_to_fit, Some(true));
@@ -215,8 +242,14 @@ mod tests {
 
     #[test]
     fn merge_copies_font_when_target_has_none() {
-        let source_font = ExcelFontStyle { bold: Some(true), ..ExcelFontStyle::default() };
-        let source = ExcelCellStyle { font: Some(source_font), ..ExcelCellStyle::new() };
+        let source_font = ExcelFontStyle {
+            bold: Some(true),
+            ..ExcelFontStyle::default()
+        };
+        let source = ExcelCellStyle {
+            font: Some(source_font),
+            ..ExcelCellStyle::new()
+        };
         let target = ExcelCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert!(merged.font.is_some());
@@ -225,10 +258,22 @@ mod tests {
 
     #[test]
     fn merge_merges_font_when_target_has_font() {
-        let source_font = ExcelFontStyle { bold: Some(true), ..ExcelFontStyle::default() };
-        let target_font = ExcelFontStyle { italic: Some(true), ..ExcelFontStyle::default() };
-        let source = ExcelCellStyle { font: Some(source_font), ..ExcelCellStyle::new() };
-        let target = ExcelCellStyle { font: Some(target_font), ..ExcelCellStyle::new() };
+        let source_font = ExcelFontStyle {
+            bold: Some(true),
+            ..ExcelFontStyle::default()
+        };
+        let target_font = ExcelFontStyle {
+            italic: Some(true),
+            ..ExcelFontStyle::default()
+        };
+        let source = ExcelCellStyle {
+            font: Some(source_font),
+            ..ExcelCellStyle::new()
+        };
+        let target = ExcelCellStyle {
+            font: Some(target_font),
+            ..ExcelCellStyle::new()
+        };
         let merged = merge_write_cell_style(&source, target);
         let font = merged.font.unwrap();
         assert_eq!(font.bold, Some(true));
@@ -237,8 +282,14 @@ mod tests {
 
     #[test]
     fn merge_overwrites_target_when_source_has_value() {
-        let source = ExcelCellStyle { hidden: Some(true), ..ExcelCellStyle::new() };
-        let target = ExcelCellStyle { hidden: Some(false), ..ExcelCellStyle::new() };
+        let source = ExcelCellStyle {
+            hidden: Some(true),
+            ..ExcelCellStyle::new()
+        };
+        let target = ExcelCellStyle {
+            hidden: Some(false),
+            ..ExcelCellStyle::new()
+        };
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.hidden, Some(true));
     }
@@ -246,7 +297,10 @@ mod tests {
     #[test]
     fn merge_preserves_target_when_source_field_is_none() {
         let source = ExcelCellStyle::new();
-        let target = ExcelCellStyle { hidden: Some(true), ..ExcelCellStyle::new() };
+        let target = ExcelCellStyle {
+            hidden: Some(true),
+            ..ExcelCellStyle::new()
+        };
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.hidden, Some(true));
     }

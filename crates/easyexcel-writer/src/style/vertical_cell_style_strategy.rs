@@ -115,10 +115,8 @@ mod tests {
 
     #[test]
     fn vertical_strategy_new_closure() {
-        let s = VerticalCellStyleStrategy::new(
-            |_| ExcelCellStyle::new(),
-            |_| ExcelCellStyle::new(),
-        );
+        let s =
+            VerticalCellStyleStrategy::new(|_| ExcelCellStyle::new(), |_| ExcelCellStyle::new());
         let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
         context.is_head = true;
         let _ = s.cell_style(&context);
@@ -128,10 +126,7 @@ mod tests {
 
     #[test]
     fn vertical_strategy_uniform() {
-        let s = VerticalCellStyleStrategy::uniform(
-            ExcelCellStyle::new(),
-            ExcelCellStyle::new(),
-        );
+        let s = VerticalCellStyleStrategy::uniform(ExcelCellStyle::new(), ExcelCellStyle::new());
         let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
         context.is_head = false;
         let _ = s.cell_style(&context);
@@ -165,19 +160,13 @@ mod tests {
 
     #[test]
     fn vertical_strategy_order_is_50_000() {
-        let s = VerticalCellStyleStrategy::uniform(
-            ExcelCellStyle::new(),
-            ExcelCellStyle::new(),
-        );
+        let s = VerticalCellStyleStrategy::uniform(ExcelCellStyle::new(), ExcelCellStyle::new());
         assert_eq!(s.order(), 50_000);
     }
 
     #[test]
     fn vertical_strategy_style_cell_style_head() {
-        let s = VerticalCellStyleStrategy::uniform(
-            ExcelCellStyle::new(),
-            ExcelCellStyle::new(),
-        );
+        let s = VerticalCellStyleStrategy::uniform(ExcelCellStyle::new(), ExcelCellStyle::new());
         let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
         context.is_head = true;
         let style = s.style_cell_style(&context);
@@ -186,10 +175,7 @@ mod tests {
 
     #[test]
     fn vertical_strategy_style_cell_style_content() {
-        let s = VerticalCellStyleStrategy::uniform(
-            ExcelCellStyle::new(),
-            ExcelCellStyle::new(),
-        );
+        let s = VerticalCellStyleStrategy::uniform(ExcelCellStyle::new(), ExcelCellStyle::new());
         let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
         context.is_head = false;
         let style = s.style_cell_style(&context);
@@ -198,20 +184,14 @@ mod tests {
 
     #[test]
     fn vertical_strategy_head_cell_style() {
-        let s = VerticalCellStyleStrategy::uniform(
-            ExcelCellStyle::new(),
-            ExcelCellStyle::new(),
-        );
+        let s = VerticalCellStyleStrategy::uniform(ExcelCellStyle::new(), ExcelCellStyle::new());
         let context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
         let _ = AbstractVerticalCellStyleStrategy::head_cell_style(&s, &context);
     }
 
     #[test]
     fn vertical_strategy_content_cell_style() {
-        let s = VerticalCellStyleStrategy::uniform(
-            ExcelCellStyle::new(),
-            ExcelCellStyle::new(),
-        );
+        let s = VerticalCellStyleStrategy::uniform(ExcelCellStyle::new(), ExcelCellStyle::new());
         let context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
         let _ = AbstractVerticalCellStyleStrategy::content_cell_style(&s, &context);
     }
@@ -225,15 +205,12 @@ mod tests_extra {
 
     #[test]
     fn vertical_strategy_content_closure_applies() {
-        let s = VerticalCellStyleStrategy::new(
-            |_| ExcelCellStyle::new(),
-            |_| ExcelCellStyle::new(),
-        );
+        let s =
+            VerticalCellStyleStrategy::new(|_| ExcelCellStyle::new(), |_| ExcelCellStyle::new());
         let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
         context.is_head = false;
         let _ = s.cell_style(&context);
         context.is_head = true;
         let _ = s.cell_style(&context);
     }
-
 }

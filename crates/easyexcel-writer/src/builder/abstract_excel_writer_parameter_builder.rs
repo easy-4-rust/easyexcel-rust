@@ -223,7 +223,10 @@ mod tests {
             handlers: vec![],
         };
         b.exclude_column_field_names(vec!["a".to_owned(), "b".to_owned()]);
-        assert_eq!(b.param.exclude_column_field_names, Some(vec!["a".to_owned(), "b".to_owned()]));
+        assert_eq!(
+            b.param.exclude_column_field_names,
+            Some(vec!["a".to_owned(), "b".to_owned()])
+        );
     }
 
     #[test]
@@ -233,7 +236,10 @@ mod tests {
             handlers: vec![],
         };
         b.exclude_column_filed_names(vec!["c".to_owned()]);
-        assert_eq!(b.param.exclude_column_field_names, Some(vec!["c".to_owned()]));
+        assert_eq!(
+            b.param.exclude_column_field_names,
+            Some(vec!["c".to_owned()])
+        );
     }
 
     #[test]
@@ -253,7 +259,10 @@ mod tests {
             handlers: vec![],
         };
         b.include_column_field_names(vec!["x".to_owned()]);
-        assert_eq!(b.param.include_column_field_names, Some(vec!["x".to_owned()]));
+        assert_eq!(
+            b.param.include_column_field_names,
+            Some(vec!["x".to_owned()])
+        );
     }
 
     #[test]
@@ -263,7 +272,10 @@ mod tests {
             handlers: vec![],
         };
         b.include_column_filed_names(vec!["y".to_owned()]);
-        assert_eq!(b.param.include_column_field_names, Some(vec!["y".to_owned()]));
+        assert_eq!(
+            b.param.include_column_field_names,
+            Some(vec!["y".to_owned()])
+        );
     }
 
     #[test]
@@ -271,7 +283,9 @@ mod tests {
         /// Minimal no-op WriteHandler used to test handler registration.
         struct NoopHandler;
         impl WriteHandler for NoopHandler {
-            fn order(&self) -> i32 { 0 }
+            fn order(&self) -> i32 {
+                0
+            }
         }
         let mut b = TestParamBuilder {
             param: WriteBasicParameter::default(),

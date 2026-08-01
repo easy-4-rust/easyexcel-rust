@@ -420,8 +420,8 @@ mod tests {
 mod tests_extra {
     use super::*;
 
-    use easyexcel_core::ExcelWriteMetadata;
     use crate::holder::write_holder::WriteHolder;
+    use easyexcel_core::ExcelWriteMetadata;
 
     #[test]
     fn resolve_head_and_write_holder_getters_are_covered() {
@@ -441,5 +441,4 @@ mod tests_extra {
         excluded.exclude_column_indexes = Some(HashSet::from([7]));
         assert!(excluded.ignore(None, Some(7)));
     }
-
 }

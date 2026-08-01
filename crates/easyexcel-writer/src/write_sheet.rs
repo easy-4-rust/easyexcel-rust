@@ -5,13 +5,11 @@
 
 use std::marker::PhantomData;
 
-use easyexcel_core::{
-    Converter, NullableObjectConverter,
-};
+use easyexcel_core::{Converter, NullableObjectConverter};
 
 use crate::cell_style::CellStyle;
-use crate::merge_range::MergeRange;
 use crate::merge::loop_merge_strategy::LoopMergeStrategy;
+use crate::merge_range::MergeRange;
 use crate::write_options::WriteOptions;
 
 /// 用于 [`ExcelWriter`] 的工作表元数据。
@@ -211,5 +209,4 @@ mod tests {
         assert_eq!(sheet.options().sheet_name, "S");
         assert_eq!(sheet.options().excel_type, None);
     }
-
 }

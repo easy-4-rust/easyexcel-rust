@@ -137,8 +137,8 @@ fn byte_len(text: &str) -> Option<u16> {
 mod tests {
     use super::*;
 
-    use easyexcel_core::{CellValue, WriteCellContext, WriteHandler};
     use chrono::NaiveDate;
+    use easyexcel_core::{CellValue, WriteCellContext, WriteHandler};
 
     fn context(value: CellValue, is_head: bool) -> WriteCellContext {
         let mut context = WriteCellContext::new("S", 0, 0, value);
@@ -160,34 +160,28 @@ mod tests {
             .after_cell(&context(CellValue::Int(12345), false))
             .unwrap();
         strategy
-            .after_cell(
-                &context(
-                    CellValue::Date(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()),
-                    false,
-                ),
-            )
+            .after_cell(&context(
+                CellValue::Date(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()),
+                false,
+            ))
             .unwrap();
         strategy
-            .after_cell(
-                &context(
-                    CellValue::Comment {
-                        value: Box::new(CellValue::String("note".to_owned())),
-                        text: "note".to_owned(),
-                    },
-                    false,
-                ),
-            )
+            .after_cell(&context(
+                CellValue::Comment {
+                    value: Box::new(CellValue::String("note".to_owned())),
+                    text: "note".to_owned(),
+                },
+                false,
+            ))
             .unwrap();
         strategy
-            .after_cell(
-                &context(
-                    CellValue::Images {
-                        value: Box::new(CellValue::Int(1)),
-                        images: Vec::new(),
-                    },
-                    false,
-                ),
-            )
+            .after_cell(&context(
+                CellValue::Images {
+                    value: Box::new(CellValue::Int(1)),
+                    images: Vec::new(),
+                },
+                false,
+            ))
             .unwrap();
         strategy
             .after_cell(&context(CellValue::Empty, true))
@@ -219,5 +213,4 @@ mod tests {
         assert_eq!(strategy.order(), -50_000);
         assert_eq!(strategy.style_column_width(99), None);
     }
-
 }

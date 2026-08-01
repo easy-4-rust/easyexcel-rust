@@ -167,5 +167,4 @@ mod tests_extra {
             .expect("short stream must fail");
         assert_eq!(error, "decrypted BIFF8 stream too short");
     }
-
 }

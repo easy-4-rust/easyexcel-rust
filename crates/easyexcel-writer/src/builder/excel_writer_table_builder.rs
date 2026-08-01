@@ -481,7 +481,10 @@ mod tests {
             .need_head(false)
             .do_write(vec![TableRow("alice")])?;
 
-        let mut workbook: Xlsx<_> = open_workbook(&output).map_err(|error: calamine::XlsxError| easyexcel_core::ExcelError::Format(error.to_string()))?;
+        let mut workbook: Xlsx<_> =
+            open_workbook(&output).map_err(|error: calamine::XlsxError| {
+                easyexcel_core::ExcelError::Format(error.to_string())
+            })?;
         let range = workbook
             .worksheet_range("Users")
             .map_err(|error| easyexcel_core::ExcelError::Format(error.to_string()))?;
@@ -585,10 +588,7 @@ mod tests {
             .do_write(vec![TableRow("alice")])
             .err()
             .expect("writing through a finished writer must fail");
-        assert!(matches!(
-            error,
-            easyexcel_core::ExcelError::Unsupported(_)
-        ));
+        assert!(matches!(error, easyexcel_core::ExcelError::Unsupported(_)));
     }
 
     #[test]
@@ -616,7 +616,10 @@ mod tests {
             .need_head(false)
             .do_write_with(|| vec![TableRow("bob")])?;
 
-        let mut workbook: Xlsx<_> = open_workbook(&output).map_err(|error: calamine::XlsxError| easyexcel_core::ExcelError::Format(error.to_string()))?;
+        let mut workbook: Xlsx<_> =
+            open_workbook(&output).map_err(|error: calamine::XlsxError| {
+                easyexcel_core::ExcelError::Format(error.to_string())
+            })?;
         let range = workbook
             .worksheet_range("Users")
             .map_err(|error| easyexcel_core::ExcelError::Format(error.to_string()))?;
@@ -672,8 +675,7 @@ mod tests {
 
     #[test]
     fn table_row_helper_supports_from_row() -> easyexcel_core::Result<()> {
-        let headers =
-            std::sync::Arc::new(std::collections::HashMap::<String, usize>::new());
+        let headers = std::sync::Arc::new(std::collections::HashMap::<String, usize>::new());
         let row = RowData::new(
             "Users",
             0,

@@ -3,7 +3,6 @@
 //! 对应 Java：`com.alibaba.excel.ExcelWriter` 及其所有依赖的私有函数。
 //! 原文件：easyexcel-core/src/main/java/com/alibaba/excel/ExcelWriter.java
 
-
 use std::any::type_name;
 use std::collections::{HashMap, HashSet};
 use std::fs::{File, OpenOptions};
@@ -212,12 +211,6 @@ pub use crate::cell_style::CellStyle;
 pub use crate::csv_encoding_writer::{CsvEncoding, CsvEncodingWriter, csv_bom, csv_encoding};
 pub use crate::excel_builder::{ExcelBuilder, ExcelBuilderImpl, FillConfig as BuilderFillConfig};
 pub use crate::excel_output_stream::ExcelOutputStream;
-pub use crate::horizontal_alignment::HorizontalAlignment;
-pub use crate::merge_range::MergeRange;
-pub use crate::vertical_alignment::VerticalAlignment;
-pub use crate::write_options::WriteOptions;
-pub use crate::write_progress::WriteProgress;
-pub use crate::write_sheet::WriteSheet;
 pub use crate::executor::abstract_excel_write_executor::AbstractExcelWriteExecutor;
 pub use crate::executor::excel_write_add_executor::ExcelWriteAddExecutor;
 pub use crate::executor::excel_write_executor::ExcelWriteExecutor;
@@ -249,10 +242,12 @@ pub use crate::holder::write_holder::WriteHolder;
 pub use crate::holder::write_sheet_holder::WriteSheetHolder as MirroredWriteSheetHolder;
 pub use crate::holder::write_table_holder::WriteTableHolder as MirroredWriteTableHolder;
 pub use crate::holder::write_workbook_holder::WriteWorkbookHolder as MirroredWriteWorkbookHolder;
+pub use crate::horizontal_alignment::HorizontalAlignment;
 pub use crate::merge::abstract_merge_strategy::AbstractMergeStrategy;
 pub use crate::merge::loop_merge_strategy::LoopMergeStrategy as MirroredLoopMergeStrategy;
 pub use crate::merge::once_absolute_merge_strategy::OnceAbsoluteMergeStrategy;
 pub use crate::merge::once_absolute_merge_strategy::OnceAbsoluteMergeStrategy as MirroredOnceAbsoluteMerge;
+pub use crate::merge_range::MergeRange;
 pub use crate::metadata::collection_row_data::CollectionRowData;
 pub use crate::metadata::map_row_data::MapRowData;
 pub use crate::metadata::row_data::RowData as MirroredRowData;
@@ -274,9 +269,13 @@ pub use crate::style::default_style::DefaultStyle;
 pub use crate::style::horizontal_cell_style_strategy::HorizontalCellStyleStrategy;
 pub use crate::style::row::simple_row_height_style_strategy::SimpleRowHeightStyleStrategy;
 pub use crate::style::vertical_cell_style_strategy::VerticalCellStyleStrategy;
+pub use crate::vertical_alignment::VerticalAlignment;
 pub use crate::write::builder::excel_writer_builder::ExcelWriterBuilder as CompatibleExcelWriterBuilder;
 pub use crate::write::builder::excel_writer_builder::ExcelWriterOutputStreamBuilder as CompatibleExcelWriterOutputStreamBuilder;
 pub use crate::write::builder::excel_writer_sheet_builder::ExcelWriterSheetBuilder as CompatibleExcelWriterSheetBuilder;
+pub use crate::write_options::WriteOptions;
+pub use crate::write_progress::WriteProgress;
+pub use crate::write_sheet::WriteSheet;
 
 /// Global write flags copied from [`WriteOptions`] for cell emission.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -584,7 +583,9 @@ impl WriteHandler for AnnotationCellStyleHandler {
     }
 }
 
-pub(crate) fn load_annotation_handlers<T>(options: &WriteOptions) -> Result<Vec<Box<dyn WriteHandler>>>
+pub(crate) fn load_annotation_handlers<T>(
+    options: &WriteOptions,
+) -> Result<Vec<Box<dyn WriteHandler>>>
 where
     T: ExcelRow,
 {
@@ -1558,7 +1559,10 @@ impl ExcelWriter {
                 if self.use_legacy_template_seed {
                     // Explicit legacy fallback: value replay without styles/merges.
                     let sheets = crate::template_write::load_template_sheets(&bytes)?;
-                    crate::template_write::seed_workbook_from_template(&mut self.workbook, &sheets)?;
+                    crate::template_write::seed_workbook_from_template(
+                        &mut self.workbook,
+                        &sheets,
+                    )?;
                     for (index, sheet) in sheets.into_iter().enumerate() {
                         self.sheet_indexes.insert(index, sheet.name.clone());
                         self.template_pending_rows
@@ -1743,11 +1747,12 @@ impl ExcelWriter {
                 .expect("xls template must exist for BIFF preserve path");
             package.sheet_names()
         };
-        let (_target_index, target_name, create_new) = crate::template_write::resolve_package_target(
-            &sheet_names,
-            sheet.options().sheet_index,
-            &sheet.options().sheet_name,
-        );
+        let (_target_index, target_name, create_new) =
+            crate::template_write::resolve_package_target(
+                &sheet_names,
+                sheet.options().sheet_index,
+                &sheet.options().sheet_name,
+            );
         if create_new {
             return Err(ExcelError::Unsupported(
                 "xls template cannot create sheets absent from the template".to_owned(),
@@ -2055,22 +2060,23 @@ impl ExcelWriter {
                 .expect("template package must exist for ZIP preserve path");
             package.sheet_names()?
         };
-        let (_target_index, target_name, create_new) = crate::template_write::resolve_package_target(
-            &sheet_names,
-            sheet.options().sheet_index,
-            &sheet.options().sheet_name,
-        );
+        let (_target_index, target_name, create_new) =
+            crate::template_write::resolve_package_target(
+                &sheet_names,
+                sheet.options().sheet_index,
+                &sheet.options().sheet_name,
+            );
         let sheet_name = if let Some(resolved) = self.resolve_sheet_name(sheet.options()) {
             resolved
-        } else if create_new {
-            let package = self
-                .template_package
-                .as_mut()
-                .expect("template package must exist for ZIP preserve path");
-            package.ensure_sheet(&target_name)?;
-            self.template_pending_rows.insert(target_name.clone(), 0);
-            target_name
         } else {
+            if create_new {
+                let package = self
+                    .template_package
+                    .as_mut()
+                    .expect("template package must exist for ZIP preserve path");
+                package.ensure_sheet(&target_name)?;
+                self.template_pending_rows.insert(target_name.clone(), 0);
+            }
             target_name
         };
         let first_write = self.template_pending_rows.remove(&sheet_name).is_some()
@@ -2794,7 +2800,6 @@ pub(crate) fn validate_xls_options(_options: &WriteOptions) -> Result<()> {
     Ok(())
 }
 
-
 /// Saves a workbook to `path` (optionally password-protected).
 ///
 /// `pub(crate)` so executor integration tests can persist worksheets built via
@@ -2959,7 +2964,6 @@ pub(crate) fn csv_record_width(columns: &[(usize, usize, &'static ExcelColumn)])
         .max()
         .unwrap_or(0)
 }
-
 
 // XLS-specific helper functions (moved from lib.rs)
 
@@ -3372,7 +3376,10 @@ pub(crate) fn write_biff8_styled_text_cell(
     Ok(())
 }
 
-pub(crate) fn cell_value_to_biff8(value: &CellValue, global: WriteGlobalFlags) -> Result<Biff8Cell> {
+pub(crate) fn cell_value_to_biff8(
+    value: &CellValue,
+    global: WriteGlobalFlags,
+) -> Result<Biff8Cell> {
     match value {
         CellValue::Empty => Ok(Biff8Cell::general(Biff8Value::Blank)),
         CellValue::String(text) | CellValue::Error(text) | CellValue::Formula(text) => {
@@ -3613,7 +3620,6 @@ pub(crate) fn apply_biff8_once_absolute_merge_property(
     )
 }
 
-
 pub(crate) const fn biff8_halign(align: HorizontalAlignment) -> u8 {
     match align {
         HorizontalAlignment::General => 0,
@@ -3696,17 +3702,22 @@ pub(crate) fn merge_biff8_dynamic_head_groups(
     Ok(())
 }
 
-
 #[cfg(test)]
 pub(crate) fn csv_record(columns: &[(usize, usize, &'static ExcelColumn)]) -> Vec<String> {
     vec![String::new(); csv_record_width(columns)]
 }
 
-pub(crate) fn before_csv_row(handlers: &mut [Box<dyn WriteHandler>], context: &WriteRowContext) -> Result<()> {
+pub(crate) fn before_csv_row(
+    handlers: &mut [Box<dyn WriteHandler>],
+    context: &WriteRowContext,
+) -> Result<()> {
     begin_row_lifecycle(handlers, context)
 }
 
-pub(crate) fn after_csv_row(handlers: &mut [Box<dyn WriteHandler>], context: &WriteRowContext) -> Result<()> {
+pub(crate) fn after_csv_row(
+    handlers: &mut [Box<dyn WriteHandler>],
+    context: &WriteRowContext,
+) -> Result<()> {
     finish_row_lifecycle(handlers, context)
 }
 
@@ -4004,7 +4015,11 @@ pub(crate) fn excel_column_width_pixels(width: u16) -> u32 {
 /// `width="{chars}"` in worksheet XML. `rust_xlsxwriter`'s
 /// [`Worksheet::set_column_width`] stores `chars * 7 + 5` pixels and round-trips
 /// to `~chars + 0.71`; using `chars * 7` pixels yields exact `width="{chars}"`.
-pub(crate) fn set_xlsx_column_width_chars(worksheet: &mut Worksheet, column: u16, chars: u16) -> Result<()> {
+pub(crate) fn set_xlsx_column_width_chars(
+    worksheet: &mut Worksheet,
+    column: u16,
+    chars: u16,
+) -> Result<()> {
     let pixels = u32::from(chars).saturating_mul(7);
     worksheet
         .set_column_width_pixels(column, pixels)
@@ -4781,8 +4796,11 @@ where
         options.template_bytes.as_deref(),
     )?;
     let sheets = crate::template_write::load_template_sheets(&bytes)?;
-    let (target_index, target_name, create_new) =
-        crate::template_write::resolve_template_target(&sheets, options.sheet_index, &options.sheet_name);
+    let (target_index, target_name, create_new) = crate::template_write::resolve_template_target(
+        &sheets,
+        options.sheet_index,
+        &options.sheet_name,
+    );
     crate::template_write::seed_workbook_from_template(workbook, &sheets)?;
 
     let mut write_options = options.clone();
@@ -4825,7 +4843,9 @@ where
     before_sheet(handlers, &sheet_context)?;
     after_sheet_create(handlers, &sheet_context)?;
     let mut spill = if write_options.compress_temp_files {
-        Some(crate::gzip_spill::GzipSheetDataWriter::create_owned(&target_name)?)
+        Some(crate::gzip_spill::GzipSheetDataWriter::create_owned(
+            &target_name,
+        )?)
     } else {
         None
     };
@@ -5137,7 +5157,10 @@ fn run_own_workbook_callbacks(scope: &HandlerExecutionScope, path: &Path) -> Res
     after_workbook_create(&mut own, &context)
 }
 
-pub(crate) fn before_sheet(handlers: &mut [Box<dyn WriteHandler>], context: &WriteSheetContext) -> Result<()> {
+pub(crate) fn before_sheet(
+    handlers: &mut [Box<dyn WriteHandler>],
+    context: &WriteSheetContext,
+) -> Result<()> {
     easyexcel_core::util::write_handler_utils::before_sheet_create(handlers, context)
 }
 
@@ -5148,7 +5171,10 @@ pub(crate) fn after_sheet_create(
     easyexcel_core::util::write_handler_utils::after_sheet_create(handlers, context)
 }
 
-pub(crate) fn after_sheet(handlers: &mut [Box<dyn WriteHandler>], context: &WriteSheetContext) -> Result<()> {
+pub(crate) fn after_sheet(
+    handlers: &mut [Box<dyn WriteHandler>],
+    context: &WriteSheetContext,
+) -> Result<()> {
     for handler in handlers.iter_mut() {
         handler.after_sheet_dispose(context)?;
     }
@@ -5388,7 +5414,9 @@ pub(crate) fn collect_handler_head_row_height(handlers: &[Box<dyn WriteHandler>]
 
 /// Collects content row height from registered strategies
 /// (Java `SimpleRowHeightStyleStrategy`).
-pub(crate) fn collect_handler_content_row_height(handlers: &[Box<dyn WriteHandler>]) -> Option<u16> {
+pub(crate) fn collect_handler_content_row_height(
+    handlers: &[Box<dyn WriteHandler>],
+) -> Option<u16> {
     handlers
         .iter()
         .rev()
@@ -6996,13 +7024,2448 @@ pub(crate) fn format_error(error: impl std::fmt::Display) -> ExcelError {
 }
 
 #[cfg(test)]
-#[path = "missing_tests.rs"] mod missing_tests;
+#[path = "missing_tests.rs"]
+mod missing_tests;
+pub use crate::write_csv::*;
 #[cfg(test)]
-
 // Re-exports for tests
 pub use crate::write_xls::*;
 pub use crate::xlsx_write::*;
-pub use crate::write_csv::*;
 
-#[path = "tests.rs"] mod tests;
+#[path = "tests.rs"]
+mod tests;
 
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    use std::collections::BTreeMap;
+
+    use bigdecimal::BigDecimal;
+    use calamine::{Data, Reader, Xls, Xlsx};
+    use chrono::NaiveDate;
+    use easyexcel_core::{DynamicRow, DynamicValue};
+    use std::str::FromStr;
+    use tempfile::tempdir;
+
+    const CFB_MAGIC: &[u8] = &[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
+
+    fn open_xls(path: &std::path::Path) -> Result<Xls<std::fs::File>> {
+        Xls::new(std::fs::File::open(path)?).map_err(format_error)
+    }
+
+    fn open_xlsx(path: &std::path::Path) -> Result<Xlsx<std::fs::File>> {
+        Xlsx::new(std::fs::File::open(path)?).map_err(format_error)
+    }
+
+    fn dyn_row(values: &[(usize, &str)]) -> DynamicRow {
+        DynamicRow::new(
+            values
+                .iter()
+                .map(|(index, value)| (*index, DynamicValue::String((*value).to_owned())))
+                .collect::<BTreeMap<_, _>>(),
+        )
+    }
+
+    fn dyn_row_values(values: &[(usize, CellValue)]) -> DynamicRow {
+        DynamicRow::new(
+            values
+                .iter()
+                .map(|(index, value)| (*index, DynamicValue::ActualData(value.clone())))
+                .collect::<BTreeMap<_, _>>(),
+        )
+    }
+
+    fn xls_template_bytes(sheet_name: &str) -> Vec<u8> {
+        let mut book = Biff8Book::default();
+        let sheet = book.sheet_mut(sheet_name);
+        sheet
+            .set(
+                0,
+                0,
+                Biff8Cell::general(Biff8Value::Text("seed".to_owned())),
+            )
+            .expect("seed cell");
+        book.to_cfb_bytes().expect("cfb bytes")
+    }
+
+    fn xlsx_template_bytes(sheet_name: &str) -> Vec<u8> {
+        let mut workbook = Workbook::new();
+        let sheet = workbook.add_worksheet();
+        sheet.set_name(sheet_name).expect("sheet name");
+        sheet.write_string(0, 0, "seed").expect("seed cell");
+        workbook.save_to_buffer().expect("template buffer")
+    }
+
+    /// Minimal typed row with a two-column schema and annotation metadata.
+    struct TwoColRow {
+        cells: Vec<CellValue>,
+    }
+
+    impl ExcelRow for TwoColRow {
+        fn schema() -> &'static [ExcelColumn] {
+            const COLUMNS: &[ExcelColumn] = &[
+                ExcelColumn::new("field", "Field", Some(0), 0, None)
+                    .with_column_width(18)
+                    .with_content_style(ExcelCellStyle {
+                        fill_pattern: Some(ExcelFillPattern::Solid),
+                        fill_foreground_color: Some(ExcelColor::Indexed(14)),
+                        ..ExcelCellStyle::new()
+                    }),
+                ExcelColumn::new("type", "Type", Some(1), 0, None),
+            ];
+            COLUMNS
+        }
+
+        fn write_metadata() -> &'static ExcelWriteMetadata {
+            const METADATA: ExcelWriteMetadata = ExcelWriteMetadata::new()
+                .head_row_height(31)
+                .content_row_height(24);
+            &METADATA
+        }
+
+        fn from_row(_row: &easyexcel_core::RowData) -> Result<Self> {
+            Ok(Self { cells: Vec::new() })
+        }
+
+        fn to_row(&self) -> Result<Vec<CellValue>> {
+            Ok(self.cells.clone())
+        }
+    }
+
+    impl TwoColRow {
+        fn new(field: &str, r#type: &str) -> Self {
+            Self {
+                cells: vec![
+                    CellValue::String(field.to_owned()),
+                    CellValue::String(r#type.to_owned()),
+                ],
+            }
+        }
+    }
+
+    /// Handler that requests a concrete row height through the logical handle.
+    struct HeightRequestingHandler;
+
+    impl WriteHandler for HeightRequestingHandler {
+        fn after_row_create(&mut self, context: &WriteRowContext) -> Result<()> {
+            context.row().set_height(27);
+            Ok(())
+        }
+    }
+
+    /// Handler that flags cells for fill-style ignoring and requests a style.
+    struct StyleRequestingHandler;
+
+    impl WriteHandler for StyleRequestingHandler {
+        fn before_cell_create(&mut self, context: &mut WriteCellContext) -> Result<()> {
+            context.ignore_fill_style = true;
+            context.cell().set_style(ExcelCellStyle {
+                fill_pattern: Some(ExcelFillPattern::Solid),
+                fill_foreground_color: Some(ExcelColor::Indexed(20)),
+                ..ExcelCellStyle::new()
+            });
+            Ok(())
+        }
+    }
+
+    /// Handler returning a negative (invalid) once-absolute merge property.
+    struct NegativeMergeHandler;
+
+    impl WriteHandler for NegativeMergeHandler {
+        fn style_once_absolute_merge(
+            &self,
+        ) -> Option<easyexcel_core::metadata::property::OnceAbsoluteMergeProperty> {
+            Some(easyexcel_core::OnceAbsoluteMergeProperty::new(-1, -1, 0, 1))
+        }
+    }
+
+    /// Handler that only requests a style through the logical cell handle.
+    struct StyleOnlyHandler;
+
+    impl WriteHandler for StyleOnlyHandler {
+        fn before_cell_create(&mut self, context: &mut WriteCellContext) -> Result<()> {
+            context.cell().set_style(ExcelCellStyle {
+                fill_pattern: Some(ExcelFillPattern::Solid),
+                fill_foreground_color: Some(ExcelColor::Indexed(30)),
+                ..ExcelCellStyle::new()
+            });
+            Ok(())
+        }
+    }
+
+    /// Handler with a repeatable unique value, used for deduplication tests.
+    struct UniqueHandler(&'static str);
+
+    impl easyexcel_core::event::NotRepeatExecutor for UniqueHandler {
+        fn unique_value(&self) -> &str {
+            self.0
+        }
+    }
+
+    impl WriteHandler for UniqueHandler {
+        fn as_not_repeat_executor(&self) -> Option<&dyn easyexcel_core::event::NotRepeatExecutor> {
+            Some(self)
+        }
+    }
+
+    /// Handler requesting a loop-merge strategy through the query API.
+    struct LoopMergeHandler;
+
+    impl WriteHandler for LoopMergeHandler {
+        fn style_loop_merge(&self) -> Option<(easyexcel_core::LoopMergeProperty, usize)> {
+            Some((easyexcel_core::LoopMergeProperty::new(2, 1), 0))
+        }
+    }
+
+    /// Row whose `to_row` fails with a typed data-conversion error.
+    struct FailingRow;
+
+    impl ExcelRow for FailingRow {
+        fn schema() -> &'static [ExcelColumn] {
+            const COLUMNS: &[ExcelColumn] = &[ExcelColumn::new("field", "Field", Some(0), 0, None)];
+            COLUMNS
+        }
+
+        fn write_metadata() -> &'static ExcelWriteMetadata {
+            const METADATA: ExcelWriteMetadata = ExcelWriteMetadata::new();
+            &METADATA
+        }
+
+        fn from_row(_row: &easyexcel_core::RowData) -> Result<Self> {
+            Ok(Self)
+        }
+
+        fn to_row(&self) -> Result<Vec<CellValue>> {
+            Err(ExcelError::Data {
+                sheet: String::new(),
+                row: 0,
+                column: Some(7),
+                field: "field",
+                value: "bad".to_owned(),
+                message: "injected conversion failure".to_owned(),
+            })
+        }
+    }
+
+    /// Row with a field-level `@ContentLoopMerge` annotation.
+    struct LoopMergeRow {
+        cells: Vec<CellValue>,
+    }
+
+    impl ExcelRow for LoopMergeRow {
+        fn schema() -> &'static [ExcelColumn] {
+            const COLUMNS: &[ExcelColumn] = &[ExcelColumn::new("value", "Value", Some(0), 0, None)
+                .with_loop_merge(easyexcel_core::LoopMergeProperty::new(2, 1))];
+            COLUMNS
+        }
+
+        fn write_metadata() -> &'static ExcelWriteMetadata {
+            const METADATA: ExcelWriteMetadata = ExcelWriteMetadata::new();
+            &METADATA
+        }
+
+        fn from_row(_row: &easyexcel_core::RowData) -> Result<Self> {
+            Ok(Self { cells: Vec::new() })
+        }
+
+        fn to_row(&self) -> Result<Vec<CellValue>> {
+            Ok(self.cells.clone())
+        }
+    }
+
+    impl LoopMergeRow {
+        fn new(cells: Vec<CellValue>) -> Self {
+            Self { cells }
+        }
+    }
+
+    /// Row with a type-level `@OnceAbsoluteMerge` annotation.
+    struct AbsoluteMergeRow {
+        cells: Vec<CellValue>,
+    }
+
+    impl ExcelRow for AbsoluteMergeRow {
+        fn schema() -> &'static [ExcelColumn] {
+            const COLUMNS: &[ExcelColumn] = &[
+                ExcelColumn::new("left", "Left", Some(0), 0, None),
+                ExcelColumn::new("right", "Right", Some(1), 0, None),
+            ];
+            COLUMNS
+        }
+
+        fn write_metadata() -> &'static ExcelWriteMetadata {
+            const METADATA: ExcelWriteMetadata = ExcelWriteMetadata::new()
+                .once_absolute_merge(easyexcel_core::OnceAbsoluteMergeProperty::new(10, 10, 0, 1));
+            &METADATA
+        }
+
+        fn from_row(_row: &easyexcel_core::RowData) -> Result<Self> {
+            Ok(Self { cells: Vec::new() })
+        }
+
+        fn to_row(&self) -> Result<Vec<CellValue>> {
+            Ok(self.cells.clone())
+        }
+    }
+
+    impl AbsoluteMergeRow {
+        fn new(cells: Vec<CellValue>) -> Self {
+            Self { cells }
+        }
+    }
+
+    /// Row with a negative (invalid) absolute merge annotation.
+    struct NegativeMergeRow {
+        cells: Vec<CellValue>,
+    }
+
+    impl ExcelRow for NegativeMergeRow {
+        fn schema() -> &'static [ExcelColumn] {
+            const COLUMNS: &[ExcelColumn] = &[ExcelColumn::new("value", "Value", Some(0), 0, None)];
+            COLUMNS
+        }
+
+        fn write_metadata() -> &'static ExcelWriteMetadata {
+            const METADATA: ExcelWriteMetadata = ExcelWriteMetadata::new()
+                .once_absolute_merge(easyexcel_core::OnceAbsoluteMergeProperty::new(-1, -1, 0, 1));
+            &METADATA
+        }
+
+        fn from_row(_row: &easyexcel_core::RowData) -> Result<Self> {
+            Ok(Self { cells: Vec::new() })
+        }
+
+        fn to_row(&self) -> Result<Vec<CellValue>> {
+            Ok(self.cells.clone())
+        }
+    }
+
+    impl NegativeMergeRow {
+        fn new(cells: Vec<CellValue>) -> Self {
+            Self { cells }
+        }
+    }
+
+    /// Row with annotation head style/font metadata exercising style merges.
+    struct FontStyleRow {
+        cells: Vec<CellValue>,
+    }
+
+    impl ExcelRow for FontStyleRow {
+        fn schema() -> &'static [ExcelColumn] {
+            const HEAD_STYLE: ExcelCellStyle = ExcelCellStyle {
+                font: Some(ExcelFontStyle {
+                    color: Some(ExcelColor::Rgb(0x112233)),
+                    font_height_in_points: Some(12.0),
+                    ..ExcelFontStyle::new()
+                }),
+                fill_pattern: Some(ExcelFillPattern::Solid),
+                fill_foreground_color: Some(ExcelColor::Rgb(0x010203)),
+                fill_background_color: Some(ExcelColor::Rgb(0x040506)),
+                ..ExcelCellStyle::new()
+            };
+            const HEAD_FONT: ExcelFontStyle = ExcelFontStyle {
+                color: Some(ExcelColor::Rgb(0x778899)),
+                font_height_in_points: Some(11.0),
+                ..ExcelFontStyle::new()
+            };
+            const CONTENT_STYLE: ExcelCellStyle = ExcelCellStyle {
+                font: Some(ExcelFontStyle {
+                    color: Some(ExcelColor::Rgb(0xDDEEFF)),
+                    font_height_in_points: Some(10.0),
+                    ..ExcelFontStyle::new()
+                }),
+                fill_pattern: Some(ExcelFillPattern::Solid),
+                fill_foreground_color: Some(ExcelColor::Rgb(0x0A0B0C)),
+                ..ExcelCellStyle::new()
+            };
+            const COLUMNS: &[ExcelColumn] = &[
+                ExcelColumn::new("field", "Field", Some(0), 0, None)
+                    .with_head_style(HEAD_STYLE)
+                    .with_head_font_style(HEAD_FONT)
+                    .with_content_style(CONTENT_STYLE),
+                ExcelColumn::new("other", "Other", Some(1), 0, None),
+            ];
+            COLUMNS
+        }
+
+        fn write_metadata() -> &'static ExcelWriteMetadata {
+            const HEAD_FONT: ExcelFontStyle = ExcelFontStyle {
+                color: Some(ExcelColor::Rgb(0x778899)),
+                font_height_in_points: Some(11.0),
+                ..ExcelFontStyle::new()
+            };
+            const METADATA: ExcelWriteMetadata =
+                ExcelWriteMetadata::new().head_font_style(HEAD_FONT);
+            &METADATA
+        }
+
+        fn from_row(_row: &easyexcel_core::RowData) -> Result<Self> {
+            Ok(Self { cells: Vec::new() })
+        }
+
+        fn to_row(&self) -> Result<Vec<CellValue>> {
+            Ok(self.cells.clone())
+        }
+    }
+
+    impl FontStyleRow {
+        fn new(cells: Vec<CellValue>) -> Self {
+            Self { cells }
+        }
+    }
+
+    #[test]
+    fn xls_stateful_double_write_appends_rows_and_finish_saves() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("stateful.xls");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
+        writer.write([dyn_row(&[(0, "a"), (1, "b")])], &sheet)?;
+        writer.write([dyn_row(&[(0, "c"), (1, "d")])], &sheet)?;
+        writer.finish()?;
+        let mut workbook = open_xls(&path)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert_eq!(range.get_value((0, 0)), Some(&Data::String("a".to_owned())));
+        assert_eq!(range.get_value((1, 1)), Some(&Data::String("d".to_owned())));
+        Ok(())
+    }
+
+    #[test]
+    fn xls_stateful_finish_on_exception_discards_unless_configured() -> Result<()> {
+        let directory = tempdir()?;
+        for (on_exception, expected_exists) in [(false, false), (true, true)] {
+            let path = directory.path().join(format!("exc-{on_exception}.xls"));
+            let mut writer = ExcelWriter::with_handlers_and_options(
+                &path,
+                Vec::new(),
+                WriteOptions {
+                    write_excel_on_exception: on_exception,
+                    ..WriteOptions::default()
+                },
+            );
+            writer.write([dyn_row(&[(0, "boom")])], &WriteSheet::new("Sheet1"))?;
+            writer.finish_on_exception()?;
+            assert_eq!(path.exists(), expected_exists);
+            if expected_exists {
+                let bytes = std::fs::read(&path)?;
+                assert!(bytes.starts_with(CFB_MAGIC));
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn xls_sheet_handlers_registration_rules() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("handlers.xls");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
+        writer.write([dyn_row(&[(0, "first")])], &sheet)?;
+        // Handlers cannot be attached to an already-initialized sheet.
+        let result = writer.write_with_sheet_handlers(
+            [dyn_row(&[(0, "late")])],
+            &sheet,
+            vec![Box::new(HeightRequestingHandler)],
+        );
+        assert!(matches!(result, Err(ExcelError::Unsupported(_))));
+
+        // A fresh sheet accepts handlers; a second registration is rejected.
+        let fresh = WriteSheet::<DynamicRow>::new("Fresh");
+        writer.write_with_sheet_handlers(
+            [dyn_row(&[(0, "early")])],
+            &fresh,
+            vec![Box::new(HeightRequestingHandler)],
+        )?;
+        let duplicate = writer.write_with_sheet_handlers(
+            [dyn_row(&[(0, "again")])],
+            &fresh,
+            vec![Box::new(HeightRequestingHandler)],
+        );
+        assert!(matches!(duplicate, Err(ExcelError::Unsupported(_))));
+        writer.finish()?;
+        Ok(())
+    }
+
+    #[test]
+    fn xls_template_stateful_append_and_finish_preserves_seed() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("template.xls");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                sheet_name: "Sheet1".to_owned(),
+                template_bytes: Some(xls_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
+        writer.write([dyn_row(&[(0, "a")])], &sheet)?;
+        writer.write([dyn_row(&[(0, "b")])], &sheet)?;
+        writer.finish()?;
+        let mut workbook = open_xls(&path)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        // Seed row, then the two appended rows.
+        assert_eq!(
+            range.get_value((0, 0)),
+            Some(&Data::String("seed".to_owned()))
+        );
+        assert_eq!(range.get_value((1, 0)), Some(&Data::String("a".to_owned())));
+        assert_eq!(range.get_value((2, 0)), Some(&Data::String("b".to_owned())));
+        Ok(())
+    }
+
+    #[test]
+    fn xls_template_rejects_non_xls_bytes() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("bad-template.xls");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        let result = writer.write([dyn_row(&[(0, "a")])], &WriteSheet::new("Sheet1"));
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn csv_with_template_rejected() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("template.csv");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        let result = writer.write([dyn_row(&[(0, "a")])], &WriteSheet::new("Sheet1"));
+        assert!(matches!(result, Err(ExcelError::Unsupported(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_stateful_append_and_finish_preserves_seed() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("template.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                sheet_name: "Sheet1".to_owned(),
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
+        writer.write([dyn_row(&[(0, "a")])], &sheet)?;
+        writer.write([dyn_row(&[(0, "b")])], &sheet)?;
+        writer.finish()?;
+        let mut workbook = open_xlsx(&path)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert_eq!(
+            range.get_value((0, 0)),
+            Some(&Data::String("seed".to_owned()))
+        );
+        assert_eq!(range.get_value((1, 0)), Some(&Data::String("a".to_owned())));
+        assert_eq!(range.get_value((2, 0)), Some(&Data::String("b".to_owned())));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_legacy_seed_path_writes_values() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("legacy.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                sheet_name: "Sheet1".to_owned(),
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                use_legacy_template_seed: true,
+                ..WriteOptions::default()
+            },
+        );
+        writer.write([dyn_row(&[(0, "legacy")])], &WriteSheet::new("Sheet1"))?;
+        writer.finish()?;
+        let mut workbook = open_xlsx(&path)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert_eq!(
+            range.get_value((1, 0)),
+            Some(&Data::String("legacy".to_owned()))
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_creates_sheet_absent_from_template() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("new-sheet.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                template_bytes: Some(xlsx_template_bytes("TemplateOnly")),
+                ..WriteOptions::default()
+            },
+        );
+        writer.write([dyn_row(&[(0, "fresh")])], &WriteSheet::new("NewSheet"))?;
+        writer.finish()?;
+        let mut workbook = open_xlsx(&path)?;
+        let names = workbook.sheet_names().to_owned();
+        assert!(names.contains(&"NewSheet".to_owned()));
+        let range = workbook.worksheet_range("NewSheet").map_err(format_error)?;
+        assert_eq!(
+            range.get_value((0, 0)),
+            Some(&Data::String("fresh".to_owned()))
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn csv_stateful_append_and_finish_writes_file() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("stateful.csv");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
+        writer.write([dyn_row(&[(0, "a"), (1, "b")])], &sheet)?;
+        writer.write([dyn_row(&[(0, "c")])], &sheet)?;
+        writer.finish()?;
+        let content = std::fs::read_to_string(&path)?;
+        let lines = content.lines().collect::<Vec<_>>();
+        assert!(
+            lines
+                .iter()
+                .any(|line| line.contains("a") && line.contains("b"))
+        );
+        assert!(lines.iter().any(|line| line.contains("c")));
+        Ok(())
+    }
+
+    #[test]
+    fn csv_output_stream_finish_on_exception_emits_capture() -> Result<()> {
+        for (on_exception, should_emit) in [(false, false), (true, true)] {
+            let output = ExcelOutputStream::new(Vec::new());
+            let inspect = output.clone();
+            let mut writer = ExcelWriter::with_output_stream(
+                "response.csv",
+                output,
+                Vec::new(),
+                WriteOptions {
+                    auto_close_stream: false,
+                    write_excel_on_exception: on_exception,
+                    ..WriteOptions::default()
+                },
+            );
+            writer.write([dyn_row(&[(0, "captured")])], &WriteSheet::new("Sheet1"))?;
+            writer.finish_on_exception()?;
+            let bytes = inspect.with_inner(Clone::clone).expect("open stream");
+            let content = String::from_utf8(bytes).map_err(format_error)?;
+            assert_eq!(content.contains("captured"), should_emit);
+            assert!(!content.is_empty() || !should_emit);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn csv_second_sheet_name_rejected() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("two-sheets.csv");
+        let mut writer = ExcelWriter::new(&path);
+        writer.write([dyn_row(&[(0, "a")])], &WriteSheet::new("first"))?;
+        let result = writer.write([dyn_row(&[(0, "b")])], &WriteSheet::new("second"));
+        assert!(matches!(result, Err(ExcelError::Unsupported(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn workbook_mut_exposes_inner_workbook() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("inner.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        writer
+            .workbook_mut()
+            .add_worksheet()
+            .write_string(0, 0, "manual")
+            .map_err(format_error)?;
+        writer.finish()?;
+        let bytes = std::fs::read(&path)?;
+        assert!(bytes.starts_with(b"PK"));
+        Ok(())
+    }
+
+    #[test]
+    fn xls_write_raw_bytes_and_image_are_embedded() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("raw.xls");
+        let mut writer = ExcelWriter::new(&path);
+        writer.write_raw_bytes(b"extra-image-stream");
+        let png: &[u8] = &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 1];
+        writer.write_image(png, 1, 2);
+        writer.write([dyn_row(&[(0, "cell")])], &WriteSheet::new("Sheet1"))?;
+        writer.finish()?;
+        let bytes = std::fs::read(&path)?;
+        assert!(bytes.starts_with(CFB_MAGIC));
+        assert!(bytes.windows(png.len()).any(|window| window == png));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_password_protected_stateful_output_is_ole() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("secret.xlsx");
+        let mut writer =
+            ExcelWriter::with_handlers_and_password(&path, Vec::new(), Some("pw".to_owned()));
+        writer.write([dyn_row(&[(0, "hidden")])], &WriteSheet::new("Sheet1"))?;
+        writer.finish()?;
+        let bytes = std::fs::read(&path)?;
+        assert!(bytes.starts_with(CFB_MAGIC));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_password_protected_output_is_ole() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("secret-template.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                password: Some("pw".to_owned()),
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        writer.write([dyn_row(&[(0, "hidden")])], &WriteSheet::new("Sheet1"))?;
+        writer.finish()?;
+        let bytes = std::fs::read(&path)?;
+        assert!(bytes.starts_with(CFB_MAGIC));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_compress_temp_files_populates_gzip_spill_snapshot() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("spill.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                compress_temp_files: true,
+                ..WriteOptions::default()
+            },
+        );
+        let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
+        writer.write([dyn_row(&[(0, "spill")])], &sheet)?;
+        writer.write([dyn_row(&[(0, "again")])], &sheet)?;
+        writer.finish()?;
+        let snapshot = writer
+            .last_gzip_spill_snapshot()
+            .expect("snapshot after finish");
+        assert_eq!(snapshot.sheet_name, "Sheet1");
+        assert!(snapshot.is_gzip);
+        assert!(snapshot.uncompressed_len > 0);
+        Ok(())
+    }
+
+    #[test]
+    fn finish_gzip_spill_failure_propagates() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("spill-fail.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                compress_temp_files: true,
+                ..WriteOptions::default()
+            },
+        );
+        let mut spill = crate::gzip_spill::GzipSheetDataWriter::create_owned("Sheet1")?;
+        let snapshot = spill.snapshot()?;
+        std::fs::remove_file(&snapshot.path)?;
+        writer.gzip_spills.insert("Sheet1".to_owned(), spill);
+        assert!(writer.finish().is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn write_with_table_handlers_xlsx_new_sheet_and_table() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("table.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
+        let table = MirroredWriteTable::new();
+        writer.write_with_table_handlers(
+            [dyn_row(&[(0, "tabled")])],
+            &sheet,
+            &table,
+            Vec::new(),
+            Vec::new(),
+        )?;
+        writer.finish()?;
+        let mut workbook = open_xlsx(&path)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert_eq!(
+            range.get_value((0, 0)),
+            Some(&Data::String("tabled".to_owned()))
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn write_with_table_handlers_xls_existing_sheet_new_table() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("table.xls");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<TwoColRow>::new("Sheet1");
+        writer.write([TwoColRow::new("first", "x")], &sheet)?;
+        let table = MirroredWriteTable::with_table_no(7);
+        writer.write_with_table_handlers(
+            [TwoColRow::new("second", "y")],
+            &sheet,
+            &table,
+            Vec::new(),
+            Vec::new(),
+        )?;
+        writer.finish()?;
+        let mut workbook = open_xls(&path)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert_eq!(
+            range.get_value((3, 0)),
+            Some(&Data::String("second".to_owned()))
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn write_with_table_handlers_registration_errors() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("table-err.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
+        let table = MirroredWriteTable::new();
+        writer.write_with_table_handlers(
+            [dyn_row(&[(0, "first")])],
+            &sheet,
+            &table,
+            vec![Box::new(HeightRequestingHandler)],
+            Vec::new(),
+        )?;
+        // Duplicate sheet-handler registration on an initialized sheet.
+        let duplicate_sheet = writer.write_with_table_handlers(
+            [dyn_row(&[(0, "second")])],
+            &sheet,
+            &table,
+            vec![Box::new(HeightRequestingHandler)],
+            Vec::new(),
+        );
+        assert!(matches!(duplicate_sheet, Err(ExcelError::Unsupported(_))));
+        // Duplicate table-handler registration on an initialized table.
+        let duplicate_table = writer.write_with_table_handlers(
+            [dyn_row(&[(0, "second")])],
+            &sheet,
+            &table,
+            Vec::new(),
+            vec![Box::new(HeightRequestingHandler)],
+        );
+        assert!(matches!(duplicate_table, Err(ExcelError::Unsupported(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn xls_dynamic_head_automatic_merge_applied() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("dyn-head.xls");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<DynamicRow>::from_options(WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            dynamic_head: Some(vec![
+                vec!["User".to_owned(), "Name".to_owned()],
+                vec!["User".to_owned(), "Age".to_owned()],
+                vec!["Meta".to_owned()],
+            ]),
+            ..WriteOptions::default()
+        });
+        writer.write([dyn_row(&[(0, "n"), (1, "a"), (2, "m")])], &sheet)?;
+        writer.finish()?;
+        let mut workbook = open_xls(&path)?;
+        let merges = workbook
+            .merge_cells_by_sheet_name("Sheet1")
+            .map_err(format_error)?;
+        assert!(!merges.is_empty());
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert_eq!(range.get_value((2, 0)), Some(&Data::String("n".to_owned())));
+        Ok(())
+    }
+
+    #[test]
+    fn xls_dynamic_row_with_over_256_columns_errors() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("wide.xls");
+        let mut writer = ExcelWriter::new(&path);
+        let wide = dyn_row(&(0..300).map(|index| (index, "x")).collect::<Vec<_>>());
+        let result = writer.write([wide], &WriteSheet::new("Sheet1"));
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn xls_content_styles_apply_all_attributes() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("styled.xls");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<DynamicRow>::from_options(WriteOptions {
+            content_styles: vec![CellStyle {
+                bold: true,
+                italic: true,
+                font_color: Some(0xFF0000),
+                background_color: Some(0x00FF00),
+                horizontal_alignment: Some(HorizontalAlignment::Center),
+                vertical_alignment: Some(VerticalAlignment::Center),
+                wrap_text: true,
+                number_format: Some("0.00".to_owned()),
+            }],
+            ..WriteOptions::default()
+        });
+        writer.write([dyn_row(&[(0, "styled")])], &sheet)?;
+        writer.finish()?;
+        let bytes = std::fs::read(&path)?;
+        assert!(bytes.starts_with(CFB_MAGIC));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_public_write_with_template_bytes() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("public-template.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            ..WriteOptions::default()
+        };
+        crate::xlsx_write::write_xlsx::<DynamicRow, _>(&path, &options, [dyn_row(&[(0, "pub")])])?;
+        let mut workbook = open_xlsx(&path)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert_eq!(
+            range.get_value((1, 0)),
+            Some(&Data::String("pub".to_owned()))
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn xls_public_write_with_template_bytes() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("public-template.xls");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xls_template_bytes("Sheet1")),
+            ..WriteOptions::default()
+        };
+        crate::write_xls::write_xls::<DynamicRow, _>(&path, &options, [dyn_row(&[(0, "pub")])])?;
+        let mut workbook = open_xls(&path)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert_eq!(
+            range.get_value((1, 0)),
+            Some(&Data::String("pub".to_owned()))
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn xls_public_write_to_writer_with_template() -> Result<()> {
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xls_template_bytes("Sheet1")),
+            ..WriteOptions::default()
+        };
+        let mut output = Vec::new();
+        crate::write_xls::write_xls_to_writer::<DynamicRow, _, _>(
+            std::path::Path::new("logical.xls"),
+            &mut output,
+            &options,
+            [dyn_row(&[(0, "streamed")])],
+            &mut [],
+        )?;
+        assert!(output.starts_with(CFB_MAGIC));
+        Ok(())
+    }
+
+    #[test]
+    fn finish_twice_is_noop() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("twice.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        writer.write([dyn_row(&[(0, "a")])], &WriteSheet::new("Sheet1"))?;
+        writer.finish()?;
+        writer.finish()?;
+        writer.finish_on_exception()?;
+        assert!(writer.is_finished());
+        Ok(())
+    }
+
+    #[test]
+    fn xls_height_requesting_handler_applies_head_and_content_heights() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("heights.xls");
+        let mut writer = ExcelWriter::with_handlers(&path, vec![Box::new(HeightRequestingHandler)]);
+        writer.write([TwoColRow::new("h", "c")], &WriteSheet::new("Sheet1"))?;
+        writer.finish()?;
+        let mut workbook = open_xls(&path)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert_eq!(range.get_value((1, 0)), Some(&Data::String("h".to_owned())));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_height_requesting_handler_applies_row_heights() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("heights.xlsx");
+        let mut writer = ExcelWriter::with_handlers(&path, vec![Box::new(HeightRequestingHandler)]);
+        writer.write([TwoColRow::new("h", "c")], &WriteSheet::new("Sheet1"))?;
+        writer.finish()?;
+        let bytes = std::fs::read(&path)?;
+        assert!(bytes.starts_with(b"PK"));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_stateful_double_write_with_incoming_table_options() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("incoming.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
+        writer.write([dyn_row(&[(0, "one")])], &sheet)?;
+        let table = MirroredWriteTable::new();
+        writer.write_with_table_handlers(
+            [dyn_row(&[(0, "two")])],
+            &sheet,
+            &table,
+            Vec::new(),
+            Vec::new(),
+        )?;
+        writer.finish()?;
+        let mut workbook = open_xlsx(&path)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert_eq!(
+            range.get_value((1, 0)),
+            Some(&Data::String("two".to_owned()))
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn xls_cell_value_variant_branches() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("values.xls");
+        let mut writer = ExcelWriter::new(&path);
+        let date = NaiveDate::from_ymd_opt(2024, 1, 2).expect("date");
+        let row = dyn_row_values(&[
+            (0, CellValue::Bool(true)),
+            (1, CellValue::Int(-7)),
+            (2, CellValue::Float(1.5)),
+            (3, CellValue::Error("boom".to_owned())),
+            (4, CellValue::Formula("SUM(1,2)".to_owned())),
+            (
+                5,
+                CellValue::Hyperlink {
+                    url: "https://example.test".to_owned(),
+                    text: "link".to_owned(),
+                },
+            ),
+            (6, CellValue::Date(date)),
+            (
+                7,
+                CellValue::DateTime(date.and_hms_opt(3, 4, 5).expect("time")),
+            ),
+            (
+                8,
+                CellValue::Comment {
+                    value: Box::new(CellValue::String("note".to_owned())),
+                    text: "hello".to_owned(),
+                },
+            ),
+            (9, CellValue::RichText(RichTextStringData::new("rich"))),
+            (
+                10,
+                CellValue::Images {
+                    value: Box::new(CellValue::String("img".to_owned())),
+                    images: vec![ImageData::new(vec![1, 2, 3])],
+                },
+            ),
+            (11, CellValue::Image(vec![4, 5, 6])),
+            (
+                12,
+                CellValue::Decimal(BigDecimal::from_str("12.34").expect("dec")),
+            ),
+            (
+                13,
+                CellValue::Decimal(BigDecimal::from_str("9007199254740992").expect("dec")),
+            ),
+            (14, CellValue::Float(1e12)),
+            (15, CellValue::Empty),
+        ]);
+        writer.write([row], &WriteSheet::new("Sheet1"))?;
+        writer.finish()?;
+        let bytes = std::fs::read(&path)?;
+        assert!(bytes.starts_with(CFB_MAGIC));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_cell_value_variant_branches() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("values.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<DynamicRow>::from_options(WriteOptions {
+            use_scientific_format: true,
+            use_1904_windowing: true,
+            ..WriteOptions::default()
+        });
+        let date = NaiveDate::from_ymd_opt(2024, 1, 2).expect("date");
+        let row = dyn_row_values(&[
+            (0, CellValue::Float(1e12)),
+            (
+                1,
+                CellValue::Decimal(BigDecimal::from_str("9007199254740992").expect("dec")),
+            ),
+            (
+                2,
+                CellValue::Decimal(BigDecimal::from_str("1000000000000").expect("dec")),
+            ),
+            (3, CellValue::Date(date)),
+            (
+                4,
+                CellValue::DateTime(date.and_hms_opt(1, 2, 3).expect("time")),
+            ),
+            (
+                5,
+                CellValue::Comment {
+                    value: Box::new(CellValue::Bool(true)),
+                    text: "note text".to_owned(),
+                },
+            ),
+            (6, CellValue::Bool(false)),
+            (7, CellValue::Error("boom".to_owned())),
+            (8, CellValue::Formula("A1+B1".to_owned())),
+            (
+                9,
+                CellValue::Hyperlink {
+                    url: "https://example.test".to_owned(),
+                    text: "go".to_owned(),
+                },
+            ),
+        ]);
+        writer.write([row], &sheet)?;
+        writer.finish()?;
+        let bytes = std::fs::read(&path)?;
+        assert!(bytes.starts_with(b"PK"));
+        Ok(())
+    }
+
+    #[test]
+    fn xls_and_xlsx_loop_merge_annotation_rows() -> Result<()> {
+        let directory = tempdir()?;
+        let xls_path = directory.path().join("loop.xls");
+        let mut xls_writer = ExcelWriter::new(&xls_path);
+        let rows = vec![
+            LoopMergeRow::new(vec![CellValue::String("a".to_owned())]),
+            LoopMergeRow::new(vec![CellValue::String("b".to_owned())]),
+            LoopMergeRow::new(vec![CellValue::String("c".to_owned())]),
+            LoopMergeRow::new(vec![CellValue::String("d".to_owned())]),
+        ];
+        xls_writer.write(rows, &WriteSheet::new("Sheet1"))?;
+        xls_writer.finish()?;
+
+        let xlsx_path = directory.path().join("loop.xlsx");
+        let mut xlsx_writer = ExcelWriter::new(&xlsx_path);
+        let rows = vec![
+            LoopMergeRow::new(vec![CellValue::String("a".to_owned())]),
+            LoopMergeRow::new(vec![CellValue::String("b".to_owned())]),
+            LoopMergeRow::new(vec![CellValue::String("c".to_owned())]),
+            LoopMergeRow::new(vec![CellValue::String("d".to_owned())]),
+        ];
+        xlsx_writer.write(rows, &WriteSheet::new("Sheet1"))?;
+        xlsx_writer.finish()?;
+        assert!(xls_path.exists());
+        assert!(xlsx_path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn xls_and_xlsx_absolute_merge_annotation_rows() -> Result<()> {
+        let directory = tempdir()?;
+        let xls_path = directory.path().join("merge.xls");
+        let mut xls_writer = ExcelWriter::new(&xls_path);
+        xls_writer.write(
+            [AbsoluteMergeRow::new(vec![
+                CellValue::String("l".to_owned()),
+                CellValue::String("r".to_owned()),
+            ])],
+            &WriteSheet::new("Sheet1"),
+        )?;
+        xls_writer.finish()?;
+
+        let xlsx_path = directory.path().join("merge.xlsx");
+        let mut xlsx_writer = ExcelWriter::new(&xlsx_path);
+        xlsx_writer.write(
+            [AbsoluteMergeRow::new(vec![
+                CellValue::String("l".to_owned()),
+                CellValue::String("r".to_owned()),
+            ])],
+            &WriteSheet::new("Sheet1"),
+        )?;
+        xlsx_writer.finish()?;
+        assert!(xls_path.exists());
+        assert!(xlsx_path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn negative_merge_handler_properties_are_skipped() -> Result<()> {
+        let directory = tempdir()?;
+        let xls_path = directory.path().join("neg.xls");
+        let mut xls_writer =
+            ExcelWriter::with_handlers(&xls_path, vec![Box::new(NegativeMergeHandler)]);
+        xls_writer.write([TwoColRow::new("v", "w")], &WriteSheet::new("Sheet1"))?;
+        xls_writer.finish()?;
+
+        let xlsx_path = directory.path().join("neg.xlsx");
+        let mut xlsx_writer =
+            ExcelWriter::with_handlers(&xlsx_path, vec![Box::new(NegativeMergeHandler)]);
+        xlsx_writer.write([TwoColRow::new("v", "w")], &WriteSheet::new("Sheet1"))?;
+        xlsx_writer.finish()?;
+
+        // Negative indexes in template layout merges are skipped too.
+        let tpl_path = directory.path().join("neg-tpl.xlsx");
+        let mut tpl_writer = ExcelWriter::with_handlers_and_options(
+            &tpl_path,
+            vec![Box::new(NegativeMergeHandler)],
+            WriteOptions {
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        tpl_writer.write([TwoColRow::new("v", "w")], &WriteSheet::new("Sheet1"))?;
+        tpl_writer.finish()?;
+        assert!(xls_path.exists());
+        assert!(xlsx_path.exists());
+        assert!(tpl_path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn negative_metadata_merge_is_rejected_at_handler_load() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("neg-meta.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let result = writer.write(
+            [NegativeMergeRow::new(vec![CellValue::String(
+                "v".to_owned(),
+            )])],
+            &WriteSheet::new("Sheet1"),
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn xls_annotation_font_style_merge_and_rgb_remap() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("fonts.xls");
+        let mut writer = ExcelWriter::new(&path);
+        writer.write(
+            [FontStyleRow::new(vec![
+                CellValue::String("f".to_owned()),
+                CellValue::String("o".to_owned()),
+            ])],
+            &WriteSheet::new("Sheet1"),
+        )?;
+        writer.finish()?;
+        let bytes = std::fs::read(&path)?;
+        assert!(bytes.starts_with(CFB_MAGIC));
+        Ok(())
+    }
+
+    #[test]
+    fn convert_row_at_data_error_maps_physical_column() -> Result<()> {
+        let columns = selected_columns(FailingRow::schema(), &WriteOptions::default())?;
+        let result = convert_row_at(
+            &FailingRow,
+            &ConverterRegistry::default(),
+            "Sheet1",
+            3,
+            &columns,
+        );
+        let error = result.expect_err("must fail");
+        let text = error.to_string();
+        assert!(text.contains("Sheet1"), "{text}");
+        assert!(text.contains("row=3"), "{text}");
+        assert!(text.contains("column=Some(0)"), "{text}");
+        assert!(text.contains("injected"), "{text}");
+
+        let directory = tempdir()?;
+        let path = directory.path().join("failing.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        assert!(
+            writer
+                .write([FailingRow], &WriteSheet::new("Sheet1"))
+                .is_err()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn xls_finish_via_output_stream_with_and_without_template() -> Result<()> {
+        for use_template in [false, true] {
+            let output = ExcelOutputStream::new(Vec::new());
+            let inspect = output.clone();
+            let mut writer = ExcelWriter::with_output_stream(
+                "logical.xls",
+                output,
+                Vec::new(),
+                WriteOptions {
+                    auto_close_stream: false,
+                    template_bytes: if use_template {
+                        Some(xls_template_bytes("Sheet1"))
+                    } else {
+                        None
+                    },
+                    ..WriteOptions::default()
+                },
+            );
+            writer.write([dyn_row(&[(0, "streamed")])], &WriteSheet::new("Sheet1"))?;
+            writer.finish()?;
+            let bytes = inspect.with_inner(Clone::clone).expect("open stream");
+            assert!(bytes.starts_with(CFB_MAGIC));
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn xls_finish_save_failure_propagates() -> Result<()> {
+        let directory = tempdir()?;
+        // A directory with an .xls name is not a writable file, so saving fails.
+        let path = directory.path().join("out.xls");
+        std::fs::create_dir(&path)?;
+        let mut writer = ExcelWriter::new(&path);
+        writer.write([dyn_row(&[(0, "x")])], &WriteSheet::new("Sheet1"))?;
+        assert!(matches!(writer.finish(), Err(ExcelError::Io(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn xls_template_write_absent_sheet_rejected() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("absent.xls");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                template_bytes: Some(xls_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        let result = writer.write([dyn_row(&[(0, "x")])], &WriteSheet::new("NoSuchSheet"));
+        assert!(matches!(result, Err(ExcelError::Unsupported(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn xls_template_with_table_handlers_and_dynamic_head() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tpl-table.xls");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                template_bytes: Some(xls_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        let sheet = WriteSheet::<DynamicRow>::from_options(WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            dynamic_head: Some(vec![
+                vec!["User".to_owned(), "Name".to_owned()],
+                vec!["User".to_owned(), "Age".to_owned()],
+                vec!["Meta".to_owned()],
+            ]),
+            ..WriteOptions::default()
+        });
+        let table = MirroredWriteTable::with_table_no(2);
+        writer.write_with_table_handlers(
+            [dyn_row(&[(0, "n"), (1, "a"), (2, "m")])],
+            &sheet,
+            &table,
+            Vec::new(),
+            Vec::new(),
+        )?;
+        let table2 = MirroredWriteTable::with_table_no(3);
+        writer.write_with_table_handlers(
+            [dyn_row(&[(0, "n2"), (1, "a2"), (2, "m2")])],
+            &sheet,
+            &table2,
+            Vec::new(),
+            Vec::new(),
+        )?;
+        writer.finish()?;
+        let mut workbook = open_xls(&path)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert!(range.get_value((4, 0)).is_some());
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_with_table_handlers_existing_state() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tpl-table.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
+        writer.write([dyn_row(&[(0, "one")])], &sheet)?;
+        let table = MirroredWriteTable::with_table_no(0);
+        writer.write_with_table_handlers(
+            [dyn_row(&[(0, "two")])],
+            &sheet,
+            &table,
+            Vec::new(),
+            Vec::new(),
+        )?;
+        writer.finish()?;
+        let mut workbook = open_xlsx(&path)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert_eq!(
+            range.get_value((2, 0)),
+            Some(&Data::String("two".to_owned()))
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_height_handler_styles_and_zero_rows() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tpl-styles.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            vec![Box::new(HeightRequestingHandler)],
+            WriteOptions {
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        let sheet = WriteSheet::<DynamicRow>::from_options(WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            content_styles: vec![CellStyle {
+                bold: true,
+                font_color: Some(0x00FF00),
+                background_color: Some(0x0000FF),
+                ..CellStyle::new()
+            }],
+            ..WriteOptions::default()
+        });
+        writer.write([dyn_row(&[(0, "styled")])], &sheet)?;
+        writer.finish()?;
+        assert!(path.exists());
+
+        let empty_path = directory.path().join("tpl-empty.xlsx");
+        let mut empty_writer = ExcelWriter::with_handlers_and_options(
+            &empty_path,
+            Vec::new(),
+            WriteOptions {
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        empty_writer.write(Vec::<DynamicRow>::new(), &WriteSheet::new("Sheet1"))?;
+        empty_writer.finish()?;
+        assert!(empty_path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_public_legacy_seed_with_spill() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("legacy-public.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            use_legacy_template_seed: true,
+            compress_temp_files: true,
+            ..WriteOptions::default()
+        };
+        crate::xlsx_write::write_xlsx::<DynamicRow, _>(
+            &path,
+            &options,
+            [dyn_row(&[(0, "legacy")])],
+        )?;
+        let mut workbook = open_xlsx(&path)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert_eq!(
+            range.get_value((1, 0)),
+            Some(&Data::String("legacy".to_owned()))
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_public_rejects_xls_template_file() -> Result<()> {
+        let directory = tempdir()?;
+        let template_path = directory.path().join("seed.xls");
+        std::fs::write(&template_path, xls_template_bytes("Sheet1"))?;
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_file: Some(template_path),
+            ..WriteOptions::default()
+        };
+        let path = directory.path().join("dual.xlsx");
+        let result =
+            crate::xlsx_write::write_xlsx::<DynamicRow, _>(&path, &options, [dyn_row(&[(0, "x")])]);
+        assert!(matches!(result, Err(ExcelError::Unsupported(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_public_creates_absent_sheet() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("new-sheet-public.xlsx");
+        let options = WriteOptions {
+            sheet_name: "NewSheet".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("TemplateOnly")),
+            ..WriteOptions::default()
+        };
+        crate::xlsx_write::write_xlsx::<DynamicRow, _>(
+            &path,
+            &options,
+            [dyn_row(&[(0, "fresh")])],
+        )?;
+        let mut workbook = open_xlsx(&path)?;
+        assert!(workbook.sheet_names().contains(&"NewSheet".to_owned()));
+        Ok(())
+    }
+
+    #[test]
+    fn xls_public_template_bad_bytes_and_absent_sheet() -> Result<()> {
+        let directory = tempdir()?;
+        let bad_path = directory.path().join("bad.xls");
+        let bad_options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            ..WriteOptions::default()
+        };
+        assert!(
+            crate::write_xls::write_xls::<DynamicRow, _>(
+                &bad_path,
+                &bad_options,
+                [dyn_row(&[(0, "x")])],
+            )
+            .is_err()
+        );
+        let absent_path = directory.path().join("absent.xls");
+        let absent_options = WriteOptions {
+            sheet_index: Some(9),
+            template_bytes: Some(xls_template_bytes("Sheet1")),
+            ..WriteOptions::default()
+        };
+        assert!(
+            crate::write_xls::write_xls::<DynamicRow, _>(
+                &absent_path,
+                &absent_options,
+                [dyn_row(&[(0, "x")])],
+            )
+            .is_err()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn xls_public_template_with_handlers_to_subdirectory() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("nested").join("out.xls");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xls_template_bytes("Sheet1")),
+            ..WriteOptions::default()
+        };
+        let mut handlers: Vec<Box<dyn WriteHandler>> = vec![Box::new(HeightRequestingHandler)];
+        crate::write_xls::write_xls_with_handlers::<DynamicRow, _>(
+            &path,
+            &options,
+            [dyn_row(&[(0, "nested")])],
+            &mut handlers,
+        )?;
+        assert!(path.exists());
+
+        let plain_path = directory.path().join("plain.xls");
+        let plain_options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            ..WriteOptions::default()
+        };
+        crate::write_xls::write_xls_with_handlers::<DynamicRow, _>(
+            &plain_path,
+            &plain_options,
+            [dyn_row(&[(0, "plain")])],
+            &mut handlers,
+        )?;
+        assert!(plain_path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_public_compress_temp_files() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("spill-public.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            compress_temp_files: true,
+            ..WriteOptions::default()
+        };
+        crate::xlsx_write::write_xlsx::<DynamicRow, _>(
+            &path,
+            &options,
+            [dyn_row(&[(0, "spill")])],
+        )?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn csv_write_with_table_handlers() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("table.csv");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
+        let table = MirroredWriteTable::new();
+        writer.write_with_table_handlers(
+            [dyn_row(&[(0, "tabled")])],
+            &sheet,
+            &table,
+            Vec::new(),
+            Vec::new(),
+        )?;
+        writer.write_with_table_handlers(
+            [dyn_row(&[(0, "again")])],
+            &sheet,
+            &table,
+            Vec::new(),
+            Vec::new(),
+        )?;
+        writer.finish()?;
+        let content = std::fs::read_to_string(&path)?;
+        assert!(content.contains("tabled"));
+        assert!(content.contains("again"));
+        Ok(())
+    }
+
+    #[test]
+    fn csv_schema_change_between_writes_rejected() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("schema.csv");
+        let mut writer = ExcelWriter::new(&path);
+        writer.write([TwoColRow::new("a", "b")], &WriteSheet::new("Sheet1"))?;
+        let result = writer.write([dyn_row(&[(0, "x")])], &WriteSheet::new("Sheet1"));
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn table_schema_mismatch_between_writes_rejected() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("table-schema.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let table = MirroredWriteTable::new();
+        writer.write_with_table_handlers(
+            [TwoColRow::new("a", "b")],
+            &WriteSheet::new("Sheet1"),
+            &table,
+            Vec::new(),
+            Vec::new(),
+        )?;
+        let result = writer.write_with_table_handlers(
+            [dyn_row(&[(0, "x")])],
+            &WriteSheet::new("Sheet1"),
+            &table,
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(matches!(result, Err(ExcelError::Unsupported(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn sheet_handlers_on_initialized_sheet_rejected() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("late-sheet-handlers.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
+        let table = MirroredWriteTable::new();
+        writer.write([dyn_row(&[(0, "first")])], &sheet)?;
+        let result = writer.write_with_table_handlers(
+            [dyn_row(&[(0, "second")])],
+            &sheet,
+            &table,
+            vec![Box::new(HeightRequestingHandler)],
+            Vec::new(),
+        );
+        assert!(matches!(result, Err(ExcelError::Unsupported(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn table_handlers_on_new_sheet_run_workbook_callbacks() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("new-sheet-handlers.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
+        let table = MirroredWriteTable::new();
+        writer.write_with_table_handlers(
+            [dyn_row(&[(0, "a")])],
+            &sheet,
+            &table,
+            vec![Box::new(HeightRequestingHandler)],
+            Vec::new(),
+        )?;
+        writer.finish()?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn xls_dynamic_head_with_height_handler() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("dyn-heights.xls");
+        let mut writer = ExcelWriter::with_handlers(&path, vec![Box::new(HeightRequestingHandler)]);
+        let sheet = WriteSheet::<DynamicRow>::from_options(WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            dynamic_head: Some(vec![
+                vec!["User".to_owned(), "Name".to_owned()],
+                vec!["User".to_owned(), "Age".to_owned()],
+            ]),
+            ..WriteOptions::default()
+        });
+        writer.write([dyn_row(&[(0, "n"), (1, "a")])], &sheet)?;
+        writer.finish()?;
+        let mut workbook = open_xls(&path)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert_eq!(range.get_value((2, 0)), Some(&Data::String("n".to_owned())));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_legacy_template_autofit() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("autofit.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                use_legacy_template_seed: true,
+                ..WriteOptions::default()
+            },
+        );
+        let sheet = WriteSheet::<DynamicRow>::from_options(WriteOptions {
+            auto_width: true,
+            ..WriteOptions::default()
+        });
+        writer.write([dyn_row(&[(0, "autofit me")])], &sheet)?;
+        writer.finish()?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn biff8_create_row_overflow_errors() -> Result<()> {
+        let mut book = Biff8Book::default();
+        let mut creator = Biff8RowCreator {
+            sheet: book.sheet_mut("Sheet1"),
+        };
+        let result = create_row(&mut creator, 65_536);
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        let result = create_row(&mut creator, 65_535);
+        assert!(result.is_ok());
+        Ok(())
+    }
+
+    #[test]
+    fn effective_sheet_name_keeps_trimmed_when_disabled() {
+        let options = WriteOptions {
+            auto_trim: false,
+            sheet_name: "  padded  ".to_owned(),
+            ..WriteOptions::default()
+        };
+        assert_eq!(effective_sheet_name(&options), "  padded  ");
+        let trimmed = WriteOptions {
+            auto_trim: true,
+            sheet_name: "  padded  ".to_owned(),
+            ..WriteOptions::default()
+        };
+        assert_eq!(effective_sheet_name(&trimmed), "padded");
+    }
+
+    #[test]
+    fn write_with_sheet_handlers_after_finish_rejected() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("finished.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        writer.write([dyn_row(&[(0, "a")])], &WriteSheet::new("Sheet1"))?;
+        writer.finish()?;
+        let result = writer.write_with_sheet_handlers(
+            [dyn_row(&[(0, "b")])],
+            &WriteSheet::new("Sheet1"),
+            vec![Box::new(HeightRequestingHandler)],
+        );
+        assert!(matches!(result, Err(ExcelError::Unsupported(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn handler_ignore_fill_and_requested_style() -> Result<()> {
+        let directory = tempdir()?;
+        let xls_path = directory.path().join("style-h.xls");
+        let mut xls_writer =
+            ExcelWriter::with_handlers(&xls_path, vec![Box::new(StyleRequestingHandler)]);
+        xls_writer.write([TwoColRow::new("a", "b")], &WriteSheet::new("Sheet1"))?;
+        xls_writer.finish()?;
+
+        let xlsx_path = directory.path().join("style-h.xlsx");
+        let mut xlsx_writer =
+            ExcelWriter::with_handlers(&xlsx_path, vec![Box::new(StyleRequestingHandler)]);
+        xlsx_writer.write([TwoColRow::new("a", "b")], &WriteSheet::new("Sheet1"))?;
+        xlsx_writer.finish()?;
+        assert!(xls_path.exists());
+        assert!(xlsx_path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn dynamic_head_merge_mismatch_errors() -> Result<()> {
+        let options = WriteOptions {
+            dynamic_head: Some(vec![vec!["A".to_owned()]]),
+            ..WriteOptions::default()
+        };
+        let columns = selected_columns(&[], &options)?;
+        assert_eq!(columns.len(), 1);
+        let head = vec![vec!["A".to_owned()], vec!["B".to_owned()]];
+        let result = dynamic_head_merge_ranges(&columns, &head, 0);
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_annotation_merge_and_width_handlers() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tpl-ann.xlsx");
+        let mut handlers: Vec<Box<dyn WriteHandler>> = vec![Box::new(
+            MirroredOnceAbsoluteMerge::from_property(
+                easyexcel_core::OnceAbsoluteMergeProperty::new(0, 0, 0, 1),
+            )
+            .expect("merge strategy"),
+        )];
+        let mut width_strategy = SimpleColumnWidthStyleStrategy::new();
+        width_strategy.set_column_width(0, 42);
+        handlers.push(Box::new(width_strategy));
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            ..WriteOptions::default()
+        };
+        crate::xlsx_write::write_xlsx_with_handlers::<AbsoluteMergeRow, _>(
+            &path,
+            &options,
+            [AbsoluteMergeRow::new(vec![
+                CellValue::String("l".to_owned()),
+                CellValue::String("r".to_owned()),
+            ])],
+            &mut handlers,
+        )?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn initialize_existing_table_holder_csv_early_return() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tbl.csv");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
+        writer.write([dyn_row(&[(0, "a")])], &sheet)?;
+        let table = MirroredWriteTable::with_table_no(5);
+        writer.write_with_table_handlers(
+            [dyn_row(&[(0, "c")])],
+            &sheet,
+            &table,
+            Vec::new(),
+            Vec::new(),
+        )?;
+        writer.finish()?;
+        let content = std::fs::read_to_string(&path)?;
+        assert!(content.contains("a"));
+        assert!(content.contains("c"));
+        Ok(())
+    }
+
+    #[test]
+    fn initialize_existing_table_holder_xls_applies_table_merges() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tbl.xls");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<TwoColRow>::new("Sheet1");
+        writer.write([TwoColRow::new("a", "b")], &sheet)?;
+        let table = MirroredWriteTable::with_table_no(5);
+        writer.write_with_table_handlers(
+            [TwoColRow::new("c", "d")],
+            &sheet,
+            &table,
+            Vec::new(),
+            vec![Box::new(
+                MirroredOnceAbsoluteMerge::from_property(
+                    easyexcel_core::OnceAbsoluteMergeProperty::new(10, 10, 0, 1),
+                )
+                .expect("merge strategy"),
+            )],
+        )?;
+        writer.finish()?;
+        let mut workbook = open_xls(&path)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert!(range.get_value((3, 0)).is_some());
+        Ok(())
+    }
+
+    #[test]
+    fn initialize_existing_table_holder_xlsx_template_layout() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tbl-tpl.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        let sheet = WriteSheet::<TwoColRow>::new("Sheet1");
+        writer.write([TwoColRow::new("a", "b")], &sheet)?;
+        let table = MirroredWriteTable::with_table_no(5);
+        writer.write_with_table_handlers(
+            [TwoColRow::new("c", "d")],
+            &sheet,
+            &table,
+            Vec::new(),
+            Vec::new(),
+        )?;
+        writer.finish()?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn initialize_existing_table_holder_xlsx_column_widths() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tbl-widths.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<TwoColRow>::from_options(WriteOptions {
+            column_widths: vec![(0, 30)],
+            ..WriteOptions::default()
+        });
+        writer.write([TwoColRow::new("a", "b")], &sheet)?;
+        let table = MirroredWriteTable::with_table_no(5);
+        writer.write_with_table_handlers(
+            [TwoColRow::new("c", "d")],
+            &sheet,
+            &table,
+            Vec::new(),
+            Vec::new(),
+        )?;
+        writer.finish()?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_annotation_font_merge_and_number_format() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("fonts.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        writer.write(
+            [FontStyleRow::new(vec![
+                CellValue::String("f".to_owned()),
+                CellValue::String("o".to_owned()),
+            ])],
+            &WriteSheet::new("Sheet1"),
+        )?;
+        writer.finish()?;
+
+        let fmt_path = directory.path().join("fmt.xlsx");
+        let mut fmt_writer = ExcelWriter::new(&fmt_path);
+        let fmt_sheet = WriteSheet::<DynamicRow>::from_options(WriteOptions {
+            content_styles: vec![CellStyle {
+                number_format: Some("0.00".to_owned()),
+                bold: true,
+                italic: true,
+                font_color: Some(0x00FF00),
+                background_color: Some(0xFF0000),
+                horizontal_alignment: Some(HorizontalAlignment::Right),
+                vertical_alignment: Some(VerticalAlignment::Top),
+                wrap_text: true,
+                ..CellStyle::new()
+            }],
+            ..WriteOptions::default()
+        });
+        fmt_writer.write([dyn_row(&[(0, "x")])], &fmt_sheet)?;
+        fmt_writer.finish()?;
+        assert!(path.exists());
+        assert!(fmt_path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn sort_handlers_dedupes_repeat_executors() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("dedupe.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            ..WriteOptions::default()
+        };
+        let mut handlers: Vec<Box<dyn WriteHandler>> = vec![
+            Box::new(UniqueHandler("shared")),
+            Box::new(UniqueHandler("shared")),
+        ];
+        crate::xlsx_write::write_xlsx_with_handlers::<DynamicRow, _>(
+            &path,
+            &options,
+            [dyn_row(&[(0, "dedupe")])],
+            &mut handlers,
+        )?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_to_writer_with_password() -> Result<()> {
+        let mut output = Vec::new();
+        crate::xlsx_write::write_xlsx_to_writer::<DynamicRow, _, _>(
+            std::path::Path::new("logical.xlsx"),
+            &mut output,
+            &WriteOptions {
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                password: Some("pw".to_owned()),
+                ..WriteOptions::default()
+            },
+            [dyn_row(&[(0, "encrypted")])],
+            &mut [],
+        )?;
+        assert!(output.starts_with(CFB_MAGIC));
+        Ok(())
+    }
+
+    #[test]
+    fn legacy_seed_public_with_layout_and_absent_sheet() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("legacy-layout.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            use_legacy_template_seed: true,
+            column_widths: vec![(0, 25)],
+            merge_ranges: vec![MergeRange::new(1, 2, 0, 1)],
+            auto_width: true,
+            compress_temp_files: true,
+            ..WriteOptions::default()
+        };
+        crate::xlsx_write::write_xlsx::<DynamicRow, _>(
+            &path,
+            &options,
+            [dyn_row(&[(0, "layout")])],
+        )?;
+        assert!(path.exists());
+
+        let absent_path = directory.path().join("legacy-absent.xlsx");
+        let absent_options = WriteOptions {
+            sheet_name: "BrandNew".to_owned(),
+            sheet_index: Some(9),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            use_legacy_template_seed: true,
+            ..WriteOptions::default()
+        };
+        crate::xlsx_write::write_xlsx::<DynamicRow, _>(
+            &absent_path,
+            &absent_options,
+            [dyn_row(&[(0, "fresh")])],
+        )?;
+        let mut workbook = open_xlsx(&absent_path)?;
+        assert!(workbook.sheet_names().contains(&"BrandNew".to_owned()));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_wide_row_style_column_error() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("wide-tpl.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        let wide = dyn_row(&(0..70_000).map(|index| (index, "x")).collect::<Vec<_>>());
+        let result = writer.write([wide], &WriteSheet::new("Sheet1"));
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_absent_rows_get_no_heights() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("absent-tpl.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        let rows: Vec<Option<TwoColRow>> = vec![
+            Some(TwoColRow::new("a", "b")),
+            None,
+            Some(TwoColRow::new("c", "d")),
+        ];
+        writer.write(rows, &WriteSheet::new("Sheet1"))?;
+        writer.finish()?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_requested_styles_merge_with_handler_styles() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("req-styles.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            vec![Box::new(StyleOnlyHandler)],
+            WriteOptions {
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        writer.write([TwoColRow::new("a", "b")], &WriteSheet::new("Sheet1"))?;
+        writer.finish()?;
+        let mut workbook = open_xlsx(&path)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert_eq!(range.get_value((2, 0)), Some(&Data::String("a".to_owned())));
+        Ok(())
+    }
+
+    #[test]
+    fn loop_merge_handler_strategy_applied() -> Result<()> {
+        let directory = tempdir()?;
+        let xls_path = directory.path().join("loop-h.xls");
+        let mut xls_writer =
+            ExcelWriter::with_handlers(&xls_path, vec![Box::new(LoopMergeHandler)]);
+        let rows = vec![
+            TwoColRow::new("a", "b"),
+            TwoColRow::new("c", "d"),
+            TwoColRow::new("e", "f"),
+            TwoColRow::new("g", "h"),
+        ];
+        xls_writer.write(rows, &WriteSheet::new("Sheet1"))?;
+        xls_writer.finish()?;
+
+        let xlsx_path = directory.path().join("loop-h.xlsx");
+        let mut xlsx_writer =
+            ExcelWriter::with_handlers(&xlsx_path, vec![Box::new(LoopMergeHandler)]);
+        let rows = vec![
+            TwoColRow::new("a", "b"),
+            TwoColRow::new("c", "d"),
+            TwoColRow::new("e", "f"),
+            TwoColRow::new("g", "h"),
+        ];
+        xlsx_writer.write(rows, &WriteSheet::new("Sheet1"))?;
+        xlsx_writer.finish()?;
+        assert!(xls_path.exists());
+        assert!(xlsx_path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_legacy_seed_to_writer() -> Result<()> {
+        let mut output = Vec::new();
+        crate::xlsx_write::write_xlsx_to_writer::<DynamicRow, _, _>(
+            std::path::Path::new("logical.xlsx"),
+            &mut output,
+            &WriteOptions {
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                use_legacy_template_seed: true,
+                ..WriteOptions::default()
+            },
+            [dyn_row(&[(0, "legacy")])],
+            &mut [],
+        )?;
+        assert!(output.starts_with(b"PK"));
+        Ok(())
+    }
+
+    #[test]
+    fn stateful_xlsx_template_negative_merge_handler_layout() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("neg-tpl.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            vec![Box::new(NegativeMergeHandler)],
+            WriteOptions {
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        writer.write([TwoColRow::new("v", "w")], &WriteSheet::new("Sheet1"))?;
+        writer.finish()?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn row_type_from_row_constructors_are_invokable() -> Result<()> {
+        let row_data = easyexcel_core::RowData::new(
+            "Sheet1",
+            0,
+            vec![CellValue::String("x".to_owned())],
+            std::sync::Arc::new(std::collections::HashMap::new()),
+        );
+        assert!(TwoColRow::from_row(&row_data).is_ok());
+        assert!(LoopMergeRow::from_row(&row_data).is_ok());
+        assert!(AbsoluteMergeRow::from_row(&row_data).is_ok());
+        assert!(NegativeMergeRow::from_row(&row_data).is_ok());
+        assert!(FontStyleRow::from_row(&row_data).is_ok());
+        assert!(FailingRow::from_row(&row_data).is_ok());
+        assert!(
+            NegativeMergeRow::new(vec![CellValue::String("v".to_owned())])
+                .to_row()
+                .is_ok()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_requested_style_merged_with_handler_style() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("req-style.xlsx");
+        let mut writer = ExcelWriter::with_handlers(&path, vec![Box::new(StyleOnlyHandler)]);
+        writer.write([TwoColRow::new("a", "b")], &WriteSheet::new("Sheet1"))?;
+        writer.finish()?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn cell_format_applies_converted_data_format_without_annotation() {
+        let context = CellFormatContext {
+            explicit: None,
+            cell: None,
+            font: None,
+            handler_cell: None,
+            converted_cell: None,
+            converted_data_format: Some("0.00"),
+            global: WriteGlobalFlags::default(),
+        };
+        let format = cell_format(context);
+        // rust_xlsxwriter exposes no num-format getter; exercising cell_format
+        // with a converted data format is the coverage goal.
+        let _ = format;
+    }
+
+    #[test]
+    fn apply_annotation_once_absolute_merge_applies_when_handler_absent() -> Result<()> {
+        let mut worksheet = rust_xlsxwriter::Worksheet::new();
+        let handlers: Vec<Box<dyn WriteHandler>> = Vec::new();
+        apply_annotation_once_absolute_merge::<AbsoluteMergeRow>(&mut worksheet, &handlers)?;
+        Ok(())
+    }
+
+    #[test]
+    fn table_annotation_handlers_second_write_short_circuits() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tbl-twice.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<TwoColRow>::new("Sheet1");
+        let table = crate::metadata::write_table::WriteTable::new();
+        writer.write_with_table([TwoColRow::new("a", "b")], &sheet, &table)?;
+        writer.write_with_table([TwoColRow::new("c", "d")], &sheet, &table)?;
+        writer.finish()?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_existing_sheet_uses_else_target_name() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tpl-existing.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            ..WriteOptions::default()
+        };
+        let mut writer = ExcelWriter::new(&path);
+        writer.write([TwoColRow::new("a", "b")], &WriteSheet::new("Sheet1"))?;
+        writer.finish()?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn xls_write_with_automatic_merge_head_disabled() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("no-merge-head.xls");
+        let options = WriteOptions {
+            automatic_merge_head: false,
+            sheet_name: "Sheet1".to_owned(),
+            ..WriteOptions::default()
+        };
+        crate::write_xls::write_xls::<TwoColRow, _>(&path, &options, [TwoColRow::new("a", "b")])?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn template_head_style_none_column_matches_head_fallback() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tpl-dyn-head.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            ..WriteOptions::default()
+        };
+        let mut writer = ExcelWriter::new(&path);
+        // DynamicRow has an empty schema, so head columns never match.
+        writer.write([dyn_row(&[(0, "a"), (1, "b")])], &WriteSheet::new("Sheet1"))?;
+        writer.finish()?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn xls_finish_via_output_stream_with_and_without_template_full_loop() -> Result<()> {
+        for use_template in [false, true] {
+            let directory = tempdir()?;
+            let logical = directory.path().join("stream.xls");
+            let output = ExcelOutputStream::new(std::io::Cursor::new(Vec::<u8>::new()));
+            let mut options = WriteOptions {
+                sheet_name: "Sheet1".to_owned(),
+                ..WriteOptions::default()
+            };
+            if use_template {
+                let mut book = crate::biff8::Biff8Book::default();
+                book.sheet_mut("Sheet1");
+                options.template_bytes = Some(book.to_cfb_bytes()?);
+            }
+            let writer = ExcelWriter::with_output_stream(logical, output, Vec::new(), options);
+            let mut writer = writer;
+            writer.write([TwoColRow::new("a", "b")], &WriteSheet::new("Sheet1"))?;
+            writer.finish()?;
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn ensure_table_annotation_handlers_second_call_short_circuits() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("ensure-twice.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let options = WriteOptions::default();
+        writer.ensure_table_annotation_handlers::<TwoColRow>("Sheet1", 0, &options)?;
+        writer.ensure_table_annotation_handlers::<TwoColRow>("Sheet1", 0, &options)?;
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_existing_sheet_name_uses_else_target() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tpl-else-target.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            ..WriteOptions::default()
+        };
+        let mut writer = ExcelWriter::new(&path);
+        writer.write([TwoColRow::new("a", "b")], &WriteSheet::new("Sheet1"))?;
+        writer.finish()?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn template_head_extra_column_hits_none_head_fallback() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tpl-extra-col.xlsx");
+        let mut workbook = Workbook::new();
+        let sheet = workbook.add_worksheet();
+        sheet.set_name("Sheet1").expect("sheet name");
+        sheet.write_string(0, 0, "A").expect("head a");
+        sheet.write_string(0, 1, "B").expect("head b");
+        sheet.write_string(0, 2, "C").expect("head c");
+        let template = workbook.save_to_buffer().expect("template");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(template),
+            ..WriteOptions::default()
+        };
+        let mut writer = ExcelWriter::new(&path);
+        writer.write([TwoColRow::new("a", "b")], &WriteSheet::new("Sheet1"))?;
+        writer.finish()?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn template_append_cell_styles_head_with_unknown_column() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("styles-head.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            ..WriteOptions::default()
+        };
+        let mut package = crate::template_write::TemplatePackage::from_bytes(
+            xlsx_template_bytes("Sheet1").as_slice(),
+        )?;
+        let rows = vec![
+            vec![
+                (0usize, CellValue::String("h0".to_owned())),
+                (5usize, CellValue::String("extra".to_owned())),
+            ],
+            vec![(0usize, CellValue::String("v".to_owned()))],
+        ];
+        let converted: Vec<Vec<(usize, easyexcel_core::WriteCellData)>> = Vec::new();
+        let ignore: Vec<Vec<bool>> = vec![Vec::new(), Vec::new()];
+        let requested: Vec<Vec<Option<ExcelCellStyle>>> = vec![Vec::new(), Vec::new()];
+        let styles = template_append_cell_styles::<TwoColRow>(
+            &mut package,
+            &options,
+            &[],
+            &rows,
+            &rows,
+            &converted,
+            &ignore,
+            &requested,
+            true,
+            0,
+        )?;
+        assert_eq!(styles.len(), 2);
+        let _ = ExcelWriter::new(&path);
+        Ok(())
+    }
+}

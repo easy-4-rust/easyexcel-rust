@@ -443,5 +443,4 @@ mod tests_extra {
         let grbit = u16::from_le_bytes([font[2], font[3]]);
         assert_eq!(grbit & 0x0A, 0x0A);
     }
-
 }

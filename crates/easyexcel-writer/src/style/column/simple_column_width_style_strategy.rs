@@ -78,5 +78,4 @@ mod tests_extra {
         assert_eq!(uniform.column_width(0), Some(20));
         assert_eq!(uniform.column_width(7), Some(20));
     }
-
 }

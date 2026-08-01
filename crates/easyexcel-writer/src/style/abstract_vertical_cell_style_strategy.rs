@@ -99,7 +99,10 @@ mod tests {
         };
         let context = WriteCellContext::new("Sheet1", 0, 0, CellValue::Empty);
         let style = strategy.head_cell_style(&context);
-        assert_eq!(style.horizontal_alignment, Some(ExcelHorizontalAlignment::Center));
+        assert_eq!(
+            style.horizontal_alignment,
+            Some(ExcelHorizontalAlignment::Center)
+        );
     }
 
     #[test]
@@ -139,14 +142,20 @@ mod tests {
             wrapped: Some(true),
             ..ExcelCellStyle::new()
         };
-        let strategy = TestVerticalStrategy { head_style, content_style };
+        let strategy = TestVerticalStrategy {
+            head_style,
+            content_style,
+        };
         let context = WriteCellContext::new("Sheet1", 0, 0, CellValue::Empty);
 
         let head = strategy.head_cell_style(&context);
         let content = strategy.content_cell_style(&context);
 
         assert_ne!(head, content);
-        assert_eq!(head.horizontal_alignment, Some(ExcelHorizontalAlignment::Center));
+        assert_eq!(
+            head.horizontal_alignment,
+            Some(ExcelHorizontalAlignment::Center)
+        );
         assert_eq!(content.wrapped, Some(true));
     }
 }

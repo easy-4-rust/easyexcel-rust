@@ -572,10 +572,7 @@ mod tests {
             compressed_len: 0,
             _dir: None,
         };
-        let error = reader
-            .next_row()
-            .err()
-            .expect("corrupt stream must fail");
+        let error = reader.next_row().err().expect("corrupt stream must fail");
         assert!(matches!(error, ExcelError::Io(_)));
     }
 
