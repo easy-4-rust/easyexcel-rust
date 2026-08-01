@@ -901,6 +901,20 @@ mod tests_extra {
     }
 
     #[test]
+    fn set_rejects_rows_and_columns_beyond_biff8_limits() {
+        let mut sheet = Biff8Sheet::new("S");
+        let err = sheet
+            .set(70_000, 0, Biff8Cell::general(Biff8Value::Number(1.0)))
+            .unwrap_err();
+        assert!(matches!(err, ExcelError::Format(_)));
+        let err = sheet
+            .set(0, 300, Biff8Cell::general(Biff8Value::Number(1.0)))
+            .unwrap_err();
+        assert!(matches!(err, ExcelError::Format(_)));
+        assert!(sheet.cells.is_empty());
+    }
+
+    #[test]
     fn bool_and_number_cells_emit_boolerr_rk_and_number_records() {
         let mut sheet = Biff8Sheet::new("S");
         sheet

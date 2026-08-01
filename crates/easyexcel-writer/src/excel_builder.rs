@@ -505,7 +505,7 @@ mod tests {
                 cells
             })],
             &sheet,
-        )?;
+        ).expect("add_content should succeed");
         finish_write_context(&mut builder, false)?;
         finish_write_context(&mut builder, false)?;
         assert!(path.exists());
@@ -526,7 +526,7 @@ mod tests {
                 cells
             })],
             &sheet,
-        )?;
+        ).expect("add_content should succeed");
         builder.finish(false)?;
         assert!(path.exists());
         Ok(())
@@ -766,6 +766,21 @@ mod tests {
             error.to_string(),
             "unsupported operation: Calling the 'fill' method must use a template."
         );
+
+        // The remaining trait surface must be callable on the stub.
+        let table = WriteTable::default();
+        builder
+            .add_content([DynamicRow::default()], &sheet)
+            .expect("stub add_content");
+        builder
+            .add_content_with_table([], &sheet, &table)
+            .expect("stub add_content_with_table");
+        builder.merge(0, 0, 0, 1).expect("stub merge");
+        assert_eq!(
+            builder.write_context().current_write_holder().path(),
+            std::path::Path::new("stub.xlsx")
+        );
+        builder.finish(false).expect("stub finish");
     }
 
     /// `into_writer`, `writer_mut`, and `logical_path` surface accessors.
@@ -874,7 +889,9 @@ mod tests {
     /// A failing fill delegate propagates its error through `ExcelBuilderImpl::fill`.
     #[test]
     fn fill_propagates_delegate_error() {
-        struct FailingFillExecutor;
+        struct FailingFillExecutor {
+            fail_first: bool,
+        }
 
         impl WriteFillExecutor for FailingFillExecutor {
             fn fill(
@@ -883,7 +900,12 @@ mod tests {
                 _fill_config: WriteFillConfig,
                 _sheet: WriteFillSheet,
             ) -> Result<()> {
-                Err(ExcelError::Unsupported("fill failed on purpose".to_owned()))
+                if self.fail_first {
+                    self.fail_first = false;
+                    Err(ExcelError::Unsupported("fill failed on purpose".to_owned()))
+                } else {
+                    Ok(())
+                }
             }
 
             fn finish(&mut self, _on_exception: bool) -> Result<()> {
@@ -891,19 +913,31 @@ mod tests {
             }
         }
 
+        let directory = tempdir().expect("tempdir");
+        let path = directory.path().join("fill-error.xlsx");
         let mut builder = ExcelBuilderImpl::from_options(
-            "fill-error.xlsx",
+            &path,
             WriteOptions {
                 template_bytes: Some(vec![1]),
                 ..WriteOptions::default()
             },
         );
-        builder.set_fill_executor(Box::new(FailingFillExecutor));
+        builder.set_fill_executor(Box::new(FailingFillExecutor { fail_first: true }));
         let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
         let error = builder
             .fill(&DynamicRow::default(), FillConfig::new(), &sheet)
             .expect_err("delegate error must propagate");
-        assert_eq!(error.to_string(), "unsupported operation: fill failed on purpose");
+        assert_eq!(
+            error.to_string(),
+            "unsupported operation: fill failed on purpose"
+        );
+
+        // A later successful fill routes `finish` through the fill delegate.
+        builder
+            .fill(&DynamicRow::default(), FillConfig::new(), &sheet)
+            .expect("second fill succeeds");
+        builder.finish(false).expect("finish via fill delegate");
+        assert!(builder.finished_via_fill());
     }
 
     /// `write_rows` preserves the sheet name when `auto_trim` is disabled.
@@ -975,11 +1009,6 @@ mod tests {
                 &SCHEMA
             }
 
-            fn write_metadata() -> &'static ExcelWriteMetadata {
-                static METADATA: ExcelWriteMetadata = ExcelWriteMetadata::new();
-                &METADATA
-            }
-
             fn from_row(_row: &RowData) -> Result<Self> {
                 Ok(Self)
             }
@@ -997,6 +1026,16 @@ mod tests {
             .add_content([DuplicateIndexRow], &sheet)
             .expect_err("duplicate forced index must fail");
         assert!(error.to_string().contains("must be inconsistent"));
+
+        // The conversion surface of the failing-schema row stays callable.
+        let row = DuplicateIndexRow::from_row(&RowData::new(
+            "Sheet1",
+            0,
+            Vec::new(),
+            std::sync::Arc::new(std::collections::HashMap::new()),
+        ))
+        .expect("from_row");
+        assert!(row.to_row().expect("to_row").is_empty());
     }
 
     /// Direct conversion-surface check for `ContextRow` (`from_row`/`to_row`).
@@ -1028,6 +1067,20 @@ mod tests {
         let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
         builder.add_content([], &sheet)?;
         builder.finish(true)?;
+        Ok(())
+    }
+
+    /// Defensive branch: a fill session without an installed executor falls
+    /// back to the normal finish path. Only reachable by direct field
+    /// manipulation because `fill()` requires an executor to start a session.
+    #[test]
+    fn finish_resources_skips_missing_fill_executor() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("finish-no-executor.xlsx");
+        let mut builder = ExcelBuilderImpl::from_options(&path, WriteOptions::default());
+        builder.fill_session_active = true;
+        builder.finish(false)?;
+        assert!(path.exists());
         Ok(())
     }
 }

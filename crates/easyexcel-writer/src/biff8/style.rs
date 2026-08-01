@@ -491,6 +491,18 @@ mod tests_extra {
     }
 
     #[test]
+    fn apply_excel_cell_style_without_fill_colors() {
+        let mut req = Biff8StyleRequest::default();
+        req.apply_excel_cell_style(ExcelCellStyle {
+            fill_pattern: Some(ExcelFillPattern::Solid),
+            ..ExcelCellStyle::default()
+        });
+        assert_eq!(req.fill_pattern, Some(1));
+        assert!(req.fill_fg_icv.is_none());
+        assert!(req.fill_bg_icv.is_none());
+    }
+
+    #[test]
     fn empty_font_style_is_a_noop() {
         let mut req = Biff8StyleRequest::default();
         req.apply_excel_font_style(ExcelFontStyle::default());
