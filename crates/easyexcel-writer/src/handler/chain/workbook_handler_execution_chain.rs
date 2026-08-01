@@ -88,3 +88,29 @@ impl Default for WorkbookHandlerExecutionChain {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use easyexcel_core::{WriteHandler, WriteWorkbookContext};
+
+    struct NoopHandler;
+    impl WriteHandler for NoopHandler {}
+
+    #[test]
+    fn workbook_chain_default_runs_lifecycle_across_nodes() {
+        let mut chain = WorkbookHandlerExecutionChain::default();
+        chain.add_last(Box::new(NoopHandler));
+        chain.add_last(Box::new(NoopHandler));
+        let context = WriteWorkbookContext::new("out.xlsx");
+        chain.before_workbook_create(&context).unwrap();
+        chain.after_workbook_create(&context).unwrap();
+        chain.after_workbook_dispose(&context).unwrap();
+    }
+
+    #[test]
+    fn workbook_chain_with_handler_head_works() {
+        let chain = WorkbookHandlerExecutionChain::with_handler(Box::new(NoopHandler));
+        let _ = chain;
+    }
+}

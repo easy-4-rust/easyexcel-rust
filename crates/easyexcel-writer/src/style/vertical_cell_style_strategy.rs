@@ -107,3 +107,133 @@ impl WriteHandler for VerticalCellStyleStrategy {
         Some(AbstractCellStyleStrategy::cell_style(self, context))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use easyexcel_core::CellValue;
+
+    #[test]
+    fn vertical_strategy_new_closure() {
+        let s = VerticalCellStyleStrategy::new(
+            |_| ExcelCellStyle::new(),
+            |_| ExcelCellStyle::new(),
+        );
+        let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
+        context.is_head = true;
+        let _ = s.cell_style(&context);
+        context.is_head = false;
+        let _ = s.cell_style(&context);
+    }
+
+    #[test]
+    fn vertical_strategy_uniform() {
+        let s = VerticalCellStyleStrategy::uniform(
+            ExcelCellStyle::new(),
+            ExcelCellStyle::new(),
+        );
+        let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
+        context.is_head = false;
+        let _ = s.cell_style(&context);
+    }
+
+    #[test]
+    fn vertical_strategy_uniform_with_fonts() {
+        let s = VerticalCellStyleStrategy::uniform_with_fonts(
+            ExcelCellStyle::new(),
+            ExcelFontStyle::default(),
+            ExcelCellStyle::new(),
+            ExcelFontStyle::default(),
+        );
+        let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
+        context.is_head = false;
+        let _ = s.cell_style(&context);
+    }
+
+    #[test]
+    fn vertical_strategy_uniform_with_write_fonts() {
+        let s = VerticalCellStyleStrategy::uniform_with_write_fonts(
+            ExcelCellStyle::new(),
+            WriteFont::default(),
+            ExcelCellStyle::new(),
+            WriteFont::default(),
+        );
+        let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
+        context.is_head = false;
+        let _ = s.cell_style(&context);
+    }
+
+    #[test]
+    fn vertical_strategy_order_is_50_000() {
+        let s = VerticalCellStyleStrategy::uniform(
+            ExcelCellStyle::new(),
+            ExcelCellStyle::new(),
+        );
+        assert_eq!(s.order(), 50_000);
+    }
+
+    #[test]
+    fn vertical_strategy_style_cell_style_head() {
+        let s = VerticalCellStyleStrategy::uniform(
+            ExcelCellStyle::new(),
+            ExcelCellStyle::new(),
+        );
+        let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
+        context.is_head = true;
+        let style = s.style_cell_style(&context);
+        assert!(style.is_some());
+    }
+
+    #[test]
+    fn vertical_strategy_style_cell_style_content() {
+        let s = VerticalCellStyleStrategy::uniform(
+            ExcelCellStyle::new(),
+            ExcelCellStyle::new(),
+        );
+        let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
+        context.is_head = false;
+        let style = s.style_cell_style(&context);
+        assert!(style.is_some());
+    }
+
+    #[test]
+    fn vertical_strategy_head_cell_style() {
+        let s = VerticalCellStyleStrategy::uniform(
+            ExcelCellStyle::new(),
+            ExcelCellStyle::new(),
+        );
+        let context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
+        let _ = AbstractVerticalCellStyleStrategy::head_cell_style(&s, &context);
+    }
+
+    #[test]
+    fn vertical_strategy_content_cell_style() {
+        let s = VerticalCellStyleStrategy::uniform(
+            ExcelCellStyle::new(),
+            ExcelCellStyle::new(),
+        );
+        let context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
+        let _ = AbstractVerticalCellStyleStrategy::content_cell_style(&s, &context);
+    }
+}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    use easyexcel_core::CellValue;
+
+    #[test]
+    fn vertical_strategy_content_closure_applies() {
+        let s = VerticalCellStyleStrategy::new(
+            |_| ExcelCellStyle::new(),
+            |_| ExcelCellStyle::new(),
+        );
+        let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
+        context.is_head = false;
+        let _ = s.cell_style(&context);
+        context.is_head = true;
+        let _ = s.cell_style(&context);
+    }
+
+}

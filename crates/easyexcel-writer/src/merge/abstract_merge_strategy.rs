@@ -89,3 +89,38 @@ mod tests {
         assert_eq!(strategy.last_sheet_name, Some("Sheet3".to_owned()));
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use easyexcel_core::{CellValue, WriteCellContext, WriteHandler};
+
+    struct ExtraMergeStrategy {
+        merge_called: bool,
+    }
+
+    impl WriteHandler for ExtraMergeStrategy {}
+
+    impl AbstractMergeStrategy for ExtraMergeStrategy {
+        fn merge(
+            &mut self,
+            _sheet_name: &str,
+            _cell: &WriteCellContext,
+            _extra: Option<&CellExtra>,
+            _relative_row_index: Option<i32>,
+        ) {
+            self.merge_called = true;
+        }
+    }
+
+    #[test]
+    fn abstract_merge_strategy_after_cell_dispose_default_is_noop() {
+        let mut strategy = ExtraMergeStrategy { merge_called: false };
+        let context = WriteCellContext::new("TestSheet", 0, 0, CellValue::Empty);
+        AbstractMergeStrategy::after_cell_dispose(&mut strategy, &context);
+        assert!(!strategy.merge_called);
+        strategy.merge("Sheet1", &context, None, Some(0));
+        assert!(strategy.merge_called);
+    }
+
+}

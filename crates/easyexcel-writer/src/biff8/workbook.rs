@@ -356,24 +356,16 @@ impl Biff8Book {
         let stream = build_workbook_stream(self)?;
         let mut mem = Cursor::new(Vec::<u8>::new());
         {
-            let mut cf = cfb::CompoundFile::create(&mut mem).map_err(|error| {
-                ExcelError::Format(format!("cannot create OLE2 container: {error}"))
-            })?;
+            let mut cf = cfb::CompoundFile::create(&mut mem).map_err(|error| ExcelError::Format(format!("cannot create OLE2 container: {error}")))?;
             {
-                let mut workbook = cf.create_stream("Workbook").map_err(|error| {
-                    ExcelError::Format(format!("cannot create Workbook stream: {error}"))
-                })?;
+                let mut workbook = cf.create_stream("Workbook").map_err(|error| ExcelError::Format(format!("cannot create Workbook stream: {error}")))?;
                 workbook.write_all(&stream)?;
             }
             if !self.extra_bytes.is_empty() {
-                let mut images = cf.create_stream("Images").map_err(|error| {
-                    ExcelError::Format(format!("cannot create Images stream: {error}"))
-                })?;
+                let mut images = cf.create_stream("Images").map_err(|error| ExcelError::Format(format!("cannot create Images stream: {error}")))?;
                 images.write_all(&self.extra_bytes)?;
             }
-            cf.flush().map_err(|error| {
-                ExcelError::Format(format!("cannot flush OLE2 container: {error}"))
-            })?;
+            cf.flush().map_err(|error| ExcelError::Format(format!("cannot flush OLE2 container: {error}")))?;
         }
         Ok(mem.into_inner())
     }
@@ -744,5 +736,203 @@ mod tests {
             date_to_excel_serial_with_windowing(NaiveDate::from_ymd_opt(1904, 1, 1).unwrap(), true),
             0.0
         );
+    }
+}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    /// Walks the BIFF record stream, returning (record type, payload) pairs and
+    /// asserting the framing is well formed end to end.
+    fn records(bytes: &[u8]) -> Vec<(u16, Vec<u8>)> {
+        let mut out = Vec::new();
+        let mut i = 0;
+        while i + 4 <= bytes.len() {
+            let typ = u16::from_le_bytes([bytes[i], bytes[i + 1]]);
+            let len = u16::from_le_bytes([bytes[i + 2], bytes[i + 3]]) as usize;
+            let end = i + 4 + len;
+            assert!(end <= bytes.len(), "record 0x{typ:04X} overruns stream");
+            out.push((typ, bytes[i + 4..end].to_vec()));
+            i = end;
+        }
+        assert_eq!(i, bytes.len(), "stream must be exhausted exactly");
+        out
+    }
+
+    #[test]
+    fn add_merge_rejects_reversed_ranges() {
+        let mut sheet = Biff8Sheet::new("S");
+        let err = sheet
+            .add_merge(Biff8Merge {
+                first_row: 5,
+                last_row: 3,
+                first_col: 0,
+                last_col: 2,
+            })
+            .unwrap_err();
+        assert!(matches!(err, ExcelError::Format(_)));
+        let err = sheet
+            .add_merge(Biff8Merge {
+                first_row: 0,
+                last_row: 2,
+                first_col: 4,
+                last_col: 1,
+            })
+            .unwrap_err();
+        assert!(matches!(err, ExcelError::Format(_)));
+        assert!(sheet.merges.is_empty());
+    }
+
+    #[test]
+    fn add_merge_skips_single_cells_and_tracks_bounds() {
+        let mut sheet = Biff8Sheet::new("S");
+        sheet
+            .add_merge(Biff8Merge {
+                first_row: 2,
+                last_row: 2,
+                first_col: 3,
+                last_col: 3,
+            })
+            .unwrap();
+        assert!(sheet.merges.is_empty());
+        sheet
+            .add_merge(Biff8Merge {
+                first_row: 0,
+                last_row: 1,
+                first_col: 0,
+                last_col: 2,
+            })
+            .unwrap();
+        assert_eq!(sheet.merges.len(), 1);
+        assert_eq!(sheet.dimensions(), (2, 3));
+    }
+
+    #[test]
+    fn write_raw_bytes_round_trips_through_cfb_images_stream() {
+        let mut book = Biff8Book::default();
+        book.write_raw_bytes(&[1, 2, 3, 4]);
+        assert_eq!(book.extra_bytes, vec![1, 2, 3, 4]);
+        let cfb = book.to_cfb_bytes().unwrap();
+        assert!(!cfb.is_empty());
+    }
+
+    #[test]
+    fn write_image_encodes_obj_and_msodrawing_records() {
+        let images: &[&[u8]] = &[
+            &[0xFF, 0xD8, 0x01, 0x02], // JPEG magic
+            &[0x89, b'P', 0x03, 0x04], // PNG magic
+            &[0xAB, 0xCD, 0x05],       // unknown magic → default JPEG
+            &[0x42],                   // too short → default JPEG
+            &[],                       // empty
+        ];
+        for image in images {
+            let mut book = Biff8Book::default();
+            book.write_image(image, 0, 0);
+            assert!(book.extra_bytes.len() > 4);
+            assert_eq!(
+                u16::from_le_bytes([book.extra_bytes[0], book.extra_bytes[1]]),
+                OBJ
+            );
+            let obj_len = u16::from_le_bytes([book.extra_bytes[2], book.extra_bytes[3]]) as usize;
+            let mso = 4 + obj_len;
+            assert_eq!(
+                u16::from_le_bytes([book.extra_bytes[mso], book.extra_bytes[mso + 1]]),
+                MSODRAWING
+            );
+            let mso_len =
+                u16::from_le_bytes([book.extra_bytes[mso + 2], book.extra_bytes[mso + 3]]) as usize;
+            let drawing = &book.extra_bytes[mso + 4..mso + 4 + mso_len];
+            // The raw image payload is embedded inside the MSODRAWING record.
+            if !image.is_empty() {
+                assert!(drawing.windows(image.len()).any(|w| w == *image));
+            }
+            assert!(!book.to_cfb_bytes().unwrap().is_empty());
+        }
+    }
+
+    #[test]
+    fn empty_book_writes_default_sheet1() {
+        let book = Biff8Book::default();
+        let stream = build_workbook_stream(&book).unwrap();
+        let recs = records(&stream);
+        let boundsheets: Vec<&[u8]> = recs
+            .iter()
+            .filter(|(typ, _)| *typ == BOUNDSHEET)
+            .map(|(_, data)| data.as_slice())
+            .collect();
+        assert_eq!(boundsheets.len(), 1);
+        let data = boundsheets[0];
+        let cch = data[6] as usize;
+        assert_eq!(data[7], 0x00, "ASCII name uses compressed encoding");
+        assert_eq!(&data[8..8 + cch], b"Sheet1");
+        assert!(book.to_cfb_bytes().unwrap().len() > stream.len());
+    }
+
+    #[test]
+    fn long_strings_span_sst_continue_records() {
+        let mut sheet = Biff8Sheet::new("S");
+        let long_a = "a".repeat(MAX_RECORD_DATA + 779);
+        let long_b = "b".repeat(MAX_RECORD_DATA + 779);
+        sheet
+            .set(0, 0, Biff8Cell::general(Biff8Value::Text(long_a)))
+            .unwrap();
+        sheet
+            .set(1, 0, Biff8Cell::general(Biff8Value::Text(long_b)))
+            .unwrap();
+        let mut book = Biff8Book::default();
+        book.sheets.push(sheet);
+        let stream = build_workbook_stream(&book).unwrap();
+        let mut sst = 0;
+        let mut continues = 0;
+        for (typ, data) in records(&stream) {
+            if typ == SST || typ == CONTINUE {
+                assert!(data.len() <= MAX_RECORD_DATA);
+            }
+            if typ == SST {
+                sst += 1;
+            }
+            if typ == CONTINUE {
+                continues += 1;
+            }
+        }
+        assert_eq!(sst, 1);
+        assert!(continues >= 3, "expected CONTINUE chunks, got {continues}");
+    }
+
+    #[test]
+    fn bool_and_number_cells_emit_boolerr_rk_and_number_records() {
+        let mut sheet = Biff8Sheet::new("S");
+        sheet
+            .set(0, 0, Biff8Cell::general(Biff8Value::Bool(true)))
+            .unwrap();
+        sheet
+            .set(1, 0, Biff8Cell::general(Biff8Value::Bool(false)))
+            .unwrap();
+        // 1/3 is not RK-encodable → NUMBER record.
+        sheet
+            .set(2, 0, Biff8Cell::general(Biff8Value::Number(1.0 / 3.0)))
+            .unwrap();
+        // 42 is RK-encodable → RK record.
+        sheet
+            .set(3, 0, Biff8Cell::general(Biff8Value::Number(42.0)))
+            .unwrap();
+        let mut book = Biff8Book::default();
+        book.sheets.push(sheet);
+        let stream = build_workbook_stream(&book).unwrap();
+        let mut boolerr = 0;
+        let mut number = 0;
+        let mut rk = 0;
+        for (typ, _) in records(&stream) {
+            match typ {
+                BOOLERR => boolerr += 1,
+                NUMBER => number += 1,
+                RK => rk += 1,
+                _ => {}
+            }
+        }
+        assert_eq!(boolerr, 2);
+        assert_eq!(number, 1);
+        assert_eq!(rk, 1);
     }
 }

@@ -132,3 +132,92 @@ fn data_length(context: &WriteCellContext) -> Option<u16> {
 fn byte_len(text: &str) -> Option<u16> {
     u16::try_from(text.as_bytes().len()).ok()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use easyexcel_core::{CellValue, WriteCellContext, WriteHandler};
+    use chrono::NaiveDate;
+
+    fn context(value: CellValue, is_head: bool) -> WriteCellContext {
+        let mut context = WriteCellContext::new("S", 0, 0, value);
+        context.is_head = is_head;
+        context
+    }
+
+    #[test]
+    fn longest_match_observes_widths_and_reports_them() {
+        let mut strategy = LongestMatchColumnWidthStyleStrategy::new().with_autofit_fallback(true);
+        assert!(strategy.autofit_fallback());
+        strategy
+            .after_cell(&context(CellValue::String("hello".to_owned()), false))
+            .unwrap();
+        strategy
+            .after_cell(&context(CellValue::Bool(true), false))
+            .unwrap();
+        strategy
+            .after_cell(&context(CellValue::Int(12345), false))
+            .unwrap();
+        strategy
+            .after_cell(
+                &context(
+                    CellValue::Date(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()),
+                    false,
+                ),
+            )
+            .unwrap();
+        strategy
+            .after_cell(
+                &context(
+                    CellValue::Comment {
+                        value: Box::new(CellValue::String("note".to_owned())),
+                        text: "note".to_owned(),
+                    },
+                    false,
+                ),
+            )
+            .unwrap();
+        strategy
+            .after_cell(
+                &context(
+                    CellValue::Images {
+                        value: Box::new(CellValue::Int(1)),
+                        images: Vec::new(),
+                    },
+                    false,
+                ),
+            )
+            .unwrap();
+        strategy
+            .after_cell(&context(CellValue::Empty, true))
+            .unwrap();
+        let width = strategy.style_column_width(0);
+        assert!(width.is_some_and(|w| w > 0));
+        assert_eq!(strategy.head_column_width(0), width);
+        assert!(strategy.style_auto_column_width());
+    }
+
+    #[test]
+    fn longest_match_poisoned_cache_returns_early() {
+        let mut strategy = LongestMatchColumnWidthStyleStrategy::new();
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _guard = strategy.cache.lock().expect("lock");
+            panic!("poison the cache");
+        }));
+        let mut context = WriteCellContext::new("S", 0, 0, CellValue::String("x".to_owned()));
+        context.is_head = false;
+        let _ = strategy.after_cell(&context);
+        assert_eq!(strategy.style_column_width(0), None);
+    }
+
+    #[test]
+    fn longest_match_default_has_no_autofit_fallback() {
+        let strategy = LongestMatchColumnWidthStyleStrategy::default();
+        assert!(!strategy.autofit_fallback());
+        assert!(!strategy.style_auto_column_width());
+        assert_eq!(strategy.order(), -50_000);
+        assert_eq!(strategy.style_column_width(99), None);
+    }
+
+}

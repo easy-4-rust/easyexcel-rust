@@ -547,4 +547,210 @@ mod tests {
         assert_eq!(range.get((1, 2)), None);
         assert_eq!(range.get((2, 1)), Some(&Data::String("solo".to_owned())));
     }
+
+    /// Proves `add_to_path` writes a calamine-readable file.
+    #[test]
+    fn add_to_path_writes_readable_xlsx() {
+        let directory = tempdir().expect("tempdir");
+        let path = directory.path().join("add-to-path.xlsx");
+        let context = TestWriteContext { path: path.clone() };
+        let executor = ExcelWriteAddExecutor::new(&context);
+
+        let mut row = BTreeMap::new();
+        row.insert(0, DynamicValue::String("dave".to_owned()));
+        row.insert(1, DynamicValue::ActualData(CellValue::Int(40)));
+        let data = vec![DynamicRow::new(row)];
+
+        executor
+            .add_to_path(
+                &path,
+                &WriteOptions {
+                    need_head: false,
+                    sheet_name: "Sheet1".to_owned(),
+                    ..WriteOptions::default()
+                },
+                data,
+            )
+            .expect("add_to_path should succeed");
+
+        let mut book: Xlsx<_> = open_workbook(&path).expect("open");
+        let range = book.worksheet_range("Sheet1").expect("sheet");
+        assert_eq!(range.get((0, 0)), Some(&Data::String("dave".to_owned())));
+        assert_eq!(range.get((0, 1)), Some(&Data::Float(40.0)));
+    }
+
+    /// Proves `add_java_object_to_excel` with a single cell is callable.
+    #[test]
+    fn add_java_object_to_excel_single_cell() {
+        let directory = tempdir().expect("tempdir");
+        let path = directory.path().join("single-cell.xlsx");
+        let context = TestWriteContext { path: path.clone() };
+        let executor = ExcelWriteAddExecutor::new(&context);
+
+        let mut workbook = Workbook::new();
+        let worksheet = workbook.add_worksheet();
+        worksheet.set_name("Single").expect("sheet name");
+        let options = WriteOptions {
+            need_head: false,
+            sheet_name: "Single".to_owned(),
+            ..WriteOptions::default()
+        };
+        let metadata = ExcelWriteMetadata::default();
+        let mut handlers: Vec<Box<dyn WriteHandler>> = vec![];
+        let mut row = BTreeMap::new();
+        row.insert(0, DynamicValue::String("single".to_owned()));
+        let data = vec![DynamicRow::new(row)];
+        let progress = executor
+            .add_to_worksheet(
+                worksheet,
+                &options,
+                data,
+                &mut handlers,
+                WriteProgress { next_row: 0, next_data_index: 0 },
+                false,
+                &metadata,
+            )
+            .expect("single cell row");
+        assert_eq!(progress.next_row, 1);
+
+        crate::save_workbook(&mut workbook, &path, None).expect("save");
+        let mut book: Xlsx<_> = open_workbook(&path).expect("open");
+        let range = book.worksheet_range("Single").expect("sheet");
+        assert_eq!(range.get((0, 0)), Some(&Data::String("single".to_owned())));
+    }
+
+    /// Proves `add_to_worksheet` is callable and writes cells.
+    #[test]
+    fn add_to_worksheet_writes_cells() {
+        let directory = tempdir().expect("tempdir");
+        let path = directory.path().join("add-to-worksheet.xlsx");
+        let context = TestWriteContext { path: path.clone() };
+        let executor = ExcelWriteAddExecutor::new(&context);
+
+        let mut workbook = Workbook::new();
+        let worksheet = workbook.add_worksheet();
+        worksheet.set_name("Data").expect("sheet name");
+        let options = WriteOptions {
+            need_head: false,
+            sheet_name: "Data".to_owned(),
+            ..WriteOptions::default()
+        };
+
+        let mut row = BTreeMap::new();
+        row.insert(0, DynamicValue::String("eve".to_owned()));
+        row.insert(1, DynamicValue::ActualData(CellValue::Int(50)));
+        let data = vec![DynamicRow::new(row)];
+
+        let progress = executor
+            .add_to_worksheet(
+                worksheet,
+                &options,
+                data,
+                &mut [],
+                WriteProgress { next_row: 0, next_data_index: 0 },
+                false,
+                &ExcelWriteMetadata::default(),
+            )
+            .expect("add_to_worksheet should succeed");
+        assert_eq!(progress.next_row, 1);
+
+        crate::save_workbook(&mut workbook, &path, None).expect("save");
+        let mut book: Xlsx<_> = open_workbook(&path).expect("open");
+        let range = book.worksheet_range("Data").expect("sheet");
+        assert_eq!(range.get((0, 0)), Some(&Data::String("eve".to_owned())));
+        assert_eq!(range.get((0, 1)), Some(&Data::Float(50.0)));
+    }
+
+    /// Empty basic-type rows return the incoming progress unchanged (Java
+    /// `oneRowData.isEmpty()` early return for both Collection and Map rows).
+    #[test]
+    fn empty_basic_type_rows_return_progress_unchanged() {
+        let mut workbook = Workbook::new();
+        let worksheet = workbook.add_worksheet();
+        let options = WriteOptions {
+            need_head: false,
+            sheet_name: "Data".to_owned(),
+            ..WriteOptions::default()
+        };
+        let metadata = ExcelWriteMetadata::new();
+        let context = TestWriteContext {
+            path: PathBuf::from("empty-rows.xlsx"),
+        };
+        let executor = ExcelWriteAddExecutor::new(&context);
+
+        let empty_collection = CollectionRowData::new(vec![]);
+        let progress = executor
+            .add_basic_type_to_excel(
+                worksheet,
+                &options,
+                &empty_collection,
+                4,
+                7,
+                &mut [],
+                &metadata,
+            )
+            .expect("empty collection row");
+        assert_eq!(progress.next_row, 4);
+        assert_eq!(progress.next_data_index, 7);
+
+        let empty_map = MapRowData::new(BTreeMap::new());
+        let progress = executor
+            .add_basic_type_to_excel_with_map(worksheet, &options, &empty_map, 8, 9, &mut [], &metadata)
+            .expect("empty map row");
+        assert_eq!(progress.next_row, 8);
+        assert_eq!(progress.next_data_index, 9);
+    }
+
+    /// Proves `add_java_object_to_excel` (the JavaBean branch) writes a row.
+    #[test]
+    fn add_java_object_to_excel_writes_row() {
+        let mut workbook = Workbook::new();
+        let worksheet = workbook.add_worksheet();
+        let options = WriteOptions {
+            need_head: false,
+            sheet_name: "Data".to_owned(),
+            ..WriteOptions::default()
+        };
+        let metadata = ExcelWriteMetadata::new();
+        let context = TestWriteContext {
+            path: PathBuf::from("java-object.xlsx"),
+        };
+        let executor = ExcelWriteAddExecutor::new(&context);
+
+        let mut cells = BTreeMap::new();
+        cells.insert(0, DynamicValue::String("java".to_owned()));
+        let progress = executor
+            .add_java_object_to_excel(
+                worksheet,
+                &options,
+                DynamicRow::new(cells),
+                3,
+                5,
+                &mut [],
+                &metadata,
+            )
+            .expect("java object row");
+        assert_eq!(progress.next_row, 4);
+        assert_eq!(progress.next_data_index, 6);
+    }
+
+    /// Exercising the full `WriteContextHolder` surface of `TestWriteContext`
+    /// (each accessor used by callers of this test context).
+    #[test]
+    fn test_write_context_holder_surface_contract() {
+        let context = TestWriteContext {
+            path: PathBuf::from("surface.xlsx"),
+        };
+        assert_eq!(context.holder_type(), easyexcel_core::Holder::Workbook);
+        assert!(context.excel_write_head_property().head_cell_range_list().is_empty());
+        assert!(context.converter_map().is_empty());
+        assert!(context.need_head());
+        assert!(context.automatic_merge_head());
+        assert_eq!(context.relative_head_row_index(), 0);
+        assert!(!context.order_by_include_column());
+        assert_eq!(context.include_column_indexes(), None);
+        assert_eq!(context.include_column_field_names(), None);
+        assert!(context.exclude_column_indexes().is_empty());
+        assert!(context.exclude_column_field_names().is_empty());
+    }
 }

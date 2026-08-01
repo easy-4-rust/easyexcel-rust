@@ -155,3 +155,17 @@ mod tests {
         assert!(result.is_err());
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn decrypt_biff8_stream_rejects_short_input() {
+        let error = decrypt_biff8_stream(&[1, 2, 3], "pwd", &[0u8; 16], &[0u8; 16])
+            .err()
+            .expect("short stream must fail");
+        assert_eq!(error, "decrypted BIFF8 stream too short");
+    }
+
+}

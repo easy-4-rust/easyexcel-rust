@@ -47,3 +47,48 @@ impl WriteHandler for FillStyleCellWriteHandler {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use easyexcel_core::CellValue;
+
+    #[test]
+    fn fill_style_cell_write_handler_new_no_style() {
+        let handler = FillStyleCellWriteHandler::new();
+        assert!(handler.last_style().is_none());
+    }
+
+    #[test]
+    fn fill_style_cell_write_handler_default() {
+        let handler = FillStyleCellWriteHandler::default();
+        assert!(handler.last_style().is_none());
+    }
+
+    #[test]
+    fn fill_style_cell_write_handler_set_ignore() {
+        let mut handler = FillStyleCellWriteHandler::new();
+        handler.set_ignore(true);
+        // After set_ignore, last_style should still be None
+        assert!(handler.last_style().is_none());
+    }
+
+    #[test]
+    fn fill_style_cell_write_handler_order_is_zero() {
+        let handler = FillStyleCellWriteHandler::new();
+        assert_eq!(handler.order(), 0);
+    }
+
+    #[test]
+    fn fill_style_cell_write_handler_before_cell() {
+        let mut handler = FillStyleCellWriteHandler::new();
+        let mut context = WriteCellContext::new(
+            "Sheet1",
+            0,
+            0,
+            CellValue::Empty,
+        );
+        handler.before_cell(&mut context).unwrap();
+        assert!(handler.last_style().is_none());
+    }
+}

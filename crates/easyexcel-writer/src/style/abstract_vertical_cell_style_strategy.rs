@@ -118,6 +118,18 @@ mod tests {
     }
 
     #[test]
+    fn vertical_strategy_cell_style_delegates_to_impl() {
+        let strategy = TestVerticalStrategy {
+            head_style: ExcelCellStyle::new(),
+            content_style: ExcelCellStyle::new(),
+        };
+        let context = WriteCellContext::new("Sheet1", 0, 0, CellValue::Empty);
+        let _ = strategy.cell_style(&context);
+        let default = DefaultStrategy;
+        let _ = default.cell_style(&context);
+    }
+
+    #[test]
     fn different_styles_for_head_and_content() {
         let head_style = ExcelCellStyle {
             horizontal_alignment: Some(ExcelHorizontalAlignment::Center),

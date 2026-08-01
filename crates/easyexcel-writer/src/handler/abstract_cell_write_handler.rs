@@ -25,3 +25,22 @@ impl CellWriteHandler for AbstractCellWriteHandler {
     // All three callbacks remain no-ops — the trait provides sensible
     // defaults; we just need a concrete type for the deprecated shim.
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[allow(deprecated)]
+    fn abstract_cell_write_handler_order_is_zero() {
+        let handler = AbstractCellWriteHandler;
+        assert_eq!(handler.order(), 0);
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn abstract_cell_write_handler_unit_construction() {
+        let handler = AbstractCellWriteHandler;
+        let _: AbstractCellWriteHandler = handler;
+    }
+}

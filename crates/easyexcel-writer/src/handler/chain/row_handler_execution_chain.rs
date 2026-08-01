@@ -79,3 +79,29 @@ impl Default for RowHandlerExecutionChain {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use easyexcel_core::{WriteHandler, WriteRowContext};
+
+    struct NoopHandler;
+    impl WriteHandler for NoopHandler {}
+
+    #[test]
+    fn row_chain_default_runs_lifecycle_across_nodes() {
+        let mut chain = RowHandlerExecutionChain::default();
+        chain.add_last(Box::new(NoopHandler));
+        chain.add_last(Box::new(NoopHandler));
+        let context = WriteRowContext::new("S", 0, None, false);
+        chain.before_row_create(&context).unwrap();
+        chain.after_row_create(&context).unwrap();
+        chain.after_row_dispose(&context).unwrap();
+    }
+
+    #[test]
+    fn row_chain_with_handler_head_works() {
+        let chain = RowHandlerExecutionChain::with_handler(Box::new(NoopHandler));
+        let _ = chain;
+    }
+}

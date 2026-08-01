@@ -475,4 +475,114 @@ mod tests {
         assert!(reader.next_row().expect("eof").is_none());
         assert!(reader.snapshot().is_gzip);
     }
+
+    #[test]
+    fn gzip_spill_round_trips_every_cell_value_variant() {
+        let mut writer = GzipSheetDataWriter::create_owned("All").expect("create");
+        let date = NaiveDate::from_ymd_opt(2020, 1, 1).expect("date");
+        let datetime = date.and_hms_opt(12, 30, 0).expect("datetime");
+        let datetime_nanos = date
+            .and_hms_nano_opt(12, 30, 0, 123_000_000)
+            .expect("datetime nanos");
+        let rows = vec![
+            CellValue::Empty,
+            CellValue::String("s".to_owned()),
+            CellValue::Bool(false),
+            CellValue::Int(-7),
+            CellValue::Float(1.25),
+            CellValue::Decimal(BigDecimal::from(3)),
+            CellValue::Date(date),
+            CellValue::DateTime(datetime),
+            CellValue::DateTime(datetime_nanos),
+            CellValue::Error("#DIV/0!".to_owned()),
+            CellValue::Formula("B2+C2".to_owned()),
+            CellValue::Hyperlink {
+                url: "https://x".to_owned(),
+                text: "link".to_owned(),
+            },
+            CellValue::Comment {
+                value: Box::new(CellValue::Bool(true)),
+                text: "note".to_owned(),
+            },
+            CellValue::Image(vec![1, 2, 3]),
+            CellValue::RichText(RichTextStringData::new("rich")),
+            CellValue::Images {
+                value: Box::new(CellValue::Int(5)),
+                images: vec![ImageData::new(vec![9, 8])],
+            },
+        ];
+        writer.write_row(&rows).expect("write");
+        let mut reader = writer.finish().expect("finish");
+        let decoded = reader.next_row().expect("decode").expect("row");
+        assert_eq!(decoded, rows);
+        assert!(reader.next_row().expect("eof").is_none());
+    }
+
+    #[test]
+    fn gzip_spill_decode_reports_corrupt_payloads() {
+        let mut cursor = 0usize;
+        // Decimal parse failure.
+        let decimal_err = decode_cell(&[5, 3, 0, 0, 0, b'a', b'b', b'c'], &mut cursor)
+            .err()
+            .expect("invalid decimal must fail");
+        assert!(matches!(decimal_err, ExcelError::Format(_)));
+        // Date parse failure.
+        cursor = 0;
+        let date_err = decode_cell(&[6, 3, 0, 0, 0, b'b', b'a', b'd'], &mut cursor)
+            .err()
+            .expect("invalid date must fail");
+        assert!(matches!(date_err, ExcelError::Format(_)));
+        // DateTime parse failure (both fallback formats fail).
+        cursor = 0;
+        let datetime_err = decode_cell(&[7, 3, 0, 0, 0, b'b', b'a', b'd'], &mut cursor)
+            .err()
+            .expect("invalid datetime must fail");
+        assert!(matches!(datetime_err, ExcelError::Format(_)));
+        // Unknown tag.
+        cursor = 0;
+        let unknown = decode_cell(&[99], &mut cursor)
+            .err()
+            .expect("unknown tag must fail");
+        assert!(matches!(unknown, ExcelError::Format(_)));
+        // String payload shorter than its declared length.
+        cursor = 0;
+        let truncated = decode_cell(&[1, 10, 0, 0, 0], &mut cursor)
+            .err()
+            .expect("truncated payload must fail");
+        assert!(matches!(truncated, ExcelError::Format(_)));
+        // Non-UTF-8 string payload.
+        cursor = 0;
+        let invalid_utf8 = decode_cell(&[8, 1, 0, 0, 0, 0xFF], &mut cursor)
+            .err()
+            .expect("invalid UTF-8 must fail");
+        assert!(matches!(invalid_utf8, ExcelError::Format(_)));
+    }
+
+    #[test]
+    fn gzip_spill_reader_reports_non_eof_stream_errors() {
+        let directory = tempfile::tempdir().expect("tempdir");
+        let bad_path = directory.path().join("bad.gz");
+        std::fs::write(&bad_path, b"not a gzip stream").expect("write");
+        let file = OpenOptions::new().read(true).open(&bad_path).expect("open");
+        let mut reader = GzipSpillReader {
+            sheet_name: "Sheet1".to_owned(),
+            path: bad_path,
+            decoder: GzDecoder::new(file),
+            uncompressed_len: 0,
+            compressed_len: 0,
+            _dir: None,
+        };
+        let error = reader
+            .next_row()
+            .err()
+            .expect("corrupt stream must fail");
+        assert!(matches!(error, ExcelError::Io(_)));
+    }
+
+    #[test]
+    fn file_has_gzip_magic_missing_file_returns_false() {
+        assert!(!file_has_gzip_magic(std::path::Path::new(
+            "/nonexistent/path/definitely-missing.gz"
+        )));
+    }
 }

@@ -179,3 +179,113 @@ impl From<WriteOptions> for WriteWorkbook {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use easyexcel_core::support::ExcelTypeEnum;
+
+    #[test]
+    fn write_workbook_new_defaults() {
+        let wb = WriteWorkbook::new();
+        assert_eq!(wb.excel_type(), ExcelTypeEnum::Xlsx);
+        assert!(wb.file().is_none());
+        assert!(wb.template_file().is_none());
+        // Default WriteOptions has with_bom=true and auto_close_stream=true
+        assert!(wb.with_bom());
+        assert!(wb.password().is_none());
+        assert!(wb.in_memory());
+        assert!(!wb.write_excel_on_exception());
+        assert!(wb.auto_close_stream());
+    }
+
+    #[test]
+    fn write_workbook_default_impl() {
+        let wb = WriteWorkbook::default();
+        assert_eq!(wb.excel_type(), ExcelTypeEnum::Xlsx);
+    }
+
+    #[test]
+    fn write_workbook_set_excel_type() {
+        let mut wb = WriteWorkbook::new();
+        wb.set_excel_type(ExcelTypeEnum::Xls);
+        assert_eq!(wb.excel_type(), ExcelTypeEnum::Xls);
+    }
+
+    #[test]
+    fn write_workbook_set_file() {
+        let mut wb = WriteWorkbook::new();
+        wb.set_file("/tmp/wb.xlsx");
+        assert_eq!(wb.file().unwrap().to_str().unwrap(), "/tmp/wb.xlsx");
+    }
+
+    #[test]
+    fn write_workbook_set_template_file() {
+        let mut wb = WriteWorkbook::new();
+        wb.set_template_file("/tmp/tpl.xlsx");
+        assert!(wb.template_file().is_some());
+    }
+
+    #[test]
+    fn write_workbook_set_template_bytes() {
+        let mut wb = WriteWorkbook::new();
+        wb.set_template_bytes(vec![1u8, 2, 3]);
+        assert!(wb.template_file().is_none());
+    }
+
+    #[test]
+    fn write_workbook_set_charset() {
+        let mut wb = WriteWorkbook::new();
+        let charset = CsvCharset::new("UTF-8");
+        wb.set_charset(charset.clone());
+        assert_eq!(wb.charset(), &charset);
+    }
+
+    #[test]
+    fn write_workbook_set_with_bom() {
+        let mut wb = WriteWorkbook::new();
+        wb.set_with_bom(true);
+        assert!(wb.with_bom());
+    }
+
+    #[test]
+    fn write_workbook_set_password() {
+        let mut wb = WriteWorkbook::new();
+        wb.set_password("secret");
+        assert_eq!(wb.password(), Some("secret"));
+    }
+
+    #[test]
+    fn write_workbook_set_in_memory() {
+        let mut wb = WriteWorkbook::new();
+        wb.set_in_memory(false);
+        assert!(!wb.in_memory());
+    }
+
+    #[test]
+    fn write_workbook_set_write_excel_on_exception() {
+        let mut wb = WriteWorkbook::new();
+        wb.set_write_excel_on_exception(true);
+        assert!(wb.write_excel_on_exception());
+    }
+
+    #[test]
+    fn write_workbook_set_auto_close_stream() {
+        let mut wb = WriteWorkbook::new();
+        wb.set_auto_close_stream(true);
+        assert!(wb.auto_close_stream());
+    }
+
+    #[test]
+    fn write_workbook_from_write_options() {
+        let opts = WriteOptions::default();
+        let wb = WriteWorkbook::from(opts);
+        assert_eq!(wb.excel_type(), ExcelTypeEnum::Xlsx);
+    }
+
+    #[test]
+    fn write_workbook_options_accessor() {
+        let wb = WriteWorkbook::new();
+        let _ = wb.options();
+    }
+}

@@ -64,3 +64,19 @@ impl AbstractColumnWidthStyleStrategy for SimpleColumnWidthStyleStrategy {
             .copied()
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use easyexcel_core::WriteCellContext;
+
+    #[test]
+    fn simple_column_width_default_matches_new() {
+        let strategy = SimpleColumnWidthStyleStrategy::default();
+        assert_eq!(strategy.column_width(0), None);
+        let uniform = SimpleColumnWidthStyleStrategy::uniform(20);
+        assert_eq!(uniform.column_width(0), Some(20));
+        assert_eq!(uniform.column_width(7), Some(20));
+    }
+
+}

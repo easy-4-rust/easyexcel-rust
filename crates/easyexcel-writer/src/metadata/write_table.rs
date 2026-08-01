@@ -68,3 +68,59 @@ impl Default for WriteTable {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn write_table_new_defaults() {
+        let table = WriteTable::new();
+        assert_eq!(table.table_no(), 0);
+    }
+
+    #[test]
+    fn write_table_default_impl() {
+        let table = WriteTable::default();
+        assert_eq!(table.table_no(), 0);
+    }
+
+    #[test]
+    fn write_table_with_table_no() {
+        let table = WriteTable::with_table_no(5);
+        assert_eq!(table.table_no(), 5);
+    }
+
+    #[test]
+    fn write_table_set_table_no() {
+        let mut table = WriteTable::new();
+        table.set_table_no(3);
+        assert_eq!(table.table_no(), 3);
+    }
+
+    #[test]
+    fn write_table_options_accessor() {
+        let table = WriteTable::new();
+        let _ = table.options();
+    }
+
+    #[test]
+    fn write_table_parameter_accessor() {
+        let table = WriteTable::new();
+        let _ = table.parameter();
+    }
+
+    #[test]
+    fn write_table_clone() {
+        let original = WriteTable::with_table_no(2);
+        let cloned = original.clone();
+        assert_eq!(original, cloned);
+    }
+
+    #[test]
+    fn write_table_equality() {
+        let a = WriteTable::new();
+        let b = WriteTable::new();
+        assert_eq!(a, b);
+    }
+}

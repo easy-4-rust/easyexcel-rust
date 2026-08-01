@@ -117,3 +117,23 @@ mod tests {
         assert_eq!(cells.get_cell_value(1), Some(&CellValue::Bool(true)));
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    use easyexcel_core::CellValue;
+
+    #[test]
+    fn row_data_slice_and_vec_is_empty() {
+        let empty_vec: Vec<CellValue> = Vec::new();
+        assert!(<Vec<CellValue> as RowData>::is_empty(&empty_vec));
+        let empty_slice: &[CellValue] = &[];
+        assert!(<[CellValue] as RowData>::is_empty(empty_slice));
+        let non_empty = vec![CellValue::String("x".to_owned())];
+        assert!(!<Vec<CellValue> as RowData>::is_empty(&non_empty));
+        let slice: &[CellValue] = &non_empty;
+        assert!(!<[CellValue] as RowData>::is_empty(slice));
+    }
+
+}

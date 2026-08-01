@@ -415,3 +415,31 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    use easyexcel_core::ExcelWriteMetadata;
+    use crate::holder::write_holder::WriteHolder;
+
+    #[test]
+    fn resolve_head_and_write_holder_getters_are_covered() {
+        let mut holder = AbstractWriteHolder::default();
+        holder.resolve_head(
+            None,
+            Some(vec![vec!["Name".to_owned()]]),
+            ExcelWriteMetadata::default(),
+        );
+        assert!(holder.need_head());
+        assert_eq!(holder.relative_head_row_index(), 0);
+        assert!(holder.automatic_merge_head());
+        assert!(!holder.order_by_include_column());
+        // None field-name / None column-index arms of WriteHolder::ignore.
+        assert!(!holder.ignore(None, None));
+        let mut excluded = AbstractWriteHolder::default();
+        excluded.exclude_column_indexes = Some(HashSet::from([7]));
+        assert!(excluded.ignore(None, Some(7)));
+    }
+
+}

@@ -96,3 +96,74 @@ impl DerefMut for WriteWorkbookHolder<'_> {
         &mut self.abstract_holder
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::metadata::write_basic_parameter::WriteBasicParameter;
+
+    #[test]
+    fn write_workbook_holder_new() {
+        let holder = WriteWorkbookHolder::new("/tmp/out.xlsx");
+        assert_eq!(holder.path(), "/tmp/out.xlsx");
+        assert!(holder.sheets().is_empty());
+        assert!(holder.handlers().is_empty());
+    }
+
+    #[test]
+    fn write_workbook_holder_from_parameter() {
+        let param = WriteBasicParameter::default();
+        let holder = WriteWorkbookHolder::from_parameter("/tmp/p.xlsx", &param);
+        assert_eq!(holder.path(), "/tmp/p.xlsx");
+    }
+
+    #[test]
+    fn write_workbook_holder_abstract_holder_accessors() {
+        let mut holder = WriteWorkbookHolder::new("/tmp/a.xlsx");
+        let _ = holder.abstract_holder();
+        let _ = holder.abstract_holder_mut();
+    }
+
+    #[test]
+    fn write_workbook_holder_sheets_mut() {
+        let mut holder = WriteWorkbookHolder::new("/tmp/b.xlsx");
+        let _ = holder.sheets_mut();
+    }
+
+    #[test]
+    fn write_workbook_holder_push_handler() {
+        /// No-op WriteHandler for testing.
+        struct NoopHandler;
+        impl WriteHandler for NoopHandler {
+            fn order(&self) -> i32 { 0 }
+        }
+        let mut holder = WriteWorkbookHolder::new("/tmp/c.xlsx");
+        holder.push_handler(Box::new(NoopHandler));
+        assert_eq!(holder.handlers().len(), 1);
+        assert_eq!(NoopHandler.order(), 0);
+    }
+
+    #[test]
+    fn write_workbook_holder_deref() {
+        let holder = WriteWorkbookHolder::new("/tmp/d.xlsx");
+        let _ = holder.abstract_holder();
+    }
+}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    use easyexcel_core::{ExcelWriteHeadProperty, WriteHandler};
+
+    struct NoopHandler;
+    impl WriteHandler for NoopHandler {}
+
+    #[test]
+    fn workbook_holder_deref_mut_reaches_abstract_holder() {
+        let mut holder = WriteWorkbookHolder::new("out.xlsx");
+        holder.set_excel_write_head_property(ExcelWriteHeadProperty::new());
+        assert_eq!(NoopHandler.order(), 0);
+    }
+
+}

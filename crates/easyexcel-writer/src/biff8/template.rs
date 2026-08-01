@@ -520,9 +520,7 @@ fn read_workbook_stream(bytes: &[u8]) -> Result<(String, Vec<u8>)> {
         .map_err(|error| ExcelError::Format(format!("cannot open xls OLE container: {error}")))?;
     for path in ["/Workbook", "/Book", "Workbook", "Book"] {
         if cf.is_stream(path) {
-            let mut stream = cf.open_stream(path).map_err(|error| {
-                ExcelError::Format(format!("cannot open {path} stream: {error}"))
-            })?;
+            let mut stream = cf.open_stream(path).map_err(|error| ExcelError::Format(format!("cannot open {path} stream: {error}")))?;
             let mut workbook = Vec::new();
             stream.read_to_end(&mut workbook)?;
             let normalized = if path.ends_with("Book") && !path.ends_with("Workbook") {
@@ -545,16 +543,10 @@ fn rewrite_workbook_stream(
 ) -> Result<Vec<u8>> {
     let mut cursor = Cursor::new(ole_bytes.to_vec());
     {
-        let mut cf = CompoundFile::open(&mut cursor).map_err(|error| {
-            ExcelError::Format(format!("cannot reopen xls OLE container: {error}"))
-        })?;
+        let mut cf = CompoundFile::open(&mut cursor).map_err(|error| ExcelError::Format(format!("cannot reopen xls OLE container: {error}")))?;
         {
-            let mut stream = cf.open_stream(workbook_path).map_err(|error| {
-                ExcelError::Format(format!("cannot rewrite {workbook_path}: {error}"))
-            })?;
-            stream.set_len(0).map_err(|error| {
-                ExcelError::Format(format!("cannot truncate {workbook_path}: {error}"))
-            })?;
+            let mut stream = cf.open_stream(workbook_path).map_err(|error| ExcelError::Format(format!("cannot rewrite {workbook_path}: {error}")))?;
+            stream.set_len(0).map_err(|error| ExcelError::Format(format!("cannot truncate {workbook_path}: {error}")))?;
             stream.write_all(workbook)?;
             stream.flush()?;
         }
@@ -745,17 +737,25 @@ fn decode_label_payload(data: &[u8]) -> (u16, u8, Option<String>) {
     }
     let row = u16::from_le_bytes([data[0], data[1]]);
     let col = u16::from_le_bytes([data[2], data[3]]);
-    // Bytes 4-5 are XF index; bytes 6-7 are string length
-    let byte_len = u16::from_le_bytes([data[6], data[7]]) as usize;
+    // Bytes 4-5 are XF index; bytes 6-7 are the XLUnicodeString length (cch),
+    // followed by `grbit` + character data (BIFF8 LABEL inline string).
+    let cch = u16::from_le_bytes([data[6], data[7]]) as usize;
     let string_data = &data[8..];
-    let text = if string_data.len() >= byte_len + 1 {
-        // BIFF8 short string: leading byte is length, followed by bytes
-        let len = string_data[0] as usize;
-        if len <= string_data.len().saturating_sub(1) && len <= byte_len {
-            let raw = &string_data[1..=len.min(string_data.len().saturating_sub(1))];
-            String::from_utf8_lossy(raw).into_owned()
+    let text = if !string_data.is_empty() {
+        if string_data[0] & 0x01 == 0 {
+            // Compressed 8-bit characters.
+            let take = cch.min(string_data.len().saturating_sub(1));
+            String::from_utf8_lossy(&string_data[1..1 + take]).into_owned()
         } else {
-            String::new()
+            // 16-bit Unicode characters.
+            let take = cch
+                .saturating_mul(2)
+                .min(string_data.len().saturating_sub(1));
+            let units: Vec<u16> = string_data[1..1 + take]
+                .chunks_exact(2)
+                .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]))
+                .collect();
+            String::from_utf16_lossy(&units)
         }
     } else {
         String::new()
@@ -944,11 +944,9 @@ mod tests {
         );
         // NUMBER/RK may surface as Int or Float depending on calamine decoding.
         let cell = range.get((1, 0));
-        assert!(
-            matches!(cell, Some(Data::Float(v)) if *v == 99.0)
-                || matches!(cell, Some(Data::Int(99))),
-            "expected numeric 99, got {cell:?}"
-        );
+        let is_float_99 = matches!(cell, Some(Data::Float(v)) if *v == 99.0);
+        let is_int_99 = matches!(cell, Some(Data::Int(99)));
+        assert!(is_float_99 || is_int_99, "expected numeric 99, got {cell:?}");
         assert_eq!(
             range.get((2, 0)).and_then(DataType::as_string).as_deref(),
             Some("appended")
@@ -990,5 +988,614 @@ mod tests {
         }
         assert!(matched > 0);
         assert!(package.records.iter().any(|record| record.typ == LABEL));
+    }
+
+    fn build_single_sheet_template() -> Vec<u8> {
+        let mut book = Biff8Book::default();
+        book.sheet_mut("Sheet1")
+            .set(0, 0, Biff8Cell::general(Biff8Value::Text("hello".into())))
+            .unwrap();
+        book.to_cfb_bytes().unwrap()
+    }
+
+    fn reload(records: Vec<RawRecord>) -> Biff8TemplatePackage {
+        let template = build_single_sheet_template();
+        let workbook = assemble_workbook(&records).unwrap();
+        let cfb = rewrite_workbook_stream(&template, "Workbook", &workbook).unwrap();
+        Biff8TemplatePackage::from_bytes(&cfb).unwrap()
+    }
+
+    #[test]
+    fn from_bytes_rejects_non_ole_header() {
+        let error = Biff8TemplatePackage::from_bytes(&[0, 1, 2, 3])
+            .err()
+            .expect("non-OLE bytes must fail");
+        assert!(matches!(error, ExcelError::Format(_)));
+    }
+
+    #[test]
+    fn from_bytes_rejects_workbook_without_worksheets() {
+        let template = build_single_sheet_template();
+        let (_, workbook) = read_workbook_stream(&template).unwrap();
+        let mut records = split_records(&workbook).unwrap();
+        // Keep only the globals BOF/EOF — drop BOUNDSHEET and worksheet spans.
+        records.retain(|record| {
+            if record.typ == BOF {
+                !is_worksheet_bof(&record.data)
+            } else {
+                record.typ == EOF
+            }
+        });
+        let patched = assemble_workbook(&records).unwrap();
+        let cfb = rewrite_workbook_stream(&template, "Workbook", &patched).unwrap();
+        let error = Biff8TemplatePackage::from_bytes(&cfb)
+            .err()
+            .expect("workbook without worksheets must fail");
+        assert!(matches!(error, ExcelError::Format(_)));
+    }
+
+    #[test]
+    fn from_path_and_save_methods_round_trip() {
+        let directory = tempfile::tempdir().unwrap();
+        let template_path = directory.path().join("tpl.xls");
+        std::fs::write(&template_path, build_single_sheet_template()).unwrap();
+        let package = Biff8TemplatePackage::from_path(&template_path).unwrap();
+        assert_eq!(package.sheet_names(), vec!["Sheet1".to_owned()]);
+
+        let save_path = directory.path().join("nested/out/tpl-copy.xls");
+        package.save_to_path(&save_path).unwrap();
+        assert!(save_path.exists());
+
+        // A bare relative path has an empty parent and skips create_dir_all.
+        let bare_path = std::path::Path::new("bare-tpl-copy.xls");
+        package.save_to_path(bare_path).unwrap();
+        assert!(bare_path.exists());
+        std::fs::remove_file(bare_path).unwrap();
+
+        let mut sink = Vec::new();
+        package.save_to_writer(&mut sink).unwrap();
+        assert!(!sink.is_empty());
+
+        let missing = directory.path().join("missing.xls");
+        let error = Biff8TemplatePackage::from_path(&missing)
+            .err()
+            .expect("missing file must fail");
+        assert!(matches!(error, ExcelError::Io(_)));
+    }
+
+    #[test]
+    fn set_cell_validates_rows_columns_and_sheet_names() {
+        let mut package = Biff8TemplatePackage::from_bytes(&build_single_sheet_template()).unwrap();
+        let too_many_rows =
+            Biff8Cell::general(Biff8Value::Number(1.0));
+        let row_error = package
+            .set_cell("Sheet1", 70_000, 0, too_many_rows.clone())
+            .err()
+            .expect("row overflow must fail");
+        assert!(matches!(row_error, ExcelError::Format(_)));
+        let col_error = package
+            .set_cell("Sheet1", 0, 300, too_many_rows)
+            .err()
+            .expect("column overflow must fail");
+        assert!(matches!(col_error, ExcelError::Format(_)));
+        let sheet_error = package
+            .set_cell("Nope", 0, 0, Biff8Cell::general(Biff8Value::Blank))
+            .err()
+            .expect("unknown sheet must fail");
+        assert!(matches!(sheet_error, ExcelError::SheetNotFound(_)));
+    }
+
+    #[test]
+    fn set_cell_preserves_xf_when_overwriting_short_record() {
+        let mut package = Biff8TemplatePackage::from_bytes(&build_single_sheet_template()).unwrap();
+        // A 4-byte LABEL payload (row + col only) forces the short-record XF fallback.
+        let insert_at = package.sheets[0].eof_index;
+        package.records.insert(
+            insert_at,
+            RawRecord {
+                typ: LABEL,
+                data: vec![5, 0, 5, 0],
+            },
+        );
+        package.adjust_indices_after_insert(0, insert_at);
+        package
+            .set_cell(
+                "Sheet1",
+                5,
+                5,
+                Biff8Cell::general(Biff8Value::Number(7.0)),
+            )
+            .unwrap();
+        assert!(
+            matches!(package.records[insert_at].typ, NUMBER | RK),
+            "the short LABEL record must be replaced by a numeric record"
+        );
+    }
+
+    #[test]
+    fn multi_sheet_insert_adjusts_later_sheet_indices() {
+        let mut book = Biff8Book::default();
+        book.sheet_mut("Sheet1")
+            .set(0, 0, Biff8Cell::general(Biff8Value::Text("a".into())))
+            .unwrap();
+        book.sheet_mut("Sheet2")
+            .set(0, 0, Biff8Cell::general(Biff8Value::Text("b".into())))
+            .unwrap();
+        let template = book.to_cfb_bytes().unwrap();
+        let mut package = Biff8TemplatePackage::from_bytes(&template).unwrap();
+        assert_eq!(
+            package.sheet_names(),
+            vec!["Sheet1".to_owned(), "Sheet2".to_owned()]
+        );
+        let sheet2_bof_before = package.sheets[1].bof_index;
+        package
+            .set_cell(
+                "Sheet1",
+                5,
+                0,
+                Biff8Cell::general(Biff8Value::Number(1.0)),
+            )
+            .unwrap();
+        assert!(
+            package.sheets[1].bof_index > sheet2_bof_before,
+            "Sheet2 BOF index must shift after inserting into Sheet1"
+        );
+
+        let out = package.to_bytes().unwrap();
+        use calamine::{DataType, Reader, Xls, open_workbook_from_rs};
+        let mut xls: Xls<_> = open_workbook_from_rs(Cursor::new(out)).unwrap();
+        let first = xls.worksheet_range("Sheet1").unwrap();
+        assert_eq!(
+            first.get((0, 0)).and_then(DataType::as_string).as_deref(),
+            Some("a")
+        );
+        let second = xls.worksheet_range("Sheet2").unwrap();
+        assert_eq!(
+            second.get((0, 0)).and_then(DataType::as_string).as_deref(),
+            Some("b")
+        );
+    }
+
+    #[test]
+    fn refresh_dimension_inserts_missing_dimension_record() {
+        let template = build_single_sheet_template();
+        let (_, workbook) = read_workbook_stream(&template).unwrap();
+        let mut records = split_records(&workbook).unwrap();
+        records.retain(|record| record.typ != DIMENSION);
+        let mut package = reload(records);
+        assert!(package.sheets[0].dimension_index.is_none());
+        package
+            .set_cell(
+                "Sheet1",
+                3,
+                1,
+                Biff8Cell::general(Biff8Value::Number(2.0)),
+            )
+            .unwrap();
+        assert!(
+            package.records.iter().any(|record| record.typ == DIMENSION),
+            "a DIMENSION record must be inserted when the template lacks one"
+        );
+    }
+
+    #[test]
+    fn scan_placeholders_finds_label_and_labelsst_braced_text() {
+        let mut book = Biff8Book::default();
+        book.sheet_mut("Sheet1")
+            .set(
+                0,
+                0,
+                Biff8Cell::general(Biff8Value::Text("hello {name}".into())),
+            )
+            .unwrap();
+        let template = book.to_cfb_bytes().unwrap();
+        let mut package = Biff8TemplatePackage::from_bytes(&template).unwrap();
+        // Inline LABEL placeholder next to the LABELSST one.
+        let label = encode_label_record(4, 4, XF_GENERAL, "key {x}").unwrap();
+        let insert_at = package.sheets[0].eof_index;
+        package.records.insert(insert_at, label);
+        package.adjust_indices_after_insert(0, insert_at);
+
+        let placeholders = package.scan_placeholders();
+        assert_eq!(placeholders.len(), 2, "got {placeholders:?}");
+        let texts = placeholders
+            .iter()
+            .map(|(_, _, _, text)| text.clone())
+            .collect::<Vec<_>>();
+        assert!(texts.contains(&"hello {name}".to_owned()));
+        assert!(texts.contains(&"key {x}".to_owned()));
+
+        // An empty LABEL payload decodes to None and is skipped by the scan.
+        let empty_label = encode_label_record(8, 8, XF_GENERAL, "").unwrap();
+        let insert_at = package.sheets[0].eof_index;
+        package.records.insert(insert_at, empty_label);
+        package.adjust_indices_after_insert(0, insert_at);
+        assert_eq!(package.scan_placeholders().len(), 2);
+    }
+
+    #[test]
+    fn replace_label_replaces_existing_inserts_missing_and_errors() {
+        let mut book = Biff8Book::default();
+        book.sheet_mut("Sheet1")
+            .set(
+                0,
+                0,
+                Biff8Cell::general(Biff8Value::Text("hello {name}".into())),
+            )
+            .unwrap();
+        let template = book.to_cfb_bytes().unwrap();
+        let mut package = Biff8TemplatePackage::from_bytes(&template).unwrap();
+
+        // Replace the existing LABELSST cell with an inline LABEL.
+        package.replace_label("Sheet1", 0, 0, "world").unwrap();
+        assert!(
+            package.scan_placeholders().is_empty(),
+            "replaced text must no longer be a placeholder"
+        );
+
+        // Replace a missing cell: a new LABEL record is inserted.
+        package.replace_label("Sheet1", 9, 9, "new").unwrap();
+        assert!(package.records.iter().any(|record| record.typ == LABEL));
+
+        // Replace over a short (4-byte) LABEL payload: XF_GENERAL fallback.
+        let insert_at = package.sheets[0].eof_index;
+        package.records.insert(
+            insert_at,
+            RawRecord {
+                typ: LABEL,
+                data: vec![7, 0, 7, 0],
+            },
+        );
+        package.adjust_indices_after_insert(0, insert_at);
+        package.replace_label("Sheet1", 7, 7, "short").unwrap();
+
+        let sheet_error = package
+            .replace_label("Nope", 0, 0, "x")
+            .err()
+            .expect("unknown sheet must fail");
+        assert!(matches!(sheet_error, ExcelError::SheetNotFound(_)));
+    }
+
+    #[test]
+    fn cell_value_to_template_cell_maps_all_variants() {
+        use std::str::FromStr as _;
+
+        let blank = cell_value_to_template_cell(&CellValue::Empty).unwrap();
+        assert!(matches!(blank.value, Biff8Value::Blank));
+        for value in [
+            CellValue::String("s".into()),
+            CellValue::Error("e".into()),
+            CellValue::Formula("f".into()),
+            CellValue::Hyperlink {
+                url: "u".into(),
+                text: "t".into(),
+            },
+        ] {
+            let mapped = cell_value_to_template_cell(&value).unwrap();
+            assert!(
+                matches!(mapped.value, Biff8Value::Text(_)),
+                "expected text for {value:?}"
+            );
+        }
+        let rich = cell_value_to_template_cell(&CellValue::RichText(
+            easyexcel_core::RichTextStringData::new("rich"),
+        ))
+        .unwrap();
+        assert!(matches!(rich.value, Biff8Value::Text(_)));
+        let boolean = cell_value_to_template_cell(&CellValue::Bool(true)).unwrap();
+        assert!(matches!(boolean.value, Biff8Value::Bool(true)));
+        let integer = cell_value_to_template_cell(&CellValue::Int(7)).unwrap();
+        assert!(matches!(integer.value, Biff8Value::Number(_)));
+        let float = cell_value_to_template_cell(&CellValue::Float(1.5)).unwrap();
+        assert!(matches!(float.value, Biff8Value::Number(_)));
+        let decimal = cell_value_to_template_cell(&CellValue::Decimal(
+            bigdecimal::BigDecimal::from(10),
+        ))
+        .unwrap();
+        assert!(matches!(decimal.value, Biff8Value::Number(_)));
+        let huge_decimal = cell_value_to_template_cell(&CellValue::Decimal(
+            bigdecimal::BigDecimal::from_str("99999999999999999999").unwrap(),
+        ))
+        .unwrap();
+        assert!(matches!(huge_decimal.value, Biff8Value::Text(_)));
+        let date = cell_value_to_template_cell(&CellValue::Date(
+            chrono::NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+        ))
+        .unwrap();
+        assert!(matches!(date.value, Biff8Value::Number(_)));
+        let datetime = cell_value_to_template_cell(&CellValue::DateTime(
+            chrono::NaiveDate::from_ymd_opt(2024, 1, 15)
+                .unwrap()
+                .and_hms_opt(12, 30, 0)
+                .unwrap(),
+        ))
+        .unwrap();
+        assert!(matches!(datetime.value, Biff8Value::Number(_)));
+        let comment = cell_value_to_template_cell(&CellValue::Comment {
+            value: Box::new(CellValue::String("note".into())),
+            text: "note-text".into(),
+        })
+        .unwrap();
+        assert!(matches!(comment.value, Biff8Value::Text(_)));
+        let images = cell_value_to_template_cell(&CellValue::Images {
+            value: Box::new(CellValue::Int(1)),
+            images: Vec::new(),
+        })
+        .unwrap();
+        assert!(matches!(images.value, Biff8Value::Number(_)));
+        let image_error = cell_value_to_template_cell(&CellValue::Image(vec![1, 2, 3]))
+            .err()
+            .expect("legacy XLS images must be unsupported");
+        assert!(matches!(image_error, ExcelError::Unsupported(_)));
+    }
+
+    #[test]
+    fn encode_cell_record_covers_blank_bool_rk_number_and_oversize() {
+        let blank = encode_cell_record(0, 0, XF_GENERAL, &Biff8Value::Blank).unwrap();
+        assert_eq!(blank.typ, BLANK);
+        let boolean = encode_cell_record(0, 0, XF_GENERAL, &Biff8Value::Bool(true)).unwrap();
+        assert_eq!(boolean.typ, BOOLERR);
+        let rk = encode_cell_record(0, 0, XF_GENERAL, &Biff8Value::Number(99.0)).unwrap();
+        assert_eq!(rk.typ, RK);
+        let number = encode_cell_record(0, 0, XF_GENERAL, &Biff8Value::Number(1.0 / 3.0)).unwrap();
+        assert_eq!(number.typ, NUMBER);
+        let long_text = "x".repeat(MAX_RECORD_DATA + 100);
+        let oversize = encode_cell_record(0, 0, XF_GENERAL, &Biff8Value::Text(long_text))
+            .err()
+            .expect("oversized LABEL must fail");
+        assert!(matches!(oversize, ExcelError::Format(_)));
+    }
+
+    #[test]
+    fn encode_label_record_rejects_oversize_text() {
+        let long_text = "x".repeat(MAX_RECORD_DATA + 100);
+        let error = encode_label_record(0, 0, XF_GENERAL, &long_text)
+            .err()
+            .expect("oversized LABEL must fail");
+        assert!(matches!(error, ExcelError::Format(_)));
+    }
+
+    #[test]
+    fn decode_helpers_handle_short_and_unicode_payloads() {
+        // decode_label_payload: short payload and normal compressed payload.
+        assert_eq!(decode_label_payload(&[0, 0]), (0, 0, None));
+        // Eight-byte payload with no string data at all.
+        assert_eq!(decode_label_payload(&[0u8; 8]), (0, 0, None));
+        let mut label = Vec::new();
+        label.extend_from_slice(&0u16.to_le_bytes());
+        label.extend_from_slice(&1u16.to_le_bytes());
+        label.extend_from_slice(&15u16.to_le_bytes());
+        label.extend_from_slice(&3u16.to_le_bytes());
+        label.push(0);
+        label.extend_from_slice(b"xyz");
+        assert_eq!(
+            decode_label_payload(&label),
+            (0, 1, Some("xyz".to_owned()))
+        );
+        // 16-bit Unicode LABEL payload.
+        let mut unicode_label = Vec::new();
+        unicode_label.extend_from_slice(&2u16.to_le_bytes());
+        unicode_label.extend_from_slice(&0u16.to_le_bytes());
+        unicode_label.extend_from_slice(&15u16.to_le_bytes());
+        unicode_label.extend_from_slice(&1u16.to_le_bytes());
+        unicode_label.push(1);
+        unicode_label.extend_from_slice(&[b'A', 0]);
+        assert_eq!(
+            decode_label_payload(&unicode_label),
+            (2, 0, Some("A".to_owned()))
+        );
+        // Zero-length string: empty text -> None.
+        let mut empty = Vec::new();
+        empty.extend_from_slice(&0u16.to_le_bytes());
+        empty.extend_from_slice(&0u16.to_le_bytes());
+        empty.extend_from_slice(&15u16.to_le_bytes());
+        empty.extend_from_slice(&0u16.to_le_bytes());
+        empty.push(0);
+        assert_eq!(decode_label_payload(&empty), (0, 0, None));
+
+        // decode_labelsst_index: short and normal payloads.
+        assert_eq!(decode_labelsst_index(&[1, 2]), (0, 0, None));
+        let mut labelsst = Vec::new();
+        labelsst.extend_from_slice(&3u16.to_le_bytes());
+        labelsst.extend_from_slice(&4u16.to_le_bytes());
+        labelsst.extend_from_slice(&15u16.to_le_bytes());
+        labelsst.extend_from_slice(&7u32.to_le_bytes());
+        assert_eq!(decode_labelsst_index(&labelsst), (3, 4, Some(7)));
+
+        // decode_labelsst_payload: short, mid-length, and normal payloads.
+        assert_eq!(decode_labelsst_payload(&[1, 2]), (0, 0, None));
+        assert_eq!(decode_labelsst_payload(&[0u8; 9]), (0, 0, None));
+        assert_eq!(decode_labelsst_payload(&labelsst), (3, 4, None));
+
+        // cell_coords: payload too short for a cell record.
+        let short_cell = RawRecord {
+            typ: LABEL,
+            data: vec![1, 2],
+        };
+        assert_eq!(cell_coords(&short_cell), None);
+
+        // decode_boundsheet_name: too short, compressed, and Unicode.
+        let too_short = decode_boundsheet_name(&[0, 0, 0, 0, 0, 0, 0])
+            .err()
+            .expect("short BOUNDSHEET must fail");
+        assert!(matches!(too_short, ExcelError::Format(_)));
+        let mut compressed = vec![0u8; 8];
+        compressed[6] = 2;
+        compressed.extend_from_slice(b"AB");
+        assert_eq!(decode_boundsheet_name(&compressed).unwrap(), "AB");
+        let mut unicode = vec![0u8; 8];
+        unicode[6] = 2;
+        unicode[7] = 1;
+        unicode.extend_from_slice(&[b'A', 0, b'B', 0]);
+        assert_eq!(decode_boundsheet_name(&unicode).unwrap(), "AB");
+    }
+
+    #[test]
+    fn parse_sst_handles_compressed_unicode_and_truncated_bodies() {
+        // Compressed strings.
+        let mut compressed = Vec::new();
+        compressed.extend_from_slice(&1u32.to_le_bytes());
+        compressed.extend_from_slice(&1u32.to_le_bytes());
+        compressed.extend_from_slice(&3u16.to_le_bytes());
+        compressed.push(0);
+        compressed.extend_from_slice(b"abc");
+        let record = RawRecord {
+            typ: SST,
+            data: compressed,
+        };
+        assert_eq!(parse_sst(&[record]), vec!["abc".to_owned()]);
+
+        // 16-bit Unicode strings.
+        let mut unicode = Vec::new();
+        unicode.extend_from_slice(&1u32.to_le_bytes());
+        unicode.extend_from_slice(&1u32.to_le_bytes());
+        unicode.extend_from_slice(&1u16.to_le_bytes());
+        unicode.push(1);
+        unicode.extend_from_slice(&[b'A', 0]);
+        let record = RawRecord {
+            typ: SST,
+            data: unicode,
+        };
+        assert_eq!(parse_sst(&[record]), vec!["A".to_owned()]);
+
+        // Truncated body: cch read beyond the body.
+        let mut truncated = Vec::new();
+        truncated.extend_from_slice(&1u32.to_le_bytes());
+        truncated.extend_from_slice(&100u32.to_le_bytes());
+        truncated.extend_from_slice(&[0, 0]);
+        let record = RawRecord {
+            typ: SST,
+            data: truncated,
+        };
+        assert!(parse_sst(&[record]).is_empty());
+
+        // Body with a single byte: the cch read immediately overflows.
+        let mut single_byte = Vec::new();
+        single_byte.extend_from_slice(&1u32.to_le_bytes());
+        single_byte.extend_from_slice(&100u32.to_le_bytes());
+        single_byte.push(0);
+        let record = RawRecord {
+            typ: SST,
+            data: single_byte,
+        };
+        assert!(parse_sst(&[record]).is_empty());
+
+        // Body exhausted right after grbit.
+        let mut exhausted = Vec::new();
+        exhausted.extend_from_slice(&1u32.to_le_bytes());
+        exhausted.extend_from_slice(&1u32.to_le_bytes());
+        exhausted.extend_from_slice(&0u16.to_le_bytes());
+        exhausted.push(0);
+        let record = RawRecord {
+            typ: SST,
+            data: exhausted,
+        };
+        assert_eq!(parse_sst(&[record]), vec![String::new()]);
+
+        // No SST record at all.
+        assert!(parse_sst(&[]).is_empty());
+    }
+
+    #[test]
+    fn split_records_and_discover_sheets_error_paths() {
+        // Truncated BIFF record.
+        let truncated = split_records(&[0x00, 0x02, 0x00, 0x05, 0x01])
+            .err()
+            .expect("truncated record must fail");
+        assert!(matches!(truncated, ExcelError::Format(_)));
+        // Empty record list.
+        let empty = split_records(&[])
+            .err()
+            .expect("empty stream must fail");
+        assert!(matches!(empty, ExcelError::Format(_)));
+
+        let boundsheet = |name: &[u8]| RawRecord {
+            typ: BOUNDSHEET,
+            data: {
+                let mut data = vec![0u8; 8];
+                data[6] = name.len() as u8;
+                data.extend_from_slice(name);
+                data
+            },
+        };
+        let worksheet_bof = RawRecord {
+            typ: BOF,
+            data: [0, 0, DT_WORKSHEET.to_le_bytes()[0], DT_WORKSHEET.to_le_bytes()[1]].to_vec(),
+        };
+
+        // Nested worksheet BOF without EOF.
+        let nested = discover_sheets(&[boundsheet(b"A"), worksheet_bof.clone(), worksheet_bof.clone()])
+            .err()
+            .expect("nested BOF must fail");
+        assert!(matches!(nested, ExcelError::Format(_)));
+        // Worksheet BOF missing its EOF.
+        let missing_eof = discover_sheets(&[boundsheet(b"A"), worksheet_bof])
+            .err()
+            .expect("missing EOF must fail");
+        assert!(matches!(missing_eof, ExcelError::Format(_)));
+    }
+
+    #[test]
+    fn assemble_and_write_raw_record_error_paths() {
+        // BOUNDSHEET count does not match worksheet BOF count.
+        let unbalanced = assemble_workbook(&[RawRecord {
+            typ: BOUNDSHEET,
+            data: vec![0u8; 8],
+        }])
+        .err()
+        .expect("unbalanced BOUNDSHEET must fail");
+        assert!(matches!(unbalanced, ExcelError::Format(_)));
+        // Oversized record payload.
+        let oversized = write_raw_record(
+            &mut Vec::new(),
+            &RawRecord {
+                typ: LABEL,
+                data: vec![0u8; MAX_RECORD_DATA + 1],
+            },
+        )
+        .err()
+        .expect("oversized payload must fail");
+        assert!(matches!(oversized, ExcelError::Format(_)));
+    }
+
+    #[test]
+    fn read_workbook_stream_supports_book_and_rejects_unknown_containers() {
+        // A CFB containing only a "Book" stream (legacy path).
+        let mut book_mem = Cursor::new(Vec::<u8>::new());
+        {
+            let mut cf = cfb::CompoundFile::create(&mut book_mem).unwrap();
+            let mut stream = cf.create_stream("Book").unwrap();
+            stream.write_all(b"\x09\x08").unwrap();
+            cf.flush().unwrap();
+        }
+        let (path, workbook) = read_workbook_stream(&book_mem.into_inner()).unwrap();
+        assert_eq!(path, "Book");
+        assert_eq!(workbook, b"\x09\x08");
+
+        // A CFB without any Workbook/Book stream.
+        let mut other_mem = Cursor::new(Vec::<u8>::new());
+        {
+            let mut cf = cfb::CompoundFile::create(&mut other_mem).unwrap();
+            cf.create_stream("SummaryInformation").unwrap();
+            cf.flush().unwrap();
+        }
+        let missing = read_workbook_stream(&other_mem.into_inner())
+            .err()
+            .expect("missing Workbook stream must fail");
+        assert!(matches!(missing, ExcelError::Format(_)));
+
+        // OLE magic but a broken container.
+        let mut broken = vec![0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
+        broken.extend_from_slice(&[0u8; 32]);
+        let corrupt = read_workbook_stream(&broken)
+            .err()
+            .expect("corrupt container must fail");
+        assert!(matches!(corrupt, ExcelError::Format(_)));
+    }
+
+    #[test]
+    fn looks_like_xls_detects_ole_magic() {
+        assert!(looks_like_xls(&[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]));
+        assert!(!looks_like_xls(b"PK\x03\x04"));
     }
 }

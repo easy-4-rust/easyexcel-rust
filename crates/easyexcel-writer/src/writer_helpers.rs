@@ -299,3 +299,206 @@ impl std::io::Write for CapturedOutput {
         Ok(())
     }
 }
+
+/// Test helper to drain captured output bytes.
+#[allow(dead_code)]
+pub(crate) fn take_captured_output_helper(output: &CapturedOutput) -> Vec<u8> {
+    output
+        .0
+        .lock()
+        .map_err(|_| std::io::Error::other("CSV capture lock poisoned"))
+        .map(|mut bytes| std::mem::take(&mut *bytes))
+        .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use easyexcel_core::{
+        CellValue, ExcelCellStyle, WriteHandler, WriteRowContext, WriteSheetContext,
+        metadata::property::{LoopMergeProperty, OnceAbsoluteMergeProperty},
+    };
+
+    struct RecordingHandler(Arc<Mutex<Vec<&'static str>>>);
+
+    impl RecordingHandler {
+        fn record(&self, event: &'static str) {
+            self.0.lock().expect("event log mutex poisoned").push(event);
+        }
+    }
+
+    impl WriteHandler for RecordingHandler {
+        fn before_workbook_create(&mut self, _context: &WriteWorkbookContext) -> Result<()> {
+            self.record("before_workbook_create");
+            Ok(())
+        }
+
+        fn after_workbook_create(&mut self, _context: &WriteWorkbookContext) -> Result<()> {
+            self.record("after_workbook_create");
+            Ok(())
+        }
+
+        fn after_workbook_dispose(&mut self, _context: &WriteWorkbookContext) -> Result<()> {
+            self.record("after_workbook_dispose");
+            Ok(())
+        }
+
+        fn before_sheet_create(&mut self, _context: &WriteSheetContext) -> Result<()> {
+            self.record("before_sheet_create");
+            Ok(())
+        }
+
+        fn after_sheet_create(&mut self, _context: &WriteSheetContext) -> Result<()> {
+            self.record("after_sheet_create");
+            Ok(())
+        }
+
+        fn after_sheet_dispose(&mut self, _context: &WriteSheetContext) -> Result<()> {
+            self.record("after_sheet_dispose");
+            Ok(())
+        }
+
+        fn before_row_create(&mut self, _context: &WriteRowContext) -> Result<()> {
+            self.record("before_row_create");
+            Ok(())
+        }
+
+        fn after_row_create(&mut self, _context: &WriteRowContext) -> Result<()> {
+            self.record("after_row_create");
+            Ok(())
+        }
+
+        fn after_row_dispose(&mut self, _context: &WriteRowContext) -> Result<()> {
+            self.record("after_row_dispose");
+            Ok(())
+        }
+
+        fn before_cell_create(&mut self, _context: &mut WriteCellContext) -> Result<()> {
+            self.record("before_cell_create");
+            Ok(())
+        }
+
+        fn after_cell_create(&mut self, _context: &WriteCellContext) -> Result<()> {
+            self.record("after_cell_create");
+            Ok(())
+        }
+
+        fn after_cell_data_converted(&mut self, _context: &WriteCellContext) -> Result<()> {
+            self.record("after_cell_data_converted");
+            Ok(())
+        }
+
+        fn after_cell_dispose(&mut self, _context: &WriteCellContext) -> Result<()> {
+            self.record("after_cell_dispose");
+            Ok(())
+        }
+
+        fn style_cell_style(&self, _context: &WriteCellContext) -> Option<ExcelCellStyle> {
+            Some(ExcelCellStyle::default())
+        }
+
+        fn style_column_width(&self, _column_index: usize) -> Option<u16> {
+            Some(11)
+        }
+
+        fn style_head_row_height(&self) -> Option<u16> {
+            Some(21)
+        }
+
+        fn style_content_row_height(&self) -> Option<u16> {
+            Some(31)
+        }
+
+        fn style_auto_column_width(&self) -> bool {
+            true
+        }
+
+        fn style_once_absolute_merge(
+            &self,
+        ) -> Option<OnceAbsoluteMergeProperty> {
+            Some(OnceAbsoluteMergeProperty {
+                first_row_index: 0,
+                last_row_index: 1,
+                first_column_index: 0,
+                last_column_index: 1,
+            })
+        }
+
+        fn style_loop_merge(&self) -> Option<(LoopMergeProperty, usize)> {
+            Some((
+                LoopMergeProperty {
+                    each_row: 2,
+                    column_extend: 1,
+                },
+                3,
+            ))
+        }
+    }
+
+    #[test]
+    fn shared_handler_forwards_all_callbacks_and_style_queries() {
+        let events = Arc::new(Mutex::new(Vec::new()));
+        let mut shared =
+            SharedWriteHandler::new(Box::new(RecordingHandler(Arc::clone(&events))));
+
+        let workbook_context = WriteWorkbookContext::new("out.xlsx");
+        let sheet_context = WriteSheetContext::new("Sheet1");
+        let row_context = WriteRowContext::new("Sheet1", 0, None, false);
+        let mut cell_context =
+            WriteCellContext::new("Sheet1", 0, 0, CellValue::String("x".to_owned()));
+
+        shared.before_workbook_create(&workbook_context).unwrap();
+        shared.after_workbook_create(&workbook_context).unwrap();
+        shared.after_workbook_dispose(&workbook_context).unwrap();
+        shared.before_sheet_create(&sheet_context).unwrap();
+        shared.after_sheet_create(&sheet_context).unwrap();
+        shared.after_sheet_dispose(&sheet_context).unwrap();
+        shared.before_row_create(&row_context).unwrap();
+        shared.after_row_create(&row_context).unwrap();
+        shared.after_row_dispose(&row_context).unwrap();
+        shared.before_cell_create(&mut cell_context).unwrap();
+        shared.after_cell_create(&cell_context).unwrap();
+        shared.after_cell_data_converted(&cell_context).unwrap();
+        shared.after_cell_dispose(&cell_context).unwrap();
+
+        assert_eq!(
+            shared.style_cell_style(&cell_context),
+            Some(ExcelCellStyle::default())
+        );
+        assert_eq!(shared.style_column_width(0), Some(11));
+        assert_eq!(shared.style_head_row_height(), Some(21));
+        assert_eq!(shared.style_content_row_height(), Some(31));
+        assert!(shared.style_auto_column_width());
+        assert_eq!(
+            shared.style_once_absolute_merge(),
+            Some(OnceAbsoluteMergeProperty {
+                first_row_index: 0,
+                last_row_index: 1,
+                first_column_index: 0,
+                last_column_index: 1,
+            })
+        );
+        assert_eq!(
+            shared.style_loop_merge(),
+            Some((
+                LoopMergeProperty {
+                    each_row: 2,
+                    column_extend: 1,
+                },
+                3,
+            ))
+        );
+
+        let log = events.lock().expect("event log mutex poisoned");
+        assert_eq!(log.len(), 13);
+        assert_eq!(log[0], "before_workbook_create");
+        assert_eq!(log[12], "after_cell_dispose");
+    }
+
+    #[test]
+    fn shared_handler_unique_value_reports_inner_string() {
+        let unique = SharedHandlerUniqueValue("abc".to_owned());
+        assert_eq!(unique.unique_value(), "abc");
+        assert_eq!(unique.unique_value(), unique.unique_value());
+    }
+}

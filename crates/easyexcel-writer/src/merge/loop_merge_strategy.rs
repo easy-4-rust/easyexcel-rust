@@ -97,3 +97,18 @@ impl AbstractMergeStrategy for LoopMergeStrategy {
         // mutation happens in those callers.
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    use easyexcel_core::CellValue;
+
+    #[test]
+    fn loop_merge_strategy_merge_default_body_runs() {
+        let mut strategy = LoopMergeStrategy::new(2, 1, 0).expect("valid");
+        let context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
+        strategy.merge("Sheet1", &context, None, Some(0));
+    }
+
+}

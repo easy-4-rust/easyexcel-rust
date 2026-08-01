@@ -117,3 +117,79 @@ impl AbstractMergeStrategy for OnceAbsoluteMergeStrategy {
         // `WriteHandler::style_once_absolute_merge`, not per cell.
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn once_absolute_merge_strategy_new_ok() {
+        let s = OnceAbsoluteMergeStrategy::new(0, 1, 0, 1).unwrap();
+        assert_eq!(s.first_row_index(), 0);
+        assert_eq!(s.last_row_index(), 1);
+        assert_eq!(s.first_column_index(), 0);
+        assert_eq!(s.last_column_index(), 1);
+    }
+
+    #[test]
+    fn once_absolute_merge_strategy_new_negative_error() {
+        assert!(OnceAbsoluteMergeStrategy::new(-1, 1, 0, 1).is_err());
+        assert!(OnceAbsoluteMergeStrategy::new(0, -1, 0, 1).is_err());
+        assert!(OnceAbsoluteMergeStrategy::new(0, 1, -1, 1).is_err());
+        assert!(OnceAbsoluteMergeStrategy::new(0, 1, 0, -1).is_err());
+    }
+
+    #[test]
+    fn once_absolute_merge_strategy_from_property() {
+        let prop = OnceAbsoluteMergeProperty::new(0, 5, 0, 3);
+        let s = OnceAbsoluteMergeStrategy::from_property(prop).unwrap();
+        assert_eq!(s.first_row_index(), 0);
+    }
+
+    #[test]
+    fn once_absolute_merge_strategy_to_property() {
+        let s = OnceAbsoluteMergeStrategy::new(0, 2, 1, 3).unwrap();
+        let prop = s.to_property();
+        assert_eq!(prop.first_row_index, 0);
+        assert_eq!(prop.last_row_index, 2);
+        assert_eq!(prop.first_column_index, 1);
+        assert_eq!(prop.last_column_index, 3);
+    }
+
+    #[test]
+    fn once_absolute_merge_strategy_order() {
+        let s = OnceAbsoluteMergeStrategy::new(0, 1, 0, 1).unwrap();
+        assert_eq!(s.order(), -60_000);
+    }
+
+    #[test]
+    fn once_absolute_merge_strategy_style_once_absolute_merge() {
+        let s = OnceAbsoluteMergeStrategy::new(0, 1, 0, 1).unwrap();
+        let prop = s.style_once_absolute_merge().unwrap();
+        assert_eq!(prop.first_row_index, 0);
+    }
+
+    #[test]
+    fn once_absolute_merge_strategy_accessors() {
+        let s = OnceAbsoluteMergeStrategy::new(1, 5, 2, 7).unwrap();
+        assert_eq!(s.first_row_index(), 1);
+        assert_eq!(s.last_row_index(), 5);
+        assert_eq!(s.first_column_index(), 2);
+        assert_eq!(s.last_column_index(), 7);
+    }
+}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    use easyexcel_core::CellValue;
+
+    #[test]
+    fn once_absolute_merge_strategy_merge_default_body_runs() {
+        let mut strategy = OnceAbsoluteMergeStrategy::new(0, 1, 0, 1).expect("valid");
+        let context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
+        strategy.merge("Sheet1", &context, None, Some(0));
+    }
+
+}

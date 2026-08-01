@@ -193,3 +193,23 @@ impl<T> WriteSheet<T> {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use easyexcel_core::{Converter, DynamicRow};
+
+    struct StringConverter;
+    impl Converter<String> for StringConverter {}
+    impl NullableObjectConverter<String> for StringConverter {}
+
+    #[test]
+    fn write_sheet_register_nullable_converter_keeps_options() {
+        let sheet = WriteSheet::<DynamicRow>::new("S")
+            .register_nullable_converter::<String, StringConverter>(StringConverter);
+        assert_eq!(sheet.options().sheet_name, "S");
+        assert_eq!(sheet.options().excel_type, None);
+    }
+
+}

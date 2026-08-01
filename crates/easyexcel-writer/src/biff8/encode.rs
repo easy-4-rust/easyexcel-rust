@@ -400,3 +400,48 @@ mod tests {
         assert_eq!(u16::from_le_bytes([bytes[6], bytes[7]]), 1);
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn encode_unicode_string_supports_16bit_chars() {
+        let encoded = encode_unicode_string("中文");
+        assert_eq!(encoded[0], 2);
+        assert_eq!(encoded[1], 0);
+        assert_eq!(encoded[2], 0x01);
+    }
+
+    #[test]
+    fn encode_short_unicode_string_supports_16bit_chars() {
+        let encoded = encode_short_unicode_string("中文");
+        assert_eq!(encoded[0], 2);
+        assert_eq!(encoded[1], 0x01);
+    }
+
+    #[test]
+    fn encode_rk_handles_non_finite_and_fractional_values() {
+        assert_eq!(encode_rk(f64::NAN), None);
+        assert_eq!(encode_rk(f64::INFINITY), None);
+        let hundredth = encode_rk(1.5).expect("1.5 packs as /100 RK");
+        assert_eq!(hundredth & 0x03, 0x03);
+        let truncated = encode_rk(4_294_967_296.0).expect("2^32 packs as truncated RK");
+        assert_eq!(truncated & 0x03, 0x00);
+        assert_eq!(encode_rk(1.0 / 3.0), None);
+    }
+
+    #[test]
+    fn pack_cell_xf_wrap_flag_sets_alignment_bit() {
+        let xf = pack_cell_xf(0, 0, 0, 0, true, 0, 0, 0);
+        assert_eq!(xf[6] & 0x08, 0x08);
+    }
+
+    #[test]
+    fn pack_font_italic_and_strikeout_set_grbit() {
+        let font = pack_font(12, false, true, true, 0, "Test");
+        let grbit = u16::from_le_bytes([font[2], font[3]]);
+        assert_eq!(grbit & 0x0A, 0x0A);
+    }
+
+}

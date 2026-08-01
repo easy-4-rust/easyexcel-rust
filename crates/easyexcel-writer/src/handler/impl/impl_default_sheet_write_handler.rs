@@ -40,3 +40,36 @@ impl WriteHandler for DefaultWriteSheetHandler {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use easyexcel_core::WriteSheetContext;
+
+    #[test]
+    fn default_sheet_write_handler_new_initialized_false() {
+        let handler = DefaultWriteSheetHandler::new();
+        assert!(!handler.initialized());
+    }
+
+    #[test]
+    fn default_sheet_write_handler_default_impl() {
+        let handler = DefaultWriteSheetHandler::default();
+        assert!(!handler.initialized());
+    }
+
+    #[test]
+    fn default_sheet_write_handler_after_sheet_sets_initialized() {
+        let mut handler = DefaultWriteSheetHandler::new();
+        assert!(!handler.initialized());
+        let context = WriteSheetContext::new("Sheet1");
+        handler.after_sheet(&context).unwrap();
+        assert!(handler.initialized());
+    }
+
+    #[test]
+    fn default_sheet_write_handler_order_is_zero() {
+        let handler = DefaultWriteSheetHandler::new();
+        assert_eq!(handler.order(), 0);
+    }
+}

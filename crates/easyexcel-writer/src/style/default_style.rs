@@ -50,3 +50,46 @@ impl WriteHandler for DefaultStyle {
 
 // Hint to the linter that the color import is part of the public surface.
 const _IGNORE: Option<ExcelColor> = None;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use easyexcel_core::WriteWorkbookContext;
+
+    #[test]
+    fn default_style_new_alignment() {
+        let style = DefaultStyle::new();
+        assert_eq!(
+            style.header().horizontal_alignment,
+            Some(ExcelHorizontalAlignment::Center)
+        );
+    }
+
+    #[test]
+    fn default_style_default_impl() {
+        let style = DefaultStyle::default();
+        assert_eq!(
+            style.header().horizontal_alignment,
+            Some(ExcelHorizontalAlignment::Center)
+        );
+    }
+
+    #[test]
+    fn default_style_order() {
+        let style = DefaultStyle::new();
+        assert_eq!(style.order(), 0);
+    }
+
+    #[test]
+    fn default_style_after_workbook() {
+        let mut style = DefaultStyle::new();
+        let context = WriteWorkbookContext::new("test.xlsx");
+        style.after_workbook(&context).unwrap();
+    }
+
+    #[test]
+    fn default_style_header_accessor() {
+        let style = DefaultStyle::new();
+        let _ = style.header();
+    }
+}

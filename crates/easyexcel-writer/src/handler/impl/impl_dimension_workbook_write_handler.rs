@@ -40,3 +40,36 @@ impl easyexcel_core::WriteHandler for DimensionWorkbookWriteHandler {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dimension_workbook_write_handler_new_no_ref() {
+        let handler = DimensionWorkbookWriteHandler::new();
+        assert!(handler.last_ref().is_none());
+    }
+
+    #[test]
+    fn dimension_workbook_write_handler_default_no_ref() {
+        let handler = DimensionWorkbookWriteHandler::default();
+        assert!(handler.last_ref().is_none());
+    }
+
+    #[test]
+    fn dimension_workbook_write_handler_after_workbook_sets_ref() {
+        use easyexcel_core::WriteHandler;
+        let mut handler = DimensionWorkbookWriteHandler::new();
+        let context = WriteWorkbookContext::new("/tmp/wb.xlsx");
+        handler.after_workbook(&context).unwrap();
+        assert_eq!(handler.last_ref(), Some("/tmp/wb.xlsx"));
+    }
+
+    #[test]
+    fn dimension_workbook_write_handler_order_is_zero() {
+        use easyexcel_core::WriteHandler;
+        let handler = DimensionWorkbookWriteHandler::new();
+        assert_eq!(handler.order(), 0);
+    }
+}

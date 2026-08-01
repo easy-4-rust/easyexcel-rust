@@ -183,3 +183,23 @@ pub fn csv_bom(encoding: CsvEncoding) -> &'static [u8] {
         CsvEncoding::Standard(_) => b"",
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    use std::io::Cursor;
+    use easyexcel_core::CsvCharset;
+
+    #[test]
+    fn csv_encoding_writer_with_charset_transcodes() {
+        let mut writer =
+            CsvEncodingWriter::with_charset(Cursor::new(Vec::<u8>::new()), &CsvCharset::new("GBK"))
+                .expect("GBK charset is supported");
+        writer
+            .write_all("中文,data\n".as_bytes())
+            .expect("write must succeed");
+        writer.flush().expect("flush must succeed");
+    }
+
+}

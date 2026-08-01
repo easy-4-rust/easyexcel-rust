@@ -133,3 +133,171 @@ pub trait AbstractExcelWriterParameterBuilder {
         None
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use easyexcel_core::WriteHandler;
+
+    /// Concrete test impl of the parameter-builder trait.
+    struct TestParamBuilder {
+        param: WriteBasicParameter,
+        handlers: Vec<Box<dyn WriteHandler>>,
+    }
+
+    impl AbstractExcelWriterParameterBuilder for TestParamBuilder {
+        fn parameter(&mut self) -> &mut WriteBasicParameter {
+            &mut self.param
+        }
+
+        fn register_write_handler(&mut self, handler: Box<dyn WriteHandler>) -> &mut Self {
+            self.handlers.push(handler);
+            self
+        }
+    }
+
+    #[test]
+    fn abstract_writer_parameter_builder_need_head() {
+        let mut b = TestParamBuilder {
+            param: WriteBasicParameter::default(),
+            handlers: vec![],
+        };
+        b.need_head(false);
+        assert_eq!(b.param.need_head, Some(false));
+    }
+
+    #[test]
+    fn abstract_writer_parameter_builder_use_default_style() {
+        let mut b = TestParamBuilder {
+            param: WriteBasicParameter::default(),
+            handlers: vec![],
+        };
+        b.use_default_style(true);
+        assert_eq!(b.param.use_default_style, Some(true));
+    }
+
+    #[test]
+    fn abstract_writer_parameter_builder_automatic_merge_head() {
+        let mut b = TestParamBuilder {
+            param: WriteBasicParameter::default(),
+            handlers: vec![],
+        };
+        b.automatic_merge_head(true);
+        assert_eq!(b.param.automatic_merge_head, Some(true));
+    }
+
+    #[test]
+    fn abstract_writer_parameter_builder_relative_head_row_index() {
+        let mut b = TestParamBuilder {
+            param: WriteBasicParameter::default(),
+            handlers: vec![],
+        };
+        b.relative_head_row_index(5);
+        assert_eq!(b.param.relative_head_row_index, Some(5));
+    }
+
+    #[test]
+    fn abstract_writer_parameter_builder_order_by_include_column() {
+        let mut b = TestParamBuilder {
+            param: WriteBasicParameter::default(),
+            handlers: vec![],
+        };
+        b.order_by_include_column(true);
+        assert_eq!(b.param.order_by_include_column, Some(true));
+    }
+
+    #[test]
+    fn abstract_writer_parameter_builder_exclude_column_indexes() {
+        let mut b = TestParamBuilder {
+            param: WriteBasicParameter::default(),
+            handlers: vec![],
+        };
+        b.exclude_column_indexes(vec![1, 2, 3]);
+        assert_eq!(b.param.exclude_column_indexes, Some(vec![1, 2, 3]));
+    }
+
+    #[test]
+    fn abstract_writer_parameter_builder_exclude_column_field_names() {
+        let mut b = TestParamBuilder {
+            param: WriteBasicParameter::default(),
+            handlers: vec![],
+        };
+        b.exclude_column_field_names(vec!["a".to_owned(), "b".to_owned()]);
+        assert_eq!(b.param.exclude_column_field_names, Some(vec!["a".to_owned(), "b".to_owned()]));
+    }
+
+    #[test]
+    fn abstract_writer_parameter_builder_exclude_column_filed_names_alias() {
+        let mut b = TestParamBuilder {
+            param: WriteBasicParameter::default(),
+            handlers: vec![],
+        };
+        b.exclude_column_filed_names(vec!["c".to_owned()]);
+        assert_eq!(b.param.exclude_column_field_names, Some(vec!["c".to_owned()]));
+    }
+
+    #[test]
+    fn abstract_writer_parameter_builder_include_column_indexes() {
+        let mut b = TestParamBuilder {
+            param: WriteBasicParameter::default(),
+            handlers: vec![],
+        };
+        b.include_column_indexes(vec![0]);
+        assert_eq!(b.param.include_column_indexes, Some(vec![0]));
+    }
+
+    #[test]
+    fn abstract_writer_parameter_builder_include_column_field_names() {
+        let mut b = TestParamBuilder {
+            param: WriteBasicParameter::default(),
+            handlers: vec![],
+        };
+        b.include_column_field_names(vec!["x".to_owned()]);
+        assert_eq!(b.param.include_column_field_names, Some(vec!["x".to_owned()]));
+    }
+
+    #[test]
+    fn abstract_writer_parameter_builder_include_column_filed_names_alias() {
+        let mut b = TestParamBuilder {
+            param: WriteBasicParameter::default(),
+            handlers: vec![],
+        };
+        b.include_column_filed_names(vec!["y".to_owned()]);
+        assert_eq!(b.param.include_column_field_names, Some(vec!["y".to_owned()]));
+    }
+
+    #[test]
+    fn abstract_writer_parameter_builder_register_write_handler() {
+        /// Minimal no-op WriteHandler used to test handler registration.
+        struct NoopHandler;
+        impl WriteHandler for NoopHandler {
+            fn order(&self) -> i32 { 0 }
+        }
+        let mut b = TestParamBuilder {
+            param: WriteBasicParameter::default(),
+            handlers: vec![],
+        };
+        let handler: Box<dyn WriteHandler> = Box::new(NoopHandler);
+        b.register_write_handler(handler);
+        assert_eq!(b.handlers.len(), 1);
+        assert_eq!(NoopHandler.order(), 0);
+    }
+
+    #[test]
+    fn abstract_writer_parameter_builder_head_style_slot() {
+        let b = TestParamBuilder {
+            param: WriteBasicParameter::default(),
+            handlers: vec![],
+        };
+        let _ = b.head_style_slot();
+    }
+
+    #[test]
+    fn abstract_writer_parameter_builder_parameter_accessor() {
+        let mut b = TestParamBuilder {
+            param: WriteBasicParameter::default(),
+            handlers: vec![],
+        };
+        let _ = b.parameter();
+    }
+}

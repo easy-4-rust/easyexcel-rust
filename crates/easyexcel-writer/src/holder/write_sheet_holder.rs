@@ -116,3 +116,72 @@ impl DerefMut for WriteSheetHolder<'_> {
         &mut self.abstract_holder
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::metadata::write_basic_parameter::WriteBasicParameter;
+
+    #[test]
+    fn write_sheet_holder_new() {
+        let holder = WriteSheetHolder::new("Sheet1", 0);
+        assert_eq!(holder.sheet_name(), "Sheet1");
+        assert_eq!(holder.sheet_no(), 0);
+        assert_eq!(holder.last_row_index(), 0);
+        assert!(!holder.has_data());
+        assert!(holder.tables().is_empty());
+    }
+
+    #[test]
+    fn write_sheet_holder_from_parameter() {
+        let parent = AbstractWriteHolder::default();
+        let param = WriteBasicParameter::default();
+        let holder = WriteSheetHolder::from_parameter("S1", 1, &param, &parent);
+        assert_eq!(holder.sheet_name(), "S1");
+        assert_eq!(holder.sheet_no(), 1);
+    }
+
+    #[test]
+    fn write_sheet_holder_abstract_holder_accessors() {
+        let mut holder = WriteSheetHolder::new("Sheet", 0);
+        let _ = holder.abstract_holder();
+        let _ = holder.abstract_holder_mut();
+    }
+
+    #[test]
+    fn write_sheet_holder_tables_mut() {
+        let mut holder = WriteSheetHolder::new("S", 0);
+        let _ = holder.tables_mut();
+    }
+
+    #[test]
+    fn write_sheet_holder_advance_row() {
+        let mut holder = WriteSheetHolder::new("S", 0);
+        assert_eq!(holder.advance_row(), 1);
+        assert!(holder.has_data());
+        assert_eq!(holder.last_row_index(), 1);
+        assert_eq!(holder.advance_row(), 2);
+    }
+
+    #[test]
+    fn write_sheet_holder_deref() {
+        let holder = WriteSheetHolder::new("S", 0);
+        let _ = holder.abstract_holder();
+    }
+}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    use easyexcel_core::ExcelWriteHeadProperty;
+
+    #[test]
+    fn sheet_holder_deref_mut_reaches_abstract_holder() {
+        let mut holder = WriteSheetHolder::new("Sheet1", 0);
+        holder.set_excel_write_head_property(ExcelWriteHeadProperty::new());
+        holder.advance_row();
+        assert!(holder.has_data());
+    }
+
+}

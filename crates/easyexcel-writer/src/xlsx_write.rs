@@ -121,12 +121,7 @@ where
         )?;
     } else {
         let mut workbook = Workbook::new();
-        let holder_scope = HandlerHolderScope::new_resolved::<T>(
-            logical_path,
-            i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX),
-            None,
-            options,
-        )?;
+        let holder_scope = HandlerHolderScope::new_resolved::<T>(logical_path, i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX), None, options)?;
         write_sheet_to_workbook::<T, I>(
             &mut workbook,
             options,
@@ -137,4 +132,75 @@ where
         save_workbook_to_writer(&mut workbook, &mut output, options.password.as_deref())?;
     }
     after_workbook(handlers, &workbook_context)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use std::collections::BTreeMap;
+    use std::io::Cursor;
+    use easyexcel_core::{DynamicRow, DynamicValue};
+    use crate::write_options::WriteOptions;
+
+    fn dynamic_row() -> DynamicRow {
+        let mut values = BTreeMap::new();
+        values.insert(0, DynamicValue::String("alice".to_owned()));
+        DynamicRow::new(values)
+    }
+
+    #[test]
+    fn write_xlsx_to_writer_emits_xlsx_bytes() {
+        let mut options = WriteOptions::default();
+        options.sheet_name = "Sheet1".to_owned();
+        let mut output = Cursor::new(Vec::<u8>::new());
+        write_xlsx_to_writer::<DynamicRow, _, _>(
+            std::path::Path::new("logical.xlsx"),
+            &mut output,
+            &options,
+            vec![dynamic_row()],
+            &mut [],
+        )
+        .expect("write must succeed");
+        assert!(output.get_ref().len() > 0);
+    }
+
+}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    use std::collections::BTreeMap;
+    use std::io::Cursor;
+    use easyexcel_core::{DynamicRow, DynamicValue};
+    use crate::write_options::WriteOptions;
+
+    fn dynamic_row() -> DynamicRow {
+        let mut values = BTreeMap::new();
+        values.insert(0, DynamicValue::String("alice".to_owned()));
+        DynamicRow::new(values)
+    }
+
+    #[test]
+    fn write_xlsx_to_writer_uses_template_when_provided() {
+        let mut workbook = rust_xlsxwriter::Workbook::new();
+        let sheet = workbook.add_worksheet();
+        sheet.write_string(0, 0, "h").expect("write");
+        let template = workbook.save_to_buffer().expect("buffer");
+        let mut options = WriteOptions::default();
+        options.sheet_name = "Sheet1".to_owned();
+        options.template_bytes = Some(template);
+        let mut output = Cursor::new(Vec::<u8>::new());
+        write_xlsx_to_writer::<DynamicRow, _, _>(
+            std::path::Path::new("logical.xlsx"),
+            &mut output,
+            &options,
+            vec![dynamic_row()],
+            &mut [],
+        )
+        .expect("template write must succeed");
+        assert!(output.get_ref().len() > 0);
+    }
+
 }

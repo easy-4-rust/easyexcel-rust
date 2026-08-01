@@ -42,3 +42,36 @@ impl WriteHandler for DefaultWriteWorkbookHandler {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use easyexcel_core::WriteWorkbookContext;
+
+    #[test]
+    fn default_workbook_write_handler_new_initialized_false() {
+        let handler = DefaultWriteWorkbookHandler::new();
+        assert!(!handler.initialized());
+    }
+
+    #[test]
+    fn default_workbook_write_handler_default_impl() {
+        let handler = DefaultWriteWorkbookHandler::default();
+        assert!(!handler.initialized());
+    }
+
+    #[test]
+    fn default_workbook_write_handler_before_workbook_sets_initialized() {
+        let mut handler = DefaultWriteWorkbookHandler::new();
+        assert!(!handler.initialized());
+        let context = WriteWorkbookContext::new("test.xlsx");
+        handler.before_workbook(&context).unwrap();
+        assert!(handler.initialized());
+    }
+
+    #[test]
+    fn default_workbook_write_handler_order_is_zero() {
+        let handler = DefaultWriteWorkbookHandler::new();
+        assert_eq!(handler.order(), 0);
+    }
+}

@@ -438,3 +438,177 @@ mod tests {
         assert_eq!(font_index_for_slot(5), 6);
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn apply_excel_cell_style_maps_every_field() {
+        let mut req = Biff8StyleRequest::default();
+        let style = ExcelCellStyle {
+            horizontal_alignment: Some(ExcelHorizontalAlignment::Distributed),
+            vertical_alignment: Some(ExcelVerticalAlignment::Top),
+            wrapped: Some(true),
+            fill_pattern: Some(ExcelFillPattern::DarkTrellis),
+            fill_foreground_color: Some(ExcelColor::Indexed(13)),
+            fill_background_color: Some(ExcelColor::Indexed(64)),
+            font: Some(ExcelFontStyle {
+                font_name: Some("Arial"),
+                font_height_in_points: Some(18.0),
+                italic: Some(true),
+                strikeout: Some(true),
+                color: Some(ExcelColor::Indexed(10)),
+                bold: Some(true),
+                ..ExcelFontStyle::default()
+            }),
+            ..ExcelCellStyle::default()
+        };
+        req.apply_excel_cell_style(style);
+        assert_eq!(req.halign, Some(7));
+        assert_eq!(req.valign, Some(0));
+        assert!(req.wrap);
+        assert_eq!(req.fill_pattern, Some(10));
+        assert_eq!(req.fill_fg_icv, Some(13));
+        assert_eq!(req.fill_bg_icv, Some(ICV_AUTO));
+        assert_eq!(req.font_name, Some("Arial".to_owned()));
+        assert_eq!(req.font_height_points, Some(18));
+        assert!(req.italic);
+        assert!(req.strikeout);
+        assert!(req.bold);
+        assert_eq!(req.font_color_icv, Some(10));
+    }
+
+    #[test]
+    fn fill_foreground_implies_solid_pattern_and_approximates_rgb() {
+        let mut req = Biff8StyleRequest::default();
+        req.apply_excel_cell_style(ExcelCellStyle {
+            fill_foreground_color: Some(ExcelColor::Rgb(0xFF_00_00)),
+            ..ExcelCellStyle::default()
+        });
+        assert_eq!(req.fill_pattern, Some(1));
+        assert_eq!(req.fill_fg_icv, Some(10));
+    }
+
+    #[test]
+    fn empty_font_style_is_a_noop() {
+        let mut req = Biff8StyleRequest::default();
+        req.apply_excel_font_style(ExcelFontStyle::default());
+        assert!(req.font_name.is_none());
+        assert!(req.font_height_points.is_none());
+        assert!(!req.italic);
+        assert!(!req.strikeout);
+    }
+
+    #[test]
+    fn font_height_is_rounded_and_clamped() {
+        let mut req = Biff8StyleRequest::default();
+        req.apply_excel_font_style(ExcelFontStyle {
+            font_height_in_points: Some(0.4),
+            ..ExcelFontStyle::default()
+        });
+        assert_eq!(req.font_height_points, Some(1));
+        req.apply_excel_font_style(ExcelFontStyle {
+            font_height_in_points: Some(500.0),
+            ..ExcelFontStyle::default()
+        });
+        assert_eq!(req.font_height_points, Some(409));
+        req.apply_excel_font_style(ExcelFontStyle {
+            font_height_in_points: Some(12.6),
+            ..ExcelFontStyle::default()
+        });
+        assert_eq!(req.font_height_points, Some(13));
+    }
+
+    #[test]
+    fn resolve_xf_preserves_date_and_datetime_number_formats() {
+        let mut table = Biff8StyleTable::default();
+        let mut req = Biff8StyleRequest::default();
+        req.bold = true;
+        let date_xf = table.resolve_xf(&req, XF_DATE);
+        let datetime_xf = table.resolve_xf(&req, XF_DATETIME);
+        assert_eq!(date_xf, XF_CUSTOM_BASE);
+        assert_eq!(datetime_xf, XF_CUSTOM_BASE + 1);
+        let xfs = table.custom_xfs();
+        assert_eq!(u16::from_le_bytes([xfs[0][2], xfs[0][3]]), 14);
+        assert_eq!(u16::from_le_bytes([xfs[1][2], xfs[1][3]]), 22);
+        // Repeated requests are cached.
+        assert_eq!(table.resolve_xf(&req, XF_DATE), date_xf);
+        assert_eq!(table.custom_xfs().len(), 2);
+    }
+
+    #[test]
+    fn alloc_rgb_icv_reuses_then_allocates_then_falls_back() {
+        let mut table = Biff8StyleTable::default();
+        assert_eq!(table.alloc_rgb_icv(0x10_20_30), 8);
+        assert_eq!(table.alloc_rgb_icv(0x10_20_30), 8);
+        assert_eq!(table.palette_rgb.len(), 1);
+        for i in 1..56u32 {
+            table.alloc_rgb_icv((i & 0xFF) << 16);
+        }
+        assert_eq!(table.palette_rgb.len(), 56);
+        assert!(table.needs_palette());
+        assert_eq!(table.palette_overrides().len(), 56);
+        // Palette full → nearest built-in fallback.
+        assert_eq!(table.alloc_rgb_icv(0x01_02_03), 8);
+        assert_eq!(table.alloc_rgb_icv(0xFF_FF_FF), 9);
+    }
+
+    #[test]
+    fn color_to_icv_handles_indexed_and_rgb() {
+        let mut table = Biff8StyleTable::default();
+        assert_eq!(color_to_icv(&mut table, ExcelColor::Indexed(64)), ICV_AUTO);
+        assert_eq!(color_to_icv(&mut table, ExcelColor::Indexed(10)), 10);
+        assert_eq!(color_to_icv(&mut table, ExcelColor::Rgb(0x00_FF_00)), 8);
+        assert_eq!(table.palette_rgb.len(), 1);
+        assert_eq!(table.palette_rgb[0], (0, 255, 0));
+    }
+
+    #[test]
+    fn pattern_and_alignment_codes_match_poi() {
+        for (pattern, code) in [
+            (ExcelFillPattern::None, 0u8),
+            (ExcelFillPattern::Solid, 1),
+            (ExcelFillPattern::MediumGray, 2),
+            (ExcelFillPattern::DarkGray, 3),
+            (ExcelFillPattern::LightGray, 4),
+            (ExcelFillPattern::DarkHorizontal, 5),
+            (ExcelFillPattern::DarkVertical, 6),
+            (ExcelFillPattern::DarkDown, 7),
+            (ExcelFillPattern::DarkUp, 8),
+            (ExcelFillPattern::DarkGrid, 9),
+            (ExcelFillPattern::DarkTrellis, 10),
+            (ExcelFillPattern::LightHorizontal, 11),
+            (ExcelFillPattern::LightVertical, 12),
+            (ExcelFillPattern::LightDown, 13),
+            (ExcelFillPattern::LightUp, 14),
+            (ExcelFillPattern::LightGrid, 15),
+            (ExcelFillPattern::LightTrellis, 16),
+            (ExcelFillPattern::Gray125, 17),
+            (ExcelFillPattern::Gray0625, 18),
+        ] {
+            assert_eq!(excel_fill_pattern(pattern), code);
+        }
+        for (align, code) in [
+            (ExcelHorizontalAlignment::General, 0u8),
+            (ExcelHorizontalAlignment::Left, 1),
+            (ExcelHorizontalAlignment::Center, 2),
+            (ExcelHorizontalAlignment::Right, 3),
+            (ExcelHorizontalAlignment::Fill, 4),
+            (ExcelHorizontalAlignment::Justify, 5),
+            (ExcelHorizontalAlignment::CenterAcross, 6),
+            (ExcelHorizontalAlignment::Distributed, 7),
+        ] {
+            assert_eq!(excel_halign(align), code);
+        }
+        for (align, code) in [
+            (ExcelVerticalAlignment::Top, 0u8),
+            (ExcelVerticalAlignment::Center, 1),
+            (ExcelVerticalAlignment::Bottom, 2),
+            (ExcelVerticalAlignment::Justify, 3),
+            (ExcelVerticalAlignment::Distributed, 4),
+        ] {
+            assert_eq!(excel_valign(align), code);
+        }
+    }
+}

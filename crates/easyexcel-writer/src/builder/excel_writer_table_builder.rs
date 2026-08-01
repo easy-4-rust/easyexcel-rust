@@ -481,10 +481,7 @@ mod tests {
             .need_head(false)
             .do_write(vec![TableRow("alice")])?;
 
-        let mut workbook: Xlsx<_> =
-            open_workbook(&output).map_err(|error: calamine::XlsxError| {
-                easyexcel_core::ExcelError::Format(error.to_string())
-            })?;
+        let mut workbook: Xlsx<_> = open_workbook(&output).map_err(|error: calamine::XlsxError| easyexcel_core::ExcelError::Format(error.to_string()))?;
         let range = workbook
             .worksheet_range("Users")
             .map_err(|error| easyexcel_core::ExcelError::Format(error.to_string()))?;
@@ -492,6 +489,198 @@ mod tests {
             range.get_value((0, 0)).and_then(|cell| cell.get_string()),
             Some("alice")
         );
+        Ok(())
+    }
+
+    struct NoopHandler;
+
+    impl WriteHandler for NoopHandler {}
+
+    #[test]
+    fn table_builder_extra_setters_and_accessors() {
+        let builder = ExcelWriterTableBuilder::new()
+            .exclude_column_field_names(["skip"])
+            .head_style(CellStyle::new().bold(true));
+        assert_eq!(
+            builder.table().options.head_style,
+            CellStyle::new().bold(true)
+        );
+        assert_eq!(builder.handler_count(), 0);
+        assert!(builder.handlers().is_empty());
+
+        let mut builder = builder.register_write_handler(Box::new(NoopHandler));
+        assert_eq!(builder.handler_count(), 1);
+        assert_eq!(builder.handlers().len(), 1);
+        builder.head_style_record(CellStyle::new());
+        builder.parameter().order_by_include_column = Some(true);
+        AbstractExcelWriterParameterBuilder::register_write_handler(
+            &mut builder,
+            Box::new(NoopHandler),
+        );
+        assert_eq!(builder.handler_count(), 2);
+        let built = builder.build();
+        assert!(built.options().order_by_include_column);
+        assert_eq!(
+            built.options().exclude_column_field_names,
+            vec!["skip".to_owned()]
+        );
+    }
+
+    #[test]
+    fn table_builder_default_matches_new() {
+        assert_eq!(ExcelWriterTableBuilder::default().table().table_no(), 0);
+        assert_eq!(ExcelWriterTableBuilder::new().table().table_no(), 0);
+        assert_eq!(ExcelWriterTableBuilder::default().handler_count(), 0);
+    }
+
+    #[test]
+    fn unbound_table_builder_do_write_returns_format_error() {
+        let error = ExcelWriterTableBuilder::new()
+            .do_write(vec![TableRow("alice")])
+            .err()
+            .expect("unbound table builder must fail");
+        assert!(matches!(error, easyexcel_core::ExcelError::Format(_)));
+    }
+
+    #[test]
+    fn missing_parent_sheet_do_write_returns_format_error() {
+        let directory = tempdir().expect("tempdir must succeed");
+        let output = directory.path().join("missing-sheet.xlsx");
+        let builder = ExcelWriterTableBuilder {
+            parameter: WriteBasicParameter::default(),
+            table: WriteTable::new(),
+            own_handlers: Vec::new(),
+            parent_handlers: Vec::new(),
+            excel_writer: Some(ExcelWriter::new(&output)),
+            write_sheet: None,
+        };
+        let error = builder
+            .do_write(vec![TableRow("alice")])
+            .err()
+            .expect("missing parent sheet must fail");
+        assert!(matches!(error, easyexcel_core::ExcelError::Format(_)));
+    }
+
+    #[test]
+    fn finished_parent_writer_do_write_propagates_write_error() {
+        let directory = tempdir().expect("tempdir must succeed");
+        let output = directory.path().join("finished-writer.xlsx");
+        let mut writer = ExcelWriter::new(&output);
+        writer
+            .finish()
+            .expect("finishing an unused writer must succeed");
+        let mut sheet = WriteSheetMetadata::new();
+        sheet.set_sheet_name("Users");
+        sheet.options.sheet_name = "Users".to_owned();
+
+        let builder = ExcelWriterTableBuilder {
+            parameter: WriteBasicParameter::default(),
+            table: WriteTable::new(),
+            own_handlers: Vec::new(),
+            parent_handlers: Vec::new(),
+            excel_writer: Some(writer),
+            write_sheet: Some(sheet),
+        };
+        let error = builder
+            .do_write(vec![TableRow("alice")])
+            .err()
+            .expect("writing through a finished writer must fail");
+        assert!(matches!(
+            error,
+            easyexcel_core::ExcelError::Unsupported(_)
+        ));
+    }
+
+    #[test]
+    fn merge_table_options_applies_parameter_field_names_and_plain_style() {
+        let sheet = WriteOptions::default();
+        let mut table = WriteTable::new();
+        table.parameter.exclude_column_field_names = Some(vec!["first".to_owned()]);
+        table.parameter.use_default_style = Some(false);
+        let merged = merge_table_options(&sheet, &table);
+        assert_eq!(merged.exclude_column_field_names, vec!["first".to_owned()]);
+        assert!(!merged.use_default_style);
+        assert_eq!(merged.head_style, CellStyle::new());
+    }
+
+    #[test]
+    fn bound_table_builder_do_write_with_resolves_lazily() -> easyexcel_core::Result<()> {
+        let directory = tempdir()?;
+        let output = directory.path().join("table-with.xlsx");
+        let writer = ExcelWriter::new(&output);
+        let mut sheet = WriteSheetMetadata::new();
+        sheet.set_sheet_name("Users");
+        sheet.options.sheet_name = "Users".to_owned();
+
+        ExcelWriterTableBuilder::with_excel_writer(writer, sheet, Vec::new())
+            .need_head(false)
+            .do_write_with(|| vec![TableRow("bob")])?;
+
+        let mut workbook: Xlsx<_> = open_workbook(&output).map_err(|error: calamine::XlsxError| easyexcel_core::ExcelError::Format(error.to_string()))?;
+        let range = workbook
+            .worksheet_range("Users")
+            .map_err(|error| easyexcel_core::ExcelError::Format(error.to_string()))?;
+        assert_eq!(
+            range.get_value((0, 0)).and_then(|cell| cell.get_string()),
+            Some("bob")
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn merge_table_options_falls_back_to_explicit_table_options() {
+        let sheet = WriteOptions::default();
+        let mut table = WriteTable::new();
+        table.options.relative_head_row_index = 4;
+        table.options.need_head = false;
+        table.options.automatic_merge_head = false;
+        table.options.order_by_include_column = true;
+        table.options.include_column_indexes = Some(vec![1]);
+        table.options.include_column_field_names = Some(vec!["second".to_owned()]);
+        table.options.exclude_column_indexes = vec![0];
+        table.options.exclude_column_field_names = vec!["first".to_owned()];
+        table.options.head_style = CellStyle::new();
+
+        let merged = merge_table_options(&sheet, &table);
+        assert_eq!(merged.relative_head_row_index, 4);
+        assert!(!merged.need_head);
+        assert!(!merged.automatic_merge_head);
+        assert!(merged.order_by_include_column);
+        assert_eq!(merged.include_column_indexes, Some(vec![1]));
+        assert_eq!(
+            merged.include_column_field_names,
+            Some(vec!["second".to_owned()])
+        );
+        assert_eq!(merged.exclude_column_indexes, vec![0]);
+        assert_eq!(merged.exclude_column_field_names, vec!["first".to_owned()]);
+        assert_eq!(merged.head_style, CellStyle::new());
+    }
+
+    #[test]
+    fn build_applies_explicit_field_name_and_style_overrides() {
+        let table = ExcelWriterTableBuilder::new()
+            .exclude_column_field_names(["skip"])
+            .use_default_style(false)
+            .build();
+        assert_eq!(
+            table.options().exclude_column_field_names,
+            vec!["skip".to_owned()]
+        );
+        assert!(!table.options().use_default_style);
+        assert_eq!(table.options().head_style, CellStyle::new());
+    }
+
+    #[test]
+    fn table_row_helper_supports_from_row() -> easyexcel_core::Result<()> {
+        let headers =
+            std::sync::Arc::new(std::collections::HashMap::<String, usize>::new());
+        let row = RowData::new(
+            "Users",
+            0,
+            vec![CellValue::String("alice".to_owned())],
+            headers,
+        );
+        assert_eq!(TableRow::from_row(&row)?.0, "");
         Ok(())
     }
 }

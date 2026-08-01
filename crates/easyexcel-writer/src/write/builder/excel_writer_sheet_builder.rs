@@ -222,3 +222,178 @@ impl Default for ExcelWriterSheetBuilder {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use easyexcel_core::{DynamicRow, DynamicValue, WriteHandler};
+    use tempfile::tempdir;
+
+    struct NoopHandler;
+    impl WriteHandler for NoopHandler {
+        fn order(&self) -> i32 { 0 }
+    }
+
+    #[test]
+    fn excel_writer_sheet_builder_new() {
+        let builder = ExcelWriterSheetBuilder::new();
+        let _ = builder.build();
+    }
+
+    #[test]
+    fn excel_writer_sheet_builder_default() {
+        let builder = ExcelWriterSheetBuilder::default();
+        let _ = builder.build();
+    }
+
+    #[test]
+    fn excel_writer_sheet_builder_sheet_no() {
+        let builder = ExcelWriterSheetBuilder::new().sheet_no(2);
+        let _ = builder.build();
+    }
+
+    #[test]
+    fn excel_writer_sheet_builder_sheet_name() {
+        let builder = ExcelWriterSheetBuilder::new().sheet_name("MySheet");
+        let _ = builder.build();
+    }
+
+    #[test]
+    fn excel_writer_sheet_builder_relative_head_row_index() {
+        let builder = ExcelWriterSheetBuilder::new().relative_head_row_index(1);
+        let _ = builder.build();
+    }
+
+    #[test]
+    fn excel_writer_sheet_builder_need_head() {
+        let builder = ExcelWriterSheetBuilder::new().need_head(true);
+        let _ = builder.build();
+    }
+
+    #[test]
+    fn excel_writer_sheet_builder_use_default_style() {
+        let builder = ExcelWriterSheetBuilder::new().use_default_style(true);
+        let _ = builder.build();
+    }
+
+    #[test]
+    fn excel_writer_sheet_builder_automatic_merge_head() {
+        let builder = ExcelWriterSheetBuilder::new().automatic_merge_head(true);
+        let _ = builder.build();
+    }
+
+    #[test]
+    fn excel_writer_sheet_builder_include_column_indexes() {
+        let builder = ExcelWriterSheetBuilder::new().include_column_indexes([0, 1, 2]);
+        let _ = builder.build();
+    }
+
+    #[test]
+    fn excel_writer_sheet_builder_include_column_field_names() {
+        let builder = ExcelWriterSheetBuilder::new().include_column_field_names(["a", "b"]);
+        let _ = builder.build();
+    }
+
+    #[test]
+    fn excel_writer_sheet_builder_exclude_column_indexes() {
+        let builder = ExcelWriterSheetBuilder::new().exclude_column_indexes([0]);
+        let _ = builder.build();
+    }
+
+    #[test]
+    fn excel_writer_sheet_builder_exclude_column_field_names() {
+        let builder = ExcelWriterSheetBuilder::new().exclude_column_field_names(["a"]);
+        let _ = builder.build();
+    }
+
+    #[test]
+    fn excel_writer_sheet_builder_order_by_include_column() {
+        let builder = ExcelWriterSheetBuilder::new().order_by_include_column(true);
+        let _ = builder.build();
+    }
+
+    #[test]
+    fn excel_writer_sheet_builder_register_write_handler() {
+        let builder = ExcelWriterSheetBuilder::new().register_write_handler(NoopHandler);
+        let _ = builder.build();
+    }
+
+    #[test]
+    fn excel_writer_sheet_builder_with_excel_writer_and_options() {
+        let options = WriteOptions::default();
+        let _builder = ExcelWriterSheetBuilder::with_excel_writer_and_options(
+            // Can't easily create ExcelWriter here without a real file
+            // Use a manual test
+            crate::excel_writer_core::ExcelWriter::new("/tmp/test.xlsx"),
+            options,
+        );
+    }
+
+    #[test]
+    fn excel_writer_sheet_builder_table() {
+        let builder = ExcelWriterSheetBuilder::new();
+        let _table_builder = builder.table();
+    }
+
+    #[test]
+    fn excel_writer_sheet_builder_use_default_style_false() {
+        let builder = ExcelWriterSheetBuilder::new().use_default_style(false);
+        let _ = builder.build();
+    }
+
+    #[test]
+    fn noop_handler_order_returns_zero() {
+        assert_eq!(NoopHandler.order(), 0);
+    }
+
+    fn dynamic_row(value: &str) -> DynamicRow {
+        let mut values = std::collections::BTreeMap::new();
+        values.insert(0, DynamicValue::String(value.to_owned()));
+        DynamicRow::new(values)
+    }
+
+    #[test]
+    fn with_excel_writer_owns_writer_and_writes() -> easyexcel_core::Result<()> {
+        use calamine::{DataType, Reader, Xlsx, open_workbook};
+        let directory = tempdir()?;
+        let output = directory.path().join("sheet-builder-owner.xlsx");
+        let writer = ExcelWriter::new(&output);
+
+        ExcelWriterSheetBuilder::with_excel_writer(writer)
+            .need_head(false)
+            .do_write(vec![dynamic_row("alice")])?;
+
+        let mut workbook: Xlsx<_> = open_workbook(&output)
+            .map_err(|error: calamine::XlsxError| ExcelError::Format(error.to_string()))?;
+        let range = workbook
+            .worksheet_range("Sheet1")
+            .map_err(|error| ExcelError::Format(error.to_string()))?;
+        assert_eq!(
+            range.get_value((0, 0)).and_then(|cell| cell.get_string()),
+            Some("alice")
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn do_write_with_resolves_rows_lazily() -> easyexcel_core::Result<()> {
+        let directory = tempdir()?;
+        let output = directory.path().join("sheet-builder-lazy.xlsx");
+        let writer = ExcelWriter::new(&output);
+
+        ExcelWriterSheetBuilder::with_excel_writer(writer)
+            .need_head(false)
+            .do_write_with(|| vec![dynamic_row("bob")])?;
+        assert!(output.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn do_write_without_owned_writer_returns_format_error() {
+        let error = ExcelWriterSheetBuilder::new()
+            .do_write(vec![dynamic_row("x")])
+            .err()
+            .expect("builder without a writer must fail");
+        assert!(matches!(error, ExcelError::Format(_)));
+    }
+}

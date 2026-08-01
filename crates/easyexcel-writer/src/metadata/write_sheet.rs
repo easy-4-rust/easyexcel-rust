@@ -95,3 +95,75 @@ impl Default for WriteSheet {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn write_sheet_new_defaults() {
+        let sheet = WriteSheet::new();
+        assert_eq!(sheet.sheet_no(), 0);
+        assert_eq!(sheet.sheet_name(), "");
+    }
+
+    #[test]
+    fn write_sheet_default_impl() {
+        let sheet = WriteSheet::default();
+        assert_eq!(sheet.sheet_no(), 0);
+    }
+
+    #[test]
+    fn write_sheet_with_sheet_no() {
+        let sheet = WriteSheet::with_sheet_no(3);
+        assert_eq!(sheet.sheet_no(), 3);
+        assert_eq!(sheet.sheet_name(), "");
+    }
+
+    #[test]
+    fn write_sheet_with_sheet() {
+        let sheet = WriteSheet::with_sheet(2, "MySheet");
+        assert_eq!(sheet.sheet_no(), 2);
+        assert_eq!(sheet.sheet_name(), "MySheet");
+    }
+
+    #[test]
+    fn write_sheet_set_sheet_no() {
+        let mut sheet = WriteSheet::new();
+        sheet.set_sheet_no(5);
+        assert_eq!(sheet.sheet_no(), 5);
+    }
+
+    #[test]
+    fn write_sheet_set_sheet_name() {
+        let mut sheet = WriteSheet::new();
+        sheet.set_sheet_name("NewSheet");
+        assert_eq!(sheet.sheet_name(), "NewSheet");
+    }
+
+    #[test]
+    fn write_sheet_options_accessor() {
+        let sheet = WriteSheet::new();
+        let _opts = sheet.options();
+    }
+
+    #[test]
+    fn write_sheet_parameter_accessor() {
+        let sheet = WriteSheet::new();
+        let _param = sheet.parameter();
+    }
+
+    #[test]
+    fn write_sheet_equality() {
+        let a = WriteSheet::new();
+        let b = WriteSheet::new();
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn write_sheet_clone() {
+        let original = WriteSheet::with_sheet(1, "Clone");
+        let cloned = original.clone();
+        assert_eq!(original, cloned);
+    }
+}

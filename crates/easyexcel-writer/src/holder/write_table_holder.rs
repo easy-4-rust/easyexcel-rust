@@ -141,4 +141,57 @@ mod tests {
         );
         assert!(table.order_by_include_column());
     }
+
+    #[test]
+    fn write_table_holder_new() {
+        let holder = WriteTableHolder::new(0);
+        assert_eq!(holder.table_no(), 0);
+        assert_eq!(holder.last_row_index(), 0);
+        assert!(holder.parent_sheet().is_none());
+    }
+
+    #[test]
+    fn write_table_holder_from_parameter() {
+        let parent = AbstractWriteHolder::default();
+        let param = WriteBasicParameter::default();
+        let holder = WriteTableHolder::from_parameter(3, &param, &parent);
+        assert_eq!(holder.table_no(), 3);
+    }
+
+    #[test]
+    fn write_table_holder_abstract_holder_accessors() {
+        let mut holder = WriteTableHolder::new(0);
+        let _ = holder.abstract_holder();
+        let _ = holder.abstract_holder_mut();
+    }
+
+    #[test]
+    fn write_table_holder_set_parent_sheet() {
+        let mut holder = WriteTableHolder::new(0);
+        holder.set_parent_sheet("Sheet1");
+        assert_eq!(holder.parent_sheet(), Some("Sheet1"));
+    }
+
+    #[test]
+    fn write_table_holder_deref() {
+        let holder = WriteTableHolder::new(0);
+        let _ = holder.abstract_holder();
+    }
+}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    use easyexcel_core::ExcelWriteHeadProperty;
+
+    #[test]
+    fn table_holder_deref_mut_reaches_abstract_holder() {
+        let mut holder = WriteTableHolder::new(0);
+        holder.set_excel_write_head_property(ExcelWriteHeadProperty::new());
+        use crate::holder::write_holder::WriteHolder;
+        let target: &mut crate::holder::abstract_write_holder::AbstractWriteHolder = &mut holder;
+        assert!(target.need_head());
+    }
+
 }

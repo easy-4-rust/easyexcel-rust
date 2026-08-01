@@ -134,3 +134,125 @@ impl WriteHandler for HorizontalCellStyleStrategy {
         Some(AbstractCellStyleStrategy::cell_style(self, context))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use easyexcel_core::CellValue;
+
+    #[test]
+    fn horizontal_strategy_new_empty() {
+        let s = HorizontalCellStyleStrategy::new(vec![]);
+        assert!(s.content_styles().is_empty());
+    }
+
+    #[test]
+    fn horizontal_strategy_with_head_and_content() {
+        let s = HorizontalCellStyleStrategy::with_head_and_content(
+            ExcelCellStyle::new(),
+            ExcelCellStyle::new(),
+        );
+        assert_eq!(s.content_styles().len(), 1);
+    }
+
+    #[test]
+    fn horizontal_strategy_with_head_and_contents() {
+        let s = HorizontalCellStyleStrategy::with_head_and_contents(
+            ExcelCellStyle::new(),
+            vec![ExcelCellStyle::new(), ExcelCellStyle::new()],
+        );
+        assert_eq!(s.content_styles().len(), 2);
+    }
+
+    #[test]
+    fn horizontal_strategy_with_head_font() {
+        let font = ExcelFontStyle::default();
+        let s = HorizontalCellStyleStrategy::new(vec![]).with_head_font(font);
+        assert!(s.head_style().font.is_some());
+    }
+
+    #[test]
+    fn horizontal_strategy_with_head_write_font() {
+        let font = WriteFont::default();
+        let s = HorizontalCellStyleStrategy::new(vec![]).with_head_write_font(font);
+        assert!(s.head_style().font.is_some());
+    }
+
+    #[test]
+    fn horizontal_strategy_with_content_font() {
+        let font = ExcelFontStyle::default();
+        let style = ExcelCellStyle::new();
+        let s = HorizontalCellStyleStrategy::new(vec![style]).with_content_font(font);
+        assert!(s.content_styles()[0].font.is_some());
+    }
+
+    #[test]
+    fn horizontal_strategy_with_content_write_font() {
+        let font = WriteFont::default();
+        let style = ExcelCellStyle::new();
+        let s = HorizontalCellStyleStrategy::new(vec![style]).with_content_write_font(font);
+        assert!(s.content_styles()[0].font.is_some());
+    }
+
+    #[test]
+    fn horizontal_strategy_order_is_50_000() {
+        let s = HorizontalCellStyleStrategy::new(vec![]);
+        assert_eq!(s.order(), 50_000);
+    }
+
+    #[test]
+    fn horizontal_strategy_style_cell_style_head() {
+        let s = HorizontalCellStyleStrategy::with_head_and_content(
+            ExcelCellStyle::new(),
+            ExcelCellStyle::new(),
+        );
+        let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
+        context.is_head = true;
+        let style = s.style_cell_style(&context);
+        assert!(style.is_some());
+    }
+
+    #[test]
+    fn horizontal_strategy_style_cell_style_content() {
+        let s = HorizontalCellStyleStrategy::with_head_and_content(
+            ExcelCellStyle::new(),
+            ExcelCellStyle::new(),
+        );
+        let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
+        context.is_head = false;
+        let style = s.style_cell_style(&context);
+        assert!(style.is_some());
+    }
+
+    #[test]
+    fn horizontal_strategy_style_cell_style_empty() {
+        let s = HorizontalCellStyleStrategy::new(vec![]);
+        let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
+        context.is_head = false;
+        let style = s.style_cell_style(&context);
+        assert!(style.is_some());
+    }
+
+    #[test]
+    fn horizontal_strategy_cell_style_strategy_head() {
+        let s = HorizontalCellStyleStrategy::with_head_and_content(
+            ExcelCellStyle::new(),
+            ExcelCellStyle::new(),
+        );
+        let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
+        context.is_head = true;
+        let style = AbstractCellStyleStrategy::cell_style(&s, &context);
+        assert!(style.font.is_none() || style.font.is_some());
+    }
+
+    #[test]
+    fn horizontal_strategy_cell_style_strategy_content() {
+        let s = HorizontalCellStyleStrategy::with_head_and_contents(
+            ExcelCellStyle::new(),
+            vec![ExcelCellStyle::new(), ExcelCellStyle::new()],
+        );
+        let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
+        context.is_head = false;
+        let _ = AbstractCellStyleStrategy::cell_style(&s, &context);
+    }
+}

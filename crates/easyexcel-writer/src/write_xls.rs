@@ -66,12 +66,7 @@ where
     }
 
     let mut book = Biff8Book::default();
-    let holder_scope = HandlerHolderScope::new_resolved::<T>(
-        path,
-        i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX),
-        None,
-        options,
-    )?;
+    let holder_scope = HandlerHolderScope::new_resolved::<T>(path, i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX), None, options)?;
     write_sheet_to_biff8_book::<T, I>(&mut book, options, rows, handlers, Some(&holder_scope))?;
     // Phase 5.3: BIFF8 RC4 encryption
     if let Some(password) = &options.password {
@@ -122,12 +117,7 @@ where
     }
 
     let mut book = Biff8Book::default();
-    let holder_scope = HandlerHolderScope::new_resolved::<T>(
-        logical_path,
-        i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX),
-        None,
-        options,
-    )?;
+    let holder_scope = HandlerHolderScope::new_resolved::<T>(logical_path, i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX), None, options)?;
     write_sheet_to_biff8_book::<T, I>(&mut book, options, rows, handlers, Some(&holder_scope))?;
     book.write_to(&mut output)?;
     output.flush()?;
@@ -136,3 +126,74 @@ where
 }
 
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use std::collections::BTreeMap;
+    use std::io::Cursor;
+    use easyexcel_core::{DynamicRow, DynamicValue};
+    use crate::write_options::WriteOptions;
+
+    fn dynamic_row() -> DynamicRow {
+        let mut values = BTreeMap::new();
+        values.insert(0, DynamicValue::String("alice".to_owned()));
+        DynamicRow::new(values)
+    }
+
+    #[test]
+    fn write_xls_to_writer_emits_biff8_bytes() {
+        let mut options = WriteOptions::default();
+        options.sheet_name = "Sheet1".to_owned();
+        let mut output = Cursor::new(Vec::<u8>::new());
+        write_xls_to_writer::<DynamicRow, _, _>(
+            std::path::Path::new("logical.xls"),
+            &mut output,
+            &options,
+            vec![dynamic_row()],
+            &mut [],
+        )
+        .expect("write must succeed");
+        assert!(output.get_ref().len() > 0);
+    }
+
+}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    use std::collections::BTreeMap;
+    use std::io::Cursor;
+    use easyexcel_core::{DynamicRow, DynamicValue};
+    use crate::biff8::Biff8Book;
+    use crate::write_options::WriteOptions;
+
+    fn dynamic_row() -> DynamicRow {
+        let mut values = BTreeMap::new();
+        values.insert(0, DynamicValue::String("alice".to_owned()));
+        DynamicRow::new(values)
+    }
+
+    #[test]
+    fn write_xls_to_writer_uses_template_when_provided() {
+        let mut book = Biff8Book::default();
+        book.sheet_mut("Sheet1");
+        let template = book.to_cfb_bytes().expect("template");
+        let mut options = WriteOptions::default();
+        options.sheet_name = "Sheet1".to_owned();
+        options.template_bytes = Some(template);
+        let mut output = Cursor::new(Vec::<u8>::new());
+        write_xls_to_writer::<DynamicRow, _, _>(
+            std::path::Path::new("logical.xls"),
+            &mut output,
+            &options,
+            vec![dynamic_row()],
+            &mut [],
+        )
+        .expect("template write must succeed");
+        assert!(output.get_ref().len() > 0);
+    }
+
+}
