@@ -78,3 +78,32 @@ impl HyperlinkData {
         self.coordinates
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn builders_and_getters_round_trip() {
+        // 对应 Java：HyperlinkData 构建与 getter
+        let coordinates = CoordinateData::new();
+        let link = HyperlinkData::new()
+            .address("https://example.com")
+            .hyperlink_type(HyperlinkType::Url)
+            .coordinates(coordinates);
+
+        assert_eq!(link.get_address(), Some("https://example.com"));
+        assert_eq!(link.get_hyperlink_type(), HyperlinkType::Url);
+        assert_eq!(link.get_coordinates(), coordinates);
+        assert_eq!(HyperlinkData::default(), HyperlinkData::new());
+    }
+
+    #[test]
+    fn defaults_and_none_type() {
+        // 对应 Java：默认超链接类型为 NONE
+        let link = HyperlinkData::new();
+        assert_eq!(link.get_address(), None);
+        assert_eq!(link.get_hyperlink_type(), HyperlinkType::None);
+        assert_eq!(link.hyperlink_type, HyperlinkType::None);
+    }
+}

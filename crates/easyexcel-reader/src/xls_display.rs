@@ -352,3 +352,230 @@ mod tests {
         assert!(!code.contains('\u{FFFD}'));
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use ssfmt::Locale;
+
+    /// 组装 BIFF 记录：sid + 长度 + 载荷。
+    fn record(sid: u16, payload: &[u8]) -> Vec<u8> {
+        let mut out = Vec::new();
+        out.extend_from_slice(&sid.to_le_bytes());
+        out.extend_from_slice(&(payload.len() as u16).to_le_bytes());
+        out.extend_from_slice(payload);
+        out
+    }
+
+    fn worksheet_bof() -> Vec<u8> {
+        record(0x0809, &[0, 0, 0x10, 0x00])
+    }
+
+    fn custom_format_record(ifmt: u16, code: &str) -> Vec<u8> {
+        let mut payload = vec![0, 0, 0, 0, 0];
+        payload[0..2].copy_from_slice(&ifmt.to_le_bytes());
+        payload[2..4].copy_from_slice(&(code.len() as u16).to_le_bytes());
+        payload.extend_from_slice(code.as_bytes());
+        record(0x041E, &payload)
+    }
+
+    fn xf_record(ifmt: u16) -> Vec<u8> {
+        let mut payload = vec![0, 0, 0, 0];
+        payload[2..4].copy_from_slice(&ifmt.to_le_bytes());
+        record(0x00E0, &payload)
+    }
+
+    fn number_record(row: u16, col: u16, xf: u16, value: f64) -> Vec<u8> {
+        let mut payload = Vec::new();
+        payload.extend_from_slice(&row.to_le_bytes());
+        payload.extend_from_slice(&col.to_le_bytes());
+        payload.extend_from_slice(&xf.to_le_bytes());
+        payload.extend_from_slice(&value.to_le_bytes());
+        record(0x0203, &payload)
+    }
+
+    fn rk_bytes(value: i32) -> [u8; 4] {
+        ((value << 2) as u32 | 0x02).to_le_bytes()
+    }
+
+    #[test]
+    fn parses_number_xf_and_custom_format_displays() {
+        // 对应 Java：NUMBER + XF + FORMAT 渲染自定义格式显示值
+        let locale = Locale::default();
+        let mut wb = Vec::new();
+        wb.extend_from_slice(&worksheet_bof());
+        wb.extend_from_slice(&custom_format_record(5, "0.0"));
+        wb.extend_from_slice(&xf_record(5));
+        wb.extend_from_slice(&number_record(0, 0, 0, 12.34));
+
+        let displays = parse_workbook_displays(&wb, false, &locale);
+        assert_eq!(displays[0].get(&(0, 0)).map(String::as_str), Some("12.3"));
+    }
+
+    #[test]
+    fn mulrk_record_pushes_every_repeated_cell() {
+        // 对应 Java：MulRk 记录展开多个单元格
+        let locale = Locale::default();
+        let mut wb = Vec::new();
+        wb.extend_from_slice(&worksheet_bof());
+        wb.extend_from_slice(&custom_format_record(5, "0.0"));
+        wb.extend_from_slice(&xf_record(5));
+        // row=0, firstCol=0, (xf=0, rk=100), (xf=0, rk=200), lastCol=1
+        let mut payload = vec![0, 0, 0, 0, 0, 0];
+        payload.extend_from_slice(&rk_bytes(100));
+        payload.extend_from_slice(&[0, 0]);
+        payload.extend_from_slice(&rk_bytes(200));
+        payload.extend_from_slice(&[1, 0]);
+        wb.extend_from_slice(&record(0x00BD, &payload));
+
+        let displays = parse_workbook_displays(&wb, false, &locale);
+        assert_eq!(displays[0].get(&(0, 0)).map(String::as_str), Some("100.0"));
+        assert_eq!(displays[0].get(&(0, 1)).map(String::as_str), Some("200.0"));
+    }
+
+    #[test]
+    fn skips_non_finite_out_of_range_and_missing_formats() {
+        // 对应 Java：NaN/越界 XF/无格式码的单元格不产出显示值
+        let locale = Locale::default();
+        let mut wb = Vec::new();
+        wb.extend_from_slice(&worksheet_bof());
+        wb.extend_from_slice(&custom_format_record(5, "0.0"));
+        wb.extend_from_slice(&xf_record(5));
+        wb.extend_from_slice(&number_record(0, 0, 0, f64::NAN));
+        wb.extend_from_slice(&number_record(0, 1, 9, 1.5)); // xf 越界
+        wb.extend_from_slice(&number_record(0, 2, 0, 2.5)); // 由 xf_record(5) 命中
+
+        let displays = parse_workbook_displays(&wb, false, &locale);
+        assert!(!displays[0].contains_key(&(0, 0)));
+        assert!(!displays[0].contains_key(&(0, 1)));
+        assert!(displays[0].contains_key(&(0, 2)));
+    }
+
+    #[test]
+    fn skips_general_and_at_format_codes() {
+        // 对应 Java：General/@ 交给 calamine 文本化
+        let locale = Locale::default();
+        let mut wb = Vec::new();
+        wb.extend_from_slice(&worksheet_bof());
+        wb.extend_from_slice(&xf_record(0)); // Builtin 0 = General
+        wb.extend_from_slice(&number_record(0, 0, 0, 3.5));
+
+        let displays = parse_workbook_displays(&wb, false, &locale);
+        assert!(!displays[0].contains_key(&(0, 0)));
+    }
+
+    #[test]
+    fn breaks_on_truncated_records_and_ignores_unknown_sids() {
+        // 对应 Java：截断记录停止解析；未知 sid 跳过
+        let locale = Locale::default();
+        let mut wb = Vec::new();
+        wb.extend_from_slice(&worksheet_bof());
+        wb.extend_from_slice(&[0xFF, 0x00, 0x04, 0x00, 1, 2, 3, 4]); // 未知 sid
+        wb.extend_from_slice(&[0x08, 0x09, 0xFF, 0x00, 0]); // 截断
+        let displays = parse_workbook_displays(&wb, false, &locale);
+        assert_eq!(displays.len(), 1);
+        assert!(displays[0].is_empty());
+    }
+
+    #[test]
+    fn parse_format_record_guards_short_and_utf16_bodies() {
+        // 对应 Java：FORMAT 记录长度门控与 UTF-16 分支
+        assert!(parse_format_record(&[0, 0]).is_none());
+        // utf16 flags=1 但字节不足
+        let payload = [5, 0, 4, 0, 1, 0x41];
+        assert!(parse_format_record(&payload).is_none());
+        // utf16 有效
+        let mut utf16 = vec![5, 0, 2, 0, 1];
+        utf16.extend_from_slice(&[0x30, 0, 0x2E, 0]); // "0."
+        let (ifmt, code) = parse_format_record(&utf16).expect("utf16 FORMAT");
+        assert_eq!(ifmt, 5);
+        assert_eq!(code, "0.");
+    }
+
+    #[test]
+    fn decode_rk_guards_short_input() {
+        // 对应 Java：RK 解码输入不足返回 0
+        assert_eq!(decode_rk(&[1, 2]), 0.0);
+    }
+
+    #[test]
+    fn load_xls_displays_is_soft_on_invalid_files() {
+        // 对应 Java：加载失败回退空列表（调用方用 calamine as_text）
+        let directory = tempfile::tempdir().expect("tempdir");
+        let path = directory.path().join("bad.xls");
+        std::fs::write(&path, b"not an ole document").expect("write");
+        let displays = load_xls_displays(&path, false, &Locale::default());
+        assert!(displays.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod tests_extra2 {
+    use super::*;
+    use ssfmt::Locale;
+
+    /// 组装 BIFF 记录：sid + 长度 + 载荷。
+    fn record(sid: u16, payload: &[u8]) -> Vec<u8> {
+        let mut out = Vec::new();
+        out.extend_from_slice(&sid.to_le_bytes());
+        out.extend_from_slice(&(payload.len() as u16).to_le_bytes());
+        out.extend_from_slice(payload);
+        out
+    }
+
+    fn worksheet_bof() -> Vec<u8> {
+        record(0x0809, &[0, 0, 0x10, 0x00])
+    }
+
+    fn xf_record(ifmt: u16) -> Vec<u8> {
+        let mut payload = vec![0, 0, 0, 0];
+        payload[2..4].copy_from_slice(&ifmt.to_le_bytes());
+        record(0x00E0, &payload)
+    }
+
+    fn custom_format_record(ifmt: u16, code: &str) -> Vec<u8> {
+        let mut payload = vec![0, 0, 0, 0, 0];
+        payload[0..2].copy_from_slice(&ifmt.to_le_bytes());
+        payload[2..4].copy_from_slice(&(code.len() as u16).to_le_bytes());
+        payload.extend_from_slice(code.as_bytes());
+        record(0x041E, &payload)
+    }
+
+    fn number_record(row: u16, col: u16, xf: u16, value: f64) -> Vec<u8> {
+        let mut payload = Vec::new();
+        payload.extend_from_slice(&row.to_le_bytes());
+        payload.extend_from_slice(&col.to_le_bytes());
+        payload.extend_from_slice(&xf.to_le_bytes());
+        payload.extend_from_slice(&value.to_le_bytes());
+        record(0x0203, &payload)
+    }
+
+    #[test]
+    fn xf_without_any_format_code_is_skipped() {
+        // 对应 Java：XF 指向无内置码也无自定义码的 ifmt 时不产出显示值
+        let locale = Locale::default();
+        let mut wb = Vec::new();
+        wb.extend_from_slice(&worksheet_bof());
+        // ifmt=99 不在内置表、也无自定义 FORMAT → builtin_format_code 返回 None
+        wb.extend_from_slice(&xf_record(99));
+        wb.extend_from_slice(&number_record(0, 0, 0, 1.5));
+        let displays = parse_workbook_displays(&wb, false, &locale);
+        assert!(!displays[0].contains_key(&(0, 0)));
+    }
+
+    #[test]
+    fn unparseable_format_code_yields_no_display() {
+        // 对应 Java：ssfmt 无法解析的格式码不产出显示值（调用方回退 calamine 文本）
+        let locale = Locale::default();
+        let mut wb = Vec::new();
+        wb.extend_from_slice(&worksheet_bof());
+        // 未闭合的方括号让 ssfmt 解析失败 → format_with_code 返回 None
+        wb.extend_from_slice(&custom_format_record(5, "[Red"));
+        wb.extend_from_slice(&xf_record(5));
+        wb.extend_from_slice(&number_record(0, 0, 0, 1.5));
+        let displays = parse_workbook_displays(&wb, false, &locale);
+        assert!(!displays[0].contains_key(&(0, 0)));
+        // 直接断言 format_with_code 对坏格式码返回 None
+        assert_eq!(format_with_code(1.5, "[Red", false, &locale), None);
+    }
+}

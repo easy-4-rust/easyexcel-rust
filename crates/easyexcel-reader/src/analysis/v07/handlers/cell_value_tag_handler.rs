@@ -43,3 +43,21 @@ impl XlsxTagHandler for CellValueTagHandler {
         self.inner.append(ch);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cell_value_handler_accumulates_v_text() {
+        // 对应 Java：CellValueTagHandler 继承 characters 累积 <v> 文本
+        let mut handler = CellValueTagHandler::new();
+        assert_eq!(handler.temp_data(), "");
+        handler.start_element("v", "");
+        handler.characters("12");
+        handler.characters(".5");
+        assert_eq!(handler.temp_data(), "12.5");
+        assert_eq!(handler.take(), "12.5");
+        assert_eq!(handler.take(), "");
+    }
+}

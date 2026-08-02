@@ -1384,6 +1384,164 @@ fn found_crate_path(found: FoundCrate) -> proc_macro2::TokenStream {
     }
 }
 
+/// 测试辅助：解构 `Data::Struct` 并返回其字段集合；非 struct 输入触发 panic。
+///
+/// 正常测试中 `parse_quote!` 恒产出 struct，panic 臂数学不可达，由
+/// `expect_struct_fields_rejects_non_struct_input`（should_panic 契约测试）显式触发，
+/// 替代散落在各测试里的 `let Data::Struct(data) = ... else { panic!("expected struct") }`。
+#[cfg(test)]
+fn expect_struct_fields(input: DeriveInput) -> Fields {
+    match input.data {
+        Data::Struct(data) => data.fields,
+        _other => panic!("expected struct, got other input data"),
+    }
+}
+
 #[cfg(test)]
 #[path = "tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use quote::quote;
+    use syn::{DeriveInput, parse_quote};
+
+    /// 对应 Java：原始值快照的类型过滤——非路径类型与空路径段走防御分支。
+    #[test]
+    fn side_effect_free_original_type_handles_non_path_and_empty_path() {
+        // 普通路径类型（String）命中白名单。
+        assert!(is_side_effect_free_original_type(&syn::parse_quote!(
+            String
+        )));
+        assert!(is_side_effect_free_original_type(&syn::parse_quote!(i32)));
+        // 非路径类型（引用 / 元组）→ false。
+        assert!(!is_side_effect_free_original_type(&syn::parse_quote!(&str)));
+        assert!(!is_side_effect_free_original_type(&syn::parse_quote!((
+            i32, i32
+        ))));
+        // 路径但无段（防御分支）→ false。
+        let empty_path = syn::Type::Path(syn::TypePath {
+            qself: None,
+            path: syn::Path {
+                leading_colon: None,
+                segments: Default::default(),
+            },
+            attrs: Vec::new(),
+        });
+        assert!(!is_side_effect_free_original_type(&empty_path));
+    }
+
+    /// 对应 Java：`data_validation` 全部属性（含 formula2）解析成功，未知属性报错。
+    #[test]
+    fn data_validation_parses_formula2_and_rejects_unknown_property() {
+        let input: DeriveInput = parse_quote! {
+            struct User {
+                #[excel(data_validation(type = "list", operator = "between", formula1 = "A1", formula2 = "A10"))]
+                value: String,
+            }
+        };
+        // parse_quote! 恒产出 struct；非 struct 输入由 expect_struct_fields 的 panic 臂兜底。
+        let fields = expect_struct_fields(input);
+        let field = fields.iter().next().expect("field");
+        let options =
+            parse_field_options(&field.attrs, &quote!(::easyexcel)).expect("valid data_validation");
+        let tokens = options
+            .data_validation
+            .expect("data validation tokens")
+            .to_string();
+        assert!(tokens.contains("A1"), "{tokens}");
+        assert!(tokens.contains("A10"), "{tokens}");
+
+        let input: DeriveInput = parse_quote! {
+            struct User { #[excel(data_validation(unknown = "x"))] value: String }
+        };
+        let fields = expect_struct_fields(input);
+        let field = fields.iter().next().expect("field");
+        let error = parse_field_options(&field.attrs, &quote!(::easyexcel))
+            .map(drop) // map(drop) 规避 expect_err 对 Ok 类型的 Debug 约束，语义与失败行为不变
+            .expect_err("未知 data_validation 属性必须报错");
+        assert!(
+            error
+                .to_string()
+                .contains("unsupported data_validation property")
+        );
+    }
+
+    /// 对应 Java：`conditional` 三个属性解析成功，未知属性报错。
+    #[test]
+    fn conditional_parses_and_rejects_unknown_property() {
+        let input: DeriveInput = parse_quote! {
+            struct User {
+                #[excel(conditional(condition = ">0", font_color = "FF0000", background_color = "FFFF00"))]
+                value: String,
+            }
+        };
+        let fields = expect_struct_fields(input);
+        let field = fields.iter().next().expect("field");
+        let options =
+            parse_field_options(&field.attrs, &quote!(::easyexcel)).expect("valid conditional");
+        let tokens = options.conditional.expect("conditional tokens").to_string();
+        assert!(tokens.contains("FF0000"), "{tokens}");
+        assert!(tokens.contains("FFFF00"), "{tokens}");
+
+        let input: DeriveInput = parse_quote! {
+            struct User { #[excel(conditional(unknown = "x"))] value: String }
+        };
+        let fields = expect_struct_fields(input);
+        let field = fields.iter().next().expect("field");
+        let error = parse_field_options(&field.attrs, &quote!(::easyexcel))
+            .map(drop) // map(drop) 规避 expect_err 对 Ok 类型的 Debug 约束，语义与失败行为不变
+            .expect_err("未知 conditional 属性必须报错");
+        assert!(
+            error
+                .to_string()
+                .contains("unsupported conditional property")
+        );
+    }
+
+    /// 对应 Java：`once_absolute_merge` 支持负索引字面量，拒绝非整型表达式。
+    #[test]
+    fn once_absolute_merge_accepts_negative_indices_and_rejects_non_integers() {
+        let input: DeriveInput = parse_quote! {
+            #[excel(once_absolute_merge(first_row_index = -1, last_row_index = 3, first_column_index = -1, last_column_index = 5))]
+            struct User {
+                value: String,
+            }
+        };
+        let options = parse_struct_options(&input.attrs, &quote!(::easyexcel))
+            .expect("valid once_absolute_merge");
+        let tokens = options
+            .once_absolute_merge
+            .expect("merge tokens")
+            .to_string()
+            .replace(' ', "");
+        assert!(tokens.contains("-1"), "{tokens}");
+        assert!(tokens.contains("3"), "{tokens}");
+        assert!(tokens.contains("5"), "{tokens}");
+
+        let input: DeriveInput = parse_quote! {
+            #[excel(once_absolute_merge(first_row_index = -name))]
+            struct User {
+                value: String,
+            }
+        };
+        let error = parse_struct_options(&input.attrs, &quote!(::easyexcel))
+            .map(drop) // map(drop) 规避 expect_err 对 Ok 类型的 Debug 约束，语义与失败行为不变
+            .expect_err("非整型 merge 索引必须报错");
+        assert!(error.to_string().contains("merge index must be an integer"));
+    }
+
+    /// 契约测试：`expect_struct_fields` 对非 struct 输入必须触发 panic。
+    ///
+    /// 正常测试中该 panic 臂数学不可达（`parse_quote!` 恒产出 struct），
+    /// 这里用失败输入显式触发，保证兜底臂保持有效且被覆盖。
+    #[test]
+    #[should_panic(expected = "expected struct")]
+    fn expect_struct_fields_rejects_non_struct_input() {
+        let input: DeriveInput = parse_quote! {
+            enum NotAStruct { A }
+        };
+        let _ = expect_struct_fields(input);
+    }
+}

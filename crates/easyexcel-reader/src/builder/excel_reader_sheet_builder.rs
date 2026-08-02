@@ -285,3 +285,98 @@ mod tests {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use std::io::Write;
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    use easyexcel_core::DynamicRow;
+    use tempfile::NamedTempFile;
+
+    use super::*;
+    use crate::ReadOptions;
+
+    struct SheetCountingListener(Arc<AtomicUsize>);
+
+    impl ReadListener<DynamicRow> for SheetCountingListener {
+        fn invoke(&mut self, _data: DynamicRow, _context: &AnalysisContext) -> Result<()> {
+            self.0.fetch_add(1, Ordering::SeqCst);
+            Ok(())
+        }
+    }
+
+    fn counting_listener() -> SheetCountingListener {
+        SheetCountingListener(Arc::new(AtomicUsize::new(0)))
+    }
+
+    #[test]
+    fn unbound_builder_build_applies_all_sheet_parameters() {
+        // 对应 Java：ExcelReaderSheetBuilder.build() 参数装配
+        let sheet = ExcelReaderSheetBuilder::new()
+            .sheet_no(-1)
+            .head_row_number(3)
+            .use_scientific_format(true)
+            .build();
+        assert_eq!(sheet.sheet_no(), 0);
+        assert_eq!(sheet.head_row_number(), Some(3));
+        assert_eq!(sheet.use_scientific_format(), Some(true));
+
+        // sheet_name 单名 + 负数 sheet_no 收敛到 0（对应 Java：sheetNo.max(0)）
+        let sheet = ExcelReaderSheetBuilder::new()
+            .sheet_name("Report")
+            .sheet_no(-5)
+            .head_row_number(-2)
+            .build();
+        assert_eq!(sheet.sheet_name(), "Report");
+        assert_eq!(sheet.sheet_no(), 0);
+        assert_eq!(sheet.head_row_number(), Some(0));
+
+        // parameter() 等价于 build()（对应 Java：protected ReadSheet parameter()）
+        let parameter = ExcelReaderSheetBuilder::new().parameter();
+        assert_eq!(parameter, ReadSheet::default_construction());
+    }
+
+    #[test]
+    fn bound_builder_forwarding_methods_apply_to_built_sheet() -> Result<()> {
+        // 对应 Java：ExcelReaderSheetBuilder(ExcelReader).headRowNumber/useScientificFormat
+        let mut file = NamedTempFile::with_suffix(".csv")?;
+        writeln!(file, "name,age")?;
+        writeln!(file, "alice,30")?;
+        let mut reader =
+            ExcelReader::new(file.path(), ReadOptions::default(), counting_listener())?;
+
+        let sheet = ExcelReaderSheetBuilder::with_excel_reader(&mut reader)
+            .sheet_no(0)
+            .head_row_number(0)
+            .use_scientific_format(true)
+            .build();
+        assert_eq!(sheet.sheet_no(), 0);
+        assert_eq!(sheet.head_row_number(), Some(0));
+        assert_eq!(sheet.use_scientific_format(), Some(true));
+        Ok(())
+    }
+
+    #[test]
+    fn bound_builder_do_read_sync_respects_head_row_number_override() -> Result<()> {
+        // 对应 Java：doReadSync() 使用本 sheet 的 headRowNumber 覆盖
+        let mut file = NamedTempFile::with_suffix(".csv")?;
+        writeln!(file, "name,age")?;
+        writeln!(file, "alice,30")?;
+        let mut reader =
+            ExcelReader::new(file.path(), ReadOptions::default(), counting_listener())?;
+
+        let rows = ExcelReaderSheetBuilder::with_excel_reader(&mut reader)
+            .sheet_name("Sheet1")
+            .head_row_number(0)
+            .do_read_sync()?;
+        // head_row_number=0 时表头行也作为数据读出（对应 Java：headRowNumber=0 语义）
+        assert_eq!(rows.len(), 2);
+        assert_eq!(
+            rows[1].get(0),
+            Some(&easyexcel_core::DynamicValue::String("alice".to_owned()))
+        );
+        Ok(())
+    }
+}

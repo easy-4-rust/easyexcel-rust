@@ -174,4 +174,66 @@ mod tests {
         let error = create(&InvalidRow).expect_err("mismatch must fail");
         assert!(error.to_string().contains("schema/value length mismatch"));
     }
+
+    #[test]
+    fn user_row_write_metadata_and_unreachable_from_row() {
+        // 对应 Java：UserRow 写元数据；from_row 为未实现路径
+        let metadata = UserRow::write_metadata();
+        assert_eq!(metadata.column_width, None);
+        let row = RowData::new(
+            "Sheet1",
+            0,
+            Vec::new(),
+            std::sync::Arc::new(std::collections::HashMap::new()),
+        );
+        let result =
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| UserRow::from_row(&row)));
+        assert!(result.is_err(), "from_row is intentionally unreachable");
+        let result =
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| InvalidRow::from_row(&row)));
+        assert!(result.is_ok());
+    }
+
+    struct EmptyRow;
+
+    impl ExcelRow for EmptyRow {
+        fn schema() -> &'static [ExcelColumn] {
+            &[]
+        }
+
+        fn from_row(_row: &RowData) -> crate::Result<Self> {
+            Ok(Self)
+        }
+
+        fn to_row(&self) -> crate::Result<Vec<CellValue>> {
+            Ok(Vec::new())
+        }
+    }
+
+    #[test]
+    fn iter_is_empty_and_property_type_missing() {
+        // 对应 Java：BeanMap 迭代、空判断与缺失属性类型
+        let map = create(&UserRow {
+            name: "Bob".to_owned(),
+            age: 30,
+        })
+        .expect("bean map");
+        let entries: Vec<(&str, &CellValue)> = map.iter().collect();
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].0, "age");
+        assert!(!map.is_empty());
+        assert_eq!(map.property_type("missing"), None);
+        assert_eq!(map.get("missing"), None);
+
+        let row = RowData::new(
+            "Sheet1",
+            0,
+            Vec::new(),
+            std::sync::Arc::new(std::collections::HashMap::new()),
+        );
+        let empty_map = create(&EmptyRow::from_row(&row).expect("empty row")).expect("empty map");
+        assert!(empty_map.is_empty());
+        assert_eq!(empty_map.len(), 0);
+        assert!(empty_map.iter().next().is_none());
+    }
 }

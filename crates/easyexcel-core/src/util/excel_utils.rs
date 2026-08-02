@@ -179,3 +179,49 @@ mod tests {
         assert!(!is_date_format("General"));
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn col_name_to_index_rejects_invalid_names() {
+        // 对应 Java（hutool）：非法列名返回 None
+        assert_eq!(col_name_to_index(""), None);
+        assert_eq!(col_name_to_index("a1"), None);
+        assert_eq!(col_name_to_index("A!"), None);
+        assert_eq!(col_name_to_index("ab c"), None);
+    }
+
+    #[test]
+    fn is_csv_bytes_accepts_utf8_bom() {
+        // 对应 Java（hutool）：UTF-8 BOM 开头视为 CSV
+        assert!(is_csv_bytes(&[0xEF, 0xBB, 0xBF, b'n', b'a']));
+        // 空白开头也可识别
+        assert!(is_csv_bytes(b" name"));
+    }
+
+    #[test]
+    fn is_date_format_extra_cases() {
+        // 对应 Java（hutool）：其余格式识别边界
+        assert!(is_date_format("h:mm AM/PM"));
+        assert!(is_date_format("yy"));
+        assert!(is_date_format("s.000"));
+        assert!(!is_date_format(""));
+        assert!(!is_date_format("mmmmm")); // 5 个月字母视为字面量
+        assert!(!is_date_format("sss")); // 3 个秒字母视为字面量
+        assert!(!is_date_format("General"));
+    }
+}
+
+#[cfg(test)]
+mod tests_extra2 {
+    use super::*;
+
+    #[test]
+    fn date_format_detection_accepts_am_pm_marker() {
+        // 对应 Java（hutool）：a/A 上午下午标记视为日期格式
+        assert!(is_date_format("AM/PM"));
+        assert!(is_date_format("a"));
+    }
+}

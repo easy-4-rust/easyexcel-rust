@@ -65,3 +65,34 @@ impl CsvReadContext for DefaultCsvReadContext {
         self.csv_read_sheet_holder.as_ref()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn current_sheet_materializes_typed_csv_holder() -> easyexcel_core::Result<()> {
+        // 对应 Java：CsvReadContext.currentSheet 物化 CsvReadSheetHolder
+        let options = ReadOptions::default();
+        let mut context = DefaultCsvReadContext::new(&options);
+        assert!(context.csv_read_sheet_holder().is_none());
+        assert_eq!(
+            context.analysis_context_impl().excel_type(),
+            ExcelTypeEnum::Csv
+        );
+
+        context.current_sheet(&ReadSheet::with_name(1, "Sheet1"))?;
+        let holder = context.csv_read_sheet_holder().expect("csv sheet holder");
+        assert_eq!(holder.inner().sheet_no, 1);
+        assert_eq!(holder.inner().sheet_name, "Sheet1");
+        assert_eq!(
+            context
+                .analysis_context_impl()
+                .analysis_context()
+                .sheet_name(),
+            "Sheet1"
+        );
+        assert!(context.csv_read_workbook_holder().inner().ignore_empty_row);
+        Ok(())
+    }
+}

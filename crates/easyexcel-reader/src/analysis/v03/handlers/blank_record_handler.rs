@@ -63,3 +63,21 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn process_record_parses_coordinates() {
+        // 对应 Java：BlankRecordHandler.processRecord 解析 row|col
+        let mut handler = BlankRecordHandler::new();
+        handler.process_record(BLANK_SID, &[2, 0, 5, 0, 9, 0]);
+        assert_eq!(handler.last_cell, Some(BlankCell { row: 2, column: 5 }));
+        // 错误 sid 或数据不足时保持原状态
+        handler.process_record(0xFFFF, &[2, 0, 5, 0, 9, 0]);
+        assert_eq!(handler.last_cell, Some(BlankCell { row: 2, column: 5 }));
+        handler.process_record(BLANK_SID, &[0, 0]);
+        assert_eq!(handler.last_cell, Some(BlankCell { row: 2, column: 5 }));
+    }
+}

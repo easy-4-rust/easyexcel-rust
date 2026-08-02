@@ -231,3 +231,14 @@ pub trait WriteHandler {
 fn _import_marker(v: CellValue) {
     let _ = v;
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn import_marker_holds_value() {
+        // 对应 Java：CellValue 导入标记
+        _import_marker(CellValue::Int(1));
+    }
+}

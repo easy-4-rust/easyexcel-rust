@@ -62,3 +62,34 @@ impl XlsRecordHandler for StringRecordHandler {
         }
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn process_string_without_trim_keeps_spaces() {
+        // 对应 Java：autoTrim=false 时公式字符串保留空白
+        let mut formula = FormulaRecordHandler::new();
+        let cell = StringRecordHandler::process_string(&mut formula, " x ".to_owned(), false);
+        assert!(cell.is_none(), "无 pending 公式时返回 None");
+        let cell = StringRecordHandler::process_string(&mut formula, " x ".to_owned(), true);
+        assert!(cell.is_none());
+    }
+
+    #[test]
+    fn process_record_decodes_string_segments() {
+        // 对应 Java：StringRecordHandler.processRecord 解码 BIFF8 字符串
+        let mut handler = StringRecordHandler::new();
+        let mut data = vec![3, 0, 0];
+        data.extend_from_slice(b"abc");
+        handler.process_record(STRING_SID, &data);
+        assert_eq!(handler.last_value.as_deref(), Some("abc"));
+        // 错误 sid 忽略
+        handler.process_record(0xFFFF, &data);
+        assert_eq!(handler.last_value.as_deref(), Some("abc"));
+        // 解码失败时保持原状态
+        handler.process_record(STRING_SID, &[5, 0, 0, b'a']);
+        assert_eq!(handler.last_value.as_deref(), Some("abc"));
+    }
+}

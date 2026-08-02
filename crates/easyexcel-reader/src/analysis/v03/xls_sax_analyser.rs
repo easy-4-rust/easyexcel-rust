@@ -336,3 +336,148 @@ mod tests {
         assert!(crate::list_xls_sheets(&path, &ReadOptions::default()).is_err());
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use std::fs;
+    use std::io::Read;
+
+    use base64::Engine;
+    use easyexcel_core::DynamicRow;
+    use flate2::read::GzDecoder;
+    use tempfile::NamedTempFile;
+
+    use super::*;
+
+    #[derive(Default)]
+    struct ExtraCollectingListener {
+        rows: Vec<DynamicRow>,
+    }
+
+    impl ReadListener<DynamicRow> for ExtraCollectingListener {
+        fn invoke(&mut self, data: DynamicRow, _context: &AnalysisContext) -> Result<()> {
+            self.rows.push(data);
+            Ok(())
+        }
+    }
+
+    struct FailingListener;
+
+    impl ReadListener<DynamicRow> for FailingListener {
+        fn invoke(&mut self, _data: DynamicRow, _context: &AnalysisContext) -> Result<()> {
+            Err(ExcelError::Format("listener failed".to_owned()))
+        }
+
+        fn invoke_head(
+            &mut self,
+            _head: &std::collections::HashMap<String, usize>,
+            _context: &AnalysisContext,
+        ) -> Result<()> {
+            Err(ExcelError::Format("listener failed".to_owned()))
+        }
+    }
+
+    fn write_java_multisheet_xls() -> NamedTempFile {
+        let file = NamedTempFile::with_suffix(".xls").expect("temp xls");
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(include_str!("../../fixtures/java-multiplesheets.xls.gz.b64").trim())
+            .expect("fixture b64");
+        let mut decoder = GzDecoder::new(compressed.as_slice());
+        let mut workbook = Vec::new();
+        decoder.read_to_end(&mut workbook).expect("gunzip");
+        fs::write(file.path(), workbook).expect("write xls");
+        file
+    }
+
+    #[test]
+    fn accessors_and_error_recording() -> Result<()> {
+        // 对应 Java：XlsSaxAnalyser 公开访问器与 lastError 记录
+        let file = write_java_multisheet_xls();
+        let mut options = ReadOptions::default();
+        options.head_row_number = 1;
+        options.sheet = crate::SheetSelector::Index(0);
+        let mut analyser = XlsSaxAnalyser::from_path(file.path(), options)?;
+
+        assert_eq!(analyser.path(), file.path());
+        assert!(analyser.analysis_context().sheet_name().is_empty());
+        assert!(analyser.last_error().is_none());
+
+        // 监听器失败 → execute 失败并记录 last_error
+        let mut failing = FailingListener;
+        assert!(
+            analyser
+                .execute_with_listener::<DynamicRow, _>(&mut failing)
+                .is_err()
+        );
+        assert!(analyser.last_error().is_some());
+
+        // 成功执行后清除 last_error
+        let mut collecting = ExtraCollectingListener::default();
+        analyser.execute_with_listener::<DynamicRow, _>(&mut collecting)?;
+        assert!(!collecting.rows.is_empty());
+        assert!(analyser.last_error().is_none());
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests_extra2 {
+    use std::fs;
+    use std::io::Write;
+
+    use tempfile::NamedTempFile;
+
+    use super::*;
+
+    /// 构造一个 BIFF 流中只有 BOF/EOF、没有任何 BoundSheet 的 OLE2 文档。
+    /// calamine 能打开但 sheet 列表为空，从而触发“Can not find any sheet”。
+    fn write_zero_sheet_xls() -> NamedTempFile {
+        let file = NamedTempFile::with_suffix(".xls").expect("temp xls");
+        let directory = file.path().parent().expect("tempdir parent");
+        let compound_path = directory.join(format!(
+            "zero-sheet-{}.xls",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("clock")
+                .as_nanos()
+        ));
+        {
+            let mut compound = cfb::create(&compound_path).expect("cfb create");
+            let mut stream = compound
+                .create_stream("/Workbook")
+                .expect("Workbook stream");
+            // BOF (0x0809) + EOF (0x000A)，无 BoundSheet → 0 个工作表
+            let mut records = Vec::new();
+            for (sid, payload) in [(0x0809u16, vec![0u8, 0, 0x05, 0x00]), (0x000A, vec![])] {
+                records.extend_from_slice(&sid.to_le_bytes());
+                records.extend_from_slice(&(payload.len() as u16).to_le_bytes());
+                records.extend_from_slice(&payload);
+            }
+            stream.write_all(&records).expect("write records");
+            drop(stream);
+            compound.flush().expect("flush");
+        }
+        fs::copy(&compound_path, file.path()).expect("copy cfb into temp file");
+        let _ = fs::remove_file(&compound_path);
+        file
+    }
+
+    #[test]
+    fn new_rejects_workbooks_without_any_sheet() {
+        // 对应 Java：XlsSaxAnalyser 构造时 sheetList 为空报错
+        let file = write_zero_sheet_xls();
+        let error = match XlsSaxAnalyser::from_path(file.path(), ReadOptions::default()) {
+            Ok(_) => panic!("zero-sheet workbook must fail"),
+            Err(error) => error,
+        };
+        assert!(error.to_string().contains("Can not find any sheet"));
+    }
+
+    #[test]
+    fn from_path_errors_on_missing_xls_file() {
+        // 对应 Java：无法打开的工作簿报错
+        let directory = tempfile::tempdir().expect("tempdir");
+        let missing = directory.path().join("missing.xls");
+        assert!(XlsSaxAnalyser::from_path(&missing, ReadOptions::default()).is_err());
+    }
+}

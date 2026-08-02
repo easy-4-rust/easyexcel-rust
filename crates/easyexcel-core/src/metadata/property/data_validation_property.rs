@@ -42,3 +42,23 @@ impl ExcelDataValidationMeta {
         !self.data_type.is_empty()
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_is_present_and_default() {
+        // 对应 Java：ExcelDataValidationProperty 元数据
+        let meta = ExcelDataValidationMeta::new("list", "between", "A1:A3", "");
+        assert_eq!(meta.data_type, "list");
+        assert_eq!(meta.operator, "between");
+        assert_eq!(meta.formula1, "A1:A3");
+        assert_eq!(meta.formula2, "");
+        assert!(meta.is_present());
+
+        let default = ExcelDataValidationMeta::default();
+        assert!(!default.is_present());
+        assert_eq!(default.data_type, "");
+    }
+}

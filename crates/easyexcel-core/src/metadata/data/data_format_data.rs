@@ -88,3 +88,67 @@ mod tests {
         assert_eq!(target.format.as_deref(), Some("0.00"));
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn index_and_format_accessors_round_trip() {
+        // 对应 Java：DataFormatData getIndex/setIndex/getFormat/setFormat
+        let mut data = DataFormatData::new();
+        assert_eq!(data.index(), None);
+        assert_eq!(data.format(), None);
+
+        data.set_index(Some(5));
+        assert_eq!(data.index(), Some(5));
+        data.set_index(None);
+        assert_eq!(data.index(), None);
+
+        data.set_format(Some("0.00".to_owned()));
+        assert_eq!(data.format(), Some("0.00"));
+        data.set_format(None::<String>);
+        assert_eq!(data.format(), None);
+    }
+
+    #[test]
+    fn merge_with_missing_side_is_noop() {
+        // 对应 Java：merge 任一参数为空时不修改
+        let mut target = DataFormatData::new();
+        DataFormatData::merge(None, Some(&mut target));
+        assert_eq!(target.index(), None);
+
+        DataFormatData::merge(Some(&DataFormatData::new()), None);
+        assert_eq!(target.index(), None);
+    }
+
+    #[test]
+    fn merge_skips_empty_source_fields() {
+        // 对应 Java：merge 跳过空白格式串
+        let source = DataFormatData {
+            index: None,
+            format: Some("   ".to_owned()),
+        };
+        let mut target = DataFormatData {
+            index: Some(9),
+            format: Some("keep".to_owned()),
+        };
+        DataFormatData::merge(Some(&source), Some(&mut target));
+        assert_eq!(target.index(), Some(9));
+        assert_eq!(target.format(), Some("keep"));
+    }
+
+    #[test]
+    fn clone_data_and_format_cow() {
+        // 对应 Java：clone 与格式文本借用
+        let data = DataFormatData {
+            index: Some(1),
+            format: Some("0.00%".to_owned()),
+        };
+        assert_eq!(data.clone_data(), data);
+        assert_eq!(data.format_cow(), Cow::Borrowed("0.00%"));
+
+        let empty = DataFormatData::new();
+        assert_eq!(empty.format_cow(), Cow::Borrowed(""));
+    }
+}

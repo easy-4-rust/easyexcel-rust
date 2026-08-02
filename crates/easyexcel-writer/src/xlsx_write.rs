@@ -111,13 +111,8 @@ where
         options.template_file.as_deref(),
         options.template_bytes.as_deref(),
     ) {
-        write_xlsx_onto_template_package::<T, I>(
-            logical_path,
-            Some(&mut output),
-            options,
-            rows,
-            handlers,
-        )?;
+        #[rustfmt::skip]
+        write_xlsx_onto_template_package::<T, I>(logical_path, Some(&mut output), options, rows, handlers)?;
     } else {
         let mut workbook = Workbook::new();
         let holder_scope = HandlerHolderScope::new_resolved::<T>(
@@ -204,5 +199,85 @@ mod tests_extra {
         )
         .expect("template write must succeed");
         assert!(output.get_ref().len() > 0);
+    }
+}
+
+#[cfg(test)]
+mod tests_extra2 {
+    use super::*;
+
+    use easyexcel_core::{CellValue, ExcelColumn, ExcelError, ExcelRow, ExcelWriteMetadata};
+
+    /// 两列 typed 行：配合错误的 dynamic_head 让 `new_resolved` 校验失败。
+    struct WideHeadRow {
+        cells: Vec<CellValue>,
+    }
+
+    impl ExcelRow for WideHeadRow {
+        fn schema() -> &'static [ExcelColumn] {
+            const COLUMNS: &[ExcelColumn] = &[
+                ExcelColumn::new("first", "First", Some(0), 0, None),
+                ExcelColumn::new("second", "Second", Some(1), 0, None),
+            ];
+            COLUMNS
+        }
+
+        fn write_metadata() -> &'static ExcelWriteMetadata {
+            const METADATA: ExcelWriteMetadata = ExcelWriteMetadata::new();
+            &METADATA
+        }
+
+        fn from_row(_row: &easyexcel_core::RowData) -> Result<Self> {
+            Ok(Self { cells: Vec::new() })
+        }
+
+        fn to_row(&self) -> Result<Vec<CellValue>> {
+            Ok(self.cells.clone())
+        }
+    }
+
+    #[test]
+    fn write_xlsx_to_writer_rejects_mismatched_dynamic_head() {
+        // 对应 Java：dynamic_head 路径数少于 schema 列数时 holder 初始化必须失败。
+        let mut options = WriteOptions::default();
+        options.sheet_name = "Sheet1".to_owned();
+        options.dynamic_head = Some(vec![vec!["Only".to_owned()]]);
+        let mut output = Vec::new();
+        let result = write_xlsx_to_writer::<WideHeadRow, _, _>(
+            std::path::Path::new("logical.xlsx"),
+            &mut output,
+            &options,
+            vec![WideHeadRow { cells: Vec::new() }],
+            &mut [],
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        assert!(output.is_empty());
+    }
+
+    /// 直接调用 `ExcelRow` 的三个 trait 方法。
+    ///
+    /// 对应 Java：`fromRow`/`toRow`/`writeMetadata` 在写入主路径中分别被
+    /// 读取侧与转换侧使用；这里直接覆盖调用本身。
+    #[test]
+    fn wide_head_row_trait_methods_are_reachable() {
+        let row = WideHeadRow {
+            cells: vec![CellValue::String("v".to_owned())],
+        };
+        assert_eq!(
+            <WideHeadRow as ExcelRow>::write_metadata(),
+            &ExcelWriteMetadata::new()
+        );
+        assert_eq!(
+            row.to_row().expect("to_row"),
+            vec![CellValue::String("v".to_owned())]
+        );
+        let restored = WideHeadRow::from_row(&easyexcel_core::RowData::new(
+            "s",
+            0,
+            Vec::new(),
+            std::sync::Arc::new(std::collections::HashMap::new()),
+        ))
+        .expect("from_row");
+        assert!(restored.cells.is_empty());
     }
 }

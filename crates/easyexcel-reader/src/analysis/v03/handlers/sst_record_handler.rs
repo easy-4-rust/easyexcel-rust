@@ -52,3 +52,22 @@ impl XlsRecordHandler for SstRecordHandler {
         self.process_sst(unique);
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn process_record_gates_on_sid_and_length() {
+        // 对应 Java：SstRecordHandler.processRecord 的 sid/长度门控
+        let mut handler = SstRecordHandler::new();
+        let mut sst = Vec::new();
+        sst.extend_from_slice(&1u32.to_le_bytes());
+        sst.extend_from_slice(&3u32.to_le_bytes());
+        handler.process_record(SST_SID, &sst);
+        assert_eq!(handler.unique_string_count, Some(3));
+        handler.process_record(SST_SID, &[0, 0, 0]);
+        handler.process_record(0xFFFF, &sst);
+        assert_eq!(handler.unique_string_count, Some(3));
+    }
+}

@@ -179,3 +179,104 @@ where
         )
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    /// 对应 Java：最小测试模型，实现 ExcelRow 五入口
+    #[derive(Clone, Debug, PartialEq)]
+    struct ProbeRow;
+
+    impl ExcelRow for ProbeRow {
+        fn schema() -> &'static [ExcelColumn] {
+            &[]
+        }
+
+        fn from_row(_row: &RowData) -> Result<Self> {
+            Ok(ProbeRow)
+        }
+
+        fn to_row(&self) -> Result<Vec<CellValue>> {
+            Ok(vec![CellValue::Int(1)])
+        }
+    }
+
+    fn sample_row() -> RowData {
+        RowData::new(
+            "Sheet1",
+            0,
+            Vec::new(),
+            std::sync::Arc::new(std::collections::HashMap::new()),
+        )
+    }
+
+    #[test]
+    fn option_some_delegates_to_inner_model() {
+        // 对应 Java：Option<T> 委托给内部模型
+        let row = sample_row();
+        let some: Option<ProbeRow> = Option::from_row(&row).expect("converts");
+        assert_eq!(some, Some(ProbeRow));
+
+        let converters = ConverterRegistry::default();
+        let some_converters: Option<ProbeRow> =
+            Option::from_row_with_converters(&row, &converters).expect("converts");
+        assert_eq!(some_converters, Some(ProbeRow));
+
+        assert_eq!(some.to_row().expect("ok"), vec![CellValue::Int(1)]);
+        assert_eq!(
+            some.to_row_with_converters(&converters).expect("ok"),
+            vec![CellValue::Int(1)]
+        );
+        let (original, converted) = some.to_excel_write_row(&converters).expect("ok");
+        assert_eq!(original, vec![CellValue::Int(1)]);
+        assert_eq!(converted.len(), 1);
+        let (selected_original, selected_converted) = some
+            .to_excel_write_row_selected(&converters, Some(&[0]))
+            .expect("ok");
+        assert_eq!(selected_original, vec![CellValue::Int(1)]);
+        assert_eq!(selected_converted.len(), 1);
+    }
+
+    #[test]
+    fn option_none_returns_empty_results() {
+        // 对应 Java：null 行跳过转换返回空
+        let none: Option<ProbeRow> = None;
+        let converters = ConverterRegistry::default();
+        assert_eq!(none.to_row().expect("ok"), Vec::<CellValue>::new());
+        assert_eq!(
+            none.to_row_with_converters(&converters).expect("ok"),
+            Vec::<CellValue>::new()
+        );
+        let (original, converted) = none.to_excel_write_row(&converters).expect("ok");
+        assert!(original.is_empty());
+        assert!(converted.is_empty());
+        let (original, converted) = none
+            .to_excel_write_row_selected(&converters, Some(&[0]))
+            .expect("ok");
+        assert!(original.is_empty());
+        assert!(converted.is_empty());
+        assert!(none.is_absent_row());
+    }
+
+    #[test]
+    fn option_none_to_excel_write_row_selected_without_selection() {
+        // 对应 Java：无选区时同样返回空
+        let none: Option<ProbeRow> = None;
+        let converters = ConverterRegistry::default();
+        let (original, converted) = none
+            .to_excel_write_row_selected(&converters, None)
+            .expect("ok");
+        assert!(original.is_empty());
+        assert!(converted.is_empty());
+    }
+
+    #[test]
+    fn option_delegates_schema_and_metadata() {
+        // 对应 Java：Option<T> 的 schema 与写元数据透传
+        assert!(Option::<ProbeRow>::schema().is_empty());
+        let _ = Option::<ProbeRow>::write_metadata();
+        assert!(Option::<ProbeRow>::is_absent_row(&None));
+        assert!(!Option::<ProbeRow>::is_absent_row(&Some(ProbeRow)));
+    }
+}

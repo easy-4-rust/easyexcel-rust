@@ -27,3 +27,31 @@ impl<R: Read> Converter<ImageInputStream<R>> for InputStreamImageConverter {
         }
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use crate::{ConvertContext, ExcelColumn};
+
+    #[test]
+    fn convert_to_excel_data_keeps_non_image_values() {
+        // 对应 Java：非图片值原样包装为 WriteCellData
+        let stream = ImageInputStream::new(std::io::Cursor::new(Vec::<u8>::new()));
+        let column = ExcelColumn::new("image", "Image", Some(0), 0, None);
+        let context = ConvertContext {
+            sheet_name: "Sheet1".to_owned(),
+            row_index: 0,
+            column_index: Some(0),
+            field: "image",
+            format: None,
+            use_1904_windowing: false,
+        };
+        // 空输入流读取为空图片向量，命中 Image 分支（from_image 包装为 Empty + image 列表）
+        let write_context = WriteConverterContext::new(&stream, &column, &context);
+        let data = InputStreamImageConverter
+            .convert_to_excel_data(&write_context)
+            .expect("converts");
+        assert_eq!(data.value(), &CellValue::Empty);
+        assert_eq!(data.images().len(), 1);
+    }
+}

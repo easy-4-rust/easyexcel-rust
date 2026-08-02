@@ -53,3 +53,19 @@ impl ReadCache for MapCache {
         self.adapter.put_finished()
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn map_cache_default_construction_matches_new() -> Result<()> {
+        // 对应 Java：new MapCache() 默认构造
+        let mut cache = MapCache::default();
+        cache.put("value".to_owned())?;
+        cache.put_finished()?;
+        assert_eq!(cache.get(Some(0))?, Some("value".to_owned()));
+        assert!(cache.get(None)?.is_none());
+        Ok(())
+    }
+}

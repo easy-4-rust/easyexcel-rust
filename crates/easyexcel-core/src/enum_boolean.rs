@@ -38,3 +38,19 @@ impl From<BooleanEnum> for Option<bool> {
         value.value()
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn into_option_bool_maps_all_variants() {
+        // 对应 Java：BooleanEnum 转 Option<bool>
+        let default: Option<bool> = BooleanEnum::Default.into();
+        assert_eq!(default, None);
+        let truthy: Option<bool> = BooleanEnum::True.into();
+        assert_eq!(truthy, Some(true));
+        let falsy: Option<bool> = BooleanEnum::False.into();
+        assert_eq!(falsy, Some(false));
+    }
+}

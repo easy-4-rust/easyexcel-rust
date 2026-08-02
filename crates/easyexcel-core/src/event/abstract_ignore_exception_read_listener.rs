@@ -24,3 +24,54 @@ pub trait AbstractIgnoreExceptionReadListener<T>: ReadListener<T> {
 fn _import_marker(m: HashMap<usize, String>) {
     let _ = m;
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    /// 对应 Java：仅实现必需方法的监听器，验证静默默认实现
+    struct SilentListener;
+
+    impl ReadListener<crate::CellValue> for SilentListener {
+        fn invoke(
+            &mut self,
+            _data: crate::CellValue,
+            _context: &AnalysisContext,
+        ) -> crate::analysis_context::Result<()> {
+            Ok(())
+        }
+    }
+
+    impl AbstractIgnoreExceptionReadListener<crate::CellValue> for SilentListener {}
+
+    #[test]
+    fn silent_defaults_are_noops() {
+        // 对应 Java：AbstractIgnoreExceptionReadListener 默认静默处理
+        let mut listener = SilentListener;
+        let context = AnalysisContext::new("Sheet1", 0, 0);
+        listener.on_exception_silent(
+            &crate::excel_error::ExcelError::Format("boom".to_owned()),
+            &context,
+        );
+        let extra = CellExtra::new(
+            crate::enum_cell_extra_type::CellExtraType::Merge,
+            None,
+            0,
+            1,
+            0,
+            1,
+        );
+        listener.extra_silent(&extra, &context);
+        _import_marker(HashMap::from([(0, "Name".to_owned())]));
+    }
+
+    #[test]
+    fn invoke_callback_returns_ok() {
+        // 对应 Java：ReadListener.invoke 数据行回调返回 Ok
+        let mut listener = SilentListener;
+        let context = AnalysisContext::new("Sheet1", 0, 0);
+        listener
+            .invoke(crate::CellValue::Int(1), &context)
+            .expect("invoke ok");
+    }
+}

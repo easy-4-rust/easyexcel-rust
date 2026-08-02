@@ -144,3 +144,98 @@ fn parse_a1(reference: &str) -> Result<(u32, usize)> {
     }
     Ok((one_based_row - 1, one_based_column - 1))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn start_merge_parses_single_and_ranged_refs() -> Result<()> {
+        // 对应 Java：MergeCellTagHandler.startElement 解析 ref
+        let mut handler = MergeCellTagHandler::new(true);
+        let mut attrs = HashMap::new();
+        attrs.insert(ATTRIBUTE_REF.to_owned(), "B2:C3".to_owned());
+        handler.start_merge(&attrs)?;
+        let extra = handler.last_extra.clone().expect("merge extra");
+        assert_eq!(extra.extra_type(), CellExtraType::Merge);
+        assert_eq!(extra.first_row_index(), 1);
+        assert_eq!(extra.last_row_index(), 2);
+        assert_eq!(extra.first_column_index(), 1);
+        assert_eq!(extra.last_column_index(), 2);
+        assert_eq!(extra.text(), None);
+
+        let mut attrs = HashMap::new();
+        attrs.insert(ATTRIBUTE_REF.to_owned(), "A1".to_owned());
+        handler.start_merge(&attrs)?;
+        let extra = handler.last_extra.as_ref().expect("merge extra");
+        assert_eq!((extra.first_row_index(), extra.last_row_index()), (0, 0));
+        assert_eq!(
+            (extra.first_column_index(), extra.last_column_index()),
+            (0, 0)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn start_merge_ignores_disabled_missing_or_empty_refs() -> Result<()> {
+        // 对应 Java：support()=false / 缺 ref / 空 ref 均跳过
+        let mut disabled = MergeCellTagHandler::new(false);
+        let mut attrs = HashMap::new();
+        attrs.insert(ATTRIBUTE_REF.to_owned(), "A1:B2".to_owned());
+        disabled.start_merge(&attrs)?;
+        assert!(disabled.last_extra.is_none());
+
+        let mut handler = MergeCellTagHandler::new(true);
+        handler.start_merge(&HashMap::new())?;
+        assert!(handler.last_extra.is_none());
+        let mut attrs = HashMap::new();
+        attrs.insert(ATTRIBUTE_REF.to_owned(), String::new());
+        handler.start_merge(&attrs)?;
+        assert!(handler.last_extra.is_none());
+        Ok(())
+    }
+
+    #[test]
+    fn start_merge_required_errors_on_missing_ref() {
+        // 对应 Java：严格模式缺 ref 报错
+        let mut handler = MergeCellTagHandler::new(true);
+        assert!(handler.start_merge_required(&HashMap::new()).is_err());
+        let mut attrs = HashMap::new();
+        attrs.insert(ATTRIBUTE_REF.to_owned(), String::new());
+        assert!(handler.start_merge_required(&attrs).is_err());
+        let mut attrs = HashMap::new();
+        attrs.insert(ATTRIBUTE_REF.to_owned(), "A1:B2".to_owned());
+        assert!(handler.start_merge_required(&attrs).is_ok());
+    }
+
+    #[test]
+    fn cell_extra_from_ref_validates_range_ordering_and_bounds() {
+        // 对应 Java：首尾行/列乱序与越界引用报错
+        assert!(cell_extra_from_ref(CellExtraType::Merge, None, "B2:A1").is_err());
+        assert!(cell_extra_from_ref(CellExtraType::Merge, None, "A1:A1048577").is_err());
+        assert!(cell_extra_from_ref(CellExtraType::Merge, None, "XFE1").is_err());
+        assert!(cell_extra_from_ref(CellExtraType::Merge, None, "1A").is_err());
+        // $ 前缀与合法最大范围
+        let extra = cell_extra_from_ref(CellExtraType::Merge, None, "$A$1:$XFD$1048576").unwrap();
+        assert_eq!(extra.first_row_index(), 0);
+        assert_eq!(extra.last_row_index(), 1_048_575);
+        assert_eq!(extra.last_column_index(), 16_383);
+    }
+
+    #[test]
+    fn tag_events_dispatch_only_for_merge_cell() {
+        // 对应 Java：SAX startElement 仅处理 mergeCell
+        let mut handler = MergeCellTagHandler::new(true);
+        handler.start_element("mergeCell", "ref=A1:B2");
+        assert!(handler.last_extra.is_some());
+        handler.start_element("x:mergeCell", "ref=C1:D1");
+        assert!(handler.last_extra.is_some());
+        handler.start_element("row", "ref=E1:F1");
+        let before = handler.last_extra.clone();
+        handler.start_element("row", "ref=Z9:Z10");
+        assert_eq!(handler.last_extra, before);
+        // support() 与 enabled 一致
+        assert!(handler.support());
+        assert!(!MergeCellTagHandler::new(false).support());
+    }
+}

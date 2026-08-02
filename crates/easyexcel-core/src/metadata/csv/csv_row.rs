@@ -85,3 +85,48 @@ impl CellCreator for CsvRow {
         Ok(self.cells.last_mut().expect("just pushed"))
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use crate::CellValue;
+
+    #[test]
+    fn new_row_index_cells_and_cell_lookup() {
+        // 对应 Java：CsvRow 行号与稀疏单元格查询
+        let mut row = CsvRow::new(4);
+        assert_eq!(row.row_index(), 4);
+        assert!(row.cells().is_empty());
+        assert!(row.cell(0).is_none());
+
+        row.create_cell(1).expect("cell ok");
+        row.create_cell(3).expect("cell ok");
+        assert_eq!(row.cells().len(), 2);
+        assert_eq!(row.cell(1).expect("found").column_index(), 1);
+        assert!(row.cell(2).is_none());
+    }
+
+    #[test]
+    fn create_cell_rejects_duplicate_column() {
+        // 对应 Java：同一列重复创建时报格式错误
+        let mut row = CsvRow::new(0);
+        row.create_cell(0).expect("first ok");
+        let err = row.create_cell(0).expect_err("duplicate");
+        assert!(err.to_string().contains("already exists"));
+    }
+
+    #[test]
+    fn into_record_builds_dense_record() {
+        // 对应 Java：稀疏行转为定宽记录
+        let mut row = CsvRow::new(0);
+        row.set_cell_style(CsvCellStyle::new(1));
+        row.create_cell(0)
+            .expect("cell")
+            .set_value(CellValue::Int(1));
+        row.create_cell(2)
+            .expect("cell")
+            .set_value(CellValue::String("x".to_owned()));
+        let record = row.into_record(4);
+        assert_eq!(record, vec!["1", "", "x", ""]);
+    }
+}

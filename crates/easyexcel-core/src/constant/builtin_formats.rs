@@ -164,3 +164,32 @@ pub static BUILTIN_FORMATS_CN: [Option<&str>; 59] = [
     Some("yyyy\"年\"m\"月\""),                                                   // 57
     Some("m\"月\"d\"日\""),                                                      // 58
 ];
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn get_builtin_format_resolves_tables() {
+        // 对应 Java：getBuiltinFormat 查表顺序
+        assert_eq!(get_builtin_format(0, ""), "General");
+        assert_eq!(get_builtin_format(14, ""), "yyyy/m/d");
+        assert_eq!(get_builtin_format(49, ""), "@");
+        // 超出表范围回退 General
+        assert_eq!(get_builtin_format(99, ""), "General");
+        assert_eq!(get_builtin_format(99, "0.00"), "General");
+    }
+
+    #[test]
+    fn builtin_format_code_falls_back_to_cn_table() {
+        // 对应 Java：ALL_LANGUAGES 为空时回退 CN 表
+        assert_eq!(builtin_format_code(0), Some("General"));
+        assert_eq!(builtin_format_code(14), Some("yyyy/m/d"));
+        // 索引 27 在 ALL_LANGUAGES 为空，回退 CN 表
+        assert_eq!(builtin_format_code(27), Some("yyyy\"年\"m\"月\""));
+        assert_eq!(builtin_format_code(99), None);
+        let all = switch_builtin_formats();
+        assert_eq!(all.len(), 50);
+        assert_eq!(all[0], Some("General"));
+    }
+}

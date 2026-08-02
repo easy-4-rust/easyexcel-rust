@@ -106,3 +106,34 @@ impl CellValue {
         }
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn hyperlink_as_text_returns_display_text() {
+        // 对应 Java：Hyperlink 文本化取显示文本
+        let link = CellValue::Hyperlink {
+            url: "https://x".to_owned(),
+            text: "链接".to_owned(),
+        };
+        assert_eq!(link.as_text(), "链接");
+        assert_eq!(link.data_type(), CellDataType::String);
+    }
+}
+
+#[cfg(test)]
+mod tests_extra2 {
+    use super::*;
+
+    #[test]
+    fn rich_text_as_text_returns_text_string() {
+        // 对应 Java：RichTextStringData.asText 返回 textString
+        let rich = CellValue::RichText(crate::rich_text_string_data::RichTextStringData::new(
+            "富文本",
+        ));
+        assert_eq!(rich.as_text(), "富文本");
+        assert_eq!(rich.data_type(), CellDataType::RichTextString);
+    }
+}

@@ -47,3 +47,40 @@ impl ReadListener<crate::CellValue> for SyncReadListener {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use crate::CellValue;
+
+    #[test]
+    fn new_default_list_and_set_list() {
+        // 对应 Java：SyncReadListener 构造与 getList/setList
+        let listener = SyncReadListener::new();
+        assert!(listener.list().is_empty());
+
+        let default = SyncReadListener::default();
+        assert!(default.list().is_empty());
+
+        let mut listener = SyncReadListener::new();
+        listener.set_list(vec![CellValue::Int(1), CellValue::Int(2)]);
+        assert_eq!(listener.list(), &[CellValue::Int(1), CellValue::Int(2)]);
+    }
+
+    #[test]
+    fn invoke_collects_rows_in_order() {
+        // 对应 Java：SyncReadListener.invoke 收集每一行
+        let mut listener = SyncReadListener::new();
+        let context = AnalysisContext::new("Sheet1", 0, 0);
+        listener
+            .invoke(CellValue::String("a".to_owned()), &context)
+            .expect("invoke ok");
+        listener
+            .invoke(CellValue::Int(7), &context)
+            .expect("invoke ok");
+        assert_eq!(
+            listener.list(),
+            &[CellValue::String("a".to_owned()), CellValue::Int(7)]
+        );
+    }
+}

@@ -163,3 +163,58 @@ impl From<ReadOptions> for ReadWorkbook {
         Self { options }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::cache::SimpleReadCacheSelector;
+    use crate::{ReadCacheMode, StoredReadCacheSelector};
+
+    #[test]
+    fn java_shaped_getters_and_setters_round_trip() {
+        // 对应 Java：ReadWorkbook 的 47 个成员访问器表面
+        let mut workbook = ReadWorkbook::new();
+        assert_eq!(workbook.excel_type(), None);
+
+        workbook.set_excel_type(());
+        assert!(workbook.auto_close_stream());
+        workbook.set_auto_close_stream(false);
+        assert!(workbook.auto_close_stream(), "no-op setter 保持 true");
+
+        workbook.set_ignore_empty_row(false);
+        assert!(!workbook.ignore_empty_row());
+
+        workbook.set_custom_object(crate::CustomReadObject::new(1_u32));
+        assert!(workbook.custom_object().is_some());
+
+        workbook.set_charset(crate::CsvCharset::from("gbk"));
+        assert_eq!(workbook.charset().name(), "gbk");
+
+        workbook.set_password("secret");
+        assert_eq!(workbook.password(), Some("secret"));
+
+        workbook.set_head_row_number(3);
+        assert_eq!(workbook.head_row_number(), 3);
+
+        workbook.set_read_cache(ReadCacheMode::Disk);
+        assert_eq!(workbook.read_cache(), ReadCacheMode::Disk);
+
+        assert!(workbook.read_cache_selector().is_none());
+        workbook.set_read_cache_selector(StoredReadCacheSelector::Simple(
+            SimpleReadCacheSelector::new(),
+        ));
+        assert!(workbook.read_cache_selector().is_some());
+
+        assert_eq!(workbook.options().ignore_empty_row, false);
+    }
+
+    #[test]
+    fn excel_type_mirrors_index_sheet_selection() {
+        // 对应 Java：getExcelType() 由 sheet 选择器推导
+        let mut options = ReadOptions::default();
+        options.sheet = crate::SheetSelector::Index(3);
+        let workbook = ReadWorkbook::from(options);
+        assert_eq!(workbook.excel_type(), Some(crate::SheetSelector::Index(0)));
+        assert_eq!(ReadWorkbook::default().excel_type(), None);
+    }
+}

@@ -142,3 +142,23 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn format_code_strips_star_pad_and_engineering_plus() {
+        // 对应 Java：DataFormatter 数字格式清理
+        assert_eq!(java_compat_format_code(r#"* #,##0"#), "#,##0");
+        assert_eq!(java_compat_format_code(r"0.00E+00"), "0.00E00");
+        // 转义的下划线不作为填充符移除（仅去除反斜杠）
+        assert_eq!(java_compat_format_code(r"\_0"), "_0");
+    }
+
+    #[test]
+    fn format_raw_cell_contents_stub_returns_none() {
+        // 对应 Java：格式化由 easyexcel-reader 的 ssfmt 完成
+        assert_eq!(format_raw_cell_contents(1.5, "0.00"), None);
+    }
+}

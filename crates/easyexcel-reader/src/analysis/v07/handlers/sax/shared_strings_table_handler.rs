@@ -166,3 +166,47 @@ mod tests {
         assert_eq!(utf_decode("plain"), "plain");
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn characters_appends_into_existing_element_buffer() {
+        // 对应 Java：同一 <t> 内多段 characters 追加到 currentElementData
+        let mut handler = SharedStringsTableHandler::new();
+        handler.start_element("si");
+        handler.start_element("t");
+        handler.characters("part1");
+        handler.characters("part2");
+        handler.characters("part3");
+        assert_eq!(handler.end_element("t"), None);
+        assert_eq!(
+            handler.end_element("si").as_deref(),
+            Some("part1part2part3")
+        );
+    }
+
+    #[test]
+    fn local_tag_strips_namespace_prefixes() {
+        // 对应 Java：ExcelXmlConstants 本地名匹配（ns2:t / x:t）
+        assert_eq!(local_tag("t"), "t");
+        assert_eq!(local_tag("x:si"), "si");
+        assert_eq!(local_tag("ns2:t"), "t");
+    }
+
+    #[test]
+    fn empty_si_without_t_yields_empty_string() {
+        // 对应 Java：无 <t> 的 <si> 也写入空字符串
+        let mut handler = SharedStringsTableHandler::new();
+        handler.start_element("si");
+        assert_eq!(handler.end_element("si").as_deref(), Some(""));
+        // 未知标签事件忽略
+        handler.start_element("phoneticPr");
+        assert_eq!(handler.end_element("phoneticPr"), None);
+        // 未进入 <t> 时 characters 忽略
+        handler.characters("orphan");
+        // 未打开的 <si> 结束也会产出空字符串（对应 Java：currentData 为空）
+        assert_eq!(handler.end_element("si"), Some(String::new()));
+    }
+}

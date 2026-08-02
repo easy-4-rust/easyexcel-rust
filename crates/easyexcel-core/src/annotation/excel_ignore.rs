@@ -15,3 +15,15 @@ impl ExcelIgnore {
         Self
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_creates_marker() {
+        // 对应 Java：@ExcelIgnore 标记
+        assert_eq!(ExcelIgnore::new(), ExcelIgnore);
+        assert_eq!(ExcelIgnore::default(), ExcelIgnore);
+    }
+}

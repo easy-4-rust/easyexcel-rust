@@ -1107,3 +1107,22 @@ fn to_column_index(column: u32) -> Result<usize> {
 mod missing_tests;
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn stored_selector_select_mode_dispatches_to_inner_selectors() {
+        // 对应 Java：ReadCacheSelector.selectMode 委托给具体实现
+        let simple = StoredReadCacheSelector::Simple(SimpleReadCacheSelector::new());
+        assert_eq!(simple.select_mode(100), ReadCacheMode::Memory);
+        assert_eq!(simple.select_mode(10_000_000), ReadCacheMode::Disk);
+
+        let eternal_map = StoredReadCacheSelector::Eternal(EternalReadCacheSelector::map_cache());
+        assert_eq!(eternal_map.select_mode(10_000_000), ReadCacheMode::Memory);
+
+        let eternal_disk = StoredReadCacheSelector::Eternal(EternalReadCacheSelector::ehcache());
+        assert_eq!(eternal_disk.select_mode(100), ReadCacheMode::Disk);
+    }
+}

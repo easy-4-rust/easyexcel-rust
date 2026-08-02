@@ -74,3 +74,37 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn decide_covers_all_java_branches() {
+        // 对应 Java：EofRecordHandler.processRecord 决策树全分支
+        assert_eq!(
+            EofRecordHandler::decide(false, false, false, false),
+            EofAction::Ignore
+        );
+        assert_eq!(
+            EofRecordHandler::decide(true, true, true, true),
+            EofAction::EndSheetOnly
+        );
+        assert_eq!(
+            EofRecordHandler::decide(true, true, false, false),
+            EofAction::Ignore
+        );
+        assert_eq!(
+            EofRecordHandler::decide(true, false, false, true),
+            EofAction::EndSheet
+        );
+    }
+
+    #[test]
+    fn process_record_gates_on_sid() {
+        // 对应 Java：EOF sid 门控
+        let mut handler = EofRecordHandler::new();
+        handler.process_record(EOF_SID, &[]);
+        handler.process_record(0xFFFF, &[]);
+    }
+}

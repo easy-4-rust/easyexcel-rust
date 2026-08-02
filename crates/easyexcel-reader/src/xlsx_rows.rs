@@ -1,3 +1,9 @@
+//! 对应 Java：`com.alibaba.excel.analysis.v07` 的 XLSX 行解析链路
+//!
+//! 直接读取 `sheetN.xml` 生成 STRING 显示模式行数据：解析共享字符串、
+//! 单元格格式与公式，产出 `XlsxDisplayCell`；同时提供数字格式码格式化
+//! 与工作表最后行号扫描（Java `CountTagHandler` 等价）。
+
 use std::collections::{HashMap, HashSet};
 use std::io::{BufRead, BufReader, Read, Seek};
 
@@ -31,8 +37,7 @@ use crate::cache::resolve_read_cache_mode;
 #[cfg(test)]
 use crate::read_cache::ReadCacheMode;
 use crate::read_cache::{
-    SharedStringCache, SharedStringCacheReader, SharedStringCacheWriter, create_cache,
-    memory_cache,
+    SharedStringCache, SharedStringCacheReader, SharedStringCacheWriter, create_cache, memory_cache,
 };
 
 /// Prefer EasyExcel BuiltinFormats over ssfmt ECMA table (Java locale-aware codes).
@@ -1277,3 +1282,51 @@ fn format_error(error: impl std::fmt::Display) -> ExcelError {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn format_with_code_supports_1904_date_system() {
+        // 对应 Java：1904 日期系统渲染（同一序列值在 1900/1904 系统日期不同）
+        let locale = Locale::default();
+        assert_eq!(
+            format_with_code(44927.0, "yyyy-mm-dd", true, &locale).as_deref(),
+            Some("2027-01-02")
+        );
+        assert_eq!(
+            format_with_code(44927.0, "yyyy-mm-dd", false, &locale).as_deref(),
+            Some("2023-01-01")
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests_extra2 {
+    use super::*;
+
+    #[test]
+    fn finish_cell_rejects_unknown_cell_types() -> Result<()> {
+        // 对应 Java：OOXML 未识别的单元格类型报错（防御分支直接调用验证）
+        let cursor: Box<dyn BufRead> = Box::new(std::io::Cursor::new(
+            b"<worksheet><sheetData></sheetData></worksheet>".to_vec(),
+        ));
+        let reader = XmlReader::from_reader(cursor);
+        let mut cache = create_cache(ReadCacheMode::Memory, 0)?;
+        let formats = vec![XlsxNumberFormat::Builtin(0)];
+        let mut cells = XlsxDisplayCellReader::new(
+            reader,
+            &formats,
+            false,
+            false,
+            Locale::default(),
+            cache.as_mut(),
+        )?;
+        let error = cells
+            .finish_cell(0, Some("unsupported"), "1", "", None)
+            .expect_err("unsupported cell type must fail");
+        assert!(error.to_string().contains("unsupported XLSX cell type"));
+        Ok(())
+    }
+}

@@ -35,3 +35,30 @@ impl Default for XlsxReadWorkbookHolder {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn xlsx_holder_constructors_and_inner_access() {
+        // 对应 Java：XlsxReadWorkbookHolder 构造与 inner 访问器
+        let holder = XlsxReadWorkbookHolder::new();
+        assert!(
+            !holder.inner().ignore_empty_row,
+            "derive Default 初始为 false"
+        );
+
+        let mut options = crate::ReadOptions::default();
+        options.ignore_empty_row = false;
+        let from_options = XlsxReadWorkbookHolder::from_options(&options);
+        assert!(!from_options.inner().ignore_empty_row);
+        assert_eq!(from_options.inner().charset, options.charset);
+        let default_from_options =
+            XlsxReadWorkbookHolder::from_options(&crate::ReadOptions::default());
+        assert!(default_from_options.inner().ignore_empty_row);
+
+        let defaulted = XlsxReadWorkbookHolder::default();
+        assert!(defaulted.inner().auto_close_stream);
+    }
+}

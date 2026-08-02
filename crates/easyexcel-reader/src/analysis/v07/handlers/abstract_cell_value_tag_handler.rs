@@ -42,3 +42,20 @@ impl XlsxTagHandler for AbstractCellValueTagHandler {
 /// Marker that concrete value handlers extend the abstract base (Java inheritance).
 #[allow(dead_code)]
 pub type AbstractCellValueBase = AbstractXlsxTagHandler;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn abstract_value_handler_accumulates_and_takes() {
+        // 对应 Java：AbstractCellValueTagHandler.characters 追加 tempData
+        let mut handler = AbstractCellValueTagHandler::new();
+        assert_eq!(handler.temp_data, "");
+        handler.characters("ab");
+        handler.characters("cd");
+        assert_eq!(handler.temp_data, "abcd");
+        assert_eq!(handler.take(), "abcd");
+        assert!(handler.temp_data.is_empty());
+    }
+}

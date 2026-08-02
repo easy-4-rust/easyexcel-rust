@@ -58,3 +58,44 @@ impl XlsRecordHandler for NoteRecordHandler {
         self.process_note(None, row, column);
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn process_note_requires_enabled() {
+        // 对应 Java：NoteRecordHandler.support() 控制注释是否物化
+        let mut disabled = NoteRecordHandler::new(false);
+        assert!(!disabled.support());
+        disabled.process_note(Some("note".to_owned()), 1, 2);
+        assert!(disabled.last_extra.is_none());
+
+        let mut handler = NoteRecordHandler::new(true);
+        handler.process_note(Some("note text".to_owned()), 1, 2);
+        let extra = handler.last_extra.as_ref().expect("comment extra");
+        assert_eq!(extra.extra_type(), CellExtraType::Comment);
+        assert_eq!(extra.text(), Some("note text"));
+        assert_eq!((extra.first_row_index(), extra.last_row_index()), (1, 1));
+        assert_eq!(
+            (extra.first_column_index(), extra.last_column_index()),
+            (2, 2)
+        );
+    }
+
+    #[test]
+    fn process_record_parses_note_coordinates() {
+        // 对应 Java：NoteRecordHandler.processRecord 解析 row|col
+        let mut handler = NoteRecordHandler::new(true);
+        handler.process_record(0x001C, &[3, 0, 4, 0, 0, 0]);
+        let extra = handler.last_extra.as_ref().expect("comment extra");
+        assert_eq!(
+            (extra.first_row_index(), extra.first_column_index()),
+            (3, 4)
+        );
+        // 数据不足 / 错误 sid 忽略
+        handler.process_record(0x001C, &[0, 0]);
+        handler.process_record(0xFFFF, &[3, 0, 4, 0, 0, 0]);
+        assert!(handler.last_extra.is_some());
+    }
+}

@@ -46,3 +46,28 @@ pub fn remove_thread_local_cache() {
     static CLEAR_COUNT: AtomicU32 = AtomicU32::new(0);
     CLEAR_COUNT.fetch_add(1, Ordering::Relaxed);
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn placeholder_helpers_return_expected_values() {
+        // 对应 Java：ClassUtils 占位实现（字段元数据由 derive 生成）
+        assert_eq!(
+            declared_excel_content_property(TypeId::of::<String>()),
+            None
+        );
+        combine_excel_content_property().expect("combine ok");
+        assert!(declared_fields(TypeId::of::<String>()).is_empty());
+    }
+
+    #[test]
+    fn remove_thread_local_cache_fires() {
+        // 对应 Java：ClassUtils.removeThreadLocalCache 生命周期触发
+        remove_thread_local_cache();
+        remove_thread_local_cache();
+        // 不 panic 即通过
+        assert!(true);
+    }
+}

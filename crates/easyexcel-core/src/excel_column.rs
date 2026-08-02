@@ -260,3 +260,118 @@ impl ExcelColumn {
         data
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn builder_methods_populate_annotation_fields() {
+        // 对应 Java：Head 上各注解元数据的 builder
+        let base = ExcelColumn::new("field", "名称", Some(0), 0, None);
+
+        let rounded = base.with_number_rounding_mode(NumberRoundingMode::Ceiling);
+        assert_eq!(
+            rounded.number_rounding_mode,
+            Some(NumberRoundingMode::Ceiling)
+        );
+
+        let typed = base.with_field_type("String");
+        assert_eq!(typed.field_type, Some("String"));
+
+        let wind = base.with_use_1904_windowing(true);
+        assert_eq!(wind.use_1904_windowing, Some(true));
+
+        let img = base.with_image_path("/tmp/a.png");
+        assert_eq!(img.image_path, Some("/tmp/a.png"));
+
+        let comment = base.with_comment("备注");
+        assert_eq!(comment.comment, Some("备注"));
+
+        let link = base.with_hyperlink("https://example.com");
+        assert_eq!(link.hyperlink, Some("https://example.com"));
+
+        let formula = base.with_formula("SUM(A1:A2)");
+        assert_eq!(formula.formula, Some("SUM(A1:A2)"));
+
+        let validation = ExcelDataValidationMeta::new("list", "between", "1", "2");
+        let validated = base.with_data_validation(validation);
+        assert_eq!(validated.data_validation, Some(validation));
+
+        let cf = base.with_conditional_format((">10", "red", "yellow"));
+        assert_eq!(cf.conditional_format, Some((">10", "red", "yellow")));
+
+        let filtered = base.with_auto_filter();
+        assert!(filtered.auto_filter);
+
+        // 未设置字段保持默认
+        assert_eq!(base.image_path, None);
+        assert!(!base.auto_filter);
+    }
+
+    #[test]
+    fn apply_decorations_wraps_hyperlink_over_non_string_value() {
+        // 对应 Java：Head 装饰顺序 formula -> hyperlink -> comment，
+        // 非字符串值走 as_text 文本化
+        let column = ExcelColumn::new("field", "名称", None, 0, None)
+            .with_hyperlink("https://example.com")
+            .with_comment("说明");
+
+        let mut data = WriteCellData::new(CellValue::Int(42));
+        data = column.apply_decorations(data);
+
+        // 数值先被 hyperlink 覆盖，文本为 as_text 结果。
+        // 整值断言替代 match 的兜底 panic 臂（apply_decorations 恒构造 Hyperlink 包装，
+        // other 臂数学不可达；if-let 空走会静默放行，改用整值断言保持失败可见）。
+        assert_eq!(
+            data.value(),
+            &CellValue::Hyperlink {
+                url: "https://example.com".to_owned(),
+                text: "42".to_owned(),
+            }
+        );
+        assert_eq!(
+            data.get_comment_data()
+                .map(crate::comment_data::CommentData::note_text)
+                .as_deref(),
+            Some("说明")
+        );
+        assert_eq!(
+            data.get_hyperlink_data()
+                .map(crate::hyperlink_data::HyperlinkData::get_address),
+            Some(Some("https://example.com"))
+        );
+    }
+
+    #[test]
+    fn apply_decorations_formula_then_hyperlink_then_comment() {
+        // 对应 Java：formula 先包装，hyperlink 显示文本取 formula 文本
+        let column = ExcelColumn::new("field", "名称", None, 0, None)
+            .with_formula("=A1*2")
+            .with_hyperlink("https://example.com");
+        let data = column.apply_decorations(WriteCellData::new(CellValue::Int(42)));
+        // 整值断言替代 match 兜底 panic 臂（同 apply_decorations_wraps_hyperlink_over_non_string_value）。
+        assert_eq!(
+            data.value(),
+            &CellValue::Hyperlink {
+                url: "https://example.com".to_owned(),
+                text: "=A1*2".to_owned(),
+            }
+        );
+    }
+
+    #[test]
+    fn apply_decorations_keeps_string_text_for_hyperlink() {
+        // 对应 Java：字符串值直接作为超链接显示文本
+        let column = ExcelColumn::new("field", "名称", None, 0, None).with_hyperlink("https://x");
+        let data = column.apply_decorations(WriteCellData::from_string("文本"));
+        // 整值断言替代 match 兜底 panic 臂（同 apply_decorations_wraps_hyperlink_over_non_string_value）。
+        assert_eq!(
+            data.value(),
+            &CellValue::Hyperlink {
+                url: "https://x".to_owned(),
+                text: "文本".to_owned(),
+            }
+        );
+    }
+}

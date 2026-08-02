@@ -947,10 +947,12 @@ fn facade_reads_and_writes_java_style_dynamic_rows() -> Result<()> {
         .head_row_number(0)
         .read_default_return(ReadDefaultReturn::ActualData)
         .do_read_sync()?;
-    let Some(DynamicValue::ActualData(number)) = actual[0].get(1) else {
-        panic!("expected actual numeric cell");
-    };
-    assert_eq!(number.as_text(), "109");
+    let actual_cell = actual[0].get(1);
+    // 守卫断言替代 let-else 兜底 panic 臂（ActualData 读取模式恒产出 ActualData）。
+    assert!(
+        matches!(actual_cell, Some(DynamicValue::ActualData(number)) if number.as_text() == "109"),
+        "expected actual numeric cell, got {actual_cell:?}"
+    );
 
     let listener = DynamicListener::default();
     let observed = Arc::clone(&listener.0);
@@ -959,10 +961,12 @@ fn facade_reads_and_writes_java_style_dynamic_rows() -> Result<()> {
         .read_default_return(ReadDefaultReturn::ReadCellData)
         .do_read()?;
     let observed = observed.lock().expect("dynamic listener lock");
-    let DynamicValue::ReadCellData(cell) = observed[0].get(3).expect("tail cell") else {
-        panic!("expected read cell data");
-    };
-    assert_eq!(cell.data(), &CellValue::String("tail".to_owned()));
+    let tail = observed[0].get(3).expect("tail cell");
+    // 守卫断言替代 let-else 兜底 panic 臂（ReadDefaultReturn::ReadCellData 模式恒产出 ReadCellData）。
+    assert!(
+        matches!(tail, DynamicValue::ReadCellData(cell) if cell.data() == &CellValue::String("tail".to_owned())),
+        "expected read cell data, got {tail:?}"
+    );
 
     let csv_without_head = directory.path().join("dynamic-no-head.csv");
     EasyExcel::write::<DynamicRow>(&csv_without_head)
@@ -2130,24 +2134,26 @@ fn write_converter_errors_report_physical_sheet_row_column_and_field() -> Result
     }
 
     fn assert_location(error: ExcelError, expected_row: u32) {
-        match error {
-            ExcelError::Data {
-                sheet,
-                row,
-                column,
-                field,
-                value,
-                message,
-            } => {
-                assert_eq!(sheet, "Diagnostics");
-                assert_eq!(row, expected_row);
-                assert_eq!(column, Some(0));
-                assert_eq!(field, "failing");
-                assert!(value.is_empty());
-                assert!(message.contains("converter rejected value"));
-            }
-            other => panic!("expected location-aware conversion error, got {other:?}"),
-        }
+        // 守卫断言替代 match 兜底 panic 臂（写入转换错误恒为 Data 变体）。
+        assert!(
+            matches!(
+                &error,
+                ExcelError::Data {
+                    sheet,
+                    row,
+                    column,
+                    field,
+                    value,
+                    message,
+                } if sheet == "Diagnostics"
+                    && *row == expected_row
+                    && *column == Some(0)
+                    && *field == "failing"
+                    && value.is_empty()
+                    && message.contains("converter rejected value")
+            ),
+            "expected location-aware conversion error, got {error:?}"
+        );
     }
 
     let directory = tempdir()?;

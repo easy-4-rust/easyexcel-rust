@@ -1,3 +1,8 @@
+//! 对应 Java：`com.alibaba.excel.converters` 下的数字转换器与 `com.alibaba.excel.util.NumberUtils`
+//!
+//! Java 兼容的数字读写辅助：`JavaNumber` 抽象、数字与字符串单元格双向转换、
+//! `BigDecimal`/`BigInt` 数值处理与 Java 二进制补码字节转换。
+
 use std::str::FromStr;
 
 use bigdecimal::{BigDecimal, ToPrimitive};
@@ -546,5 +551,175 @@ mod tests {
             write_string(DoubleStringConverter, &f64::NEG_INFINITY, &PERCENT),
             "-∞%"
         );
+    }
+}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use crate::converter::integer::integer_string_converter::IntegerStringConverter;
+    use crate::{ConvertContext, Converter, ExcelColumn};
+
+    /// 测试辅助：仅实现三个必需方法的 `JavaNumber`，用于覆盖默认 `negative` / `non_finite`。
+    struct BareNumber;
+
+    impl JavaNumber for BareNumber {
+        fn from_decimal(_value: &BigDecimal) -> Result<Self, ExcelError> {
+            Ok(BareNumber)
+        }
+
+        fn to_decimal(&self) -> Result<BigDecimal, ExcelError> {
+            Ok(BigDecimal::from(0))
+        }
+
+        fn java_string(&self) -> String {
+            String::new()
+        }
+    }
+
+    const COLUMN: ExcelColumn = ExcelColumn::new("value", "Value", Some(0), 0, None);
+
+    fn context() -> ConvertContext {
+        ConvertContext {
+            sheet_name: "Sheet1".to_owned(),
+            row_index: 1,
+            column_index: Some(0),
+            field: "value",
+            format: None,
+            use_1904_windowing: false,
+        }
+    }
+
+    #[test]
+    fn default_java_number_methods_report_non_negative_and_finite() {
+        // 对应 Java：`JavaNumber` 默认 `negative()` 为 false、`non_finite()` 为 None
+        assert!(!BareNumber.negative());
+        assert_eq!(BareNumber.non_finite(), None);
+    }
+
+    #[test]
+    fn read_string_number_rejects_non_string_cells() {
+        // 对应 Java：字符串数字转换器仅接受字符串单元格
+        let context = context();
+        let int_cell = CellValue::Int(1);
+        let read = ReadConverterContext::new(Some(&int_cell), &COLUMN, &context);
+        assert!(IntegerStringConverter.convert_to_rust_data(&read).is_err());
+    }
+
+    #[test]
+    fn number_error_wraps_or_passes_through() {
+        // 对应 Java：`ExcelDataConvertException` 原样透传，其余错误包装为转换错误
+        let context = context();
+        let cell = CellValue::Int(1);
+        let read_context = ReadConverterContext::new(Some(&cell), &COLUMN, &context);
+        let data_error = ExcelError::Data {
+            sheet: "s".to_owned(),
+            row: 0,
+            column: None,
+            field: "f",
+            value: "1".to_owned(),
+            message: "already a data error".to_owned(),
+        };
+        assert_eq!(
+            number_error(&read_context, &cell, data_error.clone()),
+            data_error
+        );
+        let wrapped = number_error(&read_context, &cell, ExcelError::Format("boom".to_owned()));
+        assert!(matches!(wrapped, ExcelError::Data { .. }));
+    }
+
+    #[test]
+    fn big_int_and_integer_negative_flags_match_java_signs() {
+        // 对应 Java：`BigInteger` / 基本整数类型的符号判断
+        assert!(JavaNumber::negative(&BigInt::from(-5)));
+        assert!(!JavaNumber::negative(&BigInt::from(5)));
+        assert!(JavaNumber::negative(&-1_i8));
+        assert!(!JavaNumber::negative(&1_i8));
+        assert!(JavaNumber::negative(&-1_i16));
+        assert!(JavaNumber::negative(&-1_i32));
+        assert!(JavaNumber::negative(&-1_i64));
+        assert!(!JavaNumber::negative(&1_i64));
+    }
+
+    #[test]
+    fn float_negative_and_non_finite_flags_match_java() {
+        // 对应 Java：`Float.isNaN` / `isInfinite` 与符号位判断
+        assert!(JavaNumber::negative(&-1.0_f32));
+        assert!(!JavaNumber::negative(&1.0_f32));
+        assert!(JavaNumber::negative(&-1.0_f64));
+        assert!(!JavaNumber::negative(&1.0_f64));
+        assert_eq!(
+            JavaNumber::non_finite(&f32::NAN),
+            Some(NonFiniteNumber::Nan)
+        );
+        assert_eq!(
+            JavaNumber::non_finite(&f32::INFINITY),
+            Some(NonFiniteNumber::PositiveInfinity)
+        );
+        assert_eq!(
+            JavaNumber::non_finite(&f32::NEG_INFINITY),
+            Some(NonFiniteNumber::NegativeInfinity)
+        );
+        assert_eq!(JavaNumber::non_finite(&1.0_f32), None);
+        assert_eq!(
+            JavaNumber::non_finite(&f64::NAN),
+            Some(NonFiniteNumber::Nan)
+        );
+        assert_eq!(
+            JavaNumber::non_finite(&f64::INFINITY),
+            Some(NonFiniteNumber::PositiveInfinity)
+        );
+        assert_eq!(
+            JavaNumber::non_finite(&f64::NEG_INFINITY),
+            Some(NonFiniteNumber::NegativeInfinity)
+        );
+        assert_eq!(JavaNumber::non_finite(&1.0_f64), None);
+    }
+
+    #[test]
+    fn java_float_string_special_values_match_java_to_string() {
+        // 对应 Java：`Float.toString` / `Double.toString` 的特殊值
+        assert_eq!(java_f64_string(f64::NAN), "NaN");
+        assert_eq!(java_f64_string(f64::INFINITY), "Infinity");
+        assert_eq!(java_f64_string(f64::NEG_INFINITY), "-Infinity");
+        assert_eq!(java_f32_string(f32::NAN), "NaN");
+        assert_eq!(java_f32_string(0.0), "0.0");
+        assert_eq!(java_f32_string(-0.0), "-0.0");
+        assert_eq!(java_f32_string(1.5), "1.5");
+        assert_eq!(java_f32_string(1.0e8), "1.0E8");
+    }
+
+    #[test]
+    fn float_from_decimal_success_paths_match_java() {
+        // 对应 Java：`BigDecimal.floatValue` / `doubleValue` 的转换路径
+        let decimal: BigDecimal = "1.25".parse().unwrap();
+        assert_eq!(
+            <f32 as JavaNumber>::from_decimal(&decimal).unwrap(),
+            1.25_f32
+        );
+        assert_eq!(
+            <f64 as JavaNumber>::from_decimal(&decimal).unwrap(),
+            1.25_f64
+        );
+    }
+
+    #[test]
+    fn bare_number_required_methods_are_invocable() {
+        // 对应 Java：JavaNumber 三个必需方法可直接调用
+        let bare = BareNumber::from_decimal(&BigDecimal::from(7)).expect("from decimal");
+        assert_eq!(bare.to_decimal().expect("to decimal"), BigDecimal::from(0));
+        assert_eq!(bare.java_string(), "");
+    }
+}
+
+#[cfg(test)]
+mod tests_extra2 {
+    use super::*;
+
+    #[test]
+    fn java_float_string_scientific_mantissa_keeps_decimal_point() {
+        // 对应 Java：Double.toString / Float.toString 科学计数法保留小数点尾数
+        assert_eq!(java_f64_string(1.5e8), "1.5E8");
+        assert_eq!(java_f32_string(1.5e8_f32), "1.5E8");
     }
 }

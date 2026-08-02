@@ -16,3 +16,20 @@ pub trait Handler {
         0
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    struct ProbeHandler;
+
+    impl Handler for ProbeHandler {}
+
+    #[test]
+    fn default_order_is_zero() {
+        // 对应 Java：Handler.order() 默认 OrderConstant.DEFAULT_ORDER
+        assert_eq!(ProbeHandler.order(), 0);
+        let probe = ProbeHandler;
+        assert_eq!(probe.order(), 0);
+    }
+}

@@ -11,3 +11,16 @@
 pub fn match_sheet(sheet_name: &str, sheet_pattern: &str) -> bool {
     sheet_name == sheet_pattern || sheet_pattern.is_empty()
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn match_sheet_compares_or_accepts_empty_pattern() {
+        // 对应 Java：SheetUtils.match
+        assert!(match_sheet("Sheet1", "Sheet1"));
+        assert!(match_sheet("Sheet1", ""));
+        assert!(!match_sheet("Sheet1", "Sheet2"));
+    }
+}

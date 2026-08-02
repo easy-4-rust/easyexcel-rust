@@ -249,3 +249,98 @@ fn font_property(font: ExcelFontStyle) -> FontProperty {
         bold: font.bold,
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_default_and_inner_accessor() {
+        // 对应 Java：ExcelWriteHeadProperty 空构造与默认构造等价
+        let property = ExcelWriteHeadProperty::new();
+        assert_eq!(property.inner().head_map().len(), 0);
+        assert_eq!(ExcelWriteHeadProperty::default(), property);
+        assert!(property.head_row_height_property().is_none());
+        assert!(property.content_row_height_property().is_none());
+        assert!(property.once_absolute_merge_property().is_none());
+    }
+
+    #[test]
+    fn from_columns_carries_row_heights_and_merge_metadata() {
+        // 对应 Java：从 derive 元数据解析 Head，附带行高与合并区域
+        static COLUMN: ExcelColumn = ExcelColumn::new("name", "名称", Some(1), 0, None);
+        let metadata = ExcelWriteMetadata::new()
+            .head_row_height(30)
+            .content_row_height(20)
+            .once_absolute_merge(OnceAbsoluteMergeProperty::new(0, 0, 0, 1));
+
+        let property = ExcelWriteHeadProperty::from_columns(
+            Some("Model".to_owned()),
+            &[(1, &COLUMN)],
+            None,
+            metadata,
+        )
+        .expect("built");
+        assert_eq!(property.inner().head_kind(), HeadKind::Class);
+        assert_eq!(
+            property.head_row_height_property().map(|p| p.height),
+            Some(30)
+        );
+        assert_eq!(
+            property.content_row_height_property().map(|p| p.height),
+            Some(20)
+        );
+        let merge = property.once_absolute_merge_property().expect("merge");
+        assert_eq!(merge.last_column_index, 1);
+    }
+
+    #[test]
+    fn from_columns_rejects_head_count_mismatch() {
+        // 对应 Java：表头数量与有效列数不一致时报格式错误
+        static COLUMN: ExcelColumn = ExcelColumn::new("name", "名称", None, 0, None);
+        let error = ExcelWriteHeadProperty::from_columns(
+            None,
+            &[(0, &COLUMN)],
+            Some(&[vec!["A".to_owned()], vec!["B".to_owned()]]),
+            ExcelWriteMetadata::default(),
+        )
+        .expect_err("count mismatch");
+        assert!(error.to_string().contains("does not match"));
+    }
+
+    #[test]
+    fn from_columns_rejects_index_outside_java_integer_range() {
+        // 对应 Java：列索引超出 Java Integer 范围时报格式错误
+        static COLUMN: ExcelColumn = ExcelColumn::new("name", "名称", None, 0, None);
+        let error = ExcelWriteHeadProperty::from_columns(
+            None,
+            &[(usize::MAX, &COLUMN)],
+            None,
+            ExcelWriteMetadata::default(),
+        )
+        .expect_err("index overflow");
+        assert!(error.to_string().contains("exceeds Java Integer range"));
+    }
+
+    #[test]
+    fn from_columns_with_explicit_head_names() {
+        // 对应 Java：显式表头替换字段名标签
+        static COLUMN: ExcelColumn = ExcelColumn::new("name", "名称", None, 0, None);
+        let property = ExcelWriteHeadProperty::from_columns(
+            None,
+            &[(0, &COLUMN)],
+            Some(&[vec!["姓名".to_owned()]]),
+            ExcelWriteMetadata::default(),
+        )
+        .expect("built");
+        assert_eq!(property.inner().head_kind(), HeadKind::String);
+        assert_eq!(
+            property
+                .inner()
+                .head_map()
+                .get(&0)
+                .map(|head| head.head_name_list()),
+            Some(&["姓名".to_owned()][..])
+        );
+    }
+}

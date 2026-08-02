@@ -119,3 +119,48 @@ impl<'a> ReadConverterContext<'a> {
         self.context
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    fn sample_column() -> ExcelColumn {
+        ExcelColumn::new("value", "Value", Some(0), 0, None)
+    }
+
+    fn sample_context() -> ConvertContext {
+        ConvertContext {
+            sheet_name: "Sheet1".to_owned(),
+            row_index: 1,
+            column_index: Some(0),
+            field: "value",
+            format: None,
+            use_1904_windowing: false,
+        }
+    }
+
+    #[test]
+    fn with_formula_carries_formula_metadata() {
+        // 对应 Java：ReadConverterContext.withFormula 携带公式信息
+        let column = sample_column();
+        let context = sample_context();
+        let cell = CellValue::Int(3);
+        let formula = FormulaData::new("=1+2");
+        let read_context =
+            ReadConverterContext::with_formula(Some(&cell), Some(&formula), &column, &context);
+        assert_eq!(read_context.cell(), Some(&cell));
+        assert_eq!(
+            read_context.formula().map(FormulaData::formula_value),
+            Some("=1+2")
+        );
+        assert_eq!(read_context.display_value(), None);
+        assert_eq!(read_context.decimal_value(), None);
+        assert_eq!(read_context.column().field, "value");
+        assert_eq!(read_context.convert_context().sheet_name, "Sheet1");
+
+        // 无公式与无单元格
+        let bare = ReadConverterContext::with_formula(None, None, &column, &context);
+        assert_eq!(bare.cell(), None);
+        assert_eq!(bare.formula(), None);
+    }
+}

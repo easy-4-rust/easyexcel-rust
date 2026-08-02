@@ -91,3 +91,33 @@ impl FromExcelCell for RichTextStringData {
         Ok(Self::new(cell.map_or_else(String::new, CellValue::as_text)))
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn interval_font_list_replaces_entries() {
+        // 对应 Java：RichTextStringData 的 intervalFontList 整体替换
+        let font = WriteFont::new().bold(true);
+        let value = RichTextStringData::new("rich").interval_font_list(vec![
+            IntervalFont::new(0, 2, font.clone()),
+            IntervalFont::new(2, 4, font),
+        ]);
+        assert_eq!(value.interval_fonts().len(), 2);
+        assert_eq!(value.interval_fonts()[0].start_index(), 0);
+        assert_eq!(value.text_string(), "rich");
+        assert!(value.write_font().is_none());
+    }
+
+    #[test]
+    fn apply_font_and_range_builders() {
+        // 对应 Java：applyFont / applyFont 区间
+        let font = WriteFont::new().italic(true);
+        let value = RichTextStringData::new("hello")
+            .apply_font(font.clone())
+            .apply_font_range(1, 3, font);
+        assert!(value.write_font().is_some());
+        assert_eq!(value.interval_fonts().len(), 1);
+    }
+}

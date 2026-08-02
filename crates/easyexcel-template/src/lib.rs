@@ -2521,3 +2521,288 @@ fn format_error(error: impl std::fmt::Display) -> ExcelError {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use calamine::Reader;
+    use std::fs;
+    use tempfile::tempdir;
+
+    /// 错误转换直接复用生产 `format_error`（与 `zip_writer_operation` 一致），
+    /// 不再保留独立测试副本：`map_err` 闭包只在出错时执行，测试中恒成功，
+    /// 原 test_error 函数体是死代码，已删除。
+
+    /// 手写 ZIP 包（用于构造缺失/损坏 worksheet 部件的模板）。
+    fn write_custom_zip(path: &Path, entries: &[(&str, &[u8])]) -> Result<()> {
+        let file = File::create(path).map_err(ExcelError::from)?;
+        let mut writer = ZipWriter::new(file);
+        let options = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
+        for (name, bytes) in entries {
+            writer
+                .start_file(*name, options)
+                .map_err(|error| ExcelError::Format(error.to_string()))?;
+            writer.write_all(bytes).map_err(ExcelError::from)?;
+        }
+        writer
+            .finish()
+            .map_err(|error| ExcelError::Format(error.to_string()))?;
+        Ok(())
+    }
+
+    /// 用 rust_xlsxwriter 生成一个含 `{name}` 占位符的 XLSX 模板。
+    fn xlsx_template(directory: &Path, name: &str) -> Result<PathBuf> {
+        let template = directory.join(name);
+        let mut workbook = rust_xlsxwriter::Workbook::new();
+        let worksheet = workbook.add_worksheet();
+        worksheet
+            .write_string(0, 0, "{name}")
+            .map_err(format_error)?;
+        workbook.save(&template).map_err(format_error)?;
+        Ok(template)
+    }
+
+    /// 对应 Java：`ExcelWriter.fill` 之后对已损坏 worksheet 部件的错误传播。
+    ///
+    /// worksheet 部件存在但字节不是合法 UTF-8 时，`finish` 中
+    /// `replace_collection_fills_in_sheet` 的 `?` 错误边必须被覆盖。
+    #[test]
+    fn finish_propagates_collection_fill_failure_for_non_utf8_worksheet() -> Result<()> {
+        let directory = tempdir()?;
+        let template = directory.path().join("bad-worksheet.xlsx");
+        let output = directory.path().join("out.xlsx");
+        write_custom_zip(
+            &template,
+            &[
+                (
+                    "xl/workbook.xml",
+                    br#"<workbook><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>"#,
+                ),
+                (
+                    "xl/_rels/workbook.xml.rels",
+                    br#"<Relationships><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>"#,
+                ),
+                ("xl/worksheets/sheet1.xml", &[0xff]),
+            ],
+        )?;
+        let mut writer = ExcelTemplateWriter::new(&template, &output)?;
+        writer.fill_list(
+            &FillWrapper::new([TemplateData::new().with("name", "Alice")]),
+            FillConfig::new(),
+        )?;
+        let error = writer.finish().expect_err("finish must fail");
+        assert!(
+            matches!(error, ExcelError::Format(ref message) if message.contains("invalid utf-8")),
+            "unexpected error: {error}"
+        );
+        Ok(())
+    }
+
+    /// 对应 Java：`fillXlsTemplate` 列表填充（BIFF8 `.xls`）。
+    ///
+    /// 用 easyexcel-writer 的 Biff8Book 生成带各类占位符的 `.xls` 模板：
+    /// `{.name}`（未命名 is_dot 分支）、`{plain}`（普通分支）、
+    /// `x{name}`（else 分支）、`{}`（空 key）、`{.}`（点号空 key）、
+    /// `{missing}`（未命中 key），以及命名 wrapper 的 `{users.name}`（prefix 分支）。
+    #[test]
+    fn fill_xlsx_template_list_supports_biff8_xls_placeholders() -> Result<()> {
+        let directory = tempdir()?;
+        let template = directory.path().join("list-template.xls");
+        let unnamed_output = directory.path().join("list-unnamed-output.xls");
+        let named_output = directory.path().join("list-named-output.xls");
+
+        let mut book = easyexcel_writer::biff8::Biff8Book::default();
+        {
+            let sheet = book.sheet_mut("Sheet1");
+            let text = |value: &str| {
+                easyexcel_writer::biff8::Biff8Cell::general(
+                    easyexcel_writer::biff8::Biff8Value::Text(value.to_owned()),
+                )
+            };
+            sheet.set(0, 0, text("{.name}"))?;
+            sheet.set(0, 1, text("{plain}"))?;
+            sheet.set(0, 2, text("x{name}"))?;
+            sheet.set(0, 3, text("{}"))?;
+            sheet.set(0, 4, text("{.}"))?;
+            sheet.set(0, 5, text("{missing}"))?;
+            sheet.set(0, 6, text("{users.name}"))?;
+        }
+        fs::write(&template, book.to_cfb_bytes()?)?;
+
+        // 未命名 wrapper：覆盖 is_dot / 普通 / else / 空 key / 未命中分支。
+        fill_xlsx_template_list(
+            &template,
+            &unnamed_output,
+            &FillWrapper::new([TemplateData::new()
+                .with("name", "Alice")
+                .with("plain", "Bob")]),
+            FillConfig::new(),
+        )?;
+        let mut workbook: calamine::Xls<_> =
+            calamine::open_workbook_from_rs(Cursor::new(fs::read(&unnamed_output)?))
+                .map_err(format_error)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert_eq!(
+            range.get_value((0, 0)),
+            Some(&calamine::Data::String("Alice".to_owned()))
+        );
+        assert_eq!(
+            range.get_value((0, 1)),
+            Some(&calamine::Data::String("Bob".to_owned()))
+        );
+        assert_eq!(
+            range.get_value((0, 2)),
+            Some(&calamine::Data::String("x{name}".to_owned()))
+        );
+        assert_eq!(
+            range.get_value((0, 3)),
+            Some(&calamine::Data::String("{}".to_owned()))
+        );
+        assert_eq!(
+            range.get_value((0, 4)),
+            Some(&calamine::Data::String("{.}".to_owned()))
+        );
+        assert_eq!(
+            range.get_value((0, 5)),
+            Some(&calamine::Data::String("{missing}".to_owned()))
+        );
+        assert_eq!(
+            range.get_value((0, 6)),
+            Some(&calamine::Data::String("{users.name}".to_owned()))
+        );
+
+        // 命名 wrapper：覆盖 `{prefix.key}` 分支。
+        fill_xlsx_template_list(
+            &template,
+            &named_output,
+            &FillWrapper::named("users", [TemplateData::new().with("name", "Carol")]),
+            FillConfig::new(),
+        )?;
+        let mut workbook: calamine::Xls<_> =
+            calamine::open_workbook_from_rs(Cursor::new(fs::read(&named_output)?))
+                .map_err(format_error)?;
+        let range = workbook.worksheet_range("Sheet1").map_err(format_error)?;
+        assert_eq!(
+            range.get_value((0, 6)),
+            Some(&calamine::Data::String("Carol".to_owned()))
+        );
+        Ok(())
+    }
+
+    /// 对应 Java：`loadEntries` 拒绝 legacy `.xls`（OOXML-only 限制）。
+    #[test]
+    fn load_entries_rejects_legacy_xls_paths() {
+        let error = load_entries(Path::new("legacy-template.xls")).expect_err("xls 模板必须被拒绝");
+        assert!(
+            matches!(error, ExcelError::Unsupported(ref message) if message.contains("not supported")),
+            "unexpected error: {error}"
+        );
+    }
+
+    /// 对应 Java：`last_worksheet_row` 在无 `r` 属性的行上走 if-let 的 else 边。
+    #[test]
+    fn last_worksheet_row_skips_rows_without_reference() {
+        assert_eq!(last_worksheet_row("<row></row>"), None);
+        assert_eq!(
+            last_worksheet_row(r#"<row r="2"></row><row></row>"#),
+            Some(1)
+        );
+        assert_eq!(
+            last_worksheet_row(r#"<row r="3"></row><row r="7"></row>"#),
+            Some(6)
+        );
+    }
+
+    /// 对应 Java：`replace_collection_placeholders` 指定 worksheet 过滤 +
+    /// 水平方向展开（覆盖 `expand_horizontal_cells` 全部主体）。
+    #[test]
+    fn replace_collection_placeholders_matching_filters_sheet_and_expands_horizontal() {
+        let wrapper = FillWrapper::new([
+            TemplateData::new().with("name", "A"),
+            TemplateData::new().with("name", "B"),
+        ]);
+        let worksheet = r#"<worksheet><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>{.name}</t></is></c></row><row r="2"><c r="A2" t="inlineStr"><is><t>static</t></is></c></row></sheetData></worksheet>"#;
+        let mut entries = vec![
+            TemplateEntry {
+                name: "xl/worksheets/sheet1.xml".to_owned(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: worksheet.as_bytes().to_vec(),
+            },
+            TemplateEntry {
+                name: "xl/worksheets/sheet2.xml".to_owned(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: b"<worksheet/>".to_vec(),
+            },
+        ];
+        replace_collection_placeholders_matching(
+            &mut entries,
+            Some("xl/worksheets/sheet1.xml"),
+            &wrapper,
+            FillConfig::new().direction(FillDirection::Horizontal),
+        );
+        let xml = std::str::from_utf8(&entries[0].bytes).expect("utf-8");
+        assert!(xml.contains(">A<"), "A 应横向展开: {xml}");
+        assert!(xml.contains(">B<"), "B 应横向展开: {xml}");
+        assert!(entries[1].bytes == b"<worksheet/>", "sheet2 不应被修改");
+    }
+
+    /// 对应 Java：`forceNewRow(true)` 垂直展开，逐行复制模板行并平移尾部。
+    #[test]
+    fn expand_vertical_rows_force_new_row_copies_rows_and_shifts_tail() {
+        let wrapper = FillWrapper::named(
+            "users",
+            [
+                TemplateData::new().with("name", "Alice"),
+                TemplateData::new().with("name", "Bob"),
+                TemplateData::new().with("name", "Carol"),
+            ],
+        );
+        let xml = r#"<worksheet><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>{users.name}</t></is></c></row><row r="2"><c r="A2" t="inlineStr"><is><t>Footer</t></is></c></row></sheetData></worksheet>"#;
+        let expanded =
+            expand_vertical_rows(xml, &wrapper, FillConfig::new().force_new_row(true), &[])
+                .expect("force_new_row 展开必须成功");
+        assert!(expanded.contains("Alice"), "{expanded}");
+        assert!(expanded.contains("Bob"), "{expanded}");
+        assert!(expanded.contains("Carol"), "{expanded}");
+        assert!(expanded.contains("Footer"), "{expanded}");
+    }
+
+    /// 对应 Java：默认（非 forceNewRow）垂直展开，追加行写入已有行之后。
+    #[test]
+    fn expand_vertical_rows_without_force_reuses_template_row() {
+        let wrapper = FillWrapper::named(
+            "users",
+            [
+                TemplateData::new().with("name", "Alice"),
+                TemplateData::new().with("name", "Bob"),
+            ],
+        );
+        let xml = r#"<worksheet><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>{users.name}</t></is></c></row><row r="2"><c r="B2" t="inlineStr"><is><t>Preserve</t></is></c></row><row r="3"><c r="A3" t="inlineStr"><is><t>Footer</t></is></c></row></sheetData></worksheet>"#;
+        let expanded = expand_vertical_rows(xml, &wrapper, FillConfig::new(), &[])
+            .expect("默认垂直展开必须成功");
+        assert!(expanded.contains("Alice"), "{expanded}");
+        assert!(expanded.contains("Bob"), "{expanded}");
+        assert!(expanded.contains("Preserve"), "{expanded}");
+        assert!(expanded.contains("Footer"), "{expanded}");
+    }
+
+    /// 对应 Java：`ExcelTemplateWriter` 状态机在未 finish 时仍可追加行/标量。
+    #[test]
+    fn stateful_writer_accepts_rows_and_scalar_before_finish() -> Result<()> {
+        let directory = tempdir()?;
+        let template = xlsx_template(directory.path(), "stateful-template.xlsx")?;
+        let output = directory.path().join("stateful-output.xlsx");
+        let mut writer = ExcelTemplateWriter::new(&template, &output)?;
+        writer.fill(&TemplateData::new().with("name", "stateful"))?;
+        writer.write_rows([vec![CellValue::String("summary".to_owned())]])?;
+        assert!(!writer.is_finished());
+        writer.finish()?;
+        assert!(writer.is_finished());
+        assert!(output.exists());
+        Ok(())
+    }
+}

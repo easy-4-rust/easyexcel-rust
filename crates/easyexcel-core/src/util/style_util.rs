@@ -46,3 +46,21 @@ pub fn build_font() -> Option<Box<dyn Any>> {
 pub fn build_data_format(_format: &str) -> Option<Box<dyn Any>> {
     None
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn placeholder_helpers_return_expected_defaults() {
+        // 对应 Java：StyleUtil 占位实现（委托 rust_xlsxwriter）
+        assert!(build_cell_style().is_none());
+        assert!(build_rich_text_string("text").is_none());
+        assert!(build_font().is_none());
+        assert!(build_data_format("0.00").is_none());
+
+        let any: &dyn Any = &String::from("x");
+        assert_eq!(get_cell_coordinate(any), None);
+        assert_eq!(get_hyperlink_type(any), "none");
+    }
+}

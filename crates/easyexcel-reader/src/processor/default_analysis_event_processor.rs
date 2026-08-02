@@ -18,3 +18,18 @@ impl AnalysisEventProcessor for DefaultAnalysisEventProcessor {
         let _ = _analysis_context;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_processor_events_are_noops() {
+        // 对应 Java：DefaultAnalysisEventProcessor 三个事件默认空实现
+        let mut processor = DefaultAnalysisEventProcessor;
+        let context = AnalysisContext::new("Sheet1", 0, 0);
+        processor.extra(&context);
+        processor.end_row(&context);
+        processor.end_sheet(&context);
+    }
+}

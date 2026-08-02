@@ -1258,13 +1258,14 @@ fn read_write_cell_data_round_trip() {
     let with_image =
         WriteCellData::new(CellValue::Int(100)).image(ImageData::new(vec![0x89, 0x50, 0x4e, 0x47]));
     let imaged = with_image.to_excel_cell(&ctx).unwrap();
-    match imaged {
-        CellValue::Images { value, images } => {
-            assert_eq!(*value, CellValue::Int(100));
-            assert_eq!(images.len(), 1);
+    // 整值断言替代 match 兜底 panic 臂（image_data_list 非空时 to_excel_cell 恒构造 Images 包装）。
+    assert_eq!(
+        imaged,
+        CellValue::Images {
+            value: Box::new(CellValue::Int(100)),
+            images: vec![ImageData::new(vec![0x89, 0x50, 0x4e, 0x47])],
         }
-        other => panic!("expected Images wrapper, got {other:?}"),
-    }
+    );
 }
 
 // ============================================================================
@@ -1551,12 +1552,12 @@ fn row_data_dynamic_cell_formula_preserved() {
         .with_formulas(formulas)
         .with_read_default_return(ReadDefaultReturn::ReadCellData);
     let dynamic = DynamicRow::from_row(&row).unwrap();
-    match dynamic.get(0).unwrap() {
-        DynamicValue::ReadCellData(rcd) => {
-            assert_eq!(rcd.formula().unwrap().formula_value(), "A1+1");
-        }
-        other => panic!("expected ReadCellData, got {:?}", other),
-    }
+    let cell = dynamic.get(0).unwrap();
+    // 守卫断言替代 match 兜底 panic 臂（ReadDefaultReturn::ReadCellData 模式恒产出 ReadCellData）。
+    assert!(
+        matches!(cell, DynamicValue::ReadCellData(rcd) if rcd.formula().unwrap().formula_value() == "A1+1"),
+        "expected ReadCellData, got {cell:?}"
+    );
 }
 
 // ============================================================================
@@ -1777,12 +1778,12 @@ fn row_data_decimal_values_override_float() {
         .with_decimal_values(decimals)
         .with_read_default_return(ReadDefaultReturn::ActualData);
     let dynamic = DynamicRow::from_row(&row).unwrap();
-    match dynamic.get(0).unwrap() {
-        DynamicValue::ActualData(CellValue::Decimal(d)) => {
-            assert_eq!(*d, bd);
-        }
-        other => panic!("expected Decimal, got {:?}", other),
-    }
+    let cell = dynamic.get(0).unwrap();
+    // 守卫断言替代 match 兜底 panic 臂（ActualData 模式恒产出 Decimal）。
+    assert!(
+        matches!(cell, DynamicValue::ActualData(CellValue::Decimal(d)) if *d == bd),
+        "expected Decimal, got {cell:?}"
+    );
 }
 
 // ============================================================================

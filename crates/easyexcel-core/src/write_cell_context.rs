@@ -277,3 +277,51 @@ impl WriteCellContext {
         &self.holders
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use crate::WriteContextHolder;
+
+    #[test]
+    fn with_holder_context_resolves_table_and_sheet() {
+        // 对应 Java：table_no 存在时为 Table，否则为 Sheet
+        let table = WriteCellContext::new("Sheet1", 1, 0, CellValue::Int(1)).with_holder_context(
+            WriteWorkbookHolderView::new("out.xlsx"),
+            2,
+            Some(3),
+        );
+        assert_eq!(table.write_context().holder_type(), crate::Holder::Table);
+
+        let sheet = WriteCellContext::new("Sheet1", 1, 0, CellValue::Int(1)).with_holder_context(
+            WriteWorkbookHolderView::new("out.xlsx"),
+            2,
+            None,
+        );
+        assert_eq!(sheet.write_context().holder_type(), crate::Holder::Sheet);
+    }
+
+    #[test]
+    fn apply_cell_mutations_and_sync_handle() {
+        // 对应 Java：handler 变更经 handle 提交
+        let mut context = WriteCellContext::new("Sheet1", 1, 0, CellValue::Int(1));
+        context.value = CellValue::String("changed".to_owned());
+        context.sync_cell_handle();
+        context.apply_cell_mutations();
+        assert_eq!(context.value, CellValue::String("changed".to_owned()));
+    }
+}
+
+#[cfg(test)]
+mod tests_extra2 {
+    use super::*;
+
+    #[test]
+    fn apply_cell_mutations_honors_skip_request() {
+        // 对应 Java：handler 通过 handle 请求跳过该单元格（setSkipped → skip）
+        let mut context = WriteCellContext::new("Sheet1", 1, 0, CellValue::Int(1));
+        context.cell().set_skipped(true);
+        context.apply_cell_mutations();
+        assert!(context.skip);
+    }
+}

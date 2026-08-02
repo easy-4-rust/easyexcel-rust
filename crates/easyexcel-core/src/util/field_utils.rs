@@ -25,3 +25,24 @@ pub fn resolve_cglib_field_name(name: &str) -> &str {
 pub fn get_field(_class_name: &str, _field_name: &str) -> Option<()> {
     None
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn resolve_cglib_field_name_returns_verbatim() {
+        // 对应 Java：Rust 无 CGLIB 代理，原样返回
+        assert_eq!(resolve_cglib_field_name("name"), "name");
+        assert_eq!(
+            resolve_cglib_field_name("name$$EnhancerByCGLIB$$abc"),
+            "name$$EnhancerByCGLIB$$abc"
+        );
+    }
+
+    #[test]
+    fn get_field_returns_none() {
+        // 对应 Java：字段由 derive(ExcelRow) 编译期解析
+        assert_eq!(get_field("Model", "name"), None);
+    }
+}

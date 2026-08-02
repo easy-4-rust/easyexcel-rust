@@ -1,3 +1,8 @@
+//! 对应 Java：`com.alibaba.excel.converters.boolean_` 下的 Boolean 转换器
+//!
+//! 布尔值与数字/字符串单元格之间的双向转换辅助函数，
+//! 供 `BooleanBooleanConverter` / `BooleanNumberConverter` / `BooleanStringConverter` 复用。
+
 use bigdecimal::BigDecimal;
 use num_bigint::BigInt;
 
@@ -270,6 +275,124 @@ mod tests {
                 &StringBooleanConverter
             ),
             CellDataType::Boolean
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use crate::converter::bigdecimal::big_decimal_boolean_converter::BigDecimalBooleanConverter;
+    use crate::converter::biginteger::big_integer_boolean_converter::BigIntegerBooleanConverter;
+    use crate::converter::booleanconverter::boolean_boolean_converter::BooleanBooleanConverter;
+    use crate::converter::booleanconverter::boolean_number_converter::BooleanNumberConverter;
+    use crate::converter::booleanconverter::boolean_string_converter::BooleanStringConverter;
+    use crate::converter::byteconverter::byte_boolean_converter::ByteBooleanConverter;
+    use crate::{
+        ConvertContext, Converter, ExcelColumn, ReadConverterContext, WriteConverterContext,
+    };
+
+    const COLUMN: ExcelColumn = ExcelColumn::new("value", "Value", Some(0), 0, None);
+
+    fn context() -> ConvertContext {
+        ConvertContext {
+            sheet_name: "Sheet1".to_owned(),
+            row_index: 1,
+            column_index: Some(0),
+            field: "value",
+            format: None,
+            use_1904_windowing: false,
+        }
+    }
+
+    #[test]
+    fn big_decimal_and_big_int_scalar_booleans_write_one_and_zero() {
+        // 对应 Java：`BigDecimal.ONE` / `BigInteger.ONE` 的 isOne 判断
+        let context = context();
+        let column = &COLUMN;
+        let one_decimal = BigDecimal::from(1);
+        let zero_decimal = BigDecimal::from(0);
+        assert_eq!(
+            BigDecimalBooleanConverter
+                .convert_to_excel_data(&WriteConverterContext::new(&one_decimal, column, &context,))
+                .unwrap()
+                .value(),
+            &CellValue::Bool(true)
+        );
+        assert_eq!(
+            BigDecimalBooleanConverter
+                .convert_to_excel_data(
+                    &WriteConverterContext::new(&zero_decimal, column, &context,)
+                )
+                .unwrap()
+                .value(),
+            &CellValue::Bool(false)
+        );
+        let one_big_int = BigInt::from(1);
+        let two_big_int = BigInt::from(2);
+        assert_eq!(
+            BigIntegerBooleanConverter
+                .convert_to_excel_data(&WriteConverterContext::new(&one_big_int, column, &context,))
+                .unwrap()
+                .value(),
+            &CellValue::Bool(true)
+        );
+        assert_eq!(
+            BigIntegerBooleanConverter
+                .convert_to_excel_data(&WriteConverterContext::new(&two_big_int, column, &context,))
+                .unwrap()
+                .value(),
+            &CellValue::Bool(false)
+        );
+    }
+
+    #[test]
+    fn scalar_boolean_read_rejects_wrong_or_missing_cells() {
+        // 对应 Java：布尔标量转换器对非布尔单元格或空单元格报错
+        let context = context();
+        let string_cell = CellValue::String("x".to_owned());
+        let read = ReadConverterContext::new(Some(&string_cell), &COLUMN, &context);
+        assert!(ByteBooleanConverter.convert_to_rust_data(&read).is_err());
+        let empty_read = ReadConverterContext::new(None, &COLUMN, &context);
+        assert!(
+            ByteBooleanConverter
+                .convert_to_rust_data(&empty_read)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn boolean_converters_reject_wrong_or_missing_cells() {
+        // 对应 Java：Boolean 转换器对非布尔单元格或空单元格报错
+        let context = context();
+        let int_cell = CellValue::Int(1);
+        let read = ReadConverterContext::new(Some(&int_cell), &COLUMN, &context);
+        assert!(BooleanBooleanConverter.convert_to_rust_data(&read).is_err());
+        let empty_read = ReadConverterContext::new(None, &COLUMN, &context);
+        assert!(
+            BooleanBooleanConverter
+                .convert_to_rust_data(&empty_read)
+                .is_err()
+        );
+
+        let string_cell = CellValue::String("true".to_owned());
+        let read = ReadConverterContext::new(Some(&string_cell), &COLUMN, &context);
+        assert!(BooleanNumberConverter.convert_to_rust_data(&read).is_err());
+        let empty_read = ReadConverterContext::new(None, &COLUMN, &context);
+        assert!(
+            BooleanNumberConverter
+                .convert_to_rust_data(&empty_read)
+                .is_err()
+        );
+
+        let int_cell = CellValue::Int(1);
+        let read = ReadConverterContext::new(Some(&int_cell), &COLUMN, &context);
+        assert!(BooleanStringConverter.convert_to_rust_data(&read).is_err());
+        let empty_read = ReadConverterContext::new(None, &COLUMN, &context);
+        assert!(
+            BooleanStringConverter
+                .convert_to_rust_data(&empty_read)
+                .is_err()
         );
     }
 }

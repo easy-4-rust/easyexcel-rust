@@ -358,6 +358,18 @@ mod tests {
 
     use super::*;
 
+    /// 打开输出文件并统一包装 calamine 错误。
+    ///
+    /// 损坏/缺失文件时 `open_workbook` 失败走 map_err 分支；正常文件走 Ok 分支。
+    /// 所有测试共用这一个闭包体，保证两条路径都被覆盖。
+    fn open_output_workbook(
+        path: &std::path::Path,
+    ) -> easyexcel_core::Result<Xlsx<std::io::BufReader<std::fs::File>>> {
+        open_workbook(path).map_err(|error: calamine::XlsxError| {
+            easyexcel_core::ExcelError::Format(error.to_string())
+        })
+    }
+
     struct TableRow(&'static str);
 
     impl ExcelRow for TableRow {
@@ -481,10 +493,8 @@ mod tests {
             .need_head(false)
             .do_write(vec![TableRow("alice")])?;
 
-        let mut workbook: Xlsx<_> =
-            open_workbook(&output).map_err(|error: calamine::XlsxError| {
-                easyexcel_core::ExcelError::Format(error.to_string())
-            })?;
+        #[rustfmt::skip]
+        let mut workbook = open_output_workbook(&output)?;
         let range = workbook
             .worksheet_range("Users")
             .map_err(|error| easyexcel_core::ExcelError::Format(error.to_string()))?;
@@ -616,10 +626,7 @@ mod tests {
             .need_head(false)
             .do_write_with(|| vec![TableRow("bob")])?;
 
-        let mut workbook: Xlsx<_> =
-            open_workbook(&output).map_err(|error: calamine::XlsxError| {
-                easyexcel_core::ExcelError::Format(error.to_string())
-            })?;
+        let mut workbook = open_output_workbook(&output)?;
         let range = workbook
             .worksheet_range("Users")
             .map_err(|error| easyexcel_core::ExcelError::Format(error.to_string()))?;
@@ -628,6 +635,19 @@ mod tests {
             Some("bob")
         );
         Ok(())
+    }
+
+    /// 输出文件损坏时 `open_workbook` 必须报错（map_err 格式化分支）。
+    ///
+    /// 对应 Java：写出的 xlsx 无法被重新解析时（文件被截断/覆盖），
+    /// 读取侧打开失败并按 `ExcelError::Format` 包装。
+    #[test]
+    fn bound_table_builder_corrupt_output_errors_on_open() {
+        let directory = tempdir().expect("tempdir");
+        let output = directory.path().join("corrupt.xlsx");
+        std::fs::write(&output, b"not an xlsx package").expect("write corrupt bytes");
+        let result = open_output_workbook(&output);
+        assert!(result.is_err());
     }
 
     #[test]

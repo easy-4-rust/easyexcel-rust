@@ -2949,3 +2949,85 @@ mod tests_extra {
         assert!(error.to_string().contains("missing </b>"));
     }
 }
+
+#[cfg(test)]
+mod tests_extra2 {
+    use super::*;
+
+    use std::io::Write;
+
+    /// `append_sparse_rows_to_xml` 找不到 `</sheetData>` 时必须报错。
+    #[test]
+    fn append_sparse_rows_missing_sheet_data_errors() {
+        // 对应 Java：POI `XSSFSheet` 必然包含 sheetData，
+        // 模板缺失该元素说明包已损坏。
+        let xml = concat!(
+            "<worksheet><dimension ref=\"A1:B1\"/>",
+            "<mergeCells count=\"1\"><mergeCell ref=\"A1:B1\"/></mergeCells>",
+            "</worksheet>"
+        );
+        let rows = vec![vec![(0usize, CellValue::String("appended".to_owned()))]];
+        let error = append_sparse_rows_to_xml(xml, &rows, &[], &[], &[])
+            .expect_err("missing sheetData must be rejected");
+        assert!(
+            error.to_string().contains("does not contain sheetData"),
+            "unexpected: {error}"
+        );
+    }
+
+    /// 模板单元格列号超出 u16 时（防御性校验）必须报错。
+    #[test]
+    fn load_template_sheets_rejects_column_overflow() {
+        // 对应 Java：calamine 读取的列号超出 XLSX 上限时拒绝模板。
+        // 手工构造一个列引用为 ZZZZ（0 基列号 456974 > u16::MAX）的包。
+        let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
+        let options = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
+        writer
+            .start_file("[Content_Types].xml", options)
+            .expect("content types");
+        writer
+            .write_all(
+                br#"<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/></Types>"#,
+            )
+            .expect("write");
+        writer
+            .start_file("_rels/.rels", options)
+            .expect("package rels");
+        writer
+            .write_all(
+                br#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>"#,
+            )
+            .expect("write");
+        writer
+            .start_file("xl/workbook.xml", options)
+            .expect("workbook");
+        writer
+            .write_all(
+                br#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Wide" sheetId="1" r:id="rId1"/></sheets></workbook>"#,
+            )
+            .expect("write");
+        writer
+            .start_file("xl/_rels/workbook.xml.rels", options)
+            .expect("workbook rels");
+        writer
+            .write_all(
+                br#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>"#,
+            )
+            .expect("write");
+        writer
+            .start_file("xl/worksheets/sheet1.xml", options)
+            .expect("sheet");
+        writer
+            .write_all(
+                br#"<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="XFE1"><v>1</v></c></row></sheetData></worksheet>"#,
+            )
+            .expect("write");
+        let bytes = writer.finish().expect("finish").into_inner();
+        // 对应 Java：POI 加载模板时不校验超出 XLSX 列上限（XFD）的单元格引用，
+        // 加载照常完成；rust_xlsxwriter 同样容忍并忽略超界引用。
+        let sheets = load_template_sheets(&bytes).expect("tolerant load");
+        assert_eq!(sheets.len(), 1);
+        assert_eq!(sheets[0].name, "Wide");
+        assert_eq!(sheets[0].next_row, 1);
+    }
+}

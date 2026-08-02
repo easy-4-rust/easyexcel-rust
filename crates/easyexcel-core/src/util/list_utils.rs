@@ -24,3 +24,32 @@ pub fn new_array_list_with_expected_size<T>(expected_size: usize) -> Vec<T> {
     let cap = expected_size + (expected_size >> 1) + 1;
     Vec::with_capacity(cap)
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_array_list_creates_empty() {
+        // 对应 Java：ListUtils.newArrayList
+        let list: Vec<i32> = new_array_list();
+        assert!(list.is_empty());
+    }
+
+    #[test]
+    fn new_array_list_with_capacity_reserves() {
+        // 对应 Java：ListUtils.newArrayListWithCapacity
+        let list: Vec<i32> = new_array_list_with_capacity(8);
+        assert!(list.is_empty());
+        assert!(list.capacity() >= 8);
+    }
+
+    #[test]
+    fn new_array_list_with_expected_size_uses_guava_sizing() {
+        // 对应 Java：Guava 1.5*expected+1 容量估算
+        let list: Vec<i32> = new_array_list_with_expected_size(4);
+        assert!(list.capacity() >= 7);
+        let zero: Vec<i32> = new_array_list_with_expected_size(0);
+        assert!(zero.capacity() >= 1);
+    }
+}

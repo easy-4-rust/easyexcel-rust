@@ -134,3 +134,65 @@ impl ConfigurationHolder for AbstractHolder {
         &self.converter_map
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn default_delegates_to_new() {
+        // 对应 Java：AbstractHolder 默认构造为 Workbook 作用域
+        let holder = AbstractHolder::default();
+        assert_eq!(holder, AbstractHolder::new(HolderEnum::Workbook));
+        assert!(holder.new_initialization);
+    }
+
+    #[test]
+    fn from_parameter_inherits_parent_head_and_clazz() {
+        // 对应 Java：子 holder 未指定 head/clazz 时继承父级
+        let parent = AbstractHolder {
+            head: Some(vec![vec!["Name".to_owned()]]),
+            clazz: Some("Model".to_owned()),
+            ..AbstractHolder::new(HolderEnum::Workbook)
+        };
+        let parameter = BasicParameter::new();
+        let child = AbstractHolder::from_parameter(&parameter, Some(&parent), HolderEnum::Sheet);
+        assert_eq!(child.head(), Some(&[vec!["Name".to_owned()]][..]));
+        assert_eq!(child.clazz(), Some("Model"));
+        assert_eq!(child.holder_type, HolderEnum::Sheet);
+    }
+
+    #[test]
+    fn from_parameter_uses_basic_parameter_values_when_present() {
+        // 对应 Java：显式指定的 head/clazz 覆盖继承
+        let parent = AbstractHolder::new(HolderEnum::Workbook);
+        let mut parameter = BasicParameter::new();
+        parameter.head = Some(vec![vec!["Age".to_owned()]]);
+        parameter.clazz = Some("Other".to_owned());
+        parameter.auto_trim = Some(false);
+        parameter.use1904windowing = Some(true);
+        parameter.locale = Some("zh-CN".to_owned());
+        parameter.use_scientific_format = Some(true);
+        parameter.filed_cache_location = Some(CacheLocation::ThreadLocal);
+
+        let holder = AbstractHolder::from_parameter(&parameter, Some(&parent), HolderEnum::Sheet);
+        assert_eq!(holder.head(), Some(&[vec!["Age".to_owned()]][..]));
+        assert_eq!(holder.clazz(), Some("Other"));
+        assert!(!holder.global_configuration.auto_trim);
+        assert!(holder.global_configuration.use1904windowing);
+        assert_eq!(holder.global_configuration.locale, "zh-CN");
+        assert!(holder.global_configuration.use_scientific_format);
+        assert_eq!(
+            holder.global_configuration.filed_cache_location,
+            CacheLocation::ThreadLocal
+        );
+    }
+
+    #[test]
+    fn accessors_return_none_when_unset() {
+        // 对应 Java：未配置时 head/clazz 为空
+        let holder = AbstractHolder::new(HolderEnum::Workbook);
+        assert!(holder.head().is_none());
+        assert!(holder.clazz().is_none());
+    }
+}

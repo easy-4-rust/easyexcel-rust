@@ -73,3 +73,25 @@ mod tests {
         assert!(DummyRecordHandler::process_missing_cell(0, 2, &map).is_some());
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn last_cell_of_row_event() {
+        // 对应 Java：LastCellOfRowDummyRecord 分支
+        assert_eq!(
+            DummyRecordHandler::process_last_cell_of_row(4),
+            DummyRecordEvent::EndRow { row: 4 }
+        );
+    }
+
+    #[test]
+    fn process_record_is_noop_by_design() {
+        // 对应 Java：DummyRecord 非真实 BIFF sid，processRecord 空实现
+        let mut handler = DummyRecordHandler::new();
+        handler.process_record(u16::MAX, &[]);
+        handler.process_record(0xFFFF, &[1, 2]);
+    }
+}

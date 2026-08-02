@@ -1,3 +1,8 @@
+//! 对应 Java：`com.alibaba.excel.converters.date` 下的日期转换器与 `com.alibaba.excel.util.DateUtils`
+//!
+//! 日期/时间与 Excel 数字序列号、字符串之间的转换辅助函数，
+//! 使用 Java 兼容的 `yyyy-MM-dd` / `yyyy-MM-dd HH:mm:ss` 默认格式。
+
 use std::borrow::Cow;
 
 use chrono::{NaiveDate, NaiveDateTime, Timelike};
@@ -354,5 +359,64 @@ mod tests {
                 Some(DEFAULT_DATETIME_FORMAT)
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use crate::{CellValue, ConvertContext, ExcelColumn, ReadConverterContext};
+
+    const COLUMN: ExcelColumn = ExcelColumn::new("value", "Value", Some(0), 0, None);
+
+    fn context(format: Option<&'static str>) -> ConvertContext {
+        ConvertContext {
+            sheet_name: "Sheet1".to_owned(),
+            row_index: 1,
+            column_index: Some(0),
+            field: "value",
+            format,
+            use_1904_windowing: false,
+        }
+    }
+
+    #[test]
+    fn read_datetime_rejects_unparseable_strings() {
+        // 对应 Java：`switchDateFormat` 全部失败时报转换错误
+        let cell = CellValue::String("not-a-datetime".to_owned());
+        let convert_context = context(None);
+        let read = ReadConverterContext::new(Some(&cell), &COLUMN, &convert_context);
+        assert!(read_datetime(&read).is_err());
+        let bad_value = CellValue::String("2025-13-45 99:99".to_owned());
+        let convert_context = context(Some("%Y-%m-%d %H:%M"));
+        let read = ReadConverterContext::new(Some(&bad_value), &COLUMN, &convert_context);
+        assert!(read_datetime(&read).is_err());
+    }
+
+    #[test]
+    fn format_number_as_datetime_string_formats_and_rejects_negative_serials() {
+        // 对应 Java：`StringNumberConverter` 内部日期格式分支
+        let serial = CellValue::Float(1.5);
+        let convert_context = context(None);
+        let read = ReadConverterContext::new(Some(&serial), &COLUMN, &convert_context);
+        assert_eq!(
+            format_number_as_datetime_string(&read, "yyyy-MM-dd HH:mm:ss").unwrap(),
+            "1900-01-01 12:00:00"
+        );
+        assert_eq!(
+            format_number_as_datetime_string(&read, "yyyy/MM/dd HH:mm").unwrap(),
+            "1900/01/01 12:00"
+        );
+        let negative = CellValue::Int(-1);
+        let read = ReadConverterContext::new(Some(&negative), &COLUMN, &convert_context);
+        assert!(format_number_as_datetime_string(&read, "yyyy-MM-dd HH:mm:ss").is_err());
+    }
+
+    #[test]
+    fn date_to_excel_serial_after_1900_boundary_uses_1899_12_30_epoch() {
+        // 对应 Java：1900-03-01 之后使用 1899-12-30 纪元（含虚拟闰日）
+        let date = NaiveDate::from_ymd_opt(2025, 1, 2).unwrap();
+        assert_eq!(date_to_excel_serial(date, false), 45659.0);
+        assert_eq!(date_to_excel_serial(date, true), 44197.0);
     }
 }

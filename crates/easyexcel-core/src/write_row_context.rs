@@ -136,3 +136,22 @@ use crate::{
     WriteContext, WriteHolderContext, WriteRowHandle, WriteSheetHolderView, WriteTableHolderView,
     WriteWorkbookHolderView,
 };
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use crate::WriteContextHolder;
+
+    #[test]
+    fn with_holder_context_sheet_branch() {
+        // 对应 Java：无 table 时为 Sheet holder
+        let context = WriteRowContext::new("Sheet1", 0, None, false).with_holder_context(
+            WriteWorkbookHolderView::new("out.xlsx"),
+            1,
+            None,
+        );
+        assert_eq!(context.write_context().holder_type(), crate::Holder::Sheet);
+        assert_eq!(context.write_context().sheet_no(), Some(1));
+        assert_eq!(context.row().row_index(), 0);
+    }
+}

@@ -109,3 +109,54 @@ mod tests {
         assert_eq!(RowTagHandler::resolve_row_index(None, 4).unwrap(), 4);
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn resolve_row_index_rejects_invalid_values() {
+        // 对应 Java：PositionUtils 对越界/非数字行号报错
+        assert!(RowTagHandler::resolve_row_index(Some("0"), 0).is_err());
+        assert!(RowTagHandler::resolve_row_index(Some("1048577"), 0).is_err());
+        assert!(RowTagHandler::resolve_row_index(Some("abc"), 0).is_err());
+        // 空字符串回退到游标（对应 Java：rowTagt 为空使用 before）
+        assert_eq!(RowTagHandler::resolve_row_index(Some(""), 7).unwrap(), 7);
+    }
+
+    #[test]
+    fn start_and_end_row_track_index_and_data() {
+        // 对应 Java：RowTagHandler.startElement/endElement 维护 rowIndex 与 RowType
+        let mut handler = RowTagHandler::new();
+        let mut attrs = HashMap::new();
+        attrs.insert(ATTRIBUTE_R.to_owned(), "5".to_owned());
+        assert_eq!(handler.start_row(&attrs).unwrap(), 4);
+        assert_eq!(handler.row_index, Some(4));
+        assert!(!handler.has_data);
+        handler.mark_data();
+        assert!(handler.has_data);
+        let (row, has_data) = handler.end_row();
+        assert_eq!((row, has_data), (4, true));
+        assert_eq!(handler.row_index, Some(5));
+        // 无 r 属性时沿用游标（对应 Java：rowTagt 为空使用 before）
+        let empty = HashMap::new();
+        assert_eq!(handler.start_row(&empty).unwrap(), 5);
+        assert_eq!(handler.end_row(), (5, false));
+    }
+
+    #[test]
+    fn tag_events_dispatch_only_for_row() {
+        // 对应 Java：SAX 事件仅路由 row 标签
+        let mut handler = RowTagHandler::new();
+        handler.start_element("x:row", "r=3");
+        assert_eq!(handler.row_index, Some(2));
+        handler.start_element("other", "r=9");
+        assert_eq!(handler.row_index, Some(2));
+        handler.characters("x");
+        handler.end_element("other");
+        assert_eq!(handler.row_index, Some(2));
+        handler.end_element("row");
+        assert_eq!(handler.row_index, Some(3));
+        assert!(!handler.has_data);
+    }
+}

@@ -88,3 +88,31 @@ impl Head {
         self.force_name
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn force_index_and_force_name_accessors() {
+        // 对应 Java：Head.getForceIndex / getForceName
+        let head = Head::new(
+            2,
+            Some("field".to_owned()),
+            vec!["Name".to_owned()],
+            true,
+            true,
+        )
+        .expect("head");
+        assert!(head.force_index());
+        assert!(head.force_name());
+        assert_eq!(head.column_index(), Some(2));
+        assert_eq!(head.field_name(), Some("field"));
+        assert_eq!(head.head_name_list(), &["Name".to_owned()][..]);
+
+        let plain = Head::new(0, None, Vec::new(), false, false).expect("head");
+        assert!(!plain.force_index());
+        assert!(!plain.force_name());
+        assert_eq!(plain.column_index(), Some(0));
+    }
+}

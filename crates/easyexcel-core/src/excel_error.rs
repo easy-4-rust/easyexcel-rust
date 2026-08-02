@@ -99,3 +99,86 @@ impl PartialEq for ExcelError {
 }
 
 impl Eq for ExcelError {}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    fn data_error() -> ExcelError {
+        ExcelError::Data {
+            sheet: "Sheet1".to_string(),
+            row: 2,
+            column: Some(3),
+            field: "name",
+            value: "abc".to_string(),
+            message: "convert failed".to_string(),
+        }
+    }
+
+    #[test]
+    fn clone_preserves_every_variant() {
+        // 对应 Java：异常对象的深拷贝语义
+        let data = data_error();
+        assert_eq!(data.clone(), data);
+
+        let sheet = ExcelError::SheetNotFound("s".to_string());
+        assert_eq!(sheet.clone(), sheet);
+
+        let format = ExcelError::Format("f".to_string());
+        assert_eq!(format.clone(), format);
+
+        let unsupported = ExcelError::Unsupported("u".to_string());
+        assert_eq!(unsupported.clone(), unsupported);
+
+        let io = ExcelError::Io(std::io::Error::new(std::io::ErrorKind::NotFound, "no file"));
+        let cloned = io.clone();
+        assert!(
+            matches!(cloned, ExcelError::Io(ref e) if e.kind() == std::io::ErrorKind::NotFound)
+        );
+    }
+
+    #[test]
+    fn partial_eq_matches_same_variant_and_rejects_different() {
+        // 对应 Java：异常相等性判断
+        assert_eq!(data_error(), data_error());
+        // 仅 column 不同的 Data 不相等
+        assert_ne!(
+            data_error(),
+            ExcelError::Data {
+                sheet: "Sheet1".to_string(),
+                row: 2,
+                column: None,
+                field: "name",
+                value: "abc".to_string(),
+                message: "convert failed".to_string(),
+            }
+        );
+
+        assert_eq!(
+            ExcelError::SheetNotFound("a".to_string()),
+            ExcelError::SheetNotFound("a".to_string())
+        );
+        assert_ne!(
+            ExcelError::SheetNotFound("a".to_string()),
+            ExcelError::SheetNotFound("b".to_string())
+        );
+        assert_eq!(
+            ExcelError::Format("f".to_string()),
+            ExcelError::Format("f".to_string())
+        );
+        assert_eq!(
+            ExcelError::Unsupported("u".to_string()),
+            ExcelError::Unsupported("u".to_string())
+        );
+        assert_ne!(
+            ExcelError::Unsupported("u".to_string()),
+            ExcelError::Format("u".to_string())
+        );
+        // Io 比较 kind 与消息
+        let io1 = ExcelError::Io(std::io::Error::new(std::io::ErrorKind::NotFound, "x"));
+        let io2 = ExcelError::Io(std::io::Error::new(std::io::ErrorKind::NotFound, "x"));
+        assert_eq!(io1, io2);
+        // 不同变体不相等
+        assert_ne!(data_error(), ExcelError::Format("f".to_string()));
+    }
+}

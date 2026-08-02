@@ -9469,3 +9469,2179 @@ mod tests_extra {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests_extra2 {
+    use super::*;
+
+    use std::collections::BTreeMap;
+    use std::io::{Cursor, Write};
+
+    use easyexcel_core::{DynamicRow, DynamicValue};
+    use tempfile::tempdir;
+
+    fn dyn_row(values: &[(usize, &str)]) -> DynamicRow {
+        DynamicRow::new(
+            values
+                .iter()
+                .map(|(index, value)| (*index, DynamicValue::String((*value).to_owned())))
+                .collect::<BTreeMap<_, _>>(),
+        )
+    }
+
+    fn dyn_row_values(values: &[(usize, CellValue)]) -> DynamicRow {
+        DynamicRow::new(
+            values
+                .iter()
+                .map(|(index, value)| (*index, DynamicValue::ActualData(value.clone())))
+                .collect::<BTreeMap<_, _>>(),
+        )
+    }
+
+    fn xls_template_bytes(sheet_name: &str) -> Vec<u8> {
+        let mut book = Biff8Book::default();
+        book.sheet_mut(sheet_name);
+        book.to_cfb_bytes().expect("cfb bytes")
+    }
+
+    fn xlsx_template_bytes(sheet_name: &str) -> Vec<u8> {
+        let mut workbook = Workbook::new();
+        let sheet = workbook.add_worksheet();
+        sheet.set_name(sheet_name).expect("sheet name");
+        sheet.write_string(0, 0, "seed").expect("seed cell");
+        workbook.save_to_buffer().expect("template buffer")
+    }
+
+    /// 手工构造 ZIP 模板包（entries: (路径, 内容)），默认 Stored 压缩。
+    fn zip_template(entries: &[(&str, &[u8])]) -> Vec<u8> {
+        let mut writer = zip::ZipWriter::new(Cursor::new(Vec::new()));
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+        for (name, bytes) in entries {
+            writer.start_file(*name, options).expect("start entry");
+            writer.write_all(bytes).expect("write entry");
+        }
+        writer.finish().expect("finish").into_inner()
+    }
+
+    fn minimal_workbook_xml(sheet_name: &str) -> String {
+        format!(
+            r#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="{sheet_name}" sheetId="1" r:id="rId1"/></sheets></workbook>"#
+        )
+    }
+
+    const MINIMAL_PACKAGE_RELS_XML: &[u8] = br#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>"#;
+
+    const MINIMAL_RELS_XML: &[u8] = br#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>"#;
+
+    const MINIMAL_SHEET_XML: &[u8] = br#"<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1"><v>1</v></c></row></sheetData></worksheet>"#;
+
+    const MINIMAL_CONTENT_TYPES_XML: &[u8] = br#"<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/></Types>"#;
+
+    /// 失败阶段可配置的处理器（对应 Java 测试里的 FailingHandler 模式）。
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    enum FailStage {
+        BeforeWorkbookCreate,
+        AfterSheetCreate,
+        HeadCell,
+        DataCell,
+    }
+
+    struct StageFailingHandler(FailStage);
+
+    impl WriteHandler for StageFailingHandler {
+        fn before_workbook_create(&mut self, _context: &WriteWorkbookContext) -> Result<()> {
+            if self.0 == FailStage::BeforeWorkbookCreate {
+                Err(ExcelError::Format("stage failure".to_owned()))
+            } else {
+                Ok(())
+            }
+        }
+
+        fn after_sheet_create(&mut self, _context: &WriteSheetContext) -> Result<()> {
+            if self.0 == FailStage::AfterSheetCreate {
+                Err(ExcelError::Format("stage failure".to_owned()))
+            } else {
+                Ok(())
+            }
+        }
+
+        fn before_cell_create(&mut self, context: &mut WriteCellContext) -> Result<()> {
+            let expected = if context.is_head {
+                FailStage::HeadCell
+            } else {
+                FailStage::DataCell
+            };
+            if self.0 == expected {
+                Err(ExcelError::Format("stage failure".to_owned()))
+            } else {
+                Ok(())
+            }
+        }
+    }
+
+    /// 跳过所有单元格写入（对应 Java 里通过 handler 丢弃单元格）。
+    struct SkipCellHandler;
+
+    impl WriteHandler for SkipCellHandler {
+        fn before_cell_create(&mut self, context: &mut WriteCellContext) -> Result<()> {
+            context.skip = true;
+            Ok(())
+        }
+    }
+
+    /// 只请求单元格样式（对应 Java `requestedStyle`）。
+    struct StyleRequestingHandler;
+
+    impl WriteHandler for StyleRequestingHandler {
+        fn before_cell_create(&mut self, context: &mut WriteCellContext) -> Result<()> {
+            context.cell().set_style(ExcelCellStyle {
+                fill_pattern: Some(ExcelFillPattern::Solid),
+                fill_foreground_color: Some(ExcelColor::Indexed(21)),
+                ..ExcelCellStyle::new()
+            });
+            Ok(())
+        }
+    }
+
+    /// 请求非法 loop-merge（eachRow=1 且 columnExtend=1）。
+    struct LoopMergeBadHandler;
+
+    impl WriteHandler for LoopMergeBadHandler {
+        fn style_loop_merge(&self) -> Option<(easyexcel_core::LoopMergeProperty, usize)> {
+            Some((easyexcel_core::LoopMergeProperty::new(1, 1), 0))
+        }
+    }
+
+    /// to_row 返回错误的行（对应 Java `ConvertAllFiled` 抛异常场景）。
+    struct FailingRow2;
+
+    impl ExcelRow for FailingRow2 {
+        fn schema() -> &'static [ExcelColumn] {
+            const COLUMNS: &[ExcelColumn] = &[ExcelColumn::new("field", "Field", Some(0), 0, None)];
+            COLUMNS
+        }
+
+        fn write_metadata() -> &'static ExcelWriteMetadata {
+            const METADATA: ExcelWriteMetadata = ExcelWriteMetadata::new();
+            &METADATA
+        }
+
+        fn from_row(_row: &easyexcel_core::RowData) -> Result<Self> {
+            Ok(Self)
+        }
+
+        fn to_row(&self) -> Result<Vec<CellValue>> {
+            Err(ExcelError::Data {
+                sheet: String::new(),
+                row: 0,
+                column: Some(7),
+                field: "field",
+                value: "bad".to_owned(),
+                message: "test-only row conversion failure".to_owned(),
+            })
+        }
+    }
+
+    /// 普通两列 typed 行。
+    struct PlainRow {
+        cells: Vec<CellValue>,
+    }
+
+    impl ExcelRow for PlainRow {
+        fn schema() -> &'static [ExcelColumn] {
+            const COLUMNS: &[ExcelColumn] = &[
+                ExcelColumn::new("first", "First", Some(0), 0, None),
+                ExcelColumn::new("second", "Second", Some(1), 0, None),
+            ];
+            COLUMNS
+        }
+
+        fn write_metadata() -> &'static ExcelWriteMetadata {
+            const METADATA: ExcelWriteMetadata = ExcelWriteMetadata::new();
+            &METADATA
+        }
+
+        fn from_row(_row: &easyexcel_core::RowData) -> Result<Self> {
+            Ok(Self { cells: Vec::new() })
+        }
+
+        fn to_row(&self) -> Result<Vec<CellValue>> {
+            Ok(self.cells.clone())
+        }
+    }
+
+    impl PlainRow {
+        fn new(first: &str, second: &str) -> Self {
+            Self {
+                cells: vec![
+                    CellValue::String(first.to_owned()),
+                    CellValue::String(second.to_owned()),
+                ],
+            }
+        }
+    }
+
+    /// 注解 loop_merge 非法（eachRow=1 / columnExtend=1）的行。
+    struct LoopMergeBadRow {
+        cells: Vec<CellValue>,
+    }
+
+    impl ExcelRow for LoopMergeBadRow {
+        fn schema() -> &'static [ExcelColumn] {
+            const COLUMNS: &[ExcelColumn] = &[ExcelColumn::new("field", "Field", Some(0), 0, None)
+                .with_loop_merge(easyexcel_core::LoopMergeProperty::new(1, 1))];
+            COLUMNS
+        }
+
+        fn write_metadata() -> &'static ExcelWriteMetadata {
+            const METADATA: ExcelWriteMetadata = ExcelWriteMetadata::new();
+            &METADATA
+        }
+
+        fn from_row(_row: &easyexcel_core::RowData) -> Result<Self> {
+            Ok(Self { cells: Vec::new() })
+        }
+
+        fn to_row(&self) -> Result<Vec<CellValue>> {
+            Ok(self.cells.clone())
+        }
+    }
+
+    /// 强制列号超出 u16 上限的行（对应 Java `index = 70000` 的极端注解）。
+    struct WideIndexRow {
+        cells: Vec<CellValue>,
+    }
+
+    impl ExcelRow for WideIndexRow {
+        fn schema() -> &'static [ExcelColumn] {
+            const COLUMNS: &[ExcelColumn] =
+                &[ExcelColumn::new("field", "Field", Some(70_000), 0, None)];
+            COLUMNS
+        }
+
+        fn write_metadata() -> &'static ExcelWriteMetadata {
+            const METADATA: ExcelWriteMetadata = ExcelWriteMetadata::new();
+            &METADATA
+        }
+
+        fn from_row(_row: &easyexcel_core::RowData) -> Result<Self> {
+            Ok(Self { cells: Vec::new() })
+        }
+
+        fn to_row(&self) -> Result<Vec<CellValue>> {
+            Ok(self.cells.clone())
+        }
+    }
+
+    // ========================================================================
+    // 注解处理器加载 / 表写入的错误分支
+    // ========================================================================
+
+    #[test]
+    fn loop_merge_bad_annotation_handlers_rejected() -> Result<()> {
+        // 对应 Java：@ContentLoopMerge(eachRow=1, columnExtend=1) → IllegalArgumentException。
+        let directory = tempdir()?;
+        let path = directory.path().join("bad-loop.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let result = writer.write(
+            [LoopMergeBadRow { cells: Vec::new() }],
+            &WriteSheet::new("Sheet1"),
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn loop_merge_bad_table_annotation_handlers_rejected() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("bad-loop-table.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let table = MirroredWriteTable::new();
+        let result = writer.write_with_table_handlers(
+            [LoopMergeBadRow { cells: Vec::new() }],
+            &WriteSheet::new("Sheet1"),
+            &table,
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn sheet_handlers_workbook_callback_error_propagates() -> Result<()> {
+        // 对应 Java：新 sheet 首次注册 sheet handler 时运行 workbook 回调。
+        let directory = tempdir()?;
+        let path = directory.path().join("sheet-cb.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let result = writer.write_with_sheet_handlers(
+            [dyn_row(&[(0, "first")])],
+            &WriteSheet::<DynamicRow>::new("Sheet1"),
+            vec![Box::new(StageFailingHandler(
+                FailStage::BeforeWorkbookCreate,
+            ))],
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn table_handlers_new_sheet_workbook_callback_error_propagates() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("table-cb.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let table = MirroredWriteTable::new();
+        let result = writer.write_with_table_handlers(
+            [dyn_row(&[(0, "first")])],
+            &WriteSheet::<DynamicRow>::new("Sheet1"),
+            &table,
+            vec![Box::new(StageFailingHandler(
+                FailStage::BeforeWorkbookCreate,
+            ))],
+            Vec::new(),
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn existing_sheet_table_template_layout_error_propagates() -> Result<()> {
+        // 对应 Java：已有 sheet 上建表时按模板布局（列宽/合并），列号超限必须报错。
+        let directory = tempdir()?;
+        let path = directory.path().join("table-layout.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                sheet_name: "Sheet1".to_owned(),
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        writer.write(
+            [dyn_row(&[(0, "seed")])],
+            &WriteSheet::<DynamicRow>::new("Sheet1"),
+        )?;
+        let table = MirroredWriteTable::new();
+        let result = writer.write_with_table_handlers(
+            [WideIndexRow { cells: Vec::new() }],
+            &WriteSheet::<WideIndexRow>::new("Sheet1"),
+            &table,
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn table_batch_row_conversion_errors_by_backend() -> Result<()> {
+        // 对应 Java：doWrite 期间行转换失败 → 各后端（csv/xls/xlsx）批量写入报错。
+        let directory = tempdir()?;
+
+        let csv_path = directory.path().join("table.csv");
+        let mut csv_writer = ExcelWriter::new(&csv_path);
+        let table = MirroredWriteTable::new();
+        let csv_result = csv_writer.write_with_table_handlers(
+            [FailingRow2],
+            &WriteSheet::<FailingRow2>::new("Sheet1"),
+            &table,
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(matches!(csv_result, Err(ExcelError::Data { .. })));
+
+        let xls_path = directory.path().join("table.xls");
+        let mut xls_writer = ExcelWriter::new(&xls_path);
+        let xls_result = xls_writer.write_with_table_handlers(
+            [FailingRow2],
+            &WriteSheet::<FailingRow2>::new("Sheet1"),
+            &table,
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(matches!(xls_result, Err(ExcelError::Data { .. })));
+
+        let xlsx_path = directory.path().join("table.xlsx");
+        let mut xlsx_writer = ExcelWriter::new(&xlsx_path);
+        let xlsx_result = xlsx_writer.write_with_table_handlers(
+            [FailingRow2],
+            &WriteSheet::<FailingRow2>::new("Sheet1"),
+            &table,
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(matches!(xlsx_result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    // ========================================================================
+    // start() 的模板加载错误分支（1537/1554/1558/1565）
+    // ========================================================================
+
+    #[test]
+    fn stateful_xls_start_rejects_missing_template_file() -> Result<()> {
+        // 对应 Java：withTemplate(file) 指向不存在的文件 → 打开失败。
+        let directory = tempdir()?;
+        let path = directory.path().join("missing-template.xls");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                sheet_name: "Sheet1".to_owned(),
+                template_file: Some(directory.path().join("absent.xls")),
+                ..WriteOptions::default()
+            },
+        );
+        let result = writer.write(
+            [dyn_row(&[(0, "v")])],
+            &WriteSheet::<DynamicRow>::new("Sheet1"),
+        );
+        assert!(matches!(result, Err(ExcelError::Io(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn stateful_xlsx_start_rejects_csv_template_source() -> Result<()> {
+        // 对应 Java：xlsx 不允许用 csv 模板。
+        let directory = tempdir()?;
+        let path = directory.path().join("csv-template.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                sheet_name: "Sheet1".to_owned(),
+                template_file: Some(directory.path().join("template.csv")),
+                ..WriteOptions::default()
+            },
+        );
+        let result = writer.write(
+            [dyn_row(&[(0, "v")])],
+            &WriteSheet::<DynamicRow>::new("Sheet1"),
+        );
+        assert!(matches!(result, Err(ExcelError::Unsupported(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn stateful_xlsx_start_rejects_missing_template_file() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("missing-template.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                sheet_name: "Sheet1".to_owned(),
+                template_file: Some(directory.path().join("absent.xlsx")),
+                ..WriteOptions::default()
+            },
+        );
+        let result = writer.write(
+            [dyn_row(&[(0, "v")])],
+            &WriteSheet::<DynamicRow>::new("Sheet1"),
+        );
+        assert!(matches!(result, Err(ExcelError::Io(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn stateful_xlsx_legacy_seed_rejects_invalid_sheet_name() -> Result<()> {
+        // 对应 Java：模板 sheet 名含非法字符（`[`）时 seed 到工作簿必须失败。
+        let bytes = zip_template(&[
+            ("[Content_Types].xml", MINIMAL_CONTENT_TYPES_XML),
+            ("_rels/.rels", MINIMAL_PACKAGE_RELS_XML),
+            (
+                "xl/workbook.xml",
+                minimal_workbook_xml("bad[name").as_bytes(),
+            ),
+            ("xl/_rels/workbook.xml.rels", MINIMAL_RELS_XML),
+            ("xl/worksheets/sheet1.xml", MINIMAL_SHEET_XML),
+        ]);
+        let directory = tempdir()?;
+        let path = directory.path().join("legacy-bad-name.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                sheet_name: "bad[name".to_owned(),
+                template_bytes: Some(bytes),
+                use_legacy_template_seed: true,
+                ..WriteOptions::default()
+            },
+        );
+        let result = writer.write(
+            [dyn_row(&[(0, "v")])],
+            &WriteSheet::<DynamicRow>::new("bad[name"),
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    // ========================================================================
+    // 有状态模板批量写错误分支（1832/1906/1923/2079/2174/2181）
+    // ========================================================================
+
+    #[test]
+    fn stateful_xls_template_handler_callback_error_propagates() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("xls-tpl-cb.xls");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            vec![Box::new(StageFailingHandler(FailStage::DataCell))],
+            WriteOptions {
+                sheet_name: "Sheet1".to_owned(),
+                template_bytes: Some(xls_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        let result = writer.write(
+            [dyn_row(&[(0, "v")])],
+            &WriteSheet::<DynamicRow>::new("Sheet1"),
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn stateful_xlsx_legacy_seed_after_sheet_create_error_propagates() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("legacy-cb.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            vec![Box::new(StageFailingHandler(FailStage::AfterSheetCreate))],
+            WriteOptions {
+                sheet_name: "Sheet1".to_owned(),
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                use_legacy_template_seed: true,
+                ..WriteOptions::default()
+            },
+        );
+        let result = writer.write(
+            [dyn_row(&[(0, "v")])],
+            &WriteSheet::<DynamicRow>::new("Sheet1"),
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn stateful_xlsx_legacy_seed_row_conversion_error_propagates() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("legacy-bad-row.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                sheet_name: "Sheet1".to_owned(),
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                use_legacy_template_seed: true,
+                ..WriteOptions::default()
+            },
+        );
+        let result = writer.write([FailingRow2], &WriteSheet::<FailingRow2>::new("Sheet1"));
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn stateful_xlsx_template_absent_sheet_missing_content_types() -> Result<()> {
+        // 对应 Java：模板缺少 [Content_Types].xml 时创建新 sheet 必须报错。
+        let bytes = zip_template(&[
+            ("xl/workbook.xml", minimal_workbook_xml("Sheet1").as_bytes()),
+            ("xl/_rels/workbook.xml.rels", MINIMAL_RELS_XML),
+            ("xl/worksheets/sheet1.xml", MINIMAL_SHEET_XML),
+        ]);
+        let directory = tempdir()?;
+        let path = directory.path().join("no-ct.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                sheet_name: "Absent".to_owned(),
+                template_bytes: Some(bytes),
+                ..WriteOptions::default()
+            },
+        );
+        let result = writer.write(
+            [dyn_row(&[(0, "v")])],
+            &WriteSheet::<DynamicRow>::new("Absent"),
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn stateful_xlsx_template_missing_styles_xml() -> Result<()> {
+        // 对应 Java：模板缺少 styles.xml 且单元格请求样式 → 导入样式必须报错。
+        let bytes = zip_template(&[
+            ("[Content_Types].xml", MINIMAL_CONTENT_TYPES_XML),
+            ("xl/workbook.xml", minimal_workbook_xml("Sheet1").as_bytes()),
+            ("xl/_rels/workbook.xml.rels", MINIMAL_RELS_XML),
+            ("xl/worksheets/sheet1.xml", MINIMAL_SHEET_XML),
+        ]);
+        let directory = tempdir()?;
+        let path = directory.path().join("no-styles.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            vec![Box::new(StyleRequestingHandler)],
+            WriteOptions {
+                sheet_name: "Sheet1".to_owned(),
+                template_bytes: Some(bytes),
+                ..WriteOptions::default()
+            },
+        );
+        let result = writer.write(
+            [dyn_row(&[(0, "v")])],
+            &WriteSheet::<DynamicRow>::new("Sheet1"),
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn stateful_xlsx_template_missing_sheet_data() -> Result<()> {
+        // 对应 Java：模板 worksheet 缺少 sheetData → 追加行必须报错。
+        let sheet_xml = br#"<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1"/></worksheet>"#;
+        let bytes = zip_template(&[
+            ("[Content_Types].xml", MINIMAL_CONTENT_TYPES_XML),
+            ("xl/workbook.xml", minimal_workbook_xml("Sheet1").as_bytes()),
+            ("xl/_rels/workbook.xml.rels", MINIMAL_RELS_XML),
+            ("xl/worksheets/sheet1.xml", sheet_xml),
+        ]);
+        let directory = tempdir()?;
+        let path = directory.path().join("no-sheetdata.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                sheet_name: "Sheet1".to_owned(),
+                template_bytes: Some(bytes),
+                ..WriteOptions::default()
+            },
+        );
+        let result = writer.write(
+            [dyn_row(&[(0, "v")])],
+            &WriteSheet::<DynamicRow>::new("Sheet1"),
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    // ========================================================================
+    // 公开 API 模板/错误分支（2985/3030/3044/3131/3185/3292/3318/3375/3688）
+    // ========================================================================
+
+    #[test]
+    fn public_xls_template_missing_file_rejected() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("out.xls");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_file: Some(directory.path().join("absent.xls")),
+            ..WriteOptions::default()
+        };
+        let result =
+            crate::write_xls::write_xls::<DynamicRow, _>(&path, &options, [dyn_row(&[(0, "v")])]);
+        assert!(matches!(result, Err(ExcelError::Io(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn public_xls_template_handler_callback_error_propagates() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("out.xls");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xls_template_bytes("Sheet1")),
+            ..WriteOptions::default()
+        };
+        let mut handlers: Vec<Box<dyn WriteHandler>> =
+            vec![Box::new(StageFailingHandler(FailStage::DataCell))];
+        let result = crate::write_xls::write_xls_with_handlers::<DynamicRow, _>(
+            &path,
+            &options,
+            [dyn_row(&[(0, "v")])],
+            &mut handlers,
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn public_xls_save_under_regular_file_rejected() -> Result<()> {
+        // 对应 Java：父路径是普通文件时无法创建目录。
+        let directory = tempdir()?;
+        let blocker = directory.path().join("blocker");
+        std::fs::write(&blocker, b"not a directory")?;
+        let path = blocker.join("out.xls");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            ..WriteOptions::default()
+        };
+        let result =
+            crate::write_xls::write_xls::<DynamicRow, _>(&path, &options, [dyn_row(&[(0, "v")])]);
+        assert!(matches!(result, Err(ExcelError::Io(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn public_xls_head_cell_handler_not_invoked_without_head() -> Result<()> {
+        // 对应 Java：无表头（空 schema 且未配置 dynamic_head）时 head cell
+        // handler 不会被调用，写入正常完成（handler 错误仅在表头真实创建时传播）。
+        let directory = tempdir()?;
+        let path = directory.path().join("head-nohead.xls");
+        let mut handlers: Vec<Box<dyn WriteHandler>> =
+            vec![Box::new(StageFailingHandler(FailStage::HeadCell))];
+        let result = crate::write_xls::write_xls_with_handlers::<DynamicRow, _>(
+            &path,
+            &WriteOptions::default(),
+            [dyn_row(&[(0, "v")])],
+            &mut handlers,
+        );
+        assert!(result.is_ok(), "{result:?}");
+        Ok(())
+    }
+
+    #[test]
+    fn public_xls_dynamic_head_cell_handler_error_propagates() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("head-dyn-err.xls");
+        let mut options = WriteOptions::default();
+        options.dynamic_head = Some(vec![vec!["Level".to_owned()], vec!["Field".to_owned()]]);
+        let mut handlers: Vec<Box<dyn WriteHandler>> =
+            vec![Box::new(StageFailingHandler(FailStage::HeadCell))];
+        let result = crate::write_xls::write_xls_with_handlers::<DynamicRow, _>(
+            &path,
+            &options,
+            [dyn_row(&[(0, "v")])],
+            &mut handlers,
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn public_xls_loop_merge_column_overflow_rejected() -> Result<()> {
+        // 对应 Java：BIFF8 合并列号超过 255 → 报错。
+        let directory = tempdir()?;
+        let path = directory.path().join("loop-overflow.xls");
+        let mut options = WriteOptions::default();
+        options.loop_merges = vec![MirroredLoopMergeStrategy::new(2, 1, 300)?];
+        let result = crate::write_xls::write_xls::<DynamicRow, _>(
+            &path,
+            &options,
+            [dyn_row(&[(0, "v"), (1, "w")])],
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn public_xls_head_cells_skipped_by_handler() -> Result<()> {
+        // 对应 Java：handler 跳过单元格后表头不落盘（ExcelWriter 空 sheet 仍可保存）。
+        let directory = tempdir()?;
+        let path = directory.path().join("skipped.xls");
+        let mut handlers: Vec<Box<dyn WriteHandler>> = vec![Box::new(SkipCellHandler)];
+        crate::write_xls::write_xls_with_handlers::<DynamicRow, _>(
+            &path,
+            &WriteOptions::default(),
+            [dyn_row(&[(0, "v")])],
+            &mut handlers,
+        )?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn public_xls_handler_loop_merge_invalid_property_rejected() -> Result<()> {
+        // 对应 Java：handler 返回 eachRow=1/columnExtend=1 的 loop merge → 校验失败。
+        let directory = tempdir()?;
+        let path = directory.path().join("bad-handler-loop.xls");
+        let mut handlers: Vec<Box<dyn WriteHandler>> = vec![Box::new(LoopMergeBadHandler)];
+        let result = crate::write_xls::write_xls_with_handlers::<DynamicRow, _>(
+            &path,
+            &WriteOptions::default(),
+            [dyn_row(&[(0, "v")])],
+            &mut handlers,
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    // ========================================================================
+    // 公开 XLSX 模板路径（4172/4229/4249/4500/4501/4793/4797/4864/4964/5303/6299）
+    // ========================================================================
+
+    #[test]
+    fn public_xlsx_template_missing_file_rejected() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("out.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_file: Some(directory.path().join("absent.xlsx")),
+            ..WriteOptions::default()
+        };
+        let result =
+            crate::xlsx_write::write_xlsx::<DynamicRow, _>(&path, &options, [dyn_row(&[(0, "v")])]);
+        assert!(matches!(result, Err(ExcelError::Io(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn public_xlsx_template_handler_callback_error_propagates() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("out.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            ..WriteOptions::default()
+        };
+        let mut handlers: Vec<Box<dyn WriteHandler>> =
+            vec![Box::new(StageFailingHandler(FailStage::DataCell))];
+        let result = crate::xlsx_write::write_xlsx_with_handlers::<DynamicRow, _>(
+            &path,
+            &options,
+            [dyn_row(&[(0, "v")])],
+            &mut handlers,
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn public_xlsx_template_missing_styles_xml() -> Result<()> {
+        let bytes = zip_template(&[
+            ("[Content_Types].xml", MINIMAL_CONTENT_TYPES_XML),
+            ("xl/workbook.xml", minimal_workbook_xml("Sheet1").as_bytes()),
+            ("xl/_rels/workbook.xml.rels", MINIMAL_RELS_XML),
+            ("xl/worksheets/sheet1.xml", MINIMAL_SHEET_XML),
+        ]);
+        let directory = tempdir()?;
+        let path = directory.path().join("no-styles.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(bytes),
+            ..WriteOptions::default()
+        };
+        let mut handlers: Vec<Box<dyn WriteHandler>> = vec![Box::new(StyleRequestingHandler)];
+        let result = crate::xlsx_write::write_xlsx_with_handlers::<DynamicRow, _>(
+            &path,
+            &options,
+            [dyn_row(&[(0, "v")])],
+            &mut handlers,
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn template_append_cell_styles_column_overflow_rejected() -> Result<()> {
+        // 对应 Java：模板列号超过 XLSX 上限时样式编译必须报错。
+        let mut package = crate::template_write::TemplatePackage::from_bytes(
+            xlsx_template_bytes("Sheet1").as_slice(),
+        )?;
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            ..WriteOptions::default()
+        };
+        let rows = vec![vec![(70_000usize, CellValue::String("wide".to_owned()))]];
+        let empty_converted: Vec<Vec<(usize, WriteCellData)>> = Vec::new();
+        let empty_ignore: Vec<Vec<bool>> = vec![Vec::new()];
+        let empty_requested: Vec<Vec<Option<ExcelCellStyle>>> = vec![Vec::new()];
+        let result = template_append_cell_styles::<PlainRow>(
+            &mut package,
+            &options,
+            &[],
+            &rows,
+            &rows,
+            &empty_converted,
+            &empty_ignore,
+            &empty_requested,
+            true,
+            0,
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn public_xlsx_legacy_seed_rejects_csv_template_source() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("legacy-csv.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_file: Some(directory.path().join("template.csv")),
+            use_legacy_template_seed: true,
+            ..WriteOptions::default()
+        };
+        let result =
+            crate::xlsx_write::write_xlsx::<DynamicRow, _>(&path, &options, [dyn_row(&[(0, "v")])]);
+        assert!(matches!(result, Err(ExcelError::Unsupported(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn public_xlsx_legacy_seed_missing_template_file_rejected() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("legacy-missing.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_file: Some(directory.path().join("absent.xlsx")),
+            use_legacy_template_seed: true,
+            ..WriteOptions::default()
+        };
+        let result =
+            crate::xlsx_write::write_xlsx::<DynamicRow, _>(&path, &options, [dyn_row(&[(0, "v")])]);
+        assert!(matches!(result, Err(ExcelError::Io(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn public_xlsx_legacy_seed_row_conversion_error_propagates() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("legacy-bad-row.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            use_legacy_template_seed: true,
+            ..WriteOptions::default()
+        };
+        let result =
+            crate::xlsx_write::write_xlsx::<FailingRow2, _>(&path, &options, [FailingRow2]);
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn public_xlsx_dynamic_head_handler_error_propagates() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("head-dyn.xlsx");
+        let mut options = WriteOptions::default();
+        options.dynamic_head = Some(vec![vec!["Level".to_owned()], vec!["Field".to_owned()]]);
+        let mut handlers: Vec<Box<dyn WriteHandler>> =
+            vec![Box::new(StageFailingHandler(FailStage::HeadCell))];
+        let result = crate::xlsx_write::write_xlsx_with_handlers::<DynamicRow, _>(
+            &path,
+            &options,
+            [dyn_row(&[(0, "v")])],
+            &mut handlers,
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn template_layout_skips_explicit_column_widths() -> Result<()> {
+        // 对应 Java：WriteOptions.column_widths 显式列宽优先于注解/策略宽度。
+        let directory = tempdir()?;
+        let path = directory.path().join("explicit-width.xlsx");
+        let mut options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            ..WriteOptions::default()
+        };
+        options.column_widths = vec![(0, 30)];
+        crate::xlsx_write::write_xlsx::<PlainRow, _>(&path, &options, [PlainRow::new("a", "b")])?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_comment_with_invalid_image_errors() -> Result<()> {
+        // 对应 Java：批注内的图片数据损坏时按图片解析错误处理。
+        let directory = tempdir()?;
+        let path = directory.path().join("comment-img.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            ..WriteOptions::default()
+        };
+        let row = dyn_row_values(&[(
+            0,
+            CellValue::Comment {
+                value: Box::new(CellValue::Image(vec![0x89, 0x50, 0x4E])),
+                text: "note".to_owned(),
+            },
+        )]);
+        let result = crate::xlsx_write::write_xlsx::<DynamicRow, _>(&path, &options, [row]);
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    // ========================================================================
+    // trait 方法直接调用补充：from_row / to_row 不经过写入主路径
+    // ========================================================================
+
+    #[test]
+    fn failing_row2_from_row_is_constructible() -> Result<()> {
+        // 对应 Java：ExcelRow.fromRow 只在读取侧被调用，写入侧直接调用验证。
+        let row = FailingRow2::from_row(&easyexcel_core::RowData::new(
+            "sheet",
+            0,
+            Vec::new(),
+            std::sync::Arc::new(std::collections::HashMap::new()),
+        ))?;
+        assert!(matches!(
+            row.to_row(),
+            Err(ExcelError::Data { message, .. })
+                if message == "test-only row conversion failure"
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn plain_row_from_and_to_row_round_trip() -> Result<()> {
+        // 对应 Java：PlainRow 的 fromRow/toRow 往返一致（空单元格行）。
+        let row = PlainRow::from_row(&easyexcel_core::RowData::new(
+            "sheet",
+            0,
+            Vec::new(),
+            std::sync::Arc::new(std::collections::HashMap::new()),
+        ))?;
+        assert!(row.to_row()?.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn loop_merge_bad_row_from_and_to_row_round_trip() -> Result<()> {
+        // 对应 Java：注解行 fromRow/toRow 直接调用（校验失败发生在写入前）。
+        let row = LoopMergeBadRow::from_row(&easyexcel_core::RowData::new(
+            "sheet",
+            0,
+            Vec::new(),
+            std::sync::Arc::new(std::collections::HashMap::new()),
+        ))?;
+        assert!(row.to_row()?.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn wide_index_row_from_and_to_row_round_trip() -> Result<()> {
+        // 对应 Java：宽列索引行 fromRow/toRow 直接调用（写入前即被列号校验拦截）。
+        let row = WideIndexRow::from_row(&easyexcel_core::RowData::new(
+            "sheet",
+            0,
+            Vec::new(),
+            std::sync::Arc::new(std::collections::HashMap::new()),
+        ))?;
+        assert!(row.to_row()?.is_empty());
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests_extra3 {
+    use super::*;
+
+    use std::collections::BTreeMap;
+    use std::io::{Cursor, Write};
+
+    use easyexcel_core::{DynamicRow, DynamicValue};
+    use tempfile::tempdir;
+
+    /// 空实现 handler（对应 Java 无副作用的 WriteHandler）。
+    struct NoopHandler3;
+
+    impl WriteHandler for NoopHandler3 {}
+
+    /// 失败阶段可配置的 handler（对应 Java 测试里的 FailingHandler 模式）。
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    enum FailStage3 {
+        BeforeWorkbookCreate,
+        AfterSheetCreate,
+        HeadCell,
+    }
+
+    struct StageFailingHandler3(FailStage3);
+
+    impl WriteHandler for StageFailingHandler3 {
+        fn before_workbook_create(&mut self, _context: &WriteWorkbookContext) -> Result<()> {
+            if self.0 == FailStage3::BeforeWorkbookCreate {
+                Err(ExcelError::Format("stage failure".to_owned()))
+            } else {
+                Ok(())
+            }
+        }
+
+        fn after_sheet_create(&mut self, _context: &WriteSheetContext) -> Result<()> {
+            if self.0 == FailStage3::AfterSheetCreate {
+                Err(ExcelError::Format("stage failure".to_owned()))
+            } else {
+                Ok(())
+            }
+        }
+
+        fn before_cell_create(&mut self, context: &mut WriteCellContext) -> Result<()> {
+            if self.0 == FailStage3::HeadCell && context.is_head {
+                Err(ExcelError::Format("stage failure".to_owned()))
+            } else {
+                Ok(())
+            }
+        }
+    }
+
+    /// 跳过所有单元格写入（对应 Java 里通过 handler 丢弃单元格）。
+    struct SkipCellHandler3;
+
+    impl WriteHandler for SkipCellHandler3 {
+        fn before_cell_create(&mut self, context: &mut WriteCellContext) -> Result<()> {
+            context.skip = true;
+            Ok(())
+        }
+    }
+
+    /// 具有重复 unique_value 的 handler（对应 Java `NotRepeatExecutor` 去重）。
+    struct UniqueHandler3(&'static str);
+
+    impl easyexcel_core::event::NotRepeatExecutor for UniqueHandler3 {
+        fn unique_value(&self) -> &str {
+            self.0
+        }
+    }
+
+    impl WriteHandler for UniqueHandler3 {
+        fn as_not_repeat_executor(&self) -> Option<&dyn easyexcel_core::event::NotRepeatExecutor> {
+            Some(self)
+        }
+    }
+
+    /// to_row 返回错误的行（对应 Java `toRow` 抛异常）。
+    struct FailingRow3;
+    impl ExcelRow for FailingRow3 {
+        fn schema() -> &'static [ExcelColumn] {
+            const COLUMNS: &[ExcelColumn] = &[ExcelColumn::new("field", "Field", Some(0), 0, None)];
+            COLUMNS
+        }
+
+        fn write_metadata() -> &'static ExcelWriteMetadata {
+            const METADATA: ExcelWriteMetadata = ExcelWriteMetadata::new();
+            &METADATA
+        }
+
+        fn from_row(_row: &easyexcel_core::RowData) -> Result<Self> {
+            Ok(Self)
+        }
+
+        fn to_row(&self) -> Result<Vec<CellValue>> {
+            Err(ExcelError::Data {
+                sheet: String::new(),
+                row: 0,
+                column: Some(7),
+                field: "field",
+                value: "bad".to_owned(),
+                message: "round-2 injected conversion failure".to_owned(),
+            })
+        }
+    }
+
+    /// 普通单列 typed 行（schema 非空 → 走非 dynamic 表头分支）。
+    struct SingleColRow3 {
+        cells: Vec<CellValue>,
+    }
+
+    impl ExcelRow for SingleColRow3 {
+        fn schema() -> &'static [ExcelColumn] {
+            const COLUMNS: &[ExcelColumn] = &[ExcelColumn::new("field", "Field", Some(0), 0, None)];
+            COLUMNS
+        }
+
+        fn write_metadata() -> &'static ExcelWriteMetadata {
+            const METADATA: ExcelWriteMetadata = ExcelWriteMetadata::new();
+            &METADATA
+        }
+
+        fn from_row(_row: &easyexcel_core::RowData) -> Result<Self> {
+            Ok(Self { cells: Vec::new() })
+        }
+
+        fn to_row(&self) -> Result<Vec<CellValue>> {
+            Ok(self.cells.clone())
+        }
+    }
+
+    fn dyn_row(values: &[(usize, &str)]) -> DynamicRow {
+        DynamicRow::new(
+            values
+                .iter()
+                .map(|(index, value)| (*index, DynamicValue::String((*value).to_owned())))
+                .collect::<BTreeMap<_, _>>(),
+        )
+    }
+
+    fn xls_template_bytes(sheet_name: &str) -> Vec<u8> {
+        let mut book = Biff8Book::default();
+        book.sheet_mut(sheet_name);
+        book.to_cfb_bytes().expect("cfb bytes")
+    }
+
+    fn xlsx_template_bytes(sheet_name: &str) -> Vec<u8> {
+        let mut workbook = Workbook::new();
+        let sheet = workbook.add_worksheet();
+        sheet.set_name(sheet_name).expect("sheet name");
+        sheet.write_string(0, 0, "seed").expect("seed cell");
+        workbook.save_to_buffer().expect("template buffer")
+    }
+
+    /// 手工构造 ZIP 模板包（entries: (路径, 内容)），默认 Stored 压缩。
+    fn zip_template(entries: &[(&str, &[u8])]) -> Vec<u8> {
+        let mut writer = zip::ZipWriter::new(Cursor::new(Vec::new()));
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+        for (name, bytes) in entries {
+            writer.start_file(*name, options).expect("start entry");
+            writer.write_all(bytes).expect("write entry");
+        }
+        writer.finish().expect("finish").into_inner()
+    }
+
+    const PACKAGE_RELS_XML: &[u8] = br#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>"#;
+
+    const CONTENT_TYPES_XML: &[u8] = br#"<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/></Types>"#;
+
+    const SHEET_XML: &[u8] = br#"<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1"><v>1</v></c></row></sheetData></worksheet>"#;
+
+    /// 缺少 `xl/_rels/workbook.xml.rels` 的模板：`ensure_sheet` 必须报错。
+    ///
+    /// 对应 Java：POI 在 `createSheet` 时依赖 workbook 关系表，缺失即失败。
+    fn xlsx_template_missing_workbook_rels() -> Vec<u8> {
+        zip_template(&[
+            ("[Content_Types].xml", CONTENT_TYPES_XML),
+            ("_rels/.rels", PACKAGE_RELS_XML),
+            (
+                "xl/workbook.xml",
+                br#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="TemplateOnly" sheetId="1" r:id="rId1"/></sheets></workbook>"#,
+            ),
+            ("xl/worksheets/sheet1.xml", SHEET_XML),
+        ])
+    }
+
+    // ========================================================================
+    // 生产代码 `?` 错误边：write_with_sheet_handlers / write_with_table_handlers
+    // 首次注册 sheet handler 时 workbook 回调失败（对应 Java `ExcelWriter` 抛异常）。
+    // ========================================================================
+
+    #[test]
+    fn write_with_sheet_handlers_new_sheet_callback_error_propagates() -> Result<()> {
+        // 对应 Java：新 sheet 首次注册 sheet handler 时运行 workbook 回调，
+        // 回调失败必须向上传播（`runOwnWorkbookCallbacks`）。
+        let directory = tempdir()?;
+        let path = directory.path().join("sheet-cb-err.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<DynamicRow>::new("Fresh");
+        let result = writer.write_with_sheet_handlers(
+            [dyn_row(&[(0, "x")])],
+            &sheet,
+            vec![Box::new(StageFailingHandler3(
+                FailStage3::BeforeWorkbookCreate,
+            ))],
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn write_with_table_handlers_new_sheet_callback_error_propagates() -> Result<()> {
+        // 对应 Java：表写入路径首次注册 sheet handler 时 workbook 回调失败。
+        let directory = tempdir()?;
+        let path = directory.path().join("table-cb-err.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let result = writer.write_with_table_handlers(
+            [dyn_row(&[(0, "x")])],
+            &WriteSheet::<DynamicRow>::new("Fresh"),
+            &MirroredWriteTable::new(),
+            vec![Box::new(StageFailingHandler3(
+                FailStage3::BeforeWorkbookCreate,
+            ))],
+            Vec::new(),
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_write_after_sheet_create_error_propagates() -> Result<()> {
+        // 对应 Java：`afterSheetCreate` 回调失败 → `ExcelWriteExecutor` 报错。
+        let directory = tempdir()?;
+        let path = directory.path().join("sheet-create-err.xlsx");
+        let mut handlers: Vec<Box<dyn WriteHandler>> =
+            vec![Box::new(StageFailingHandler3(FailStage3::AfterSheetCreate))];
+        let result = crate::xlsx_write::write_xlsx_with_handlers::<DynamicRow, _>(
+            &path,
+            &WriteOptions::default(),
+            [dyn_row(&[(0, "x")])],
+            &mut handlers,
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    // ========================================================================
+    // 模板保真路径：新建 sheet 时 ensure_sheet 失败（对应 Java createSheet）。
+    // ========================================================================
+
+    #[test]
+    fn xlsx_template_new_sheet_missing_workbook_rels_errors() -> Result<()> {
+        // 对应 Java：withTemplate 后写入模板中不存在的 sheet，POI 需要创建，
+        // 缺少 workbook 关系表时 `createSheet` 抛异常。
+        let directory = tempdir()?;
+        let path = directory.path().join("tpl-no-rels.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                template_bytes: Some(xlsx_template_missing_workbook_rels()),
+                ..WriteOptions::default()
+            },
+        );
+        let result = writer.write(
+            [dyn_row(&[(0, "x")])],
+            &WriteSheet::<DynamicRow>::new("BrandNew"),
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    // ========================================================================
+    // BIFF8 保存：父目录创建与不可写父路径（对应 Java FileOutputStream）。
+    // ========================================================================
+
+    #[test]
+    fn save_xls_book_creates_nested_parent_directory() -> Result<()> {
+        // 对应 Java：写入 `a/b/out.xls` 时自动 `mkdirs`。
+        let directory = tempdir()?;
+        let path = directory.path().join("nested").join("plain.xls");
+        crate::write_xls::write_xls::<DynamicRow, _>(
+            &path,
+            &WriteOptions::default(),
+            [dyn_row(&[(0, "x")])],
+        )?;
+        assert!(path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn save_xls_book_parent_is_regular_file_errors() -> Result<()> {
+        // 对应 Java：父路径被普通文件占位时 `mkdirs` 抛 IOException。
+        let directory = tempdir()?;
+        let blocker = directory.path().join("blocker");
+        std::fs::write(&blocker, b"not a directory")?;
+        let path = blocker.join("out.xls");
+        let result = crate::write_xls::write_xls::<DynamicRow, _>(
+            &path,
+            &WriteOptions::default(),
+            [dyn_row(&[(0, "x")])],
+        );
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    // ========================================================================
+    // BIFF8 表头单元格：handler 在 head 单元格阶段失败（对应 Java 回调异常）。
+    // ========================================================================
+
+    #[test]
+    fn xls_write_head_cell_failure_propagates() -> Result<()> {
+        // 对应 Java：写表头时 `beforeCellCreate` 抛异常 → 整次写入失败。
+        // 使用 schema 非空的行（非 dynamic 表头分支）；DynamicRow 无表头时
+        // head 回调不会被调用（见 public_xls_head_cell_handler_not_invoked_without_head）。
+        let directory = tempdir()?;
+        let path = directory.path().join("head-cell-err.xls");
+        let mut handlers: Vec<Box<dyn WriteHandler>> =
+            vec![Box::new(StageFailingHandler3(FailStage3::HeadCell))];
+        let result = crate::write_xls::write_xls_with_handlers::<SingleColRow3, _>(
+            &path,
+            &WriteOptions::default(),
+            [SingleColRow3 {
+                cells: vec![CellValue::String("x".to_owned())],
+            }],
+            &mut handlers,
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    // ========================================================================
+    // legacy seed 直达调用：模板源校验失败 / 模板文件缺失。
+    // ========================================================================
+
+    #[test]
+    fn write_sheet_onto_template_rejects_csv_template_bytes() -> Result<()> {
+        // 对应 Java：`validateTemplateSource` 拒绝 CSV 模板。
+        let mut workbook = Workbook::new();
+        let options = WriteOptions {
+            template_bytes: Some(b"a,b\n1,2".to_vec()),
+            ..WriteOptions::default()
+        };
+        let result = write_sheet_onto_template::<DynamicRow, _>(
+            &mut workbook,
+            &options,
+            [dyn_row(&[(0, "x")])],
+            &mut [],
+        );
+        assert!(matches!(result, Err(ExcelError::Unsupported(_))));
+        Ok(())
+    }
+
+    #[test]
+    fn write_sheet_onto_template_missing_template_file_errors() -> Result<()> {
+        // 对应 Java：`withTemplate(file)` 指向不存在的文件 → IOException。
+        let directory = tempdir()?;
+        let missing = directory.path().join("missing.xlsx");
+        let mut workbook = Workbook::new();
+        let options = WriteOptions {
+            template_file: Some(missing),
+            ..WriteOptions::default()
+        };
+        let result = write_sheet_onto_template::<DynamicRow, _>(
+            &mut workbook,
+            &options,
+            [dyn_row(&[(0, "x")])],
+            &mut [],
+        );
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    // ========================================================================
+    // TemplatePackage::from_bytes 拒绝非 ZIP 数据（对应 Java ZipFile 异常）。
+    // ========================================================================
+
+    #[test]
+    fn template_package_from_bytes_rejects_garbage() {
+        let result = crate::template_write::TemplatePackage::from_bytes(b"not a zip package");
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+    }
+
+    // ========================================================================
+    // 行转换失败（FailingRow 模式）在各公开写入入口的传播：
+    // 对应 Java `doWrite` 期间 `ConvertAllFiled` 抛异常 → `ExcelGenerateException`。
+    // ========================================================================
+
+    #[test]
+    fn sheet_handlers_failing_row_propagates() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("sheet-handlers-fail.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let result = writer.write_with_sheet_handlers(
+            [FailingRow3],
+            &WriteSheet::<FailingRow3>::new("Fresh"),
+            vec![Box::new(NoopHandler3)],
+        );
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn table_handlers_xlsx_new_sheet_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("table-fail.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let result = writer.write_with_table_handlers(
+            [FailingRow3],
+            &WriteSheet::<FailingRow3>::new("Sheet1"),
+            &MirroredWriteTable::new(),
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn table_handlers_xls_existing_sheet_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("table-fail.xls");
+        let mut writer = ExcelWriter::new(&path);
+        writer.write(
+            [dyn_row(&[(0, "first")])],
+            &WriteSheet::<DynamicRow>::new("Sheet1"),
+        )?;
+        let result = writer.write_with_table_handlers(
+            [FailingRow3],
+            &WriteSheet::<FailingRow3>::new("Sheet1"),
+            &MirroredWriteTable::with_table_no(7),
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn table_handlers_with_sheet_handlers_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("table-handlers-fail.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let result = writer.write_with_table_handlers(
+            [FailingRow3],
+            &WriteSheet::<FailingRow3>::new("Sheet1"),
+            &MirroredWriteTable::new(),
+            vec![Box::new(NoopHandler3)],
+            Vec::new(),
+        );
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn xls_to_writer_template_failing_row() -> Result<()> {
+        let mut output = Vec::new();
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xls_template_bytes("Sheet1")),
+            ..WriteOptions::default()
+        };
+        let result = crate::write_xls::write_xls_to_writer::<FailingRow3, _, _>(
+            std::path::Path::new("logical.xls"),
+            &mut output,
+            &options,
+            [FailingRow3],
+            &mut [],
+        );
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_stateful_table_handlers_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("incoming-fail.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        writer.write(
+            [dyn_row(&[(0, "one")])],
+            &WriteSheet::<DynamicRow>::new("Sheet1"),
+        )?;
+        let result = writer.write_with_table_handlers(
+            [FailingRow3],
+            &WriteSheet::<FailingRow3>::new("Sheet1"),
+            &MirroredWriteTable::new(),
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn xls_absolute_merge_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("merge-fail.xls");
+        let mut writer = ExcelWriter::new(&path);
+        let result = writer.write([FailingRow3], &WriteSheet::<FailingRow3>::new("Sheet1"));
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_absolute_merge_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("merge-fail.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let result = writer.write([FailingRow3], &WriteSheet::<FailingRow3>::new("Sheet1"));
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn xls_font_style_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("fonts-fail.xls");
+        let mut writer = ExcelWriter::new(&path);
+        let result = writer.write([FailingRow3], &WriteSheet::<FailingRow3>::new("Sheet1"));
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn xls_template_dynamic_head_table_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tpl-table-fail.xls");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                template_bytes: Some(xls_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        let sheet = WriteSheet::<FailingRow3>::from_options(WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            dynamic_head: Some(vec![
+                vec!["User".to_owned(), "Name".to_owned()],
+                vec!["User".to_owned(), "Age".to_owned()],
+                vec!["Meta".to_owned()],
+            ]),
+            ..WriteOptions::default()
+        });
+        let result = writer.write_with_table_handlers(
+            [FailingRow3],
+            &sheet,
+            &MirroredWriteTable::with_table_no(2),
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn xls_template_dynamic_head_second_table_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tpl-table2-fail.xls");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                template_bytes: Some(xls_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        let sheet = WriteSheet::<DynamicRow>::from_options(WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            dynamic_head: Some(vec![
+                vec!["User".to_owned(), "Name".to_owned()],
+                vec!["User".to_owned(), "Age".to_owned()],
+                vec!["Meta".to_owned()],
+            ]),
+            ..WriteOptions::default()
+        });
+        writer.write_with_table_handlers(
+            [dyn_row(&[(0, "n"), (1, "a"), (2, "m")])],
+            &sheet,
+            &MirroredWriteTable::with_table_no(2),
+            Vec::new(),
+            Vec::new(),
+        )?;
+        let result = writer.write_with_table_handlers(
+            [FailingRow3],
+            &WriteSheet::<FailingRow3>::from_options(WriteOptions {
+                sheet_name: "Sheet1".to_owned(),
+                dynamic_head: Some(vec![
+                    vec!["User".to_owned(), "Name".to_owned()],
+                    vec!["User".to_owned(), "Age".to_owned()],
+                    vec!["Meta".to_owned()],
+                ]),
+                ..WriteOptions::default()
+            }),
+            &MirroredWriteTable::with_table_no(3),
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_existing_state_table_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tpl-state-fail.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        writer.write(
+            [dyn_row(&[(0, "one")])],
+            &WriteSheet::<DynamicRow>::new("Sheet1"),
+        )?;
+        let result = writer.write_with_table_handlers(
+            [FailingRow3],
+            &WriteSheet::<FailingRow3>::new("Sheet1"),
+            &MirroredWriteTable::with_table_no(0),
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_legacy_seed_spill_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("legacy-fail.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            use_legacy_template_seed: true,
+            compress_temp_files: true,
+            ..WriteOptions::default()
+        };
+        let result =
+            crate::xlsx_write::write_xlsx::<FailingRow3, _>(&path, &options, [FailingRow3]);
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_absent_sheet_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("absent-fail.xlsx");
+        let options = WriteOptions {
+            sheet_name: "NewSheet".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("TemplateOnly")),
+            ..WriteOptions::default()
+        };
+        let result =
+            crate::xlsx_write::write_xlsx::<FailingRow3, _>(&path, &options, [FailingRow3]);
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn xls_nested_dir_handlers_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("nested").join("out-fail.xls");
+        let mut handlers: Vec<Box<dyn WriteHandler>> = vec![Box::new(NoopHandler3)];
+        let result = crate::write_xls::write_xls_with_handlers::<FailingRow3, _>(
+            &path,
+            &WriteOptions::default(),
+            [FailingRow3],
+            &mut handlers,
+        );
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn xls_plain_handlers_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("plain-fail.xls");
+        let mut handlers: Vec<Box<dyn WriteHandler>> = vec![Box::new(NoopHandler3)];
+        let result = crate::write_xls::write_xls_with_handlers::<FailingRow3, _>(
+            &path,
+            &WriteOptions::default(),
+            [FailingRow3],
+            &mut handlers,
+        );
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_compress_temp_files_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("spill-fail.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            compress_temp_files: true,
+            ..WriteOptions::default()
+        };
+        let result =
+            crate::xlsx_write::write_xlsx::<FailingRow3, _>(&path, &options, [FailingRow3]);
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn csv_table_handlers_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("table-fail.csv");
+        let mut writer = ExcelWriter::new(&path);
+        let result = writer.write_with_table_handlers(
+            [FailingRow3],
+            &WriteSheet::<FailingRow3>::new("Sheet1"),
+            &MirroredWriteTable::new(),
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn csv_table_handlers_second_write_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("table-fail2.csv");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
+        let table = MirroredWriteTable::new();
+        writer.write_with_table_handlers(
+            [dyn_row(&[(0, "tabled")])],
+            &sheet,
+            &table,
+            Vec::new(),
+            Vec::new(),
+        )?;
+        let result = writer.write_with_table_handlers(
+            [FailingRow3],
+            &WriteSheet::<FailingRow3>::new("Sheet1"),
+            &table,
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn table_handlers_first_write_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("table-schema-fail.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let result = writer.write_with_table_handlers(
+            [FailingRow3],
+            &WriteSheet::<FailingRow3>::new("Sheet1"),
+            &MirroredWriteTable::new(),
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn table_handlers_new_sheet_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("new-sheet-handlers-fail.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let result = writer.write_with_table_handlers(
+            [FailingRow3],
+            &WriteSheet::<FailingRow3>::new("Sheet1"),
+            &MirroredWriteTable::new(),
+            vec![Box::new(NoopHandler3)],
+            Vec::new(),
+        );
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_annotation_merge_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tpl-ann-fail.xlsx");
+        let mut handlers: Vec<Box<dyn WriteHandler>> = vec![Box::new(
+            MirroredOnceAbsoluteMerge::from_property(
+                easyexcel_core::OnceAbsoluteMergeProperty::new(0, 0, 0, 1),
+            )
+            .expect("merge strategy"),
+        )];
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            ..WriteOptions::default()
+        };
+        let result = crate::xlsx_write::write_xlsx_with_handlers::<FailingRow3, _>(
+            &path,
+            &options,
+            [FailingRow3],
+            &mut handlers,
+        );
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn csv_early_return_table_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tbl-early-fail.csv");
+        let mut writer = ExcelWriter::new(&path);
+        writer.write(
+            [dyn_row(&[(0, "a")])],
+            &WriteSheet::<DynamicRow>::new("Sheet1"),
+        )?;
+        let result = writer.write_with_table_handlers(
+            [FailingRow3],
+            &WriteSheet::<FailingRow3>::new("Sheet1"),
+            &MirroredWriteTable::with_table_no(5),
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn xls_table_merges_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tbl-fail.xls");
+        let mut writer = ExcelWriter::new(&path);
+        writer.write(
+            [dyn_row(&[(0, "a")])],
+            &WriteSheet::<DynamicRow>::new("Sheet1"),
+        )?;
+        let result = writer.write_with_table_handlers(
+            [FailingRow3],
+            &WriteSheet::<FailingRow3>::new("Sheet1"),
+            &MirroredWriteTable::with_table_no(5),
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_layout_table_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tbl-tpl-fail.xlsx");
+        let mut writer = ExcelWriter::with_handlers_and_options(
+            &path,
+            Vec::new(),
+            WriteOptions {
+                template_bytes: Some(xlsx_template_bytes("Sheet1")),
+                ..WriteOptions::default()
+            },
+        );
+        writer.write(
+            [dyn_row(&[(0, "a")])],
+            &WriteSheet::<DynamicRow>::new("Sheet1"),
+        )?;
+        let result = writer.write_with_table_handlers(
+            [FailingRow3],
+            &WriteSheet::<FailingRow3>::new("Sheet1"),
+            &MirroredWriteTable::with_table_no(5),
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_column_widths_table_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("tbl-widths-fail.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let sheet = WriteSheet::<DynamicRow>::from_options(WriteOptions {
+            column_widths: vec![(0, 30)],
+            ..WriteOptions::default()
+        });
+        writer.write([dyn_row(&[(0, "a")])], &sheet)?;
+        let result = writer.write_with_table_handlers(
+            [FailingRow3],
+            &WriteSheet::<FailingRow3>::from_options(WriteOptions {
+                column_widths: vec![(0, 30)],
+                ..WriteOptions::default()
+            }),
+            &MirroredWriteTable::with_table_no(5),
+            Vec::new(),
+            Vec::new(),
+        );
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_font_style_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("fonts-fail.xlsx");
+        let mut writer = ExcelWriter::new(&path);
+        let result = writer.write([FailingRow3], &WriteSheet::<FailingRow3>::new("Sheet1"));
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn dedupe_handlers_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("dedupe-fail.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            ..WriteOptions::default()
+        };
+        let mut handlers: Vec<Box<dyn WriteHandler>> = vec![
+            Box::new(UniqueHandler3("shared")),
+            Box::new(UniqueHandler3("shared")),
+        ];
+        let result = crate::xlsx_write::write_xlsx_with_handlers::<FailingRow3, _>(
+            &path,
+            &options,
+            [FailingRow3],
+            &mut handlers,
+        );
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_template_password_failing_row() -> Result<()> {
+        let mut output = Vec::new();
+        let options = WriteOptions {
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            password: Some("pw".to_owned()),
+            ..WriteOptions::default()
+        };
+        let result = crate::xlsx_write::write_xlsx_to_writer::<FailingRow3, _, _>(
+            std::path::Path::new("logical.xlsx"),
+            &mut output,
+            &options,
+            [FailingRow3],
+            &mut [],
+        );
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn legacy_seed_layout_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("legacy-layout-fail.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            use_legacy_template_seed: true,
+            column_widths: vec![(0, 25)],
+            merge_ranges: vec![MergeRange::new(1, 2, 0, 1)],
+            auto_width: true,
+            compress_temp_files: true,
+            ..WriteOptions::default()
+        };
+        let result =
+            crate::xlsx_write::write_xlsx::<FailingRow3, _>(&path, &options, [FailingRow3]);
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn legacy_seed_absent_sheet_failing_row() -> Result<()> {
+        let directory = tempdir()?;
+        let path = directory.path().join("legacy-absent-fail.xlsx");
+        let options = WriteOptions {
+            sheet_name: "BrandNew".to_owned(),
+            sheet_index: Some(9),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            use_legacy_template_seed: true,
+            ..WriteOptions::default()
+        };
+        let result =
+            crate::xlsx_write::write_xlsx::<FailingRow3, _>(&path, &options, [FailingRow3]);
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_legacy_seed_writer_failing_row() -> Result<()> {
+        let mut output = Vec::new();
+        let options = WriteOptions {
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            use_legacy_template_seed: true,
+            ..WriteOptions::default()
+        };
+        let result = crate::xlsx_write::write_xlsx_to_writer::<FailingRow3, _, _>(
+            std::path::Path::new("logical.xlsx"),
+            &mut output,
+            &options,
+            [FailingRow3],
+            &mut [],
+        );
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    // ========================================================================
+    // 模板样式编译：列号超限（对应 Java `@ExcelProperty.index` 越界）。
+    // ========================================================================
+
+    #[test]
+    fn template_append_cell_styles_wide_column_direct() -> Result<()> {
+        // 对应 Java：模板样式编译时列号超过 XLSX 上限 → 报错。
+        let mut package = crate::template_write::TemplatePackage::from_bytes(
+            xlsx_template_bytes("Sheet1").as_slice(),
+        )?;
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            ..WriteOptions::default()
+        };
+        let rows = vec![vec![(70_000usize, CellValue::String("wide".to_owned()))]];
+        let empty_converted: Vec<Vec<(usize, WriteCellData)>> = Vec::new();
+        let empty_ignore: Vec<Vec<bool>> = vec![Vec::new()];
+        let empty_requested: Vec<Vec<Option<ExcelCellStyle>>> = vec![Vec::new()];
+        let result = template_append_cell_styles::<FailingRow3>(
+            &mut package,
+            &options,
+            &[],
+            &rows,
+            &rows,
+            &empty_converted,
+            &empty_ignore,
+            &empty_requested,
+            true,
+            0,
+        );
+        assert!(matches!(result, Err(ExcelError::Format(_))));
+        Ok(())
+    }
+
+    // ========================================================================
+    // 跳过表头单元格 + 行转换失败（对应 Java handler 跳过单元格后仍转换行）。
+    // ========================================================================
+
+    #[test]
+    fn xls_skipped_head_cells_failing_row() -> Result<()> {
+        // 对应 Java：handler 跳过全部单元格时，行转换（toRow）失败仍须上报。
+        let directory = tempdir()?;
+        let path = directory.path().join("skipped-fail.xls");
+        let mut handlers: Vec<Box<dyn WriteHandler>> = vec![Box::new(SkipCellHandler3)];
+        let result = crate::write_xls::write_xls_with_handlers::<FailingRow3, _>(
+            &path,
+            &WriteOptions::default(),
+            [FailingRow3],
+            &mut handlers,
+        );
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    #[test]
+    fn xlsx_explicit_widths_failing_row() -> Result<()> {
+        // 对应 Java：显式列宽 + 行转换失败 → 错误传播。
+        let directory = tempdir()?;
+        let path = directory.path().join("explicit-width-fail.xlsx");
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(xlsx_template_bytes("Sheet1")),
+            column_widths: vec![(0, 30)],
+            ..WriteOptions::default()
+        };
+        let result =
+            crate::xlsx_write::write_xlsx::<FailingRow3, _>(&path, &options, [FailingRow3]);
+        assert!(matches!(result, Err(ExcelError::Data { .. })));
+        Ok(())
+    }
+
+    // ========================================================================
+    // trait 方法直接调用补充：from_row / to_row / before_cell_create Ok 分支
+    // ========================================================================
+
+    #[test]
+    fn failing_row3_from_row_is_constructible() -> Result<()> {
+        // 对应 Java：ExcelRow.fromRow 只在读取侧被调用，写入侧直接调用验证。
+        let row = FailingRow3::from_row(&easyexcel_core::RowData::new(
+            "sheet",
+            0,
+            Vec::new(),
+            std::sync::Arc::new(std::collections::HashMap::new()),
+        ))?;
+        assert!(matches!(
+            row.to_row(),
+            Err(ExcelError::Data { message, .. })
+                if message == "round-2 injected conversion failure"
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn single_col_row3_from_and_to_row_round_trip() -> Result<()> {
+        // 对应 Java：SingleColRow3 的 fromRow/toRow 往返一致（空单元格行）。
+        let row = SingleColRow3::from_row(&easyexcel_core::RowData::new(
+            "sheet",
+            0,
+            Vec::new(),
+            std::sync::Arc::new(std::collections::HashMap::new()),
+        ))?;
+        assert!(row.to_row()?.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn stage_failing_handler3_non_matching_stage_passes_cells() -> Result<()> {
+        // 对应 Java：失败阶段不匹配时 beforeCellCreate 放行（Ok 分支）。
+        let mut context = WriteCellContext::new("Sheet1", 0, 0, CellValue::String("v".to_owned()));
+        let mut handler = StageFailingHandler3(FailStage3::AfterSheetCreate);
+        assert!(handler.before_cell_create(&mut context).is_ok());
+        Ok(())
+    }
+}

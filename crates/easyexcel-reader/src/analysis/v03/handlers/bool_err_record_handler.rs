@@ -67,3 +67,45 @@ mod tests {
         assert!(BoolErrRecordHandler::process_bool(0, 0, true).value);
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn process_record_parses_boolean_and_skips_errors() {
+        // 对应 Java：BoolErrRecordHandler 仅物化布尔分支，错误分支跳过
+        let mut handler = BoolErrRecordHandler::new();
+        // row|col|xf|value|isError —— value=1, isError=0
+        handler.process_record(BOOL_ERR_SID, &[1, 0, 2, 0, 0, 0, 1, 0]);
+        assert_eq!(
+            handler.last_cell,
+            Some(BoolCell {
+                row: 1,
+                column: 2,
+                value: true
+            })
+        );
+        // isError=1 → 不产出布尔值（保持上一次结果）
+        handler.process_record(BOOL_ERR_SID, &[3, 0, 4, 0, 0, 0, 1, 1]);
+        assert_eq!(
+            handler.last_cell,
+            Some(BoolCell {
+                row: 1,
+                column: 2,
+                value: true
+            })
+        );
+        // 数据不足 / 错误 sid 忽略
+        handler.process_record(BOOL_ERR_SID, &[0, 0]);
+        handler.process_record(0xFFFF, &[1, 0, 2, 0, 0, 0, 0, 0]);
+        assert_eq!(
+            handler.last_cell,
+            Some(BoolCell {
+                row: 1,
+                column: 2,
+                value: true
+            })
+        );
+    }
+}

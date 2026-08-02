@@ -13,3 +13,14 @@
 pub fn custom_height() -> bool {
     false
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn custom_height_placeholder_is_false() {
+        // 对应 Java：customHeight 占位实现（委托 rust_xlsxwriter）
+        assert!(!custom_height());
+    }
+}

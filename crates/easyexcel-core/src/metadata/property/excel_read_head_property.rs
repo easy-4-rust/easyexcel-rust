@@ -51,3 +51,31 @@ impl std::ops::Deref for ExcelReadHeadProperty {
         &self.0
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use crate::HeadKind;
+
+    #[test]
+    fn new_without_class_and_inner_accessor() {
+        // 对应 Java：ExcelReadHeadProperty 无类名构造与 inner
+        let property = ExcelReadHeadProperty::new(None, None, Some(vec![vec!["Name".to_owned()]]));
+        assert!(property.has_head());
+        assert_eq!(property.inner().head_map().len(), 1);
+        assert_eq!(property.head_map().len(), 1);
+        // Deref 到 ExcelHeadProperty
+        let inner: &ExcelHeadProperty = &property;
+        assert_eq!(inner.head_map().len(), 1);
+    }
+
+    #[test]
+    fn new_with_class_uses_for_class() {
+        // 对应 Java：指定类名时按类解析表头
+        let property = ExcelReadHeadProperty::new(None, Some("Model".to_owned()), None);
+        // Java：类字段元数据应用后 headKind 恒为 CLASS
+        assert!(property.has_head());
+        assert!(property.inner().head_map().is_empty());
+        assert_eq!(property.inner().head_kind(), HeadKind::Class);
+    }
+}

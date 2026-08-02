@@ -40,3 +40,34 @@ where
 pub fn default_class_generic(_type_id: TypeId) -> Option<TypeId> {
     None
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn convert_to_java_object_reports_unsupported() {
+        // 对应 Java：ConverterUtils.convertToJavaObject 尚未接入时返回明确错误
+        let error = convert_to_java_object("x", TypeId::of::<String>()).expect_err("unsupported");
+        assert!(error.to_string().contains("FromExcelCell"));
+    }
+
+    #[test]
+    fn convert_to_string_map_flattens_entries() {
+        // 对应 Java：ConverterUtils.convertToStringMap
+        let entries = [("name".to_string(), 1_u32), ("age".to_string(), 2_u32)];
+        let map = convert_to_string_map(entries.iter().map(|(k, v)| (k, v)));
+        assert_eq!(map.get("name").map(String::as_str), Some("1"));
+        assert_eq!(map.get("age").map(String::as_str), Some("2"));
+
+        // 空迭代器
+        let empty: std::iter::Empty<(&String, &u32)> = std::iter::empty();
+        assert!(convert_to_string_map(empty).is_empty());
+    }
+
+    #[test]
+    fn default_class_generic_returns_none() {
+        // 对应 Java：defaultClassGeneric 默认实现
+        assert_eq!(default_class_generic(TypeId::of::<String>()), None);
+    }
+}

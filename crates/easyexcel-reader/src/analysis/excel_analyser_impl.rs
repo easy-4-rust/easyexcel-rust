@@ -445,3 +445,204 @@ mod tests {
         assert!(analyser.is_finished());
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use easyexcel_core::{CellExtra, CellExtraType, DynamicRow};
+
+    #[derive(Default)]
+    struct ExtraListener {
+        extra_calls: usize,
+    }
+
+    impl ReadListener<DynamicRow> for ExtraListener {
+        fn invoke(&mut self, _data: DynamicRow, _context: &AnalysisContext) -> Result<()> {
+            Ok(())
+        }
+
+        fn extra(&mut self, _extra: &CellExtra, _context: &AnalysisContext) -> Result<()> {
+            self.extra_calls += 1;
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn tracking_listener_captures_extra_callbacks() -> Result<()> {
+        // 对应 Java：extra 回调同步更新 AnalysisContext 快照
+        let mut delegate = ExtraListener::default();
+        let mut latest = AnalysisContext::new("", 0, 0);
+        let mut tracking = ContextTrackingReadListener {
+            delegate: &mut delegate,
+            latest: &mut latest,
+        };
+        let extra = CellExtra::new(CellExtraType::Merge, None, 0, 1, 0, 1);
+        let context = AnalysisContext::new("Sheet1", 1, 2);
+        ReadListener::<DynamicRow>::extra(&mut tracking, &extra, &context)?;
+        assert_eq!(latest.sheet_name(), "Sheet1");
+        assert_eq!(latest.sheet_no(), 1);
+        assert_eq!(delegate.extra_calls, 1);
+        Ok(())
+    }
+
+    #[test]
+    fn default_constructs_idle_analyser() {
+        // 对应 Java：new ExcelAnalyserImpl() 空构造
+        let analyser = ExcelAnalyserImpl::default();
+        assert!(analyser.path().is_none());
+        assert!(analyser.excel_type().is_none());
+        assert!(!analyser.is_finished());
+        assert!(!analyser.has_temporary_input());
+        assert!(analyser.last_error().is_none());
+    }
+
+    #[test]
+    fn analysis_without_path_and_unsupported_extension_fail() {
+        // 对应 Java：choiceExcelExecutor 需要路径；未知扩展名报错
+        let mut analyser = ExcelAnalyserImpl::new();
+        let mut listener = ExtraListener::default();
+        let error = analyser
+            .analysis_with_listener::<DynamicRow, _>(&mut listener)
+            .expect_err("no path");
+        assert!(error.to_string().contains("workbook path"));
+        assert!(analyser.path().is_none());
+
+        let directory = tempfile::tempdir().expect("tempdir");
+        let txt = directory.path().join("data.txt");
+        std::fs::write(&txt, "x").expect("write");
+        let error = match ExcelAnalyserImpl::from_path(&txt, ReadOptions::default()) {
+            Ok(_) => panic!("unsupported extension must fail"),
+            Err(error) => error,
+        };
+        assert!(error.to_string().contains("unsupported excel extension"));
+    }
+
+    #[test]
+    fn extensionless_path_falls_back_to_csv() -> Result<()> {
+        // 对应 Java：无扩展名路径默认按 CSV 处理
+        let directory = tempfile::tempdir()?;
+        let path = directory.path().join("data");
+        std::fs::write(&path, "a,b\n1,2\n")
+            .map_err(|error| ExcelError::Format(error.to_string()))?;
+        let analyser = ExcelAnalyserImpl::from_path(&path, ReadOptions::default())?;
+        assert_eq!(analyser.excel_type(), Some(ExcelTypeEnum::Csv));
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests_extra2 {
+    use super::*;
+    use easyexcel_core::DynamicRow;
+    use easyexcel_core::support::ExcelTypeEnum;
+
+    #[derive(Default)]
+    struct InvokeCounter {
+        invoke_calls: usize,
+    }
+
+    impl ReadListener<DynamicRow> for InvokeCounter {
+        fn invoke(&mut self, _data: DynamicRow, _context: &AnalysisContext) -> Result<()> {
+            self.invoke_calls += 1;
+            Ok(())
+        }
+    }
+
+    /// 构造一个带 excel_type 但缺少 path 的 analyser，覆盖分析前的路径校验。
+    fn analyser_with_type_without_path() -> ExcelAnalyserImpl {
+        ExcelAnalyserImpl {
+            path: None,
+            options: ReadOptions::default(),
+            excel_type: Some(ExcelTypeEnum::Csv),
+            excel_read_executor: None,
+            context: AnalysisContext::new("", 0, 0),
+            finished: false,
+            temporary_input: None,
+            last_error: None,
+        }
+    }
+
+    #[test]
+    fn choice_excel_executor_propagates_executor_creation_errors() {
+        // 对应 Java：choiceExcelExecutor 中构造 XlsxSaxAnalyser 失败时向上抛出
+        let directory = tempfile::tempdir().expect("tempdir");
+        let missing = directory.path().join("missing.xlsx");
+        let error = match ExcelAnalyserImpl::from_path(&missing, ReadOptions::default()) {
+            Ok(_) => panic!("missing xlsx workbook must fail"),
+            Err(error) => error,
+        };
+        assert!(error.to_string().contains("open") || error.to_string().contains("No such"));
+    }
+
+    #[test]
+    fn analysis_with_type_but_without_path_reports_format_error() {
+        // 对应 Java：analysis 需要 workbook 路径，缺失时报 Format 错误
+        let mut analyser = analyser_with_type_without_path();
+        let mut listener = InvokeCounter::default();
+        let error = analyser
+            .analysis_with_listener::<DynamicRow, _>(&mut listener)
+            .expect_err("path is missing");
+        assert!(error.to_string().contains("workbook path"));
+        assert_eq!(listener.invoke_calls, 0);
+    }
+
+    #[test]
+    fn analysis_without_executor_reports_missing_executor() -> Result<()> {
+        // 对应 Java：choiceExcelExecutor 之后 executor 一定存在，缺失是内部状态错误
+        let file = tempfile::NamedTempFile::with_suffix(".csv")?;
+        std::io::Write::write_all(&mut file.as_file(), b"a,b\n1,2\n")?;
+        let mut analyser = ExcelAnalyserImpl {
+            path: Some(file.path().to_path_buf()),
+            options: ReadOptions::default(),
+            excel_type: Some(ExcelTypeEnum::Csv),
+            excel_read_executor: None,
+            context: AnalysisContext::new("", 0, 0),
+            finished: false,
+            temporary_input: None,
+            last_error: None,
+        };
+        let mut listener = InvokeCounter::default();
+        let error = analyser
+            .analysis_with_listener::<DynamicRow, _>(&mut listener)
+            .expect_err("executor is missing");
+        assert!(error.to_string().contains("missing ExcelReadExecutor"));
+        Ok(())
+    }
+
+    #[test]
+    fn tracking_listener_forwards_invoke_callbacks() -> Result<()> {
+        // 对应 Java：invoke 回调同步更新 AnalysisContext 快照并转发
+        let mut delegate = InvokeCounter::default();
+        let mut latest = AnalysisContext::new("", 0, 0);
+        let mut tracking = ContextTrackingReadListener {
+            delegate: &mut delegate,
+            latest: &mut latest,
+        };
+        let row = DynamicRow::default();
+        let context = AnalysisContext::new("Data", 2, 5);
+        ReadListener::<DynamicRow>::invoke(&mut tracking, row, &context)?;
+        assert_eq!(latest.sheet_name(), "Data");
+        assert_eq!(latest.sheet_no(), 2);
+        assert_eq!(latest.row_index(), 5);
+        assert_eq!(delegate.invoke_calls, 1);
+        Ok(())
+    }
+
+    #[test]
+    fn from_temporary_input_keeps_the_guard_until_finish() -> Result<()> {
+        // 对应 Java：InputStream 物化临时文件，finish() 前由 analyser 持有
+        let file = tempfile::NamedTempFile::with_suffix(".csv")?;
+        std::io::Write::write_all(&mut file.as_file(), b"a,b\n1,2\n")?;
+        let path = file.into_temp_path();
+        let guard = Arc::new(path);
+        let mut analyser = ExcelAnalyserImpl::from_temporary_input(
+            guard.to_path_buf(),
+            Arc::clone(&guard),
+            ReadOptions::default(),
+        )?;
+        assert!(analyser.has_temporary_input());
+        analyser.finish();
+        assert!(!analyser.has_temporary_input());
+        Ok(())
+    }
+}

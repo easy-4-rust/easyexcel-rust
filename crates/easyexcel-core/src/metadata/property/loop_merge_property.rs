@@ -29,3 +29,18 @@ impl LoopMergeProperty {
         self.column_extend
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_and_accessors() {
+        // 对应 Java：LoopMergeProperty 构造与 getter
+        let property = LoopMergeProperty::new(2, 3);
+        assert_eq!(property.each_row, 2);
+        assert_eq!(property.column_extend, 3);
+        assert_eq!(property.each_row(), 2);
+        assert_eq!(property.column_extend(), 3);
+    }
+}

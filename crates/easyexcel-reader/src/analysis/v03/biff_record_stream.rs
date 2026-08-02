@@ -95,3 +95,72 @@ mod tests {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use std::io::Write;
+
+    #[test]
+    fn rejects_truncated_record_header() {
+        // 对应 Java：损坏的 BIFF 流报错而非静默接受
+        let error =
+            walk_biff_records(&[0x03, 0x02], |_, _| Ok(())).expect_err("header is truncated");
+        assert!(error.to_string().contains("truncated BIFF record header"));
+    }
+
+    #[test]
+    fn rejects_record_length_exceeding_buffer() {
+        // 对应 Java：record 声明长度超出缓冲时报错
+        let error = walk_biff_records(&[0x03, 0x02, 0xFF, 0xFF], |_, _| Ok(()))
+            .expect_err("length must exceed the buffer");
+        assert!(error.to_string().contains("truncated BIFF record"));
+    }
+
+    #[test]
+    fn propagates_handler_errors() {
+        // 对应 Java：handler 异常向上传递
+        let bytes = [0x03, 0x02, 0x02, 0x00, 0xAA, 0xBB];
+        let error = walk_biff_records(&bytes, |_, _| {
+            Err(ExcelError::Format("handler failure".to_owned()))
+        })
+        .expect_err("handler error must propagate");
+        assert!(error.to_string().contains("handler failure"));
+    }
+
+    #[test]
+    fn read_workbook_stream_reports_missing_stream() -> Result<()> {
+        // 对应 Java：OLE2 文档缺少 Workbook/Book 流报错
+        let directory = tempfile::tempdir()?;
+        let path = directory.path().join("nostream.xls");
+        let mut compound = cfb::create(&path)?;
+        let mut stream = compound.create_stream("OtherStream")?;
+        stream.write_all(b"data")?;
+        drop(compound);
+
+        let error = read_workbook_stream(&path).expect_err("missing Workbook stream");
+        assert!(
+            error
+                .to_string()
+                .contains("Workbook/Book stream is missing")
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn read_workbook_stream_reads_real_cfb_workbook() -> Result<()> {
+        // 对应 Java：从 OLE2 复合文档读取 Workbook 流内容
+        let directory = tempfile::tempdir()?;
+        let path = directory.path().join("workbook.xls");
+        let mut compound = cfb::create(&path)?;
+        let mut stream = compound.create_stream("/Workbook")?;
+        stream.write_all(&[0x03, 0x02, 0x02, 0x00, 0xAA, 0xBB])?;
+        drop(stream);
+        compound.flush()?;
+        drop(compound);
+
+        let workbook = read_workbook_stream(&path)?;
+        assert_eq!(workbook, vec![0x03, 0x02, 0x02, 0x00, 0xAA, 0xBB]);
+        Ok(())
+    }
+}

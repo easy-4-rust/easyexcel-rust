@@ -46,10 +46,9 @@ fn number_format_tokens_carry_java_rounding_mode_into_schema() {
             value: i32,
         }
     };
-    let Data::Struct(data) = invalid.data else {
-        panic!("expected struct");
-    };
-    let field = data.fields.iter().next().expect("field");
+    // parse_quote! 恒产出 struct；非 struct 输入由 expect_struct_fields 的 panic 臂兜底。
+    let fields = expect_struct_fields(invalid);
+    let field = fields.iter().next().expect("field");
     let options = parse_field_options(&field.attrs, &quote!(::easyexcel)).expect("parsed literal");
     assert!(
         number_rounding_mode_tokens(
@@ -276,10 +275,8 @@ fn field_options_parse_every_supported_value_and_reject_unknown_values() {
             name: String,
         }
     };
-    let Data::Struct(data) = input.data else {
-        panic!("expected struct");
-    };
-    let field = data.fields.iter().next().expect("field");
+    let fields = expect_struct_fields(input);
+    let field = fields.iter().next().expect("field");
     let options = parse_field_options(&field.attrs, &quote!(::easyexcel)).expect("valid options");
     assert!(options.annotated);
     assert!(options.ignore);
@@ -324,15 +321,11 @@ fn field_options_parse_every_supported_value_and_reject_unknown_values() {
     let input: DeriveInput = parse_quote! {
         struct User { #[excel(unknown)] name: String }
     };
-    let Data::Struct(data) = input.data else {
-        panic!("expected struct");
-    };
-    let Err(error) = parse_field_options(
-        &data.fields.iter().next().expect("field").attrs,
-        &quote!(::easyexcel),
-    ) else {
-        panic!("unknown option must be rejected");
-    };
+    let fields = expect_struct_fields(input);
+    let field = fields.iter().next().expect("field");
+    let error = parse_field_options(&field.attrs, &quote!(::easyexcel))
+        .map(drop) // map(drop) 规避 expect_err 对 Ok 类型的 Debug 约束，语义与失败行为不变
+        .expect_err("unknown option must be rejected");
     assert!(
         error
             .to_string()
@@ -365,15 +358,10 @@ fn field_options_parse_every_supported_value_and_reject_unknown_values() {
     ] {
         let source = format!("struct User {{ #[excel({attribute})] value: String }}");
         let input = syn::parse_str::<DeriveInput>(&source).expect("attribute tokens");
-        let Data::Struct(data) = input.data else {
-            panic!("expected struct");
-        };
+        let fields = expect_struct_fields(input);
+        let field = fields.iter().next().expect("field");
         assert!(
-            parse_field_options(
-                &data.fields.iter().next().expect("field").attrs,
-                &quote!(::easyexcel),
-            )
-            .is_err(),
+            parse_field_options(&field.attrs, &quote!(::easyexcel)).is_err(),
             "`{attribute}` must be rejected"
         );
     }
@@ -551,4 +539,168 @@ fn generated_tokens_are_valid_rust_syntax() {
     let tokens = expand_excel_row(input).expect("expansion");
     let wrapped = quote! { #tokens };
     assert!(!wrapped.is_empty());
+}
+
+#[test]
+fn field_original_write_conversion_uses_empty_for_non_side_effect_free_types() {
+    // 对应 Java：字段带 converter 且类型不是纯值类型时，
+    // `original` 快照必须是 `CellValue::Empty`（避免资源类型被提前消费）。
+    let tuple_ty: syn::Type = syn::parse_str("(String, u32)").expect("tuple type");
+    assert!(!is_side_effect_free_original_type(&tuple_ty));
+
+    let reference_ty: syn::Type = syn::parse_str("&'static str").expect("reference type");
+    assert!(!is_side_effect_free_original_type(&reference_ty));
+
+    let ident = syn::Ident::new("value", proc_macro2::Span::call_site());
+    let tokens = field_original_write_conversion(
+        &quote!(::easyexcel),
+        &tuple_ty,
+        &ident,
+        Some(&syn::parse_str::<syn::Path>("crate::TupleConverter").expect("path")),
+    );
+    assert!(
+        tokens.to_string().contains("CellValue :: Empty"),
+        "resource-like types must not be eagerly converted: {tokens}"
+    );
+}
+
+#[test]
+fn is_side_effect_free_original_type_handles_empty_path_segments() {
+    // `Type::Path` 但没有任何 path 段（防御分支）。
+    let empty_path = syn::Type::Path(syn::TypePath {
+        qself: None,
+        path: syn::Path {
+            leading_colon: None,
+            segments: Default::default(),
+        },
+        attrs: Vec::new(),
+    });
+    assert!(!is_side_effect_free_original_type(&empty_path));
+}
+
+#[test]
+fn data_validation_parses_formula2_and_rejects_unknown_property() {
+    // 对应 Java：@ExcelProperty 的 dataValidation 支持 type/operator/formula1/formula2。
+    let input: DeriveInput = parse_quote! {
+        struct User {
+            #[excel(data_validation(
+                type = "decimal",
+                operator = "greaterThan",
+                formula1 = "0",
+                formula2 = "10"
+            ))]
+            value: f64,
+        }
+    };
+    let fields = expect_struct_fields(input);
+    let field = fields.iter().next().expect("field");
+    let options = parse_field_options(&field.attrs, &quote!(::easyexcel)).expect("parsed");
+    let tokens = options
+        .data_validation
+        .expect("data validation")
+        .to_string();
+    assert!(tokens.contains("ExcelDataValidationMeta :: new"));
+    assert!(tokens.contains("\"decimal\""), "{tokens}");
+    assert!(tokens.contains("\"greaterThan\""), "{tokens}");
+    assert!(
+        tokens.contains("\"10\""),
+        "formula2 must be carried: {tokens}"
+    );
+
+    // 未支持的属性必须报错（覆盖 formula1/formula2 的负分支与 Err 分支）。
+    let bad: DeriveInput = parse_quote! {
+        struct User {
+            #[excel(data_validation(unknown = 1))]
+            value: f64,
+        }
+    };
+    let fields = expect_struct_fields(bad);
+    let field = fields.iter().next().expect("field");
+    let error = parse_field_options(&field.attrs, &quote!(::easyexcel))
+        .err()
+        .expect("unknown data_validation property must be rejected");
+    assert!(
+        error
+            .to_string()
+            .contains("unsupported data_validation property"),
+        "unexpected: {error}"
+    );
+}
+
+#[test]
+fn conditional_rejects_unknown_property() {
+    // 对应 Java：conditional 只支持 condition/font_color/background_color。
+    let valid: DeriveInput = parse_quote! {
+        struct User {
+            #[excel(conditional(
+                condition = ">0",
+                font_color = "FF0000",
+                background_color = "FFFF00"
+            ))]
+            value: i32,
+        }
+    };
+    let fields = expect_struct_fields(valid);
+    let field = fields.iter().next().expect("field");
+    let options = parse_field_options(&field.attrs, &quote!(::easyexcel)).expect("parsed");
+    let tokens = options.conditional.expect("conditional").to_string();
+    assert!(tokens.contains("\">0\""), "{tokens}");
+    assert!(tokens.contains("\"FF0000\""), "{tokens}");
+    assert!(tokens.contains("\"FFFF00\""), "{tokens}");
+
+    let bad: DeriveInput = parse_quote! {
+        struct User {
+            #[excel(conditional(unknown = 1))]
+            value: i32,
+        }
+    };
+    let fields = expect_struct_fields(bad);
+    let field = fields.iter().next().expect("field");
+    let error = parse_field_options(&field.attrs, &quote!(::easyexcel))
+        .err()
+        .expect("unknown conditional property must be rejected");
+    assert!(
+        error
+            .to_string()
+            .contains("unsupported conditional property"),
+        "unexpected: {error}"
+    );
+}
+
+#[test]
+fn once_absolute_merge_accepts_negative_integer_indexes() {
+    // 对应 Java：onceAbsoluteMerge 未设置时默认 -1，解析器必须支持负数。
+    let input: DeriveInput = parse_quote! {
+        #[excel(once_absolute_merge(
+            first_row_index = -1,
+            last_row_index = -2,
+            first_column_index = 0,
+            last_column_index = 1
+        ))]
+        struct User { value: String }
+    };
+    let options = parse_struct_options(&input.attrs, &quote!(::easyexcel)).expect("valid options");
+    let tokens = options
+        .once_absolute_merge
+        .expect("once absolute merge")
+        .to_string();
+    assert!(tokens.contains("- 1"), "{tokens}");
+    assert!(tokens.contains("- 2"), "{tokens}");
+}
+
+#[test]
+fn parse_signed_integer_rejects_overflow_and_non_literal_negation() {
+    // 对应 Java：merge 索引必须是字面量整数；负号后跟表达式或 i32 溢出都要报错。
+    for attribute in [
+        "once_absolute_merge(first_row_index = -2147483648)",
+        "once_absolute_merge(first_row_index = -(1 + 2))",
+        "once_absolute_merge(first_row_index = 2147483648)",
+    ] {
+        let source = format!("#[excel({attribute})] struct User {{ value: String }}");
+        let input = syn::parse_str::<DeriveInput>(&source).expect("attribute tokens");
+        assert!(
+            parse_struct_options(&input.attrs, &quote!(::easyexcel)).is_err(),
+            "`{attribute}` must be rejected"
+        );
+    }
 }

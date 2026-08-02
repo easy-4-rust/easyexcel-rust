@@ -7,7 +7,7 @@ use crate::context::read_sheet::ReadSheet;
 /// Java carries 17 fields. Rust collapses them into the `ReadOptions`
 /// struct that already lives in the reader facade. This struct exists
 /// for 1:1 API parity.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct ReadWorkbookHolder {
     /// Mirrors `ReadWorkbookHolder.charset`.
     pub charset: easyexcel_core::CsvCharset,
@@ -21,6 +21,21 @@ pub struct ReadWorkbookHolder {
     ///
     /// Mirrors `ReadWorkbookHolder.actualSheetDataList`.
     pub actual_sheet_data_list: Option<Vec<ReadSheet>>,
+}
+
+impl Default for ReadWorkbookHolder {
+    /// Java `ReadWorkbookHolder(ReadWorkbook)`：`autoCloseStream` 未指定时为
+    /// `Boolean.TRUE`（`if (readWorkbook.getAutoCloseStream() == null) ... TRUE`），
+    /// 因此 Default 与 `new()` 的自动关闭语义保持一致。
+    fn default() -> Self {
+        Self {
+            charset: easyexcel_core::CsvCharset::default(),
+            auto_close_stream: true,
+            ignore_empty_row: false,
+            password: None,
+            actual_sheet_data_list: None,
+        }
+    }
 }
 
 impl ReadWorkbookHolder {

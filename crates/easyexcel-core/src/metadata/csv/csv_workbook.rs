@@ -114,3 +114,57 @@ impl SheetCreator for CsvWorkbook {
         Ok(self.sheet.as_mut().expect("just assigned"))
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    fn sample_workbook() -> CsvWorkbook {
+        CsvWorkbook::new("zh-CN", true, false, CsvCharset::new("GBK"), true)
+    }
+
+    #[test]
+    fn accessors_return_configured_options() {
+        // 对应 Java：CsvWorkbook 各选项访问器
+        let workbook = sample_workbook();
+        assert_eq!(workbook.locale(), "zh-CN");
+        assert_eq!(workbook.charset().name(), "GBK");
+        assert!(workbook.with_bom());
+        assert!(workbook.use_1904_windowing());
+        assert!(!workbook.use_scientific_format());
+        assert!(workbook.sheet().is_none());
+        assert!(workbook.cell_style(0).is_none());
+    }
+
+    #[test]
+    fn data_format_mut_returns_registry() {
+        // 对应 Java：CsvWorkbook 级 dataFormat 注册表
+        let mut workbook = sample_workbook();
+        let registry = workbook.data_format_mut();
+        let _ = registry;
+        assert!(workbook.sheet().is_none());
+    }
+
+    #[test]
+    fn create_cell_style_registers_and_fetches() {
+        // 对应 Java：CsvCellStyle 注册后可按索引取回
+        let mut workbook = sample_workbook();
+        {
+            let style = workbook.create_cell_style();
+            let _ = style;
+        }
+        assert!(workbook.cell_style(0).is_some());
+        assert!(workbook.cell_style(1).is_none());
+    }
+
+    #[test]
+    fn create_sheet_once_then_reject_second() {
+        // 对应 Java：CSV 只允许一个 sheet，重复创建报错
+        let mut workbook = sample_workbook();
+        let sheet = workbook.create_sheet("Sheet1").expect("first ok");
+        assert_eq!(sheet.name(), "Sheet1");
+        assert!(workbook.sheet().is_some());
+        let err = workbook.create_sheet("Sheet2").expect_err("second fails");
+        assert!(err.to_string().contains("not allowed"));
+    }
+}

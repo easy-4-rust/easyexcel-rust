@@ -406,3 +406,52 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn compatibility_factories_build_contexts_from_names() {
+        // 对应 Java：WriteHandlerUtils 以名称构造上下文的兼容入口
+        let sheet = create_sheet_write_handler_context_from_name("Sheet1");
+        assert_eq!(sheet.sheet_name(), "Sheet1");
+
+        let row = create_row_write_handler_context_from_sheet("Sheet1", 3, Some(1), true);
+        assert_eq!(row.row_index, 3);
+        assert_eq!(row.relative_row_index, Some(1));
+        assert!(row.is_head);
+
+        let cell = create_cell_write_handler_context_from_sheet(
+            "Sheet1",
+            3,
+            2,
+            Some(1),
+            true,
+            Some("表头".to_owned()),
+            None,
+            CellValue::Int(7),
+        );
+        assert_eq!(cell.row_index, 3);
+        assert_eq!(cell.column_index, 2);
+        assert_eq!(cell.head_name.as_deref(), Some("表头"));
+    }
+
+    #[test]
+    fn cell_context_applies_column_metadata_when_provided() {
+        // 对应 Java：带列元数据时挂载 ExcelColumn
+        static COLUMN: ExcelColumn = ExcelColumn::new("field", "名称", Some(0), 0, None);
+        let cell = create_cell_write_handler_context_from_sheet(
+            "Sheet1",
+            1,
+            0,
+            None,
+            false,
+            None,
+            Some(&COLUMN),
+            CellValue::Int(1),
+        );
+        assert_eq!(cell.column.map(|column| column.field), Some("field"));
+        assert_eq!(cell.head_name.as_deref(), None);
+    }
+}

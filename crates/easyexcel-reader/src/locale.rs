@@ -1,3 +1,7 @@
+//! 对应 Java：`java.util.Locale`
+//!
+//! 封装语言标签与 ssfmt 格式化语言环境，用于 Java 兼容的数字与日期格式化。
+
 use std::str::FromStr;
 
 use pure_rust_locales::Locale as SystemLocale;

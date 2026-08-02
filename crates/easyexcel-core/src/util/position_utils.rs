@@ -43,3 +43,17 @@ pub fn get_col(cell_ref: &str) -> u32 {
     }
     col.saturating_sub(1)
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn get_row_by_row_tagt_parses_row_tag() {
+        // 对应 Java：PositionUtils.getRowByRowTagt
+        assert_eq!(get_row_by_row_tagt("1"), 1);
+        assert_eq!(get_row_by_row_tagt("42"), 42);
+        assert_eq!(get_row_by_row_tagt("abc"), 0);
+        assert_eq!(get_row_by_row_tagt(""), 0);
+    }
+}

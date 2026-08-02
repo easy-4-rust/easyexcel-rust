@@ -306,3 +306,221 @@ impl<T, L: ReadListener<T> + ?Sized> ReadListener<T> for &mut L {
         (**self).has_next(context)
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    /// 对应 Java：测试用 ReadListener，记录回调次数并返回配置的错误动作。
+    #[derive(Default)]
+    struct ProbeListener {
+        invokes: usize,
+        heads: usize,
+        extras: usize,
+        afters: usize,
+        has_next_result: bool,
+        on_exception_action: ErrorAction,
+        error_seen: Option<String>,
+    }
+
+    impl ProbeListener {
+        fn with_error_action(action: ErrorAction) -> Self {
+            Self {
+                on_exception_action: action,
+                ..Self::default()
+            }
+        }
+    }
+
+    impl ReadListener<i32> for ProbeListener {
+        fn on_exception(&mut self, error: &ExcelError, _context: &AnalysisContext) -> ErrorAction {
+            self.error_seen = Some(error.to_string());
+            self.on_exception_action
+        }
+
+        fn invoke_head(
+            &mut self,
+            _head: &HashMap<String, usize>,
+            _context: &AnalysisContext,
+        ) -> Result<()> {
+            self.heads += 1;
+            Ok(())
+        }
+
+        fn invoke(&mut self, _data: i32, _context: &AnalysisContext) -> Result<()> {
+            self.invokes += 1;
+            Ok(())
+        }
+
+        fn extra(&mut self, _extra: &CellExtra, _context: &AnalysisContext) -> Result<()> {
+            self.extras += 1;
+            Ok(())
+        }
+
+        fn do_after_all_analysed(&mut self, _context: &AnalysisContext) -> Result<()> {
+            self.afters += 1;
+            Ok(())
+        }
+
+        fn has_next(&mut self, _context: &AnalysisContext) -> bool {
+            self.has_next_result
+        }
+    }
+
+    fn sample_context() -> AnalysisContext {
+        AnalysisContext::new("Sheet1", 0, 1)
+    }
+
+    fn sample_head() -> HashMap<String, usize> {
+        HashMap::from([("name".to_string(), 0)])
+    }
+
+    fn sample_extra() -> CellExtra {
+        CellExtra::new(
+            crate::enum_cell_extra_type::CellExtraType::Comment,
+            Some("note".to_string()),
+            0,
+            0,
+            1,
+            1,
+        )
+    }
+
+    #[test]
+    fn composite_read_listener_into_inner_returns_pair() {
+        // 对应 Java：CompositeReadListener 拆分为两个监听器
+        let first = ProbeListener::default();
+        let second = ProbeListener::default();
+        let composite: CompositeReadListener<i32, ProbeListener, ProbeListener> =
+            CompositeReadListener::new(first, second);
+        let (first, second) = composite.into_inner();
+        assert_eq!(first.invokes, 0);
+        assert_eq!(second.invokes, 0);
+    }
+
+    #[test]
+    fn read_listener_list_default_push_len_is_empty() {
+        // 对应 Java：自定义监听器列表的增删查
+        let mut list: ReadListenerList<i32> = ReadListenerList::default();
+        assert!(list.is_empty());
+        assert_eq!(list.len(), 0);
+        list.push(ProbeListener::default());
+        assert!(!list.is_empty());
+        assert_eq!(list.len(), 1);
+        list.push_boxed(Box::new(ProbeListener::default()));
+        assert_eq!(list.len(), 2);
+        let single = ReadListenerList::new(ProbeListener::default());
+        assert_eq!(single.len(), 1);
+    }
+
+    #[test]
+    fn read_listener_list_fans_out_callbacks() {
+        // 对应 Java：ReadListenerList 按注册顺序分发所有回调
+        let mut list = ReadListenerList::new(ProbeListener {
+            has_next_result: true,
+            ..ProbeListener::default()
+        });
+        list.push(ProbeListener {
+            has_next_result: true,
+            ..ProbeListener::default()
+        });
+        let context = sample_context();
+        list.invoke_head(&sample_head(), &context).expect("head ok");
+        list.invoke(7, &context).expect("invoke ok");
+        list.extra(&sample_extra(), &context).expect("extra ok");
+        list.do_after_all_analysed(&context).expect("after ok");
+        let inner: &mut ReadListenerList<i32> = &mut list;
+        assert!(ReadListener::has_next(inner, &context));
+    }
+
+    #[test]
+    fn read_listener_list_on_exception_combines_actions() {
+        // 对应 Java：多个监听器 onException 动作合并为最强动作
+        let context = sample_context();
+        let error = ExcelError::Format("boom".to_string());
+        let mut list =
+            ReadListenerList::new(ProbeListener::with_error_action(ErrorAction::Continue));
+        list.push(ProbeListener::with_error_action(ErrorAction::Continue));
+        assert_eq!(list.on_exception(&error, &context), ErrorAction::Continue);
+
+        let mut list = ReadListenerList::new(ProbeListener::with_error_action(ErrorAction::Stop));
+        list.push(ProbeListener::with_error_action(ErrorAction::Continue));
+        assert_eq!(list.on_exception(&error, &context), ErrorAction::Stop);
+
+        let mut list =
+            ReadListenerList::new(ProbeListener::with_error_action(ErrorAction::Continue));
+        list.push(ProbeListener::with_error_action(ErrorAction::Stop));
+        assert_eq!(list.on_exception(&error, &context), ErrorAction::Stop);
+
+        let mut list =
+            ReadListenerList::new(ProbeListener::with_error_action(ErrorAction::SkipRow));
+        list.push(ProbeListener::with_error_action(ErrorAction::Continue));
+        assert_eq!(list.on_exception(&error, &context), ErrorAction::SkipRow);
+
+        let mut list =
+            ReadListenerList::new(ProbeListener::with_error_action(ErrorAction::Continue));
+        list.push(ProbeListener::with_error_action(ErrorAction::SkipRow));
+        assert_eq!(list.on_exception(&error, &context), ErrorAction::SkipRow);
+
+        let mut list = ReadListenerList::new(ProbeListener::with_error_action(ErrorAction::Stop));
+        list.push(ProbeListener::with_error_action(ErrorAction::SkipRow));
+        assert_eq!(list.on_exception(&error, &context), ErrorAction::Stop);
+
+        let mut list =
+            ReadListenerList::new(ProbeListener::with_error_action(ErrorAction::SkipRow));
+        list.push(ProbeListener::with_error_action(ErrorAction::Stop));
+        assert_eq!(list.on_exception(&error, &context), ErrorAction::Stop);
+
+        let mut list =
+            ReadListenerList::new(ProbeListener::with_error_action(ErrorAction::SkipRow));
+        list.push(ProbeListener::with_error_action(ErrorAction::SkipRow));
+        assert_eq!(list.on_exception(&error, &context), ErrorAction::SkipRow);
+
+        // 错误信息确实转发到了监听器
+        let mut list = ReadListenerList::new(ProbeListener::default());
+        list.on_exception(&error, &context);
+        let inner: &mut ReadListenerList<i32> = &mut list;
+        assert!(ReadListener::on_exception(inner, &error, &context) == ErrorAction::Stop);
+    }
+
+    #[test]
+    fn composite_read_listener_on_exception_and_extra() {
+        // 对应 Java：CompositeReadListener 先 first 后 second
+        let context = sample_context();
+        let error = ExcelError::Format("composite".to_string());
+        let first = ProbeListener::with_error_action(ErrorAction::SkipRow);
+        let second = ProbeListener::with_error_action(ErrorAction::Stop);
+        let mut composite: CompositeReadListener<i32, ProbeListener, ProbeListener> =
+            CompositeReadListener::new(first, second);
+        assert_eq!(composite.on_exception(&error, &context), ErrorAction::Stop);
+        composite
+            .extra(&sample_extra(), &context)
+            .expect("extra ok");
+        assert_eq!(composite.first.extras, 1);
+        assert_eq!(composite.second.extras, 1);
+    }
+
+    #[test]
+    fn boxed_and_mut_ref_listeners_delegate() {
+        // 对应 Java：Box<L> 与 &mut L 实现 ReadListener 委托
+        let context = sample_context();
+        let error = ExcelError::Format("boxed".to_string());
+        let mut boxed: Box<ProbeListener> =
+            Box::new(ProbeListener::with_error_action(ErrorAction::Continue));
+        assert_eq!(
+            ReadListener::on_exception(&mut boxed, &error, &context),
+            ErrorAction::Continue
+        );
+        boxed.extra(&sample_extra(), &context).expect("extra ok");
+
+        let mut probe = ProbeListener::default();
+        let mut reference = &mut probe;
+        assert_eq!(
+            ReadListener::on_exception(&mut reference, &error, &context),
+            ErrorAction::Stop
+        );
+        ReadListener::extra(&mut reference, &sample_extra(), &context).expect("extra ok");
+        assert_eq!(probe.extras, 1);
+        assert!(probe.error_seen.is_some());
+    }
+}

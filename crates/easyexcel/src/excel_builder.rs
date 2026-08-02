@@ -193,3 +193,100 @@ mod tests {
 
     use crate::EasyExcel;
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use crate::EasyExcel;
+    use easyexcel_core::DynamicValue;
+    use std::collections::BTreeMap;
+    use tempfile::tempdir;
+
+    fn dynamic_row(text: &str) -> DynamicRow {
+        let mut cells = BTreeMap::new();
+        cells.insert(0, DynamicValue::String(text.to_owned()));
+        DynamicRow::new(cells)
+    }
+
+    /// 对应 Java：`new ExcelBuilderImpl(WriteWorkbook)` 保留输出路径。
+    #[test]
+    fn builder_from_writer_preserves_logical_output_path() -> Result<()> {
+        let directory = tempdir()?;
+        let output = directory.path().join("builder-output.xlsx");
+        let writer = EasyExcel::write::<DynamicRow>(&output)
+            .need_head(false)
+            .build();
+        let builder = builder_from_writer(writer);
+        assert_eq!(builder.logical_path(), output.as_path());
+        assert!(!builder.has_fill_executor());
+        Ok(())
+    }
+
+    /// 对应 Java：未配置模板时 `fillBuilderFromWriter` 不接线 fill 执行器。
+    #[test]
+    fn fill_builder_from_writer_without_template_skips_fill_wiring() -> Result<()> {
+        let directory = tempdir()?;
+        let output = directory.path().join("plain-output.xlsx");
+        let writer = EasyExcel::write::<DynamicRow>(&output)
+            .need_head(false)
+            .build();
+        let builder = fill_builder_from_writer(writer)?;
+        assert!(!builder.has_fill_executor());
+        assert_eq!(builder.logical_path(), output.as_path());
+        Ok(())
+    }
+
+    /// 对应 Java：`wireTemplateFill` 对已装执行器的构建器直接返回。
+    #[test]
+    fn wire_template_fill_early_returns_for_existing_executor() -> Result<()> {
+        let directory = tempdir()?;
+        let template = directory.path().join("wire-template.xlsx");
+        let output = directory.path().join("wire-output.xlsx");
+        EasyExcel::write::<DynamicRow>(&template)
+            .need_head(false)
+            .do_write([dynamic_row("{name}")])?;
+        let writer = EasyExcel::write::<DynamicRow>(&output)
+            .with_template(&template)
+            .need_head(false)
+            .build();
+        let mut builder = ExcelBuilderImpl::new(writer, output.clone());
+        let executor = create_builder_fill_executor(Some(template), None, output)?;
+        builder.set_fill_executor(executor);
+        assert!(builder.has_fill_executor());
+        wire_template_fill(&mut builder)?;
+        Ok(())
+    }
+
+    /// 对应 Java：未配置模板的 writer 不创建 fill 执行器。
+    #[test]
+    fn wire_template_fill_skips_without_template() -> Result<()> {
+        let directory = tempdir()?;
+        let output = directory.path().join("no-template-output.xlsx");
+        let writer = EasyExcel::write::<DynamicRow>(&output)
+            .need_head(false)
+            .build();
+        let mut builder = ExcelBuilderImpl::new(writer, output.clone());
+        wire_template_fill(&mut builder)?;
+        assert!(!builder.has_fill_executor());
+        Ok(())
+    }
+
+    /// 对应 Java：writer 配置模板后 `wireTemplateFill` 安装 fill 执行器。
+    #[test]
+    fn wire_template_fill_installs_executor_from_writer_template() -> Result<()> {
+        let directory = tempdir()?;
+        let template = directory.path().join("install-template.xlsx");
+        let output = directory.path().join("install-output.xlsx");
+        EasyExcel::write::<DynamicRow>(&template)
+            .need_head(false)
+            .do_write([dynamic_row("{name}")])?;
+        let writer = EasyExcel::write::<DynamicRow>(&output)
+            .with_template(&template)
+            .need_head(false)
+            .build();
+        let mut builder = ExcelBuilderImpl::new(writer, output);
+        wire_template_fill(&mut builder)?;
+        assert!(builder.has_fill_executor());
+        Ok(())
+    }
+}

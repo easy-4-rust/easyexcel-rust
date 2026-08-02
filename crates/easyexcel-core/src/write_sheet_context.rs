@@ -132,3 +132,49 @@ impl WriteSheetContext {
 use crate::{
     WriteHolderContext, WriteSheetHolderView, WriteTableHolderView, WriteWorkbookHolderView,
 };
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use crate::write_context::WriteContextHolder;
+
+    #[test]
+    fn sheet_accessor_returns_self() {
+        // 对应 Java：SheetWriteHandlerContext 的 sheet 便捷访问器
+        let context = WriteSheetContext::new("Sheet1");
+        assert!(std::ptr::eq(context.sheet(), &context));
+    }
+
+    #[test]
+    fn with_holder_context_resolves_holder_views() {
+        // 对应 Java：挂载 workbook/sheet/table holder 视图
+        let context = WriteSheetContext::new("Sheet1").with_holder_context(
+            WriteWorkbookHolderView::new("out.xlsx"),
+            2,
+            Some(5),
+        );
+        assert_eq!(
+            context
+                .write_workbook_holder()
+                .map(WriteWorkbookHolderView::path),
+            Some(std::path::Path::new("out.xlsx"))
+        );
+        assert_eq!(context.write_sheet_holder().sheet_no(), Some(2));
+        assert_eq!(
+            context
+                .write_table_holder()
+                .map(WriteTableHolderView::table_no),
+            Some(5)
+        );
+        assert_eq!(context.write_context().holder_type(), crate::Holder::Table);
+
+        // 无 table 时为 Sheet
+        let plain = WriteSheetContext::new("Sheet1").with_holder_context(
+            WriteWorkbookHolderView::new("out.xlsx"),
+            2,
+            None,
+        );
+        assert_eq!(plain.write_context().holder_type(), crate::Holder::Sheet);
+        assert!(plain.write_table_holder().is_none());
+    }
+}

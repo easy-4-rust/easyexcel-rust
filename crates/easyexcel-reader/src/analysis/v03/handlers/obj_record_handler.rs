@@ -36,3 +36,20 @@ impl XlsRecordHandler for ObjRecordHandler {
         }
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn process_obj_tracks_object_id() {
+        // 对应 Java：ObjRecordHandler 记录当前对象 id
+        let mut handler = ObjRecordHandler::new();
+        handler.process_obj(7);
+        assert_eq!(handler.temp_object_index, Some(7));
+        // sid 门控：仅 OBJ_SID 触发
+        handler.process_record(OBJ_SID, &[]);
+        handler.process_record(0xFFFF, &[]);
+        assert_eq!(handler.temp_object_index, Some(7));
+    }
+}

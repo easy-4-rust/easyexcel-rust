@@ -11,8 +11,8 @@
 
 use chrono::NaiveDate;
 use easyexcel::{
-    CellValue, DynamicRow, DynamicValue, EasyExcel, ExcelRow, FillConfig,
-    FillDirection, FillWrapper, TemplateData, TemplateSheet,
+    CellValue, DynamicRow, DynamicValue, EasyExcel, ExcelRow, FillConfig, FillDirection,
+    FillWrapper, TemplateData, TemplateSheet,
 };
 
 fn temp_path(name: &str) -> std::path::PathBuf {

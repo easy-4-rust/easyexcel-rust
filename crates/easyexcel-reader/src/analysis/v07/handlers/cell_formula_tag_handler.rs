@@ -49,3 +49,23 @@ impl XlsxTagHandler for CellFormulaTagHandler {
         self.temp_formula.push_str(ch);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn formula_handler_accumulates_f_formula_text() {
+        // 对应 Java：CellFormulaTagHandler 累积 <f> 公式文本
+        let mut handler = CellFormulaTagHandler::new();
+        handler.start_element("f", "");
+        handler.characters("SUM(");
+        handler.characters("A1:A3)");
+        assert_eq!(handler.temp_formula, "SUM(A1:A3)");
+        assert_eq!(handler.finish_formula(), "SUM(A1:A3)");
+        // 非 f 标签不触发 begin/finish
+        handler.start_element("v", "");
+        handler.end_element("v");
+        assert_eq!(handler.temp_formula, "");
+    }
+}

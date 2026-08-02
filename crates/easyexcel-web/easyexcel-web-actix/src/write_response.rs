@@ -83,3 +83,52 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod tests_extra2 {
+    use super::*;
+    use actix_web::http::StatusCode;
+    use serde_json::{Value, json};
+
+    /// 读取 Actix 响应体字节（测试辅助）。
+    fn response_bytes(response: HttpResponse) -> Vec<u8> {
+        tokio::runtime::Builder::new_current_thread()
+            .build()
+            .expect("runtime")
+            .block_on(async move {
+                let body: actix_web::body::BoxBody = response.into_body();
+                let bytes = actix_web::body::to_bytes(body).await.expect("body");
+                bytes.to_vec()
+            })
+    }
+
+    /// 对应 Java：尝试触发 `excel_download_error_response` 的 JSON 序列化失败回退分支
+    /// （write_response.rs 64-65 行）。
+    ///
+    /// `ExcelDownloadErrorBody` 仅由两个 `String` 字段派生 `Serialize`，序列化在数学上
+    /// 不可能失败，因此 `unwrap_or_else` 的回退文案分支不可达。此处用边界字符串
+    /// （换行 / 制表符 / emoji）再次确认回退文案「JSON序列化错误」不会被输出。
+    #[test]
+    fn error_response_serialization_fallback_is_unreachable() {
+        let body = ExcelDownloadErrorBody::download_failed("尝试触发回退分支\n\t🎉");
+        let response = excel_download_error_response(body);
+        assert_eq!(
+            response.status(),
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "unexpected status"
+        );
+        assert_eq!(
+            response
+                .headers()
+                .get("content-type")
+                .map(|value| value.to_str().unwrap()),
+            Some("application/json; charset=utf-8")
+        );
+        let value: Value = serde_json::from_slice(&response_bytes(response)).expect("json");
+        assert_eq!(value["status"], json!("failure"));
+        assert_eq!(
+            value["message"],
+            json!("下载文件失败尝试触发回退分支\n\t🎉")
+        );
+    }
+}

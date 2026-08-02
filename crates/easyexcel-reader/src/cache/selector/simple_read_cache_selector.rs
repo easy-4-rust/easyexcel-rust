@@ -99,3 +99,43 @@ impl ReadCacheSelector for SimpleReadCacheSelector {
         }
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn selector_knobs_and_defaults_match_java() {
+        // 对应 Java：SimpleReadCacheSelector 构造与 setter
+        let selector = SimpleReadCacheSelector::new();
+        assert_eq!(
+            selector.max_use_map_cache_size_bytes(),
+            DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES
+        );
+        assert_eq!(selector.get_max_cache_activate_size(), None);
+        assert_eq!(selector.get_max_cache_activate_batch_count(), None);
+
+        let selector = SimpleReadCacheSelector::with_max_use_map_cache_size_mb(2)
+            .max_use_map_cache_size_mb(3)
+            .max_cache_activate_size(Some(100))
+            .max_cache_activate_batch_count(Some(50));
+        assert_eq!(selector.max_use_map_cache_size_bytes(), 3_000_000);
+        assert_eq!(selector.get_max_cache_activate_size(), Some(100));
+        assert_eq!(selector.get_max_cache_activate_batch_count(), Some(50));
+    }
+
+    #[test]
+    fn selector_mb_conversion_saturates_on_overflow() {
+        // 对应 Java：Long 乘法溢出保护
+        let selector = SimpleReadCacheSelector::new().max_use_map_cache_size_mb(u64::MAX);
+        assert_eq!(selector.max_use_map_cache_size_bytes(), u64::MAX);
+    }
+
+    #[test]
+    fn selector_boundary_uses_memory_below_threshold_and_disk_at_or_above() {
+        // 对应 Java：小于 maxUseMapCacheSize 用内存缓存，否则用磁盘缓存
+        let selector = SimpleReadCacheSelector::with_max_use_map_cache_size_mb(1);
+        assert_eq!(selector.select_mode(999_999), ReadCacheMode::Memory);
+        assert_eq!(selector.select_mode(1_000_000), ReadCacheMode::Disk);
+    }
+}

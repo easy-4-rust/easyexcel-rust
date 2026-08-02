@@ -852,6 +852,7 @@ dependencies = [
  "easyexcel-core",
  "easyexcel-web-actix",
  "futures-util",
+ "libc",
  "tracing",
  "tracing-subscriber",
  "urlencoding",
@@ -866,6 +867,7 @@ dependencies = [
  "easyexcel",
  "easyexcel-core",
  "easyexcel-web-axum",
+ "libc",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -877,6 +879,7 @@ name = "easyexcel-demo-fill"
 version = "0.1.0"
 dependencies = [
  "easyexcel",
+ "tempfile",
 ]
 
 [[package]]
@@ -885,6 +888,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "easyexcel",
+ "tempfile",
 ]
 
 [[package]]
@@ -893,6 +897,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "easyexcel",
+ "tempfile",
 ]
 
 [[package]]
@@ -957,6 +962,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+ "tokio",
  "urlencoding",
 ]
 
@@ -3013,6 +3019,9 @@ dependencies = [
 [[package]]
 name = "xtask"
 version = "0.1.0"
+dependencies = [
+ "tempfile",
+]
 
 [[package]]
 name = "yoke"

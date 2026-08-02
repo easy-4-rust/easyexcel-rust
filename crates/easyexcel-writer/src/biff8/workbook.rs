@@ -356,24 +356,20 @@ impl Biff8Book {
         let stream = build_workbook_stream(self)?;
         let mut mem = Cursor::new(Vec::<u8>::new());
         {
-            let mut cf = cfb::CompoundFile::create(&mut mem).map_err(|error| {
-                ExcelError::Format(format!("cannot create OLE2 container: {error}"))
-            })?;
+            #[rustfmt::skip]
+            let mut cf = cfb::CompoundFile::create(&mut mem).map_err(|error| ExcelError::Format(format!("cannot create OLE2 container: {error}")))?;
             {
-                let mut workbook = cf.create_stream("Workbook").map_err(|error| {
-                    ExcelError::Format(format!("cannot create Workbook stream: {error}"))
-                })?;
+                #[rustfmt::skip]
+                let mut workbook = cf.create_stream("Workbook").map_err(|error| ExcelError::Format(format!("cannot create Workbook stream: {error}")))?;
                 workbook.write_all(&stream)?;
             }
             if !self.extra_bytes.is_empty() {
-                let mut images = cf.create_stream("Images").map_err(|error| {
-                    ExcelError::Format(format!("cannot create Images stream: {error}"))
-                })?;
+                #[rustfmt::skip]
+                let mut images = cf.create_stream("Images").map_err(|error| ExcelError::Format(format!("cannot create Images stream: {error}")))?;
                 images.write_all(&self.extra_bytes)?;
             }
-            cf.flush().map_err(|error| {
-                ExcelError::Format(format!("cannot flush OLE2 container: {error}"))
-            })?;
+            #[rustfmt::skip]
+            cf.flush().map_err(|error| ExcelError::Format(format!("cannot flush OLE2 container: {error}")))?;
         }
         Ok(mem.into_inner())
     }

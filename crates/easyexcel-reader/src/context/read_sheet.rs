@@ -156,3 +156,21 @@ impl fmt::Display for ReadSheet {
         )
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn sheet_no_i32_matches_usize_coordinates() {
+        // 对应 Java：getSheetNo() 的 Integer 装箱视图
+        let sheet = ReadSheet::with_name(7, "Data");
+        assert_eq!(sheet.sheet_no_i32(), 7);
+        assert_eq!(sheet.sheet_no(), 7);
+        // 负数由构造时 max(0) 收敛
+        let sheet = ReadSheet::new(0);
+        assert_eq!(sheet.sheet_no_i32(), 0);
+        // Display 与 Java toString 一致
+        assert_eq!(sheet.to_string(), "ReadSheet{sheetNo=0, sheetName=''}");
+    }
+}

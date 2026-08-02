@@ -93,3 +93,71 @@ fn read_image_bytes(reader: &mut dyn Read) -> Result<Vec<u8>, ExcelError> {
     reader.read_to_end(&mut bytes)?;
     Ok(bytes)
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn debug_output_is_non_exhaustive() {
+        // 对应 Java：调试输出不暴露内部读取器
+        let stream = ImageInputStream::new(std::io::Cursor::new(vec![1_u8]));
+        let text = format!("{stream:?}");
+        assert!(text.contains("ImageInputStream"));
+    }
+
+    #[test]
+    fn from_excel_cell_is_unsupported() {
+        // 对应 Java：InputStreamImageConverter 不支持读取图片单元格
+        let error = ImageInputStream::<std::io::Cursor<Vec<u8>>>::from_excel_cell(
+            Some(&CellValue::Image(vec![1])),
+            &ConvertContext {
+                sheet_name: "Sheet1".to_owned(),
+                row_index: 0,
+                column_index: Some(0),
+                field: "image",
+                format: None,
+                use_1904_windowing: false,
+            },
+        )
+        .expect_err("unsupported");
+        assert!(error.to_string().contains("does not support reading"));
+    }
+
+    #[test]
+    fn to_excel_cell_reads_and_caches_bytes() {
+        // 对应 Java：首次读取消耗读取器并缓存，重复转换复用缓存
+        let stream = ImageInputStream::new(std::io::Cursor::new(vec![1_u8, 2_u8, 3_u8]));
+        let context = ConvertContext {
+            sheet_name: "Sheet1".to_owned(),
+            row_index: 0,
+            column_index: Some(0),
+            field: "image",
+            format: None,
+            use_1904_windowing: false,
+        };
+        assert_eq!(
+            stream.to_excel_cell(&context).expect("reads"),
+            CellValue::Image(vec![1, 2, 3])
+        );
+        // 第二次转换命中缓存，不再读取
+        assert_eq!(
+            stream.to_excel_cell(&context).expect("cached"),
+            CellValue::Image(vec![1, 2, 3])
+        );
+    }
+
+    #[test]
+    fn boxed_and_from_and_into_inner_preserve_reader() {
+        // 对应 Java：类型擦除与读取器取回
+        let boxed = ImageInputStream::boxed(std::io::Cursor::new(vec![9_u8]));
+        let _reader: Box<dyn Read + Send> = boxed.into_inner();
+
+        let from: ImageInputStream<std::io::Cursor<Vec<u8>>> =
+            std::io::Cursor::new(vec![5_u8]).into();
+        let mut cursor = from.into_inner();
+        let mut bytes = Vec::new();
+        cursor.read_to_end(&mut bytes).expect("read");
+        assert_eq!(bytes, vec![5_u8]);
+    }
+}

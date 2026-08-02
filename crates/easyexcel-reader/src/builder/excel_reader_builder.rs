@@ -548,3 +548,238 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use easyexcel_core::DynamicRow;
+    use tempfile::NamedTempFile;
+
+    #[derive(Default)]
+    struct ExtraCollectListener {
+        rows: Vec<DynamicRow>,
+    }
+
+    impl ReadListener<DynamicRow> for ExtraCollectListener {
+        fn invoke(
+            &mut self,
+            data: DynamicRow,
+            _context: &easyexcel_core::AnalysisContext,
+        ) -> Result<()> {
+            self.rows.push(data);
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn sheet_and_sheet_name_selectors_are_stored() {
+        // 对应 Java：ExcelReaderBuilder.sheet(Integer)/sheet(String)
+        let builder = ExcelReaderBuilder::new().sheet(2);
+        assert_eq!(builder.options.sheet, SheetSelector::Index(2));
+        let builder = ExcelReaderBuilder::new().sheet_name("Sheet2");
+        assert_eq!(
+            builder.options.sheet,
+            SheetSelector::Name("Sheet2".to_owned())
+        );
+    }
+
+    #[test]
+    fn use_scientific_format_toggles_the_mode() {
+        // 对应 Java：ExcelReaderBuilder.useScientificFormat(Boolean)
+        assert_eq!(
+            ExcelReaderBuilder::new()
+                .use_scientific_format(true)
+                .options
+                .scientific_format,
+            crate::ScientificFormatMode::Scientific
+        );
+        assert_eq!(
+            ExcelReaderBuilder::new()
+                .use_scientific_format(false)
+                .options
+                .scientific_format,
+            crate::ScientificFormatMode::Plain
+        );
+    }
+
+    #[test]
+    fn read_cache_and_simple_selector_wire_into_options() {
+        // 对应 Java：ExcelReaderBuilder.readCache(ReadCache)/readCacheSelector(...)
+        let builder = ExcelReaderBuilder::new().read_cache(ReadCacheMode::Memory);
+        assert_eq!(builder.options.read_cache, ReadCacheMode::Memory);
+        assert!(builder.options.read_cache_selector.is_none());
+
+        let builder = ExcelReaderBuilder::new()
+            .read_cache(ReadCacheMode::Disk)
+            .simple_read_cache_selector(SimpleReadCacheSelector::new());
+        assert_eq!(builder.options.read_cache, ReadCacheMode::Disk);
+        assert!(matches!(
+            builder.options.read_cache_selector,
+            Some(StoredReadCacheSelector::Simple(_))
+        ));
+    }
+
+    #[test]
+    fn build_without_file_fails_like_java() {
+        // 对应 Java：build() 在未设置 file 时抛出异常
+        let error = match ExcelReaderBuilder::new()
+            .build::<DynamicRow, _>(ExtraCollectListener::default())
+        {
+            Ok(_) => panic!("missing file must fail"),
+            Err(error) => error,
+        };
+        assert!(error.to_string().contains("file must be set"));
+
+        let error = match ExcelReaderBuilder::new()
+            .do_read_all::<DynamicRow, _>(ExtraCollectListener::default())
+        {
+            Ok(_) => panic!("missing file must fail"),
+            Err(error) => error,
+        };
+        assert!(error.to_string().contains("file must be set"));
+    }
+
+    #[test]
+    fn input_suffix_detects_ole_xls_workbooks() -> Result<()> {
+        // 对应 Java：根据文件头识别格式；OLE(CFB) 且不含加密流 → xls
+        let directory = tempfile::tempdir()?;
+        let path = directory.path().join("plain.xls");
+        // 仅写 OLE 魔数（D0 CF 11 E0 A1 B1 1A E1），cfb 无法解析 → 视为普通 .xls
+        std::fs::write(&path, [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1])?;
+        let bytes = std::fs::read(&path)?;
+        assert_eq!(input_suffix(&bytes), ".xls");
+        // PK 头 → xlsx，其余 → csv（对应 Java：XSSF/HSSF/CSV 识别顺序）
+        assert_eq!(input_suffix(b"PK\x03\x04rest"), ".xlsx");
+        assert_eq!(input_suffix(b"not a workbook"), ".csv");
+        Ok(())
+    }
+
+    #[test]
+    fn input_stream_materialises_callers_bytes_to_a_temp_file() -> Result<()> {
+        // 对应 Java：InputStream 写入临时文件后按内容识别格式
+        let builder = ExcelReaderBuilder::new().input_stream(std::io::Cursor::new(b"a,b\n1,2"))?;
+        assert!(builder.file.is_some());
+        let path = builder.file.clone().expect("materialised file");
+        assert_eq!(
+            std::fs::read_to_string(&path)?,
+            "a,b\n1,2",
+            "temporary file must carry the input bytes"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn registered_builder_forwards_every_option() {
+        // 对应 Java：ExcelReaderBuilder 链式 API 全部转发到内部 builder
+        let mut builder = ExcelReaderBuilder::new()
+            .register_read_listener::<DynamicRow, _>(ExtraCollectListener::default())
+            .file("out.csv")
+            .sheet(1)
+            .sheet_name("Sheet2")
+            .head_row_number(2)
+            .charset("gbk")
+            .ignore_empty_row(false)
+            .custom_object(42_u32)
+            .password("secret")
+            .extra_read(CellExtraType::Comment)
+            .read_default_return(ReadDefaultReturn::ActualData)
+            .use_scientific_format(true)
+            .register_read_listener(ExtraCollectListener::default());
+
+        assert_eq!(
+            builder.builder.file.as_deref(),
+            Some(PathBuf::from("out.csv").as_path())
+        );
+        assert_eq!(
+            builder.builder.options.sheet,
+            SheetSelector::Name("Sheet2".to_owned())
+        );
+        assert_eq!(builder.builder.options.head_row_number, 2);
+        assert_eq!(builder.builder.options.charset, CsvCharset::from("gbk"));
+        assert!(!builder.builder.options.ignore_empty_row);
+        assert!(builder.builder.options.custom_object.is_some());
+        assert_eq!(builder.builder.options.password.as_deref(), Some("secret"));
+        assert!(
+            builder
+                .builder
+                .options
+                .extra_read
+                .contains(&CellExtraType::Comment)
+        );
+        assert_eq!(
+            builder.builder.options.read_default_return,
+            ReadDefaultReturn::ActualData
+        );
+        assert_eq!(
+            builder.builder.options.scientific_format,
+            crate::ScientificFormatMode::Scientific
+        );
+
+        // AbstractExcelReaderParameterBuilder 继承方法（对应 Java 继承链）
+        AbstractExcelReaderParameterBuilder::<DynamicRow>::head_row_number(&mut builder, 5);
+        assert_eq!(builder.builder.options.head_row_number, 5);
+        AbstractExcelReaderParameterBuilder::<DynamicRow>::head_row_number(&mut builder, -3);
+        assert_eq!(builder.builder.options.head_row_number, 0);
+        AbstractExcelReaderParameterBuilder::<DynamicRow>::use_scientific_format(
+            &mut builder,
+            false,
+        );
+        assert_eq!(
+            builder.builder.options.scientific_format,
+            crate::ScientificFormatMode::Plain
+        );
+        AbstractExcelReaderParameterBuilder::<DynamicRow>::register_read_listener(
+            &mut builder,
+            Box::new(ExtraCollectListener::default()),
+        );
+    }
+
+    #[test]
+    fn registered_builder_build_uses_forwarded_file() -> Result<()> {
+        // 对应 Java：registerReadListener 后 build() 读取转发后的文件
+        let mut file = NamedTempFile::with_suffix(".csv")?;
+        writeln!(file, "name,age")?;
+        writeln!(file, "carol,33")?;
+        let builder = ExcelReaderBuilder::new()
+            .register_read_listener::<DynamicRow, _>(ExtraCollectListener::default())
+            .file(file.path());
+        let mut reader = builder.build()?;
+        reader.read_all()?;
+        reader.finish();
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests_extra2 {
+    use super::*;
+    use easyexcel_core::DynamicRow;
+
+    #[derive(Default)]
+    struct ParameterListener;
+
+    impl ReadListener<DynamicRow> for ParameterListener {
+        fn invoke(
+            &mut self,
+            _data: DynamicRow,
+            _context: &easyexcel_core::AnalysisContext,
+        ) -> Result<()> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn parameter_builder_scientific_format_true_arm() {
+        // 对应 Java：AbstractExcelReaderParameterBuilder.useScientificFormat(true)
+        let mut builder =
+            ExcelReaderBuilder::new().register_read_listener::<DynamicRow, _>(ParameterListener);
+        AbstractExcelReaderParameterBuilder::<DynamicRow>::use_scientific_format(
+            &mut builder,
+            true,
+        );
+        assert_eq!(
+            builder.builder.options.scientific_format,
+            crate::ScientificFormatMode::Scientific
+        );
+    }
+}

@@ -15,3 +15,15 @@ impl ExcelIgnoreUnannotated {
         Self
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_creates_marker() {
+        // 对应 Java：@ExcelIgnoreUnannotated 标记
+        assert_eq!(ExcelIgnoreUnannotated::new(), ExcelIgnoreUnannotated);
+        assert_eq!(ExcelIgnoreUnannotated::default(), ExcelIgnoreUnannotated);
+    }
+}

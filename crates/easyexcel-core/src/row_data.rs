@@ -225,3 +225,21 @@ pub(crate) fn actual_cell_value(value: &CellValue) -> CellValue {
         value => value.clone(),
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn row_index_and_sheet_name_accessors() {
+        // 对应 Java：ReadRowHolder.getRowIndex / sheetName
+        let row = RowData::new(
+            "Sheet1",
+            7,
+            Vec::new(),
+            std::sync::Arc::new(std::collections::HashMap::new()),
+        );
+        assert_eq!(row.row_index(), 7);
+        assert_eq!(row.sheet_name(), "Sheet1");
+    }
+}

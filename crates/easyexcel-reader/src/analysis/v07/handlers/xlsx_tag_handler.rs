@@ -19,3 +19,21 @@ pub trait XlsxTagHandler {
         let _ = ch;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_trait_methods_are_noops() {
+        // 对应 Java：ContentHandler 默认空实现
+        struct DefaultHandler;
+        impl XlsxTagHandler for DefaultHandler {}
+
+        let mut handler = DefaultHandler;
+        assert!(handler.support());
+        handler.start_element("any", "k=v");
+        handler.end_element("any");
+        handler.characters("text");
+    }
+}

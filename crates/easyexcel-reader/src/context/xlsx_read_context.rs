@@ -68,3 +68,34 @@ impl XlsxReadContext for DefaultXlsxReadContext {
         self.xlsx_read_sheet_holder.as_ref()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn current_sheet_materializes_typed_xlsx_holder() -> easyexcel_core::Result<()> {
+        // 对应 Java：XlsxReadContext.currentSheet 物化 XlsxReadSheetHolder
+        let options = ReadOptions::default();
+        let mut context = DefaultXlsxReadContext::new(&options);
+        assert!(context.xlsx_read_sheet_holder().is_none());
+        assert_eq!(
+            context.analysis_context_impl().excel_type(),
+            ExcelTypeEnum::Xlsx
+        );
+
+        context.current_sheet(&ReadSheet::with_name(2, "Sheet2"))?;
+        let holder = context.xlsx_read_sheet_holder().expect("xlsx sheet holder");
+        assert_eq!(holder.inner().sheet_no, 2);
+        assert_eq!(holder.inner().sheet_name, "Sheet2");
+        assert_eq!(
+            context
+                .analysis_context_impl()
+                .analysis_context()
+                .sheet_name(),
+            "Sheet2"
+        );
+        assert!(context.xlsx_read_workbook_holder().inner().ignore_empty_row);
+        Ok(())
+    }
+}

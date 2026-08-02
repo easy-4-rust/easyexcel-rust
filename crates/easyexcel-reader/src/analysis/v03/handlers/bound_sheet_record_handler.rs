@@ -99,3 +99,26 @@ mod tests {
         assert_eq!(handler.sheets[0].bof_position, 32);
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn decodes_utf16_sheet_name_and_truncated_bodies() {
+        // 对应 Java：BoundSheetRecordHandler 解码 UTF-16 工作表名
+        let mut handler = BoundSheetRecordHandler::new();
+        let mut payload = vec![0, 0, 0, 0, 0, 0, 2, 1];
+        payload.extend_from_slice(&[0x41, 0, 0x42, 0]); // "AB"（UTF-16LE）
+        handler.process_record(BOUND_SHEET_SID, &payload);
+        assert_eq!(handler.sheets[0].name, "AB");
+
+        // 截断的 UTF-16 与压缩名直接返回
+        handler.process_record(BOUND_SHEET_SID, &[0, 0, 0, 0, 0, 0, 4, 1, 0x41, 0]);
+        handler.process_record(BOUND_SHEET_SID, &[0, 0, 0, 0, 0, 0, 4, 0, b'A']);
+        assert_eq!(handler.sheets.len(), 1);
+        // 错误 sid 忽略
+        handler.process_record(0xFFFF, &[0; 8]);
+        assert_eq!(handler.sheets.len(), 1);
+    }
+}

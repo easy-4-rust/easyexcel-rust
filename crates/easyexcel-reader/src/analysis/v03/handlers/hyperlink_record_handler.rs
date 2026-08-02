@@ -65,3 +65,50 @@ impl XlsRecordHandler for HyperlinkRecordHandler {
         self.process_hyperlink(None, first_row, last_row, first_column, last_column);
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn process_hyperlink_requires_enabled() {
+        // 对应 Java：HyperlinkRecordHandler.support() 控制是否物化
+        let mut disabled = HyperlinkRecordHandler::new(false);
+        assert!(!disabled.support());
+        disabled.process_hyperlink(Some("x".to_owned()), 0, 1, 0, 1);
+        assert!(disabled.last_extra.is_none());
+
+        let mut handler = HyperlinkRecordHandler::new(true);
+        assert!(handler.support());
+        handler.process_hyperlink(Some("https://example.com".to_owned()), 0, 1, 0, 1);
+        let extra = handler.last_extra.as_ref().expect("hyperlink extra");
+        assert_eq!(extra.extra_type(), CellExtraType::Hyperlink);
+        assert_eq!(extra.text(), Some("https://example.com"));
+        assert_eq!((extra.first_row_index(), extra.last_row_index()), (0, 1));
+        assert_eq!(
+            (extra.first_column_index(), extra.last_column_index()),
+            (0, 1)
+        );
+    }
+
+    #[test]
+    fn process_record_parses_hyperlink_range() {
+        // 对应 Java：HyperlinkRecordHandler.processRecord 解析 4 个范围字段
+        let mut handler = HyperlinkRecordHandler::new(true);
+        handler.process_record(0x01B8, &[1, 0, 2, 0, 3, 0, 4, 0]);
+        let extra = handler.last_extra.as_ref().expect("hyperlink extra");
+        assert_eq!((extra.first_row_index(), extra.last_row_index()), (1, 2));
+        assert_eq!(
+            (extra.first_column_index(), extra.last_column_index()),
+            (3, 4)
+        );
+
+        // 禁用 / 数据不足 / 错误 sid 忽略
+        let mut disabled = HyperlinkRecordHandler::new(false);
+        disabled.process_record(0x01B8, &[1, 0, 2, 0, 3, 0, 4, 0]);
+        assert!(disabled.last_extra.is_none());
+        handler.process_record(0x01B8, &[0, 0]);
+        handler.process_record(0xFFFF, &[1, 0, 2, 0, 3, 0, 4, 0]);
+        assert!(handler.last_extra.is_some());
+    }
+}

@@ -443,3 +443,355 @@ impl ExcelRow for DynamicRow {
         Ok(row)
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use std::collections::BTreeMap;
+
+    use super::*;
+    use crate::dynamic_value::DynamicValue;
+    use crate::read_cell_data::ReadCellData;
+
+    fn context() -> ConvertContext {
+        ConvertContext {
+            sheet_name: "Data".to_owned(),
+            row_index: 1,
+            column_index: Some(0),
+            field: "value",
+            format: None,
+            use_1904_windowing: false,
+        }
+    }
+
+    #[test]
+    fn string_reference_into_excel_cell() {
+        // 对应 Java：String 类型默认写转换器
+        assert_eq!(
+            "text".to_excel_cell(&context()).unwrap(),
+            CellValue::String("text".to_owned())
+        );
+    }
+
+    #[test]
+    fn bool_from_all_supported_cells_and_rejects_others() {
+        // 对应 Java：Boolean 类型默认读转换器（BooleanNumberConverter 等）
+        for (cell, expected) in [
+            (CellValue::Bool(true), true),
+            (CellValue::Bool(false), false),
+            (CellValue::Int(1), true),
+            (CellValue::Int(0), false),
+            (CellValue::Float(1.0), true),
+            (CellValue::Float(0.0), false),
+            (CellValue::Decimal(BigDecimal::from(1)), true),
+            (CellValue::Decimal(BigDecimal::from(0)), false),
+            (CellValue::String("true".to_owned()), true),
+            (CellValue::String("1".to_owned()), true),
+            (CellValue::String("FALSE".to_owned()), false),
+            (CellValue::String("0".to_owned()), false),
+        ] {
+            assert_eq!(
+                bool::from_excel_cell(Some(&cell), &context()).unwrap(),
+                expected,
+                "cell {cell:?}"
+            );
+        }
+        for cell in [CellValue::Error("#DIV/0!".to_owned()), CellValue::Empty] {
+            assert!(bool::from_excel_cell(Some(&cell), &context()).is_err());
+        }
+        assert!(bool::from_excel_cell(None, &context()).is_err());
+    }
+
+    #[test]
+    fn big_int_from_all_supported_cells_and_rejects_others() {
+        // 对应 Java：BigInteger 类型默认读转换器
+        assert_eq!(
+            BigInt::from_excel_cell(Some(&CellValue::Bool(true)), &context()).unwrap(),
+            BigInt::from(1)
+        );
+        assert_eq!(
+            BigInt::from_excel_cell(Some(&CellValue::Int(42)), &context()).unwrap(),
+            BigInt::from(42)
+        );
+        assert_eq!(
+            BigInt::from_excel_cell(Some(&CellValue::Float(1.5)), &context()).unwrap(),
+            BigInt::from(1)
+        );
+        assert!(BigInt::from_excel_cell(Some(&CellValue::Float(f64::NAN)), &context()).is_err());
+        assert_eq!(
+            BigInt::from_excel_cell(
+                Some(&CellValue::Decimal("5.7".parse().unwrap())),
+                &context()
+            )
+            .unwrap(),
+            BigInt::from(5)
+        );
+        assert_eq!(
+            BigInt::from_excel_cell(Some(&CellValue::String("3.9".to_owned())), &context())
+                .unwrap(),
+            BigInt::from(3)
+        );
+        assert!(
+            BigInt::from_excel_cell(Some(&CellValue::String("abc".to_owned())), &context())
+                .is_err()
+        );
+        assert!(
+            BigInt::from_excel_cell(Some(&CellValue::Error("#REF!".to_owned())), &context())
+                .is_err()
+        );
+        assert!(BigInt::from_excel_cell(None, &context()).is_err());
+    }
+
+    #[test]
+    fn integers_parse_bool_float_decimal_and_reject_fractional_or_invalid() {
+        // 对应 Java：Integer 等默认读转换器仅接受整数值
+        assert_eq!(
+            i32::from_excel_cell(Some(&CellValue::Bool(true)), &context()).unwrap(),
+            1
+        );
+        assert_eq!(
+            i32::from_excel_cell(Some(&CellValue::Int(7)), &context()).unwrap(),
+            7
+        );
+        assert_eq!(
+            i32::from_excel_cell(Some(&CellValue::Float(3.0)), &context()).unwrap(),
+            3
+        );
+        assert_eq!(
+            i32::from_excel_cell(Some(&CellValue::Decimal("5".parse().unwrap())), &context())
+                .unwrap(),
+            5
+        );
+        assert_eq!(
+            i32::from_excel_cell(Some(&CellValue::String("9".to_owned())), &context()).unwrap(),
+            9
+        );
+        for cell in [
+            CellValue::Float(3.5),
+            CellValue::Decimal("5.5".parse().unwrap()),
+            CellValue::Date(NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()),
+        ] {
+            assert!(i32::from_excel_cell(Some(&cell), &context()).is_err());
+        }
+        assert!(u8::from_excel_cell(Some(&CellValue::Int(300)), &context()).is_err());
+        assert!(i32::from_excel_cell(None, &context()).is_err());
+    }
+
+    #[test]
+    fn floats_parse_all_scalar_cells_and_reject_others() {
+        // 对应 Java：Float / Double 默认读转换器
+        for (cell, expected) in [
+            (CellValue::Bool(true), 1.0),
+            (CellValue::Int(2), 2.0),
+            (CellValue::Float(1.5), 1.5),
+            (CellValue::Decimal("1.25".parse().unwrap()), 1.25),
+            (CellValue::String("2.5".to_owned()), 2.5),
+        ] {
+            assert_eq!(
+                f64::from_excel_cell(Some(&cell), &context()).unwrap(),
+                expected,
+                "cell {cell:?}"
+            );
+        }
+        assert!(
+            f64::from_excel_cell(
+                Some(&CellValue::Date(
+                    NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()
+                )),
+                &context()
+            )
+            .is_err()
+        );
+        assert!(f64::from_excel_cell(None, &context()).is_err());
+    }
+
+    #[test]
+    fn big_decimal_from_all_supported_cells_and_rejects_others() {
+        // 对应 Java：BigDecimal 默认读转换器
+        assert_eq!(
+            BigDecimal::from_excel_cell(Some(&CellValue::Bool(false)), &context()).unwrap(),
+            BigDecimal::from(0)
+        );
+        assert_eq!(
+            BigDecimal::from_excel_cell(Some(&CellValue::Int(7)), &context()).unwrap(),
+            BigDecimal::from(7)
+        );
+        assert_eq!(
+            BigDecimal::from_excel_cell(Some(&CellValue::Float(1.5)), &context()).unwrap(),
+            BigDecimal::from_str("1.5").unwrap()
+        );
+        assert!(
+            BigDecimal::from_excel_cell(Some(&CellValue::Float(f64::NAN)), &context()).is_err()
+        );
+        assert_eq!(
+            BigDecimal::from_excel_cell(Some(&CellValue::String("1.5".to_owned())), &context())
+                .unwrap(),
+            BigDecimal::from_str("1.5").unwrap()
+        );
+        assert!(
+            BigDecimal::from_excel_cell(Some(&CellValue::String("abc".to_owned())), &context())
+                .is_err()
+        );
+        assert!(
+            BigDecimal::from_excel_cell(Some(&CellValue::Error("#N/A".to_owned())), &context())
+                .is_err()
+        );
+        assert!(BigDecimal::from_excel_cell(None, &context()).is_err());
+    }
+
+    #[test]
+    fn dates_from_date_cells_serials_and_reject_others() {
+        // 对应 Java：LocalDate / LocalDateTime 默认读转换器
+        let date = NaiveDate::from_ymd_opt(2026, 1, 2).unwrap();
+        assert_eq!(
+            NaiveDate::from_excel_cell(Some(&CellValue::Date(date)), &context()).unwrap(),
+            date
+        );
+        assert!(
+            NaiveDate::from_excel_cell(Some(&CellValue::Error("#VALUE!".to_owned())), &context())
+                .is_err()
+        );
+        assert_eq!(
+            NaiveDateTime::from_excel_cell(Some(&CellValue::Date(date)), &context()).unwrap(),
+            date.and_hms_opt(0, 0, 0).unwrap()
+        );
+        assert!(
+            NaiveDateTime::from_excel_cell(
+                Some(&CellValue::Error("#VALUE!".to_owned())),
+                &context()
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn excel_serial_epochs_and_invalid_serials() {
+        // 对应 Java：Excel 序列号 → 日期，1900/1904 窗口与 60/61 虚拟闰日
+        let context = context();
+        let from = |cell: &CellValue| NaiveDateTime::from_excel_cell(Some(cell), &context);
+        let midnight_1900_03_01 = NaiveDate::from_ymd_opt(1900, 3, 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
+        assert_eq!(from(&CellValue::Float(61.0)).unwrap(), midnight_1900_03_01);
+        let noon_1900_01_01 = NaiveDate::from_ymd_opt(1900, 1, 1)
+            .unwrap()
+            .and_hms_opt(12, 0, 0)
+            .unwrap();
+        assert_eq!(
+            from(&CellValue::Decimal("1.5".parse().unwrap())).unwrap(),
+            noon_1900_01_01
+        );
+        for cell in [
+            CellValue::Float(-1.0),
+            CellValue::Float(f64::NAN),
+            CellValue::Int(-1),
+        ] {
+            assert!(from(&cell).is_err(), "cell {cell:?}");
+        }
+        for cell in [
+            CellValue::Bool(true),
+            CellValue::String("2026-01-01".to_owned()),
+        ] {
+            assert!(from(&cell).is_err(), "cell {cell:?}");
+        }
+    }
+
+    #[test]
+    fn byte_arrays_and_path_buffers_roundtrip() {
+        // 对应 Java：byte[] / Byte[] / InputStream / File 图片转换器
+        let context = context();
+        let image = CellValue::Image(vec![0x89, b'P', b'N', b'G']);
+        assert_eq!(
+            Vec::<u8>::from_excel_cell(Some(&image), &context).unwrap(),
+            vec![0x89, b'P', b'N', b'G']
+        );
+        assert!(
+            Vec::<u8>::from_excel_cell(Some(&CellValue::String("x".to_owned())), &context).is_err()
+        );
+        assert_eq!(
+            Box::<[u8]>::from_excel_cell(Some(&image), &context).unwrap(),
+            vec![0x89, b'P', b'N', b'G'].into_boxed_slice()
+        );
+        assert!(
+            Box::<[u8]>::from_excel_cell(Some(&CellValue::Error("#N/A".to_owned())), &context)
+                .is_err()
+        );
+        let short = CellValue::Image(vec![1, 2]);
+        let image_3 = CellValue::Image(vec![0x89, b'P', b'N']);
+        let array: [u8; 3] = <[u8; 3]>::from_excel_cell(Some(&image_3), &context).unwrap();
+        assert_eq!(array, [0x89, b'P', b'N']);
+        assert!(<[u8; 3]>::from_excel_cell(Some(&short), &context).is_err());
+        assert_eq!(
+            std::path::PathBuf::from_excel_cell(
+                Some(&CellValue::String("/tmp/image.png".to_owned())),
+                &context
+            )
+            .unwrap(),
+            std::path::PathBuf::from("/tmp/image.png")
+        );
+    }
+
+    #[test]
+    fn dynamic_row_to_row_covers_all_dynamic_value_variants() {
+        // 对应 Java：Map<Integer, Object> 动态行写出，READ_CELL_DATA 取 data()
+        let read_cell = ReadCellData::new(
+            0,
+            3,
+            CellValue::String("raw".to_owned()),
+            CellValue::Bool(true),
+            "display".to_owned(),
+            None,
+        );
+        let row = DynamicRow::new(BTreeMap::from([
+            (0, DynamicValue::Null),
+            (1, DynamicValue::String("s".to_owned())),
+            (2, DynamicValue::ActualData(CellValue::Int(5))),
+            (3, DynamicValue::ReadCellData(read_cell)),
+        ]));
+        assert_eq!(
+            row.to_row().unwrap(),
+            vec![
+                CellValue::Empty,
+                CellValue::String("s".to_owned()),
+                CellValue::Int(5),
+                CellValue::Bool(true),
+            ]
+        );
+        assert_eq!(
+            DynamicRow::default().to_row().unwrap(),
+            Vec::<CellValue>::new()
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests_extra2 {
+    use super::*;
+
+    fn context() -> ConvertContext {
+        ConvertContext {
+            sheet_name: "Data".to_owned(),
+            row_index: 1,
+            column_index: Some(0),
+            field: "value",
+            format: None,
+            use_1904_windowing: false,
+        }
+    }
+
+    #[test]
+    fn excel_serial_to_datetime_rejects_non_numeric_cells() {
+        // 对应 Java：Excel 序列号仅接受数值单元格，其余类型报无效转换错误
+        let context = context();
+        for cell in [
+            CellValue::Bool(true),
+            CellValue::String("1.5".to_owned()),
+            CellValue::Date(NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()),
+        ] {
+            assert!(
+                excel_serial_to_datetime(&cell, &context).is_err(),
+                "cell {cell:?} should be rejected"
+            );
+        }
+    }
+}

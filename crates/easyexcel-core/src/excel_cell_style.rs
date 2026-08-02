@@ -103,3 +103,21 @@ impl ExcelCellStyle {
         self
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn with_font_attaches_nested_font() {
+        // 对应 Java：WriteCellStyle.setWriteFont
+        let font = ExcelFontStyle {
+            bold: Some(true),
+            ..ExcelFontStyle::default()
+        };
+        let style = ExcelCellStyle::new().with_font(font);
+        assert_eq!(style.font, Some(font));
+        let plain = ExcelCellStyle::new();
+        assert_eq!(plain.font, None);
+    }
+}

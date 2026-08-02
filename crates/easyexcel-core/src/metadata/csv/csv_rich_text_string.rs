@@ -36,3 +36,22 @@ impl CsvRichTextString {
         self.value.is_empty()
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_as_str_len_and_is_empty() {
+        // 对应 Java：CsvRichTextString 纯文本包装
+        let value = CsvRichTextString::new("你好");
+        assert_eq!(value.as_str(), "你好");
+        assert_eq!(value.len(), 2);
+        assert!(!value.is_empty());
+
+        let empty = CsvRichTextString::new("");
+        assert_eq!(empty.len(), 0);
+        assert!(empty.is_empty());
+        assert_eq!(CsvRichTextString::default(), empty);
+    }
+}

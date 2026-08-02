@@ -224,3 +224,26 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn process_record_gates_and_parses_unknown_cached_code() {
+        // 对应 Java：FormulaRecordHandler.processRecord 的 sid/长度门控与未知缓存码
+        let mut handler = FormulaRecordHandler::new();
+        handler.process_record(0xFFFF, &[0; 20]);
+        handler.process_record(FORMULA_SID, &[0; 13]);
+        // 未知缓存码（0xFF 标记 + 未知 result[0]）→ Empty 类型
+        let mut data = vec![1, 0, 2, 0, 0, 0];
+        let mut result = [0u8; 8];
+        result[0] = 0x07;
+        result[6] = 0xFF;
+        result[7] = 0xFF;
+        data.extend_from_slice(&result);
+        handler.process_record(FORMULA_SID, &data);
+        let cell = handler.last_cell.expect("formula cell");
+        assert_eq!(cell.cached_type, FormulaCachedType::Empty);
+    }
+}

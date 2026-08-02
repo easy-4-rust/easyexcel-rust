@@ -113,3 +113,36 @@ mod tests {
         assert_eq!(handler.last_explicit_row_index(), Some(9));
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn start_dimension_without_ref_is_ok() {
+        // 对应 Java：dimension 标签无 ref 属性时跳过
+        let mut handler = CountTagHandler::new();
+        assert!(handler.start_dimension(&HashMap::new()).is_ok());
+        assert_eq!(handler.approximate_total_row_number, None);
+    }
+
+    #[test]
+    fn dimension_parse_rejects_missing_row() {
+        // 对应 Java：PositionUtils.getRow 对无行号的引用报错
+        assert!(CountTagHandler::parse_dimension_ref("A").is_err());
+        assert!(CountTagHandler::parse_dimension_ref("A1:A").is_err());
+    }
+
+    #[test]
+    fn start_element_dispatches_only_for_dimension() {
+        // 对应 Java：CountTagHandler.startElement 仅处理 dimension
+        let mut handler = CountTagHandler::new();
+        handler.start_element("dimension", "ref=A1:D9");
+        assert_eq!(handler.approximate_total_row_number, Some(9));
+        handler.start_element("x:dimension", "ref=A1:E3");
+        assert_eq!(handler.approximate_total_row_number, Some(3));
+        // 非 dimension 标签直接返回
+        handler.start_element("row", "r=2");
+        assert_eq!(handler.approximate_total_row_number, Some(3));
+    }
+}

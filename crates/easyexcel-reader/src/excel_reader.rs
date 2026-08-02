@@ -360,3 +360,140 @@ mod tests {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests_extra2 {
+    use std::fs;
+    use std::io::Read;
+
+    use base64::Engine;
+    use easyexcel_core::DynamicRow;
+    use flate2::read::GzDecoder;
+    use rust_xlsxwriter::Workbook;
+    use tempfile::NamedTempFile;
+
+    use super::*;
+    use crate::ReadOptions;
+
+    #[derive(Default)]
+    struct ExtraCollectListener {
+        rows: Vec<DynamicRow>,
+    }
+
+    impl ReadListener<DynamicRow> for ExtraCollectListener {
+        fn invoke(&mut self, data: DynamicRow, _context: &AnalysisContext) -> Result<()> {
+            self.rows.push(data);
+            Ok(())
+        }
+    }
+
+    fn two_sheet_workbook() -> Result<NamedTempFile> {
+        let file = NamedTempFile::with_suffix(".xlsx")?;
+        let mut workbook = Workbook::new();
+        let first = workbook.add_worksheet();
+        first
+            .set_name("First")
+            .map_err(|error| ExcelError::Format(error.to_string()))?;
+        first
+            .write_string(0, 0, "Value")
+            .map_err(|error| ExcelError::Format(error.to_string()))?;
+        first
+            .write_string(1, 0, "one")
+            .map_err(|error| ExcelError::Format(error.to_string()))?;
+        let second = workbook.add_worksheet();
+        second
+            .set_name("Second")
+            .map_err(|error| ExcelError::Format(error.to_string()))?;
+        second
+            .write_string(0, 0, "Value")
+            .map_err(|error| ExcelError::Format(error.to_string()))?;
+        second
+            .write_string(1, 0, "two")
+            .map_err(|error| ExcelError::Format(error.to_string()))?;
+        workbook
+            .save(file.path())
+            .map_err(|error| ExcelError::Format(error.to_string()))?;
+        Ok(file)
+    }
+
+    /// 物化 Java 官方多 sheet .xls fixture。
+    fn write_java_multisheet_xls() -> NamedTempFile {
+        let file = NamedTempFile::with_suffix(".xls").expect("temp xls");
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(include_str!("fixtures/java-multiplesheets.xls.gz.b64").trim())
+            .expect("fixture b64");
+        let mut decoder = GzDecoder::new(compressed.as_slice());
+        let mut workbook = Vec::new();
+        decoder.read_to_end(&mut workbook).expect("gunzip");
+        fs::write(file.path(), workbook).expect("write xls");
+        file
+    }
+
+    #[test]
+    fn read_processes_xls_workbook_sheets() -> Result<()> {
+        // 对应 Java：ExcelReader.read(ReadSheet...) 走 XlsSaxAnalyser 分支
+        let file = write_java_multisheet_xls();
+        let mut options = ReadOptions::default();
+        options.head_row_number = 1;
+        let listener = ExtraCollectListener::default();
+        let mut reader = ExcelReader::new(file.path(), options, listener)?;
+        let mut sheet = ReadSheet::new(0);
+        sheet.set_head_row_number(1);
+        reader.read(&[sheet])?;
+        Ok(())
+    }
+
+    #[test]
+    fn read_skips_selections_that_match_no_actual_sheet() -> Result<()> {
+        // 对应 Java：找不到匹配的实际工作表时静默跳过
+        let file = two_sheet_workbook()?;
+        let listener = ExtraCollectListener::default();
+        let mut reader = ExcelReader::new(file.path(), ReadOptions::default(), listener)?;
+        reader.read(&[ReadSheet::new(9), ReadSheet::named("Nope")])?;
+        assert!(reader.analysis_context().sheet_name().is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn read_applies_sheet_scientific_format_override() -> Result<()> {
+        // 对应 Java：ReadSheet.useScientificFormat 覆盖工作簿级配置
+        let file = two_sheet_workbook()?;
+        let mut options = ReadOptions::default();
+        options.scientific_format = crate::ScientificFormatMode::Plain;
+        let mut reader = ExcelReader::new(file.path(), options, ExtraCollectListener::default())?;
+
+        let mut scientific = ReadSheet::new(0);
+        scientific.set_head_row_number(1);
+        scientific.set_use_scientific_format(true);
+        reader.read(&[scientific])?;
+        assert_eq!(
+            reader.analyser.options().scientific_format,
+            crate::ScientificFormatMode::Scientific
+        );
+
+        let mut plain = ReadSheet::new(1);
+        plain.set_head_row_number(1);
+        plain.set_use_scientific_format(false);
+        reader.read(&[plain])?;
+        assert_eq!(
+            reader.analyser.options().scientific_format,
+            crate::ScientificFormatMode::Plain
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn read_with_additional_listener_runs_both_listeners() -> Result<()> {
+        // 对应 Java：read 时附加监听器与原监听器同时收到回调
+        let file = two_sheet_workbook()?;
+        let mut reader = ExcelReader::new(
+            file.path(),
+            ReadOptions::default(),
+            ExtraCollectListener::default(),
+        )?;
+        let mut additional = ExtraCollectListener::default();
+        reader.read_with_additional_listener(&[ReadSheet::new(0)], &mut additional)?;
+        assert!(!additional.rows.is_empty());
+        Ok(())
+    }
+}

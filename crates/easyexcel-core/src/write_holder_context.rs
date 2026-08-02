@@ -389,3 +389,56 @@ mod tests {
         assert!(sheet.write_table_holder().is_none());
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn default_matches_new() {
+        // 对应 Java：WriteHolderContext 默认构造
+        let context = WriteHolderContext::default();
+        assert_eq!(context.sheet_no(), None);
+        assert_eq!(context.last_row_index(), None);
+        assert!(!context.has_data());
+    }
+
+    #[test]
+    fn holder_trait_sheet_accessors_with_sheet() {
+        // 对应 Java：WriteContextHolder 的 sheet 访问器
+        let context = WriteHolderContext::new()
+            .with_sheet(
+                WriteSheetHolderView::new("Sheet1")
+                    .with_sheet_no(4)
+                    .with_last_row_index(9),
+            )
+            .with_table(WriteTableHolderView::new(3, "Sheet1"));
+        assert_eq!(context.sheet_no(), Some(4));
+        assert_eq!(context.last_row_index(), Some(9));
+        assert!(context.has_data());
+        assert_eq!(context.sheet_name(), Some("Sheet1"));
+        assert_eq!(context.table_no(), Some(3));
+    }
+
+    #[test]
+    fn from_write_context_captures_table_branch() {
+        // 对应 Java：快照包含 sheet 与 table 分支
+        let mut live = crate::WriteContextImpl::new("live.xlsx");
+        live.set_sheet_context("Users");
+        live.set_table_no(Some(5));
+        let snapshot = WriteHolderContext::from_write_context(&live);
+        assert_eq!(snapshot.table_no(), Some(5));
+        assert_eq!(snapshot.sheet_name(), Some("Users"));
+        assert_eq!(snapshot.path(), Path::new("live.xlsx"));
+        assert_eq!(snapshot.holder_type(), Holder::Table);
+    }
+
+    #[test]
+    fn from_write_context_without_sheet_stays_workbook() {
+        // 对应 Java：无 sheet 时快照仅含 workbook
+        let live = crate::WriteContextImpl::new("bare.xlsx");
+        let snapshot = WriteHolderContext::from_write_context(&live);
+        assert!(snapshot.sheet_name().is_none());
+        assert_eq!(snapshot.path(), Path::new("bare.xlsx"));
+    }
+}

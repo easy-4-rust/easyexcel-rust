@@ -54,3 +54,20 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn process_record_parses_placement() {
+        // 对应 Java：RkRecordHandler.processRecord 产出空单元格（EasyExcel 历史行为）
+        let mut handler = RkRecordHandler::new();
+        handler.process_record(RK_SID, &[3, 0, 4, 0, 0, 0]);
+        assert_eq!(handler.last_cell, Some(BlankCell { row: 3, column: 4 }));
+        // 错误 sid / 数据不足时保持原状态
+        handler.process_record(0xFFFF, &[3, 0, 4, 0, 0, 0]);
+        handler.process_record(RK_SID, &[0, 0]);
+        assert_eq!(handler.last_cell, Some(BlankCell { row: 3, column: 4 }));
+    }
+}

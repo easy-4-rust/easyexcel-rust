@@ -69,3 +69,18 @@ impl GlobalConfiguration {
         self.filed_cache_location
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn use_scientific_format_accessor() {
+        // 对应 Java：GlobalConfiguration.getUseScientificFormat
+        let config = GlobalConfiguration::new();
+        assert!(!config.use_scientific_format());
+        let mut config = config;
+        config.use_scientific_format = true;
+        assert!(config.use_scientific_format());
+    }
+}

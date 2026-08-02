@@ -171,3 +171,69 @@ mod tests {
         set_cache_path(old_cache);
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn open_input_stream_opens_existing_file() {
+        // 对应 Java：FileUtils.openInputStream
+        let directory = tempfile::tempdir().expect("temp root");
+        let path = directory.path().join("in.txt");
+        std::fs::write(&path, b"content").expect("write fixture");
+        let file = open_input_stream(&path).expect("opens");
+        assert!(file.metadata().expect("meta").len() > 0);
+
+        let missing = directory.path().join("missing.txt");
+        assert!(open_input_stream(&missing).is_err());
+    }
+
+    #[test]
+    fn write_to_file_writes_bytes_and_reports_io_errors() {
+        // 对应 Java：FileUtils.writeToFile
+        let directory = tempfile::tempdir().expect("temp root");
+        let path = directory.path().join("out.txt");
+        write_to_file(&path, b"hello").expect("writes");
+        assert_eq!(std::fs::read(&path).expect("read back"), b"hello");
+
+        // 目标目录不存在时报 IO 错误
+        let bad = directory.path().join("no-such-dir").join("out.txt");
+        let err = write_to_file(&bad, b"x").expect_err("fails");
+        assert!(matches!(err, ExcelError::Io(_)));
+    }
+
+    #[test]
+    fn create_directory_creates_nested_dirs_and_errors_on_conflict() {
+        // 对应 Java：FileUtils.createDirectory / forceMkdir
+        let directory = tempfile::tempdir().expect("temp root");
+        let nested = directory.path().join("a").join("b");
+        create_directory(&nested).expect("created");
+        assert!(nested.is_dir());
+
+        // 以文件作为父路径时报错
+        let blocker = directory.path().join("blocker");
+        std::fs::write(&blocker, b"x").expect("fixture");
+        let err = create_directory(&blocker.join("sub")).expect_err("fails");
+        assert!(matches!(err, ExcelError::Io(_)));
+    }
+
+    #[test]
+    fn delete_removes_files_and_directories_quietly() {
+        // 对应 Java：FileUtils.delete / deleteQuietly
+        let directory = tempfile::tempdir().expect("temp root");
+
+        let file_path = directory.path().join("f.txt");
+        std::fs::write(&file_path, b"x").expect("fixture");
+        delete(&file_path).expect("file deleted");
+        assert!(!file_path.exists());
+
+        let dir_path = directory.path().join("d");
+        std::fs::create_dir_all(&dir_path).expect("fixture");
+        delete(&dir_path).expect("dir deleted");
+        assert!(!dir_path.exists());
+
+        // 不存在时静默成功
+        delete(&directory.path().join("missing")).expect("no-op");
+    }
+}

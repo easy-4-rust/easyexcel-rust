@@ -186,3 +186,68 @@ mod tests {
         assert!(matches!(error, ExcelError::Format(_)));
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use std::collections::HashMap;
+
+    use easyexcel_core::support::ExcelTypeEnum;
+    use easyexcel_core::{CellValue, CustomReadObject};
+
+    use super::*;
+    use crate::holder::read_row_holder::ReadRowHolder;
+
+    #[test]
+    fn holder_accessors_and_row_state() -> Result<()> {
+        // 对应 Java：AnalysisContextImpl 各 holder 访问器
+        let options = ReadOptions::default();
+        let mut context = AnalysisContextImpl::new(ExcelTypeEnum::Xls, &options);
+
+        assert!(context.read_sheet_holder().is_none());
+        assert!(context.read_row_holder().is_none());
+        assert!(context.read_sheet_list().is_none());
+        assert!(context.custom().is_none());
+        assert_eq!(context.excel_type(), ExcelTypeEnum::Xls);
+        assert_eq!(context.current_row_num(), None);
+        assert_eq!(
+            context.read_workbook_holder().ignore_empty_row,
+            options.ignore_empty_row
+        );
+
+        // current_sheet 后 sheet holder 就位
+        let sheet = ReadSheet::with_name(2, "Data");
+        context.current_sheet(&sheet)?;
+        let holder = context.read_sheet_holder().expect("sheet holder");
+        assert_eq!(holder.sheet_no, 2);
+        assert_eq!(holder.sheet_name, "Data");
+
+        // row holder 设置与读取（对应 Java：readRowHolder(ReadRowHolder)）
+        let mut cells = HashMap::new();
+        cells.insert(0usize, CellValue::Int(7));
+        context.set_read_row_holder(ReadRowHolder::new(5, cells));
+        assert_eq!(context.current_row_num(), Some(5));
+        assert_eq!(context.read_row_holder().expect("row holder").row_index, 5);
+
+        // read_sheet_list 设置与读取（对应 Java：readSheetList(List<ReadSheet>)）
+        context.set_read_sheet_list(vec![ReadSheet::new(0)]);
+        assert_eq!(context.read_sheet_list().expect("sheet list").len(), 1);
+
+        // analysis_context_mut 修改自定义对象（对应 Java：getCustom()）
+        *context.analysis_context_mut() = context
+            .analysis_context()
+            .clone()
+            .with_custom_object(Some(CustomReadObject::new(9_u32)));
+        assert!(context.custom().is_some());
+
+        // analysis_event_processor 默认实现为 no-op（对应 Java：analysisEventProcessor()）
+        let context_inner = context.analysis_context().clone();
+        let processor = context.analysis_event_processor();
+        processor.extra(&context_inner);
+        processor.end_row(&context_inner);
+        processor.end_sheet(&context_inner);
+
+        // interrupt 为 Unsupported（对应 Java：@Deprecated interrupt()）
+        assert!(context.interrupt().is_err());
+        Ok(())
+    }
+}

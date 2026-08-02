@@ -235,3 +235,151 @@ mod tests {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use easyexcel_core::DynamicRow;
+    use rust_xlsxwriter::Workbook;
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    fn write_xlsx() -> NamedTempFile {
+        let file = NamedTempFile::with_suffix(".xlsx").expect("temp xlsx");
+        let mut workbook = Workbook::new();
+        let worksheet = workbook.add_worksheet();
+        worksheet.write_string(0, 0, "name").expect("header");
+        worksheet.write_string(1, 0, "alice").expect("row");
+        workbook.save(file.path()).expect("save");
+        file
+    }
+
+    #[test]
+    fn new_rejects_workbooks_without_sheets() -> std::io::Result<()> {
+        // 对应 Java：XlsxSaxAnalyser 构造时 sheetList 为空报错
+        let directory = tempfile::tempdir()?;
+        let path = directory.path().join("empty.xlsx");
+        {
+            let file = std::fs::File::create(&path)?;
+            let mut writer = zip::ZipWriter::new(file);
+            let options = zip::write::SimpleFileOptions::default();
+            writer.start_file("[Content_Types].xml", options)?;
+            writer.write_all(
+                br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+</Types>"#,
+            )?;
+            writer.start_file("_rels/.rels", options)?;
+            writer.write_all(
+                br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>"#,
+            )?;
+            writer.start_file("xl/_rels/workbook.xml.rels", options)?;
+            writer.write_all(
+                br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+</Relationships>"#,
+            )?;
+            writer.start_file("xl/workbook.xml", options)?;
+            writer.write_all(
+                br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets></sheets></workbook>"#,
+            )?;
+            writer.finish()?;
+        }
+        let error = match XlsxSaxAnalyser::from_path(&path, ReadOptions::default()) {
+            Ok(_) => panic!("empty workbook must fail"),
+            Err(error) => error,
+        };
+        assert!(error.to_string().contains("Can not find any sheet"));
+        Ok(())
+    }
+
+    #[test]
+    fn accessors_unsupported_entries_and_context() -> Result<()> {
+        // 对应 Java：XlsxSaxAnalyser 公开访问器与 Unsupported 方法
+        let file = write_xlsx();
+        let options = ReadOptions::default();
+        let analyser = XlsxSaxAnalyser::from_path(file.path(), options)?;
+
+        assert_eq!(analyser.path(), file.path());
+        assert!(
+            analyser
+                .xlsx_read_context()
+                .analysis_context_impl()
+                .analysis_context()
+                .sheet_name()
+                .is_empty()
+        );
+        assert!(analyser.analysis_context().sheet_name().is_empty());
+        assert!(analyser.last_error().is_none());
+
+        // readComments / parseXmlSource 由 read_xlsx 内部分派（对应 Java 方法签名保留）
+        assert!(
+            analyser
+                .read_comments(&ReadSheet::default_construction())
+                .is_err()
+        );
+        assert!(analyser.parse_xml_source().is_err());
+
+        // 构造即可用（sheet_list 发现工作表）
+        assert_eq!(analyser.sheet_list().len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn execute_records_errors_in_last_error() -> Result<()> {
+        // 对应 Java：execute 失败时持有异常供后续查询，成功后清除
+        let file = write_xlsx();
+        let mut options = ReadOptions::default();
+        options.head_row_number = 1;
+        let mut analyser = XlsxSaxAnalyser::from_path(file.path(), options)?;
+
+        let mut failing = FailingListener;
+        assert!(
+            analyser
+                .execute_with_listener::<DynamicRow, _>(&mut failing)
+                .is_err()
+        );
+        assert!(analyser.last_error().is_some());
+
+        let mut collecting = ExtraCollectingListener::default();
+        analyser.execute_with_listener::<DynamicRow, _>(&mut collecting)?;
+        assert_eq!(collecting.rows.len(), 1);
+        assert!(analyser.last_error().is_none());
+        Ok(())
+    }
+
+    #[derive(Default)]
+    struct ExtraCollectingListener {
+        rows: Vec<DynamicRow>,
+    }
+
+    impl ReadListener<DynamicRow> for ExtraCollectingListener {
+        fn invoke(&mut self, data: DynamicRow, _context: &AnalysisContext) -> Result<()> {
+            self.rows.push(data);
+            Ok(())
+        }
+    }
+
+    struct FailingListener;
+
+    impl ReadListener<DynamicRow> for FailingListener {
+        fn invoke(&mut self, _data: DynamicRow, _context: &AnalysisContext) -> Result<()> {
+            Err(ExcelError::Format("listener failed".to_owned()))
+        }
+
+        fn invoke_head(
+            &mut self,
+            _head: &std::collections::HashMap<String, usize>,
+            _context: &AnalysisContext,
+        ) -> Result<()> {
+            Err(ExcelError::Format("listener failed".to_owned()))
+        }
+    }
+}

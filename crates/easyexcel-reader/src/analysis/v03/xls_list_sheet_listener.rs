@@ -69,3 +69,52 @@ impl<'a> XlsListSheetListener<'a> {
         &self.sheet_list
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::io::Read;
+
+    use base64::Engine;
+    use flate2::read::GzDecoder;
+    use tempfile::NamedTempFile;
+
+    use super::*;
+    use crate::context::{DefaultXlsReadContext, XlsReadContext};
+
+    /// Materializes the embedded Java multisheet `.xls` fixture for unit tests.
+    fn write_java_multisheet_xls() -> NamedTempFile {
+        let file = NamedTempFile::with_suffix(".xls").expect("temp xls");
+        let compressed = base64::engine::general_purpose::STANDARD
+            .decode(include_str!("../../fixtures/java-multiplesheets.xls.gz.b64").trim())
+            .expect("fixture b64");
+        let mut decoder = GzDecoder::new(compressed.as_slice());
+        let mut workbook = Vec::new();
+        decoder.read_to_end(&mut workbook).expect("gunzip");
+        fs::write(file.path(), workbook).expect("write xls");
+        file
+    }
+
+    #[test]
+    fn execute_scans_sheets_and_exposes_accessors() -> Result<()> {
+        // 对应 Java：XlsListSheetListener.execute() 元数据扫描
+        let file = write_java_multisheet_xls();
+        let options = ReadOptions::default();
+        let mut context = DefaultXlsReadContext::new(&options);
+        let mut listener = XlsListSheetListener::new(&mut context, file.path(), options);
+
+        assert_eq!(listener.path(), file.path());
+        assert!(listener.sheet_list().is_empty());
+
+        let sheets = listener.execute()?.to_vec();
+        assert!(!sheets.is_empty());
+        let discovered = listener.sheet_list().to_vec();
+        assert_eq!(discovered, sheets);
+        assert_eq!(discovered[0].sheet_no(), 0);
+        assert!(!discovered[0].sheet_name().is_empty());
+
+        // new() 设置 needReadSheet=false（对应 Java 构造行为）
+        assert!(!context.xls_read_workbook_holder().need_read_sheet());
+        Ok(())
+    }
+}

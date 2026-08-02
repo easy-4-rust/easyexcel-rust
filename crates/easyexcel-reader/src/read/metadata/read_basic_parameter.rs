@@ -47,3 +47,25 @@ impl ReadBasicParameter {
         &self.custom_read_listener_list
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_and_accessors_match_java_shape() {
+        // 对应 Java：ReadBasicParameter 构造与 get/set 访问器
+        let mut parameter = ReadBasicParameter::new();
+        assert_eq!(parameter.head_row_number(), None);
+        assert!(parameter.custom_read_listener_list().is_empty());
+        assert_eq!(parameter.basic, BasicParameter::new());
+
+        parameter.set_head_row_number(Some(2));
+        assert_eq!(parameter.head_row_number(), Some(2));
+        parameter.set_head_row_number(None);
+        assert_eq!(parameter.head_row_number(), None);
+
+        // Default 构造等价于 new()
+        assert_eq!(ReadBasicParameter::default(), ReadBasicParameter::new());
+    }
+}

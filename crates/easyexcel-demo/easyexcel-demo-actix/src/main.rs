@@ -130,7 +130,12 @@ async fn upload(mut payload: Multipart) -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     tracing_subscriber::fmt::init();
-    info!("Actix WebTest 演示监听 http://127.0.0.1:8081");
+    // 端口可经 PORT 环境变量配置（对应 Java Quarkus 的 quarkus.http.port，默认 8081）
+    let port = std::env::var("PORT")
+        .ok()
+        .and_then(|value| value.parse::<u16>().ok())
+        .unwrap_or(8081);
+    info!("Actix WebTest 演示监听 http://127.0.0.1:{port}");
 
     HttpServer::new(|| {
         App::new()
@@ -141,7 +146,7 @@ async fn main() -> std::io::Result<()> {
             )
             .route("/upload", web::post().to(upload))
     })
-    .bind(("127.0.0.1", 8081))?
+    .bind(("127.0.0.1", port))?
     .run()
     .await
 }

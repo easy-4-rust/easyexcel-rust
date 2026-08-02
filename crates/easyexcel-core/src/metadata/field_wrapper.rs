@@ -36,3 +36,25 @@ impl FieldWrapper {
         &self.heads
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_accessors_and_default() {
+        // 对应 Java：FieldWrapper 构造与 getter
+        let wrapper = FieldWrapper::new("name", vec!["姓名".to_owned(), "英文名".to_owned()]);
+        assert_eq!(wrapper.field_name(), "name");
+        assert_eq!(wrapper.field_name, "name");
+        assert_eq!(
+            wrapper.heads(),
+            &["姓名".to_owned(), "英文名".to_owned()][..]
+        );
+        assert_eq!(wrapper.heads.len(), 2);
+
+        let empty = FieldWrapper::default();
+        assert_eq!(empty.field_name(), "");
+        assert!(empty.heads().is_empty());
+    }
+}

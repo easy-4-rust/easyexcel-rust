@@ -80,3 +80,48 @@ impl XlsRecordHandler for BofRecordHandler {
         let _ = Self::decide(bof_type, None, false);
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn decide_other_and_worksheet_branches() {
+        // 对应 Java：BofRecordHandler.decide 全分支
+        assert_eq!(
+            BofRecordHandler::decide(BofType::Other, None, false),
+            BofAction::Ignore
+        );
+        assert_eq!(
+            BofRecordHandler::decide(BofType::Workbook, None, false),
+            BofAction::ResetWorkbook
+        );
+        let action = BofRecordHandler::decide(BofType::Worksheet, Some(2), true);
+        assert_eq!(
+            action,
+            BofAction::BeginWorksheet {
+                read_sheet: true,
+                next_read_sheet_index: 3
+            }
+        );
+        let action = BofRecordHandler::decide(BofType::Worksheet, None, false);
+        assert_eq!(
+            action,
+            BofAction::BeginWorksheet {
+                read_sheet: false,
+                next_read_sheet_index: 1
+            }
+        );
+    }
+
+    #[test]
+    fn process_record_parses_type_code() {
+        // 对应 Java：BOF 类型码 0x0005/0x0010/其他
+        let mut handler = BofRecordHandler::new();
+        handler.process_record(BOF_SID, &[0, 0, 0x05, 0x00]); // workbook
+        handler.process_record(BOF_SID, &[0, 0, 0x10, 0x00]); // worksheet
+        handler.process_record(BOF_SID, &[0, 0, 0x99, 0x00]); // other
+        handler.process_record(BOF_SID, &[0, 0]); // 数据不足
+        handler.process_record(0xFFFF, &[0, 0, 0x05, 0x00]); // 错误 sid
+    }
+}

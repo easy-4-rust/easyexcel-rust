@@ -71,3 +71,44 @@ impl Font {
         font.bold(self.bold)
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn font_accessors_and_setters_round_trip() {
+        // 对应 Java：Font 的 getter/setter
+        let mut font = Font::new();
+        assert_eq!(font.font_name(), None);
+        assert_eq!(font.font_height_in_points(), 0);
+        assert!(!font.is_bold());
+
+        font.set_font_name("宋体");
+        font.set_font_height_in_points(11);
+        font.set_bold(true);
+
+        assert_eq!(font.font_name(), Some("宋体"));
+        assert_eq!(font.font_height_in_points(), 11);
+        assert!(font.is_bold());
+    }
+
+    #[test]
+    fn to_write_font_carries_all_fields() {
+        // 对应 Java：Font 转 WriteFont 保留名称、字号、加粗
+        let mut font = Font::new();
+        font.set_font_name("Arial");
+        font.set_font_height_in_points(14);
+        font.set_bold(true);
+        let write_font = font.to_write_font();
+        assert_eq!(write_font.get_font_name(), Some("Arial"));
+        assert_eq!(write_font.get_font_height_in_points(), Some(14.0));
+        assert_eq!(write_font.get_bold(), Some(true));
+
+        // 无名称时跳过名称设置
+        let plain = Font::new().to_write_font();
+        assert_eq!(plain.get_font_name(), None);
+        assert_eq!(plain.get_font_height_in_points(), Some(0.0));
+        assert_eq!(plain.get_bold(), Some(false));
+    }
+}

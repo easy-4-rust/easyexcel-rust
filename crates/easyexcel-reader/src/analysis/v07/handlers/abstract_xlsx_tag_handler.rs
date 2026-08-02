@@ -19,3 +19,18 @@ impl AbstractXlsxTagHandler {
 }
 
 impl XlsxTagHandler for AbstractXlsxTagHandler {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn abstract_base_is_constructible_and_noop() {
+        // 对应 Java：AbstractXlsxTagHandler 直接构造并继承默认实现
+        let mut handler = AbstractXlsxTagHandler::new();
+        assert!(handler.support());
+        handler.start_element("c", "r=A1");
+        handler.end_element("c");
+        handler.characters("v");
+    }
+}

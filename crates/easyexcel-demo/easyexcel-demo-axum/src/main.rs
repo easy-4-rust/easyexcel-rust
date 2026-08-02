@@ -10,6 +10,7 @@ use std::net::SocketAddr;
 use axum::{
     Router,
     extract::Multipart,
+    http::StatusCode,
     routing::{get, post},
 };
 use chrono::NaiveDateTime;
@@ -115,24 +116,24 @@ async fn download_failed_using_json() -> axum::response::Response {
 }
 
 /// `POST /upload` — 读取 multipart 文件并事件解析。
-async fn upload(mut multipart: Multipart) -> Result<String, String> {
+async fn upload(mut multipart: Multipart) -> Result<String, (StatusCode, String)> {
     while let Some(field) = multipart
         .next_field()
         .await
-        .map_err(|error| error.to_string())?
+        .map_err(|error| (StatusCode::BAD_REQUEST, error.to_string()))?
     {
         let file_name = field.file_name().unwrap_or("upload.xlsx").to_owned();
         let bytes = field
             .bytes()
             .await
-            .map_err(|error| error.to_string())?
+            .map_err(|error| (StatusCode::BAD_REQUEST, error.to_string()))?
             .to_vec();
         let extension = extension_from_path(std::path::Path::new(&file_name));
         read_upload_with_listener::<UploadData, _>(&bytes, extension, UploadDataListener::new())
-            .map_err(|error| error.to_string())?;
+            .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
         return Ok("success".to_owned());
     }
-    Err("未收到上传文件".to_owned())
+    Err((StatusCode::BAD_REQUEST, "未收到上传文件".to_owned()))
 }
 
 /// 启动 Axum 服务。
@@ -145,12 +146,31 @@ async fn main() {
         .route("/downloadFailedUsingJson", get(download_failed_using_json))
         .route("/upload", post(upload));
 
-    let address = SocketAddr::from(([127, 0, 0, 1], 8080));
+    // 端口可经 PORT 环境变量配置（对应 Java Spring 的 server.port，默认 8080）
+    let port = std::env::var("PORT")
+        .ok()
+        .and_then(|value| value.parse::<u16>().ok())
+        .unwrap_or(8080);
+    let address = SocketAddr::from(([127, 0, 0, 1], port));
     info!("Axum WebTest 演示监听 http://{address}");
     info!("GET  /download");
     info!("GET  /downloadFailedUsingJson");
     info!("POST /upload");
 
     let listener = tokio::net::TcpListener::bind(address).await.expect("bind");
-    axum::serve(listener, app).await.expect("serve");
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .expect("serve");
+}
+
+/// 等待 SIGTERM/SIGINT 后优雅关闭（容器部署标准行为）。
+async fn shutdown_signal() {
+    use tokio::signal::unix::{SignalKind, signal};
+    let mut terminate = signal(SignalKind::terminate()).expect("SIGTERM handler");
+    let mut interrupt = signal(SignalKind::interrupt()).expect("SIGINT handler");
+    tokio::select! {
+        _ = terminate.recv() => {}
+        _ = interrupt.recv() => {}
+    }
 }

@@ -470,4 +470,233 @@ mod tests {
             &CellValue::String("nullable-null".to_owned())
         );
     }
+
+    #[test]
+    fn empty_string_converter_required_methods_are_invocable() {
+        // 对应 Java：普通转换器注册后其 convert_to_rust_data 可被直接调用
+        let column = ExcelColumn::new("value", "Value", Some(0), 0, None);
+        let context = location();
+        let read_context = ReadConverterContext::new(None, &column, &context);
+        assert_eq!(
+            EmptyStringConverter
+                .convert_to_rust_data(&read_context)
+                .expect("empty cell converter"),
+            "converted-empty".to_owned()
+        );
+    }
+
+    #[test]
+    fn option_write_converter_required_methods_are_invocable() {
+        // 对应 Java：Option 写转换器在值存在时输出字符串单元格
+        let column = ExcelColumn::new("value", "Value", Some(0), 0, None);
+        let context = location();
+        let value: Option<String> = Some("x".to_owned());
+        let converted = OptionWriteConverter
+            .convert_to_excel_data(&WriteConverterContext::new(&value, &column, &context))
+            .expect("option write converter");
+        assert_eq!(converted.value(), &CellValue::String("x".to_owned()));
+    }
+}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use crate::converter::nullable_object_converter::NullableObjectConverter;
+
+    #[derive(Clone, Copy)]
+    struct TextConverter;
+
+    impl Converter<String> for TextConverter {
+        fn support_excel_type(&self) -> CellDataType {
+            CellDataType::String
+        }
+
+        fn convert_to_rust_data(
+            &self,
+            _context: &ReadConverterContext<'_>,
+        ) -> Result<String, ExcelError> {
+            Ok("converted".to_owned())
+        }
+    }
+
+    #[derive(Clone, Copy)]
+    struct OptionTextWriteConverter;
+
+    impl Converter<Option<String>> for OptionTextWriteConverter {
+        fn convert_to_excel_data(
+            &self,
+            context: &WriteConverterContext<'_, Option<String>>,
+        ) -> Result<WriteCellData, ExcelError> {
+            Ok(WriteCellData::new(CellValue::String(
+                context
+                    .value()
+                    .as_deref()
+                    .unwrap_or("nullable-marker")
+                    .to_owned(),
+            )))
+        }
+    }
+
+    impl NullableObjectConverter<Option<String>> for OptionTextWriteConverter {}
+
+    /// 测试辅助：`target_type_id` 谎报 `i32`，但 `convert_to_rust_data` 返回 String，
+    /// 用于验证注册表对转换器返回类型契约的检查。
+    struct WrongTypeReadConverter;
+
+    impl ErasedConverter for WrongTypeReadConverter {
+        fn target_type_id(&self) -> TypeId {
+            TypeId::of::<i32>()
+        }
+
+        fn target_type_name(&self) -> &'static str {
+            "i32"
+        }
+
+        fn support_excel_type(&self) -> CellDataType {
+            CellDataType::String
+        }
+
+        fn write_target_type(&self) -> Option<CellDataType> {
+            None
+        }
+
+        fn accepts_null(&self) -> bool {
+            false
+        }
+
+        fn convert_to_rust_data(
+            &self,
+            _context: &ReadConverterContext<'_>,
+        ) -> Result<Box<dyn Any>, ExcelError> {
+            Ok(Box::new("not-an-i32".to_owned()))
+        }
+
+        fn convert_to_excel_data(
+            &self,
+            _value: &dyn Any,
+            _column: &ExcelColumn,
+            _context: &ConvertContext,
+        ) -> Result<WriteCellData, ExcelError> {
+            Ok(WriteCellData::new(CellValue::Empty))
+        }
+    }
+
+    fn column() -> ExcelColumn {
+        ExcelColumn::new("value", "Value", Some(0), 0, None)
+    }
+
+    fn location() -> ConvertContext {
+        ConvertContext {
+            sheet_name: "Data".to_owned(),
+            row_index: 1,
+            column_index: Some(0),
+            field: "value",
+            format: None,
+            use_1904_windowing: false,
+        }
+    }
+
+    #[test]
+    fn read_dispatch_invokes_registered_converter_for_matching_cell_type() {
+        // 对应 Java：`AbstractHolder.converterMap` 读取分发
+        let mut registry = ConverterRegistry::default();
+        registry.register::<String, _>(TextConverter);
+        let cell = CellValue::String("x".to_owned());
+        let column = column();
+        let location = location();
+        let read_context = ReadConverterContext::new(Some(&cell), &column, &location);
+        assert_eq!(
+            registry
+                .convert_to_rust_data::<String>(&read_context)
+                .expect("registered converter dispatch"),
+            Some("converted".to_owned())
+        );
+    }
+
+    #[test]
+    fn write_contract_rejects_mismatched_any_downcast() {
+        // 对应 Java：注册表在转换器类型与目标类型不一致时报错
+        let typed = TypedConverter::<String, TextConverter> {
+            converter: TextConverter,
+            write_target_type: None,
+            accepts_null: false,
+            marker: std::marker::PhantomData,
+        };
+        let value: &dyn Any = &42_i32;
+        let error = ErasedConverter::convert_to_excel_data(&typed, value, &column(), &location())
+            .expect_err("type contract mismatch");
+        assert!(matches!(error, ExcelError::Format(_)));
+    }
+
+    #[test]
+    fn read_contract_rejects_converter_returning_wrong_type() {
+        // 对应 Java：转换器返回值类型与目标类型不一致时报错
+        let mut registry = ConverterRegistry::default();
+        registry.converters.push(Arc::new(WrongTypeReadConverter));
+        let cell = CellValue::String("x".to_owned());
+        let column = column();
+        let location = location();
+        let read_context = ReadConverterContext::new(Some(&cell), &column, &location);
+        let error = registry
+            .convert_to_rust_data::<i32>(&read_context)
+            .expect_err("converter returned String for i32");
+        assert!(matches!(error, ExcelError::Format(_)));
+    }
+
+    #[test]
+    fn nullable_write_type_registration_is_selected_for_absent_value() {
+        // 对应 Java：`registerNullableWriteConverter` + 目标单元格类型
+        let mut registry = ConverterRegistry::default();
+        registry.register_nullable_for_write_type::<Option<String>, _>(
+            CellDataType::String,
+            OptionTextWriteConverter,
+        );
+        let registry = registry.with_write_target(Some(CellDataType::String));
+        let value: Option<String> = None;
+        let converted = registry
+            .convert_to_excel_data_with_null_state(&value, &column(), &location(), true)
+            .expect("nullable write dispatch")
+            .expect("nullable converter selected");
+        assert_eq!(
+            converted.value(),
+            &CellValue::String("nullable-marker".to_owned())
+        );
+    }
+
+    #[test]
+    fn ordinary_write_converter_runs_for_present_value() {
+        // 对应 Java：普通写转换器仅在值非空时被调用
+        let mut registry = ConverterRegistry::default();
+        registry.register::<Option<String>, _>(OptionTextWriteConverter);
+        let value: Option<String> = Some("x".to_owned());
+        let converted = registry
+            .convert_to_excel_data_with_null_state(&value, &column(), &location(), false)
+            .expect("ordinary write dispatch")
+            .expect("ordinary converter selected");
+        assert_eq!(converted.value(), &CellValue::String("x".to_owned()));
+    }
+
+    #[test]
+    fn erased_helper_reaches_every_dispatch_accessor() {
+        // 对应 Java：注册表 Debug/写分发/空值门覆盖 target_type_name /
+        // write_target_type / accepts_null / convert_to_excel_data
+        let mut registry = ConverterRegistry::default();
+        registry.converters.push(Arc::new(WrongTypeReadConverter));
+        // Debug 格式化调用 target_type_name
+        assert!(format!("{registry:?}").contains("i32"));
+        // 写分发调用 write_target_type 与 convert_to_excel_data
+        let converted = registry
+            .convert_to_excel_data(&42_i32, &column(), &location())
+            .expect("write dispatch")
+            .expect("wrong-type converter selected");
+        assert_eq!(converted.value(), &CellValue::Empty);
+        // 写分发空值状态触发 accepts_null 门（非 nullable 转换器提前返回）
+        let value: i32 = 1;
+        assert!(
+            registry
+                .convert_to_excel_data_with_null_state(&value, &column(), &location(), true)
+                .expect("write null dispatch")
+                .is_none()
+        );
+    }
 }

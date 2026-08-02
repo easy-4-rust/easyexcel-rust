@@ -48,3 +48,22 @@ mod tests {
         assert_eq!(handler.approximate_total_row_number, Some(42));
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn process_record_reads_last_row_add_1() {
+        // 对应 Java：IndexRecordHandler.processRecord 读取 lastRowAdd1
+        let mut handler = IndexRecordHandler::new();
+        let mut data = vec![0u8; 16];
+        data[8..12].copy_from_slice(&9u32.to_le_bytes());
+        handler.process_record(INDEX_SID, &data);
+        assert_eq!(handler.approximate_total_row_number, Some(9));
+        // 数据不足 / 错误 sid 忽略
+        handler.process_record(INDEX_SID, &[0; 15]);
+        handler.process_record(0xFFFF, &data);
+        assert_eq!(handler.approximate_total_row_number, Some(9));
+    }
+}

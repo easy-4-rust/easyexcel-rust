@@ -37,3 +37,19 @@ impl XlsxTagHandler for CellInlineStringValueTagHandler {
         self.inner.append(ch);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn inline_string_handler_accumulates_rich_text_runs() {
+        // 对应 Java：CellInlineStringValueTagHandler 多段 <t> 追加同一缓冲
+        let mut handler = CellInlineStringValueTagHandler::new();
+        handler.start_element("t", "");
+        handler.characters("rich ");
+        handler.start_element("t", "");
+        handler.characters("text");
+        assert_eq!(handler.take(), "rich text");
+    }
+}

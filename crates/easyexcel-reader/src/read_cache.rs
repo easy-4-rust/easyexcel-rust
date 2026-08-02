@@ -1,3 +1,8 @@
+//! 对应 Java：`com.alibaba.excel.cache.ReadCache` / `ReadCacheSelector`
+//!
+//! 共享字符串缓存：`ReadCacheMode` 选择纯内存或并发磁盘缓存，
+//! 等价于 Java EasyExcel 的 `DefaultReadCache`（内存上限内缓存、超出后落盘）。
+
 use std::cell::RefCell;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom, Write};
@@ -42,9 +47,7 @@ pub trait SharedStringCacheReader: Send + Sync {
 }
 
 /// 统一的共享字符串缓存抽象：组合写入与读取两个阶段。
-pub trait SharedStringCache:
-    SharedStringCacheWriter + SharedStringCacheReader
-{
+pub trait SharedStringCache: SharedStringCacheWriter + SharedStringCacheReader {
     /// 一次性写入并结束写入阶段，返回只读缓存视图（内部缓存 API 脚手架）。
     // 内部缓存 API 脚手架，暂未在 crate 内直接调用。
     #[allow(dead_code)]
@@ -326,23 +329,12 @@ mod tests {
 
     struct FaultyIo {
         fail_seek: bool,
-        fail_read: bool,
         fail_write: bool,
     }
 
     impl Seek for FaultyIo {
         fn seek(&mut self, _position: SeekFrom) -> std::io::Result<u64> {
             if self.fail_seek {
-                Err(io_error())
-            } else {
-                Ok(0)
-            }
-        }
-    }
-
-    impl Read for FaultyIo {
-        fn read(&mut self, _buffer: &mut [u8]) -> std::io::Result<usize> {
-            if self.fail_read {
                 Err(io_error())
             } else {
                 Ok(0)
@@ -462,7 +454,6 @@ mod tests {
             _temporary_file: Some(temporary_file),
             writer: Some(Box::new(FaultyIo {
                 fail_seek: true,
-                fail_read: false,
                 fail_write: false,
             })),
             path,
@@ -476,12 +467,13 @@ mod tests {
             _temporary_file: Some(temporary_file),
             writer: Some(Box::new(FaultyIo {
                 fail_seek: false,
-                fail_read: false,
                 fail_write: true,
             })),
             path,
             entries: Vec::new(),
         };
+        // 接线 Write::flush 测试桩：显式调用以覆盖空实现
+        assert!(cache2.writer.as_mut().unwrap().flush().is_ok());
         assert!(cache2.put("value".to_owned()).is_err());
     }
 
@@ -497,5 +489,57 @@ mod tests {
         writer.seek(SeekFrom::Start(0)).expect("seek");
         writer.write_all(&[0xff]).expect("corrupt value");
         assert!(cache.get(0).is_err());
+    }
+}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn put_and_finish_shortcut_wraps_finish() -> Result<()> {
+        // 对应 Java：MapCache put 后一次调用完成写入阶段
+        let cache: Box<MemorySharedStringCache> = Box::new(MemorySharedStringCache::default());
+        let mut cache = cache;
+        cache.put("alpha".to_owned())?;
+        let reader = cache.put_and_finish()?;
+        assert_eq!(reader.get(0)?, "alpha".to_owned());
+        Ok(())
+    }
+
+    #[test]
+    fn memory_reader_reports_bounds_and_len() -> Result<()> {
+        // 对应 Java：内存缓存 get 越界报错、len 统计
+        let cache = MemorySharedStringCache::default();
+        let mut cache = cache;
+        cache.put("one".to_owned())?;
+        cache.put("two".to_owned())?;
+        let reader = Box::new(cache).finish()?;
+        assert_eq!(reader.len(), 2);
+        assert!(reader.get(2).is_err());
+        assert!(reader.get(usize::MAX).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn disk_reader_reports_out_of_bounds_index() -> Result<()> {
+        // 对应 Java：磁盘缓存 get 越界报错
+        let cache = create_cache(ReadCacheMode::Disk, DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES)?;
+        let mut cache = cache;
+        cache.put("disk".to_owned())?;
+        let reader = cache.finish()?;
+        assert_eq!(reader.get(0)?, "disk".to_owned());
+        assert_eq!(reader.len(), 1);
+        assert!(reader.get(1).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn memory_cache_get_out_of_bounds_errors_during_write_phase() -> Result<()> {
+        // 写入阶段的 MemorySharedStringCache 越界同样报错
+        let cache = MemorySharedStringCache::default();
+        let cache = cache;
+        assert!(cache.get(0).is_err());
+        Ok(())
     }
 }

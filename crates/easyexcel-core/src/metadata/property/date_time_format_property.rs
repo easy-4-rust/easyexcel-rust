@@ -42,3 +42,24 @@ impl DateTimeFormatProperty {
         self.use1904windowing
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_build_and_accessors() {
+        // 对应 Java：DateTimeFormatProperty 构造、build 与 getter
+        let property = DateTimeFormatProperty::new("yyyy-MM-dd", true);
+        assert_eq!(property.format(), "yyyy-MM-dd");
+        assert!(property.use1904windowing());
+
+        assert!(DateTimeFormatProperty::build(None, Some(true)).is_none());
+        let built = DateTimeFormatProperty::build(Some("yyyy/MM/dd"), None).expect("built");
+        assert_eq!(built.format(), "yyyy/MM/dd");
+        assert!(!built.use1904windowing());
+
+        let built = DateTimeFormatProperty::build(Some("yyyy"), Some(true)).expect("built");
+        assert!(built.use1904windowing());
+    }
+}

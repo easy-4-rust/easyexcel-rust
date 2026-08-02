@@ -14,3 +14,34 @@ pub fn copy(reader: &mut dyn Read, writer: &mut dyn Write) -> Result<u64, ExcelE
     let n = io::copy(reader, writer)?;
     Ok(n)
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    struct FailingReader;
+
+    impl Read for FailingReader {
+        fn read(&mut self, _buf: &mut [u8]) -> io::Result<usize> {
+            Err(io::Error::new(io::ErrorKind::Other, "read failed"))
+        }
+    }
+
+    #[test]
+    fn copy_transfers_all_bytes() {
+        // 对应 Java：IOUtils.copy 全量拷贝
+        let mut reader = io::Cursor::new(vec![1_u8, 2, 3, 4]);
+        let mut writer = Vec::new();
+        let copied = copy(&mut reader, &mut writer).expect("copies");
+        assert_eq!(copied, 4);
+        assert_eq!(writer, vec![1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn copy_reports_reader_errors() {
+        // 对应 Java：读取失败时向上抛错
+        let mut writer = Vec::new();
+        let error = copy(&mut FailingReader, &mut writer).expect_err("fails");
+        assert!(matches!(error, ExcelError::Io(_)));
+    }
+}

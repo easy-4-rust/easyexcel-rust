@@ -563,3 +563,148 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use crate::{CellValue, ConvertContext, ExcelColumn};
+
+    fn context(format: Option<&'static str>) -> ConvertContext {
+        ConvertContext {
+            sheet_name: "Data".to_owned(),
+            row_index: 1,
+            column_index: Some(0),
+            field: "value",
+            format,
+            use_1904_windowing: false,
+        }
+    }
+
+    #[test]
+    fn default_write_string_converters_format_dates_with_optional_format() {
+        // 对应 Java：`DefaultWriteStringConverter` 对 Date / LocalDateTime 使用默认或自定义格式
+        let registry = load_default_write_converter().with_write_target(Some(CellDataType::String));
+        let column = ExcelColumn::new("value", "Value", Some(0), 0, None);
+        let date = NaiveDate::from_ymd_opt(2025, 1, 2).unwrap();
+        assert_eq!(
+            registry
+                .convert_to_excel_data(&date, &column, &context(None))
+                .expect("default date string converter")
+                .expect("Date string converter registered")
+                .value(),
+            &CellValue::String("2025-01-02".to_owned())
+        );
+        assert_eq!(
+            registry
+                .convert_to_excel_data(&date, &column, &context(Some("%d/%m/%Y")))
+                .expect("formatted date string converter")
+                .expect("Date string converter registered")
+                .value(),
+            &CellValue::String("02/01/2025".to_owned())
+        );
+        let datetime = date.and_hms_opt(3, 4, 5).unwrap();
+        assert_eq!(
+            registry
+                .convert_to_excel_data(&datetime, &column, &context(None))
+                .expect("default datetime string converter")
+                .expect("LocalDateTime string converter registered")
+                .value(),
+            &CellValue::String("2025-01-02 03:04:05".to_owned())
+        );
+        assert_eq!(
+            registry
+                .convert_to_excel_data(&datetime, &column, &context(Some("%H:%M %d/%m/%Y")))
+                .expect("formatted datetime string converter")
+                .expect("LocalDateTime string converter registered")
+                .value(),
+            &CellValue::String("03:04 02/01/2025".to_owned())
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests_extra2 {
+    use super::*;
+    use crate::{CellValue, ConvertContext, ExcelColumn};
+
+    fn context(format: Option<&'static str>) -> ConvertContext {
+        ConvertContext {
+            sheet_name: "Data".to_owned(),
+            row_index: 1,
+            column_index: Some(0),
+            field: "value",
+            format,
+            use_1904_windowing: false,
+        }
+    }
+
+    #[test]
+    fn default_write_string_converter_formats_unsigned_integers() {
+        // 对应 Java：无专用 String 转换器的类型回退到 DefaultWriteStringConverter
+        let registry = load_default_write_converter().with_write_target(Some(CellDataType::String));
+        let column = ExcelColumn::new("value", "Value", Some(0), 0, None);
+        assert_eq!(
+            registry
+                .convert_to_excel_data(&42_u32, &column, &context(None))
+                .expect("u32 default string converter")
+                .expect("u32 string converter registered")
+                .value(),
+            &CellValue::String("42".to_owned())
+        );
+        assert_eq!(
+            registry
+                .convert_to_excel_data(&7_usize, &column, &context(None))
+                .expect("usize default string converter")
+                .expect("usize string converter registered")
+                .value(),
+            &CellValue::String("7".to_owned())
+        );
+    }
+
+    #[test]
+    fn default_write_string_converter_date_and_datetime_branches() {
+        // 对应 Java：DefaultWriteStringConverter 对 Date / LocalDateTime
+        // 使用默认或自定义格式（默认 %Y-%m-%d / %Y-%m-%d %H:%M:%S）
+        let column = ExcelColumn::new("value", "Value", Some(0), 0, None);
+        let date = NaiveDate::from_ymd_opt(2025, 1, 2).unwrap();
+        let date_converter = DefaultWriteStringConverter::<NaiveDate>::default();
+        assert_eq!(
+            Converter::convert_to_excel_data(
+                &date_converter,
+                &WriteConverterContext::new(&date, &column, &context(None)),
+            )
+            .expect("date string converter")
+            .value(),
+            &CellValue::String("2025-01-02".to_owned())
+        );
+        assert_eq!(
+            Converter::convert_to_excel_data(
+                &date_converter,
+                &WriteConverterContext::new(&date, &column, &context(Some("%d/%m/%Y"))),
+            )
+            .expect("formatted date string converter")
+            .value(),
+            &CellValue::String("02/01/2025".to_owned())
+        );
+        let datetime = date.and_hms_opt(3, 4, 5).unwrap();
+        let datetime_converter = DefaultWriteStringConverter::<NaiveDateTime>::default();
+        assert_eq!(
+            Converter::convert_to_excel_data(
+                &datetime_converter,
+                &WriteConverterContext::new(&datetime, &column, &context(None)),
+            )
+            .expect("datetime string converter")
+            .value(),
+            &CellValue::String("2025-01-02 03:04:05".to_owned())
+        );
+        assert_eq!(
+            Converter::convert_to_excel_data(
+                &datetime_converter,
+                &WriteConverterContext::new(&datetime, &column, &context(Some("%H:%M"))),
+            )
+            .expect("formatted datetime string converter")
+            .value(),
+            &CellValue::String("03:04".to_owned())
+        );
+    }
+}

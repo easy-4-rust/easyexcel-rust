@@ -62,3 +62,24 @@ mod tests {
         assert_eq!(cell.value, "a");
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn process_label_keeps_value_without_trim() {
+        // 对应 Java：autoTrim=false 时保留原始空白
+        let cell = LabelRecordHandler::process_label(1, 2, " a ", false);
+        assert_eq!(cell.value, " a ");
+    }
+
+    #[test]
+    fn process_record_gates_on_sid_and_length() {
+        // 对应 Java：LabelRecordHandler.processRecord 的 sid/长度门控
+        let mut handler = LabelRecordHandler::new();
+        handler.process_record(LABEL_SID, &[1, 0, 2, 0, 0, 0, 0, 0]);
+        handler.process_record(0xFFFF, &[1, 0, 2, 0, 0, 0, 0, 0]);
+        handler.process_record(LABEL_SID, &[0, 0]);
+    }
+}

@@ -13,3 +13,20 @@ pub trait XlsRecordHandler {
     /// cannot silently inherit an empty implementation.
     fn process_record(&mut self, record_sid: u16, data: &[u8]);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct NoopHandler;
+
+    impl XlsRecordHandler for NoopHandler {
+        fn process_record(&mut self, _record_sid: u16, _data: &[u8]) {}
+    }
+
+    #[test]
+    fn default_support_is_true() {
+        // 对应 Java：默认 support() 返回 true
+        assert!(NoopHandler.support());
+    }
+}

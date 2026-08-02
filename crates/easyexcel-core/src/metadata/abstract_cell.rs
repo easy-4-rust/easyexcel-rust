@@ -42,3 +42,23 @@ impl Cell for AbstractCell {
         self.column_index
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_with_indices_and_cell_trait() {
+        // 对应 Java：AbstractCell 构造与 Cell 接口
+        let empty = AbstractCell::new();
+        assert_eq!(empty.row_index(), None);
+        assert_eq!(empty.column_index(), None);
+        assert_eq!(AbstractCell::default(), empty);
+
+        let positioned = AbstractCell::with_indices(3, 7);
+        assert_eq!(positioned.row_index(), Some(3));
+        assert_eq!(positioned.column_index(), Some(7));
+        assert_eq!(positioned.row_index, Some(3));
+        assert_eq!(positioned.column_index, Some(7));
+    }
+}

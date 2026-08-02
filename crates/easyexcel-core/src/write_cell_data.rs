@@ -245,3 +245,62 @@ impl FromExcelCell for WriteCellData {
         Ok(Self::new(cell.cloned().unwrap_or(CellValue::Empty)))
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn from_hyperlink_and_from_comment_construct_values() {
+        // 对应 Java：WriteCellData 超链接与备注构造
+        let link = WriteCellData::from_hyperlink("https://x", "显示");
+        assert_eq!(
+            link.value(),
+            &CellValue::Hyperlink {
+                url: "https://x".to_owned(),
+                text: "显示".to_owned()
+            }
+        );
+
+        let comment = WriteCellData::from_comment(CellValue::Int(5), "说明");
+        assert_eq!(
+            comment.value(),
+            &CellValue::Comment {
+                value: Box::new(CellValue::Int(5)),
+                text: "说明".to_owned()
+            }
+        );
+    }
+
+    #[test]
+    fn decoration_getters_return_configured_metadata() {
+        // 对应 Java：getCommentData / getHyperlinkData / getFormulaData
+        let data = WriteCellData::from_string("x")
+            .comment_data(CommentData::new().text("备注".to_owned()))
+            .hyperlink_data(HyperlinkData::new().address("https://x".to_owned()))
+            .formula_data(FormulaData::new("=A1"));
+
+        assert_eq!(
+            data.get_comment_data().map(CommentData::note_text),
+            Some("备注".to_owned())
+        );
+        assert_eq!(
+            data.get_hyperlink_data()
+                .and_then(HyperlinkData::get_address),
+            Some("https://x")
+        );
+        assert_eq!(
+            data.get_formula_data().map(FormulaData::formula_value),
+            Some("=A1")
+        );
+    }
+
+    #[test]
+    fn decoration_getters_return_none_when_absent() {
+        // 对应 Java：未设置装饰时返回空
+        let data = WriteCellData::from_string("plain");
+        assert!(data.get_comment_data().is_none());
+        assert!(data.get_hyperlink_data().is_none());
+        assert!(data.get_formula_data().is_none());
+    }
+}

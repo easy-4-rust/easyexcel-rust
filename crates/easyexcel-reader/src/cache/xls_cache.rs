@@ -61,3 +61,34 @@ impl ReadCache for XlsCache {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn xls_cache_reads_the_prebuilt_string_table() -> Result<()> {
+        // 对应 Java：XlsCache(SSTRecord) 只读查询
+        let cache = XlsCache::new(vec!["alpha".to_owned(), "beta".to_owned()]);
+        assert_eq!(cache.len(), 2);
+        assert!(!cache.is_empty());
+        assert_eq!(cache.get(Some(0))?, Some("alpha".to_owned()));
+        assert_eq!(cache.get(Some(1))?, Some("beta".to_owned()));
+        // 越界与空 key 均返回 None（对应 Java：get 未命中返回 null）
+        assert_eq!(cache.get(Some(2))?, None);
+        assert_eq!(cache.get(None)?, None);
+        Ok(())
+    }
+
+    #[test]
+    fn xls_cache_empty_placeholder_is_noop() -> Result<()> {
+        // 对应 Java：new XlsCache() 空缓存占位
+        let mut cache = XlsCache::empty();
+        assert_eq!(cache.len(), 0);
+        assert!(cache.is_empty());
+        cache.put("ignored".to_owned())?;
+        cache.put_finished()?;
+        assert_eq!(cache.get(Some(0))?, None);
+        Ok(())
+    }
+}

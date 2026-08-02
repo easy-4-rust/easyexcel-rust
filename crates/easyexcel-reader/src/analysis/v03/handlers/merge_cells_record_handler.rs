@@ -105,3 +105,66 @@ mod tests {
         assert_eq!(extras[0].extra_type(), CellExtraType::Merge);
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn process_record_parses_areas_and_truncation() {
+        // 对应 Java：MergeCellsRecordHandler.processRecord 解析多个合并区域
+        let mut handler = MergeCellsRecordHandler::new(true);
+        let mut data = vec![2, 0];
+        data.extend_from_slice(&[0, 0, 1, 0, 0, 0, 1, 0]); // A1:B2
+        data.extend_from_slice(&[2, 0, 3, 0, 2, 0, 3, 0]); // C3:D4
+        handler.process_record(0x00E5, &data);
+        let extras = handler.take_extras();
+        assert_eq!(extras.len(), 2);
+        assert_eq!(
+            (extras[0].first_row_index(), extras[0].last_row_index()),
+            (0, 1)
+        );
+        assert_eq!(
+            (
+                extras[1].first_column_index(),
+                extras[1].last_column_index()
+            ),
+            (2, 3)
+        );
+        assert!(handler.support());
+
+        // 截断的区域直接跳出（长度不足 8 字节）
+        handler.process_record(0x00E5, &[2, 0, 0, 0, 1, 0, 0]);
+        assert!(handler.take_extras().is_empty());
+    }
+
+    #[test]
+    fn process_record_disabled_or_wrong_sid_is_noop() {
+        // 对应 Java：support()=false 或 sid 不匹配时忽略
+        let mut disabled = MergeCellsRecordHandler::new(false);
+        disabled.process_record(0x00E5, &[1, 0, 0, 0, 1, 0, 0, 0, 1, 0]);
+        assert!(disabled.take_extras().is_empty());
+
+        let mut handler = MergeCellsRecordHandler::new(true);
+        handler.process_record(0xFFFF, &[1, 0, 0, 0, 1, 0, 0, 0, 1, 0]);
+        assert!(handler.take_extras().is_empty());
+        handler.process_record(0x00E5, &[0]);
+        assert!(handler.take_extras().is_empty());
+    }
+}
+
+#[cfg(test)]
+mod tests_extra2 {
+    use super::*;
+
+    #[test]
+    fn trait_support_reflects_enabled_flag() {
+        // 对应 Java：XlsRecordHandler.support() 与 enable 开关一致
+        assert!(XlsRecordHandler::support(&MergeCellsRecordHandler::new(
+            true
+        )));
+        assert!(!XlsRecordHandler::support(&MergeCellsRecordHandler::new(
+            false
+        )));
+    }
+}

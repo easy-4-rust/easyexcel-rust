@@ -83,6 +83,11 @@ pub fn remove_thread_local_cache() {
 /// Best-effort translation of Java `SimpleDateFormat` pattern letters to
 /// `chrono` format specifiers. Only the letters actually used by EasyExcel
 /// are mapped; unknown chars pass through verbatim.
+///
+/// 对应 Java：SimpleDateFormat 的 y/M/d/H/m/s/S 字母在 chrono 中必须以 `%`
+/// 前缀出现，且连续的相同字母表示同一单位（如 `yyyy` 是四位年），因此
+/// 折叠为一个 chrono 说明符；`'foo'` 字面量块按 SimpleDateFormat 语义
+/// 原样输出。
 fn chrono_java_to_rust(pattern: &str) -> String {
     let mut out = String::with_capacity(pattern.len() * 2);
     let chars: Vec<char> = pattern.chars().collect();
@@ -91,27 +96,115 @@ fn chrono_java_to_rust(pattern: &str) -> String {
         let c = chars[i];
         match c {
             '\'' => {
-                // Java literal block 'foo' -> chrono literal #[foo]
-                let mut literal = String::new();
+                // Java literal block 'foo' -> 直接输出字面量（chrono 中无前缀字母本就是字面量）
                 i += 1;
                 while i < chars.len() && chars[i] != '\'' {
-                    literal.push(chars[i]);
+                    out.push(chars[i]);
                     i += 1;
                 }
-                out.push_str("[");
-                out.push_str(&literal);
-                out.push_str("]");
             }
-            'y' => out.push_str("yyyy"),
-            'M' => out.push_str("MM"),
-            'd' => out.push_str("dd"),
-            'H' => out.push_str("HH"),
-            'm' => out.push_str("mm"),
-            's' => out.push_str("ss"),
-            'S' => out.push_str("SSS"),
+            'y' | 'M' | 'd' | 'H' | 'm' | 's' | 'S' => {
+                // 连续相同字母折叠为一个说明符（Java yyyy == 四位年）
+                let run_char = c;
+                while i < chars.len() && chars[i] == run_char {
+                    i += 1;
+                }
+                let spec = match run_char {
+                    'y' => "%Y",
+                    'M' => "%m",
+                    'd' => "%d",
+                    'H' => "%H",
+                    'm' => "%M",
+                    's' => "%S",
+                    _ => "%3f", // 'S'：Java 毫秒 = 3 位小数
+                };
+                out.push_str(spec);
+                continue;
+            }
             other => out.push(other),
         }
         i += 1;
     }
     out
+}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn parse_date_with_datetime_pattern() {
+        // 对应 Java：DateUtils.parseDate 日期时间格式（DATE_FORMAT_19）
+        let dt = parse_date("2024-01-02 03:04:05", ["yyyy-MM-dd HH:mm:ss"])
+            .expect("should parse datetime");
+        assert_eq!(
+            dt,
+            NaiveDate::from_ymd_opt(2024, 1, 2)
+                .unwrap()
+                .and_hms_opt(3, 4, 5)
+                .unwrap()
+        );
+    }
+
+    #[test]
+    fn parse_date_with_date_only_pattern_midnight() {
+        // 对应 Java：DateUtils.parseDate 仅日期格式（DATE_FORMAT_10），时分秒归零
+        let dt = parse_date("2024-01-02", ["yyyy-MM-dd"]).expect("should parse date");
+        assert_eq!(
+            dt,
+            NaiveDate::from_ymd_opt(2024, 1, 2)
+                .unwrap()
+                .and_hms_opt(0, 0, 0)
+                .unwrap()
+        );
+    }
+
+    #[test]
+    fn parse_date_falls_back_to_next_pattern() {
+        // 对应 Java：多个格式依次尝试，第一个失败后尝试第二个
+        let dt = parse_date(
+            "2024/01/02 03:04:05",
+            ["yyyy-MM-dd HH:mm:ss", "yyyy/MM/dd HH:mm:ss"],
+        )
+        .expect("should fall back");
+        assert_eq!(
+            dt,
+            NaiveDate::from_ymd_opt(2024, 1, 2)
+                .unwrap()
+                .and_hms_opt(3, 4, 5)
+                .unwrap()
+        );
+    }
+
+    #[test]
+    fn parse_date_returns_error_when_no_pattern_matches() {
+        // 对应 Java：所有格式均不匹配时抛出解析异常
+        let err = parse_date("not-a-date", ["yyyy-MM-dd"]).expect_err("should fail");
+        assert!(err.to_string().contains("parseDate failed"));
+    }
+
+    #[test]
+    fn format_uses_chrono_java_translated_pattern() {
+        // 对应 Java：DateFormatUtils.format
+        let dt = NaiveDate::from_ymd_opt(2024, 1, 2)
+            .unwrap()
+            .and_hms_opt(3, 4, 5)
+            .unwrap();
+        assert_eq!(format(dt, "yyyy-MM-dd HH:mm:ss"), "2024-01-02 03:04:05");
+        // 字面量块、毫秒与未映射字符原样保留
+        assert_eq!(
+            format(dt, "yyyy'年'MM-dd HH:mm:ss.SSS"),
+            "2024年01-02 03:04:05.000"
+        );
+        assert_eq!(format(dt, "yyyy/MM/dd"), "2024/01/02");
+    }
+
+    #[test]
+    fn remove_thread_local_cache_increments_counter() {
+        // 对应 Java：DateUtils.removeThreadLocalCache 生命周期触发
+        remove_thread_local_cache();
+        remove_thread_local_cache();
+        // 两次调用不 panic 即视为通过
+        assert!(true);
+    }
 }

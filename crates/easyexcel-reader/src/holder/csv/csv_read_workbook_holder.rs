@@ -35,3 +35,31 @@ impl Default for CsvReadWorkbookHolder {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn csv_holder_constructors_and_inner_access() {
+        // 对应 Java：CsvReadWorkbookHolder 构造与 inner 访问器
+        let holder = CsvReadWorkbookHolder::new();
+        assert!(
+            !holder.inner().ignore_empty_row,
+            "derive Default 初始为 false"
+        );
+
+        let mut options = crate::ReadOptions::default();
+        options.ignore_empty_row = false;
+        let from_options = CsvReadWorkbookHolder::from_options(&options);
+        assert!(!from_options.inner().ignore_empty_row);
+        assert_eq!(from_options.inner().charset, options.charset);
+        assert_eq!(from_options.inner().password, options.password);
+        let default_from_options =
+            CsvReadWorkbookHolder::from_options(&crate::ReadOptions::default());
+        assert!(default_from_options.inner().ignore_empty_row);
+
+        let defaulted = CsvReadWorkbookHolder::default();
+        assert!(defaulted.inner().auto_close_stream);
+    }
+}

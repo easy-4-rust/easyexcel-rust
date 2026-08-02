@@ -12,3 +12,16 @@ pub fn is_true(expression: bool, message: impl Into<String>) -> Result<(), Excel
         Err(ExcelError::Unsupported(message.into()))
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn is_true_ok_and_error_paths() {
+        // 对应 Java：Validate.isTrue 校验成功与失败
+        is_true(true, "must be true").expect("ok");
+        let error = is_true(false, "expression failed").expect_err("fails");
+        assert!(error.to_string().contains("expression failed"));
+    }
+}

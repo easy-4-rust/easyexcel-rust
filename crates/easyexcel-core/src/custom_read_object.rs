@@ -45,3 +45,34 @@ impl PartialEq for CustomReadObject {
 }
 
 impl Eq for CustomReadObject {}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_and_downcast_round_trip() {
+        // 对应 Java：customObject 包装与类型安全还原
+        let object = CustomReadObject::new(42_i64);
+        assert_eq!(object.downcast_ref::<i64>(), Some(&42));
+        assert_eq!(object.downcast_ref::<String>(), None);
+        assert_eq!(object.downcast_ref::<i32>(), None);
+    }
+
+    #[test]
+    fn equality_is_pointer_identity() {
+        // 对应 Java：同一对象引用才相等
+        let first = CustomReadObject::new("x");
+        let clone = first.clone();
+        assert_eq!(first, clone);
+        let other = CustomReadObject::new("x");
+        assert_ne!(first, other);
+    }
+
+    #[test]
+    fn debug_is_non_exhaustive() {
+        // 对应 Java：调试输出不泄漏内部值
+        let object = CustomReadObject::new(1);
+        assert!(format!("{object:?}").contains("CustomReadObject"));
+    }
+}

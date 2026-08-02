@@ -91,3 +91,78 @@ impl ExcelReaderTableBuilder {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::io::Write;
+
+    use easyexcel_core::{AnalysisContext, DynamicRow, ReadListener, Result};
+    use tempfile::NamedTempFile;
+
+    use super::*;
+    use crate::ReadOptions;
+
+    #[derive(Default)]
+    struct CollectListener {
+        rows: Vec<DynamicRow>,
+    }
+
+    impl ReadListener<DynamicRow> for CollectListener {
+        fn invoke(&mut self, data: DynamicRow, _context: &AnalysisContext) -> Result<()> {
+            self.rows.push(data);
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn table_builder_parameter_and_build_round_trip() {
+        // 对应 Java：ExcelReaderTableBuilder.tableNo/build()/parameter()
+        let builder = ExcelReaderTableBuilder::new().table_no(3);
+        assert_eq!(builder.table_no, Some(3));
+        let table = builder.build();
+        assert_eq!(table.table_no(), 3);
+        assert_eq!(builder.parameter(), table);
+    }
+
+    #[test]
+    fn table_builder_with_excel_reader_starts_defaulted() -> Result<()> {
+        // 对应 Java：ExcelReaderTableBuilder(ExcelReader) 构造
+        let mut file = NamedTempFile::with_suffix(".csv")?;
+        writeln!(file, "name,age")?;
+        writeln!(file, "alice,30")?;
+        let mut reader = ExcelReader::new(
+            file.path(),
+            ReadOptions::default(),
+            CollectListener::default(),
+        )?;
+
+        // 接线 CollectListener：真实读取触发 invoke，收集数据行
+        let mut observed = CollectListener::default();
+        reader.read_all_with_additional_listener(&mut observed)?;
+        assert_eq!(observed.rows.len(), 1);
+        assert_eq!(
+            observed.rows[0].get(0),
+            Some(&easyexcel_core::DynamicValue::String("alice".to_owned()))
+        );
+
+        let builder = ExcelReaderTableBuilder::with_excel_reader(&reader);
+        assert_eq!(builder.table_no, None);
+        assert_eq!(builder.head_row_number, None);
+        assert_eq!(builder.use_scientific_format, None);
+
+        // 未设置 tableNo 时默认 0（对应 Java：ReadTable 默认 tableNo）
+        let table = ExcelReaderTableBuilder::new().build();
+        assert_eq!(table.table_no(), 0);
+        Ok(())
+    }
+
+    #[test]
+    fn table_builder_stores_parameter_builder_knobs() {
+        // 对应 Java：AbstractExcelReaderParameterBuilder 继承方法
+        let builder = ExcelReaderTableBuilder::new()
+            .head_row_number(2)
+            .use_scientific_format(true);
+        assert_eq!(builder.head_row_number, Some(2));
+        assert_eq!(builder.use_scientific_format, Some(true));
+    }
+}

@@ -98,3 +98,72 @@ impl NumberFormatProperty {
         self.rounding_mode
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn bigdecimal_mapping_covers_every_mode() {
+        // 对应 Java：RoundingMode 与 NumberFormatProperty.roundingMode 双向映射
+        assert_eq!(NumberRoundingMode::Up.bigdecimal(), Some(RoundingMode::Up));
+        assert_eq!(
+            NumberRoundingMode::Down.bigdecimal(),
+            Some(RoundingMode::Down)
+        );
+        assert_eq!(
+            NumberRoundingMode::Ceiling.bigdecimal(),
+            Some(RoundingMode::Ceiling)
+        );
+        assert_eq!(
+            NumberRoundingMode::Floor.bigdecimal(),
+            Some(RoundingMode::Floor)
+        );
+        assert_eq!(
+            NumberRoundingMode::HalfUp.bigdecimal(),
+            Some(RoundingMode::HalfUp)
+        );
+        assert_eq!(
+            NumberRoundingMode::HalfDown.bigdecimal(),
+            Some(RoundingMode::HalfDown)
+        );
+        assert_eq!(
+            NumberRoundingMode::HalfEven.bigdecimal(),
+            Some(RoundingMode::HalfEven)
+        );
+        assert_eq!(NumberRoundingMode::Unnecessary.bigdecimal(), None);
+
+        for (mode, bigdecimal_mode) in [
+            (NumberRoundingMode::Up, RoundingMode::Up),
+            (NumberRoundingMode::Down, RoundingMode::Down),
+            (NumberRoundingMode::Ceiling, RoundingMode::Ceiling),
+            (NumberRoundingMode::Floor, RoundingMode::Floor),
+            (NumberRoundingMode::HalfUp, RoundingMode::HalfUp),
+            (NumberRoundingMode::HalfDown, RoundingMode::HalfDown),
+            (NumberRoundingMode::HalfEven, RoundingMode::HalfEven),
+        ] {
+            assert_eq!(NumberRoundingMode::from(bigdecimal_mode), mode);
+        }
+        // 默认模式
+        assert_eq!(NumberRoundingMode::default(), NumberRoundingMode::HalfUp);
+    }
+
+    #[test]
+    fn new_build_and_accessors() {
+        // 对应 Java：NumberFormatProperty 构造与 getter
+        let property = NumberFormatProperty::new("0.00", NumberRoundingMode::HalfDown);
+        assert_eq!(property.format(), "0.00");
+        assert_eq!(property.rounding_mode(), NumberRoundingMode::HalfDown);
+        assert_eq!(property.format, "0.00");
+
+        // build 未指定格式返回 None
+        assert!(NumberFormatProperty::build(None, Some(NumberRoundingMode::Up)).is_none());
+        // build 未指定舍入模式使用默认
+        let built = NumberFormatProperty::build(Some("0"), None).expect("built");
+        assert_eq!(built.rounding_mode(), NumberRoundingMode::default());
+        let built = NumberFormatProperty::build(Some("0.0"), Some(NumberRoundingMode::Floor))
+            .expect("built");
+        assert_eq!(built.rounding_mode(), NumberRoundingMode::Floor);
+        assert_eq!(built.format(), "0.0");
+    }
+}

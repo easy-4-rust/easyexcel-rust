@@ -76,3 +76,19 @@ mod tests {
         assert_eq!(cell.value, 3.5);
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn process_record_gates_on_sid_and_length() {
+        // 对应 Java：NumberRecordHandler.processRecord 的 sid/长度门控
+        let mut handler = NumberRecordHandler::new();
+        handler.process_record(0xFFFF, &[2, 0, 3, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        assert!(handler.last_cell.is_none());
+        handler.process_record(NUMBER_SID, &[2, 0, 3, 0, 7, 0]);
+        assert!(handler.last_cell.is_none());
+        assert_eq!(handler.last_cell, None, "不足 14 字节时保持原状态");
+    }
+}

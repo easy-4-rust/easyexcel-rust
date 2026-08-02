@@ -60,3 +60,28 @@ impl WriteWorkbookContext {
         &self.holders
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn path_and_workbook_accessors() {
+        // 对应 Java：WorkbookWriteHandlerContext 路径访问器
+        let context = WriteWorkbookContext::new("out.xlsx");
+        assert_eq!(context.path(), Path::new("out.xlsx"));
+        assert!(std::ptr::eq(context.workbook(), &context));
+        assert_eq!(
+            context.write_workbook_holder().path(),
+            Path::new("out.xlsx")
+        );
+    }
+
+    #[test]
+    fn from_write_context_captures_path() {
+        // 对应 Java：从 live WriteContext 创建回调上下文
+        let live = crate::WriteContextImpl::new("live.xlsx");
+        let context = WriteWorkbookContext::from_write_context(&live);
+        assert_eq!(context.path(), Path::new("live.xlsx"));
+    }
+}

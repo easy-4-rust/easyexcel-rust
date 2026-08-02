@@ -123,3 +123,26 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn process_record_validates_label_sst_body() {
+        // 对应 Java：LabelSstRecordHandler.processRecord 校验 10 字节 BIFF body
+        let mut handler = LabelSstRecordHandler::new();
+        let mut data = vec![3, 0, 2, 0, 0, 0];
+        data.extend_from_slice(&5u32.to_le_bytes()); // sstIndex=5
+        handler.process_record(LABEL_SST_SID, &data);
+        let reference = handler.last_reference.expect("label sst reference");
+        assert_eq!(
+            (reference.row, reference.column, reference.sst_index),
+            (3, 2, 5)
+        );
+        // 数据不足 / 错误 sid 忽略
+        handler.process_record(LABEL_SST_SID, &[0; 9]);
+        handler.process_record(0xFFFF, &data);
+        assert_eq!(handler.last_reference.unwrap().sst_index, 5);
+    }
+}

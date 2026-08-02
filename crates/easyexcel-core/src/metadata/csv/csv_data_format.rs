@@ -67,3 +67,27 @@ mod tests {
         assert_eq!(formats.get_format(custom), Some("yyyy-mm-dd hh:mm:ss.000"));
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn get_format_resolves_builtin_and_custom() {
+        // 对应 Java：CsvDataFormat.getFormat(short)
+        let formats = CsvDataFormat::new();
+        assert_eq!(formats.get_format(0), Some("General"));
+        assert_eq!(formats.get_format(14), Some("yyyy/m/d"));
+        assert_eq!(formats.get_format(99), None);
+        assert_eq!(formats.get_format(-1), None);
+    }
+
+    #[test]
+    fn get_format_resolves_registered_custom() {
+        // 对应 Java：注册后的自定义格式按索引取回
+        let mut formats = CsvDataFormat::new();
+        let index = formats.get_format_index("my-format");
+        assert_eq!(index, 82);
+        assert_eq!(formats.get_format(index), Some("my-format"));
+    }
+}

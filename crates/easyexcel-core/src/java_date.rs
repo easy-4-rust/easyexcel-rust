@@ -74,3 +74,22 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use chrono::NaiveDate;
+
+    #[test]
+    fn from_java_date_to_naive_datetime() {
+        // 对应 Java：java.util.Date 与 LocalDateTime 互转
+        let value = NaiveDate::from_ymd_opt(2024, 5, 6)
+            .unwrap()
+            .and_hms_opt(7, 8, 9)
+            .unwrap();
+        let java_date = JavaDate::new(value);
+        let back: NaiveDateTime = java_date.into();
+        assert_eq!(back, value);
+        assert_eq!(JavaDate::from(value).naive_local(), value);
+    }
+}

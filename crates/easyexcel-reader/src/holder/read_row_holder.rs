@@ -22,3 +22,18 @@ impl ReadRowHolder {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn row_holder_new_carries_index_and_cells() {
+        // 对应 Java：ReadRowHolder 构造携带 rowIndex 与 cellMap
+        let mut cells = HashMap::new();
+        cells.insert(1usize, CellValue::String("v".to_owned()));
+        let holder = ReadRowHolder::new(3, cells.clone());
+        assert_eq!(holder.row_index, 3);
+        assert_eq!(holder.cell_map, cells);
+    }
+}

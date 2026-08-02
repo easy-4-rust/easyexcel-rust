@@ -56,3 +56,34 @@ impl Default for XlsReadWorkbookHolder {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn xls_holder_constructors_and_need_read_sheet() {
+        // 对应 Java：XlsReadWorkbookHolder 构造与 needReadSheet 开关
+        let mut holder = XlsReadWorkbookHolder::new();
+        assert!(holder.need_read_sheet());
+        holder.set_need_read_sheet(false);
+        assert!(!holder.need_read_sheet());
+        assert!(
+            !holder.inner().ignore_empty_row,
+            "derive Default 初始为 false"
+        );
+
+        let mut options = crate::ReadOptions::default();
+        options.ignore_empty_row = false;
+        let from_options = XlsReadWorkbookHolder::from_options(&options);
+        assert!(!from_options.inner().ignore_empty_row);
+        assert_eq!(from_options.inner().charset, options.charset);
+        let default_from_options =
+            XlsReadWorkbookHolder::from_options(&crate::ReadOptions::default());
+        assert!(default_from_options.inner().ignore_empty_row);
+
+        let mut mut_holder = XlsReadWorkbookHolder::default();
+        mut_holder.inner_mut().ignore_empty_row = false;
+        assert!(!mut_holder.inner().ignore_empty_row);
+    }
+}

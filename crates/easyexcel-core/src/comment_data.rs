@@ -80,3 +80,40 @@ impl CommentData {
             .unwrap_or_default()
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn builders_and_getters_round_trip() {
+        // 对应 Java：CommentData 构建与 getter
+        let anchor = ClientAnchorData::new();
+        let comment = CommentData::new()
+            .author("作者")
+            .rich_text_string_data(RichTextStringData::new("富文本"))
+            .anchor(anchor);
+
+        assert_eq!(comment.get_author(), Some("作者"));
+        assert_eq!(
+            comment
+                .get_rich_text_string_data()
+                .map(RichTextStringData::text_string),
+            Some("富文本")
+        );
+        assert_eq!(comment.get_anchor(), anchor);
+        assert_eq!(comment.note_text(), "富文本");
+    }
+
+    #[test]
+    fn text_convenience_and_missing_body() {
+        // 对应 Java：text 便捷方法与空备注
+        let comment = CommentData::new().text("纯文本");
+        assert_eq!(comment.note_text(), "纯文本");
+
+        let empty = CommentData::new();
+        assert_eq!(empty.get_author(), None);
+        assert!(empty.get_rich_text_string_data().is_none());
+        assert_eq!(empty.note_text(), "");
+    }
+}

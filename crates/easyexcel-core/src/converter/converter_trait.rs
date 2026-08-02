@@ -54,3 +54,45 @@ pub trait Converter<T> {
         ))
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use crate::{
+        CellValue, ConvertContext, ExcelColumn, ReadConverterContext, WriteConverterContext,
+    };
+
+    /// 测试辅助：不实现任何方法，全部走 trait 默认实现。
+    struct MinimalConverter;
+
+    impl Converter<i32> for MinimalConverter {}
+
+    fn context() -> ConvertContext {
+        ConvertContext {
+            sheet_name: "Data".to_owned(),
+            row_index: 1,
+            column_index: Some(0),
+            field: "value",
+            format: None,
+            use_1904_windowing: false,
+        }
+    }
+
+    #[test]
+    fn default_methods_use_string_key_and_report_unsupported() {
+        // 对应 Java：`Converter` 默认 `supportExcelTypeKey` 为 STRING，读写默认抛异常
+        let converter = MinimalConverter;
+        assert_eq!(converter.support_excel_type(), CellDataType::String);
+        let column = ExcelColumn::new("value", "Value", Some(0), 0, None);
+        let context = context();
+        let cell = CellValue::Int(1);
+        let read_error = converter
+            .convert_to_rust_data(&ReadConverterContext::new(Some(&cell), &column, &context))
+            .expect_err("default read is unsupported");
+        assert!(matches!(read_error, ExcelError::Unsupported(_)));
+        let write_error = converter
+            .convert_to_excel_data(&WriteConverterContext::new(&1_i32, &column, &context))
+            .expect_err("default write is unsupported");
+        assert!(matches!(write_error, ExcelError::Unsupported(_)));
+    }
+}

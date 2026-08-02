@@ -214,3 +214,94 @@ mod tests {
         assert_eq!(parsed.data_type, CellDataType::String);
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn start_cell_parses_and_resets_temp_buffer() {
+        // 对应 Java：CellTagHandler.startElement 解析 r/t/s 并清空 tempData
+        let mut handler = CellTagHandler::new();
+        handler.append_characters("old");
+        let mut attrs = HashMap::new();
+        attrs.insert(ATTRIBUTE_R.to_owned(), "C5".to_owned());
+        attrs.insert(ATTRIBUTE_T.to_owned(), "b".to_owned());
+        attrs.insert(ATTRIBUTE_S.to_owned(), "7".to_owned());
+        let parsed = handler.start_cell(&attrs, 0, 0).unwrap();
+        assert_eq!(parsed.position, (4, 2));
+        assert_eq!(handler.column_index, Some(2));
+        assert_eq!(handler.style_index, 7);
+        assert_eq!(handler.cell_type.as_deref(), Some("b"));
+        assert_eq!(handler.data_type, CellDataType::Boolean);
+        assert!(handler.temp_data.is_empty());
+    }
+
+    #[test]
+    fn start_cell_uses_fallback_cursor_without_r() {
+        // 对应 Java：无 r 属性时沿用游标位置
+        let mut handler = CellTagHandler::new();
+        let parsed = handler.start_cell(&HashMap::new(), 3, 5).unwrap();
+        assert_eq!(parsed.position, (3, 5));
+        assert_eq!(handler.column_index, Some(5));
+        // 无 s 属性时默认样式 0（对应 Java：DEFAULT_FORMAT_INDEX）
+        assert_eq!(handler.style_index, 0);
+    }
+
+    #[test]
+    fn start_cell_rejects_unknown_type_and_bad_style() {
+        // 对应 Java：未知 t 类型 / 非数字 s 报错
+        let mut attrs = HashMap::new();
+        attrs.insert(ATTRIBUTE_T.to_owned(), "zzz".to_owned());
+        assert!(CellTagHandler::new().start_cell(&attrs, 0, 0).is_err());
+
+        let mut attrs = HashMap::new();
+        attrs.insert(ATTRIBUTE_S.to_owned(), "nan".to_owned());
+        assert!(CellTagHandler::new().start_cell(&attrs, 0, 0).is_err());
+
+        // 无 t 属性时默认数值类型
+        let parsed = CellTagHandler::parse_start(&HashMap::new(), 0, 0).unwrap();
+        assert_eq!(parsed.cell_type, None);
+    }
+
+    #[test]
+    fn tag_events_update_cell_state() {
+        // 对应 Java：CellTagHandler 的 SAX 事件入口（含前缀标签名）
+        let mut handler = CellTagHandler::new();
+        handler.characters("accumulate");
+        assert_eq!(handler.temp_data, "accumulate");
+        handler.start_element("x:c", "r=A1 t=s");
+        assert!(handler.temp_data.is_empty());
+        assert_eq!(handler.data_type, CellDataType::String);
+        // 非 c 标签不重置状态
+        handler.start_element("row", "r=1");
+        handler.end_element("row");
+        assert_eq!(handler.data_type, CellDataType::String);
+        handler.end_element("c");
+        assert_eq!(handler.data_type, CellDataType::Empty);
+        assert_eq!(handler.style_index, 0);
+        assert_eq!(handler.cell_type, None);
+    }
+
+    #[test]
+    fn parse_cell_reference_rejects_invalid_and_out_of_range() {
+        // 对应 Java：非法单元格引用 / 越界行列报错
+        let mut attrs = HashMap::new();
+        attrs.insert(ATTRIBUTE_R.to_owned(), "A".to_owned());
+        assert!(CellTagHandler::parse_start(&attrs, 0, 0).is_err());
+
+        let mut attrs = HashMap::new();
+        attrs.insert(ATTRIBUTE_R.to_owned(), "XFE1".to_owned()); // 列 16385 越界
+        assert!(CellTagHandler::parse_start(&attrs, 0, 0).is_err());
+
+        let mut attrs = HashMap::new();
+        attrs.insert(ATTRIBUTE_R.to_owned(), "A1048577".to_owned()); // 行越界
+        assert!(CellTagHandler::parse_start(&attrs, 0, 0).is_err());
+
+        // $ 前缀与最大合法坐标
+        let mut attrs = HashMap::new();
+        attrs.insert(ATTRIBUTE_R.to_owned(), "$XFD$1048576".to_owned());
+        let parsed = CellTagHandler::parse_start(&attrs, 0, 0).unwrap();
+        assert_eq!(parsed.position, (1_048_575, 16_383));
+    }
+}

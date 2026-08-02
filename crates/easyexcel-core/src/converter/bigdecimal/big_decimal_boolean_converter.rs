@@ -25,3 +25,45 @@ impl crate::Converter<bigdecimal::BigDecimal> for BigDecimalBooleanConverter {
         ))
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use crate::Converter;
+    use crate::{CellValue, ConvertContext, ExcelColumn, WriteConverterContext};
+
+    fn context() -> ConvertContext {
+        ConvertContext {
+            sheet_name: "Data".to_owned(),
+            row_index: 1,
+            column_index: Some(0),
+            field: "value",
+            format: None,
+            use_1904_windowing: false,
+        }
+    }
+
+    #[test]
+    fn writes_one_as_true_and_zero_as_false() {
+        // 对应 Java：`BigDecimalBooleanConverter` 按 1 / 0 写出布尔单元格
+        let converter = BigDecimalBooleanConverter;
+        let column = ExcelColumn::new("value", "Value", Some(0), 0, None);
+        let context = context();
+        let one = bigdecimal::BigDecimal::from(1);
+        let zero = bigdecimal::BigDecimal::from(0);
+        assert_eq!(
+            converter
+                .convert_to_excel_data(&WriteConverterContext::new(&one, &column, &context))
+                .unwrap()
+                .value(),
+            &CellValue::Bool(true)
+        );
+        assert_eq!(
+            converter
+                .convert_to_excel_data(&WriteConverterContext::new(&zero, &column, &context))
+                .unwrap()
+                .value(),
+            &CellValue::Bool(false)
+        );
+    }
+}

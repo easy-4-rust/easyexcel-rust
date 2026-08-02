@@ -240,3 +240,68 @@ mod tests {
         assert!(decode_sst_segments(&[first]).is_err());
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn rejects_implausible_unique_string_counts() {
+        // 对应 Java：SST 声明的 unique 数量与可用字节不匹配时报错
+        let mut body = Vec::new();
+        body.extend_from_slice(&100u32.to_le_bytes());
+        body.extend_from_slice(&100u32.to_le_bytes());
+        body.extend_from_slice(&2u16.to_le_bytes());
+        body.push(0);
+        body.extend_from_slice(b"ab");
+        assert!(decode_sst_segments(&[body]).is_err());
+    }
+
+    #[test]
+    fn rejects_truncated_rich_runs() {
+        // 对应 Java：rich-run 声明但缺少 run 数据时报错
+        let mut body = Vec::new();
+        body.extend_from_slice(&1u32.to_le_bytes());
+        body.extend_from_slice(&1u32.to_le_bytes());
+        body.extend_from_slice(&1u16.to_le_bytes());
+        body.push(0x08); // 带 rich-run
+        body.extend_from_slice(&1u16.to_le_bytes()); // rich-run count = 1
+        body.push(b'a'); // 字符本体
+        // 缺少 4 字节 rich-run → skip 越界报错
+        assert!(decode_sst_segments(&[body]).is_err());
+    }
+
+    #[test]
+    fn rejects_utf16_unit_split_across_segments() {
+        // 对应 Java：UTF-16 码元被 BIFF 记录边界切开时报错
+        let mut first = Vec::new();
+        first.extend_from_slice(&1u32.to_le_bytes());
+        first.extend_from_slice(&1u32.to_le_bytes());
+        first.extend_from_slice(&2u16.to_le_bytes());
+        first.push(1); // wide
+        first.push(0x41); // 只有 1 字节，缺少另一半码元
+        assert!(decode_sst_segments(&[first]).is_err());
+    }
+
+    #[test]
+    fn rejects_headers_truncated_across_records() {
+        // 对应 Java：字符串头（字符数/标志位）跨越记录边界时报错
+        assert!(decode_unicode_string_segments(&[vec![3, 0]]).is_err());
+        // 声明字符数超过数据量时报错
+        assert!(decode_unicode_string_segments(&[vec![5, 0, 0, b'a']]).is_err());
+    }
+
+    #[test]
+    fn decodes_wide_and_compressed_single_segment_strings() -> Result<()> {
+        // 对应 Java：BIFF8 XLUnicodeString 宽/窄两种编码
+        assert_eq!(
+            decode_unicode_string_segments(&[vec![2, 0, 1, 0x60, 0x4F, 0x7D, 0x59]])?,
+            "你好"
+        );
+        assert_eq!(
+            decode_unicode_string_segments(&[vec![3, 0, 0, b'a', b'b', b'c']])?,
+            "abc"
+        );
+        Ok(())
+    }
+}

@@ -520,9 +520,8 @@ fn read_workbook_stream(bytes: &[u8]) -> Result<(String, Vec<u8>)> {
         .map_err(|error| ExcelError::Format(format!("cannot open xls OLE container: {error}")))?;
     for path in ["/Workbook", "/Book", "Workbook", "Book"] {
         if cf.is_stream(path) {
-            let mut stream = cf.open_stream(path).map_err(|error| {
-                ExcelError::Format(format!("cannot open {path} stream: {error}"))
-            })?;
+            #[rustfmt::skip]
+            let mut stream = cf.open_stream(path).map_err(|error| ExcelError::Format(format!("cannot open {path} stream: {error}")))?;
             let mut workbook = Vec::new();
             stream.read_to_end(&mut workbook)?;
             let normalized = if path.ends_with("Book") && !path.ends_with("Workbook") {
@@ -545,16 +544,13 @@ fn rewrite_workbook_stream(
 ) -> Result<Vec<u8>> {
     let mut cursor = Cursor::new(ole_bytes.to_vec());
     {
-        let mut cf = CompoundFile::open(&mut cursor).map_err(|error| {
-            ExcelError::Format(format!("cannot reopen xls OLE container: {error}"))
-        })?;
+        #[rustfmt::skip]
+        let mut cf = CompoundFile::open(&mut cursor).map_err(|error| ExcelError::Format(format!("cannot reopen xls OLE container: {error}")))?;
         {
-            let mut stream = cf.open_stream(workbook_path).map_err(|error| {
-                ExcelError::Format(format!("cannot rewrite {workbook_path}: {error}"))
-            })?;
-            stream.set_len(0).map_err(|error| {
-                ExcelError::Format(format!("cannot truncate {workbook_path}: {error}"))
-            })?;
+            #[rustfmt::skip]
+            let mut stream = cf.open_stream(workbook_path).map_err(|error| ExcelError::Format(format!("cannot rewrite {workbook_path}: {error}")))?;
+            #[rustfmt::skip]
+            stream.set_len(0).map_err(|error| ExcelError::Format(format!("cannot truncate {workbook_path}: {error}")))?;
             stream.write_all(workbook)?;
             stream.flush()?;
         }

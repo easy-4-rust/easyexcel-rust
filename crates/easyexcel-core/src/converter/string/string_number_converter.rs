@@ -156,3 +156,72 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+    use crate::Converter;
+    use crate::{CellValue, ConvertContext, ExcelColumn, ReadConverterContext};
+
+    fn convert_context(format: Option<&'static str>) -> ConvertContext {
+        ConvertContext {
+            sheet_name: "Data".to_owned(),
+            row_index: 1,
+            column_index: Some(0),
+            field: "value",
+            format,
+            use_1904_windowing: false,
+        }
+    }
+
+    #[test]
+    fn reads_decimal_and_int_cells_without_metadata_and_rejects_others() {
+        // 对应 Java：`StringNumberConverter` 对 Decimal / Int 单元格直接取数值
+        let converter = StringNumberConverter;
+        let column = ExcelColumn::new("value", "Value", Some(0), 0, None);
+        let context = convert_context(None);
+        let decimal = CellValue::Decimal("12.30".parse().unwrap());
+        assert_eq!(
+            converter
+                .convert_to_rust_data(&ReadConverterContext::new(
+                    Some(&decimal),
+                    &column,
+                    &context,
+                ))
+                .unwrap(),
+            "12.30"
+        );
+        let int = CellValue::Int(42);
+        assert_eq!(
+            converter
+                .convert_to_rust_data(&ReadConverterContext::new(Some(&int), &column, &context,))
+                .unwrap(),
+            "42"
+        );
+        let boolean = CellValue::Bool(true);
+        assert!(
+            converter
+                .convert_to_rust_data(&ReadConverterContext::new(
+                    Some(&boolean),
+                    &column,
+                    &context,
+                ))
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn internal_date_format_renders_excel_serial_as_datetime() {
+        // 对应 Java：`StringNumberConverter` 遇到内置日期格式时按日期时间渲染
+        let converter = StringNumberConverter;
+        let column = ExcelColumn::new("value", "Value", Some(0), 0, Some("yyyy-MM-dd HH:mm:ss"));
+        let context = convert_context(None);
+        let serial = CellValue::Float(1.5);
+        assert_eq!(
+            converter
+                .convert_to_rust_data(&ReadConverterContext::new(Some(&serial), &column, &context,))
+                .unwrap(),
+            "1900-01-01 12:00:00"
+        );
+    }
+}
