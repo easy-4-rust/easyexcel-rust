@@ -14,7 +14,7 @@ path = "src/main.rs"
 [dependencies]
 easyexcel = { workspace = true }
 easyexcel-core = { workspace = true }
-easyexcel-support-axum = { path = "../../easyexcel-support/easyexcel-support-axum" }
+easyexcel-axum = { path = "../../easyexcel-support/easyexcel-axum" }
 axum = { workspace = true, features = ["multipart"] }
 chrono = { workspace = true, default-features = false, features = ["std", "clock"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal"] }

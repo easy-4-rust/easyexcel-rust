@@ -4,7 +4,7 @@ use actix_multipart::Multipart;
 use actix_web::{App, HttpResponse, HttpServer, Responder, web};
 use chrono::NaiveDateTime;
 use easyexcel::{AnalysisContext, ExcelRow, ReadListener, Result as ExcelResult};
-use easyexcel_support_actix::{
+use easyexcel_actix::{
     excel_download_or_json_response, excel_download_response, extension_from_path,
     read_upload_with_listener,
 };

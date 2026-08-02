@@ -1541,6 +1541,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "easyexcel-actix"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "bytes",
+ "easyexcel",
+ "easyexcel-core",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "urlencoding",
+]
+
+[[package]]
+name = "easyexcel-axum"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "bytes",
+ "easyexcel",
+ "easyexcel-core",
+ "http 1.4.2",
+ "http-body-util",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tower",
+ "urlencoding",
+]
+
+[[package]]
 name = "easyexcel-core"
 version = "0.1.0"
 dependencies = [
@@ -1563,8 +1596,8 @@ dependencies = [
  "actix-web",
  "chrono",
  "easyexcel",
+ "easyexcel-actix",
  "easyexcel-core",
- "easyexcel-support-actix",
  "futures-util",
  "libc",
  "tracing",
@@ -1579,8 +1612,8 @@ dependencies = [
  "axum",
  "chrono",
  "easyexcel",
+ "easyexcel-axum",
  "easyexcel-core",
- "easyexcel-support-axum",
  "libc",
  "tokio",
  "tracing",
@@ -1615,6 +1648,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "easyexcel-hyper"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "easyexcel",
+ "easyexcel-core",
+ "http 1.4.2",
+ "http-body-util",
+ "hyper 1.11.0",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "urlencoding",
+]
+
+[[package]]
 name = "easyexcel-macro"
 version = "0.1.0"
 dependencies = [
@@ -1623,6 +1672,20 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.3",
+]
+
+[[package]]
+name = "easyexcel-poem"
+version = "0.1.0"
+dependencies = [
+ "easyexcel",
+ "easyexcel-core",
+ "http 1.4.2",
+ "poem",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "urlencoding",
 ]
 
 [[package]]
@@ -1649,70 +1712,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "easyexcel-support-actix"
-version = "0.1.0"
-dependencies = [
- "actix-web",
- "bytes",
- "easyexcel",
- "easyexcel-core",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "urlencoding",
-]
-
-[[package]]
-name = "easyexcel-support-axum"
-version = "0.1.0"
-dependencies = [
- "axum",
- "bytes",
- "easyexcel",
- "easyexcel-core",
- "http 1.4.2",
- "http-body-util",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "tower",
- "urlencoding",
-]
-
-[[package]]
-name = "easyexcel-support-hyper"
-version = "0.1.0"
-dependencies = [
- "bytes",
- "easyexcel",
- "easyexcel-core",
- "http 1.4.2",
- "http-body-util",
- "hyper 1.11.0",
- "serde_json",
- "tempfile",
- "tokio",
- "urlencoding",
-]
-
-[[package]]
-name = "easyexcel-support-poem"
-version = "0.1.0"
-dependencies = [
- "easyexcel",
- "easyexcel-core",
- "http 1.4.2",
- "poem",
- "serde_json",
- "tempfile",
- "tokio",
- "urlencoding",
-]
-
-[[package]]
-name = "easyexcel-support-rocket"
+name = "easyexcel-rocket"
 version = "0.1.0"
 dependencies = [
  "easyexcel",
@@ -1725,7 +1725,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "easyexcel-support-salvo"
+name = "easyexcel-salvo"
 version = "0.1.0"
 dependencies = [
  "easyexcel",
@@ -1734,35 +1734,6 @@ dependencies = [
  "serde_json",
  "tempfile",
  "urlencoding",
-]
-
-[[package]]
-name = "easyexcel-support-tide"
-version = "0.1.0"
-dependencies = [
- "easyexcel",
- "easyexcel-core",
- "serde_json",
- "tempfile",
- "tide",
- "tokio",
- "urlencoding",
-]
-
-[[package]]
-name = "easyexcel-support-warp"
-version = "0.1.0"
-dependencies = [
- "bytes",
- "easyexcel",
- "easyexcel-core",
- "http 1.4.2",
- "http-body-util",
- "serde_json",
- "tempfile",
- "tokio",
- "urlencoding",
- "warp",
 ]
 
 [[package]]
@@ -1780,6 +1751,35 @@ dependencies = [
  "rust_xlsxwriter",
  "tempfile",
  "zip 8.6.0",
+]
+
+[[package]]
+name = "easyexcel-tide"
+version = "0.1.0"
+dependencies = [
+ "easyexcel",
+ "easyexcel-core",
+ "serde_json",
+ "tempfile",
+ "tide",
+ "tokio",
+ "urlencoding",
+]
+
+[[package]]
+name = "easyexcel-warp"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "easyexcel",
+ "easyexcel-core",
+ "http 1.4.2",
+ "http-body-util",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "urlencoding",
+ "warp",
 ]
 
 [[package]]
