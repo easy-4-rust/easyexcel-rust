@@ -17,3 +17,6 @@ chrono = { workspace = true, default-features = false, features = ["std", "clock
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+tempfile = { workspace = true }

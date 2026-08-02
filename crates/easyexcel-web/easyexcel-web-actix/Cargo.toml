@@ -19,6 +19,7 @@ urlencoding = { workspace = true }
 
 [dev-dependencies]
 actix-web = { workspace = true, features = ["macros"] }
+tokio = { workspace = true, features = ["rt"] }
 
 [lints]
 workspace = true
