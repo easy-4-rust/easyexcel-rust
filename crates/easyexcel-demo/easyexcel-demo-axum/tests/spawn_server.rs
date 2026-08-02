@@ -1,7 +1,7 @@
 //! 启动 `easyexcel-demo-axum` 服务进程，用原生 HTTP 请求验证
-//! 下载 / 失败降级 / 上传三个端点（对应 Java WebTest 的三个接口）。
+//! 下载 / 失败降级 / 上传三个端点（对应 Java `WebTest` 的三个接口）。
 //!
-//! 端口经 PORT 环境变量配置（对应 Java 可配置 server.port），测试使用随机空闲端口。
+//! 端口经 `PORT` 环境变量配置（对应 Java 可配置 server.port），测试使用随机空闲端口。
 
 use std::io::{Read, Write};
 use std::net::TcpStream;
@@ -62,7 +62,7 @@ fn stop_gracefully(child: &mut Child) {
     }
 }
 
-/// 发起一个 HTTP/1.1 请求并返回 (status_line, headers, body)。
+/// 发起一个 `HTTP/1.1` 请求并返回 (status_line, headers, body)。
 ///
 /// 有界读取：先读到 `\r\n\r\n` 头结束，再按 `Content-Length` 精确读取响应体，
 /// 避免 keep-alive 连接上阻塞等待 EOF。
@@ -80,7 +80,9 @@ fn http_request(
         .expect("timeout");
     let mut request = format!("{method} {target} HTTP/1.1\r\nHost: {address}\r\n");
     request.push_str(headers);
-    request.push_str(&format!("Content-Length: {}\r\n\r\n", body.len()));
+    request.push_str("Content-Length: ");
+    request.push_str(&body.len().to_string());
+    request.push_str("\r\n\r\n");
     let mut request = request.into_bytes();
     request.extend_from_slice(body);
     stream.write_all(&request).expect("write request");
