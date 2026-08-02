@@ -5,8 +5,7 @@ use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
 use axum::http::{StatusCode, header::CONTENT_DISPOSITION, header::CONTENT_TYPE};
-use axum::response::IntoResponse;
-use easyexcel::{EasyExcel, ExcelRow, ReadListener};
+use easyexcel::{ExcelRow, ReadListener};
 use easyexcel_core::{
     AnalysisContext, CellValue, ExcelColumn, ExcelDownloadErrorBody, ExcelError,
     ExcelWriteMetadata, Result, RowData,
