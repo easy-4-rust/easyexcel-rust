@@ -1,25 +1,26 @@
 [workspace]
 members = [
     "xtask",
-    "crates/easyexcel",
-    "crates/easyexcel-core",
-    "crates/easyexcel-macro",
-    "crates/easyexcel-reader",
-    "crates/easyexcel-template",
-    "crates/easyexcel-writer",
-    "crates/easyexcel-support/easyexcel-axum",
-    "crates/easyexcel-support/easyexcel-actix",
-    "crates/easyexcel-support/easyexcel-hyper",
-    "crates/easyexcel-support/easyexcel-poem",
-    "crates/easyexcel-support/easyexcel-rocket",
-    "crates/easyexcel-support/easyexcel-salvo",
-    "crates/easyexcel-support/easyexcel-tide",
-    "crates/easyexcel-support/easyexcel-warp",
-    "crates/easyexcel-demo/easyexcel-demo-axum",
-    "crates/easyexcel-demo/easyexcel-demo-actix",
-    "crates/easyexcel-demo/easyexcel-demo-read",
-    "crates/easyexcel-demo/easyexcel-demo-write",
-    "crates/easyexcel-demo/easyexcel-demo-fill",
+    "easyexcel",
+    "easyexcel-core",
+    "easyexcel-macro",
+    "easyexcel-reader",
+    "easyexcel-template",
+    "easyexcel-writer",
+    "easyexcel-support/easyexcel-axum",
+    "easyexcel-support/easyexcel-actix",
+    "easyexcel-support/easyexcel-hyper",
+    "easyexcel-support/easyexcel-poem",
+    "easyexcel-support/easyexcel-rocket",
+    "easyexcel-support/easyexcel-salvo",
+    "easyexcel-support/easyexcel-tide",
+    "easyexcel-support/easyexcel-warp",
+    "easyexcel-test",
+    "easyexcel-demo/easyexcel-demo-axum",
+    "easyexcel-demo/easyexcel-demo-actix",
+    "easyexcel-demo/easyexcel-demo-read",
+    "easyexcel-demo/easyexcel-demo-write",
+    "easyexcel-demo/easyexcel-demo-fill",
 ]
 resolver = "3"
 
@@ -31,8 +32,8 @@ license = "Apache-2.0"
 repository = "https://github.com/easy-4-rust/easyexcel-rust"
 
 [workspace.dependencies]
-easyexcel = { path = "crates/easyexcel" }
-easyexcel-core = { path = "crates/easyexcel-core" }
+easyexcel = { path = "easyexcel" }
+easyexcel-core = { path = "easyexcel-core" }
 actix-multipart = "0.8.0"
 actix-web = "4.11.0"
 axum = "0.8.9"

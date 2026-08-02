@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Export Java EasyExcel golden JSON expectations into crates/easyexcel/tests/golden/.
+# Export Java EasyExcel golden JSON expectations into easyexcel/tests/golden/.
 #
 # Uses scripts/java-golden-export (Maven) against Alibaba EasyExcel 4.0.3.
-# - Reads checked-in fixtures under crates/easyexcel/tests/fixtures
+# - Reads checked-in fixtures under easyexcel/tests/fixtures
 # - Writes SimpleData xlsx/csv artifacts under tests/golden/artifacts/
 # - Emits *.expected.json (STRING-mode display cells) for Rust对照
 #
@@ -23,8 +23,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 EXPORT_DIR="${ROOT}/scripts/java-golden-export"
-FIXTURES_DIR="${FIXTURES_DIR:-${ROOT}/crates/easyexcel/tests/fixtures}"
-OUT_DIR="${OUT_DIR:-${ROOT}/crates/easyexcel/tests/golden}"
+FIXTURES_DIR="${FIXTURES_DIR:-${ROOT}/easyexcel/tests/fixtures}"
+OUT_DIR="${OUT_DIR:-${ROOT}/easyexcel/tests/golden}"
 
 # Prefer Homebrew OpenJDK when plain `java` is missing from PATH (macOS).
 if [[ -z "${JAVA_HOME:-}" ]]; then

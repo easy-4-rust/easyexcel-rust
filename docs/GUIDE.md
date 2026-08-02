@@ -267,6 +267,6 @@ match EasyExcel::read_sync::<User>("data.xlsx").do_read_sync() {
 
 ## More Examples
 
-See `crates/easyexcel/tests/` for comprehensive 1:1 Java test parity examples covering
+See `easyexcel-test/tests/` for comprehensive 1:1 Java test parity examples covering
 every API path: annotation combinations, converters, encrypt, fill, handlers, large data,
 multi-sheet, styles, and more.

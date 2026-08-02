@@ -11,7 +11,7 @@
 
 ---
 
-## 1. crates/easyexcel-core/src/
+## 1. easyexcel-core/src/
 
 ```
 easyexcel-core/src/
@@ -210,7 +210,7 @@ easyexcel-core/src/
 
 ---
 
-## 2. crates/easyexcel-derive/src/
+## 2. easyexcel-derive/src/
 
 ```
 easyexcel-derive/src/
@@ -237,7 +237,7 @@ easyexcel-derive/src/
 
 ---
 
-## 3. crates/easyexcel-reader/src/
+## 3. easyexcel-reader/src/
 
 ```
 easyexcel-reader/src/
@@ -355,7 +355,7 @@ easyexcel-reader/src/
 
 ---
 
-## 4. crates/easyexcel-writer/src/
+## 4. easyexcel-writer/src/
 
 ```
 easyexcel-writer/src/
@@ -463,7 +463,7 @@ easyexcel-writer/src/
 
 ---
 
-## 5. crates/easyexcel-template/src/
+## 5. easyexcel-template/src/
 
 ```
 easyexcel-template/src/
@@ -492,7 +492,7 @@ easyexcel-template/src/
 
 ---
 
-## 6. crates/easyexcel/src/  (top-level facade)
+## 6. easyexcel/src/  (top-level facade)
 
 ```
 easyexcel/src/

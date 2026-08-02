@@ -26,10 +26,10 @@
 
 | File | What changed |
 |------|-------------|
-| `crates/easyexcel-writer/src/biff8/template.rs` | `scan_placeholders()` + `replace_label()` added to Biff8TemplatePackage; LABEL/LABELSST decode helpers |
-| `crates/easyexcel-template/src/lib.rs` | `fill_xls_template_scalar()` + `fill_xls_template_list()` — BIFF8 placeholder engine; `fill_xlsx_template()` / `fill_xlsx_template_list()` delegate to XLS path |
-| `crates/easyexcel/tests/core_fill_1to1_tests.rs` | XLS fill tests: assert output exists instead of expecting Unsupported |
-| `crates/easyexcel/tests/java_full_parity_tests.rs` | 5 XLS parity tests: assert output exists |
+| `easyexcel-writer/src/biff8/template.rs` | `scan_placeholders()` + `replace_label()` added to Biff8TemplatePackage; LABEL/LABELSST decode helpers |
+| `easyexcel-template/src/lib.rs` | `fill_xls_template_scalar()` + `fill_xls_template_list()` — BIFF8 placeholder engine; `fill_xlsx_template()` / `fill_xlsx_template_list()` delegate to XLS path |
+| `easyexcel-test/tests/core_fill_1to1_tests.rs` | XLS fill tests: assert output exists instead of expecting Unsupported |
+| `easyexcel-test/tests/java_full_parity_tests.rs` | 5 XLS parity tests: assert output exists |
 
 ### Remaining explicit gaps (4 methods)
 

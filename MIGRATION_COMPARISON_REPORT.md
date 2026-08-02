@@ -45,7 +45,7 @@
 | (template) | `easyexcel-template` | XLSX 模板填充 |
 | `easyexcel` | `easyexcel` | 顶层门面 (`EasyExcel::read`/`write`) |
 
-### 2.2 核心包 (com.alibaba.excel → crates/easyexcel-core/src)
+### 2.2 核心包 (com.alibaba.excel → easyexcel-core/src)
 
 | Java 包 | Java 文件数 | Rust 对应 | Rust 文件数 | 状态 |
 |---------|------------|-----------|------------|------|

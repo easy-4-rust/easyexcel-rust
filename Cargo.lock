@@ -1754,6 +1754,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "easyexcel-test"
+version = "0.1.0"
+dependencies = [
+ "bigdecimal",
+ "calamine",
+ "chrono",
+ "easyexcel",
+ "easyexcel-core",
+ "easyexcel-macro",
+ "easyexcel-reader",
+ "easyexcel-writer",
+ "num-bigint",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "zip 8.6.0",
+]
+
+[[package]]
 name = "easyexcel-tide"
 version = "0.1.0"
 dependencies = [

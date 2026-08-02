@@ -260,7 +260,7 @@ not a full POI port.
 Out-of-boundary requests return a typed `ExcelError::Unsupported` (or a
 documented degraded encoding such as formula text as a plain string). They
 never write an XLSX package with a `.xls` extension. Full inventory and
-round-trip notes live in `crates/easyexcel-writer/src/biff8/mod.rs`.
+round-trip notes live in `easyexcel-writer/src/biff8/mod.rs`.
 
 ## Encryption boundary
 

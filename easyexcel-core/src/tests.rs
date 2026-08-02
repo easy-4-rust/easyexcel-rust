@@ -2640,7 +2640,7 @@ fn parameter_excel_column_all_fields() {
 }
 
 // LoopMergeStrategy tests are in easyexcel-writer crate
-// See: crates/easyexcel-writer/src/tests.rs
+// See: easyexcel-writer/src/tests.rs
 
 // --- FillStyle tests ---
 #[test]

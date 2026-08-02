@@ -106,48 +106,48 @@ case "$PHASE" in
         ;;
     phase1)
         phase_files=(
-            "crates/easyexcel-core/src/annotation/excel_image.rs"
-            "crates/easyexcel-core/src/annotation/excel_comment.rs"
-            "crates/easyexcel-core/src/annotation/excel_hyperlink.rs"
-            "crates/easyexcel-core/src/annotation/excel_formula.rs"
-            "crates/easyexcel-core/src/annotation/excel_data_validation.rs"
-            "crates/easyexcel-core/src/annotation/excel_conditional.rs"
-            "crates/easyexcel-core/src/annotation/excel_filter.rs"
+            "easyexcel-core/src/annotation/excel_image.rs"
+            "easyexcel-core/src/annotation/excel_comment.rs"
+            "easyexcel-core/src/annotation/excel_hyperlink.rs"
+            "easyexcel-core/src/annotation/excel_formula.rs"
+            "easyexcel-core/src/annotation/excel_data_validation.rs"
+            "easyexcel-core/src/annotation/excel_conditional.rs"
+            "easyexcel-core/src/annotation/excel_filter.rs"
         )
         ;;
     phase2)
         phase_files=(
-            "crates/easyexcel-writer/src/handler/workbook_workbook_write_handler.rs"
-            "crates/easyexcel-writer/src/handler/sheet_write_handler.rs"
-            "crates/easyexcel-writer/src/handler/row_write_handler.rs"
-            "crates/easyexcel-writer/src/handler/cell_write_handler.rs"
-            "crates/easyexcel-writer/src/handler/merge_handler.rs"
-            "crates/easyexcel-writer/src/handler/constraint_handler.rs"
+            "easyexcel-writer/src/handler/workbook_workbook_write_handler.rs"
+            "easyexcel-writer/src/handler/sheet_write_handler.rs"
+            "easyexcel-writer/src/handler/row_write_handler.rs"
+            "easyexcel-writer/src/handler/cell_write_handler.rs"
+            "easyexcel-writer/src/handler/merge_handler.rs"
+            "easyexcel-writer/src/handler/constraint_handler.rs"
         )
         ;;
     phase3)
         phase_files=(
-            "crates/easyexcel-core/src/comment_data.rs"
-            "crates/easyexcel-core/src/hyperlink_data.rs"
-            "crates/easyexcel-writer/src/handler/data_validation_write_handler.rs"
-            "crates/easyexcel-writer/src/handler/conditional_format_write_handler.rs"
-            "crates/easyexcel-writer/src/handler/auto_filter_write_handler.rs"
+            "easyexcel-core/src/comment_data.rs"
+            "easyexcel-core/src/hyperlink_data.rs"
+            "easyexcel-writer/src/handler/data_validation_write_handler.rs"
+            "easyexcel-writer/src/handler/conditional_format_write_handler.rs"
+            "easyexcel-writer/src/handler/auto_filter_write_handler.rs"
         )
         ;;
     phase4)
         phase_files=(
-            "crates/easyexcel-writer/src/poi_handle.rs"
+            "easyexcel-writer/src/poi_handle.rs"
         )
         ;;
     phase5)
         phase_files=(
-            "crates/easyexcel-template/src/xls_fill.rs"
-            "crates/easyexcel-writer/src/biff8/encrypt.rs"
+            "easyexcel-template/src/xls_fill.rs"
+            "easyexcel-writer/src/biff8/encrypt.rs"
         )
         ;;
     phase6)
         phase_files=(
-            "crates/easyexcel/tests/temp_1to1_tests/_hardened.rs"
+            "easyexcel/tests/temp_1to1_tests/_hardened.rs"
         )
         ;;
     phase7)
