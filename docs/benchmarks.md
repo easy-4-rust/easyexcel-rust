@@ -75,6 +75,54 @@ changes), machine load variance, or measurement methodology drift. Output
 bytes and row-count verification remain identical, so semantics are
 unaffected.
 
+### 2026-08-03 bisect: root cause located (commit-level)
+
+Re-measured HEAD with the current toolchain and bisected the slowdown by
+running the benchmark at historical commits (same machine, same toolchain,
+release profile):
+
+| Commit | Date | Write | Read |
+|---|---|---|---|
+| `eb11974` | 2026-07-17 | 1.81 s | **0.90 s** |
+| `68e8b5f` | 2026-07-24 | 1.77 s | 2.22 s |
+| `be30782` (incl. `101d668`) | 2026-07-24 | **5.94 s** | 2.50 s |
+| `90773d9` | 2026-07-30 | 5.82 s | 2.47 s |
+| `7382f2e` | 2026-07-30 | 7.85 s | 2.61 s |
+| HEAD (`1c210e9`) | 2026-08-03 | 6.05 s | 2.49 s |
+
+XLSX output bytes identical (12 336 909) at every measured commit — semantics
+unaffected throughout.
+
+**Write regression (1.8 s → 6.0 s, ~3.3x): introduced by `101d668`
+(refactor(writer): 优化抽象写入处理器和参数构建器实现, 2026-07-24).** The
+commit expands `WriteCellContext` from a ~6-field lightweight struct to a
+25+-field context mirroring Java `CellWriteHandlerContext` in full (static
+`ExcelColumn` metadata, `head_name`, `original_value`, `pending_original_*`,
+`cell_data_list`, `target_cell_data_type`, `cell` handle, `holders`), and
+rewrites the per-cell conversion/handler pipeline. This is deliberate Java
+semantic parity (the Java context is likewise a fat object), not an
+accidental inefficiency. `101d668` itself does not compile; its code takes
+effect from `be30782` onward. Toolchain is ruled out: `eb11974` runs 1.81 s
+under the current Rust 1.97.1, so the old code is not slow under the new
+toolchain.
+
+**Read regression (0.9 s → 2.3 s, ~2.5x): introduced across the 2026-07-17→21
+"align Java" feature series** (`f60811f` XLSX formula metadata, `a8e0197` cell
+extra events, `12308c2` cell display formatting, `da2a384` Hutool reader
+ergonomics, `9cb3b8b` BigInteger conversion, `9f76f9f` 1904 date windowing,
+`6e58f0f` scientific number formatting, `d9c7cba` locale-aware reading).
+Each adds per-cell-event work in the SAX analysis hot path; `8090351` (4.45 s,
+intermediate) shows the peak before the `11f28ff`→`18ab533` empty-body
+cleanup pass settled it at ~2.3 s.
+
+**Verdict: both regressions are the measured cost of Java semantic parity,
+not bugs.** Absolute throughput remains healthy: ~165 k rows/s write,
+~400 k rows/s read, 11.2 MiB peak RSS (constant-memory streaming). Optional
+future optimization targets (not 1.0 blockers): per-cell `Vec<CellValue>` in
+`WriteCellContext` (single-value path could use a small inline buffer) and
+event-stage allocation reduction in the reader. Benchmarked on Apple M4 Pro,
+24 GiB RAM, macOS 26.5.2, Rust 1.97.1.
+
 ## Reproduce
 
 ```shell
