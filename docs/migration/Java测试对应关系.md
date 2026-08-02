@@ -52,8 +52,8 @@
 | `rare/WriteTest` | 2 | `demo_1to1_tests.rs`（rare_test_*） |
 
 `web/WebTest`：Spring `@Controller`，0 个 `@Test` 方法；Rust 侧由
-`easyexcel-web/easyexcel-web-axum/src/tests.rs` 与
-`easyexcel-web/easyexcel-web-actix/src/tests.rs` 覆盖等价下载/上传功能。
+`easyexcel-support/easyexcel-support-axum/src/tests.rs` 与
+`easyexcel-support/easyexcel-support-actix/src/tests.rs` 覆盖等价下载/上传功能。
 
 ## 三、Java 测试功能点覆盖核查（方法级 1:1 命名）
 

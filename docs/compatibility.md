@@ -70,7 +70,7 @@ This document is the release gate, not a marketing checklist. A row is marked
 | XLS read | calamine BIFF/XLS engine | implemented: sheet selection, typed mapping, listeners, headers, coordinates, multi-sheet Java fixture; worksheet data is materialized in memory |
 | XLS write | Minimal BIFF8 (`easyexcel_writer::biff8`) | partial: see [XLS write capability boundary](#xls-write-capability-boundary); never silently emits XLSX bytes under a `.xls` path |
 | XLSX password/encryption | `password` on read/write builders | partial: ECMA-376 Agile AES-256/SHA-512 write and Agile/Standard OOXML read implemented; correct, wrong, and missing-password paths tested; **legacy `.xls` password/RC4 stays typed `Unsupported`** (not remapped to Agile) |
-| Axum/Actix adapters | `easyexcel-web-axum` / `easyexcel-web-actix` | implemented: per-crate `tests.rs` covers multipart upload, streamed XLSX/CSV download headers, JSON error bodies, and write-error degradation with `easyexcel_core::ExcelDownloadErrorBody`; runnable `easyexcel-demo-axum` / `easyexcel-demo-actix` demos with spawn integration tests (random port via `PORT` env mirroring Java server.port, SIGTERM graceful shutdown, upload batch-flush/parse-error/empty-multipart/malformed-multipart scenarios); core crates stay framework-free (see [Web / JSON 框架映射](#web--json-框架映射2026-07-23)) |
+| Axum/Actix adapters | `easyexcel-support-axum` / `easyexcel-support-actix` | implemented: per-crate `tests.rs` covers multipart upload, streamed XLSX/CSV download headers, JSON error bodies, and write-error degradation with `easyexcel_core::ExcelDownloadErrorBody`; runnable `easyexcel-demo-axum` / `easyexcel-demo-actix` demos with spawn integration tests (random port via `PORT` env mirroring Java server.port, SIGTERM graceful shutdown, upload batch-flush/parse-error/empty-multipart/malformed-multipart scenarios); core crates stay framework-free (see [Web / JSON 框架映射](#web--json-框架映射2026-07-23)) |
 
 Hutool POI is used only as a secondary ergonomics and production-hardening
 reference. The adoption boundary and dependency direction are documented in
@@ -317,8 +317,8 @@ single-sheet constraint.
 | Java 生态 | Rust 生态 | Crate |
 |---|---|---|
 | Jackson / Fastjson2 JSON 错误体 | `serde` + `serde_json` | `easyexcel_core::ExcelDownloadErrorBody` |
-| Spring Boot `WebTest` 上传/下载 | **axum** | `easyexcel-web-axum` + `easyexcel-demo-axum` |
-| Quarkus REST（对称） | **actix-web** | `easyexcel-web-actix` + `easyexcel-demo-actix` |
+| Spring Boot `WebTest` 上传/下载 | **axum** | `easyexcel-support-axum` + `easyexcel-demo-axum` |
+| Quarkus REST（对称） | **actix-web** | `easyexcel-support-actix` + `easyexcel-demo-actix` |
 
 契约要点：
 

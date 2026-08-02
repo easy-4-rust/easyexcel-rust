@@ -19,9 +19,9 @@ easyexcel-rust/                        (workspace root)
 │   ├── easyexcel-reader/            ← XLSX/XLS/CSV reading
 │   ├── easyexcel-template/          ← template fill (`{key}` placeholders)
 │   ├── easyexcel-writer/            ← XLSX/XLS/CSV writing + BIFF8 encoder
-│   ├── easyexcel-web/               ← 【planned】web adapters (sa-token-web style)
-│   │   ├── easyexcel-web-axum/      ← Spring Boot → axum
-│   │   └── easyexcel-web-actix/     ← Quarkus → actix-web
+│   ├── easyexcel-support/          ← Java easyexcel-support 模块
+│   │   ├── easyexcel-support-axum/ ← Spring Boot → axum
+│   │   └── easyexcel-support-actix/← Quarkus → actix-web
 │   └── easyexcel-demo/              ← 【planned】scenario demos
 │       ├── easyexcel-demo-axum/
 │       ├── easyexcel-demo-actix/

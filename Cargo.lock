@@ -850,7 +850,7 @@ dependencies = [
  "chrono",
  "easyexcel",
  "easyexcel-core",
- "easyexcel-web-actix",
+ "easyexcel-support-actix",
  "futures-util",
  "libc",
  "tracing",
@@ -866,7 +866,7 @@ dependencies = [
  "chrono",
  "easyexcel",
  "easyexcel-core",
- "easyexcel-web-axum",
+ "easyexcel-support-axum",
  "libc",
  "tokio",
  "tracing",
@@ -935,24 +935,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "easyexcel-template"
-version = "0.1.0"
-dependencies = [
- "base64 0.23.0",
- "bigdecimal",
- "calamine",
- "chrono",
- "easyexcel-core",
- "easyexcel-writer",
- "flate2",
- "num-bigint",
- "rust_xlsxwriter",
- "tempfile",
- "zip 8.6.0",
-]
-
-[[package]]
-name = "easyexcel-web-actix"
+name = "easyexcel-support-actix"
 version = "0.1.0"
 dependencies = [
  "actix-web",
@@ -967,7 +950,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "easyexcel-web-axum"
+name = "easyexcel-support-axum"
 version = "0.1.0"
 dependencies = [
  "axum",
@@ -982,6 +965,23 @@ dependencies = [
  "tokio",
  "tower",
  "urlencoding",
+]
+
+[[package]]
+name = "easyexcel-template"
+version = "0.1.0"
+dependencies = [
+ "base64 0.23.0",
+ "bigdecimal",
+ "calamine",
+ "chrono",
+ "easyexcel-core",
+ "easyexcel-writer",
+ "flate2",
+ "num-bigint",
+ "rust_xlsxwriter",
+ "tempfile",
+ "zip 8.6.0",
 ]
 
 [[package]]

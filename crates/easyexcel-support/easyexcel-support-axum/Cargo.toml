@@ -1,25 +1,29 @@
 [package]
-name = "easyexcel-web-actix"
+name = "easyexcel-support-axum"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "Actix-web (Quarkus) integration for easyexcel-rust"
+description = "easyexcel-support axum adapter (Spring Boot integration) for easyexcel-rust"
 repository.workspace = true
 
 [dependencies]
 easyexcel = { workspace = true }
 easyexcel-core = { workspace = true }
-actix-web = { workspace = true }
+axum = { workspace = true }
 bytes = { workspace = true }
+http = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tempfile = { workspace = true }
+tokio = { workspace = true, features = ["fs", "io-util", "rt", "macros"] }
+tower = { workspace = true }
 urlencoding = { workspace = true }
 
 [dev-dependencies]
-actix-web = { workspace = true, features = ["macros"] }
-tokio = { workspace = true, features = ["rt"] }
+axum = { workspace = true, features = ["multipart"] }
+tower = { workspace = true, features = ["util"] }
+http-body-util = { workspace = true }
 
 [lints]
 workspace = true

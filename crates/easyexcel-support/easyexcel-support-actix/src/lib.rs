@@ -1,7 +1,6 @@
-//! Axum（Spring Boot）Web 集成层。
+//! easyexcel-support actix 适配器（Quarkus Web 集成层）。
 //!
-//! 对应 Java `com.alibaba.easyexcel.test.demo.web.WebTest` 中的
-//! `HttpServletResponse` 下载 / 上传模式。
+//! API 与 [`easyexcel-support-axum`] 对称，对应同一套 Java `WebTest` 示例。
 
 mod error_body;
 mod headers;

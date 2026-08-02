@@ -15,7 +15,7 @@ use axum::{
 };
 use chrono::NaiveDateTime;
 use easyexcel::{AnalysisContext, ExcelRow, ReadListener, Result as ExcelResult};
-use easyexcel_web_axum::{
+use easyexcel_support_axum::{
     ExcelDownloadErrorBody, excel_download_error_response, excel_download_or_json_response,
     excel_download_response, extension_from_path, read_upload_with_listener,
 };
