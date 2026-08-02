@@ -319,6 +319,7 @@ single-sheet constraint.
 | Jackson / Fastjson2 JSON 错误体 | `serde` + `serde_json` | `easyexcel_core::ExcelDownloadErrorBody` |
 | Spring Boot `WebTest` 上传/下载 | **axum** | `easyexcel-support-axum` + `easyexcel-demo-axum` |
 | Quarkus REST（对称） | **actix-web** | `easyexcel-support-actix` + `easyexcel-demo-actix` |
+| 多框架适配（对称契约） | **rocket / warp / salvo / poem / tide / hyper** | `easyexcel-support-{rocket,warp,salvo,poem,tide,hyper}`，每个适配器 17 个 `adapter_contract.rs` 中立契约测试（下载 200+附件头+OOXML body、JSON 错误降级、上传 roundtrip、垃圾字节拒绝），对齐 thymeleaf-support 的多框架模式 |
 
 契约要点：
 

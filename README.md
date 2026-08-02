@@ -2,7 +2,7 @@
 
 [![Rust](https://img.shields.io/badge/rust-1.88+-blue.svg)](https://www.rust-lang.org)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
-[![tests](https://img.shields.io/badge/tests-2652+-green.svg)](https://github.com/easy-4-rust/easyexcel-rust)
+[![tests](https://img.shields.io/badge/tests-2771+-green.svg)](https://github.com/easy-4-rust/easyexcel-rust)
 
 **easyexcel-rust** is a native Rust port of Alibaba [EasyExcel](https://github.com/alibaba/easyexcel) 4.0.3.
 It delivers the Java EasyExcel programming model in idiomatic Rust: builders,

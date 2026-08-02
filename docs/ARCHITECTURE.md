@@ -21,7 +21,13 @@ easyexcel-rust/                        (workspace root)
 │   ├── easyexcel-writer/            ← XLSX/XLS/CSV writing + BIFF8 encoder
 │   ├── easyexcel-support/          ← Java easyexcel-support 模块
 │   │   ├── easyexcel-support-axum/ ← Spring Boot → axum
-│   │   └── easyexcel-support-actix/← Quarkus → actix-web
+│   │   ├── easyexcel-support-actix/← Quarkus → actix-web
+│   │   ├── easyexcel-support-rocket/
+│   │   ├── easyexcel-support-warp/
+│   │   ├── easyexcel-support-salvo/
+│   │   ├── easyexcel-support-poem/
+│   │   ├── easyexcel-support-tide/
+│   │   └── easyexcel-support-hyper/← 底层 HTTP 薄适配
 │   └── easyexcel-demo/              ← 【planned】scenario demos
 │       ├── easyexcel-demo-axum/
 │       ├── easyexcel-demo-actix/

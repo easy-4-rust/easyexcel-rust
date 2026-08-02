@@ -9,6 +9,12 @@ members = [
     "crates/easyexcel-writer",
     "crates/easyexcel-support/easyexcel-support-axum",
     "crates/easyexcel-support/easyexcel-support-actix",
+    "crates/easyexcel-support/easyexcel-support-hyper",
+    "crates/easyexcel-support/easyexcel-support-poem",
+    "crates/easyexcel-support/easyexcel-support-rocket",
+    "crates/easyexcel-support/easyexcel-support-salvo",
+    "crates/easyexcel-support/easyexcel-support-tide",
+    "crates/easyexcel-support/easyexcel-support-warp",
     "crates/easyexcel-demo/easyexcel-demo-axum",
     "crates/easyexcel-demo/easyexcel-demo-actix",
     "crates/easyexcel-demo/easyexcel-demo-read",
@@ -44,6 +50,12 @@ futures-util = "0.3.31"
 getrandom = "0.4"
 http = "1.4.0"
 http-body-util = "0.1.3"
+hyper = "1.11.0"
+poem = "3.1.12"
+rocket = "0.5.1"
+salvo = "0.95.1"
+tide = "0.16.0"
+warp = "0.4.3"
 md-5 = "0.11.0"
 ms-offcrypto-writer = "1.0.7"
 num-bigint = "0.4"
