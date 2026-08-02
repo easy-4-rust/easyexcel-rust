@@ -87,11 +87,12 @@ reference. The adoption boundary and dependency direction are documented in
 7. Formatting, Clippy, tests, docs, MSRV, and security audit are green in CI.
 
 Security audit status is tracked in [security-audit.md](security-audit.md)
-(run with `cargo audit` against the local RustSec advisory DB). As of
-2026-08-01 the audit is **not** green: two high-severity findings on the
-transitive `quick-xml 0.38.4` (pulled in by `office-crypto`) await a dependency
-bump — the workspace's own `quick-xml` is already 0.41.0. See the audit
-document for affected code paths and remediation.
+(run with `cargo audit`). As of 2026-08-03 the audit is **green**: 0
+vulnerabilities. The two previously-open high-severity findings on transitive
+`quick-xml 0.38.4` (pulled in by `office-crypto`) were closed by vendoring
+`office-crypto` at `vendor/office-crypto` with `quick-xml` bumped to the
+workspace's 0.41.0 via `[patch.crates-io]`; the 0.38.x line has no patched
+release. See the audit document for the change.
 
 ### Verification evidence 6: `cargo llvm-cov` coverage
 
@@ -104,7 +105,8 @@ Measured with `cargo llvm-cov --workspace --all-features` on 2026-08-02
 | Regions | **96.49%** (74 521 covered / 2 615 missed) |
 | Functions | **96.22%** (5 772 covered / 218 missed) |
 
-The 1.0 gate requires 100% lines, regions, and functions. The remaining gap is
+The 1.0 gate requires 100% of all reachable lines, regions, and functions
+(see evidence item 6 above). The remaining gap is
 not coverable without changing test or production semantics — every remaining
 uncovered item was verified line-by-line by eight review agents:
 
@@ -152,6 +154,14 @@ in the categories above.
   cannot supply a password non-interactively. They are verified instead by the
   encryption round-trip tests, and LibreOffice/Excel open them on machines
   where a password can be entered interactively.
+
+**Last run: 2026-08-03 — SKIPPED** (`./scripts/verify-libreoffice-open.sh`,
+exit 0): LibreOffice is not installed on the verification machine
+(`/Applications/LibreOffice.app` absent, `soffice`/`libreoffice` not on
+PATH). Per the script contract the check is skipped and documented, not
+failed; the Excel half (OOXML round-trip + golden tests) ran green on the
+same date. Re-run on a machine with LibreOffice (`brew install --cask
+libreoffice`) to complete the gate.
 
 ## XLSX streaming boundary
 

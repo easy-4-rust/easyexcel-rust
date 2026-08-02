@@ -1,12 +1,25 @@
 # easyexcel-rust 依赖安全审计
 
-> 审计日期：2026-08-01 ｜ 范围：workspace `Cargo.lock`（323 个锁定依赖实例）+ Rust 工具链
+> 审计日期：2026-08-03（修复后复跑）｜ 范围：workspace `Cargo.lock` + Rust 工具链
 > 对应 `docs/compatibility.md` 验证证据 7（security audit 门禁）。
 
 ## 结论
 
-**2 个高危漏洞（未修复）+ 1 个 unmaintained 警告**，均在传递依赖上；workspace
-直接依赖无已知漏洞。证据 7（安全审计门禁）当前**不绿**，需依赖升级后复跑确认。
+**0 vulnerabilities，`cargo audit` 退出码 0**，证据 7（安全审计门禁）**绿**。
+2026-08-01 审计发现的 2 个高危漏洞（`quick-xml 0.38.4` 传递依赖）已修复：
+上游 `office-crypto 0.3.0` 固定 `quick-xml 0.38.4`（该 0.38.x 线无修复版），
+故将 `office-crypto` vendor 至 `vendor/office-crypto`，依赖提升为 `quick-xml 0.41`
+（与 workspace 直接依赖同版本），经 `[patch.crates-io]` 全局替换；其 quick-xml
+API 使用面（`Reader`/`Event`）在 0.38 → 0.41 兼容，加密读写测试（
+`temp_encrypt_password_round_trip`、`golden_encrypt_data`）回归通过。
+`Cargo.lock` 中 `quick-xml 0.38.4` 已完全移除，全 workspace 单一 0.41.0。
+
+剩余 10 条 informational 警告（`unmaintained`/`notice`/`unsound` 级，非漏洞，
+不使 `cargo audit` 失败）：`aes-soft`/`aesni`/`cpuid-bool`（aes 生态旧分 crate，
+由 `office-crypto` 的 `aes 0.8` 线传递）、`async-std`/`http-types`/`tide`
+（`easyexcel-tide` 适配器使用的 tide 0.16 框架自身已停维护，属框架固有风险）、
+`bincode`/`instant`/`stdweb`（深层传递）、`rand 0.7.3`（unsound 仅当使用
+`rand::rng()` 自定义 logger 时触发，workspace 未使用该 API）。
 
 ## 工具与方法
 
@@ -23,22 +36,20 @@ cargo audit
   结果与 `cargo audit` 一致（离线脚本未处理 withdrawn 状态，ring 等已撤回公告需
   排除；generic-array 0.14.7 因多行 patched 列表解析误差曾误报，真实工具不报）。
 
-## 漏洞明细
+## 漏洞明细（已修复，历史记录）
 
 | Crate | 锁定版本 | ID | 严重度 | 说明 | 修复 |
 |---|---|---|---|---|---|
 | `quick-xml`（传递） | 0.38.4 | RUSTSEC-2026-0195 | 7.5 high | `NsReader` 命名空间声明无界分配 → 内存耗尽 DoS | 升级到 >= 0.41.0 |
 | `quick-xml`（传递） | 0.38.4 | RUSTSEC-2026-0194 | 7.5 high | 起始标签重复属性名检查二次方运行时间（DoS） | 升级到 >= 0.41.0 |
 
-警告（无漏洞、`informational`）：
+**2026-08-03 修复记录**：`vendor/office-crypto`（上游 0.3.0 源码 fork）+
+root `Cargo.toml` `[patch.crates-io]`，quick-xml 提升到 0.41.0。复跑
+`cargo audit` 0 vulnerabilities，exit 0。`Cargo.lock` 不再含 0.38.4。
 
-| Crate | 锁定版本 | ID | 说明 |
-|---|---|---|---|
-| `derivative` | 2.2.0 | RUSTSEC-2024-0388 | 已停止维护（unmaintained），建议替换 |
+## 受影响代码路径（已消除）
 
-## 受影响代码路径
-
-`cargo tree -i quick-xml@0.38.4`：
+修复前 `cargo tree -i quick-xml@0.38.4`：
 
 ```
 quick-xml v0.38.4
@@ -51,15 +62,22 @@ quick-xml v0.38.4
   easyexcel-reader 自身的 SAX 解析使用 0.41.0（已修复版本），不受影响。
 - 受影响的 0.38.4 由 `office-crypto 0.3.0`（OOXML 加密元数据解析，用于密码保护
   XLSX 读取）传递引入，图中存在两个 quick-xml 版本。
+- 修复后：`cargo tree -i quick-xml` 仅返回 0.41.0 单一版本，上述双版本场景消除。
 
-## 修复建议（不改代码，仅记录）
+## 修复执行记录
 
-1. 升级 `office-crypto` 到使用 `quick-xml >= 0.41.0` 的版本（若上游已发布）；
-2. 或在 `Cargo.toml` 用 `[patch]`/直接依赖约束让 office-crypto 复用 0.41.x；
-3. 修复后复跑 `cargo audit`，应显示 0 vulnerabilities。
+1. 2026-08-03 检查上游：`office-crypto` 最新版仍为 0.3.0（master 亦未升级 quick-xml），
+   无升级空间；
+2. vendor 源码至 `vendor/office-crypto`（MIT 许可，保留 LICENSE），依赖改为
+   `quick-xml = "0.41"`；
+3. root `Cargo.toml` 添加 `[patch.crates-io] office-crypto = { path = "vendor/office-crypto" }`；
+4. `cargo update -p office-crypto` 后 lock 中 0.38.4 移除；
+5. 回归：`easyexcel-reader` 编译通过、`temp_encrypt_password_round_trip` 与
+   `golden_encrypt_data` 测试通过；
+6. `cargo audit` → 0 vulnerabilities，exit 0。
 
-两条漏洞均为解析型 DoS（非 RCE/数据泄露），且仅影响密码保护 XLSX 读取的
-解包阶段；官方 1.0 发布前完成升级即可满足验证证据 7。
+两条原漏洞均为解析型 DoS（非 RCE/数据泄露），仅影响密码保护 XLSX 读取的
+解包阶段，且现已被 0.41.0 修复版覆盖。
 
 ## 未发现问题项（审计确认干净）
 
