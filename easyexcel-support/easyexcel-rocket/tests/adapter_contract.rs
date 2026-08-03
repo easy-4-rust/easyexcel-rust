@@ -3,11 +3,11 @@
 
 use std::sync::{Arc, Mutex};
 
-use easyexcel::{ExcelRow, ReadListener};
-use easyexcel_core::{
+use easyexcel::core::{
     AnalysisContext, CellValue, ExcelColumn, ExcelDownloadErrorBody, ExcelError,
     ExcelWriteMetadata, Result, RowData,
 };
+use easyexcel::{ExcelRow, ReadListener};
 use rocket::http::Status;
 use rocket::response::Response;
 use serde_json::{Value, json};

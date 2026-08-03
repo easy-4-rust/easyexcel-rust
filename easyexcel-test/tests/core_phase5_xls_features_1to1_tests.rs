@@ -6,7 +6,7 @@
 //! Naming: `mod <java_class_snake>` + `fn <java_method_snake>`.
 
 use easyexcel::EasyExcel;
-use easyexcel_core::CellExtraType;
+use easyexcel::core::CellExtraType;
 use easyexcel_macro::ExcelRow;
 
 // ---------------------------------------------------------------------------
@@ -16,7 +16,7 @@ use easyexcel_macro::ExcelRow;
 
 mod encrypt_data_test_xls {
     use super::*;
-    use easyexcel_writer::ExcelWriter;
+    use easyexcel::writer::ExcelWriter;
 
     #[derive(Debug, Clone, ExcelRow)]
     struct EncryptRow {
@@ -51,8 +51,8 @@ mod encrypt_data_test_xls {
 
 mod converter_data_test_xls_image {
     use super::*;
+    use easyexcel::writer::ExcelWriter;
     use easyexcel_macro::ExcelRow;
-    use easyexcel_writer::ExcelWriter;
 
     #[derive(Debug, Clone, ExcelRow)]
     struct ImageRow {

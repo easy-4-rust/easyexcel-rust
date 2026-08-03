@@ -934,7 +934,7 @@ fn fill_test_composite_fill() {
 /// so SXSSF gzips spilled sheet XML (CPU for disk). Rust maps that flag to
 /// [`easyexcel::ExcelWriterBuilder::compress_temp_files`], which forces
 /// `rust_xlsxwriter` constant-memory spill (uncompressed tempfile; final ZIP
-/// still Deflate). See [`easyexcel_writer::WriteOptions::compress_temp_files`].
+/// still Deflate). See [`easyexcel::writer::WriteOptions::compress_temp_files`].
 ///
 /// Coverage:
 /// 1. Builder API is wired (not `ExcelError::Unsupported`).

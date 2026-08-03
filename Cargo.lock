@@ -1525,18 +1525,33 @@ checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 name = "easyexcel"
 version = "0.1.0-alpha.1"
 dependencies = [
+ "base64 0.23.0",
  "bigdecimal",
  "calamine",
+ "cfb 0.14.0",
  "chrono",
- "easyexcel-core",
+ "csv",
  "easyexcel-macro",
- "easyexcel-reader",
- "easyexcel-template",
- "easyexcel-writer",
+ "encoding_rs",
+ "encoding_rs_io",
+ "flate2",
+ "getrandom 0.4.3",
+ "md-5 0.11.0",
+ "ms-offcrypto-writer",
  "num-bigint",
+ "office-crypto",
+ "pure-rust-locales",
+ "quick-xml",
+ "rand 0.9.5",
+ "rust_xlsxwriter",
  "serde",
  "serde_json",
+ "ssfmt",
+ "sys-locale",
  "tempfile",
+ "thiserror 2.0.19",
+ "ureq",
+ "url",
  "zip",
 ]
 
@@ -1547,7 +1562,6 @@ dependencies = [
  "actix-web",
  "bytes",
  "easyexcel",
- "easyexcel-core",
  "serde",
  "serde_json",
  "tempfile",
@@ -1562,7 +1576,6 @@ dependencies = [
  "axum",
  "bytes",
  "easyexcel",
- "easyexcel-core",
  "http 1.5.0",
  "http-body-util",
  "serde",
@@ -1574,21 +1587,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "easyexcel-core"
-version = "0.1.0-alpha.1"
-dependencies = [
- "bigdecimal",
- "chrono",
- "num-bigint",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 2.0.19",
- "ureq",
- "url",
-]
-
-[[package]]
 name = "easyexcel-demo-actix"
 version = "0.1.0-alpha.1"
 dependencies = [
@@ -1597,7 +1595,6 @@ dependencies = [
  "chrono",
  "easyexcel",
  "easyexcel-actix",
- "easyexcel-core",
  "futures-util",
  "libc",
  "tracing",
@@ -1613,7 +1610,6 @@ dependencies = [
  "chrono",
  "easyexcel",
  "easyexcel-axum",
- "easyexcel-core",
  "libc",
  "tokio",
  "tracing",
@@ -1653,7 +1649,6 @@ version = "0.1.0-alpha.1"
 dependencies = [
  "bytes",
  "easyexcel",
- "easyexcel-core",
  "http 1.5.0",
  "http-body-util",
  "hyper 1.11.0",
@@ -1667,7 +1662,7 @@ dependencies = [
 name = "easyexcel-macro"
 version = "0.1.0-alpha.1"
 dependencies = [
- "easyexcel-core",
+ "easyexcel",
  "proc-macro-crate",
  "proc-macro2",
  "quote",
@@ -1679,7 +1674,6 @@ name = "easyexcel-poem"
 version = "0.1.0-alpha.1"
 dependencies = [
  "easyexcel",
- "easyexcel-core",
  "http 1.5.0",
  "poem",
  "serde_json",
@@ -1689,34 +1683,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "easyexcel-reader"
-version = "0.1.0-alpha.1"
-dependencies = [
- "base64 0.23.0",
- "bigdecimal",
- "calamine",
- "cfb 0.14.0",
- "csv",
- "easyexcel-core",
- "encoding_rs",
- "encoding_rs_io",
- "flate2",
- "office-crypto",
- "pure-rust-locales",
- "quick-xml",
- "rust_xlsxwriter",
- "ssfmt",
- "sys-locale",
- "tempfile",
- "zip",
-]
-
-[[package]]
 name = "easyexcel-rocket"
 version = "0.1.0-alpha.1"
 dependencies = [
  "easyexcel",
- "easyexcel-core",
  "http 1.5.0",
  "rocket",
  "serde_json",
@@ -1729,28 +1699,10 @@ name = "easyexcel-salvo"
 version = "0.1.0-alpha.1"
 dependencies = [
  "easyexcel",
- "easyexcel-core",
  "salvo",
  "serde_json",
  "tempfile",
  "urlencoding",
-]
-
-[[package]]
-name = "easyexcel-template"
-version = "0.1.0-alpha.1"
-dependencies = [
- "base64 0.23.0",
- "bigdecimal",
- "calamine",
- "chrono",
- "easyexcel-core",
- "easyexcel-writer",
- "flate2",
- "num-bigint",
- "rust_xlsxwriter",
- "tempfile",
- "zip",
 ]
 
 [[package]]
@@ -1761,10 +1713,7 @@ dependencies = [
  "calamine",
  "chrono",
  "easyexcel",
- "easyexcel-core",
  "easyexcel-macro",
- "easyexcel-reader",
- "easyexcel-writer",
  "num-bigint",
  "serde",
  "serde_json",
@@ -1777,7 +1726,6 @@ name = "easyexcel-tide"
 version = "0.1.0-alpha.1"
 dependencies = [
  "easyexcel",
- "easyexcel-core",
  "serde_json",
  "tempfile",
  "tide",
@@ -1791,7 +1739,6 @@ version = "0.1.0-alpha.1"
 dependencies = [
  "bytes",
  "easyexcel",
- "easyexcel-core",
  "http 1.5.0",
  "http-body-util",
  "serde_json",
@@ -1799,27 +1746,6 @@ dependencies = [
  "tokio",
  "urlencoding",
  "warp",
-]
-
-[[package]]
-name = "easyexcel-writer"
-version = "0.1.0-alpha.1"
-dependencies = [
- "bigdecimal",
- "calamine",
- "cfb 0.14.0",
- "chrono",
- "csv",
- "easyexcel-core",
- "encoding_rs",
- "flate2",
- "getrandom 0.4.3",
- "md-5 0.11.0",
- "ms-offcrypto-writer",
- "rand 0.9.5",
- "rust_xlsxwriter",
- "tempfile",
- "zip",
 ]
 
 [[package]]

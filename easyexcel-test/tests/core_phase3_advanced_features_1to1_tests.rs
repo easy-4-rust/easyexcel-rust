@@ -13,7 +13,7 @@
 //! Naming: `mod <java_class_snake>` + `fn <java_method_snake>`.
 
 use easyexcel::CellValue;
-use easyexcel_core::{CellExtra, CellExtraType, WriteCellData};
+use easyexcel::core::{CellExtra, CellExtraType, WriteCellData};
 use easyexcel_macro::ExcelRow as DeriveExcelRow;
 
 // ---------------------------------------------------------------------------
@@ -23,7 +23,7 @@ use easyexcel_macro::ExcelRow as DeriveExcelRow;
 mod formula_cell_test {
     //! Mirrors: CellDataDataTest#t01ReadFormula07
     use super::*;
-    use easyexcel_core::ExcelRow as ExcelRowTrait;
+    use easyexcel::core::ExcelRow as ExcelRowTrait;
 
     #[derive(Debug, DeriveExcelRow)]
     struct FormulaRow {
@@ -57,7 +57,7 @@ mod formula_cell_test {
         let decorated = col.apply_decorations(data);
         // WriteCellData::to_excel_cell emits the underlying CellValue
         // (CellValue::Formula here).
-        let ctx = easyexcel_core::ConvertContext {
+        let ctx = easyexcel::core::ConvertContext {
             sheet_name: String::new(),
             row_index: 0,
             column_index: None,
@@ -65,7 +65,7 @@ mod formula_cell_test {
             format: None,
             use_1904_windowing: false,
         };
-        let cv = easyexcel_core::IntoExcelCell::to_excel_cell(&decorated, &ctx).unwrap();
+        let cv = easyexcel::core::IntoExcelCell::to_excel_cell(&decorated, &ctx).unwrap();
         if let CellValue::Formula(s) = &cv {
             assert_eq!(s, "SUM(A1:A10)");
         } else {
@@ -81,7 +81,7 @@ mod formula_cell_test {
 mod hyperlink_cell_test {
     //! Mirrors: CellDataDataTest#t03ReadHyperlink07
     use super::*;
-    use easyexcel_core::ExcelRow as ExcelRowTrait;
+    use easyexcel::core::ExcelRow as ExcelRowTrait;
 
     #[derive(Debug, DeriveExcelRow)]
     struct HyperlinkRow {
@@ -114,7 +114,7 @@ mod hyperlink_cell_test {
         let col = <HyperlinkRow as ExcelRowTrait>::schema()[0];
         let data = WriteCellData::from_string("example");
         let decorated = col.apply_decorations(data);
-        let ctx = easyexcel_core::ConvertContext {
+        let ctx = easyexcel::core::ConvertContext {
             sheet_name: String::new(),
             row_index: 0,
             column_index: None,
@@ -122,7 +122,7 @@ mod hyperlink_cell_test {
             format: None,
             use_1904_windowing: false,
         };
-        let cv = easyexcel_core::IntoExcelCell::to_excel_cell(&decorated, &ctx).unwrap();
+        let cv = easyexcel::core::IntoExcelCell::to_excel_cell(&decorated, &ctx).unwrap();
         if let CellValue::Hyperlink { url, text } = &cv {
             assert_eq!(url, "https://example.com");
             assert_eq!(text, "example");
@@ -139,7 +139,7 @@ mod hyperlink_cell_test {
 mod comment_cell_test {
     //! Mirrors: CellDataDataTest#t05ReadComment07
     use super::*;
-    use easyexcel_core::ExcelRow as ExcelRowTrait;
+    use easyexcel::core::ExcelRow as ExcelRowTrait;
 
     #[derive(Debug, DeriveExcelRow)]
     struct CommentRow {
@@ -171,7 +171,7 @@ mod comment_cell_test {
         let col = <CommentRow as ExcelRowTrait>::schema()[0];
         let data = WriteCellData::from_string("hello");
         let decorated = col.apply_decorations(data);
-        let ctx = easyexcel_core::ConvertContext {
+        let ctx = easyexcel::core::ConvertContext {
             sheet_name: String::new(),
             row_index: 0,
             column_index: None,
@@ -179,7 +179,7 @@ mod comment_cell_test {
             format: None,
             use_1904_windowing: false,
         };
-        let cv = easyexcel_core::IntoExcelCell::to_excel_cell(&decorated, &ctx).unwrap();
+        let cv = easyexcel::core::IntoExcelCell::to_excel_cell(&decorated, &ctx).unwrap();
         if let CellValue::Comment { value, text } = &cv {
             assert_eq!(text, "note text");
             assert_eq!(**value, CellValue::String("hello".to_owned()));

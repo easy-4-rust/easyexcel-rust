@@ -196,7 +196,7 @@ fn temp_lock_stress_intentionally_skipped() {
         .do_write(rows)
         .unwrap();
     assert!(path.exists());
-    let read: Vec<easyexcel_core::DynamicRow> = easyexcel::EasyExcel::read_dynamic_sync(&path)
+    let read: Vec<easyexcel::core::DynamicRow> = easyexcel::EasyExcel::read_dynamic_sync(&path)
         .do_read_sync()
         .unwrap_or_default();
     assert!(!read.is_empty());

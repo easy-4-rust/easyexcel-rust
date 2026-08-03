@@ -6,24 +6,46 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
 
 [dependencies]
-easyexcel-core = { path = "../easyexcel-core", version = "0.1.0-alpha.1" }
+# 内部 proc-macro（保持独立 crate）
 easyexcel-macro = { path = "../easyexcel-macro", version = "0.1.0-alpha.1" }
-easyexcel-reader = { path = "../easyexcel-reader", version = "0.1.0-alpha.1" }
-easyexcel-template = { path = "../easyexcel-template", version = "0.1.0-alpha.1" }
-easyexcel-writer = { path = "../easyexcel-writer", version = "0.1.0-alpha.1" }
-
-[dev-dependencies]
+# 原 easyexcel-core 依赖
 bigdecimal.workspace = true
-calamine.workspace = true
 chrono.workspace = true
 num-bigint.workspace = true
-serde.workspace = true
+serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 tempfile.workspace = true
-easyexcel-macro = { path = "../easyexcel-macro", version = "0.1.0-alpha.1" }
+thiserror.workspace = true
+ureq.workspace = true
+url.workspace = true
+# 原 easyexcel-reader 依赖
+calamine.workspace = true
+cfb.workspace = true
+csv.workspace = true
+encoding_rs.workspace = true
+encoding_rs_io.workspace = true
+office-crypto.workspace = true
+pure-rust-locales.workspace = true
+quick-xml.workspace = true
+ssfmt.workspace = true
+sys-locale.workspace = true
 zip.workspace = true
+# 原 easyexcel-writer 依赖
+flate2.workspace = true
+getrandom.workspace = true
+md-5.workspace = true
+ms-offcrypto-writer.workspace = true
+rand.workspace = true
+rust_xlsxwriter.workspace = true
+
+[dev-dependencies]
+easyexcel-macro = { path = "../easyexcel-macro", version = "0.1.0-alpha.1" }
+base64.workspace = true
 
 [lints]
 workspace = true

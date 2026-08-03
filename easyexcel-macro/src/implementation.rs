@@ -1112,7 +1112,7 @@ fn parse_font_style(
 }
 
 /// Parses `content_loop_merge(each_row = N, column_extend = M)` into
-/// [`easyexcel_core::LoopMergeProperty`] construction tokens.
+/// [`easyexcel::core::LoopMergeProperty`] construction tokens.
 fn parse_content_loop_merge(
     meta: &ParseNestedMeta<'_>,
     crate_path: &proc_macro2::TokenStream,
@@ -1215,7 +1215,7 @@ fn parse_conditional(
 }
 
 /// Parses `once_absolute_merge(first_row_index = ..., ...)` into
-/// [`easyexcel_core::OnceAbsoluteMergeProperty`] construction tokens.
+/// [`easyexcel::core::OnceAbsoluteMergeProperty`] construction tokens.
 fn parse_once_absolute_merge(
     meta: &ParseNestedMeta<'_>,
     crate_path: &proc_macro2::TokenStream,

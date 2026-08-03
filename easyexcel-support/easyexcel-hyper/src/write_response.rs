@@ -7,8 +7,8 @@
 //!     .doWrite(data());
 //! ```
 
+use easyexcel::core::{ExcelDownloadErrorBody, ExcelError, Result};
 use easyexcel::{EasyExcel, ExcelRow};
-use easyexcel_core::{ExcelDownloadErrorBody, ExcelError, Result};
 use http_body_util::Full;
 use hyper::{Response, StatusCode};
 
@@ -28,7 +28,7 @@ pub type ResponseBody = Full<bytes::Bytes>;
 ///
 /// # Errors
 ///
-/// 行转换、工作表配置或 OOXML 写入失败时返回 [`easyexcel_core::ExcelError`]。
+/// 行转换、工作表配置或 OOXML 写入失败时返回 [`easyexcel::core::ExcelError`]。
 pub fn write_rows_to_bytes<T, I>(sheet_name: &str, rows: I) -> Result<Vec<u8>>
 where
     T: ExcelRow,

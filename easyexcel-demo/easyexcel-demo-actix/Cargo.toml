@@ -14,7 +14,6 @@ path = "src/main.rs"
 
 [dependencies]
 easyexcel = { workspace = true }
-easyexcel-core = { workspace = true }
 easyexcel-actix = { path = "../../easyexcel-support/easyexcel-actix" }
 actix-web = { workspace = true }
 actix-multipart = { workspace = true }

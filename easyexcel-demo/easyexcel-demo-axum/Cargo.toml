@@ -14,7 +14,6 @@ path = "src/main.rs"
 
 [dependencies]
 easyexcel = { workspace = true }
-easyexcel-core = { workspace = true }
 easyexcel-axum = { path = "../../easyexcel-support/easyexcel-axum" }
 axum = { workspace = true, features = ["multipart"] }
 chrono = { workspace = true, default-features = false, features = ["std", "clock"] }

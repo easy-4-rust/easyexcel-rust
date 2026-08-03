@@ -12,8 +12,8 @@
 //! `http_body_util::BoxBody<Bytes, warp::Error>`），通过
 //! `Response::new` + `status_mut` + `headers_mut` 构造 200 响应与附件头。
 
+use easyexcel::core::{ExcelDownloadErrorBody, Result};
 use easyexcel::{EasyExcel, ExcelRow};
-use easyexcel_core::{ExcelDownloadErrorBody, Result};
 use http::HeaderValue;
 use http::header::CONTENT_TYPE;
 use warp::http::StatusCode;
@@ -27,7 +27,7 @@ use crate::headers::excel_xlsx_attachment_headers;
 ///
 /// # Errors
 ///
-/// 行转换、工作表配置或 OOXML 写入失败时返回 [`easyexcel_core::ExcelError`]。
+/// 行转换、工作表配置或 OOXML 写入失败时返回 [`easyexcel::core::ExcelError`]。
 pub fn write_rows_to_bytes<T, I>(sheet_name: &str, rows: I) -> Result<Vec<u8>>
 where
     T: ExcelRow,

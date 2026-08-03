@@ -352,7 +352,7 @@ fn writer_builder_excel_type_overrides_path_extension() -> Result<()> {
     let path = directory.path().join("values.data");
 
     EasyExcel::write::<Value>(&path)
-        .excel_type(easyexcel_core::support::ExcelTypeEnum::Csv)
+        .excel_type(crate::core::support::ExcelTypeEnum::Csv)
         .with_bom(false)
         .do_write(vec![Value("one".to_owned())])?;
 

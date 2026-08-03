@@ -2,7 +2,7 @@
 //! 中降级分支的不可达性验证（Rocket 适配，镜像 axum 适配器的 `tests_extra2`）。
 
 use easyexcel::ExcelRow;
-use easyexcel_core::ExcelDownloadErrorBody;
+use easyexcel::core::ExcelDownloadErrorBody;
 use rocket::http::Status;
 use rocket::response::Response;
 use serde_json::{Value, json};

@@ -5,11 +5,11 @@ use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
 use axum::http::{StatusCode, header::CONTENT_DISPOSITION, header::CONTENT_TYPE};
-use easyexcel::{ExcelRow, ReadListener};
-use easyexcel_core::{
+use easyexcel::core::{
     AnalysisContext, CellValue, ExcelColumn, ExcelDownloadErrorBody, ExcelError,
     ExcelWriteMetadata, Result, RowData,
 };
+use easyexcel::{ExcelRow, ReadListener};
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
 

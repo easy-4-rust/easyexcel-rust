@@ -9,9 +9,9 @@
 //!
 //! Naming: `mod <java_class_snake>` + `fn <java_method_snake>`.
 
+use easyexcel::core::ExcelRow as ExcelRowTrait;
+use easyexcel::core::{IntoExcelCell, WriteCellData};
 use easyexcel::{EasyExcel, ExcelRow};
-use easyexcel_core::ExcelRow as ExcelRowTrait;
-use easyexcel_core::{IntoExcelCell, WriteCellData};
 
 // ---------------------------------------------------------------------------
 // Top-level test structs (visible to derive macro)
@@ -167,7 +167,7 @@ mod poi_handle_test {
     fn t06_poi_handle_via_cell_data07() {
         let mut data = WriteCellData::new(easyexcel::CellValue::Empty);
         data.set_value(easyexcel::CellValue::String("hello".to_owned()));
-        let ctx = easyexcel_core::ConvertContext {
+        let ctx = easyexcel::core::ConvertContext {
             sheet_name: String::new(),
             row_index: 0,
             column_index: None,

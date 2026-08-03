@@ -5,13 +5,13 @@
 //! ConstraintHandler}` and `DefaultWriteHandlerLoader`.
 //!
 //! Rust mirror: sub-trait split in
-//! `easyexcel_writer::handler::{workbook,sheet,row,cell,merge,constraint}_write_handler`
+//! `easyexcel::writer::handler::{workbook,sheet,row,cell,merge,constraint}_write_handler`
 //! and `DefaultWriteHandlerLoader::load_default_handler()`.
 //!
 //! Naming: `mod <java_class_snake>` + `fn <java_method_snake>`.
 
-use easyexcel_core::WriteHandler;
-use easyexcel_writer::handler::{
+use easyexcel::core::WriteHandler;
+use easyexcel::writer::handler::{
     cell_write_handler::CellWriteHandler, default_write_handler_loader::DefaultWriteHandlerLoader,
     row_write_handler::RowWriteHandler, sheet_write_handler::SheetWriteHandler,
     workbook_write_handler::WorkbookWriteHandler,
@@ -24,7 +24,7 @@ use easyexcel_writer::handler::{
 mod workbook_write_handler_test {
     //! Mirrors WorkbookWriteHandlerTest#t01WorkbookCreateOrder07
     use super::*;
-    use easyexcel_core::WriteWorkbookContext;
+    use easyexcel::core::WriteWorkbookContext;
 
     /// Capture-only handler used to verify the workbook before/after
     /// lifecycle fires. 对应 Java：`WorkbookWriteHandler` interface.
@@ -37,11 +37,11 @@ mod workbook_write_handler_test {
     impl WorkbookWriteHandler for LifecycleProbe {}
 
     impl WriteHandler for LifecycleProbe {
-        fn before_workbook(&mut self, _ctx: &WriteWorkbookContext) -> easyexcel_core::Result<()> {
+        fn before_workbook(&mut self, _ctx: &WriteWorkbookContext) -> easyexcel::core::Result<()> {
             self.before_count += 1;
             Ok(())
         }
-        fn after_workbook(&mut self, _ctx: &WriteWorkbookContext) -> easyexcel_core::Result<()> {
+        fn after_workbook(&mut self, _ctx: &WriteWorkbookContext) -> easyexcel::core::Result<()> {
             self.after_count += 1;
             Ok(())
         }
@@ -67,7 +67,7 @@ mod workbook_write_handler_test {
 mod sheet_write_handler_test {
     //! Mirrors SheetWriteHandlerTest#t02SheetCreateOrder07
     use super::*;
-    use easyexcel_core::{Result, WriteSheetContext};
+    use easyexcel::core::{Result, WriteSheetContext};
 
     #[derive(Default)]
     struct SheetProbe {
@@ -107,7 +107,7 @@ mod sheet_write_handler_test {
 mod row_write_handler_test {
     //! Mirrors RowWriteHandlerTest#t03RowCreateOrder07
     use super::*;
-    use easyexcel_core::{Result, WriteRowContext};
+    use easyexcel::core::{Result, WriteRowContext};
 
     #[derive(Default)]
     struct RowProbe {
@@ -147,7 +147,7 @@ mod row_write_handler_test {
 mod cell_write_handler_test {
     //! Mirrors CellWriteHandlerTest#t04CellCreateOrder07
     use super::*;
-    use easyexcel_core::{Result, WriteCellContext};
+    use easyexcel::core::{Result, WriteCellContext};
 
     #[derive(Default)]
     struct CellProbe {
@@ -196,7 +196,7 @@ mod default_write_handler_loader_test {
         assert_eq!(handlers.len(), 4, "must return 4 XLSX default handlers");
         // Verify all handlers implement the unified WriteHandler trait
         // and can dispatch a no-op workbook lifecycle.
-        let ctx = easyexcel_core::WriteWorkbookContext::new("out.xlsx");
+        let ctx = easyexcel::core::WriteWorkbookContext::new("out.xlsx");
         for h in &mut handlers {
             WriteHandler::before_workbook(h.as_mut(), &ctx).unwrap();
             WriteHandler::after_workbook(h.as_mut(), &ctx).unwrap();
@@ -216,7 +216,7 @@ mod default_write_handler_loader_test {
 
     #[test]
     fn t03_load_default_handler_by_excel_type07() {
-        use easyexcel_core::support::ExcelTypeEnum;
+        use easyexcel::core::support::ExcelTypeEnum;
 
         assert_eq!(
             DefaultWriteHandlerLoader::load_default_handler_for(true, ExcelTypeEnum::Xlsx).len(),

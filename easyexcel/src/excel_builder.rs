@@ -6,10 +6,10 @@
 use std::any::Any;
 use std::path::PathBuf;
 
-use easyexcel_core::{DynamicRow, Result};
-use easyexcel_template::create_builder_fill_executor;
-use easyexcel_writer::BuilderFillConfig;
-use easyexcel_writer::{ExcelBuilder, ExcelBuilderImpl, ExcelWriter, WriteSheet};
+use crate::core::{DynamicRow, Result};
+use crate::template::create_builder_fill_executor;
+use crate::writer::BuilderFillConfig;
+use crate::writer::{ExcelBuilder, ExcelBuilderImpl, ExcelWriter, WriteSheet};
 
 /// Creates an [`ExcelBuilderImpl`] from a stateful writer without fill wiring.
 ///
@@ -95,8 +95,8 @@ pub fn do_fill_template_with_config(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use easyexcel_core::DynamicValue;
-    use easyexcel_template::{FillConfig, FillWrapper, TemplateData};
+    use crate::core::DynamicValue;
+    use crate::template::{FillConfig, FillWrapper, TemplateData};
     use std::collections::BTreeMap;
     use tempfile::tempdir;
 
@@ -198,7 +198,7 @@ mod tests {
 mod tests_extra {
     use super::*;
     use crate::EasyExcel;
-    use easyexcel_core::DynamicValue;
+    use crate::core::DynamicValue;
     use std::collections::BTreeMap;
     use tempfile::tempdir;
 

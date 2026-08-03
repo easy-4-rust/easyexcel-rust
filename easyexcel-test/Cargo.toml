@@ -10,9 +10,6 @@ publish = false
 
 [dev-dependencies]
 easyexcel = { path = "../easyexcel" }
-easyexcel-core = { path = "../easyexcel-core" }
-easyexcel-reader = { path = "../easyexcel-reader" }
-easyexcel-writer = { path = "../easyexcel-writer" }
 easyexcel-macro = { path = "../easyexcel-macro" }
 bigdecimal.workspace = true
 calamine.workspace = true

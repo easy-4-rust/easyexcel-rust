@@ -3,11 +3,11 @@
 
 use std::sync::{Arc, Mutex};
 
-use easyexcel::{ExcelRow, ReadListener};
-use easyexcel_core::{
+use easyexcel::core::{
     AnalysisContext, CellValue, ExcelColumn, ExcelDownloadErrorBody, ExcelError,
     ExcelWriteMetadata, Result, RowData,
 };
+use easyexcel::{ExcelRow, ReadListener};
 use salvo::http::StatusCode;
 use salvo::http::header::{CONTENT_DISPOSITION, CONTENT_TYPE};
 use serde_json::{Value, json};

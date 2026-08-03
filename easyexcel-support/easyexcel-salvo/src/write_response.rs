@@ -7,8 +7,8 @@
 //!     .doWrite(data());
 //! ```
 
+use easyexcel::core::{ExcelDownloadErrorBody, Result};
 use easyexcel::{EasyExcel, ExcelRow};
-use easyexcel_core::{ExcelDownloadErrorBody, Result};
 use salvo::Response;
 use salvo::http::header::CONTENT_TYPE;
 use salvo::http::{HeaderValue, StatusCode};
@@ -22,7 +22,7 @@ use crate::headers::excel_xlsx_attachment_headers;
 ///
 /// # Errors
 ///
-/// 行转换、工作表配置或 OOXML 写入失败时返回 [`easyexcel_core::ExcelError`]。
+/// 行转换、工作表配置或 OOXML 写入失败时返回 [`easyexcel::core::ExcelError`]。
 pub fn write_rows_to_bytes<T, I>(sheet_name: &str, rows: I) -> Result<Vec<u8>>
 where
     T: ExcelRow,

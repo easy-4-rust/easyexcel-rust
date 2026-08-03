@@ -9,7 +9,6 @@ description = "easyexcel-support tide adapter for easyexcel-rust"
 
 [dependencies]
 easyexcel = { workspace = true }
-easyexcel-core = { workspace = true }
 tide = { workspace = true }
 serde_json = { workspace = true }
 tempfile = { workspace = true }

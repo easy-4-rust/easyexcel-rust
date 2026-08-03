@@ -3,6 +3,11 @@
 //! Java 对应：`com.alibaba.excel.EasyExcel` / `EasyExcelFactory`。
 //! `easy_excel.rs` / `easy_excel_factory.rs` 为 1:1 路径镜像模块（不删减本文件实现）。
 
+pub mod core;
+pub mod reader;
+pub mod template;
+pub mod writer;
+
 mod easy_excel;
 mod easy_excel_factory;
 mod excel_builder;
@@ -11,23 +16,22 @@ use std::io::{Read, Write};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
-pub use easyexcel_core::metadata::GlobalConfiguration;
-pub use easyexcel_core::*;
-pub use easyexcel_macro::ExcelRow;
-pub use easyexcel_reader::{
+pub use crate::core::metadata::GlobalConfiguration;
+pub use crate::core::*;
+pub use crate::reader::{
     CompatibleExcelReaderBuilder, CompatibleExcelReaderSheetBuilder, Ehcache,
     EternalReadCacheSelector, ExcelLocale, ExcelReader, MapCache, ReadCache, ReadCacheMode,
     ReadCacheSelector, SimpleReadCacheSelector, StoredReadCacheSelector, XlsCache,
     apply_global_configuration_to_read_options, global_configuration_from_read_options,
 };
-use easyexcel_reader::{
+use crate::reader::{
     ReadOptions, ScientificFormatMode, SheetSelector, read_csv, read_xls, read_xlsx,
 };
-pub use easyexcel_template::{
+pub use crate::template::{
     ExcelTemplateWriter, FillConfig, FillDirection, FillWrapper, IntoTemplateValue, TemplateData,
     TemplateSheet, fill_xlsx_template, fill_xlsx_template_list,
 };
-pub use easyexcel_writer::{
+pub use crate::writer::{
     CellStyle, CompatibleExcelWriterBuilder, CompatibleExcelWriterOutputStreamBuilder,
     CompatibleExcelWriterSheetBuilder, CsvEncodingWriter, ExcelBuilder, ExcelBuilderImpl,
     ExcelOutputStream, ExcelWriter, HorizontalAlignment, HorizontalCellStyleStrategy,
@@ -37,10 +41,11 @@ pub use easyexcel_writer::{
     WriteSheet, write_csv_to_buffer, write_csv_to_writer, write_xls, write_xls_to_writer,
     write_xlsx_to_writer,
 };
-use easyexcel_writer::{
+use crate::writer::{
     DefaultWriteHandlerLoader, write_csv_with_handlers, write_xls_with_handlers,
     write_xlsx_with_handlers,
 };
+pub use easyexcel_macro::ExcelRow;
 pub use excel_builder::{
     builder_from_writer, do_fill_template, do_fill_template_with_config, fill_builder_from_writer,
     wire_template_fill,
@@ -239,8 +244,8 @@ impl EasyExcel {
     /// Creates a `WriteTable` value mirroring Java
     /// `EasyExcelFactory.writerTable(Integer)`. (Java `writerTable(int)`)
     #[must_use]
-    pub fn writer_table(table_no: i32) -> easyexcel_writer::MirroredWriteTable {
-        easyexcel_writer::MirroredWriteTable::with_table_no(table_no)
+    pub fn writer_table(table_no: i32) -> crate::writer::MirroredWriteTable {
+        crate::writer::MirroredWriteTable::with_table_no(table_no)
     }
 
     /// Begins a multi-table write flow that produces an `ExcelWriterTableBuilder`.
@@ -252,14 +257,14 @@ impl EasyExcel {
     /// Phase 4 addition: provides the three-arg `write(Collection, WriteSheet, WriteTable)`
     /// overload at the public facade level.
     #[must_use]
-    pub fn writer_table_builder(table_no: i32) -> easyexcel_writer::ExcelWriterTableBuilder {
-        easyexcel_writer::ExcelWriterTableBuilder::new().table_no(table_no)
+    pub fn writer_table_builder(table_no: i32) -> crate::writer::ExcelWriterTableBuilder {
+        crate::writer::ExcelWriterTableBuilder::new().table_no(table_no)
     }
 
     /// Builds Java's unbound `writerTable()` builder.
     #[must_use]
-    pub fn writer_table_builder_default() -> easyexcel_writer::ExcelWriterTableBuilder {
-        easyexcel_writer::ExcelWriterTableBuilder::new()
+    pub fn writer_table_builder_default() -> crate::writer::ExcelWriterTableBuilder {
+        crate::writer::ExcelWriterTableBuilder::new()
     }
 
     /// Fills scalar `{key}` placeholders in an existing XLSX template.
@@ -863,7 +868,7 @@ where
     /// Sets an explicit output type, overriding the file extension.
     /// (Java `ExcelWriterBuilder.excelType`)
     #[must_use]
-    pub const fn excel_type(mut self, excel_type: easyexcel_core::support::ExcelTypeEnum) -> Self {
+    pub const fn excel_type(mut self, excel_type: crate::core::support::ExcelTypeEnum) -> Self {
         self.options.excel_type = Some(excel_type);
         self
     }
@@ -1100,7 +1105,7 @@ where
     ///
     /// - CSV templates are rejected (`csv cannot use template.`), matching Java.
     /// - **XLS templates:** record-preserving BIFF8 overlay via
-    ///   `easyexcel_writer::biff8::Biff8TemplatePackage` (unmodified records kept;
+    ///   `crate::writer::biff8::Biff8TemplatePackage` (unmodified records kept;
     ///   new cells appended as LABEL/NUMBER). Creating sheets absent from the
     ///   template remains unsupported.
     /// - **Default (XLSX):** styles and merges are preserved via ZIP/OOXML append
@@ -1305,7 +1310,7 @@ where
         data: &dyn std::any::Any,
         fill_config: FillConfig,
     ) -> Result<()> {
-        let builder_config = easyexcel_writer::BuilderFillConfig::new()
+        let builder_config = crate::writer::BuilderFillConfig::new()
             .direction(match fill_config.get_direction() {
                 FillDirection::Vertical => WriteDirection::Vertical,
                 FillDirection::Horizontal => WriteDirection::Horizontal,
@@ -1471,14 +1476,14 @@ fn is_xls_path(path: &Path) -> bool {
 
 fn is_csv_write(path: &Path, options: &WriteOptions) -> bool {
     match options.excel_type {
-        Some(excel_type) => excel_type == easyexcel_core::support::ExcelTypeEnum::Csv,
+        Some(excel_type) => excel_type == crate::core::support::ExcelTypeEnum::Csv,
         None => is_csv_path(path),
     }
 }
 
 fn is_xls_write(path: &Path, options: &WriteOptions) -> bool {
     match options.excel_type {
-        Some(excel_type) => excel_type == easyexcel_core::support::ExcelTypeEnum::Xls,
+        Some(excel_type) => excel_type == crate::core::support::ExcelTypeEnum::Xls,
         None => is_xls_path(path),
     }
 }
@@ -1486,13 +1491,13 @@ fn is_xls_write(path: &Path, options: &WriteOptions) -> bool {
 fn effective_write_type(
     path: &Path,
     options: &WriteOptions,
-) -> easyexcel_core::support::ExcelTypeEnum {
+) -> crate::core::support::ExcelTypeEnum {
     if is_csv_write(path, options) {
-        easyexcel_core::support::ExcelTypeEnum::Csv
+        crate::core::support::ExcelTypeEnum::Csv
     } else if is_xls_write(path, options) {
-        easyexcel_core::support::ExcelTypeEnum::Xls
+        crate::core::support::ExcelTypeEnum::Xls
     } else {
-        easyexcel_core::support::ExcelTypeEnum::Xlsx
+        crate::core::support::ExcelTypeEnum::Xlsx
     }
 }
 
@@ -1687,7 +1692,7 @@ mod tests_extra {
         let directory = tempdir()?;
         let path = directory.path().join("explicit-type.xls");
         EasyExcel::write::<DynamicRow>(&path)
-            .excel_type(easyexcel_core::support::ExcelTypeEnum::Xls)
+            .excel_type(crate::core::support::ExcelTypeEnum::Xls)
             .need_head(false)
             .do_write([dynamic_row(0, "xls-row")])?;
         let bytes = std::fs::read(&path)?;

@@ -10,8 +10,8 @@
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+use easyexcel::core::Result;
 use easyexcel::{EasyExcel, ExcelRow, ReadListener};
-use easyexcel_core::Result;
 use tempfile::Builder;
 
 /// 将上传字节写入带指定扩展名的临时文件并返回路径与句柄。

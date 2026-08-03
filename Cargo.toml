@@ -2,11 +2,7 @@
 members = [
     "xtask",
     "easyexcel",
-    "easyexcel-core",
     "easyexcel-macro",
-    "easyexcel-reader",
-    "easyexcel-template",
-    "easyexcel-writer",
     "easyexcel-support/easyexcel-axum",
     "easyexcel-support/easyexcel-actix",
     "easyexcel-support/easyexcel-hyper",
@@ -37,7 +33,6 @@ categories = ["parser-implementations", "encoding"]
 
 [workspace.dependencies]
 easyexcel = { path = "easyexcel", version = "0.1.0-alpha.1" }
-easyexcel-core = { path = "easyexcel-core", version = "0.1.0-alpha.1" }
 actix-multipart = "0.8.0"
 actix-web = "4.11.0"
 axum = "0.8.9"

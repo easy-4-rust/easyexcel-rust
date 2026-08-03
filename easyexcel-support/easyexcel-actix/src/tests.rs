@@ -5,11 +5,11 @@ use std::sync::{Arc, Mutex};
 
 use actix_web::body::BoxBody;
 use actix_web::http::header::{self, HeaderValue};
-use easyexcel::{ExcelRow, ReadListener};
-use easyexcel_core::{
+use easyexcel::core::{
     AnalysisContext, CellValue, ExcelColumn, ExcelDownloadErrorBody, ExcelError,
     ExcelWriteMetadata, Result, RowData,
 };
+use easyexcel::{ExcelRow, ReadListener};
 use serde_json::{Value, json};
 
 use crate::{
