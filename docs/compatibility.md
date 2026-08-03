@@ -96,14 +96,20 @@ release. See the audit document for the change.
 
 ### Verification evidence 6: `cargo llvm-cov` coverage
 
-Measured with `cargo llvm-cov --workspace --all-features` on 2026-08-02
-(2652 tests, all green):
+Measured with `cargo llvm-cov --workspace --all-features` (full workspace,
+all crates incl. support adapters, demos, xtask) on 2026-08-03 — the same
+measurement runs in CI (`scripts/coverage.sh`). x86_64-linux, rustc 1.97.1,
+2771 tests, all green:
 
 | Metric | Value |
 |--------|-------|
-| Lines | **98.77%** (47 541 covered / 584 missed) |
-| Regions | **96.49%** (74 521 covered / 2 615 missed) |
-| Functions | **96.22%** (5 772 covered / 218 missed) |
+| Lines | **96.38%** (75 384 total / 2 730 missed) |
+| Regions | **95.96%** (5 866 total / 237 missed) |
+| Functions | **98.68%** (48 296 total / 637 missed) |
+
+(An earlier 2026-08-02 measurement on a narrower scope reported 98.77% lines;
+the numbers above supersede it. CI enforces a 95% fail-under floor as a
+regression guard — see `scripts/coverage.sh`.)
 
 The 1.0 gate requires 100% of all reachable lines, regions, and functions
 (see evidence item 6 above). The remaining gap is
