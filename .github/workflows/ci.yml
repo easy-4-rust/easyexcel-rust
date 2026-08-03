@@ -7,8 +7,18 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    # Java golden 期望文件在中文 locale 下导出（DateFormatTest 的 MMM 月份名），
+    # 测试必须与生成环境一致；Rust 端跟随系统 locale（对齐 Java 默认 locale）
+    env:
+      LANG: zh_CN.UTF-8
+      LC_ALL: zh_CN.UTF-8
     steps:
       - uses: actions/checkout@v4
+      - name: Install zh_CN locale
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y locales
+          sudo locale-gen zh_CN.UTF-8
       - uses: dtolnay/rust-toolchain@master
         with:
           # 固定与本地验证一致的 1.97.1（rustup，与 CI 官方发行完全一致），
