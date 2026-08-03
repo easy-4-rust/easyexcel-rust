@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.handler.chain.*`.
+//! 对应 Java：`com.alibaba.excel.write.handler.chain.*`.
 
 pub mod cell_handler_execution_chain;
 pub mod row_handler_execution_chain;

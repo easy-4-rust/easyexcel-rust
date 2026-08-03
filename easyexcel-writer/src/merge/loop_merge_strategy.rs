@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.merge.LoopMergeStrategy`.
+//! 对应 Java：`com.alibaba.excel.write.merge.LoopMergeStrategy`.
 
 use easyexcel_core::{
     CellExtra, ExcelError, LoopMergeProperty, Result, WriteCellContext, WriteHandler,
@@ -6,7 +6,7 @@ use easyexcel_core::{
 
 use crate::merge::abstract_merge_strategy::AbstractMergeStrategy;
 
-/// Mirrors Java `LoopMergeStrategy` (3 constructors + `afterRowDispose`).
+/// 对应 Java：`LoopMergeStrategy` (3 constructors + `afterRowDispose`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LoopMergeStrategy {
     pub(crate) each_rows: u32,

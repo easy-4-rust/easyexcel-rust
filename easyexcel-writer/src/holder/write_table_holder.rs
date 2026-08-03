@@ -1,11 +1,11 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.holder.WriteTableHolder`.
+//! 对应 Java：`com.alibaba.excel.write.metadata.holder.WriteTableHolder`.
 
 use std::ops::{Deref, DerefMut};
 
 use crate::holder::abstract_write_holder::AbstractWriteHolder;
 use crate::metadata::WriteBasicParameter;
 
-/// Mirrors Java `WriteTableHolder extends AbstractWriteHolder`.
+/// 对应 Java：`WriteTableHolder extends AbstractWriteHolder`.
 ///
 /// Java's holder carries a POI `Sheet` plus a `tableNo` field. The Rust port
 /// mirrors the type so the [`crate::ExcelWriterTableBuilder`] can return a

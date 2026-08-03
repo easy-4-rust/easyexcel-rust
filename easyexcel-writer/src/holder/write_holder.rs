@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.holder.WriteHolder` (interface).
+//! 对应 Java：`com.alibaba.excel.write.metadata.holder.WriteHolder` (interface).
 
 use std::collections::HashSet;
 
 use crate::ExcelWriteHeadProperty;
 
-/// Mirrors Java `WriteHolder extends ConfigurationHolder`.
+/// 对应 Java：`WriteHolder extends ConfigurationHolder`.
 pub trait WriteHolder {
     /// Returns the resolved `ExcelWriteHeadProperty` for the holder. (Java `excelWriteHeadProperty()`)
     fn excel_write_head_property(&self) -> &ExcelWriteHeadProperty;

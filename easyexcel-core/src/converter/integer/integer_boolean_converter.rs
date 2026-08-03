@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.integer.IntegerBooleanConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.integer.IntegerBooleanConverter`.
 //!
-/// Mirrors Java `IntegerBooleanConverter`.
+/// 对应 Java：`IntegerBooleanConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct IntegerBooleanConverter;
 

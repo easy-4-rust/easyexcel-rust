@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.data.DataFormatData`.
+//! 对应 Java：`com.alibaba.excel.metadata.data.DataFormatData`.
 
 /// A Java built-in number-format index or a custom Excel format string.
 ///

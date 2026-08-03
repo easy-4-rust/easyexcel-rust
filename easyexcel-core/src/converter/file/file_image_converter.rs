@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.file.FileImageConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.file.FileImageConverter`.
 //!
-/// Mirrors Java `FileImageConverter`.
+/// 对应 Java：`FileImageConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct FileImageConverter;
 

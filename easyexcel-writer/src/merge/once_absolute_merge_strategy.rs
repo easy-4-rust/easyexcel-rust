@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.write.merge.OnceAbsoluteMergeStrategy`.
+//! 对应 Java：`com.alibaba.excel.write.merge.OnceAbsoluteMergeStrategy`.
 
 use easyexcel_core::{CellExtra, OnceAbsoluteMergeProperty, WriteCellContext, WriteHandler};
 
 use crate::merge::abstract_merge_strategy::AbstractMergeStrategy;
 
-/// Mirrors Java `OnceAbsoluteMergeStrategy implements SheetWriteHandler`.
+/// 对应 Java：`OnceAbsoluteMergeStrategy implements SheetWriteHandler`.
 ///
 /// Registered instances are consumed by the XLSX write path via
 /// [`WriteHandler::style_once_absolute_merge`] (in addition to type-level

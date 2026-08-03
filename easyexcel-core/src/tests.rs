@@ -2289,7 +2289,7 @@ fn dynamic_row_into_values_ownership() {
 
 // ============================================================================
 // A. Annotation Tests (@ExcelProperty, @ExcelIgnore, @ColumnWidth)
-//    Mirrors Java: AnnotationDataTest
+//    对应 Java：: AnnotationDataTest
 // ============================================================================
 
 #[test]

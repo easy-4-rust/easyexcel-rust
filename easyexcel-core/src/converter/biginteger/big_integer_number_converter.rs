@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.biginteger.BigIntegerNumberConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.biginteger.BigIntegerNumberConverter`.
 //!
-/// Mirrors Java `BigIntegerNumberConverter`.
+/// 对应 Java：`BigIntegerNumberConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct BigIntegerNumberConverter;
 

@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.integer.IntegerNumberConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.integer.IntegerNumberConverter`.
 //!
-/// Mirrors Java `IntegerNumberConverter`.
+/// 对应 Java：`IntegerNumberConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct IntegerNumberConverter;
 

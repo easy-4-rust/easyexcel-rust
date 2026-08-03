@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.write.handler.impl.DefaultRowWriteHandler`.
+//! 对应 Java：`com.alibaba.excel.write.handler.impl.DefaultRowWriteHandler`.
 
 use crate::WriteHandler;
 use easyexcel_core::WriteContext;
 use easyexcel_core::WriteSheetContext;
 
-/// Mirrors Java `DefaultRowWriteHandler extends AbstractRowWriteHandler`.
+/// 对应 Java：`DefaultRowWriteHandler extends AbstractRowWriteHandler`.
 ///
 /// Java's handler simply hooks `beforeSheetCreate` to freeze the first
 /// row, which `rust_xlsxwriter` does automatically via

@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.read.listener.IgnoreExceptionReadListener`.
+//! 对应 Java：`com.alibaba.excel.read.listener.IgnoreExceptionReadListener`.
 
 use easyexcel_core::{AnalysisContext, ReadListener};
 
-/// Mirrors Java `IgnoreExceptionReadListener extends ReadListener<T>`.
+/// 对应 Java：`IgnoreExceptionReadListener extends ReadListener<T>`.
 ///
 /// Java overrides `onException` to swallow the error and `hasNext` to
 /// return `true`. The Rust port implements the same defaults on the

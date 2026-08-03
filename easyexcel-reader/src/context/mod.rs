@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.context.*`.
+//! 对应 Java：`com.alibaba.excel.context.*`.
 //!
 //! `default_*_read_context` 文件为 Java 类名 1:1 路径镜像（不删既有实现）。
 

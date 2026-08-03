@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.format.ExcelGeneralNumberFormat`.
+//! 对应 Java：`com.alibaba.excel.metadata.format.ExcelGeneralNumberFormat`.
 //!
 //! Java's 81-line class formats numbers in Excel's "General" format.
 //! Rust delegates to `ssfmt::format` with format code `"General"`.

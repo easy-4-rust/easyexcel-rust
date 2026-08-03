@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.bytearray.BoxingByteArrayImageConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.bytearray.BoxingByteArrayImageConverter`.
 //!
-/// Mirrors Java `BoxingByteArrayImageConverter`.
+/// 对应 Java：`BoxingByteArrayImageConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct BoxingByteArrayImageConverter;
 

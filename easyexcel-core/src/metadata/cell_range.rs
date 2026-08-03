@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.CellRange`.
+//! 对应 Java：`com.alibaba.excel.metadata.CellRange`.
 
 /// Inclusive rectangular cell range.
 ///

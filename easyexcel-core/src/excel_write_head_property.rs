@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.property.ExcelWriteHeadProperty`.
+//! 对应 Java：`com.alibaba.excel.write.property.ExcelWriteHeadProperty`.
 
 use std::collections::{BTreeMap, HashSet};
 use std::ops::Deref;
@@ -12,7 +12,7 @@ use crate::{
     OnceAbsoluteMergeProperty,
 };
 
-/// Mirrors Java `ExcelWriteHeadProperty extends ExcelHeadProperty`.
+/// 对应 Java：`ExcelWriteHeadProperty extends ExcelHeadProperty`.
 ///
 /// This is core metadata rather than a backend object. Keeping it in
 /// `easyexcel-core` lets `WriteContextHolder` expose the same resolved property

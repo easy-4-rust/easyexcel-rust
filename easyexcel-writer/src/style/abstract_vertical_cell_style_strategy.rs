@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.write.style.AbstractVerticalCellStyleStrategy`.
+//! 对应 Java：`com.alibaba.excel.write.style.AbstractVerticalCellStyleStrategy`.
 
 use easyexcel_core::{ExcelCellStyle, WriteCellContext};
 
 use crate::style::abstract_cell_style_strategy::AbstractCellStyleStrategy;
 
-/// Mirrors Java `AbstractVerticalCellStyleStrategy extends AbstractCellStyleStrategy`.
+/// 对应 Java：`AbstractVerticalCellStyleStrategy extends AbstractCellStyleStrategy`.
 ///
 /// The Java side stores two `WriteCellStyle` fields (`headCellStyle`,
 /// `contentCellStyle`) and applies them based on `isHead`. The Rust

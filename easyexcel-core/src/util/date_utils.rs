@@ -1,4 +1,4 @@
-//! Mirrors Java com.alibaba.excel.util.DateUtils.
+//! 对应 Java： com.alibaba.excel.util.DateUtils.
 
 #![allow(dead_code)]
 

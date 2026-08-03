@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.annotation.*`.
+//! 对应 Java：`com.alibaba.excel.annotation.*`.
 
 pub mod date_time_format;
 pub mod excel_comment;

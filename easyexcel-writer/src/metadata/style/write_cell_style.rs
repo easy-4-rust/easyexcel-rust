@@ -1,17 +1,17 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.style.WriteCellStyle`.
+//! 对应 Java：`com.alibaba.excel.write.metadata.style.WriteCellStyle`.
 
 use easyexcel_core::ExcelCellStyle;
 
 use crate::metadata::style::write_font::merge_excel_font_style;
 
-/// Mirrors Java `WriteCellStyle`.
+/// 对应 Java：`WriteCellStyle`.
 ///
 /// The Java side carries POI-typed fields plus nested `writeFont` and a
 /// static `merge` helper. Rust reuses [`ExcelCellStyle`] for the data
 /// (including [`ExcelCellStyle::font`]) and mirrors the merge method.
 pub type WriteCellStyle = ExcelCellStyle;
 
-/// Mirrors Java `WriteCellStyle.merge(WriteCellStyle source, WriteCellStyle target)`.
+/// 对应 Java：`WriteCellStyle.merge(WriteCellStyle source, WriteCellStyle target)`.
 ///
 /// Java merges the source's non-null fields into the target, including
 /// nested `WriteFont.merge`. The Rust port performs the same union over

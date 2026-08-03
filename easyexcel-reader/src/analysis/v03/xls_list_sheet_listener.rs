@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.XlsListSheetListener`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.XlsListSheetListener`.
 
 use std::path::{Path, PathBuf};
 
@@ -7,7 +7,7 @@ use easyexcel_core::Result;
 use crate::context::{DefaultXlsReadContext, ReadSheet};
 use crate::{ReadOptions, list_xls_sheets};
 
-/// Mirrors Java `XlsListSheetListener implements HSSFListener`.
+/// 对应 Java：`XlsListSheetListener implements HSSFListener`.
 ///
 /// Java's listener pre-scans BIFF records to enumerate sheet names
 /// before the main read. Rust performs the same metadata-only pass through
@@ -22,7 +22,7 @@ pub struct XlsListSheetListener<'a> {
 impl<'a> XlsListSheetListener<'a> {
     /// Creates the metadata-only listener.
     ///
-    /// Mirrors Java `XlsListSheetListener(XlsReadContext)`, including
+    /// 对应 Java：`XlsListSheetListener(XlsReadContext)`, including
     /// `needReadSheet = false`.
     pub fn new(
         xls_read_context: &'a mut DefaultXlsReadContext,

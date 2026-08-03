@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.WriteWorkbook`.
+//! 对应 Java：`com.alibaba.excel.write.metadata.WriteWorkbook`.
 
 use easyexcel_core::CsvCharset;
 
 use crate::WriteOptions;
 
-/// Mirrors Java `WriteWorkbook extends WriteBasicParameter`.
+/// 对应 Java：`WriteWorkbook extends WriteBasicParameter`.
 ///
 /// The Java side carries 11 fields (file, outputStream, templateFile, etc.).
 /// Rust reuses the existing [`WriteOptions`] struct that already models the

@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.NoteRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.NoteRecordHandler`.
 
 use easyexcel_core::{CellExtra, CellExtraType};
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
-/// Mirrors Java `NoteRecordHandler` (comment / note).
+/// 对应 Java：`NoteRecordHandler` (comment / note).
 #[derive(Debug, Default)]
 pub struct NoteRecordHandler {
     /// Whether comment extras are enabled. (Java `support`)

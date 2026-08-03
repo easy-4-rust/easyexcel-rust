@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.ExcelAnalyserImpl`.
+//! 对应 Java：`com.alibaba.excel.analysis.ExcelAnalyserImpl`.
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -62,7 +62,7 @@ where
     }
 }
 
-/// Mirrors Java `com.alibaba.excel.analysis.ExcelAnalyserImpl implements ExcelAnalyser`.
+/// 对应 Java：`com.alibaba.excel.analysis.ExcelAnalyserImpl implements ExcelAnalyser`.
 ///
 /// Java constructs the analyser from `ReadWorkbook`, then
 /// [`choiceExcelExecutor`](ExcelAnalyserImpl::choice_excel_executor) selects
@@ -197,7 +197,7 @@ impl ExcelAnalyserImpl {
         self.options.sheet = sheet;
     }
 
-    /// Mirrors Java `choiceExcelExecutor(ReadWorkbook)`.
+    /// 对应 Java：`choiceExcelExecutor(ReadWorkbook)`.
     ///
     /// Resolves `ExcelTypeEnum` from the path extension (with a CSV fallback)
     /// and seeds [`analysis_context`](ExcelAnalyser::analysis_context). It

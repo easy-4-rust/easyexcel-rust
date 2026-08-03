@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.metadata.property.RowHeightProperty`.
+//! 对应 Java：`com.alibaba.excel.metadata.property.RowHeightProperty`.
 
-/// Mirrors Java `RowHeightProperty`. (Java `height: Short`)
+/// 对应 Java：`RowHeightProperty`. (Java `height: Short`)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RowHeightProperty {
     /// Row height in points. (Java `getHeight()`)

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.context.xls.*`.
+//! 对应 Java：`com.alibaba.excel.context.xls.*`.
 
 use easyexcel_core::support::ExcelTypeEnum;
 
@@ -9,7 +9,7 @@ use crate::holder::xls::xls_read_workbook_holder::XlsReadWorkbookHolder;
 
 use super::analysis_context_impl::AnalysisContextImpl;
 
-/// Mirrors Java `XlsReadContext extends AnalysisContext`.
+/// 对应 Java：`XlsReadContext extends AnalysisContext`.
 pub trait XlsReadContext {
     /// Returns the shared analysis state.
     fn analysis_context_impl(&self) -> &AnalysisContextImpl;
@@ -21,7 +21,7 @@ pub trait XlsReadContext {
     fn xls_read_sheet_holder(&self) -> Option<&XlsReadSheetHolder>;
 }
 
-/// Mirrors Java `DefaultXlsReadContext extends AnalysisContextImpl implements XlsReadContext`.
+/// 对应 Java：`DefaultXlsReadContext extends AnalysisContextImpl implements XlsReadContext`.
 #[derive(Debug, Clone)]
 pub struct DefaultXlsReadContext {
     inner: AnalysisContextImpl,
@@ -30,7 +30,7 @@ pub struct DefaultXlsReadContext {
 }
 
 impl DefaultXlsReadContext {
-    /// Mirrors Java `DefaultXlsReadContext(ReadWorkbook, ExcelTypeEnum)`.
+    /// 对应 Java：`DefaultXlsReadContext(ReadWorkbook, ExcelTypeEnum)`.
     #[must_use]
     pub fn new(options: &ReadOptions) -> Self {
         Self {

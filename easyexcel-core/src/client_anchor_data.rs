@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.data.ClientAnchorData`.
+//! 对应 Java：`com.alibaba.excel.metadata.data.ClientAnchorData`.
 
 use crate::anchor_type::AnchorType;
 use crate::coordinate_data::CoordinateData;

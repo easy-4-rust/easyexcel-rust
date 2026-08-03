@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.LabelSstRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.LabelSstRecordHandler`.
 //!
 //! Resolves an SST index through a caller-supplied cache lookup, matching
 //! Java's `ReadCache.get(sstIndex)` path.
@@ -26,7 +26,7 @@ pub enum LabelSstCell {
     },
 }
 
-/// Mirrors Java `LabelSstRecordHandler`.
+/// 对应 Java：`LabelSstRecordHandler`.
 #[derive(Debug, Default)]
 pub struct LabelSstRecordHandler {
     /// Most recently parsed raw LabelSST placement and cache index.

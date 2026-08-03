@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.XlsRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.XlsRecordHandler`.
 
 /// Handler contract for one or more BIFF record SIDs.
 pub trait XlsRecordHandler {

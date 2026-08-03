@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.data.CellData<T>` plus
+//! 对应 Java：`com.alibaba.excel.metadata.data.CellData<T>` plus
 //! `CellDataTypeEnum`. In Rust the value and its type are fused into a single
 //! `CellValue` enum; `CellDataType` is the dispatch key used by converters.
 

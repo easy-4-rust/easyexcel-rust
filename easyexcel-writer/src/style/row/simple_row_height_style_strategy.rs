@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.write.style.row.SimpleRowHeightStyleStrategy`.
+//! 对应 Java：`com.alibaba.excel.write.style.row.SimpleRowHeightStyleStrategy`.
 
 use easyexcel_core::WriteHandler;
 
 use crate::style::row::abstract_row_height_style_strategy::AbstractRowHeightStyleStrategy;
 
-/// Mirrors Java `SimpleRowHeightStyleStrategy`.
+/// 对应 Java：`SimpleRowHeightStyleStrategy`.
 pub struct SimpleRowHeightStyleStrategy {
     head_row_height: Option<u16>,
     content_row_height: Option<u16>,

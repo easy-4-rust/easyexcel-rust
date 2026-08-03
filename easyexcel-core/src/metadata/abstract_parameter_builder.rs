@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.AbstractParameterBuilder`.
+//! 对应 Java：`com.alibaba.excel.metadata.AbstractParameterBuilder`.
 
 use crate::CacheLocation;
 

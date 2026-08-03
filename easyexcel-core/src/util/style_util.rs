@@ -1,4 +1,4 @@
-//! Mirrors Java com.alibaba.excel.util.StyleUtil.
+//! 对应 Java： com.alibaba.excel.util.StyleUtil.
 //!
 //! Java wraps Apache POI `CellStyle`, `RichTextString`,
 //! `HyperlinkType`, `Font`, and `DataFormat` helpers. The Rust port

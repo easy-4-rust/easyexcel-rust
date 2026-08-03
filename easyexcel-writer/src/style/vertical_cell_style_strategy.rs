@@ -15,7 +15,7 @@ use crate::style::abstract_vertical_cell_style_strategy::AbstractVerticalCellSty
 
 /// Concrete, testable vertical (per-column) cell style strategy.
 ///
-/// Mirrors Java anonymous `AbstractVerticalCellStyleStrategy` subclasses used
+/// 对应 Java： anonymous `AbstractVerticalCellStyleStrategy` subclasses used
 /// in `StyleDataTest`.
 pub struct VerticalCellStyleStrategy {
     head: Box<dyn Fn(usize) -> ExcelCellStyle + Send + Sync>,

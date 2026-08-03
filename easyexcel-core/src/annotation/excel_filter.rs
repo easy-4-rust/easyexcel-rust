@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.annotation.write.ExcelFilter` (introduced in Phase 1).
+//! 对应 Java：`com.alibaba.excel.annotation.write.ExcelFilter` (introduced in Phase 1).
 //!
 //! In Rust, `#[derive(ExcelRow)]` with `#[excel(filter)]` attribute
 //! enables auto-filtering on the column. This marker type exists

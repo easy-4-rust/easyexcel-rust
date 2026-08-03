@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.doubleconverter.DoubleBooleanConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.doubleconverter.DoubleBooleanConverter`.
 //!
-/// Mirrors Java `DoubleBooleanConverter`.
+/// 对应 Java：`DoubleBooleanConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct DoubleBooleanConverter;
 

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.poi.FontUnderline` styling subset.
+//! 对应 Java：`com.alibaba.excel.enums.poi.FontUnderline` styling subset.
 
 /// Font underline style used by annotation-driven font styles.
 ///

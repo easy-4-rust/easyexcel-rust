@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.WriteLastRowTypeEnum`.
+//! 对应 Java：`com.alibaba.excel.enums.WriteLastRowTypeEnum`.
 //!
 //! Tracks whether a worksheet has been initialized with template data or
 //! remains empty.

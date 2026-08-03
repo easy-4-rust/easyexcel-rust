@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.metadata.data.FormulaData`.
+//! 对应 Java：`com.alibaba.excel.metadata.data.FormulaData`.
 
 /// Formula metadata associated with a cached cell value while reading.
 ///
-/// Mirrors Java `FormulaData` (`formulaValue` field + `clone()` override).
+/// 对应 Java：`FormulaData` (`formulaValue` field + `clone()` override).
 /// Rust uses `#[derive(Clone)]` so the public `clone()` is automatic.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct FormulaData {

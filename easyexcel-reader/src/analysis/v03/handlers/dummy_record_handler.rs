@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler`.
 //!
 //! Handles POI "dummy" records that mark end-of-row and missing cells.
 
@@ -19,7 +19,7 @@ pub enum DummyRecordEvent {
     MissingCell(BlankCell),
 }
 
-/// Mirrors Java `DummyRecordHandler`.
+/// 对应 Java：`DummyRecordHandler`.
 #[derive(Debug, Default)]
 pub struct DummyRecordHandler;
 

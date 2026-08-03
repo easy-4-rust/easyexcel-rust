@@ -1,6 +1,6 @@
 //! BIFF8 (.xls) standard RC4 encryption — POI compatible.
 //!
-//! Mirrors Java `org.apache.poi.hssf.record.crypto.Biff8EncryptionKey`
+//! 对应 Java：`org.apache.poi.hssf.record.crypto.Biff8EncryptionKey`
 //! and `com.alibaba.excel.support.encrypt.EncryptionInfo` (standard mode).
 //!
 //! # Algorithm (POI default: RC4 40-bit)

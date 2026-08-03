@@ -8,7 +8,7 @@ use crate::locale::ExcelLocale;
 
 /// Builds a global configuration snapshot from read options.
 ///
-/// Mirrors Java holder propagation from `ReadBasicParameter` into
+/// 对应 Java： holder propagation from `ReadBasicParameter` into
 /// `GlobalConfiguration`.
 #[must_use]
 pub fn global_configuration_from_read_options(options: &ReadOptions) -> GlobalConfiguration {

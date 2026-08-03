@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.cache.selector.*`.
+//! 对应 Java：`com.alibaba.excel.cache.selector.*`.
 
 mod eternal_read_cache_selector;
 mod read_cache_selector;

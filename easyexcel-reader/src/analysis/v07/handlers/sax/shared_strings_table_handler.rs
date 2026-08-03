@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v07.handlers.sax.SharedStringsTableHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v07.handlers.sax.SharedStringsTableHandler`.
 //!
 //! Java's SAX handler parses `sharedStrings.xml` and populates the `ReadCache`.
 //! Rust's `xlsx_rows::parse_shared_strings` drives this handler from `quick_xml`

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.cache.Ehcache`.
+//! 对应 Java：`com.alibaba.excel.cache.Ehcache`.
 //!
 //! Java binds two org.ehcache managers: a persistent disk manager
 //! (`FILE_CACHE_MANAGER`, 20 GB pool) and a heap active cache
@@ -27,7 +27,7 @@ pub const DEFAULT_MAX_EHCACHE_ACTIVATE_BATCH_COUNT: i32 = 20;
 
 /// Disk-backed shared-string cache matching Java `Ehcache`.
 ///
-/// Mirrors Java `com.alibaba.excel.cache.Ehcache`.
+/// 对应 Java：`com.alibaba.excel.cache.Ehcache`.
 ///
 /// Use [`ReadCacheMode::Disk`](crate::ReadCacheMode::Disk) or
 /// [`EternalReadCacheSelector::ehcache`] at the workbook level; this type exists
@@ -39,7 +39,7 @@ pub struct Ehcache {
 impl Ehcache {
     /// Creates a disk-backed cache with Java default batch sizing.
     ///
-    /// Mirrors Java `new Ehcache(null, maxCacheActivateBatchCount)`.
+    /// 对应 Java：`new Ehcache(null, maxCacheActivateBatchCount)`.
     ///
     /// The `max_cache_activate_batch_count` argument is accepted for signature
     /// parity; Rust's disk backend does not replicate Java's heap active-cache
@@ -55,7 +55,7 @@ impl Ehcache {
 
     /// Creates a cache with the deprecated Java `maxCacheActivateSize` MB knob.
     ///
-    /// Mirrors Java `new Ehcache(maxCacheActivateSize)`.
+    /// 对应 Java：`new Ehcache(maxCacheActivateSize)`.
     ///
     /// # Errors
     ///

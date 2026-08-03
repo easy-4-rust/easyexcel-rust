@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.handler.RowWriteHandler`.
+//! 对应 Java：`com.alibaba.excel.write.handler.RowWriteHandler`.
 
 /// Marks a handler as the Rust counterpart of Java `RowWriteHandler`.
 ///

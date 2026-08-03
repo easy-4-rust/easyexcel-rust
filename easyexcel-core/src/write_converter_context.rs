@@ -1,11 +1,11 @@
-//! Mirrors Java `com.alibaba.excel.converters.WriteConverterContext`.
+//! 对应 Java：`com.alibaba.excel.converters.WriteConverterContext`.
 
 use crate::convert_context::ConvertContext;
 use crate::excel_column::ExcelColumn;
 
 /// Context supplied to a custom Rust-to-cell converter.
 ///
-/// Mirrors Java `WriteConverterContext<T>(value, contentProperty,
+/// 对应 Java：`WriteConverterContext<T>(value, contentProperty,
 /// writeContext)`. Rust drops the heavy `WriteContext` reference and uses
 /// the lightweight `ConvertContext`.
 #[derive(Debug, Clone, Copy)]

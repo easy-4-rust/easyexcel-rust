@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.cache.selector.SimpleReadCacheSelector`.
+//! 对应 Java：`com.alibaba.excel.cache.selector.SimpleReadCacheSelector`.
 //!
 //! Default workbook behaviour (`ReadCacheMode::Auto`) uses the same
 //! [`DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES`] (5_000_000) boundary as Java
@@ -11,7 +11,7 @@ use crate::read_cache::{DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES, ReadCacheMode};
 
 /// Simple cache selector matching Java's 5 MB map-cache boundary.
 ///
-/// Mirrors Java `com.alibaba.excel.cache.selector.SimpleReadCacheSelector`.
+/// 对应 Java：`com.alibaba.excel.cache.selector.SimpleReadCacheSelector`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SimpleReadCacheSelector {
     /// Maximum shared-string table size that keeps data in memory, in bytes.
@@ -41,7 +41,7 @@ impl SimpleReadCacheSelector {
 
     /// Creates a selector with a custom map-cache size in megabytes.
     ///
-    /// Mirrors Java `SimpleReadCacheSelector(Long maxUseMapCacheSize, Integer maxCacheActivateSize)`.
+    /// 对应 Java：`SimpleReadCacheSelector(Long maxUseMapCacheSize, Integer maxCacheActivateSize)`.
     #[must_use]
     pub fn with_max_use_map_cache_size_mb(max_use_map_cache_size_mb: u64) -> Self {
         Self {

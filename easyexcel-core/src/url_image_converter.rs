@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.converters.url.UrlImageConverter` with
+//! 对应 Java：`com.alibaba.excel.converters.url.UrlImageConverter` with
 //! Java's default timeout values (1s connect, 5s read).
 
 use std::fmt::Display;

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.executor.ExcelWriteFillExecutor`.
+//! 对应 Java：`com.alibaba.excel.write.executor.ExcelWriteFillExecutor`.
 
 use std::any::Any;
 
@@ -7,7 +7,7 @@ use easyexcel_core::{
     ExcelError, Result, WriteContext, WriteFillConfig, WriteFillExecutor, WriteFillSheet,
 };
 
-/// Mirrors Java `ExcelWriteFillExecutor extends AbstractExcelWriteExecutor`.
+/// 对应 Java：`ExcelWriteFillExecutor extends AbstractExcelWriteExecutor`.
 ///
 /// The Java class owns the template-analysis and collection cursor state.
 /// Rust keeps that state in the pluggable [`WriteFillExecutor`] implemented by
@@ -52,7 +52,7 @@ impl<'a> ExcelWriteFillExecutor<'a> {
 
     /// Fills scalar or collection data on one selected worksheet.
     ///
-    /// Mirrors Java `fill(Object, FillConfig)`. Template analysis, repeated
+    /// 对应 Java：`fill(Object, FillConfig)`. Template analysis, repeated
     /// collection cursors, row shifting, horizontal/vertical direction and
     /// style inheritance execute in the injected stateful engine.
     ///

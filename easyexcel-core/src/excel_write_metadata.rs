@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.AbstractHolder` type-level fields
+//! 对应 Java：`com.alibaba.excel.metadata.AbstractHolder` type-level fields
 //! aggregated into `WriteBasicParameter` plus the
 //! `ExcelWriteHeadProperty` derivation.
 

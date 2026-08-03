@@ -1,11 +1,11 @@
-//! Mirrors Java `com.alibaba.excel.cache.selector.EternalReadCacheSelector`.
+//! 对应 Java：`com.alibaba.excel.cache.selector.EternalReadCacheSelector`.
 
 use super::read_cache_selector::ReadCacheSelector;
 use crate::read_cache::ReadCacheMode;
 
 /// Always returns the same cache mode regardless of shared-string table size.
 ///
-/// Mirrors Java `com.alibaba.excel.cache.selector.EternalReadCacheSelector`.
+/// 对应 Java：`com.alibaba.excel.cache.selector.EternalReadCacheSelector`.
 ///
 /// Java `EasyExcel.readCache(ReadCache)` wraps the cache instance in this
 /// selector so workbook reads skip the 5 MB Auto heuristic. Rust exposes the
@@ -19,7 +19,7 @@ pub struct EternalReadCacheSelector {
 impl EternalReadCacheSelector {
     /// Creates a selector that always returns `mode`.
     ///
-    /// Mirrors Java `new EternalReadCacheSelector(ReadCache readCache)`.
+    /// 对应 Java：`new EternalReadCacheSelector(ReadCache readCache)`.
     #[must_use]
     pub const fn new(mode: ReadCacheMode) -> Self {
         Self { mode }

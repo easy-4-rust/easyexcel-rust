@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v07.handlers.CellValueTagHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v07.handlers.CellValueTagHandler`.
 //!
 //! Java class is empty — it inherits `characters` from
 //! `AbstractCellValueTagHandler` for the `<v>` tag.
@@ -6,7 +6,7 @@
 use super::abstract_cell_value_tag_handler::AbstractCellValueTagHandler;
 use super::xlsx_tag_handler::XlsxTagHandler;
 
-/// Mirrors Java `CellValueTagHandler` (`<v>` cell value tag).
+/// 对应 Java：`CellValueTagHandler` (`<v>` cell value tag).
 #[derive(Debug, Default)]
 pub struct CellValueTagHandler {
     inner: AbstractCellValueTagHandler,

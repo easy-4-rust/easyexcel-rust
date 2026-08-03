@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v07.handlers.sax.XlsxRowHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v07.handlers.sax.XlsxRowHandler`.
 //!
 //! Java routes each worksheet tag through a static `XLSX_CELL_HANDLER_MAP`.
 //! This Rust port keeps the same map and forwards SAX-style callbacks; the
@@ -57,7 +57,7 @@ impl RoutedHandler {
     }
 }
 
-/// Mirrors Java `XlsxRowHandler extends DefaultHandler`.
+/// 对应 Java：`XlsxRowHandler extends DefaultHandler`.
 pub struct XlsxRowHandler {
     /// Active handlers keyed by local tag name.
     handlers: HashMap<&'static str, RoutedHandler>,

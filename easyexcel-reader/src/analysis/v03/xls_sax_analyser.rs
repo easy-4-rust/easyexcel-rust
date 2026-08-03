@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.XlsSaxAnalyser`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.XlsSaxAnalyser`.
 
 use std::path::{Path, PathBuf};
 
@@ -11,7 +11,7 @@ use crate::analysis::v03::xls_record_dispatcher::{XlsRecordDispatchState, XlsRec
 use crate::context::{DefaultXlsReadContext, ReadSheet, XlsReadContext};
 use crate::{ReadOptions, read_xls};
 
-/// Mirrors Java `XlsSaxAnalyser implements HSSFListener, ExcelReadExecutor`.
+/// 对应 Java：`XlsSaxAnalyser implements HSSFListener, ExcelReadExecutor`.
 ///
 /// Java registers 19 BIFF record handlers and drives POI `HSSFEventFactory`.
 /// Rust runs the same SID dispatch over the real OLE Workbook stream, then uses
@@ -32,7 +32,7 @@ pub struct XlsSaxAnalyser {
 }
 
 impl XlsSaxAnalyser {
-    /// Mirrors Java `XlsSaxAnalyser(XlsReadContext)`.
+    /// 对应 Java：`XlsSaxAnalyser(XlsReadContext)`.
     ///
     /// Sheet discovery uses calamine metadata, equivalent to Java
     /// `XlsListSheetListener.execute()` pre-scan.
@@ -93,7 +93,7 @@ impl XlsSaxAnalyser {
         self.last_error.as_ref()
     }
 
-    /// Mirrors Java `processRecord(Record)` from `HSSFListener`.
+    /// 对应 Java：`processRecord(Record)` from `HSSFListener`.
     ///
     /// # Errors
     ///
@@ -162,7 +162,7 @@ impl XlsSaxAnalyser {
 }
 
 impl ExcelReadExecutor for XlsSaxAnalyser {
-    /// Mirrors Java `sheetList()`.
+    /// 对应 Java：`sheetList()`.
     fn sheet_list(&self) -> &[ReadSheet] {
         &self.sheet_list
     }

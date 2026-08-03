@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.annotation.write.style.ContentLoopMerge`.
+//! 对应 Java：`com.alibaba.excel.annotation.write.style.ContentLoopMerge`.
 //!
 //! In Rust, prefer `#[excel(content_loop_merge(each_row = N, column_extend = M))]`
 //! on a field with `#[derive(ExcelRow)]`. This marker exists for 1:1 Java

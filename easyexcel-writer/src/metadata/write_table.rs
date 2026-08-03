@@ -1,9 +1,9 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.WriteTable`.
+//! 对应 Java：`com.alibaba.excel.write.metadata.WriteTable`.
 
 use crate::WriteOptions;
 use crate::metadata::WriteBasicParameter;
 
-/// Mirrors Java `WriteTable extends WriteBasicParameter`.
+/// 对应 Java：`WriteTable extends WriteBasicParameter`.
 ///
 /// Java carries a `tableNo` field. Rust reuses [`WriteOptions`] for the
 /// common base and adds the table index.

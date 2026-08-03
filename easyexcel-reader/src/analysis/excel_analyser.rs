@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.analysis.ExcelAnalyser` (interface).
+//! 对应 Java：`com.alibaba.excel.analysis.ExcelAnalyser` (interface).
 
 use easyexcel_core::{AnalysisContext, ExcelRow, ReadListener, Result};
 
 use super::excel_read_executor::ExcelReadExecutorKind;
 
-/// Mirrors Java `com.alibaba.excel.analysis.ExcelAnalyser`.
+/// 对应 Java：`com.alibaba.excel.analysis.ExcelAnalyser`.
 ///
 /// Java declares four methods: `analysis`, `finish`, `excelExecutor`,
 /// `analysisContext`. Rust's [`crate::read_xlsx`] / [`crate::read_xls`] /

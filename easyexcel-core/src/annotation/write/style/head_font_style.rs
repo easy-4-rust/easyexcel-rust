@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.annotation.write.style.HeadFontStyle`.
+//! 对应 Java：`com.alibaba.excel.annotation.write.style.HeadFontStyle`.
 //!
 //! In Rust, prefer `#[excel(head_font_style(...))]` on a type or field with
 //! `#[derive(ExcelRow)]`. This marker exists for 1:1 Java package parity.

@@ -1,4 +1,4 @@
-//! Mirrors Java com.alibaba.excel.util.EasyExcelTempFileCreationStrategy.
+//! 对应 Java： com.alibaba.excel.util.EasyExcelTempFileCreationStrategy.
 //!
 //! Java swaps POI's `TempFileCreationStrategy` for one that honours the
 //! EasyExcel cache path. The Rust port uses `tempfile::TempDir` /

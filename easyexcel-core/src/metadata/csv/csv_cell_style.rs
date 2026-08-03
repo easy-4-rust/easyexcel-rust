@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.csv.CsvCellStyle`.
+//! 对应 Java：`com.alibaba.excel.metadata.csv.CsvCellStyle`.
 
 use crate::metadata::data::DataFormatData;
 

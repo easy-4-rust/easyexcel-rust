@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.StringRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.StringRecordHandler`.
 //!
 //! Completes a pending string-formula cell created by [`super::formula_record_handler`].
 
@@ -6,7 +6,7 @@ use super::super::xls_record_handler::XlsRecordHandler;
 use super::formula_record_handler::{FormulaCell, FormulaRecordHandler};
 use crate::analysis::v03::biff_string::decode_unicode_string_segments;
 
-/// Mirrors Java `StringRecordHandler`.
+/// 对应 Java：`StringRecordHandler`.
 #[derive(Debug, Default)]
 pub struct StringRecordHandler {
     /// Most recently decoded formula string result.

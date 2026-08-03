@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.write.handler.impl.FillStyleCellWriteHandler`.
+//! 对应 Java：`com.alibaba.excel.write.handler.impl.FillStyleCellWriteHandler`.
 
 use easyexcel_core::{ExcelCellStyle, WriteCellContext, WriteHandler};
 
-/// Mirrors Java `FillStyleCellWriteHandler`.
+/// 对应 Java：`FillStyleCellWriteHandler`.
 ///
 /// Java's handler keeps the originating template cell style when filling
 /// a template. The Rust port delegates this to the template fill code

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.property.*`.
+//! 对应 Java：`com.alibaba.excel.metadata.property.*`.
 
 pub mod column_width_property;
 pub mod data_validation_property;

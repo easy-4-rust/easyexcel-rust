@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.property.ExcelDataValidationProperty`
+//! 对应 Java：`com.alibaba.excel.metadata.property.ExcelDataValidationProperty`
 //! (introduced in Phase 1, derived from `@ExcelDataValidation` annotation).
 
 /// Static metadata describing a per-cell data-validation rule.
@@ -20,7 +20,7 @@ pub struct ExcelDataValidationMeta {
 }
 
 impl ExcelDataValidationMeta {
-    /// Builds a new metadata record. (Mirrors Java default constructor + setters)
+    /// Builds a new metadata record. (对应 Java： default constructor + setters)
     #[must_use]
     pub const fn new(
         data_type: &'static str,

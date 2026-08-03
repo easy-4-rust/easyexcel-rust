@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.converters.string.StringImageConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.string.StringImageConverter`.
 //!
 //! Used with `#[excel(converter = StringImageConverter)]`. The file path is
 //! read during row conversion; missing or unreadable files return an I/O

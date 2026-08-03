@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.converters.ConverterKeyBuild`.
+//! 对应 Java：`com.alibaba.excel.converters.ConverterKeyBuild`.
 
 use std::any::TypeId;
 

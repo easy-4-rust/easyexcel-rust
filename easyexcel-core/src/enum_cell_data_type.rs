@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.CellDataTypeEnum`.
+//! 对应 Java：`com.alibaba.excel.enums.CellDataTypeEnum`.
 //!
 //! Java 定义了 8 个变体；Rust 额外补齐了 `Formula` 和 `Image`，与 `CellValue`
 //! 中 `Formula(String) / Image(Vec<u8>)` 变体对齐。

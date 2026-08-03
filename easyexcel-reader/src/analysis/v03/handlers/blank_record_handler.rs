@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.BlankRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.BlankRecordHandler`.
 //!
 //! XLS BIFF decoding is owned by `calamine::Xls` today; these helpers encode
 //! the Java `processRecord` semantics so a future `XlsSaxAnalyser` can call
@@ -15,7 +15,7 @@ pub struct BlankCell {
     pub column: usize,
 }
 
-/// Mirrors Java `BlankRecordHandler`.
+/// 对应 Java：`BlankRecordHandler`.
 #[derive(Debug, Default)]
 pub struct BlankRecordHandler {
     /// Most recently decoded blank cell.

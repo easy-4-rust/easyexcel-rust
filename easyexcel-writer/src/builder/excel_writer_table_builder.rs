@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.builder.ExcelWriterTableBuilder`.
+//! 对应 Java：`com.alibaba.excel.write.builder.ExcelWriterTableBuilder`.
 
 use crate::CellStyle;
 use crate::WriteHandler;
@@ -10,7 +10,7 @@ use crate::metadata::write_sheet::WriteSheet as WriteSheetMetadata;
 use crate::metadata::{WriteBasicParameter, WriteTable};
 use crate::{ExcelWriter, WriteSheet};
 
-/// Mirrors Java `ExcelWriterTableBuilder extends AbstractExcelWriterParameterBuilder`.
+/// 对应 Java：`ExcelWriterTableBuilder extends AbstractExcelWriterParameterBuilder`.
 ///
 /// Java carries a `WriteTable` and a back-reference to the parent
 /// `WriteSheet`; Rust mirrors the data on the parameter struct and
@@ -40,7 +40,7 @@ impl ExcelWriterTableBuilder {
 
     /// Creates a table builder bound to its parent writer and sheet.
     ///
-    /// Mirrors Java `ExcelWriterTableBuilder(ExcelWriter, WriteSheet)`.
+    /// 对应 Java：`ExcelWriterTableBuilder(ExcelWriter, WriteSheet)`.
     #[must_use]
     pub fn with_excel_writer(
         excel_writer: ExcelWriter,
@@ -187,7 +187,7 @@ impl ExcelWriterTableBuilder {
 
     /// Writes the supplied rows through the parent sheet/table and finishes.
     ///
-    /// Mirrors Java `ExcelWriterTableBuilder.doWrite(Collection)`.
+    /// 对应 Java：`ExcelWriterTableBuilder.doWrite(Collection)`.
     pub fn do_write<T, I>(mut self, rows: I) -> easyexcel_core::Result<()>
     where
         T: easyexcel_core::ExcelRow,

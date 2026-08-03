@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.annotation.write.style.ContentStyle`.
+//! 对应 Java：`com.alibaba.excel.annotation.write.style.ContentStyle`.
 //!
 //! In Rust, prefer `#[excel(content_style(...))]` on a type or field with
 //! `#[derive(ExcelRow)]`. This marker exists for 1:1 Java package parity.

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.property.ExcelContentProperty`.
+//! 对应 Java：`com.alibaba.excel.metadata.property.ExcelContentProperty`.
 //!
 //! See also [`DateTimeFormatProperty`] and [`NumberFormatProperty`] for the
 //! annotation-driven format metadata that Java stores on this type.
@@ -9,7 +9,7 @@ use crate::excel_font_style::ExcelFontStyle;
 use super::date_time_format_property::DateTimeFormatProperty;
 use super::number_format_property::NumberFormatProperty;
 
-/// Mirrors Java `ExcelContentProperty`.
+/// 对应 Java：`ExcelContentProperty`.
 ///
 /// Java carries a `Field`, `Converter`, [`DateTimeFormatProperty`],
 /// [`NumberFormatProperty`], `StyleProperty`, `FontProperty`. Rust

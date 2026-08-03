@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.write.handler.chain.RowHandlerExecutionChain`.
+//! 对应 Java：`com.alibaba.excel.write.handler.chain.RowHandlerExecutionChain`.
 
 use easyexcel_core::WriteRowContext;
 
-/// Mirrors Java `RowHandlerExecutionChain`.
+/// 对应 Java：`RowHandlerExecutionChain`.
 pub struct RowHandlerExecutionChain {
     pub(crate) handler: Option<Box<dyn easyexcel_core::WriteHandler>>,
     pub(crate) next: Option<Box<RowHandlerExecutionChain>>,

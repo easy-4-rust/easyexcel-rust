@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.converters.longconverter.*`.
+//! 对应 Java：`com.alibaba.excel.converters.longconverter.*`.
 
 pub mod long_boolean_converter;
 pub mod long_number_converter;

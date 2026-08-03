@@ -6,7 +6,7 @@ use crate::WriteOptions;
 
 /// Builds a global configuration snapshot from write options.
 ///
-/// Mirrors Java holder propagation from `WriteBasicParameter` into
+/// 对应 Java： holder propagation from `WriteBasicParameter` into
 /// `GlobalConfiguration`.
 #[must_use]
 pub fn global_configuration_from_write_options(options: &WriteOptions) -> GlobalConfiguration {

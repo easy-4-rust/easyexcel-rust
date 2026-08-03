@@ -1,4 +1,4 @@
-//! Mirrors Java com.alibaba.excel.util.MemberUtils.
+//! 对应 Java： com.alibaba.excel.util.MemberUtils.
 //!
 //! Java uses `java.lang.reflect.Member` introspection (Apache Commons
 //! `MemberUtils` provides `setAccessibleWorkaround` and visibility

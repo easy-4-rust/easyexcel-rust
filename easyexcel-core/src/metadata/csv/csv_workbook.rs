@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.csv.CsvWorkbook`.
+//! 对应 Java：`com.alibaba.excel.metadata.csv.CsvWorkbook`.
 
 use crate::CsvCharset;
 use crate::excel_error::ExcelError;

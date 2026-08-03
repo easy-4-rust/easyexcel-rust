@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.style.WriteFont`.
+//! 对应 Java：`com.alibaba.excel.write.metadata.style.WriteFont`.
 
 use crate::excel_color::ExcelColor;
 use crate::excel_font_script::ExcelFontScript;

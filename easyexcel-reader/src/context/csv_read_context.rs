@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.context.csv.*`.
+//! 对应 Java：`com.alibaba.excel.context.csv.*`.
 
 use easyexcel_core::support::ExcelTypeEnum;
 
@@ -9,7 +9,7 @@ use crate::holder::csv::csv_read_workbook_holder::CsvReadWorkbookHolder;
 
 use super::analysis_context_impl::AnalysisContextImpl;
 
-/// Mirrors Java `CsvReadContext extends AnalysisContext`.
+/// 对应 Java：`CsvReadContext extends AnalysisContext`.
 pub trait CsvReadContext {
     /// Returns the shared analysis state.
     fn analysis_context_impl(&self) -> &AnalysisContextImpl;
@@ -21,7 +21,7 @@ pub trait CsvReadContext {
     fn csv_read_sheet_holder(&self) -> Option<&CsvReadSheetHolder>;
 }
 
-/// Mirrors Java `DefaultCsvReadContext extends AnalysisContextImpl implements CsvReadContext`.
+/// 对应 Java：`DefaultCsvReadContext extends AnalysisContextImpl implements CsvReadContext`.
 #[derive(Debug, Clone)]
 pub struct DefaultCsvReadContext {
     inner: AnalysisContextImpl,
@@ -30,7 +30,7 @@ pub struct DefaultCsvReadContext {
 }
 
 impl DefaultCsvReadContext {
-    /// Mirrors Java `DefaultCsvReadContext(ReadWorkbook, ExcelTypeEnum)`.
+    /// 对应 Java：`DefaultCsvReadContext(ReadWorkbook, ExcelTypeEnum)`.
     #[must_use]
     pub fn new(options: &ReadOptions) -> Self {
         Self {

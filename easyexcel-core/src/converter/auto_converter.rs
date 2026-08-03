@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.converters.AutoConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.AutoConverter`.
 
 use super::converter_trait::Converter;
 
-/// Mirrors Java `AutoConverter implements Converter<Object>`.
+/// 对应 Java：`AutoConverter implements Converter<Object>`.
 ///
 /// This is deliberately a converter with only the default unsupported
 /// operations. Java uses it as the `@ExcelProperty.converter` sentinel: when

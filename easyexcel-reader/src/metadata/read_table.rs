@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.read.metadata.ReadTable`.
+//! 对应 Java：`com.alibaba.excel.read.metadata.ReadTable`.
 
-/// Mirrors Java `ReadTable` — a thin marker carrying a single
+/// 对应 Java：`ReadTable` — a thin marker carrying a single
 /// `tableNo` field. Java has 4 members (tableNo, getTableNo,
 /// setTableNo, equals/hashCode). Rust collapses the int field into
 /// the `i32` representation that matches `ReadSheet.sheetNo`.

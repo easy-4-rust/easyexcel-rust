@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.read.listener.ReadListener<T>` (and the
+//! 对应 Java：`com.alibaba.excel.read.listener.ReadListener<T>` (and the
 //! `IgnoreExceptionReadListener` default implementation).
 
 use std::collections::HashMap;
@@ -15,7 +15,7 @@ use crate::excel_error::ExcelError;
 pub trait ReadListener<T> {
     /// Called when row conversion or processing fails.
     ///
-    /// Mirrors Java `onException(Exception, AnalysisContext) throws Exception`,
+    /// 对应 Java：`onException(Exception, AnalysisContext) throws Exception`,
     /// where the exception is mapped to [`ErrorAction`].
     fn on_exception(&mut self, _error: &ExcelError, _context: &AnalysisContext) -> ErrorAction {
         ErrorAction::Stop

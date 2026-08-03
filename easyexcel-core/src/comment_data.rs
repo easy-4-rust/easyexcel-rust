@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.data.CommentData`.
+//! 对应 Java：`com.alibaba.excel.metadata.data.CommentData`.
 
 use crate::client_anchor_data::ClientAnchorData;
 use crate::rich_text_string_data::RichTextStringData;

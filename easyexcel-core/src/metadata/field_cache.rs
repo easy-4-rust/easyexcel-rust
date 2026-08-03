@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.FieldCache`.
+//! 对应 Java：`com.alibaba.excel.metadata.FieldCache`.
 
 use std::collections::BTreeMap;
 

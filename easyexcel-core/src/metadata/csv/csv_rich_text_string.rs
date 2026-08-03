@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.csv.CsvRichTextString`.
+//! 对应 Java：`com.alibaba.excel.metadata.csv.CsvRichTextString`.
 
 /// CSV rich text wrapper.
 ///

@@ -1,4 +1,4 @@
-//! Mirrors Java com.alibaba.excel.util.BooleanUtils.
+//! 对应 Java： com.alibaba.excel.util.BooleanUtils.
 
 #![allow(dead_code)]
 

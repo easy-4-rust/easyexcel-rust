@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.metadata.property.OnceAbsoluteMergeProperty`.
+//! 对应 Java：`com.alibaba.excel.metadata.property.OnceAbsoluteMergeProperty`.
 
-/// Mirrors Java `OnceAbsoluteMergeProperty`.
+/// 对应 Java：`OnceAbsoluteMergeProperty`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OnceAbsoluteMergeProperty {
     /// First row index. (Java `firstRowIndex`)

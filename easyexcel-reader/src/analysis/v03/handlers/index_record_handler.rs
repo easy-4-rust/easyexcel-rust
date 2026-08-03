@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.IndexRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.IndexRecordHandler`.
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
-/// Mirrors Java `IndexRecordHandler`.
+/// 对应 Java：`IndexRecordHandler`.
 #[derive(Debug, Default)]
 pub struct IndexRecordHandler {
     /// Approximate total rows from `IndexRecord.getLastRowAdd1`.

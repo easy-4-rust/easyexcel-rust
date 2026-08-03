@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.event.SyncReadListener`.
+//! 对应 Java：`com.alibaba.excel.event.SyncReadListener`.
 
 use crate::analysis_context::AnalysisContext;
 use crate::read_listener::ReadListener;

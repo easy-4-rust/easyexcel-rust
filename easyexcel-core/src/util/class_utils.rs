@@ -1,4 +1,4 @@
-//! Mirrors Java com.alibaba.excel.util.ClassUtils.
+//! 对应 Java： com.alibaba.excel.util.ClassUtils.
 //!
 //! Java relies on reflection (`java.lang.Class.getDeclaredFields`,
 //! `Field.setAccessible`) to map POJO fields to Excel columns. The Rust

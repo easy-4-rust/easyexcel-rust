@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.string.StringBooleanConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.string.StringBooleanConverter`.
 //!
-/// Mirrors Java `StringBooleanConverter`.
+/// 对应 Java：`StringBooleanConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct StringBooleanConverter;
 

@@ -1,4 +1,4 @@
-//! Mirrors Java com.alibaba.excel.util.NumberDataFormatterUtils.
+//! 对应 Java： com.alibaba.excel.util.NumberDataFormatterUtils.
 
 #![allow(dead_code)]
 

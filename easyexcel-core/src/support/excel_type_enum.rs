@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.support.ExcelTypeEnum`.
+//! 对应 Java：`com.alibaba.excel.support.ExcelTypeEnum`.
 //!
 //! Java distinguishes three Excel types by file extension and magic bytes:
 //! `XLSX` (`PK\x03\x04`), `XLS` (`D0CF11E0A1B11AE1`), and `CSV` (no magic).
 //! Rust mirrors the same three variants.
 
-/// Mirrors Java `ExcelTypeEnum`.
+/// 对应 Java：`ExcelTypeEnum`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExcelTypeEnum {
     /// CSV format. (Java `CSV`)

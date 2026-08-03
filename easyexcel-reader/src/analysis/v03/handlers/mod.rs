@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.*`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.*`.
 
 pub mod abstract_xls_record_handler;
 pub mod blank_record_handler;

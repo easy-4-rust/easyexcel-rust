@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.BasicParameter`.
+//! 对应 Java：`com.alibaba.excel.metadata.BasicParameter`.
 
 use crate::CacheLocation;
 

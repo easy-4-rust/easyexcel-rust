@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.NullObject`.
+//! 对应 Java：`com.alibaba.excel.metadata.NullObject`.
 
 /// Null object placeholder.
 ///

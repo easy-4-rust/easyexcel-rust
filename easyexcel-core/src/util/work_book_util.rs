@@ -1,4 +1,4 @@
-//! Mirrors Java com.alibaba.excel.util.WorkBookUtil.
+//! 对应 Java： com.alibaba.excel.util.WorkBookUtil.
 //!
 //! Java wraps Apache POI `Workbook` / `Sheet` / `Row` / `Cell`
 //! construction behind a small utility boundary. Rust keeps that boundary

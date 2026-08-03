@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.format.DataFormatter`.
+//! 对应 Java：`com.alibaba.excel.metadata.format.DataFormatter`.
 //!
 //! Java's 874-line class formats Excel numbers and dates using POI's
 //! internal format engine. Rust delegates to the `ssfmt` crate at the

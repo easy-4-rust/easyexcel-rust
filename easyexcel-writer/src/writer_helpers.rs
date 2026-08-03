@@ -52,7 +52,7 @@ pub(crate) fn maybe_trim_cell_string(value: &str, auto_trim: bool) -> String {
     }
 }
 
-/// Mirrors Java/reader extreme-magnitude scientific formatting threshold.
+/// 对应 Java：/reader extreme-magnitude scientific formatting threshold.
 #[allow(dead_code)]
 pub(crate) fn is_scientific_magnitude(value: f64) -> bool {
     let absolute = value.abs();

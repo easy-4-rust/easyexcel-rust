@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.write.handler.impl.DefaultWriteWorkbookHandler`.
+//! 对应 Java：`com.alibaba.excel.write.handler.impl.DefaultWriteWorkbookHandler`.
 
 use easyexcel_core::{Result, WriteWorkbookContext};
 
 use crate::WriteHandler;
 
-/// Mirrors Java `DefaultWriteWorkbookHandler`.
+/// 对应 Java：`DefaultWriteWorkbookHandler`.
 ///
 /// Tracks whether the workbook has been initialized for writing so the
 /// builder can defer dimension calculation until the first sheet

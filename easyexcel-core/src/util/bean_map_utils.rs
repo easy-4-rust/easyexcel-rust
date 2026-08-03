@@ -28,7 +28,7 @@ impl BeanMap {
 
     /// Returns the declared Rust type for a field.
     ///
-    /// Mirrors Java `BeanMap.getPropertyType`; manually implemented
+    /// 对应 Java：`BeanMap.getPropertyType`; manually implemented
     /// [`ExcelRow`] schemas may legitimately return `None`.
     #[must_use]
     pub fn property_type(&self, field_name: &str) -> Option<&'static str> {

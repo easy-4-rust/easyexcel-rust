@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.poi.FillPatternTypeEnum`.
+//! 对应 Java：`com.alibaba.excel.enums.poi.FillPatternTypeEnum`.
 
 /// Fill pattern used by annotation-driven cell styles.
 ///

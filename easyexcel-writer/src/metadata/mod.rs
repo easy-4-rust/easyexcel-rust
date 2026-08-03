@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.*` sub-packages.
+//! 对应 Java：`com.alibaba.excel.write.metadata.*` sub-packages.
 
 pub mod collection_row_data;
 pub mod map_row_data;

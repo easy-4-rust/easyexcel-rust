@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v07.handlers.MergeCellTagHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v07.handlers.MergeCellTagHandler`.
 
 use std::collections::HashMap;
 
@@ -7,7 +7,7 @@ use easyexcel_core::{CellExtra, CellExtraType, ExcelError, Result};
 
 use super::xlsx_tag_handler::XlsxTagHandler;
 
-/// Mirrors Java `MergeCellTagHandler`.
+/// 对应 Java：`MergeCellTagHandler`.
 #[derive(Debug, Default)]
 pub struct MergeCellTagHandler {
     /// Whether merge extras are enabled. (Java `support` / `extraReadSet`)

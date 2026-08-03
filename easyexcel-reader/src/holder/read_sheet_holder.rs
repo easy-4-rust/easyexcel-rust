@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.read.metadata.holder.ReadSheetHolder`.
+//! 对应 Java：`com.alibaba.excel.read.metadata.holder.ReadSheetHolder`.
 
-/// Mirrors Java `ReadSheetHolder extends AbstractReadHolder`.
+/// 对应 Java：`ReadSheetHolder extends AbstractReadHolder`.
 #[derive(Debug, Clone)]
 pub struct ReadSheetHolder {
     /// Mirrors `ReadSheetHolder.sheetNo`.
@@ -14,7 +14,7 @@ pub struct ReadSheetHolder {
 }
 
 impl ReadSheetHolder {
-    /// Mirrors Java `ReadSheetHolder(ReadSheet, ReadWorkbookHolder)`.
+    /// 对应 Java：`ReadSheetHolder(ReadSheet, ReadWorkbookHolder)`.
     pub fn new(sheet_no: i32, sheet_name: impl Into<String>) -> Self {
         Self {
             sheet_no,

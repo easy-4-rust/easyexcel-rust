@@ -1,4 +1,4 @@
-//! Mirrors Java com.alibaba.excel.util.PoiUtils.
+//! 对应 Java： com.alibaba.excel.util.PoiUtils.
 
 #![allow(dead_code)]
 

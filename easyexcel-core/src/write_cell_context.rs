@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.handler.context.CellWriteHandlerContext`.
+//! 对应 Java：`com.alibaba.excel.write.handler.context.CellWriteHandlerContext`.
 
 use crate::cell_value::CellValue;
 use crate::enum_cell_data_type::CellDataType;
@@ -10,7 +10,7 @@ use crate::{
 
 /// Mutable cell-level write lifecycle context.
 ///
-/// Mirrors Java `CellWriteHandlerContext` (13 fields). Rust keeps only the
+/// 对应 Java：`CellWriteHandlerContext` (13 fields). Rust keeps only the
 /// fields a handler actually mutates and exposes `skip: bool` so handlers
 /// can suppress writing a cell without juggling the underlying POI types.
 #[derive(Debug, Clone, PartialEq)]
@@ -35,13 +35,13 @@ pub struct WriteCellContext {
     pub relative_row_index: Option<usize>,
     /// Value before write handlers transform it.
     ///
-    /// Mirrors Java `CellWriteHandlerContext.originalValue`. Typed writer
+    /// 对应 Java：`CellWriteHandlerContext.originalValue`. Typed writer
     /// paths replace the constructor default with the field's value before a
     /// registered or annotation converter runs.
     pub original_value: Option<CellValue>,
     /// Declared Rust field type before conversion.
     ///
-    /// Mirrors Java `CellWriteHandlerContext.originalFieldClass`.
+    /// 对应 Java：`CellWriteHandlerContext.originalFieldClass`.
     pub original_field_type: Option<&'static str>,
     /// Source value held until Java's conversion stage begins.
     pending_original_value: Option<CellValue>,
@@ -56,7 +56,7 @@ pub struct WriteCellContext {
     pub target_cell_data_type: Option<CellDataType>,
     /// Suppresses annotation/strategy style filling for this cell.
     ///
-    /// Mirrors Java `CellWriteHandlerContext.ignoreFillStyle`.
+    /// 对应 Java：`CellWriteHandlerContext.ignoreFillStyle`.
     pub ignore_fill_style: bool,
     /// Value that will be written. A handler may replace it.
     pub value: CellValue,
@@ -161,7 +161,7 @@ impl WriteCellContext {
 
     /// Returns the first converted cell value.
     ///
-    /// Mirrors Java `CellWriteHandlerContext.getFirstCellData()`.
+    /// 对应 Java：`CellWriteHandlerContext.getFirstCellData()`.
     #[must_use]
     pub fn first_cell_data(&self) -> Option<&CellValue> {
         self.cell_data_list.first()

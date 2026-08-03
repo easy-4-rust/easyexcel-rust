@@ -176,7 +176,7 @@ impl ConverterRegistry {
     }
 
     /// Returns a registry where `overrides` take precedence over this registry.
-    /// Mirrors Java sheet-level > workbook-level converter chain.
+    /// 对应 Java： sheet-level > workbook-level converter chain.
     #[must_use]
     pub fn merged_with(&self, overrides: &Self) -> Self {
         let mut converters = self.converters.clone();
@@ -198,7 +198,7 @@ impl ConverterRegistry {
     /// Converts a cell through the newest matching global converter.
     ///
     /// `None` means no global converter matched and the caller should use its
-    /// built-in conversion implementation. Mirrors Java
+    /// built-in conversion implementation. 对应 Java：
     /// `AbstractHolder.converterMap` + read dispatch.
     ///
     /// # Errors

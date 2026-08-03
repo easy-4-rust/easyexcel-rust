@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.FormulaRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.FormulaRecordHandler`.
 //!
 //! Formula string parsing (`HSSFFormulaParser`) stays outside this handler;
 //! callers pass the already-resolved formula text and cached result type.
@@ -43,7 +43,7 @@ pub struct FormulaCell {
     pub pending_string: bool,
 }
 
-/// Mirrors Java `FormulaRecordHandler`.
+/// 对应 Java：`FormulaRecordHandler`.
 #[derive(Debug, Default)]
 pub struct FormulaRecordHandler {
     /// Pending string-formula cell awaiting `StringRecord`. (Java `tempCellData`)

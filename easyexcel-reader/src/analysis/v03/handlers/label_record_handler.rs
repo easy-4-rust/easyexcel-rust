@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.LabelRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.LabelRecordHandler`.
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
@@ -13,7 +13,7 @@ pub struct LabelCell {
     pub value: String,
 }
 
-/// Mirrors Java `LabelRecordHandler`.
+/// 对应 Java：`LabelRecordHandler`.
 #[derive(Debug, Default)]
 pub struct LabelRecordHandler;
 

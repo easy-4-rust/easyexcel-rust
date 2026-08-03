@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.shortconverter.ShortBooleanConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.shortconverter.ShortBooleanConverter`.
 //!
-/// Mirrors Java `ShortBooleanConverter`.
+/// 对应 Java：`ShortBooleanConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ShortBooleanConverter;
 

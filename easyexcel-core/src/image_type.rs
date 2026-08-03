@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.data.ImageData.ImageType`.
+//! 对应 Java：`com.alibaba.excel.metadata.data.ImageData.ImageType`.
 
 /// Java `ImageData.ImageType` equivalent metadata.
 ///

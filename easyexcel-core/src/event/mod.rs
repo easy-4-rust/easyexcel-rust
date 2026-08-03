@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.event.*`.
+//! 对应 Java：`com.alibaba.excel.event.*`.
 
 pub mod abstract_ignore_exception_read_listener;
 pub mod analysis_event_listener;

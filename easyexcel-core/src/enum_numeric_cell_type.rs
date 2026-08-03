@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.NumericCellTypeEnum`.
+//! 对应 Java：`com.alibaba.excel.enums.NumericCellTypeEnum`.
 //!
 //! POI-specific supplement; not surfaced publicly by Rust.
 

@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.IgnorableXlsRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.IgnorableXlsRecordHandler`.
 
 use super::xls_record_handler::XlsRecordHandler;
 
-/// Mirrors Java `IgnorableXlsRecordHandler extends XlsRecordHandler`.
+/// 对应 Java：`IgnorableXlsRecordHandler extends XlsRecordHandler`.
 ///
 /// Java marks handlers whose records belong to a worksheet and may be skipped
 /// while the current worksheet is not selected.

@@ -1,11 +1,11 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.SstRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.SstRecordHandler`.
 //!
 //! The dispatcher assembles physical CONTINUE records and supplies the decoded
 //! strings, matching Java's `XlsCache(SSTRecord)` responsibility.
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
-/// Mirrors Java `SstRecordHandler`.
+/// 对应 Java：`SstRecordHandler`.
 #[derive(Debug, Default)]
 pub struct SstRecordHandler {
     /// Number of unique strings announced by the SST. (Java `getNumUniqueStrings`)

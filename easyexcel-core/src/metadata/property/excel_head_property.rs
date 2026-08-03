@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.property.ExcelHeadProperty`.
+//! 对应 Java：`com.alibaba.excel.metadata.property.ExcelHeadProperty`.
 
 use std::collections::BTreeMap;
 

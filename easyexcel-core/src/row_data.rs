@@ -113,7 +113,7 @@ impl RowData {
 
     /// Resolves a cell using Java `EasyExcel`'s index-before-name priority.
     ///
-    /// Mirrors Java `AnalysisContext.readRowHolder().getCell(column)` semantics
+    /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)` semantics
     /// in the `ModelBuildEventListener` (`buildUserModel`).
     #[must_use]
     pub fn cell(&self, column: &ExcelColumn) -> Option<&CellValue> {

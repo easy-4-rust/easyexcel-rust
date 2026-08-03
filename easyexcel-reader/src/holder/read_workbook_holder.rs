@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.read.metadata.holder.ReadWorkbookHolder`.
+//! 对应 Java：`com.alibaba.excel.read.metadata.holder.ReadWorkbookHolder`.
 
 use crate::context::read_sheet::ReadSheet;
 
-/// Mirrors Java `ReadWorkbookHolder extends AbstractReadHolder`.
+/// 对应 Java：`ReadWorkbookHolder extends AbstractReadHolder`.
 ///
 /// Java carries 17 fields. Rust collapses them into the `ReadOptions`
 /// struct that already lives in the reader facade. This struct exists
@@ -41,7 +41,7 @@ impl Default for ReadWorkbookHolder {
 impl ReadWorkbookHolder {
     /// Resolves workbook-level holder state from the public read options.
     ///
-    /// Mirrors Java `ReadWorkbookHolder(ReadWorkbook, ...)` propagation before
+    /// 对应 Java：`ReadWorkbookHolder(ReadWorkbook, ...)` propagation before
     /// a format-specific context is constructed.
     #[must_use]
     pub fn from_options(options: &crate::ReadOptions) -> Self {

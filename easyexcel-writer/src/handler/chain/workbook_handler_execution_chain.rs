@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.write.handler.chain.WorkbookHandlerExecutionChain`.
+//! 对应 Java：`com.alibaba.excel.write.handler.chain.WorkbookHandlerExecutionChain`.
 
 use easyexcel_core::WriteWorkbookContext;
 
-/// Mirrors Java `WorkbookHandlerExecutionChain`.
+/// 对应 Java：`WorkbookHandlerExecutionChain`.
 pub struct WorkbookHandlerExecutionChain {
     pub(crate) handler: Option<Box<dyn easyexcel_core::WriteHandler>>,
     pub(crate) next: Option<Box<WorkbookHandlerExecutionChain>>,

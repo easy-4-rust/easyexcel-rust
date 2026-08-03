@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.cache.*` and `cache.selector.*`.
+//! 对应 Java：`com.alibaba.excel.cache.*` and `cache.selector.*`.
 //!
 //! ## Java ↔ Rust mapping
 //!

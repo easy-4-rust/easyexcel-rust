@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v07.handlers.HyperlinkTagHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v07.handlers.HyperlinkTagHandler`.
 
 use std::collections::HashMap;
 
@@ -10,7 +10,7 @@ use easyexcel_core::{CellExtra, CellExtraType, ExcelError, Result};
 use super::merge_cell_tag_handler::cell_extra_from_ref;
 use super::xlsx_tag_handler::XlsxTagHandler;
 
-/// Mirrors Java `HyperlinkTagHandler`.
+/// 对应 Java：`HyperlinkTagHandler`.
 #[derive(Debug, Default)]
 pub struct HyperlinkTagHandler {
     /// Whether hyperlink extras are enabled. (Java `support`)

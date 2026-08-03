@@ -1,9 +1,9 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.WriteSheet`.
+//! 对应 Java：`com.alibaba.excel.write.metadata.WriteSheet`.
 
 use crate::WriteOptions;
 use crate::metadata::WriteBasicParameter;
 
-/// Mirrors Java `WriteSheet extends WriteBasicParameter`.
+/// 对应 Java：`WriteSheet extends WriteBasicParameter`.
 ///
 /// Java stores `sheetNo` and `sheetName`. Rust reuses [`WriteOptions`] and
 /// extends the type with the two fields so 1:1 naming is preserved.

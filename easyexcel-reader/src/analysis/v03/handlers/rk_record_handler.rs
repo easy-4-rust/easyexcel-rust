@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.RkRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.RkRecordHandler`.
 //!
 //! Note: Java oddly materialises an *empty* cell for RK records (historical
 //! EasyExcel behaviour). We mirror that exactly.
@@ -6,7 +6,7 @@
 use super::super::xls_record_handler::XlsRecordHandler;
 use super::blank_record_handler::BlankCell;
 
-/// Mirrors Java `RkRecordHandler`.
+/// 对应 Java：`RkRecordHandler`.
 #[derive(Debug, Default)]
 pub struct RkRecordHandler {
     /// Most recently decoded RK placement using Java's empty-cell quirk.

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.context.AnalysisContext` (the public listener
+//! 对应 Java：`com.alibaba.excel.context.AnalysisContext` (the public listener
 //! surface — `AnalysisContextImpl` carries additional mutable state).
 
 use std::any::Any;
@@ -90,7 +90,7 @@ impl AnalysisContext {
 
 /// Action selected by a listener after a row error.
 ///
-/// Mirrors Java `ReadListener.onException(...)` semantics:
+/// 对应 Java：`ReadListener.onException(...)` semantics:
 /// * `Continue` ⇒ Java's `onException` returns without throwing.
 /// * `SkipRow` ⇒ Rust extension for batch pagination.
 /// * `Stop` ⇒ Java's `onException` throws `ExcelAnalysisException`.

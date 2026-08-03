@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.BoolErrRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.BoolErrRecordHandler`.
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
@@ -16,7 +16,7 @@ pub struct BoolCell {
     pub value: bool,
 }
 
-/// Mirrors Java `BoolErrRecordHandler`.
+/// 对应 Java：`BoolErrRecordHandler`.
 #[derive(Debug, Default)]
 pub struct BoolErrRecordHandler {
     /// Most recently decoded boolean cell.

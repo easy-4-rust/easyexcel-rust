@@ -274,7 +274,7 @@ impl XlsRecordDispatcher {
         &self.state
     }
 
-    /// Mirrors Java `XlsSaxAnalyser.processRecord`: unknown SIDs are ignored,
+    /// 对应 Java：`XlsSaxAnalyser.processRecord`: unknown SIDs are ignored,
     /// disabled handlers are skipped, and known records reach their handler.
     pub fn process_record(&mut self, record_sid: u16, data: &[u8]) -> Result<()> {
         self.state.total_record_count += 1;

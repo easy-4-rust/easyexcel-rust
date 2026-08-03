@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.ReadDefaultReturnEnum`.
+//! 对应 Java：`com.alibaba.excel.enums.ReadDefaultReturnEnum`.
 //!
 //! `STRING` (default) / `ACTUAL_DATA` / `READ_CELL_DATA`.
 

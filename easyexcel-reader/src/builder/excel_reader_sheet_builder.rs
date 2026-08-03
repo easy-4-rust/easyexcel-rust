@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.read.builder.ExcelReaderSheetBuilder`.
+//! 对应 Java：`com.alibaba.excel.read.builder.ExcelReaderSheetBuilder`.
 //!
 //! Java signature (10 methods + AbstractExcelReaderParameterBuilder
 //! inherited methods):
@@ -25,7 +25,7 @@ use easyexcel_core::{AnalysisContext, ExcelRow, ReadListener, Result};
 use crate::context::read_sheet::ReadSheet;
 use crate::excel_reader::ExcelReader;
 
-/// Mirrors Java `ExcelReaderSheetBuilder extends AbstractExcelReaderParameterBuilder`.
+/// 对应 Java：`ExcelReaderSheetBuilder extends AbstractExcelReaderParameterBuilder`.
 ///
 /// The unbound form mirrors Java's `EasyExcelFactory.readSheet(...)` and only
 /// carries metadata. [`Self::with_excel_reader`] returns a borrowed bound

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.fill.AnalysisCell`.
+//! 对应 Java：`com.alibaba.excel.write.metadata.fill.AnalysisCell`.
 
 use crate::WriteTemplateAnalysisCellType;
 

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.property.NumberFormatProperty`.
+//! 对应 Java：`com.alibaba.excel.metadata.property.NumberFormatProperty`.
 
 use bigdecimal::RoundingMode;
 

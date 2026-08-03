@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.read.builder.AbstractExcelReaderParameterBuilder`.
+//! 对应 Java：`com.alibaba.excel.read.builder.AbstractExcelReaderParameterBuilder`.
 
-/// Mirrors Java `AbstractExcelReaderParameterBuilder<T, C>`.
+/// 对应 Java：`AbstractExcelReaderParameterBuilder<T, C>`.
 pub trait AbstractExcelReaderParameterBuilder<T> {
     /// Sets the head row count. (Java `headRowNumber(Integer)`)
     fn head_row_number(&mut self, head_row_number: i32) -> &mut Self;

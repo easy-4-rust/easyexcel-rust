@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.fill.*`.
+//! 对应 Java：`com.alibaba.excel.write.metadata.fill.*`.
 
 pub mod analysis_cell;
 

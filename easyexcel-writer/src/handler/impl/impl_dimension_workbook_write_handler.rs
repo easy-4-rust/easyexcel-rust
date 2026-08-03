@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.write.handler.impl.DimensionWorkbookWriteHandler`.
+//! 对应 Java：`com.alibaba.excel.write.handler.impl.DimensionWorkbookWriteHandler`.
 
 use easyexcel_core::WriteWorkbookContext;
 
-/// Mirrors Java `DimensionWorkbookWriteHandler implements WorkbookWriteHandler`.
+/// 对应 Java：`DimensionWorkbookWriteHandler implements WorkbookWriteHandler`.
 ///
 /// Java's handler fixes the `<dimension ref="A1:..."/>` field on
 /// `SXSSFWorkbook` because POI's streaming writer skips it. The Rust

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.converters.byteconverter.*`.
+//! 对应 Java：`com.alibaba.excel.converters.byteconverter.*`.
 
 pub mod byte_boolean_converter;
 pub mod byte_number_converter;

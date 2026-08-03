@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.WriteTemplateAnalysisCellTypeEnum`.
+//! 对应 Java：`com.alibaba.excel.enums.WriteTemplateAnalysisCellTypeEnum`.
 
 /// Cell kind discovered while analysing a template placeholder.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

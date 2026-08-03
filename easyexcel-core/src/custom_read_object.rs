@@ -22,7 +22,7 @@ impl CustomReadObject {
         Self(Arc::new(value))
     }
 
-    /// Returns the value when its concrete type matches `T`. Mirrors Java
+    /// Returns the value when its concrete type matches `T`. 对应 Java：
     /// `(T) AnalysisContext.getCustom()` after an explicit cast.
     #[must_use]
     pub fn downcast_ref<T: Any>(&self) -> Option<&T> {

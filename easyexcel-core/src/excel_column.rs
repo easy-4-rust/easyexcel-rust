@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.property.ExcelHeadProperty` field
+//! 对应 Java：`com.alibaba.excel.metadata.property.ExcelHeadProperty` field
 //! `Head.columnIndex` / `field` / `fieldName` / `headNameList` /
 //! `columnWidthProperty` / `headStyleProperty` / etc.
 
@@ -117,7 +117,7 @@ impl ExcelColumn {
 
     /// Adds the declared Rust field type.
     ///
-    /// Mirrors Java `Head.field.getType()` / `originalFieldClass`.
+    /// 对应 Java：`Head.field.getType()` / `originalFieldClass`.
     #[must_use]
     pub const fn with_field_type(mut self, field_type: &'static str) -> Self {
         self.field_type = Some(field_type);

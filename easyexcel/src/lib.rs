@@ -51,7 +51,7 @@ pub struct EasyExcel;
 
 /// Java-compatible alias for [`EasyExcel`].
 ///
-/// Mirrors Java `EasyExcelFactory`; `EasyExcel` extends the same factory in Java.
+/// 对应 Java：`EasyExcelFactory`; `EasyExcel` extends the same factory in Java.
 pub type EasyExcelFactory = EasyExcel;
 
 impl EasyExcel {
@@ -240,7 +240,7 @@ impl EasyExcel {
 
     /// Begins a multi-table write flow that produces an `ExcelWriterTableBuilder`.
     ///
-    /// Mirrors Java `ExcelWriterBuilder.table(Integer)` which yields an
+    /// 对应 Java：`ExcelWriterBuilder.table(Integer)` which yields an
     /// `ExcelWriterTableBuilder` for configuring per-table options before
     /// calling `.do_write(rows, sheet, table)`.
     ///
@@ -520,7 +520,7 @@ where
 
     /// Registers a converter that receives empty cells.
     ///
-    /// Mirrors Java's `registerConverter(NullableObjectConverter)`.
+    /// 对应 Java：'s `registerConverter(NullableObjectConverter)`.
     #[must_use]
     pub fn register_nullable_converter<V, C>(mut self, converter: C) -> Self
     where
@@ -1278,7 +1278,7 @@ where
 
     /// Fills scalar `{key}` placeholders through [`ExcelBuilderImpl::fill`].
     ///
-    /// Mirrors Java `EasyExcel.write(file).withTemplate(template).sheet().doFill(data)`.
+    /// 对应 Java：`EasyExcel.write(file).withTemplate(template).sheet().doFill(data)`.
     ///
     /// # Errors
     ///
@@ -1290,7 +1290,7 @@ where
 
     /// Fills scalar or collection data with Java-compatible `FillConfig`.
     ///
-    /// Mirrors Java `ExcelWriterSheetBuilder.doFill(Object, FillConfig)`.
+    /// 对应 Java：`ExcelWriterSheetBuilder.doFill(Object, FillConfig)`.
     pub fn do_fill_with_config(
         self,
         data: &dyn std::any::Any,
@@ -1309,7 +1309,7 @@ where
 
     /// Resolves fill data lazily, then delegates to [`Self::do_fill`].
     ///
-    /// Mirrors Java `doFill(Supplier<Object>)`.
+    /// 对应 Java：`doFill(Supplier<Object>)`.
     pub fn do_fill_with<D, F>(self, supplier: F) -> Result<()>
     where
         D: std::any::Any,
@@ -1321,7 +1321,7 @@ where
 
     /// Resolves fill data lazily and applies an explicit fill configuration.
     ///
-    /// Mirrors Java `doFill(Supplier<Object>, FillConfig)`.
+    /// 对应 Java：`doFill(Supplier<Object>, FillConfig)`.
     pub fn do_fill_with_config_supplier<D, F>(
         self,
         supplier: F,

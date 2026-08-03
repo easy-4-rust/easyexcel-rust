@@ -1,11 +1,11 @@
-//! Mirrors Java `com.alibaba.excel.metadata.data.ReadCellData`.
+//! 对应 Java：`com.alibaba.excel.metadata.data.ReadCellData`.
 
 use crate::cell_value::CellValue;
 use crate::formula_data::FormulaData;
 
 /// Java-compatible no-model cell metadata.
 ///
-/// Mirrors Java `ReadCellData<T>`: `rowIndex`, `columnIndex`, `numberValue`,
+/// 对应 Java：`ReadCellData<T>`: `rowIndex`, `columnIndex`, `numberValue`,
 /// `originalNumberValue`, `stringValue`, `booleanValue`, `data`, `type`,
 /// `dataFormatData`, `formulaData`. The Rust port preserves the read-side
 /// metadata that downstream consumers need.

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.poi.VerticalAlignmentEnum`.
+//! 对应 Java：`com.alibaba.excel.enums.poi.VerticalAlignmentEnum`.
 
 /// Vertical alignment used by annotation-driven cell styles.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

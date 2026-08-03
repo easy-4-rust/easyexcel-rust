@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.converters.DefaultConverterLoader`.
+//! 对应 Java：`com.alibaba.excel.converters.DefaultConverterLoader`.
 
 use std::marker::PhantomData;
 use std::path::PathBuf;
@@ -141,7 +141,7 @@ where
     }
 }
 
-/// Mirrors Java `DefaultConverterLoader.loadDefaultWriteConverter()`.
+/// 对应 Java：`DefaultConverterLoader.loadDefaultWriteConverter()`.
 pub fn load_default_write_converter() -> ConverterRegistry {
     let mut registry = ConverterRegistry::default();
     macro_rules! register {
@@ -229,7 +229,7 @@ pub fn load_default_write_converter() -> ConverterRegistry {
     registry
 }
 
-/// Mirrors Java `DefaultConverterLoader.loadDefaultReadConverter()`.
+/// 对应 Java：`DefaultConverterLoader.loadDefaultReadConverter()`.
 pub fn load_default_read_converter() -> ConverterRegistry {
     let mut registry = ConverterRegistry::default();
     macro_rules! register {

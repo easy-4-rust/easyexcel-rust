@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.bigdecimal.BigDecimalNumberConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.bigdecimal.BigDecimalNumberConverter`.
 //!
-/// Mirrors Java `BigDecimalNumberConverter`.
+/// 对应 Java：`BigDecimalNumberConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct BigDecimalNumberConverter;
 

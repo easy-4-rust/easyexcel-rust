@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.write.style.DefaultStyle`.
+//! 对应 Java：`com.alibaba.excel.write.style.DefaultStyle`.
 
 use easyexcel_core::{ExcelCellStyle, ExcelColor, ExcelHorizontalAlignment, WriteHandler};
 
-/// Mirrors Java `DefaultStyle`.
+/// 对应 Java：`DefaultStyle`.
 ///
 /// The Java side is a `WorkbookWriteHandler` that pushes a default
 /// `WriteCellStyle` (bold header, white background) onto every

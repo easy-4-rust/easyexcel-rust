@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.EofRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.EofRecordHandler`.
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
@@ -15,7 +15,7 @@ pub enum EofAction {
     EndSheet,
 }
 
-/// Mirrors Java `EofRecordHandler`.
+/// 对应 Java：`EofRecordHandler`.
 #[derive(Debug, Default)]
 pub struct EofRecordHandler;
 

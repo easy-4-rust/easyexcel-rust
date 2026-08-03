@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.poi.HorizontalAlignmentEnum`.
+//! 对应 Java：`com.alibaba.excel.enums.poi.HorizontalAlignmentEnum`.
 
 /// Horizontal alignment used by annotation-driven cell styles.
 ///

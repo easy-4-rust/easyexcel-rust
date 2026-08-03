@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.write.executor.AbstractExcelWriteExecutor`.
+//! 对应 Java：`com.alibaba.excel.write.executor.AbstractExcelWriteExecutor`.
 
 use easyexcel_core::WriteContext;
 
-/// Mirrors Java `AbstractExcelWriteExecutor implements ExcelWriteExecutor`.
+/// 对应 Java：`AbstractExcelWriteExecutor implements ExcelWriteExecutor`.
 ///
 /// The Java side stores a `WriteContext` and exposes the
 /// `converterAndSet(CellWriteHandlerContext)` helper. Rust mirrors the

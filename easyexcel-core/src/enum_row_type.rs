@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.RowTypeEnum`.
+//! 对应 Java：`com.alibaba.excel.enums.RowTypeEnum`.
 //!
 //! Used to distinguish data rows from empty rows during SAX streaming.
 

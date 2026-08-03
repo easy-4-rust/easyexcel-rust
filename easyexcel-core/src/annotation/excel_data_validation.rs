@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.annotation.write.ExcelDataValidation` (introduced in Phase 1).
+//! 对应 Java：`com.alibaba.excel.annotation.write.ExcelDataValidation` (introduced in Phase 1).
 //!
 //! In Rust, `#[derive(ExcelRow)]` with `#[excel(data_validation(...))]` attribute
 //! replaces Java runtime annotation processing. This marker type exists

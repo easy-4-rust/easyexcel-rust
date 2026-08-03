@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.style.*`.
+//! 对应 Java：`com.alibaba.excel.write.style.*`.
 //!
 //! ## Wiring status (annotation metadata vs registered strategies)
 //!

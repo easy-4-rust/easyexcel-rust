@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.metadata.property.StyleProperty`.
+//! 对应 Java：`com.alibaba.excel.metadata.property.StyleProperty`.
 
 use crate::excel_cell_style::ExcelCellStyle;
 
-/// Mirrors Java `StyleProperty`. Rust reuses `ExcelCellStyle` for the
+/// 对应 Java：`StyleProperty`. Rust reuses `ExcelCellStyle` for the
 /// runtime representation; this struct exists for 1:1 Java package
 /// parity.
 /// `Eq` is not derived because [`ExcelCellStyle`] embeds `f64` font size.

@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.longconverter.LongBooleanConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.longconverter.LongBooleanConverter`.
 //!
-/// Mirrors Java `LongBooleanConverter`.
+/// 对应 Java：`LongBooleanConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct LongBooleanConverter;
 

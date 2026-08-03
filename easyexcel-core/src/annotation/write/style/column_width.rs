@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.annotation.write.style.ColumnWidth`.
+//! 对应 Java：`com.alibaba.excel.annotation.write.style.ColumnWidth`.
 //!
 //! In Rust, prefer `#[excel(column_width = N)]` on a type or field with
 //! `#[derive(ExcelRow)]`. This marker exists for 1:1 Java package parity.

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.annotation.format.DateTimeFormat`.
+//! 对应 Java：`com.alibaba.excel.annotation.format.DateTimeFormat`.
 //!
 //! In Rust, `#[excel(format = "...")]` replaces this annotation.
 

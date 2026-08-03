@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.floatconverter.FloatNumberConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.floatconverter.FloatNumberConverter`.
 //!
-/// Mirrors Java `FloatNumberConverter`.
+/// 对应 Java：`FloatNumberConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct FloatNumberConverter;
 

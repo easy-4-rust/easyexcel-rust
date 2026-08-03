@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.read.processor.DefaultAnalysisEventProcessor`.
+//! 对应 Java：`com.alibaba.excel.read.processor.DefaultAnalysisEventProcessor`.
 
 use crate::processor::analysis_event_processor::AnalysisEventProcessor;
 use easyexcel_core::AnalysisContext;

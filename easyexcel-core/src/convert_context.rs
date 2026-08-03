@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.property.ExcelContentProperty` and
+//! 对应 Java：`com.alibaba.excel.metadata.property.ExcelContentProperty` and
 //! `com.alibaba.excel.metadata.GlobalConfiguration` (subset).
 
 use crate::excel_error::ExcelError;

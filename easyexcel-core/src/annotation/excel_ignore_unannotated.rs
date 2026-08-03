@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.annotation.ExcelIgnoreUnannotated`.
+//! 对应 Java：`com.alibaba.excel.annotation.ExcelIgnoreUnannotated`.
 //!
 //! In Rust, `#[derive(ExcelRow)]` with `#[excel(...)]` attributes
 //! replaces Java runtime annotation processing. This module exists

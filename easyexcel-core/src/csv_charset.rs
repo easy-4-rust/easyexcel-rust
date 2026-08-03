@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.csv.CsvCharset` (Java uses `java.nio.charset.Charset`).
+//! 对应 Java：`com.alibaba.excel.metadata.csv.CsvCharset` (Java uses `java.nio.charset.Charset`).
 //!
 //! The Rust port uses a `String` for the Java-style charset label because
 //! `encoding_rs::Encoding` (the actual codec backend) is queried separately.

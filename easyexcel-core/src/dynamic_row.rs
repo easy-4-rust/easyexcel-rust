@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.data.ReadCellData` collected into a
+//! 对应 Java：`com.alibaba.excel.metadata.data.ReadCellData` collected into a
 //! `Map<Integer, Object>`.
 
 use std::collections::BTreeMap;

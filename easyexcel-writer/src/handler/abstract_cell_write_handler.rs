@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.write.handler.AbstractCellWriteHandler`.
+//! 对应 Java：`com.alibaba.excel.write.handler.AbstractCellWriteHandler`.
 
 use easyexcel_core::WriteHandler;
 
 use crate::handler::cell_write_handler::CellWriteHandler;
 
-/// Mirrors Java `AbstractCellWriteHandler implements CellWriteHandler`.
+/// 对应 Java：`AbstractCellWriteHandler implements CellWriteHandler`.
 ///
 /// Java declares the type as `@Deprecated`; Rust keeps the same
 /// name and delegates the three callbacks to default no-ops so older

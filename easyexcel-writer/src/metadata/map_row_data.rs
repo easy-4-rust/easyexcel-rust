@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.MapRowData`.
+//! 对应 Java：`com.alibaba.excel.write.metadata.MapRowData`.
 
 use std::collections::BTreeMap;
 
 use easyexcel_core::CellValue;
 
-/// Mirrors Java `MapRowData implements RowData`.
+/// 对应 Java：`MapRowData implements RowData`.
 ///
 /// Java wraps a `Map<Integer, ?>` and its `RowData` adapter reports
 /// `map.size()` then calls `map.get(0..size)`. Rust preserves that exact,

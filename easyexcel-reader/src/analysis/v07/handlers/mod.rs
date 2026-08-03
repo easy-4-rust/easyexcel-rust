@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v07.handlers.*`.
+//! 对应 Java：`com.alibaba.excel.analysis.v07.handlers.*`.
 
 pub mod abstract_cell_value_tag_handler;
 pub mod abstract_xlsx_tag_handler;

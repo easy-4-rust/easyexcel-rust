@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v07.handlers.CellTagHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v07.handlers.CellTagHandler`.
 //!
 //! Attribute parsing and temp-buffer logic live here; `xlsx_rows::XlsxDisplayCellReader`
 //! still owns the `quick_xml` event loop and calls into these helpers (只增不减).
@@ -27,7 +27,7 @@ pub struct CellStartAttrs {
     pub data_type: CellDataType,
 }
 
-/// Mirrors Java `CellTagHandler`.
+/// 对应 Java：`CellTagHandler`.
 ///
 /// Holds the per-cell temp buffer that Java stores on `XlsxReadSheetHolder`
 /// (`tempCellData` / `tempData`).

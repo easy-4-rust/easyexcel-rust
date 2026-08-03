@@ -1,4 +1,4 @@
-//! Mirrors Java com.alibaba.excel.util.PositionUtils.
+//! 对应 Java： com.alibaba.excel.util.PositionUtils.
 
 #![allow(dead_code)]
 

@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.read.metadata.holder.xls.XlsReadWorkbookHolder`.
+//! 对应 Java：`com.alibaba.excel.read.metadata.holder.xls.XlsReadWorkbookHolder`.
 
 use crate::holder::read_workbook_holder::ReadWorkbookHolder;
 
-/// Mirrors Java `XlsReadWorkbookHolder extends ReadWorkbookHolder`.
+/// 对应 Java：`XlsReadWorkbookHolder extends ReadWorkbookHolder`.
 #[derive(Debug, Clone)]
 pub struct XlsReadWorkbookHolder {
     inner: ReadWorkbookHolder,
@@ -10,7 +10,7 @@ pub struct XlsReadWorkbookHolder {
 }
 
 impl XlsReadWorkbookHolder {
-    /// Mirrors Java constructor.
+    /// 对应 Java： constructor.
     pub fn new() -> Self {
         Self {
             inner: ReadWorkbookHolder::default(),

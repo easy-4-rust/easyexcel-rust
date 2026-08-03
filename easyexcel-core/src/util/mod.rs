@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.util.*`.
+//! 对应 Java：`com.alibaba.excel.util.*`.
 //!
 //! Each submodule is a 1:1 mirror of a single Java utility class from
 //! `com.alibaba.excel.util` (and the Apache Commons / POI helpers it

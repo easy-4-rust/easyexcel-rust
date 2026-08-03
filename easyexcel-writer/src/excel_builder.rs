@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.ExcelBuilder` and `ExcelBuilderImpl`.
+//! 对应 Java：`com.alibaba.excel.write.ExcelBuilder` and `ExcelBuilderImpl`.
 
 use std::any::Any;
 use std::path::PathBuf;
@@ -18,7 +18,7 @@ use crate::{ExcelWriter, MergeRange, WriteOptions, WriteSheet};
 
 /// Minimal fill configuration accepted by [`ExcelBuilder::fill`].
 ///
-/// Mirrors Java `com.alibaba.excel.write.metadata.fill.FillConfig` at the
+/// 对应 Java：`com.alibaba.excel.write.metadata.fill.FillConfig` at the
 /// builder surface. Stateful template filling remains on
 /// `easyexcel_template::FillConfig`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -90,7 +90,7 @@ impl Default for FillConfig {
 
 /// Workbook builder contract matching Java `ExcelBuilder`.
 ///
-/// Mirrors Java `com.alibaba.excel.write.ExcelBuilder`.
+/// 对应 Java：`com.alibaba.excel.write.ExcelBuilder`.
 pub trait ExcelBuilder {
     /// Appends rows to a worksheet. (Java `addContent(Collection, WriteSheet)`)
     ///
@@ -154,7 +154,7 @@ pub trait ExcelBuilder {
 
 /// Concrete builder implementation delegating to [`ExcelWriter`].
 ///
-/// Mirrors Java `com.alibaba.excel.write.ExcelBuilderImpl`.
+/// 对应 Java：`com.alibaba.excel.write.ExcelBuilderImpl`.
 pub struct ExcelBuilderImpl {
     writer: ExcelWriter,
     logical_path: PathBuf,
@@ -210,7 +210,7 @@ impl ExcelBuilderImpl {
 
     /// Installs a template fill executor wired by the `easyexcel` facade.
     ///
-    /// Mirrors Java lazy `ExcelWriteFillExecutor` creation inside
+    /// 对应 Java： lazy `ExcelWriteFillExecutor` creation inside
     /// `ExcelBuilderImpl.fill`.
     pub fn set_fill_executor(&mut self, executor: Box<dyn WriteFillExecutor>) {
         self.fill_executor = Some(executor);

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v07.handlers.RowTagHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v07.handlers.RowTagHandler`.
 //!
 //! Row-index resolution is shared with `xlsx_rows::XlsxDisplayCellReader::next_cell`
 //! via [`RowTagHandler::resolve_row_index`]. Empty-row synthesis from Java
@@ -12,7 +12,7 @@ use easyexcel_core::{ExcelError, Result};
 
 use super::xlsx_tag_handler::XlsxTagHandler;
 
-/// Mirrors Java `RowTagHandler`.
+/// 对应 Java：`RowTagHandler`.
 #[derive(Debug, Default)]
 pub struct RowTagHandler {
     /// Zero-based current row index. (Java `XlsxReadSheetHolder.rowIndex`)

@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.RowData` (interface).
+//! 对应 Java：`com.alibaba.excel.write.metadata.RowData` (interface).
 
 use easyexcel_core::CellValue;
 
-/// Mirrors Java `RowData` interface (one method: `getCellValue(int)`).
+/// 对应 Java：`RowData` interface (one method: `getCellValue(int)`).
 ///
 /// Java models each cell of a basic-type row through a common interface so
 /// `ExcelWriteAddExecutor` can branch on `CollectionRowData`, `MapRowData`,

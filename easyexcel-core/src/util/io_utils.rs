@@ -1,4 +1,4 @@
-//! Mirrors Java com.alibaba.excel.util.IoUtils.
+//! 对应 Java： com.alibaba.excel.util.IoUtils.
 
 #![allow(dead_code)]
 

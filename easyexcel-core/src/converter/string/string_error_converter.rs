@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.string.StringErrorConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.string.StringErrorConverter`.
 //!
-/// Mirrors Java `StringErrorConverter`.
+/// 对应 Java：`StringErrorConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct StringErrorConverter;
 

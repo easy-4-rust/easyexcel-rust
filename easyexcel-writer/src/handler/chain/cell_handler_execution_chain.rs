@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.write.handler.chain.CellHandlerExecutionChain`.
+//! 对应 Java：`com.alibaba.excel.write.handler.chain.CellHandlerExecutionChain`.
 
 use easyexcel_core::WriteCellContext;
 
-/// Mirrors Java `CellHandlerExecutionChain` (a single linked-list node).
+/// 对应 Java：`CellHandlerExecutionChain` (a single linked-list node).
 pub struct CellHandlerExecutionChain {
     pub(crate) handler: Option<Box<dyn easyexcel_core::WriteHandler>>,
     pub(crate) next: Option<Box<CellHandlerExecutionChain>>,

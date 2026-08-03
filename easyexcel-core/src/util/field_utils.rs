@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-//! Mirrors Java com.alibaba.excel.util.FieldUtils.
+//! 对应 Java： com.alibaba.excel.util.FieldUtils.
 //!
 //! Java uses Spring's `ReflectionUtils` / Apache Commons `FieldUtils` to
 //! resolve fields (and to strip CGLIB `$$EnhancerByCGLIB$$` synthetic

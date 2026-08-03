@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.event.AbstractIgnoreExceptionReadListener`.
+//! 对应 Java：`com.alibaba.excel.event.AbstractIgnoreExceptionReadListener`.
 
 use crate::analysis_context::AnalysisContext;
 use crate::cell_extra::CellExtra;

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.ReadDefaultReturnEnum`'s payload
+//! 对应 Java：`com.alibaba.excel.enums.ReadDefaultReturnEnum`'s payload
 //! values: `String` / `ActualData` (i.e. `CellValue`) / `ReadCellData`.
 
 use crate::cell_value::CellValue;

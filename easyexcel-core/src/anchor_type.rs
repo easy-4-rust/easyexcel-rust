@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.data.ClientAnchorData.AnchorType`.
+//! 对应 Java：`com.alibaba.excel.metadata.data.ClientAnchorData.AnchorType`.
 
 /// Java `ClientAnchorData.AnchorType` equivalent.
 ///

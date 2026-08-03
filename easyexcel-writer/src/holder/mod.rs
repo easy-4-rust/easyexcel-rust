@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.holder.*`.
+//! 对应 Java：`com.alibaba.excel.write.metadata.holder.*`.
 
 pub mod abstract_write_holder;
 pub mod write_holder;

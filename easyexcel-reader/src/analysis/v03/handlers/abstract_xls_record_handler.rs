@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.AbstractXlsRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.AbstractXlsRecordHandler`.
 
 use super::super::xls_record_handler::XlsRecordHandler;
 

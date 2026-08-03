@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.property.DateTimeFormatProperty`.
+//! 对应 Java：`com.alibaba.excel.metadata.property.DateTimeFormatProperty`.
 
 /// Date-time format metadata from `@DateTimeFormat`.
 ///

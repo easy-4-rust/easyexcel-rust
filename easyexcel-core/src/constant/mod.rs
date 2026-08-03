@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.constant.*`.
+//! 对应 Java：`com.alibaba.excel.constant.*`.
 
 pub mod builtin_formats;
 pub mod easy_excel_constants;

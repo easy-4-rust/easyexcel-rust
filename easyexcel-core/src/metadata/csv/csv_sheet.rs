@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.csv.CsvSheet`.
+//! 对应 Java：`com.alibaba.excel.metadata.csv.CsvSheet`.
 
 use std::collections::VecDeque;
 

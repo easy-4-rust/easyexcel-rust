@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.handler.DefaultWriteHandlerLoader`.
+//! 对应 Java：`com.alibaba.excel.write.handler.DefaultWriteHandlerLoader`.
 
 use easyexcel_core::WriteHandler;
 use easyexcel_core::support::ExcelTypeEnum;
@@ -8,7 +8,7 @@ use crate::handler::r#impl::impl_dimension_workbook_write_handler::DimensionWork
 use crate::handler::r#impl::impl_fill_style_cell_write_handler::FillStyleCellWriteHandler;
 use crate::style::default_style::DefaultStyle;
 
-/// Mirrors Java `DefaultWriteHandlerLoader.loadDefaultHandler(Boolean useDefaultStyle, ExcelTypeEnum excelType)`.
+/// 对应 Java：`DefaultWriteHandlerLoader.loadDefaultHandler(Boolean useDefaultStyle, ExcelTypeEnum excelType)`.
 ///
 /// Returns the Java-equivalent default handler set for each output type.
 pub struct DefaultWriteHandlerLoader;
@@ -24,7 +24,7 @@ impl DefaultWriteHandlerLoader {
         Self::load_default_handler_for(true, ExcelTypeEnum::Xlsx)
     }
 
-    /// Mirrors Java `loadDefaultHandler(Boolean useDefaultStyle, ExcelTypeEnum excelType)`.
+    /// 对应 Java：`loadDefaultHandler(Boolean useDefaultStyle, ExcelTypeEnum excelType)`.
     #[must_use]
     pub fn load_default_handler_for(
         use_default_style: bool,

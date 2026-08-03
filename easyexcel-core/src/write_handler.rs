@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.handler.WriteHandler` plus its four
+//! 对应 Java：`com.alibaba.excel.write.handler.WriteHandler` plus its four
 //! capability interfaces (Workbook/Sheet/Row/CellWriteHandler) collapsed into a
 //! single trait.
 
@@ -165,7 +165,7 @@ pub trait WriteHandler {
 
     /// Optional cell style from a registered style strategy.
     ///
-    /// Mirrors Java `AbstractCellStyleStrategy` / `HorizontalCellStyleStrategy`
+    /// 对应 Java：`AbstractCellStyleStrategy` / `HorizontalCellStyleStrategy`
     /// / `AbstractVerticalCellStyleStrategy` applying `WriteCellStyle` during
     /// `afterCellDispose`. The XLSX write path merges non-`None` results into
     /// the cell format.
@@ -175,7 +175,7 @@ pub trait WriteHandler {
 
     /// Optional fixed column width from a registered width strategy.
     ///
-    /// Mirrors Java `AbstractColumnWidthStyleStrategy.columnWidth` /
+    /// 对应 Java：`AbstractColumnWidthStyleStrategy.columnWidth` /
     /// `SimpleColumnWidthStyleStrategy`.
     fn style_column_width(&self, _column_index: usize) -> Option<u16> {
         None
@@ -183,7 +183,7 @@ pub trait WriteHandler {
 
     /// Optional head row height from a registered row-height strategy.
     ///
-    /// Mirrors Java `AbstractRowHeightStyleStrategy.setHeadColumnHeight` /
+    /// 对应 Java：`AbstractRowHeightStyleStrategy.setHeadColumnHeight` /
     /// `SimpleRowHeightStyleStrategy`.
     fn style_head_row_height(&self) -> Option<u16> {
         None
@@ -191,7 +191,7 @@ pub trait WriteHandler {
 
     /// Optional content row height from a registered row-height strategy.
     ///
-    /// Mirrors Java `AbstractRowHeightStyleStrategy.setContentColumnHeight` /
+    /// 对应 Java：`AbstractRowHeightStyleStrategy.setContentColumnHeight` /
     /// `SimpleRowHeightStyleStrategy`.
     fn style_content_row_height(&self) -> Option<u16> {
         None
@@ -208,7 +208,7 @@ pub trait WriteHandler {
 
     /// Optional absolute merge region from a registered merge strategy.
     ///
-    /// Mirrors Java `OnceAbsoluteMergeStrategy.afterSheetCreate` when the
+    /// 对应 Java：`OnceAbsoluteMergeStrategy.afterSheetCreate` when the
     /// strategy is registered via `register_write_handler` (annotation
     /// `@OnceAbsoluteMerge` remains a separate metadata path).
     fn style_once_absolute_merge(&self) -> Option<OnceAbsoluteMergeProperty> {

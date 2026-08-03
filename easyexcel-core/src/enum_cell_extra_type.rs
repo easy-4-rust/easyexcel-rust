@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.CellExtraTypeEnum`.
+//! 对应 Java：`com.alibaba.excel.enums.CellExtraTypeEnum`.
 //!
 //! `COMMENT / HYPERLINK / MERGE`.
 

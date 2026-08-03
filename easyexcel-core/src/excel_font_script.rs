@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.poi.FontScript`.
+//! 对应 Java：`com.alibaba.excel.enums.poi.FontScript`.
 
 /// Font script position used by annotation-driven font styles.
 ///

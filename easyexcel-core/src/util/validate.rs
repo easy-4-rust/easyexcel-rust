@@ -1,4 +1,4 @@
-//! Mirrors Java com.alibaba.excel.util.Validate.
+//! 对应 Java： com.alibaba.excel.util.Validate.
 
 #![allow(dead_code)]
 

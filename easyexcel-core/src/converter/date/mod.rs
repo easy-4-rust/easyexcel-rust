@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.converters.date.*`.
+//! 对应 Java：`com.alibaba.excel.converters.date.*`.
 
 pub mod date_date_converter;
 pub mod date_number_converter;

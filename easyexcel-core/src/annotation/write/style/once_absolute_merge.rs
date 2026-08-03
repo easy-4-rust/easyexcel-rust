@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge`.
+//! 对应 Java：`com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge`.
 //!
 //! In Rust, prefer
 //! `#[excel(once_absolute_merge(first_row_index = ..., last_row_index = ..., first_column_index = ..., last_column_index = ...))]`

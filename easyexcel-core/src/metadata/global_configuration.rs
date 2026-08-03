@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.GlobalConfiguration`.
+//! 对应 Java：`com.alibaba.excel.metadata.GlobalConfiguration`.
 
 use crate::CacheLocation;
 
@@ -20,7 +20,7 @@ pub struct GlobalConfiguration {
 }
 
 impl Default for GlobalConfiguration {
-    /// Mirrors Java default constructor values.
+    /// 对应 Java： default constructor values.
     fn default() -> Self {
         Self {
             auto_trim: true,

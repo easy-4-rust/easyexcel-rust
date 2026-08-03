@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.context.WriteContext` (interface).
+//! 对应 Java：`com.alibaba.excel.context.WriteContext` (interface).
 
 use std::path::{Path, PathBuf};
 
@@ -9,7 +9,7 @@ use crate::WriteSheetContext;
 use crate::WriteWorkbookContext;
 use crate::excel_error::ExcelError;
 
-/// Mirrors Java `WriteContext` (110-line interface).
+/// 对应 Java：`WriteContext` (110-line interface).
 ///
 /// Java exposes a single `currentWriteHolder()` accessor plus the
 /// `finish(boolean onException)` lifecycle. Rust collapses the
@@ -186,7 +186,7 @@ impl WriteContextHolderState {
     }
 }
 
-/// Mirrors Java `WriteContextImpl implements WriteContext`.
+/// 对应 Java：`WriteContextImpl implements WriteContext`.
 ///
 /// Java owns POI workbook state; Rust exposes path and holder mirrors for
 /// writer facades that delegate to `rust_xlsxwriter`.

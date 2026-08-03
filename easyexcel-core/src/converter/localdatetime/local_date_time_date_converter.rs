@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.localdatetime.LocalDateTimeDateConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.localdatetime.LocalDateTimeDateConverter`.
 //!
-/// Mirrors Java `LocalDateTimeDateConverter`.
+/// 对应 Java：`LocalDateTimeDateConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct LocalDateTimeDateConverter;
 

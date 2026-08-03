@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.holder.WriteWorkbookHolder`.
+//! 对应 Java：`com.alibaba.excel.write.metadata.holder.WriteWorkbookHolder`.
 
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
@@ -8,7 +8,7 @@ use crate::holder::abstract_write_holder::AbstractWriteHolder;
 use crate::metadata::WriteBasicParameter;
 use easyexcel_core::WriteHandler;
 
-/// Mirrors Java `WriteWorkbookHolder extends AbstractWriteHolder`.
+/// 对应 Java：`WriteWorkbookHolder extends AbstractWriteHolder`.
 ///
 /// The Java side aggregates the `rust_xlsxwriter::Workbook` POI handle, the
 /// in-progress sheet holders, and the writer's handler list. Rust holds the

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.FieldWrapper`.
+//! 对应 Java：`com.alibaba.excel.metadata.FieldWrapper`.
 
 /// Runtime field metadata for one annotated model field.
 ///

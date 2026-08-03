@@ -1,6 +1,6 @@
 //! Excel utility functions absorbed from hutool-poi.
 //!
-//! Mirrors Java `cn.hutool.poi.excel.ExcelUtil` (column name conversion),
+//! 对应 Java：`cn.hutool.poi.excel.ExcelUtil` (column name conversion),
 //! `cn.hutool.poi.excel.ExcelFileUtil` (magic-byte detection), and
 //! `cn.hutool.poi.excel.ExcelDateUtil` (date format detection).
 

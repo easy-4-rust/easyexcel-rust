@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.ByteOrderMarkEnum`.
+//! 对应 Java：`com.alibaba.excel.enums.ByteOrderMarkEnum`.
 //!
 //! Maps CSV charset names to their leading BOM. Java uses
 //! `org.apache.commons.io.ByteOrderMark`; Rust uses byte literal arrays.

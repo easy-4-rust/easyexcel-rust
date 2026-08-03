@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler`.
 
 use easyexcel_core::{CellExtra, CellExtraType};
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
-/// Mirrors Java `HyperlinkRecordHandler`.
+/// 对应 Java：`HyperlinkRecordHandler`.
 #[derive(Debug, Default)]
 pub struct HyperlinkRecordHandler {
     /// Whether hyperlink extras are enabled. (Java `support`)

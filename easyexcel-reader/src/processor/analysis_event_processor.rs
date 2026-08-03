@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.read.processor.AnalysisEventProcessor`.
+//! 对应 Java：`com.alibaba.excel.read.processor.AnalysisEventProcessor`.
 
 use easyexcel_core::AnalysisContext;
 
-/// Mirrors Java `AnalysisEventProcessor` (interface, 33 lines).
+/// 对应 Java：`AnalysisEventProcessor` (interface, 33 lines).
 ///
 /// Java declares three methods: `extra`, `endRow`, `endSheet`. Rust
 /// mirrors the same surface so a default implementation can be plugged

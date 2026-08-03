@@ -493,22 +493,22 @@ fn invalid_pattern(pattern: &str, reason: &str) -> ExcelError {
     ))
 }
 
-/// Mirrors Java `NumberUtils.parseShort` without a format.
+/// 对应 Java：`NumberUtils.parseShort` without a format.
 pub fn parse_short(value: &str) -> Result<i16, ExcelError> {
     parse_decimal(value, None).and_then(|value| decimal_java_i16(&value))
 }
 
-/// Mirrors Java `NumberUtils.parseLong` without a format.
+/// 对应 Java：`NumberUtils.parseLong` without a format.
 pub fn parse_long(value: &str) -> Result<i64, ExcelError> {
     parse_decimal(value, None).and_then(|value| decimal_java_i64(&value))
 }
 
-/// Mirrors Java `NumberUtils.parseInteger` without a format.
+/// 对应 Java：`NumberUtils.parseInteger` without a format.
 pub fn parse_integer(value: &str) -> Result<i32, ExcelError> {
     parse_decimal(value, None).and_then(|value| decimal_java_i32(&value))
 }
 
-/// Mirrors Java `NumberUtils.parseFloat` without a format.
+/// 对应 Java：`NumberUtils.parseFloat` without a format.
 pub fn parse_float(value: &str) -> Result<f32, ExcelError> {
     parse_decimal(value, None).and_then(|value| {
         value
@@ -518,18 +518,18 @@ pub fn parse_float(value: &str) -> Result<f32, ExcelError> {
     })
 }
 
-/// Mirrors Java `NumberUtils.parseBigDecimal` without a format.
+/// 对应 Java：`NumberUtils.parseBigDecimal` without a format.
 pub fn parse_big_decimal(value: &str) -> Result<BigDecimal, ExcelError> {
     parse_decimal(value, None)
 }
 
-/// Mirrors Java `NumberUtils.parseByte` without a format.
+/// 对应 Java：`NumberUtils.parseByte` without a format.
 pub fn parse_byte(value: &str) -> Result<i8, ExcelError> {
     parse_decimal(value, None)
         .map(|value| i8::from_le_bytes(java_signed_low_bytes::<1>(&decimal_to_big_int(&value))))
 }
 
-/// Mirrors Java `NumberUtils.parseDouble` without a format.
+/// 对应 Java：`NumberUtils.parseDouble` without a format.
 pub fn parse_double(value: &str) -> Result<f64, ExcelError> {
     parse_decimal(value, None).and_then(|value| {
         value

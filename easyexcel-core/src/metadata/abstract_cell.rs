@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.AbstractCell`.
+//! 对应 Java：`com.alibaba.excel.metadata.AbstractCell`.
 
 use super::cell::Cell;
 

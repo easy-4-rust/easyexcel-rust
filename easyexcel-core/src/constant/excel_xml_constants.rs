@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.constant.ExcelXmlConstants`.
+//! 对应 Java：`com.alibaba.excel.constant.ExcelXmlConstants`.
 
 /// `dimension` tag.
 pub const DIMENSION_TAG: &str = "dimension";

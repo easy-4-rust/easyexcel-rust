@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.CellExtra`.
+//! 对应 Java：`com.alibaba.excel.metadata.CellExtra`.
 
 use crate::enum_cell_extra_type::CellExtraType;
 

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.AbstractHolder`.
+//! 对应 Java：`com.alibaba.excel.metadata.AbstractHolder`.
 
 use crate::CacheLocation;
 use crate::ConverterRegistry;

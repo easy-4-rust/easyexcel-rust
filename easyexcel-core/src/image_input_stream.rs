@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.converters.inputstream.InputStreamImageConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.inputstream.InputStreamImageConverter`.
 
 use std::cell::RefCell;
 use std::fmt;

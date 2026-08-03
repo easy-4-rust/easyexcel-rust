@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v07.*`.
+//! 对应 Java：`com.alibaba.excel.analysis.v07.*`.
 
 pub mod handlers;
 pub mod xlsx_sax_analyser;

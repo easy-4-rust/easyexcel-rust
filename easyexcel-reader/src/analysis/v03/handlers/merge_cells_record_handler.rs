@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.MergeCellsRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.MergeCellsRecordHandler`.
 
 use easyexcel_core::{CellExtra, CellExtraType};
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
-/// Mirrors Java `MergeCellsRecordHandler`.
+/// 对应 Java：`MergeCellsRecordHandler`.
 #[derive(Debug, Default)]
 pub struct MergeCellsRecordHandler {
     /// Whether merge extras are enabled. (Java `support`)

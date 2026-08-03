@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v07.handlers.CellFormulaTagHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v07.handlers.CellFormulaTagHandler`.
 
 use super::xlsx_tag_handler::XlsxTagHandler;
 
-/// Mirrors Java `CellFormulaTagHandler`.
+/// 对应 Java：`CellFormulaTagHandler`.
 #[derive(Debug, Default)]
 pub struct CellFormulaTagHandler {
     /// Accumulated formula text. (Java `XlsxReadSheetHolder.tempFormula`)

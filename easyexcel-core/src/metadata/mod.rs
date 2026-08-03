@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.*` sub-packages.
+//! 对应 Java：`com.alibaba.excel.metadata.*` sub-packages.
 
 pub mod abstract_cell;
 pub mod abstract_holder;

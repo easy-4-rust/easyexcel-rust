@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler`.
 //!
 //! Stores comment text under the current object id for later `NoteRecord` use.
 
@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
-/// Mirrors Java `TextObjectRecordHandler`.
+/// 对应 Java：`TextObjectRecordHandler`.
 #[derive(Debug, Default)]
 pub struct TextObjectRecordHandler {
     /// shapeId → comment text. (Java `objectCacheMap`)

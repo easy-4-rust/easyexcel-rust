@@ -1,4 +1,4 @@
-//! Mirrors Java com.alibaba.excel.util.MapUtils.
+//! 对应 Java： com.alibaba.excel.util.MapUtils.
 
 #![allow(dead_code)]
 

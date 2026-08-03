@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.cache.XlsCache`.
+//! 对应 Java：`com.alibaba.excel.cache.XlsCache`.
 //!
 //! Java builds the cache from a POI `SSTRecord` during BIFF event parsing.
 //! Rust calamine resolves SST internally; this type remains for API parity and
@@ -10,7 +10,7 @@ use super::read_cache::ReadCache;
 
 /// XLS shared-string cache backed by a pre-built string table.
 ///
-/// Mirrors Java `com.alibaba.excel.cache.XlsCache`.
+/// 对应 Java：`com.alibaba.excel.cache.XlsCache`.
 ///
 /// [`put`](ReadCache::put) is a no-op because the SST is immutable after
 /// construction, matching Java usage after `SstRecordHandler` finishes.

@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.read.metadata.holder.ReadRowHolder`.
+//! 对应 Java：`com.alibaba.excel.read.metadata.holder.ReadRowHolder`.
 
 use std::collections::HashMap;
 
 use easyexcel_core::CellValue;
 
-/// Mirrors Java `ReadRowHolder implements Holder`.
+/// 对应 Java：`ReadRowHolder implements Holder`.
 #[derive(Debug, Clone)]
 pub struct ReadRowHolder {
     /// Mirrors `ReadRowHolder.rowIndex`.
@@ -14,7 +14,7 @@ pub struct ReadRowHolder {
 }
 
 impl ReadRowHolder {
-    /// Mirrors Java constructor.
+    /// 对应 Java： constructor.
     pub fn new(row_index: i32, cell_map: HashMap<usize, CellValue>) -> Self {
         Self {
             row_index,

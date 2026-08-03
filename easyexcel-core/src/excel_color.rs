@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.poi.IndexedColors` combined with the
+//! 对应 Java：`com.alibaba.excel.enums.poi.IndexedColors` combined with the
 //! `0xRRGGBB` extended RGB value.
 
 /// A color supplied by Java-compatible palette index or by explicit RGB value.

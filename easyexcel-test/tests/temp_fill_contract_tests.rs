@@ -1,6 +1,6 @@
 //! Temp fill-package *contract* tests — portable EasyExcel fill API.
 //!
-//! Mirrors Java `com.alibaba.easyexcel.test.temp.fill.FillTempTest`,
+//! 对应 Java：`com.alibaba.easyexcel.test.temp.fill.FillTempTest`,
 //! `temp.FillTempTest`, and `temp.issue1663.FillTest` using fixtures under
 //! `tests/fixtures/` (no machine-local paths).
 

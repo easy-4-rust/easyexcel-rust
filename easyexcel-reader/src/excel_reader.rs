@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.ExcelReader`.
+//! 对应 Java：`com.alibaba.excel.ExcelReader`.
 
 use std::marker::PhantomData;
 use std::path::PathBuf;
@@ -16,7 +16,7 @@ use crate::{ReadOptions, SheetSelector};
 
 /// Event-driven workbook reader.
 ///
-/// Mirrors Java `com.alibaba.excel.ExcelReader`.
+/// 对应 Java：`com.alibaba.excel.ExcelReader`.
 pub struct ExcelReader<T, L> {
     analyser: ExcelAnalyserImpl,
     listener: L,
@@ -30,7 +30,7 @@ where
 {
     /// Creates a reader bound to a workbook path and options.
     ///
-    /// Mirrors Java `ExcelReader(ReadWorkbook)`.
+    /// 对应 Java：`ExcelReader(ReadWorkbook)`.
     pub fn new(path: impl Into<PathBuf>, options: ReadOptions, listener: L) -> Result<Self> {
         Ok(Self {
             analyser: ExcelAnalyserImpl::from_path(path, options)?,

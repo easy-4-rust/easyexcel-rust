@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.format.*`.
+//! 对应 Java：`com.alibaba.excel.metadata.format.*`.
 
 pub mod data_formatter;
 pub mod excel_general_number_format;

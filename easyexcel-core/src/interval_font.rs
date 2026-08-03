@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.data.RichTextStringData.IntervalFont`.
+//! 对应 Java：`com.alibaba.excel.metadata.data.RichTextStringData.IntervalFont`.
 
 use crate::write_font::WriteFont;
 

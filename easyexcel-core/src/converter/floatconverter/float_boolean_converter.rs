@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.floatconverter.FloatBooleanConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.floatconverter.FloatBooleanConverter`.
 //!
-/// Mirrors Java `FloatBooleanConverter`.
+/// 对应 Java：`FloatBooleanConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct FloatBooleanConverter;
 

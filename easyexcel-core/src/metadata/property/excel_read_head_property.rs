@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.read.metadata.property.ExcelReadHeadProperty`.
+//! 对应 Java：`com.alibaba.excel.read.metadata.property.ExcelReadHeadProperty`.
 
 use super::super::configuration_holder::ConfigurationHolder;
 use super::excel_head_property::ExcelHeadProperty;

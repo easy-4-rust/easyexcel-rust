@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.data.CoordinateData`.
+//! 对应 Java：`com.alibaba.excel.metadata.data.CoordinateData`.
 
 /// Cell coordinates used by Java `CoordinateData` decorations.
 ///

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.read.metadata.holder.*`.
+//! 对应 Java：`com.alibaba.excel.read.metadata.holder.*`.
 
 pub mod abstract_read_holder;
 pub mod csv;

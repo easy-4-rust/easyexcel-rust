@@ -1,15 +1,15 @@
-//! Mirrors Java `com.alibaba.excel.read.metadata.holder.xls.XlsReadSheetHolder`.
+//! 对应 Java：`com.alibaba.excel.read.metadata.holder.xls.XlsReadSheetHolder`.
 
 use crate::holder::read_sheet_holder::ReadSheetHolder;
 
-/// Mirrors Java `XlsReadSheetHolder extends ReadSheetHolder`.
+/// 对应 Java：`XlsReadSheetHolder extends ReadSheetHolder`.
 #[derive(Debug, Clone)]
 pub struct XlsReadSheetHolder {
     inner: ReadSheetHolder,
 }
 
 impl XlsReadSheetHolder {
-    /// Mirrors Java constructor.
+    /// 对应 Java： constructor.
     pub fn new(sheet_no: i32, sheet_name: impl Into<String>) -> Self {
         Self {
             inner: ReadSheetHolder::new(sheet_no, sheet_name),

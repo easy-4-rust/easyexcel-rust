@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.longconverter.LongNumberConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.longconverter.LongNumberConverter`.
 //!
-/// Mirrors Java `LongNumberConverter`.
+/// 对应 Java：`LongNumberConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct LongNumberConverter;
 

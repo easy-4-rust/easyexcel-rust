@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.style.column.SimpleColumnWidthStyleStrategy`.
+//! 对应 Java：`com.alibaba.excel.write.style.column.SimpleColumnWidthStyleStrategy`.
 
 use std::collections::HashMap;
 
@@ -6,7 +6,7 @@ use easyexcel_core::WriteHandler;
 
 use crate::style::column::abstract_column_width_style_strategy::AbstractColumnWidthStyleStrategy;
 
-/// Mirrors Java `SimpleColumnWidthStyleStrategy`.
+/// 对应 Java：`SimpleColumnWidthStyleStrategy`.
 pub struct SimpleColumnWidthStyleStrategy {
     widths: HashMap<usize, u16>,
 }

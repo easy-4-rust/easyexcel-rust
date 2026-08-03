@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.*`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.*`.
 
 pub(crate) mod biff_record_stream;
 pub(crate) mod biff_string;

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.constant.BuiltinFormats`.
+//! 对应 Java：`com.alibaba.excel.constant.BuiltinFormats`.
 //!
 //! Java defines three locale-dependent arrays (`BUILTIN_FORMATS_ALL_LANGUAGES`,
 //! `BUILTIN_FORMATS_CN`, `BUILTIN_FORMATS_US`) plus lookup helpers. The Rust

@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.byteconverter.ByteStringConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.byteconverter.ByteStringConverter`.
 //!
-/// Mirrors Java `ByteStringConverter`.
+/// 对应 Java：`ByteStringConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ByteStringConverter;
 

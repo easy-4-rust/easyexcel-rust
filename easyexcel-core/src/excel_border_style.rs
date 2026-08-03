@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.poi.BorderStyleEnum`.
+//! 对应 Java：`com.alibaba.excel.enums.poi.BorderStyleEnum`.
 
 /// Border line style used by annotation-driven cell styles.
 ///

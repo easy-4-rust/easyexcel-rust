@@ -1,11 +1,11 @@
-//! Mirrors Java `com.alibaba.excel.write.builder.AbstractExcelWriterParameterBuilder`.
+//! 对应 Java：`com.alibaba.excel.write.builder.AbstractExcelWriterParameterBuilder`.
 
 use crate::CellStyle;
 use easyexcel_core::WriteHandler;
 
 use crate::metadata::WriteBasicParameter;
 
-/// Mirrors Java `AbstractExcelWriterParameterBuilder<T, C>`.
+/// 对应 Java：`AbstractExcelWriterParameterBuilder<T, C>`.
 ///
 /// The Java side chains 12 setter methods (`needHead`, `useDefaultStyle`,
 /// `automaticMergeHead`, `excludeColumnIndexes`, `excludeColumnFieldNames`,

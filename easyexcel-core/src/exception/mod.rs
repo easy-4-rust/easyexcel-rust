@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.exception.*`.
+//! 对应 Java：`com.alibaba.excel.exception.*`.
 
 pub mod excel_analysis_exception;
 pub mod excel_analysis_stop_exception;

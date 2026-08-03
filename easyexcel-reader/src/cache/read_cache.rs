@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.cache.ReadCache`.
+//! 对应 Java：`com.alibaba.excel.cache.ReadCache`.
 
 use easyexcel_core::Result;
 
@@ -10,7 +10,7 @@ use crate::read_cache::{
 
 /// Shared-string cache contract matching Java `ReadCache`.
 ///
-/// Mirrors Java `com.alibaba.excel.cache.ReadCache`.
+/// 对应 Java：`com.alibaba.excel.cache.ReadCache`.
 pub trait ReadCache: Send {
     /// Initializes the cache. (Java `init(AnalysisContext)`)
     ///
@@ -75,7 +75,7 @@ pub fn new_disk_cache() -> Result<Box<dyn SharedStringCache>> {
 
 /// Resolves the effective [`ReadCacheMode`] for a shared-string table size.
 ///
-/// Mirrors Java `ReadWorkbookHolder` selector wiring.
+/// 对应 Java：`ReadWorkbookHolder` selector wiring.
 #[must_use]
 pub fn resolve_read_cache_mode(
     mode: ReadCacheMode,

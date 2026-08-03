@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.read.metadata.ReadWorkbook`.
+//! 对应 Java：`com.alibaba.excel.read.metadata.ReadWorkbook`.
 //!
 //! Java signature (47 members: 18 fields × 3 each for get/set/equals
 //! + equals/hashCode + 5 ctor overloads). The Rust port stores the
@@ -12,7 +12,7 @@
 
 use crate::ReadOptions;
 
-/// Mirrors Java `ReadWorkbook extends ReadBasicParameter`.
+/// 对应 Java：`ReadWorkbook extends ReadBasicParameter`.
 ///
 /// The Java side carries 18 fields (file, outputStream, charset,
 /// mandatoryUseInputStream, autoCloseStream, customObject, etc.).

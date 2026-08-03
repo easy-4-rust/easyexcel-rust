@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.annotation.write.style.*`.
+//! 对应 Java：`com.alibaba.excel.annotation.write.style.*`.
 //!
 //! Java applies these annotations at runtime via `ExcelWriteHeadProperty` /
 //! `AbstractWriteHolder`. In Rust, `#[derive(ExcelRow)]` with nested

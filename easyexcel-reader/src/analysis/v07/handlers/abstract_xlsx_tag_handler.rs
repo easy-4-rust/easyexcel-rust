@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler`.
 
 use super::xlsx_tag_handler::XlsxTagHandler;
 
-/// Mirrors Java `AbstractXlsxTagHandler implements XlsxTagHandler`.
+/// 对应 Java：`AbstractXlsxTagHandler implements XlsxTagHandler`.
 ///
 /// Java provides default no-op implementations for all four methods
 /// (`support` / `startElement` / `endElement` / `characters`). Rust mirrors

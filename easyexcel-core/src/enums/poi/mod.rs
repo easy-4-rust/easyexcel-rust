@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.poi.*`.
+//! 对应 Java：`com.alibaba.excel.enums.poi.*`.
 
 pub mod border_style_enum;
 pub mod fill_pattern_type_enum;

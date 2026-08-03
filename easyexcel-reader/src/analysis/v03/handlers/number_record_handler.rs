@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.NumberRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.NumberRecordHandler`.
 //!
 //! XLS BIFF decoding is owned by `calamine::Xls` today; these helpers encode
 //! the Java `processRecord` numeric-cell semantics for a future SAX path.
@@ -18,7 +18,7 @@ pub struct NumberCell {
     pub format_index: u16,
 }
 
-/// Mirrors Java `NumberRecordHandler`.
+/// 对应 Java：`NumberRecordHandler`.
 #[derive(Debug, Default)]
 pub struct NumberRecordHandler {
     /// Most recently decoded number cell.

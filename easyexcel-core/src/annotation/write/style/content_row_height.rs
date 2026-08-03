@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.annotation.write.style.ContentRowHeight`.
+//! 对应 Java：`com.alibaba.excel.annotation.write.style.ContentRowHeight`.
 //!
 //! In Rust, prefer `#[excel(content_row_height = N)]` on a type with
 //! `#[derive(ExcelRow)]`. This marker exists for 1:1 Java package parity.

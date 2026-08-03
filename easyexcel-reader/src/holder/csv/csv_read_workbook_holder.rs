@@ -1,15 +1,15 @@
-//! Mirrors Java `com.alibaba.excel.read.metadata.holder.csv.CsvReadWorkbookHolder`.
+//! 对应 Java：`com.alibaba.excel.read.metadata.holder.csv.CsvReadWorkbookHolder`.
 
 use crate::holder::read_workbook_holder::ReadWorkbookHolder;
 
-/// Mirrors Java `CsvReadWorkbookHolder extends ReadWorkbookHolder`.
+/// 对应 Java：`CsvReadWorkbookHolder extends ReadWorkbookHolder`.
 #[derive(Debug, Clone)]
 pub struct CsvReadWorkbookHolder {
     inner: ReadWorkbookHolder,
 }
 
 impl CsvReadWorkbookHolder {
-    /// Mirrors Java constructor.
+    /// 对应 Java： constructor.
     pub fn new() -> Self {
         Self {
             inner: ReadWorkbookHolder::default(),

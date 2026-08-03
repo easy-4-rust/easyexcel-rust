@@ -143,7 +143,7 @@ impl TemplatePackage {
     /// Ensures a worksheet exists; creates an empty one when the name is new.
     ///
     /// Existing worksheets, `xl/styles.xml`, and their `mergeCells` are left
-    /// untouched. Mirrors Java creating a sheet that is absent from the template.
+    /// untouched. 对应 Java： creating a sheet that is absent from the template.
     ///
     /// # Errors
     ///

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.converters.integer.*`.
+//! 对应 Java：`com.alibaba.excel.converters.integer.*`.
 
 pub mod integer_boolean_converter;
 pub mod integer_number_converter;

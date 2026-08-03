@@ -1,11 +1,11 @@
-//! Mirrors Java `com.alibaba.excel.read.listener.PageReadListener<T>`.
+//! 对应 Java：`com.alibaba.excel.read.listener.PageReadListener<T>`.
 
 use crate::analysis_context::{AnalysisContext, Result};
 use crate::read_listener::ReadListener;
 
 /// A listener that buffers rows and invokes a callback page by page.
 ///
-/// Mirrors Java `PageReadListener<T>(Consumer<List<T>> consumer, int
+/// 对应 Java：`PageReadListener<T>(Consumer<List<T>> consumer, int
 /// batchCount)` with `BATCH_COUNT = 100`.
 pub struct PageReadListener<T> {
     batch_size: usize,

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.holder.AbstractWriteHolder`.
+//! 对应 Java：`com.alibaba.excel.write.metadata.holder.AbstractWriteHolder`.
 
 use std::collections::HashSet;
 
@@ -11,7 +11,7 @@ use easyexcel_core::converter::default_converter_loader::load_default_write_conv
 use crate::metadata::WriteBasicParameter;
 use crate::{ExcelWriteHeadProperty, WriteHolder};
 
-/// Mirrors Java `AbstractWriteHolder extends AbstractHolder implements WriteHolder`.
+/// 对应 Java：`AbstractWriteHolder extends AbstractHolder implements WriteHolder`.
 ///
 /// The Java side carries resolved nullable parameters inherited from the
 /// parent holder. Rust keeps the same resolved state here; builders use

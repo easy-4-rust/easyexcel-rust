@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.executor.ExcelWriteAddExecutor`.
+//! 对应 Java：`com.alibaba.excel.write.executor.ExcelWriteAddExecutor`.
 //!
 //! Java source:
 //! `easyexcel-core/src/main/java/com/alibaba/excel/write/executor/ExcelWriteAddExecutor.java`
@@ -29,7 +29,7 @@ use crate::metadata::collection_row_data::CollectionRowData;
 use crate::metadata::map_row_data::MapRowData;
 use crate::{WriteOptions, WriteProgress, append_rows_to_worksheet, write_xlsx};
 
-/// Mirrors Java `ExcelWriteAddExecutor extends AbstractExcelWriteExecutor`.
+/// 对应 Java：`ExcelWriteAddExecutor extends AbstractExcelWriteExecutor`.
 ///
 /// The Java side holds `add(Collection<?>)`, `addOneRowOfDataToExcel`,
 /// `addBasicTypeToExcel`, `doAddBasicTypeToExcel`, and `addJavaObjectToExcel`.

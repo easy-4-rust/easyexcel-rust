@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.WriteBasicParameter`.
+//! 对应 Java：`com.alibaba.excel.write.metadata.WriteBasicParameter`.
 
 use easyexcel_core::ConverterRegistry;
 
-/// Mirrors Java `WriteBasicParameter extends BasicParameter`.
+/// 对应 Java：`WriteBasicParameter extends BasicParameter`.
 ///
 /// Java carries 9 fields (`relativeHeadRowIndex`, `needHead`,
 /// `customWriteHandlerList`, `useDefaultStyle`, `automaticMergeHead`,

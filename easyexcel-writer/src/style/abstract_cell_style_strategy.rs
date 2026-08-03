@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.write.style.AbstractCellStyleStrategy`.
+//! 对应 Java：`com.alibaba.excel.write.style.AbstractCellStyleStrategy`.
 
 use easyexcel_core::{WriteCellContext, WriteHandler};
 
-/// Mirrors Java `AbstractCellStyleStrategy extends AbstractCellWriteHandler`.
+/// 对应 Java：`AbstractCellStyleStrategy extends AbstractCellWriteHandler`.
 ///
 /// The Java side selects a `WriteCellStyle` for each cell. Rust collapses
 /// the strategy into a [`WriteHandler`] trait implementation that

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.Head`.
+//! 对应 Java：`com.alibaba.excel.metadata.Head`.
 
 use crate::excel_error::ExcelError;
 use crate::metadata::property::{

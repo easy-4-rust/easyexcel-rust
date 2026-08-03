@@ -197,7 +197,7 @@ impl ExcelWriterSheetBuilder {
 
     /// Creates a table builder bound to this writer and sheet.
     ///
-    /// Mirrors Java `ExcelWriterSheetBuilder.table()`.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`.
     #[must_use]
     pub fn table(mut self) -> ExcelWriterTableBuilder {
         match self.excel_writer.take() {
@@ -210,7 +210,7 @@ impl ExcelWriterSheetBuilder {
 
     /// Creates a numbered table builder.
     ///
-    /// Mirrors Java `ExcelWriterSheetBuilder.table(Integer)`.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table(Integer)`.
     #[must_use]
     pub fn table_no(self, table_no: i32) -> ExcelWriterTableBuilder {
         self.table().table_no(table_no)

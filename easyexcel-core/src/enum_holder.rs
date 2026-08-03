@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.HolderEnum`.
+//! 对应 Java：`com.alibaba.excel.enums.HolderEnum`.
 
 /// The types of holder.
 ///

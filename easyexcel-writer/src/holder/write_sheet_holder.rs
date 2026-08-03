@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.holder.WriteSheetHolder`.
+//! 对应 Java：`com.alibaba.excel.write.metadata.holder.WriteSheetHolder`.
 
 use std::ops::{Deref, DerefMut};
 
@@ -6,7 +6,7 @@ use crate::MirroredWriteTableHolder as WriteTableHolder;
 use crate::holder::abstract_write_holder::AbstractWriteHolder;
 use crate::metadata::WriteBasicParameter;
 
-/// Mirrors Java `WriteSheetHolder extends AbstractWriteHolder`.
+/// 对应 Java：`WriteSheetHolder extends AbstractWriteHolder`.
 ///
 /// Java's holder stores a POI `Sheet` instance plus the in-flight row
 /// cursors. The Rust port reuses [`crate::ExcelWriter`] for the live

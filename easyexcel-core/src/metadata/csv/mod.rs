@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.csv.*`.
+//! 对应 Java：`com.alibaba.excel.metadata.csv.*`.
 
 pub mod csv_cell;
 pub mod csv_cell_style;

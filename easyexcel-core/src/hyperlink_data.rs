@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.data.HyperlinkData`.
+//! 对应 Java：`com.alibaba.excel.metadata.data.HyperlinkData`.
 
 use crate::coordinate_data::CoordinateData;
 

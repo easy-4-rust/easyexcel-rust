@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.csv.CsvDataFormat`.
+//! 对应 Java：`com.alibaba.excel.metadata.csv.CsvDataFormat`.
 
 use std::collections::HashMap;
 
@@ -20,7 +20,7 @@ impl CsvDataFormat {
 
     /// Returns the built-in or workbook-local index for `format`.
     ///
-    /// Mirrors Java `CsvDataFormat#getFormat(String)`.
+    /// 对应 Java：`CsvDataFormat#getFormat(String)`.
     pub fn get_format_index(&mut self, format: &str) -> i16 {
         if let Some(index) = switch_builtin_formats()
             .iter()
@@ -40,7 +40,7 @@ impl CsvDataFormat {
 
     /// Resolves a built-in or custom index to its format string.
     ///
-    /// Mirrors Java `CsvDataFormat#getFormat(short)`.
+    /// 对应 Java：`CsvDataFormat#getFormat(short)`.
     #[must_use]
     pub fn get_format(&self, index: i16) -> Option<&str> {
         let index = usize::try_from(index).ok()?;

@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.converters.date.DateNumberConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.date.DateNumberConverter`.
 //!
 //! Rust maps Java `java.util.Date` to [`crate::JavaDate`].
 
-/// Mirrors Java `DateNumberConverter`.
+/// 对应 Java：`DateNumberConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct DateNumberConverter;
 

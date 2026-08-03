@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v07.XlsxSaxAnalyser`.
+//! 对应 Java：`com.alibaba.excel.analysis.v07.XlsxSaxAnalyser`.
 
 use std::path::{Path, PathBuf};
 
@@ -8,7 +8,7 @@ use crate::analysis::excel_read_executor::ExcelReadExecutor;
 use crate::context::{DefaultXlsxReadContext, ReadSheet, XlsxReadContext};
 use crate::{ReadOptions, list_xlsx_sheets, read_xlsx};
 
-/// Mirrors Java `XlsxSaxAnalyser implements ExcelReadExecutor`.
+/// 对应 Java：`XlsxSaxAnalyser implements ExcelReadExecutor`.
 ///
 /// Java constructs OPCPackage, parses shared strings, and drives SAX through
 /// `XlsxRowHandler`. Rust keeps the same public surface but delegates the
@@ -27,7 +27,7 @@ pub struct XlsxSaxAnalyser {
 }
 
 impl XlsxSaxAnalyser {
-    /// Mirrors Java `XlsxSaxAnalyser(XlsxReadContext, InputStream decryptedStream)`.
+    /// 对应 Java：`XlsxSaxAnalyser(XlsxReadContext, InputStream decryptedStream)`.
     ///
     /// Sheet discovery uses the same quick-xml metadata path as [`read_xlsx`].
     /// Decryption is handled inside [`list_xlsx_sheets`] / [`read_xlsx`].
@@ -86,7 +86,7 @@ impl XlsxSaxAnalyser {
         self.last_error.as_ref()
     }
 
-    /// Mirrors Java `readComments(ReadSheet)` — comment replay after sheet SAX.
+    /// 对应 Java：`readComments(ReadSheet)` — comment replay after sheet SAX.
     ///
     /// # Errors
     ///
@@ -98,7 +98,7 @@ impl XlsxSaxAnalyser {
         ))
     }
 
-    /// Mirrors Java `parseXmlSource(InputStream, ContentHandler)`.
+    /// 对应 Java：`parseXmlSource(InputStream, ContentHandler)`.
     ///
     /// # Errors
     ///
@@ -152,7 +152,7 @@ impl XlsxSaxAnalyser {
 }
 
 impl ExcelReadExecutor for XlsxSaxAnalyser {
-    /// Mirrors Java `sheetList()`.
+    /// 对应 Java：`sheetList()`.
     fn sheet_list(&self) -> &[ReadSheet] {
         &self.sheet_list
     }

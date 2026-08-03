@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.BooleanEnum`.
+//! 对应 Java：`com.alibaba.excel.enums.BooleanEnum`.
 //!
 //! Java uses `BooleanEnum { DEFAULT(null), TRUE, FALSE }` so annotations can
 //! distinguish "unset" from "false". Rust uses `Option<bool>` for the same
@@ -7,7 +7,7 @@
 
 /// Tri-state boolean matching Java `BooleanEnum`.
 ///
-/// Mirrors Java `BooleanEnum`. The `Default` variant carries `None` so that an
+/// 对应 Java：`BooleanEnum`. The `Default` variant carries `None` so that an
 /// annotation that omits the field can be detected and distinguished from
 /// `false`.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]

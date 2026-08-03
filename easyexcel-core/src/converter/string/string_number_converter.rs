@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.string.StringNumberConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.string.StringNumberConverter`.
 
-/// Mirrors Java `StringNumberConverter`.
+/// 对应 Java：`StringNumberConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct StringNumberConverter;
 

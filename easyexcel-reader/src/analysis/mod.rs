@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.*`.
+//! 对应 Java：`com.alibaba.excel.analysis.*`.
 
 pub mod csv;
 pub mod excel_analyser;

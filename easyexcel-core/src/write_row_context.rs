@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.write.handler.context.RowWriteHandlerContext`.
+//! 对应 Java：`com.alibaba.excel.write.handler.context.RowWriteHandlerContext`.
 
 /// Row-level write lifecycle context.
 ///
-/// Mirrors Java `RowWriteHandlerContext` (`writeSheetHolder`, `writeTableHolder`,
+/// 对应 Java：`RowWriteHandlerContext` (`writeSheetHolder`, `writeTableHolder`,
 /// `rowIndex`, `relativeRowIndex`, `head`). Rust keeps only the fields a
 /// handler needs and drops the `Row` POI object because `rust_xlsxwriter`
 /// does not expose it for handler interception.
@@ -14,7 +14,7 @@ pub struct WriteRowContext {
     pub row_index: u32,
     /// Relative index within the current head or content block.
     ///
-    /// Mirrors Java `RowWriteHandlerContext.relativeRowIndex`.
+    /// 对应 Java：`RowWriteHandlerContext.relativeRowIndex`.
     pub relative_row_index: Option<usize>,
     /// Whether this is a header row.
     pub is_head: bool,

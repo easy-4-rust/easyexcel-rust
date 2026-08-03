@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.converters.ReadConverterContext`.
+//! 对应 Java：`com.alibaba.excel.converters.ReadConverterContext`.
 
 use crate::cell_value::CellValue;
 use crate::convert_context::ConvertContext;
@@ -8,7 +8,7 @@ use bigdecimal::BigDecimal;
 
 /// Context supplied to a custom cell-to-Rust converter.
 ///
-/// Mirrors Java `ReadConverterContext<T>(readCellData, contentProperty,
+/// 对应 Java：`ReadConverterContext<T>(readCellData, contentProperty,
 /// analysisContext)`. Rust drops the `ReadCellData` wrapper and stores
 /// `&CellValue` directly to avoid cloning the entire cell envelope.
 #[derive(Debug, Clone, Copy)]
@@ -40,7 +40,7 @@ impl<'a> ReadConverterContext<'a> {
     }
 
     /// Creates a read conversion context with optional formula metadata.
-    /// Mirrors Java's ability to expose `formulaData` from `ReadCellData`.
+    /// 对应 Java：'s ability to expose `formulaData` from `ReadCellData`.
     #[must_use]
     pub const fn with_formula(
         cell: Option<&'a CellValue>,

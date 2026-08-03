@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.handler.impl.*`.
+//! 对应 Java：`com.alibaba.excel.write.handler.impl.*`.
 
 pub mod impl_default_row_write_handler;
 pub mod impl_default_sheet_write_handler;

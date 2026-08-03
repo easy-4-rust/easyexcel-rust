@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy`.
+//! 对应 Java：`com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy`.
 
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -10,7 +10,7 @@ use crate::style::column::abstract_head_column_width_style_strategy::AbstractHea
 /// Maximum Excel column width in character units. (Java `MAX_COLUMN_WIDTH = 255`)
 const MAX_COLUMN_WIDTH: u16 = 255;
 
-/// Mirrors Java `LongestMatchColumnWidthStyleStrategy`.
+/// 对应 Java：`LongestMatchColumnWidthStyleStrategy`.
 ///
 /// Java walks rendered cell content after each cell write, measures
 /// `String.getBytes().length`, and calls `Sheet.setColumnWidth(col, len * 256)`

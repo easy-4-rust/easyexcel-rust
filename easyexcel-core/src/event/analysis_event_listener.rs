@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.event.AnalysisEventListener`.
+//! 对应 Java：`com.alibaba.excel.event.AnalysisEventListener`.
 
 use crate::CellValue;
 

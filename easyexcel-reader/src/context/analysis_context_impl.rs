@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.context.AnalysisContextImpl`.
+//! 对应 Java：`com.alibaba.excel.context.AnalysisContextImpl`.
 
 use std::collections::HashSet;
 
@@ -14,7 +14,7 @@ use crate::processor::default_analysis_event_processor::DefaultAnalysisEventProc
 
 use super::read_sheet::ReadSheet;
 
-/// Mirrors Java `AnalysisContextImpl implements AnalysisContext`.
+/// 对应 Java：`AnalysisContextImpl implements AnalysisContext`.
 ///
 /// Wraps the listener-facing [`AnalysisContext`] from `easyexcel-core` and
 /// attaches holder state that Java stores on this type.
@@ -39,7 +39,7 @@ pub struct AnalysisContextImpl {
 }
 
 impl AnalysisContextImpl {
-    /// Mirrors Java `AnalysisContextImpl(ReadWorkbook, ExcelTypeEnum)`.
+    /// 对应 Java：`AnalysisContextImpl(ReadWorkbook, ExcelTypeEnum)`.
     #[must_use]
     pub fn new(excel_type: ExcelTypeEnum, options: &ReadOptions) -> Self {
         Self {
@@ -66,7 +66,7 @@ impl AnalysisContextImpl {
         &mut self.inner
     }
 
-    /// Mirrors Java `currentSheet(ReadSheet)`.
+    /// 对应 Java：`currentSheet(ReadSheet)`.
     ///
     /// # Errors
     ///
@@ -142,13 +142,13 @@ impl AnalysisContextImpl {
         self.excel_type
     }
 
-    /// Mirrors Java `@Deprecated getCurrentRowNum()`.
+    /// 对应 Java：`@Deprecated getCurrentRowNum()`.
     #[must_use]
     pub fn current_row_num(&self) -> Option<i32> {
         self.read_row_holder.as_ref().map(|holder| holder.row_index)
     }
 
-    /// Mirrors Java `@Deprecated interrupt()`.
+    /// 对应 Java：`@Deprecated interrupt()`.
     ///
     /// # Errors
     ///

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.executor.ExcelWriteFillExecutor`.
+//! 对应 Java：`com.alibaba.excel.write.executor.ExcelWriteFillExecutor`.
 //!
 //! The trait lives in `easyexcel-core` so `easyexcel-writer` can hold an optional
 //! hook without depending on `easyexcel-template`, and the template crate can
@@ -10,7 +10,7 @@ use crate::{ExcelError, Result, WriteDirection};
 
 /// Minimal fill configuration at the [`ExcelBuilder`](crate::WriteContext) surface.
 ///
-/// Mirrors Java `com.alibaba.excel.write.metadata.fill.FillConfig` fields used by
+/// 对应 Java：`com.alibaba.excel.write.metadata.fill.FillConfig` fields used by
 /// `ExcelBuilderImpl.fill`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WriteFillConfig {
@@ -43,7 +43,7 @@ impl Default for WriteFillConfig {
 
 /// Worksheet metadata passed into template fill execution.
 ///
-/// Mirrors Java `WriteSheet` selection inside `ExcelBuilderImpl.fill`.
+/// 对应 Java：`WriteSheet` selection inside `ExcelBuilderImpl.fill`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WriteFillSheet {
     /// Selected worksheet name.
@@ -63,7 +63,7 @@ impl Default for WriteFillSheet {
 
 /// Hook implemented by `easyexcel-template` and wired from the `easyexcel` facade.
 ///
-/// Mirrors Java `ExcelWriteFillExecutor.fill(Object, FillConfig)`.
+/// 对应 Java：`ExcelWriteFillExecutor.fill(Object, FillConfig)`.
 pub trait WriteFillExecutor {
     /// Accumulates one scalar or collection fill against the loaded template.
     ///
@@ -80,7 +80,7 @@ pub trait WriteFillExecutor {
 
     /// Persists accumulated fill results to the configured output target.
     ///
-    /// Mirrors Java `WriteContext.finish(boolean onException)` for fill-only
+    /// 对应 Java：`WriteContext.finish(boolean onException)` for fill-only
     /// sessions.
     ///
     /// # Errors
@@ -91,7 +91,7 @@ pub trait WriteFillExecutor {
 
 /// Returns a descriptive error when no template stream is configured.
 ///
-/// Mirrors Java `ExcelGenerateException("Calling the 'fill' method must use a template.")`.
+/// 对应 Java：`ExcelGenerateException("Calling the 'fill' method must use a template.")`.
 #[must_use]
 pub fn fill_requires_template_error() -> ExcelError {
     ExcelError::Unsupported("Calling the 'fill' method must use a template.".to_owned())
@@ -99,7 +99,7 @@ pub fn fill_requires_template_error() -> ExcelError {
 
 /// Returns a descriptive error when CSV fill is requested.
 ///
-/// Mirrors Java `ExcelGenerateException("csv does not support filling data.")`.
+/// 对应 Java：`ExcelGenerateException("csv does not support filling data.")`.
 #[must_use]
 pub fn csv_fill_unsupported_error() -> ExcelError {
     ExcelError::Unsupported("csv does not support filling data.".to_owned())

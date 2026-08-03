@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v07.handlers.CountTagHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v07.handlers.CountTagHandler`.
 //!
 //! Parses the worksheet `<dimension ref="A1:Z99">` attribute to recover an
 //! approximate total row count (`PositionUtils.getRow(totalStr) + 1`).
@@ -10,7 +10,7 @@ use easyexcel_core::{ExcelError, Result};
 
 use super::xlsx_tag_handler::XlsxTagHandler;
 
-/// Mirrors Java `CountTagHandler`.
+/// 对应 Java：`CountTagHandler`.
 #[derive(Debug, Default)]
 pub struct CountTagHandler {
     /// Approximate total row number from the dimension ref. (Java sheet holder)

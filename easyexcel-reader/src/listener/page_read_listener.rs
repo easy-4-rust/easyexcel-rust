@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.read.listener.PageReadListener`.
+//! 对应 Java：`com.alibaba.excel.read.listener.PageReadListener`.
 
 use std::collections::VecDeque;
 
 use easyexcel_core::{AnalysisContext, ReadListener};
 
-/// Mirrors Java `PageReadListener<T> implements ReadListener<T>`.
+/// 对应 Java：`PageReadListener<T> implements ReadListener<T>`.
 ///
 /// Java batches rows in a list and invokes a `Consumer<List<T>>` when the
 /// batch is full or on `doAfterAllAnalysed`. Rust mirrors with a
@@ -16,7 +16,7 @@ pub struct PageReadListener<T> {
 }
 
 impl<T> PageReadListener<T> {
-    /// Mirrors Java `PageReadListener(Consumer<List<T>>)`.
+    /// 对应 Java：`PageReadListener(Consumer<List<T>>)`.
     pub fn new(callback: impl FnMut(Vec<T>) + Send + 'static) -> Self {
         Self {
             batch_size: 100,
@@ -25,7 +25,7 @@ impl<T> PageReadListener<T> {
         }
     }
 
-    /// Mirrors Java `PageReadListener(Consumer<List<T>>, int)`.
+    /// 对应 Java：`PageReadListener(Consumer<List<T>>, int)`.
     pub fn with_batch_size(mut self, batch_size: usize) -> Self {
         self.batch_size = batch_size.max(1);
         self

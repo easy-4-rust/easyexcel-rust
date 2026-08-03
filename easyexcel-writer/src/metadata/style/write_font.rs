@@ -1,11 +1,11 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.style.WriteFont`.
+//! 对应 Java：`com.alibaba.excel.write.metadata.style.WriteFont`.
 
 use easyexcel_core::{ExcelFontStyle, WriteFont};
 
-/// Mirrors Java `WriteCellStyle`'s font side.
+/// 对应 Java：`WriteCellStyle`'s font side.
 pub type WriteCellFont = WriteFont;
 
-/// Mirrors Java `WriteFont.merge(WriteFont source, WriteFont target)`.
+/// 对应 Java：`WriteFont.merge(WriteFont source, WriteFont target)`.
 ///
 /// Java's `merge` copies every non-`None` field from source to target.
 /// The Rust port performs the same union over the `Option` fields on

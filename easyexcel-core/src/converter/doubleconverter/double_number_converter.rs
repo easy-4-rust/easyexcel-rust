@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.doubleconverter.DoubleNumberConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.doubleconverter.DoubleNumberConverter`.
 //!
-/// Mirrors Java `DoubleNumberConverter`.
+/// 对应 Java：`DoubleNumberConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct DoubleNumberConverter;
 

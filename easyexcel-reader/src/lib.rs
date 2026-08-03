@@ -90,9 +90,9 @@ impl ScientificFormatMode {
 /// Stored cache selector matching Java `ReadCacheSelector` wiring.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StoredReadCacheSelector {
-    /// Mirrors Java `SimpleReadCacheSelector`.
+    /// 对应 Java：`SimpleReadCacheSelector`.
     Simple(SimpleReadCacheSelector),
-    /// Mirrors Java `EternalReadCacheSelector`.
+    /// 对应 Java：`EternalReadCacheSelector`.
     Eternal(EternalReadCacheSelector),
 }
 
@@ -217,7 +217,7 @@ where
 
 /// Discovers worksheet names in workbook order.
 ///
-/// Mirrors Java `XlsxSaxAnalyser` constructor sheet enumeration via `XSSFReader`.
+/// 对应 Java：`XlsxSaxAnalyser` constructor sheet enumeration via `XSSFReader`.
 ///
 /// # Errors
 ///
@@ -231,7 +231,7 @@ pub fn list_xlsx_sheets(path: &Path, options: &ReadOptions) -> Result<Vec<(usize
 
 /// Discovers worksheet names in workbook order.
 ///
-/// Mirrors Java `XlsSaxAnalyser.sheetList()` via `XlsListSheetListener` /
+/// 对应 Java：`XlsSaxAnalyser.sheetList()` via `XlsListSheetListener` /
 /// calamine `Reader::sheet_names`.
 ///
 /// # Errors

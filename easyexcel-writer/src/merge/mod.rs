@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.merge.*`.
+//! 对应 Java：`com.alibaba.excel.write.merge.*`.
 
 pub mod abstract_merge_strategy;
 pub mod loop_merge_strategy;

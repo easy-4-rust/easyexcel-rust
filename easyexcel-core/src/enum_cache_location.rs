@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.CacheLocationEnum`.
+//! 对应 Java：`com.alibaba.excel.enums.CacheLocationEnum`.
 //!
 //! Used by Java `BasicParameter.filedCacheLocation`. Rust has collapsed this
 //! concept into `easyexcel_reader::ReadCacheMode`, but the enum is kept for

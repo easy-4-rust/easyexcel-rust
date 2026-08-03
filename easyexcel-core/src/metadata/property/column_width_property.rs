@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.metadata.property.ColumnWidthProperty`.
+//! 对应 Java：`com.alibaba.excel.metadata.property.ColumnWidthProperty`.
 
-/// Mirrors Java `ColumnWidthProperty`. (Java `width: Integer`)
+/// 对应 Java：`ColumnWidthProperty`. (Java `width: Integer`)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ColumnWidthProperty {
     /// Column width in Excel character units. (Java `getWidth()`)

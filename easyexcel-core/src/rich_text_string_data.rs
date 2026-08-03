@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.data.RichTextStringData`.
+//! 对应 Java：`com.alibaba.excel.metadata.data.RichTextStringData`.
 
 use crate::cell_value::CellValue;
 use crate::convert_context::ConvertContext;

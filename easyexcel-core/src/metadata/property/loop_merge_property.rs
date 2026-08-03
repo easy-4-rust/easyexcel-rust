@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.metadata.property.LoopMergeProperty`.
+//! 对应 Java：`com.alibaba.excel.metadata.property.LoopMergeProperty`.
 
-/// Mirrors Java `LoopMergeProperty`. (Java `eachRow: int`, `columnExtend: int`)
+/// 对应 Java：`LoopMergeProperty`. (Java `eachRow: int`, `columnExtend: int`)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LoopMergeProperty {
     /// Each row. (Java `eachRow`)

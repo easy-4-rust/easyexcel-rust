@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.converters.booleanconverter.BooleanNumberConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.booleanconverter.BooleanNumberConverter`.
 //!
-/// Mirrors Java `BooleanNumberConverter`.
+/// 对应 Java：`BooleanNumberConverter`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct BooleanNumberConverter;
 

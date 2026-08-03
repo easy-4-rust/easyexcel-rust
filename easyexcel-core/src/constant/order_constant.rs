@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.constant.OrderConstant`.
+//! 对应 Java：`com.alibaba.excel.constant.OrderConstant`.
 
 /// The system's own style. (Java `DEFAULT_DEFINE_STYLE`)
 pub const DEFAULT_DEFINE_STYLE: i32 = -70_000;

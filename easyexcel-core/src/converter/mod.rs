@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.converters.*` sub-packages.
+//! 对应 Java：`com.alibaba.excel.converters.*` sub-packages.
 
 pub mod converter_trait;
 pub use converter_trait::*;

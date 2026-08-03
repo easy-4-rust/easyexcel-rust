@@ -1,6 +1,6 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.CollectionRowData`.
+//! 对应 Java：`com.alibaba.excel.write.metadata.CollectionRowData`.
 
-/// Mirrors Java `CollectionRowData implements RowData`.
+/// 对应 Java：`CollectionRowData implements RowData`.
 ///
 /// Java wraps a `Collection<?>` of raw values for a no-model row. The Rust
 /// port is a tuple newtype that holds the same `Vec<CellValue>`. It implements

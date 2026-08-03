@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.BoundSheetRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.BoundSheetRecordHandler`.
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
@@ -11,7 +11,7 @@ pub struct BoundSheetEntry {
     pub bof_position: u32,
 }
 
-/// Mirrors Java `BoundSheetRecordHandler`.
+/// 对应 Java：`BoundSheetRecordHandler`.
 #[derive(Debug, Default)]
 pub struct BoundSheetRecordHandler {
     /// Accumulated bound-sheet records. (Java workbook holder list)

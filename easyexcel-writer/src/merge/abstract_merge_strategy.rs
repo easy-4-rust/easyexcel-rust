@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.write.merge.AbstractMergeStrategy`.
+//! 对应 Java：`com.alibaba.excel.write.merge.AbstractMergeStrategy`.
 
 use easyexcel_core::{CellExtra, WriteCellContext, WriteHandler};
 
-/// Mirrors Java `AbstractMergeStrategy implements CellWriteHandler`.
+/// 对应 Java：`AbstractMergeStrategy implements CellWriteHandler`.
 ///
 /// The Java side overrides `afterCellDispose` and calls the abstract
 /// `merge(Sheet, Cell, Head, Integer relativeRowIndex)`. Rust mirrors the

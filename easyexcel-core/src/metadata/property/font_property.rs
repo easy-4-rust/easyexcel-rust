@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.metadata.property.FontProperty`.
+//! 对应 Java：`com.alibaba.excel.metadata.property.FontProperty`.
 
 use crate::excel_color::ExcelColor;
 use crate::excel_font_script::ExcelFontScript;
 use crate::excel_underline::ExcelUnderline;
 
-/// Mirrors Java `FontProperty`. Rust reuses `ExcelFontStyle` for the
+/// 对应 Java：`FontProperty`. Rust reuses `ExcelFontStyle` for the
 /// runtime representation; this struct exists for 1:1 Java package
 /// parity.
 #[derive(Debug, Clone, Copy, PartialEq)]

@@ -22,7 +22,7 @@ pub fn builder_from_writer(writer: ExcelWriter) -> ExcelBuilderImpl {
 
 /// Creates an [`ExcelBuilderImpl`] and wires template fill when configured.
 ///
-/// Mirrors Java `new ExcelBuilderImpl(WriteWorkbook)` where
+/// 对应 Java：`new ExcelBuilderImpl(WriteWorkbook)` where
 /// `WriteWorkbook.templateInputStream` is non-null.
 ///
 /// # Errors

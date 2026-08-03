@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.WriteDirectionEnum`.
+//! 对应 Java：`com.alibaba.excel.enums.WriteDirectionEnum`.
 //!
 //! `VERTICAL` vs `HORIZONTAL` for template fills.
 //!

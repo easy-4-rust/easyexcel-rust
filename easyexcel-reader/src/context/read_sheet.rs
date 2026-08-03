@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.read.metadata.ReadSheet`.
+//! 对应 Java：`com.alibaba.excel.read.metadata.ReadSheet`.
 
 use std::fmt;
 
-/// Mirrors Java `ReadSheet extends ReadBasicParameter`.
+/// 对应 Java：`ReadSheet extends ReadBasicParameter`.
 ///
 /// Rust keeps the sheet identity fields used by SAX executors and
 /// [`super::AnalysisContextImpl::current_sheet`]. Parameter fields from
@@ -25,13 +25,13 @@ pub struct ReadSheet {
 }
 
 impl ReadSheet {
-    /// Mirrors Java `ReadSheet()`.
+    /// 对应 Java：`ReadSheet()`.
     #[must_use]
     pub fn default_construction() -> Self {
         Self::default()
     }
 
-    /// Mirrors Java `ReadSheet(Integer sheetNo)`.
+    /// 对应 Java：`ReadSheet(Integer sheetNo)`.
     #[must_use]
     pub fn new(sheet_no: usize) -> Self {
         Self {
@@ -43,7 +43,7 @@ impl ReadSheet {
         }
     }
 
-    /// Mirrors Java `ReadSheet(Integer sheetNo, String sheetName)`.
+    /// 对应 Java：`ReadSheet(Integer sheetNo, String sheetName)`.
     #[must_use]
     pub fn with_name(sheet_no: usize, sheet_name: impl Into<String>) -> Self {
         Self {
@@ -147,7 +147,7 @@ impl ReadSheet {
 }
 
 impl fmt::Display for ReadSheet {
-    /// Mirrors Java `ReadSheet.toString()`.
+    /// 对应 Java：`ReadSheet.toString()`.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,

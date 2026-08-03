@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v07.handlers.CellInlineStringValueTagHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v07.handlers.CellInlineStringValueTagHandler`.
 //!
 //! Java class is empty — it inherits `characters` from
 //! `AbstractCellValueTagHandler` for the inline `<t>` tag.
@@ -6,7 +6,7 @@
 use super::abstract_cell_value_tag_handler::AbstractCellValueTagHandler;
 use super::xlsx_tag_handler::XlsxTagHandler;
 
-/// Mirrors Java `CellInlineStringValueTagHandler` (inline string `<t>`).
+/// 对应 Java：`CellInlineStringValueTagHandler` (inline string `<t>`).
 #[derive(Debug, Default)]
 pub struct CellInlineStringValueTagHandler {
     inner: AbstractCellValueTagHandler,

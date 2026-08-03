@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.converters.shortconverter.*`.
+//! 对应 Java：`com.alibaba.excel.converters.shortconverter.*`.
 
 pub mod short_boolean_converter;
 pub mod short_number_converter;

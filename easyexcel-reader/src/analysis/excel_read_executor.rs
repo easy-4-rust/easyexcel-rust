@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.ExcelReadExecutor` (interface).
+//! 对应 Java：`com.alibaba.excel.analysis.ExcelReadExecutor` (interface).
 
 use std::path::PathBuf;
 
@@ -11,7 +11,7 @@ use crate::analysis::v03::xls_sax_analyser::XlsSaxAnalyser;
 use crate::analysis::v07::xlsx_sax_analyser::XlsxSaxAnalyser;
 use crate::context::ReadSheet;
 
-/// Mirrors Java `ExcelReadExecutor`.
+/// 对应 Java：`ExcelReadExecutor`.
 ///
 /// Java declares `sheetList()` and `execute()`. Rust's `read_xlsx` /
 /// `read_xls` / `read_csv` functions cover the same contract.

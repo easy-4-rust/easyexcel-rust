@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.csv.CsvExcelReadExecutor`.
+//! 对应 Java：`com.alibaba.excel.analysis.csv.CsvExcelReadExecutor`.
 
 use std::path::PathBuf;
 
@@ -8,7 +8,7 @@ use crate::analysis::excel_read_executor::ExcelReadExecutor;
 use crate::context::ReadSheet;
 use crate::{ReadOptions, read_csv};
 
-/// Mirrors Java `CsvExcelReadExecutor implements ExcelReadExecutor`.
+/// 对应 Java：`CsvExcelReadExecutor implements ExcelReadExecutor`.
 ///
 /// The actual CSV parsing in Rust lives in `crate::read_csv`. This
 /// struct exists for 1:1 Java package parity.
@@ -41,12 +41,12 @@ impl CsvExcelReadExecutor {
 }
 
 impl ExcelReadExecutor for CsvExcelReadExecutor {
-    /// Mirrors Java `sheetList()`.
+    /// 对应 Java：`sheetList()`.
     fn sheet_list(&self) -> &[ReadSheet] {
         &self.sheet_list
     }
 
-    /// Mirrors Java `execute()` through the real CSV record parser.
+    /// 对应 Java：`execute()` through the real CSV record parser.
     fn execute<T, L>(&mut self, options: &ReadOptions, listener: &mut L) -> Result<()>
     where
         T: ExcelRow,

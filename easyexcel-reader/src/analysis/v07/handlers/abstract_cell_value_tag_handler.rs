@@ -1,9 +1,9 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler`.
 
 use super::abstract_xlsx_tag_handler::AbstractXlsxTagHandler;
 use super::xlsx_tag_handler::XlsxTagHandler;
 
-/// Mirrors Java `AbstractCellValueTagHandler extends AbstractXlsxTagHandler`.
+/// 对应 Java：`AbstractCellValueTagHandler extends AbstractXlsxTagHandler`.
 ///
 /// Java only overrides `characters` to append into `tempData`. Concrete
 /// handlers (`CellValueTagHandler`, `CellInlineStringValueTagHandler`) inherit

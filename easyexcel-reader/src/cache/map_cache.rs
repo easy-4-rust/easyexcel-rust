@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.cache.MapCache`.
+//! 对应 Java：`com.alibaba.excel.cache.MapCache`.
 //!
 //! Java stores every shared string in a single in-memory `ArrayList`.
 //! Rust uses [`crate::read_cache::MemorySharedStringCache`] via
@@ -13,7 +13,7 @@ use crate::read_cache::SharedStringCache;
 
 /// In-memory shared-string cache matching Java `MapCache`.
 ///
-/// Mirrors Java `com.alibaba.excel.cache.MapCache`.
+/// 对应 Java：`com.alibaba.excel.cache.MapCache`.
 pub struct MapCache {
     adapter: SharedStringCacheAdapter,
 }

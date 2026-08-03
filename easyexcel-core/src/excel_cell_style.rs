@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.metadata.style.WriteCellStyle` (the
+//! 对应 Java：`com.alibaba.excel.write.metadata.style.WriteCellStyle` (the
 //! annotation-driven subset carried by `ExcelCellStyle` / `ExcelFontStyle`).
 
 use crate::excel_border_style::ExcelBorderStyle;

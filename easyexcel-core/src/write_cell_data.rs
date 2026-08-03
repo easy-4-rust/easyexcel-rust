@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.data.WriteCellData`.
+//! 对应 Java：`com.alibaba.excel.metadata.data.WriteCellData`.
 
 use crate::ExcelCellStyle;
 use crate::cell_value::CellValue;
@@ -87,7 +87,7 @@ impl WriteCellData {
 
     /// Replaces the underlying scalar value while keeping decorations intact.
     ///
-    /// Mirrors Java's `WriteCellData.setValue(...)` setter used by the writer
+    /// 对应 Java：'s `WriteCellData.setValue(...)` setter used by the writer
     /// when an annotation override (formula / hyperlink) needs to wrap the
     /// typed scalar without reallocating the cell structure.
     pub fn set_value(&mut self, value: impl Into<CellValue>) -> &mut Self {
@@ -173,7 +173,7 @@ impl WriteCellData {
 
     /// Returns a mutable style, creating it when absent.
     ///
-    /// Mirrors Java `WriteCellData#getOrCreateStyle`.
+    /// 对应 Java：`WriteCellData#getOrCreateStyle`.
     pub fn get_or_create_style(&mut self) -> &mut ExcelCellStyle {
         self.write_cell_style
             .get_or_insert_with(ExcelCellStyle::default)

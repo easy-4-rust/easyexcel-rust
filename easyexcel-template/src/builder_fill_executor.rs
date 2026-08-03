@@ -18,7 +18,7 @@ use crate::{
 
 /// Stateful template fill executor for [`easyexcel_writer::ExcelBuilderImpl`].
 ///
-/// Mirrors Java `ExcelWriteFillExecutor` backed by the same loaded XLSX
+/// 对应 Java：`ExcelWriteFillExecutor` backed by the same loaded XLSX
 /// package as [`ExcelTemplateWriter`].
 pub struct BuilderFillExecutor {
     inner: ExcelTemplateWriter<'static>,

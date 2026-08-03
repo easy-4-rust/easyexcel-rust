@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.enums.WriteTypeEnum`.
+//! 对应 Java：`com.alibaba.excel.enums.WriteTypeEnum`.
 //!
 //! `ADD` vs `FILL`. Used internally by `ExcelBuilderImpl` (Java) to switch
 //! between `ExcelWriteAddExecutor` and `ExcelWriteFillExecutor`.

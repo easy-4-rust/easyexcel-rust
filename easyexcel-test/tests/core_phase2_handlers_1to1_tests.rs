@@ -27,7 +27,7 @@ mod workbook_write_handler_test {
     use easyexcel_core::WriteWorkbookContext;
 
     /// Capture-only handler used to verify the workbook before/after
-    /// lifecycle fires. Mirrors Java `WorkbookWriteHandler` interface.
+    /// lifecycle fires. 对应 Java：`WorkbookWriteHandler` interface.
     #[derive(Default)]
     struct LifecycleProbe {
         before_count: u32,

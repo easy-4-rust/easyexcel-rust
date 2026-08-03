@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.metadata.ConfigurationHolder` and `Holder`.
+//! 对应 Java：`com.alibaba.excel.metadata.ConfigurationHolder` and `Holder`.
 
 use crate::ConverterRegistry;
 use crate::Holder as HolderEnum;

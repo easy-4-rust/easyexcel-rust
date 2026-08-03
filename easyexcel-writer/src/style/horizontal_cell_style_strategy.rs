@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.style.HorizontalCellStyleStrategy`.
+//! 对应 Java：`com.alibaba.excel.write.style.HorizontalCellStyleStrategy`.
 //!
 //! Wired into the XLSX write path via [`WriteHandler::style_cell_style`], which
 //! the writer merges into each cell format after annotation styles. Nested
@@ -9,7 +9,7 @@ use easyexcel_core::{ExcelCellStyle, ExcelFontStyle, WriteCellContext, WriteFont
 use crate::metadata::style::write_font::excel_font_style_from_write_font;
 use crate::style::abstract_cell_style_strategy::AbstractCellStyleStrategy;
 
-/// Mirrors Java `HorizontalCellStyleStrategy`.
+/// 对应 Java：`HorizontalCellStyleStrategy`.
 ///
 /// The Java side cycles through a list of content styles by
 /// `relativeRowIndex`; the Rust port mirrors that behaviour once the

@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.BofRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.BofRecordHandler`.
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
@@ -29,7 +29,7 @@ pub enum BofAction {
     },
 }
 
-/// Mirrors Java `BofRecordHandler`.
+/// 对应 Java：`BofRecordHandler`.
 #[derive(Debug, Default)]
 pub struct BofRecordHandler;
 

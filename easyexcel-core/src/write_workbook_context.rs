@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.write.handler.context.WorkbookWriteHandlerContext`.
+//! 对应 Java：`com.alibaba.excel.write.handler.context.WorkbookWriteHandlerContext`.
 
 use std::path::{Path, PathBuf};
 
@@ -6,7 +6,7 @@ use crate::{WriteContext, WriteHolderContext, WriteWorkbookHolderView};
 
 /// Workbook-level write lifecycle context.
 ///
-/// Mirrors Java `WorkbookWriteHandlerContext` (`writeContext`,
+/// 对应 Java：`WorkbookWriteHandlerContext` (`writeContext`,
 /// `writeWorkbookHolder`). Rust collapses it to the logical path because the
 /// `rust_xlsxwriter::Workbook` is held privately by the [`crate::ExcelWriter`].
 #[derive(Debug, Clone, PartialEq)]

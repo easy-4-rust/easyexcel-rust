@@ -1,10 +1,10 @@
-//! Mirrors Java `com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler`.
+//! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler`.
 //!
 //! Tracks the current drawing/object id used later by note/text handlers.
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
-/// Mirrors Java `ObjRecordHandler`.
+/// 对应 Java：`ObjRecordHandler`.
 #[derive(Debug, Default)]
 pub struct ObjRecordHandler {
     /// Last seen object / shape id. (Java sheet holder)

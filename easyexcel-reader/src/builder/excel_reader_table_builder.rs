@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.read.builder.ExcelReaderTableBuilder`.
+//! 对应 Java：`com.alibaba.excel.read.builder.ExcelReaderTableBuilder`.
 //!
 //! Java signature (5 members):
 //! ```java
@@ -18,7 +18,7 @@ use easyexcel_core::ReadListener;
 use crate::excel_reader::ExcelReader;
 use crate::metadata::read_table::ReadTable;
 
-/// Mirrors Java `ExcelReaderTableBuilder extends AbstractExcelReaderParameterBuilder`.
+/// 对应 Java：`ExcelReaderTableBuilder extends AbstractExcelReaderParameterBuilder`.
 ///
 /// Rust: table-level configuration is sparse in this port because
 /// `ReadTable` is an in-memory struct (the Java type itself is

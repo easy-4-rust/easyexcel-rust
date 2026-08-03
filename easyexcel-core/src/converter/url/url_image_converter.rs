@@ -1,3 +1,3 @@
-//! Mirrors Java `com.alibaba.excel.converters.url.UrlImageConverter`.
+//! 对应 Java：`com.alibaba.excel.converters.url.UrlImageConverter`.
 //!
 pub use crate::UrlImageConverter;

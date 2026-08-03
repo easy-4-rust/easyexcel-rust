@@ -1,4 +1,4 @@
-//! Mirrors Java `com.alibaba.excel.read.builder.ExcelReaderBuilder`.
+//! 对应 Java：`com.alibaba.excel.read.builder.ExcelReaderBuilder`.
 
 use std::cell::RefCell;
 use std::io::{Read, Write};
@@ -16,7 +16,7 @@ use crate::cache::SimpleReadCacheSelector;
 use crate::excel_reader::ExcelReader;
 use crate::{ReadCacheMode, ReadOptions, SheetSelector, StoredReadCacheSelector};
 
-/// Mirrors Java `ExcelReaderBuilder extends AbstractExcelReaderParameterBuilder`.
+/// 对应 Java：`ExcelReaderBuilder extends AbstractExcelReaderParameterBuilder`.
 #[derive(Debug, Clone, Default)]
 pub struct ExcelReaderBuilder {
     /// Mirrors `ReadWorkbook.file`.

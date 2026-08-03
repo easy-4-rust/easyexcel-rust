@@ -1,8 +1,8 @@
-//! Mirrors Java `com.alibaba.excel.write.style.column.AbstractColumnWidthStyleStrategy`.
+//! 对应 Java：`com.alibaba.excel.write.style.column.AbstractColumnWidthStyleStrategy`.
 
 use easyexcel_core::WriteHandler;
 
-/// Mirrors Java `AbstractColumnWidthStyleStrategy extends AbstractCellWriteHandler`.
+/// 对应 Java：`AbstractColumnWidthStyleStrategy extends AbstractCellWriteHandler`.
 ///
 /// Java declares a single `protected abstract Integer columnWidth(...)` hook.
 pub trait AbstractColumnWidthStyleStrategy: WriteHandler {
