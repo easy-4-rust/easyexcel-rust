@@ -74,6 +74,8 @@ __pycache__/
 .fastRequest
 *.http
 *.json
+# Java golden 期望文件必须提交：测试直接依赖它们，CI 无 Java 生成环境
+!easyexcel-test/tests/golden/*.expected.json
 .flattened-pom.xml
 /agentdb.rvf
 /agentdb.rvf.lock
