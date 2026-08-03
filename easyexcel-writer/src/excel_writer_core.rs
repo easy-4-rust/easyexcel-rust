@@ -4,6 +4,7 @@
 //! 原文件：easyexcel-core/src/main/java/com/alibaba/excel/ExcelWriter.java
 
 use std::any::type_name;
+use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, Write};
@@ -152,11 +153,14 @@ pub(crate) fn effective_sheet_name(options: &WriteOptions) -> String {
 }
 
 /// Trims string cell text when auto-trim is enabled.
-pub(crate) fn maybe_trim_cell_string(value: &str, auto_trim: bool) -> String {
+///
+/// 关闭 `auto_trim` 时返回借用（零拷贝）：XLSX 热路径每字符串单元格原本
+/// 固定产生一次 `String` 分配，此改动将其消除；仅开启 `auto_trim` 时才会分配。
+pub(crate) fn maybe_trim_cell_string(value: &str, auto_trim: bool) -> Cow<'_, str> {
     if auto_trim {
-        value.trim().to_owned()
+        Cow::Owned(value.trim().to_owned())
     } else {
-        value.to_owned()
+        Cow::Borrowed(value)
     }
 }
 
@@ -1002,6 +1006,9 @@ where
         )?;
         let row_context = WriteRowContext::new(sheet_name, row_index, Some(data_index), false);
         let row_context = holder_scope.map_or(row_context.clone(), |scope| scope.row(row_context));
+        // 样式上下文按行构建一次：`content` 是常量构造，但移出单元格循环与
+        // XLSX 路径保持一致，避免每单元格重复构造。
+        let style_ctx = SheetStyleContext::content(explicit_style, metadata, global);
         begin_row_lifecycle(handlers, &row_context)?;
         for (physical_index, schema_index, column) in row_columns {
             let cell_data = cells.get(*schema_index);
@@ -1023,7 +1030,6 @@ where
             finish_cell_lifecycle(handlers, &context)?;
             context.apply_cell_mutations();
             if !context.skip {
-                let style_ctx = SheetStyleContext::content(explicit_style, metadata, global);
                 let format_ctx = if context.ignore_fill_style {
                     style_ctx.column(column).without_fill_style()
                 } else {
@@ -1207,7 +1213,7 @@ pub(crate) fn cell_value_to_biff8(
         CellValue::Empty => Ok(Biff8Cell::general(Biff8Value::Blank)),
         CellValue::String(text) | CellValue::Error(text) | CellValue::Formula(text) => {
             Ok(Biff8Cell::general(Biff8Value::Text(
-                maybe_trim_cell_string(text, global.auto_trim),
+                maybe_trim_cell_string(text, global.auto_trim).into_owned(),
             )))
         }
         CellValue::Bool(flag) => Ok(Biff8Cell::general(Biff8Value::Bool(*flag))),
@@ -1235,7 +1241,7 @@ pub(crate) fn cell_value_to_biff8(
             datetime_to_excel_serial_with_windowing(*date_time, global.use_1904_windowing),
         )),
         CellValue::Hyperlink { text, .. } => Ok(Biff8Cell::general(Biff8Value::Text(
-            maybe_trim_cell_string(text, global.auto_trim),
+            maybe_trim_cell_string(text, global.auto_trim).into_owned(),
         ))),
         CellValue::Comment { value, .. } => cell_value_to_biff8(value, global),
         CellValue::Images { value, images } => {
@@ -1247,7 +1253,7 @@ pub(crate) fn cell_value_to_biff8(
             cell_value_to_biff8(value, global)
         }
         CellValue::RichText(rich) => Ok(Biff8Cell::general(Biff8Value::Text(
-            maybe_trim_cell_string(rich.text_string(), global.auto_trim),
+            maybe_trim_cell_string(rich.text_string(), global.auto_trim).into_owned(),
         ))),
         CellValue::Image(bytes) => {
             // Write base value, image bytes handled by caller
@@ -3649,8 +3655,91 @@ fn write_cell(
         row_index,
         column_index: column,
     } = cell;
-    let format = cell_format(style);
     let global = style.global;
+    // 无样式快速路径：CellFormatContext 全字段为空时，cell_format 的结果恒
+    // 等于 rust_xlsxwriter 默认格式（xf 0），直接调用无格式写方法可跳过每个
+    // 单元格的 Format 构造与格式表哈希查找（RwLock + Format 哈希）。输出字节
+    // 完全一致：默认格式在 workbook 创建时预置为 xf 0，两种路径的单元格 XML
+    // 均不带 s 属性，styles.xml 亦不受影响。
+    if style.explicit.is_none()
+        && style.cell.is_none()
+        && style.font.is_none()
+        && style.handler_cell.is_none()
+        && style.converted_cell.is_none()
+        && style.converted_data_format.is_none()
+    {
+        match value {
+            CellValue::String(text) | CellValue::Error(text) => {
+                let text = maybe_trim_cell_string(text, global.auto_trim);
+                if text.is_empty() {
+                    // 空字符串经带格式写入会落成空白单元格（store_string 语义），
+                    // 无格式写入则整格跳过——为保持优化前输出，回退带格式路径。
+                    let format = Format::new();
+                    return worksheet
+                        .write_string_with_format(row_index, column, text, &format)
+                        .map(|_| ())
+                        .map_err(format_error);
+                }
+                return worksheet
+                    .write_string(row_index, column, text)
+                    .map(|_| ())
+                    .map_err(format_error);
+            }
+            CellValue::Bool(flag) => {
+                return worksheet
+                    .write_boolean(row_index, column, *flag)
+                    .map(|_| ())
+                    .map_err(format_error);
+            }
+            CellValue::Int(number) => {
+                return write_integer_unformatted(worksheet, row_index, column, *number);
+            }
+            CellValue::Float(number) => {
+                if global.use_scientific_format
+                    && metadata.format.is_none()
+                    && is_scientific_magnitude(*number)
+                {
+                    // 科学计数法需要数字格式，落入下方带格式路径。
+                } else {
+                    return worksheet
+                        .write_number(row_index, column, *number)
+                        .map(|_| ())
+                        .map_err(format_error);
+                }
+            }
+            CellValue::Decimal(number) => {
+                let numeric = finite_decimal_f64(number, "XLSX")?;
+                if decimal_integer_requires_text(number)? {
+                    return worksheet
+                        .write_string(row_index, column, number.to_plain_string())
+                        .map(|_| ())
+                        .map_err(format_error);
+                }
+                if global.use_scientific_format
+                    && metadata.format.is_none()
+                    && is_scientific_magnitude(numeric)
+                {
+                    // 科学计数法需要数字格式，落入下方带格式路径。
+                } else {
+                    return worksheet
+                        .write_number(row_index, column, numeric)
+                        .map(|_| ())
+                        .map_err(format_error);
+                }
+            }
+            CellValue::Formula(text) => {
+                return worksheet
+                    .write_formula(row_index, column, text.as_str())
+                    .map(|_| ())
+                    .map_err(format_error);
+            }
+            // 其余类型（Empty/Date/DateTime/Hyperlink/Comment/Image/RichText/
+            // Images）必然携带格式或特殊语义（如 Hyperlink 无格式写入会套用
+            // 超链接样式），一律走带格式路径。
+            _ => {}
+        }
+    }
+    let format = cell_format(style);
     match value {
         CellValue::Empty => {
             worksheet
@@ -3660,7 +3749,7 @@ fn write_cell(
         CellValue::String(value) | CellValue::Error(value) => {
             let text = maybe_trim_cell_string(value, global.auto_trim);
             worksheet
-                .write_string_with_format(row_index, column, &text, &format)
+                .write_string_with_format(row_index, column, text.as_ref(), &format)
                 .map_err(format_error)?;
         }
         CellValue::Bool(value) => {
@@ -4435,6 +4524,30 @@ fn write_integer(
     } else {
         worksheet
             .write_string_with_format(row, column, value.to_string(), format)
+            .map(|_| ())
+            .map_err(format_error)
+    }
+}
+
+/// 无格式整数写入（无样式快速路径专用）：语义与 [`write_integer`] 完全一致，
+/// 仅跳过格式表查找，输出单元格 XML 相同（默认格式与无格式均解析为 xf 0）。
+fn write_integer_unformatted(
+    worksheet: &mut Worksheet,
+    row: u32,
+    column: u16,
+    value: i64,
+) -> Result<()> {
+    const MAX_EXACT_EXCEL_INTEGER: u64 = 9_007_199_254_740_991;
+    if value.unsigned_abs() <= MAX_EXACT_EXCEL_INTEGER {
+        #[allow(clippy::cast_precision_loss)]
+        let number = value as f64;
+        worksheet
+            .write_number(row, column, number)
+            .map(|_| ())
+            .map_err(format_error)
+    } else {
+        worksheet
+            .write_string(row, column, value.to_string())
             .map(|_| ())
             .map_err(format_error)
     }

@@ -57,8 +57,16 @@ impl WriteCellHandle {
     }
 
     /// Synchronizes a value changed through the compatibility context field.
+    ///
+    /// 值未变化时跳过克隆：热路径上每单元格回调链结束时 `current_value` 与
+    /// `context.value` 通常已经一致（构造值原样保留，或 `set_value` 已同时写入
+    /// 两处），此时无条件克隆会为每个单元格额外分配一次 String；此处先比较再
+    /// 决定是否需要克隆，语义与旧实现完全一致。
     pub fn sync_value(&self, value: &CellValue) {
-        *self.current_value.borrow_mut() = value.clone();
+        let mut current = self.current_value.borrow_mut();
+        if *current != *value {
+            *current = value.clone();
+        }
     }
 
     /// Requests a final backend-neutral cell style.
@@ -155,5 +163,27 @@ mod tests {
             Some(true)
         );
         assert_eq!(cell.requested_skip(), Some(false));
+    }
+
+    #[test]
+    fn sync_value_reflects_direct_mutation_and_keeps_requested() {
+        // 对应 Java：context.value 被 handler 直接修改后经 sync 同步到 handle
+        let cell = WriteCellHandle::new(0, 0, CellValue::String("initial".to_owned()));
+        // 值未变化时同步不改变 value()（优化：跳过冗余克隆）
+        cell.sync_value(&CellValue::String("initial".to_owned()));
+        assert_eq!(cell.value(), CellValue::String("initial".to_owned()));
+        // 直接变更后同步使 value() 可见
+        cell.sync_value(&CellValue::String("direct".to_owned()));
+        assert_eq!(cell.value(), CellValue::String("direct".to_owned()));
+        // sync 不写入 requested（apply_cell_mutations 不重复提交）
+        assert_eq!(cell.requested_value(), None);
+        // set_value 后再次同步同值，value() 不变且 requested 保留
+        cell.set_value(CellValue::String("mutated".to_owned()));
+        cell.sync_value(&CellValue::String("mutated".to_owned()));
+        assert_eq!(cell.value(), CellValue::String("mutated".to_owned()));
+        assert_eq!(
+            cell.requested_value(),
+            Some(CellValue::String("mutated".to_owned()))
+        );
     }
 }
