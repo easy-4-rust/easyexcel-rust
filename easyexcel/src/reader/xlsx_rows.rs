@@ -592,7 +592,7 @@ impl<'a> XlsxDisplayCellReader<'a> {
             .is_some_and(XlsxNumberFormat::is_date_format)
         {
             let date = ExcelDateTime::new(number, ExcelDateTimeType::DateTime, self.date_1904);
-            return super::excel_datetime_cell(&date, self.date_1904);
+            return crate::reader::cell_conversion::excel_datetime_cell(&date, self.date_1904);
         }
         CellValue::Float(number)
     }

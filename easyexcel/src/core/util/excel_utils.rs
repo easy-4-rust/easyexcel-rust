@@ -9,7 +9,7 @@
 /// Mirrors hutool `ExcelUtil.indexToColName(int)`.
 ///
 /// ```
-/// use easyexcel_core::util::excel_utils::index_to_col_name;
+/// use easyexcel::core::util::excel_utils::index_to_col_name;
 /// assert_eq!(index_to_col_name(0), "A");
 /// assert_eq!(index_to_col_name(25), "Z");
 /// assert_eq!(index_to_col_name(26), "AA");
@@ -33,7 +33,7 @@ pub fn index_to_col_name(mut index: u32) -> String {
 /// Mirrors hutool `ExcelUtil.colNameToIndex(String)`.
 ///
 /// ```
-/// use easyexcel_core::util::excel_utils::col_name_to_index;
+/// use easyexcel::core::util::excel_utils::col_name_to_index;
 /// assert_eq!(col_name_to_index("A"), Some(0));
 /// assert_eq!(col_name_to_index("AA"), Some(26));
 /// ```
