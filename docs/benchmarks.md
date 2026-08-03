@@ -132,3 +132,75 @@ event-stage allocation reduction in the reader. Benchmarked on Apple M4 Pro,
 The script uses `/usr/bin/time -l` on macOS and `/usr/bin/time -v` on Linux. Its
 first argument overrides the row count and its second argument overrides the
 output path.
+
+### 2026-08-03 Java comparison (same machine)
+
+Same-day, same-machine (Apple M4 Pro, 24 GiB RAM, macOS 26.5.2, arm64)
+head-to-head against the Java original, to ground the migration in a real
+cross-implementation baseline.
+
+Java side: EasyExcel 4.0.3 built from source (alibaba/easyexcel repo HEAD
+`3afdea9d`), Amazon Corretto 17.0.20 LTS, JVM args `-Xmx4g` only (default G1
+GC). Harness: `MillionRowBenchmark` (plain class with `main`, not a JUnit
+test) added at `easyexcel-test/src/test/java/com/alibaba/easyexcel/test/
+benchmark/MillionRowBenchmark.java` in the Java repo. It mirrors the
+`million_rows` example semantics: typed write, streaming read through a
+`ReadListener` that counts and releases each row, and a hard row-count check
+(expected 1,000,000, read 1,000,000 — passed in every run).
+
+Row model and fairness caveats (read before comparing):
+
+- The Java row model follows the Rust `DemoRow` from
+  `easyexcel/examples/generate_compat_fixtures.rs`: ID (Long) / Name
+  (`row-{i}`) / Date (`java.util.Date`, written by the default
+  `DateNumberConverter` as an Excel serial-number cell) / Score (`i*0.5`) —
+  **four cells per row**. The Rust numbers above were measured with the
+  `million_rows` example's two-cell `BenchmarkRow` (ID u32 / Value String),
+  so XLSX byte size is not an apples-to-apples comparison and the Java run
+  does twice the per-row cell work.
+- Write was measured in both forms: **stream** (10,000-row chunks through
+  repeated `ExcelWriter.write` — the Java equivalent of
+  `constant_memory(true)`) and **one-shot** (a single `doWrite(List)` holding
+  all 1,000,000 rows in memory, the memory-heavy default usage pattern).
+  Read is listener-based streaming in both cases.
+- JIT: cold. Every run is a fresh JVM with no warm-up; the write phase also
+  absorbs JIT compilation of the write path. Stream mode ran twice and was
+  consistent.
+
+| Metric | Rust 1.97.1 (HEAD, 2026-08-03) | Java stream | Java one-shot |
+|---|---|---|---|
+| Data rows (+ header) | 1,000,000 + 1 | 1,000,000 + 1 | 1,000,000 + 1 |
+| Cells per row | 2 (ID/Value) | 4 (ID/Name/Date/Score) | 4 (ID/Name/Date/Score) |
+| XLSX bytes | 12,336,909 | 25,658,931 | 25,658,931 |
+| Write time | 6.05 s | 4.10 s (repeat 4.16 s) | 4.14 s |
+| Read time | 2.49 s | 2.36 s (repeat 2.35 s) | 2.40 s |
+| Max RSS (`/usr/bin/time -l`) | 11,370,496 B (~10.8 MiB) | 498,909,184 B (~476 MiB) | 1,195,474,944 B (~1.14 GiB) |
+| Peak memory footprint | 3,637,680 B | 388,090,496 B | 1,085,082,816 B |
+
+Throughput on this machine: Java stream write ~244 k rows/s (976 k cells/s)
+vs Rust ~165 k rows/s (330 k cells/s); Java read ~424 k rows/s (1.69 M
+cells/s) vs Rust ~401 k rows/s (803 k cells/s).
+
+Verdict: same order of magnitude — Java (cold JIT) writes ~1.5x faster than
+current Rust HEAD and reads about equal; per cell, Java is ~2-3x faster in
+both directions. The headline difference is memory: the JVM streaming run
+peaks at ~476 MiB RSS (POI SXSSF keeps the shared-strings table in memory
+plus JIT/GC infrastructure) and the one-shot run at ~1.14 GiB (the 1M-row
+list itself), versus ~10.8 MiB for Rust's constant-memory streaming — Rust
+uses ~44x less memory than the Java stream form and ~105x less than the Java
+one-shot form. For reference, the 2026-07-17 Rust baseline (write 2.93 s /
+read 0.65 s) beat Java on both axes; the current Rust regression is the
+measured cost of Java semantic parity documented above.
+
+Reproduce:
+
+```shell
+cd /Users/wandl/workspaces/workspace-github/easyexcel        # Java repo
+JAVA_HOME=/Users/wandl/Library/Java/JavaVirtualMachines/corretto-17.0.20/Contents/Home
+mvn -q install -pl easyexcel-core -am
+mvn -q test-compile -pl easyexcel-test -Dmaven.test.skip=false
+mvn -q dependency:build-classpath -pl easyexcel-test -Dmdep.outputFile=/tmp/eex-cp.txt
+/usr/bin/time -l java -Xmx4g \
+  -cp "easyexcel-test/target/test-classes:easyexcel-test/target/classes:$(cat /tmp/eex-cp.txt)" \
+  com.alibaba.easyexcel.test.benchmark.MillionRowBenchmark 1000000 /tmp/out.xlsx stream
+```
