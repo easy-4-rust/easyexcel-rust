@@ -1,6 +1,6 @@
 # easyexcel-rust
 
-[![Rust](https://img.shields.io/badge/rust-1.88+-blue.svg)](https://www.rust-lang.org)
+[![Rust](https://img.shields.io/badge/rust-1.94+-blue.svg)](https://www.rust-lang.org)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
 [![tests](https://img.shields.io/badge/tests-2771+-green.svg)](https://github.com/easy-4-rust/easyexcel-rust)
 
