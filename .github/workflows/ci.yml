@@ -14,10 +14,10 @@ jobs:
       LC_ALL: zh_CN.UTF-8
     steps:
       - uses: actions/checkout@v4
-      - name: Install zh_CN locale
+      - name: Install zh_CN locale and zlib dev
         run: |
           sudo apt-get update
-          sudo apt-get install -y locales
+          sudo apt-get install -y locales zlib1g-dev
           sudo locale-gen zh_CN.UTF-8
       - uses: dtolnay/rust-toolchain@master
         with:
