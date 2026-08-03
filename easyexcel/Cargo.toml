@@ -8,11 +8,11 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-easyexcel-core = { path = "../easyexcel-core" }
-easyexcel-macro = { path = "../easyexcel-macro" }
-easyexcel-reader = { path = "../easyexcel-reader" }
-easyexcel-template = { path = "../easyexcel-template" }
-easyexcel-writer = { path = "../easyexcel-writer" }
+easyexcel-core = { path = "../easyexcel-core", version = "0.1.0-alpha.1" }
+easyexcel-macro = { path = "../easyexcel-macro", version = "0.1.0-alpha.1" }
+easyexcel-reader = { path = "../easyexcel-reader", version = "0.1.0-alpha.1" }
+easyexcel-template = { path = "../easyexcel-template", version = "0.1.0-alpha.1" }
+easyexcel-writer = { path = "../easyexcel-writer", version = "0.1.0-alpha.1" }
 
 [dev-dependencies]
 bigdecimal.workspace = true
@@ -22,7 +22,7 @@ num-bigint.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tempfile.workspace = true
-easyexcel-macro = { path = "../easyexcel-macro" }
+easyexcel-macro = { path = "../easyexcel-macro", version = "0.1.0-alpha.1" }
 zip.workspace = true
 
 [lints]

@@ -17,7 +17,7 @@ quote.workspace = true
 syn.workspace = true
 
 [dev-dependencies]
-easyexcel-core = { path = "../easyexcel-core" }
+easyexcel-core = { path = "../easyexcel-core", version = "0.1.0-alpha.1" }
 
 [lints]
 workspace = true

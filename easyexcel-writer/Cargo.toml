@@ -12,7 +12,7 @@ bigdecimal.workspace = true
 calamine.workspace = true
 cfb.workspace = true
 chrono.workspace = true
-easyexcel-core = { path = "../easyexcel-core" }
+easyexcel-core = { path = "../easyexcel-core", version = "0.1.0-alpha.1" }
 csv.workspace = true
 encoding_rs.workspace = true
 flate2.workspace = true

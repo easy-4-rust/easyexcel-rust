@@ -1523,7 +1523,7 @@ checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 
 [[package]]
 name = "easyexcel"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "bigdecimal",
  "calamine",
@@ -1542,7 +1542,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-actix"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "actix-web",
  "bytes",
@@ -1557,7 +1557,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-axum"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "axum",
  "bytes",
@@ -1575,7 +1575,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-core"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "bigdecimal",
  "chrono",
@@ -1590,7 +1590,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-demo-actix"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "actix-multipart",
  "actix-web",
@@ -1607,7 +1607,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-demo-axum"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "axum",
  "chrono",
@@ -1623,7 +1623,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-demo-fill"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "easyexcel",
  "tempfile",
@@ -1631,7 +1631,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-demo-read"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "chrono",
  "easyexcel",
@@ -1640,7 +1640,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-demo-write"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "chrono",
  "easyexcel",
@@ -1649,7 +1649,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-hyper"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "bytes",
  "easyexcel",
@@ -1665,7 +1665,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-macro"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "easyexcel-core",
  "proc-macro-crate",
@@ -1676,7 +1676,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-poem"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "easyexcel",
  "easyexcel-core",
@@ -1690,7 +1690,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-reader"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "base64 0.23.0",
  "bigdecimal",
@@ -1713,7 +1713,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-rocket"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "easyexcel",
  "easyexcel-core",
@@ -1726,7 +1726,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-salvo"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "easyexcel",
  "easyexcel-core",
@@ -1738,7 +1738,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-template"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "base64 0.23.0",
  "bigdecimal",
@@ -1755,7 +1755,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-test"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "bigdecimal",
  "calamine",
@@ -1774,7 +1774,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-tide"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "easyexcel",
  "easyexcel-core",
@@ -1787,7 +1787,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-warp"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "bytes",
  "easyexcel",
@@ -1803,7 +1803,7 @@ dependencies = [
 
 [[package]]
 name = "easyexcel-writer"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "bigdecimal",
  "calamine",
@@ -5955,7 +5955,7 @@ checksum = "636f85e5ca6488e96401b61eb7de54f4e44755c988af0f52cf90230c312a1a89"
 
 [[package]]
 name = "xtask"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "tempfile",
 ]
