@@ -11,7 +11,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          # 固定与本地开发/验证一致的版本（brew cargo 1.93.1），避免最新 stable
+          # 的 rustfmt/clippy 规则漂移导致 CI 与本地不一致。高于 MSRV 1.88。
+          toolchain: 1.93.1
           components: clippy,llvm-tools-preview,rustfmt
       - uses: taiki-e/install-action@cargo-llvm-cov
       - uses: taiki-e/install-action@cargo-audit
