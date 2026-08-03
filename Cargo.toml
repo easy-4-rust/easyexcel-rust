@@ -25,11 +25,15 @@ members = [
 resolver = "3"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 edition = "2024"
 rust-version = "1.94"
 license = "Apache-2.0"
 repository = "https://github.com/easy-4-rust/easyexcel-rust"
+homepage = "https://github.com/easy-4-rust/easyexcel-rust"
+description = "Alibaba EasyExcel 4.0.3 的 Rust 迁移——高保真读写 XLSX/XLS/CSV，恒定内存流式"
+keywords = ["excel", "xlsx", "easyexcel", "spreadsheet", "csv"]
+categories = ["parser-implementations", "encoding"]
 
 [workspace.dependencies]
 easyexcel = { path = "easyexcel" }
