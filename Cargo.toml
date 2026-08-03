@@ -67,7 +67,7 @@ pure-rust-locales = "0.8.2"
 quick-xml = "0.41.0"
 quote = "1.0.47"
 rand = "0.9"
-rust_xlsxwriter = { version = "0.96.0", features = ["chrono", "constant_memory"] }
+rust_xlsxwriter = { version = "0.97.0", features = ["chrono", "constant_memory"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
 ssfmt = { version = "0.1.2", default-features = false }
