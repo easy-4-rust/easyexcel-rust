@@ -130,7 +130,7 @@ fn data_length(context: &WriteCellContext) -> Option<u16> {
 
 /// UTF-8 byte length capped to `u16`, approximating Java `String.getBytes().length`.
 fn byte_len(text: &str) -> Option<u16> {
-    u16::try_from(text.as_bytes().len()).ok()
+    u16::try_from(text.len()).ok()
 }
 
 #[cfg(test)]

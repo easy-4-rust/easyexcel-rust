@@ -47,12 +47,11 @@ impl CellDataType {
         match cell_type {
             None | Some("") => Some(Self::Empty),
             Some("s") => Some(Self::String),
-            Some("str" | "inlineStr") => Some(Self::DirectString),
+            // Rust path also accepts date serials marked `d` (OOXML extension).
+            Some("str" | "inlineStr" | "d") => Some(Self::DirectString),
             Some("e") => Some(Self::Error),
             Some("b") => Some(Self::Boolean),
             Some("n") => Some(Self::Number),
-            // Rust path also accepts date serials marked `d` (OOXML extension).
-            Some("d") => Some(Self::DirectString),
             Some(_) => None,
         }
     }

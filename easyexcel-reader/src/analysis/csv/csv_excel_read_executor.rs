@@ -85,8 +85,10 @@ mod tests {
         let mut file = NamedTempFile::with_suffix(".csv")?;
         writeln!(file, "value")?;
         writeln!(file, "csv-row")?;
-        let mut options = ReadOptions::default();
-        options.head_row_number = 1;
+        let options = ReadOptions {
+            head_row_number: 1,
+            ..ReadOptions::default()
+        };
         let mut executor = CsvExcelReadExecutor::from_path(file.path());
         let mut listener = CollectingListener::default();
 

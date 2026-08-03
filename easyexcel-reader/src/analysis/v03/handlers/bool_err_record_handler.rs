@@ -51,7 +51,7 @@ impl XlsRecordHandler for BoolErrRecordHandler {
         if is_error {
             return;
         }
-        let row = u16::from_le_bytes([data[0], data[1]]) as u32;
+        let row = u32::from(u16::from_le_bytes([data[0], data[1]]));
         let column = u16::from_le_bytes([data[2], data[3]]) as usize;
         let value = data[6] != 0;
         self.last_cell = Some(Self::process_bool(row, column, value));

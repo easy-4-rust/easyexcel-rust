@@ -67,12 +67,11 @@ where
 pub fn extension_from_path(path: &Path) -> &'static str {
     path.extension()
         .and_then(|value| value.to_str())
-        .map(|value| match value.to_ascii_lowercase().as_str() {
+        .map_or(".xlsx", |value| match value.to_ascii_lowercase().as_str() {
             "csv" => ".csv",
             "xls" => ".xls",
             _ => ".xlsx",
         })
-        .unwrap_or(".xlsx")
 }
 
 fn normalize_extension(extension: &str) -> String {

@@ -10,6 +10,11 @@ pub type WriteCellFont = WriteFont;
 /// Java's `merge` copies every non-`None` field from source to target.
 /// The Rust port performs the same union over the `Option` fields on
 /// [`WriteFont`].
+///
+/// # Panics
+///
+/// Never in practice; the `unwrap` on `get_font_name` is guarded by a
+/// preceding `is_some()` check.
 #[must_use]
 pub fn merge_write_font(source: &WriteFont, mut target: WriteFont) -> WriteFont {
     if source.get_font_name().is_some() {
@@ -140,10 +145,10 @@ mod tests {
 
     #[test]
     fn merge_write_font_with_color() {
-        let source = WriteFont::new().color(ExcelColor::Rgb(0xFF0000));
+        let source = WriteFont::new().color(ExcelColor::Rgb(0xFF_0000));
         let target = WriteFont::new();
         let merged = merge_write_font(&source, target);
-        assert_eq!(merged.get_color(), Some(ExcelColor::Rgb(0xFF0000)));
+        assert_eq!(merged.get_color(), Some(ExcelColor::Rgb(0xFF_0000)));
     }
 
     #[test]

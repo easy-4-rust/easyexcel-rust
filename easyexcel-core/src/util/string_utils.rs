@@ -56,7 +56,7 @@ pub fn region_matches(
         if !ignore_case {
             return false;
         }
-        if a.to_ascii_lowercase() != b.to_ascii_lowercase() {
+        if !a.eq_ignore_ascii_case(&b) {
             return false;
         }
     }

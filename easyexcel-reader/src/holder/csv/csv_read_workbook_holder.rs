@@ -10,6 +10,7 @@ pub struct CsvReadWorkbookHolder {
 
 impl CsvReadWorkbookHolder {
     /// 对应 Java： constructor.
+    #[must_use]
     pub fn new() -> Self {
         Self {
             inner: ReadWorkbookHolder::default(),
@@ -25,6 +26,7 @@ impl CsvReadWorkbookHolder {
     }
 
     /// Returns the inner holder.
+    #[must_use]
     pub const fn inner(&self) -> &ReadWorkbookHolder {
         &self.inner
     }
@@ -49,8 +51,10 @@ mod tests {
             "derive Default 初始为 false"
         );
 
-        let mut options = crate::ReadOptions::default();
-        options.ignore_empty_row = false;
+        let options = crate::ReadOptions {
+            ignore_empty_row: false,
+            ..crate::ReadOptions::default()
+        };
         let from_options = CsvReadWorkbookHolder::from_options(&options);
         assert!(!from_options.inner().ignore_empty_row);
         assert_eq!(from_options.inner().charset, options.charset);

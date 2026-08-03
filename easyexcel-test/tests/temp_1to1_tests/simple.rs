@@ -74,7 +74,7 @@ fn simple_write_simple_write_1() {
     assert_eq!(map.property_type("str22"), Some("Option < String >"));
 }
 
-/// Java `Write#simpleWrite` — `relativeHeadRowIndex(10)` + DemoData write.
+/// Java `Write#simpleWrite` — `relativeHeadRowIndex(10)` + `DemoData` write.
 #[test]
 fn simple_write_simple_write() {
     #[derive(Debug, Clone, ExcelRow)]
@@ -118,25 +118,12 @@ fn simple_write_simple_write() {
     );
 }
 
-/// Java `Write#simpleWrite2` — WriteData + SheetWriteHandler `protectSheet`.
+/// Java `Write#simpleWrite2` — `WriteData` + `SheetWriteHandler` `protectSheet`.
 ///
 /// Write path is portable; `protectSheet("edit")` needs a POI Sheet handle →
 /// typed [`ExcelError::Unsupported`] (no soft-skip).
 #[test]
 fn simple_write_simple_write_2() {
-    let gap = ExcelError::Unsupported(
-        "SheetWriteHandler.afterSheetCreate protectSheet — WriteSheetContext has no Sheet handle"
-            .to_owned(),
-    );
-    assert!(matches!(gap, ExcelError::Unsupported(_)));
-
-    #[derive(Debug, Clone, ExcelRow)]
-    struct WriteData {
-        #[excel(name = "dd")]
-        dd: NaiveDate,
-        #[excel(name = "f1")]
-        f1: f32,
-    }
     struct ProtectProbeHandler {
         hits: Arc<AtomicUsize>,
     }
@@ -147,6 +134,19 @@ fn simple_write_simple_write_2() {
             Ok(())
         }
     }
+    #[derive(Debug, Clone, ExcelRow)]
+    struct WriteData {
+        #[excel(name = "dd")]
+        dd: NaiveDate,
+        #[excel(name = "f1")]
+        f1: f32,
+    }
+    let gap = ExcelError::Unsupported(
+        "SheetWriteHandler.afterSheetCreate protectSheet — WriteSheetContext has no Sheet handle"
+            .to_owned(),
+    );
+    assert!(matches!(gap, ExcelError::Unsupported(_)));
+
     let hits = Arc::new(AtomicUsize::new(0));
     let path = helpers::temp_path("temp_simple_write2.xlsx");
     let data: Vec<WriteData> = (0..10)
@@ -167,25 +167,13 @@ fn simple_write_simple_write_2() {
     assert_eq!(rows.len(), 10);
 }
 
-/// Java `Write#simpleWrite3` — dynamic head + `inMemory(true)` + CellWriteHandler.
+/// Java `Write#simpleWrite3` — dynamic head + `inMemory(true)` + `CellWriteHandler`.
 ///
 /// Rust default XLSX write is already in-memory (non-`constant_memory`).
-/// POI `Cell.setCellStyle` / IndexedColors is expressed via `style_cell_style`;
+/// POI `Cell.setCellStyle` / `IndexedColors` is expressed via `style_cell_style`;
 /// raw POI Cell handle remains typed Unsupported.
 #[test]
 fn simple_write_simple_write_3() {
-    let gap = ExcelError::Unsupported(
-        "CellWriteHandler.afterCellDataConverted Cell.setCellStyle — no POI Cell handle".to_owned(),
-    );
-    assert!(matches!(gap, ExcelError::Unsupported(_)));
-
-    #[derive(Debug, Clone, ExcelRow)]
-    struct WriteData {
-        #[excel(name = "dd")]
-        dd: NaiveDate,
-        #[excel(name = "f1")]
-        f1: f32,
-    }
     struct WriteCellStyleHandler;
     impl WriteHandler for WriteCellStyleHandler {
         fn style_cell_style(
@@ -203,6 +191,18 @@ fn simple_write_simple_write_3() {
             Some(style)
         }
     }
+    #[derive(Debug, Clone, ExcelRow)]
+    struct WriteData {
+        #[excel(name = "dd")]
+        dd: NaiveDate,
+        #[excel(name = "f1")]
+        f1: f32,
+    }
+    let gap = ExcelError::Unsupported(
+        "CellWriteHandler.afterCellDataConverted Cell.setCellStyle — no POI Cell handle".to_owned(),
+    );
+    assert!(matches!(gap, ExcelError::Unsupported(_)));
+
     let path = helpers::temp_path("temp_simple_write3.xlsx");
     let data: Vec<WriteData> = (0..10)
         .map(|_| WriteData {
@@ -234,7 +234,7 @@ fn simple_write_simple_write_3() {
     );
 }
 
-/// Java `Write#json` — Fastjson2 serialize JsonData (SS1/sS2/ss3).
+/// Java `Write#json` — Fastjson2 serialize `JsonData` (SS1/sS2/ss3).
 #[test]
 fn simple_write_json() {
     #[derive(Debug, Serialize)]
@@ -256,7 +256,7 @@ fn simple_write_json() {
     assert!(s.contains("\"ss3\":\"33\""));
 }
 
-/// Java `Write#json3` — Fastjson2 parse then re-serialize JsonData.
+/// Java `Write#json3` — Fastjson2 parse then re-serialize `JsonData`.
 #[test]
 fn simple_write_json_3() {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -280,15 +280,9 @@ fn simple_write_json_3() {
 ///
 /// Public `ExcelWriter::write` has no three-arg `(sheet, table)` overload; the
 /// Java case writes one table once — portable equivalent is typed sheet write.
-/// Three-arg WriteTable API is typed Unsupported.
+/// Three-arg `WriteTable` API is typed Unsupported.
 #[test]
 fn simple_write_table_write() {
-    let gap = ExcelError::Unsupported(
-        "ExcelWriter.write(data, WriteSheet, WriteTable) — public facade has no WriteTable overload"
-            .to_owned(),
-    );
-    assert!(matches!(gap, ExcelError::Unsupported(_)));
-
     #[derive(Debug, Clone, ExcelRow)]
     struct DemoData1 {
         #[excel(name = "字符串标题")]
@@ -298,6 +292,12 @@ fn simple_write_table_write() {
         #[excel(name = "数字标题")]
         double_data: Option<f64>,
     }
+    let gap = ExcelError::Unsupported(
+        "ExcelWriter.write(data, WriteSheet, WriteTable) — public facade has no WriteTable overload"
+            .to_owned(),
+    );
+    assert!(matches!(gap, ExcelError::Unsupported(_)));
+
     let path = helpers::temp_path("temp_simple_table_write.xlsx");
     let data: Vec<DemoData1> = (0..10)
         .map(|i| DemoData1 {

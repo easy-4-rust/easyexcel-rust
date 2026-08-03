@@ -8,15 +8,9 @@ use easyexcel_core::AnalysisContext;
 pub struct DefaultAnalysisEventProcessor;
 
 impl AnalysisEventProcessor for DefaultAnalysisEventProcessor {
-    fn extra(&mut self, _analysis_context: &AnalysisContext) {
-        let _ = _analysis_context;
-    }
-    fn end_row(&mut self, _analysis_context: &AnalysisContext) {
-        let _ = _analysis_context;
-    }
-    fn end_sheet(&mut self, _analysis_context: &AnalysisContext) {
-        let _ = _analysis_context;
-    }
+    fn extra(&mut self, _: &AnalysisContext) {}
+    fn end_row(&mut self, _: &AnalysisContext) {}
+    fn end_sheet(&mut self, _: &AnalysisContext) {}
 }
 
 #[cfg(test)]

@@ -1,6 +1,6 @@
 //! 对应 Java：`com.alibaba.excel.read.builder.ExcelReaderSheetBuilder`.
 //!
-//! Java signature (10 methods + AbstractExcelReaderParameterBuilder
+//! Java signature (10 methods + `AbstractExcelReaderParameterBuilder`
 //! inherited methods):
 //! ```java
 //! public class ExcelReaderSheetBuilder
@@ -91,8 +91,11 @@ impl ExcelReaderSheetBuilder {
     /// Returns the finalised [`ReadSheet`] for use with the
     /// [`ExcelReader`]. (Java `public ReadSheet build()`)
     ///
-    /// Sheet_no defaults to 0 (matching Java's `new ReadSheet()`).
+    /// `Sheet_no` defaults to 0 (matching Java's `new ReadSheet()`).
     #[must_use]
+    // 对应 Java：`Math.max(sheetNo/headRowNumber, 0)` 保证非负后转 usize/u32，
+    // 符号位必然为 0 且值不超目标类型上限，`as` 转换不丢失符号或截断。
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     pub fn build(&self) -> ReadSheet {
         let mut sheet = match (self.sheet_no, &self.sheet_name) {
             (Some(no), Some(name)) => ReadSheet::with_name(no.max(0) as usize, name.clone()),
@@ -180,6 +183,10 @@ where
     ///
     /// This is the Rust equivalent of Java
     /// `ExcelReaderSheetBuilder.doRead()`.
+    ///
+    /// # Errors
+    ///
+    /// 当工作表解析失败时返回 [`ExcelError`]。
     pub fn do_read(self) -> Result<()> {
         let sheet = self.sheet_builder.build();
         self.excel_reader.read(&[sheet])?;
@@ -192,6 +199,10 @@ where
     /// The bound reader's existing listener runs first, followed by the
     /// synchronous collecting listener, matching Java listener registration
     /// order.
+    ///
+    /// # Errors
+    ///
+    /// 当工作表解析失败时返回 [`ExcelError`]。
     pub fn do_read_sync(self) -> Result<Vec<T>>
     where
         T: Clone,

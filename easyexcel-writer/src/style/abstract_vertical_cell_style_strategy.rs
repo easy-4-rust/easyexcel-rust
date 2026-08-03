@@ -133,6 +133,9 @@ mod tests {
     }
 
     #[test]
+    // 语义敏感：`head` / `content` / `context` 命名与 Java 侧 getter 一一对应，
+    // 保留原名便于对照，故豁免 similar_names。
+    #[allow(clippy::similar_names)]
     fn different_styles_for_head_and_content() {
         let head_style = ExcelCellStyle {
             horizontal_alignment: Some(ExcelHorizontalAlignment::Center),

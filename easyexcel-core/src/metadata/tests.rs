@@ -16,7 +16,7 @@ use crate::{
 
 #[test]
 fn null_object_is_zero_sized_marker() {
-    assert_eq!(NullObject::new(), NullObject::default());
+    assert_eq!(NullObject::new(), NullObject);
 }
 
 #[test]

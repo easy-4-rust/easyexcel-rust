@@ -15,6 +15,7 @@ pub struct ReadRowHolder {
 
 impl ReadRowHolder {
     /// 对应 Java： constructor.
+    #[must_use]
     pub fn new(row_index: i32, cell_map: HashMap<usize, CellValue>) -> Self {
         Self {
             row_index,

@@ -1,4 +1,4 @@
-//! End-to-end parity tests for distinct Java Date and LocalDateTime converter keys.
+//! End-to-end parity tests for distinct Java Date and `LocalDateTime` converter keys.
 
 use chrono::{NaiveDate, NaiveDateTime};
 use easyexcel::{EasyExcel, ExcelRow, JavaDate, Result};

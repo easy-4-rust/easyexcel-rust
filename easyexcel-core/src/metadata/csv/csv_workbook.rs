@@ -85,6 +85,11 @@ impl CsvWorkbook {
     }
 
     /// Creates and registers a cell style.
+    ///
+    /// # Panics
+    ///
+    /// Never in practice; `last_mut` is only reached after the style was
+    /// pushed onto the list.
     pub fn create_cell_style(&mut self) -> &mut CsvCellStyle {
         let index = i16::try_from(self.cell_styles.len()).unwrap_or(i16::MAX);
         self.cell_styles.push(CsvCellStyle::new(index));

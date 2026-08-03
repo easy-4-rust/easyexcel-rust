@@ -55,6 +55,10 @@ impl CellTagHandler {
     /// Java `CellTagHandler.startElement(XlsxReadContext, String, Attributes)`.
     ///
     /// Parses `r` / `t` / `s` and resets `temp_data`.
+    ///
+    /// # Errors
+    ///
+    /// 当 `r` 引用无法解析或 `t` 类型不受支持时返回 [`ExcelError::Format`]。
     pub fn start_cell(
         &mut self,
         attrs: &HashMap<String, String>,
@@ -64,7 +68,7 @@ impl CellTagHandler {
         let parsed = Self::parse_start(attrs, fallback_row, fallback_column)?;
         self.column_index = Some(parsed.position.1);
         self.style_index = parsed.style_index;
-        self.cell_type = parsed.cell_type.clone();
+        self.cell_type.clone_from(&parsed.cell_type);
         self.data_type = parsed.data_type;
         self.temp_data.clear();
         Ok(parsed)
@@ -73,6 +77,10 @@ impl CellTagHandler {
     /// Pure attribute parse shared with `xlsx_rows::next_cell` (no self mutation required).
     ///
     /// Corresponds to the attribute-reading portion of Java `startElement`.
+    ///
+    /// # Errors
+    ///
+    /// 当 `r` 引用无法解析或 `t` 类型不受支持时返回 [`ExcelError::Format`]。
     pub fn parse_start(
         attrs: &HashMap<String, String>,
         fallback_row: u32,

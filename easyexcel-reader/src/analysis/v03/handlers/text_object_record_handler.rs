@@ -36,14 +36,14 @@ impl TextObjectRecordHandler {
 pub const TEXT_OBJECT_SID: u16 = 0x01B6;
 
 impl XlsRecordHandler for TextObjectRecordHandler {
-    /// Java `TextObjectRecordHandler.processRecord` — parses TxO (0x01B6)
+    /// Java `TextObjectRecordHandler.processRecord` — parses `TxO` (0x01B6)
     /// to extract shapeId + linked Continue record text.
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
         if record_sid != TEXT_OBJECT_SID && record_sid != CONTINUE_SID {
             return;
         }
         if record_sid == TEXT_OBJECT_SID && data.len() >= 4 {
-            let object_id = u16::from_le_bytes([data[2], data[3]]) as u32;
+            let object_id = u32::from(u16::from_le_bytes([data[2], data[3]]));
             // Extract text from TxO record data starting at byte 10
             // (after grbit[2] + shapeId[2] + reserved[8] = 12 bytes min)
             if data.len() > 12 {
@@ -107,7 +107,7 @@ mod tests_extra {
         assert_eq!(handler.get(5), Some("comment"));
 
         // CONTINUE 追加到已有 TxO 文本
-        handler.process_record(CONTINUE_SID, &[b'!', b' ', b'm', b'o', b'r', b'e']);
+        handler.process_record(CONTINUE_SID, b"! more");
         assert_eq!(handler.get(5), Some("comment! more"));
 
         // 无文本的 TxO → 占位符 TxO_{id}
@@ -142,7 +142,7 @@ mod tests_extra2 {
     fn continue_with_empty_cache_is_ignored() {
         // 对应 Java：无 TxO 缓存时 CONTINUE 文本不落任何对象
         let mut handler = TextObjectRecordHandler::new();
-        handler.process_record(CONTINUE_SID, &[b'a', b'b']);
+        handler.process_record(CONTINUE_SID, b"ab");
         assert!(handler.object_cache.is_empty());
     }
 }

@@ -16,6 +16,7 @@ impl CsvReadSheetHolder {
         }
     }
     /// Returns the inner holder.
+    #[must_use]
     pub const fn inner(&self) -> &ReadSheetHolder {
         &self.inner
     }

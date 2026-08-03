@@ -312,6 +312,8 @@ where
         })
 }
 
+// 泛型行对象按值传入是宏生成的调用惯例，改引用会改变泛型约束
+#[allow(clippy::needless_pass_by_value)]
 fn prepare_write_row<T>(
     row: T,
     converters: &ConverterRegistry,
@@ -517,6 +519,8 @@ pub(crate) fn append_csv_records(
     })
 }
 
+// 参数与 Java 对应写入路径参数一一对应，拆分结构体会破坏 1:1 可追溯性
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn append_csv_rows<T, I>(
     writer: &mut csv::Writer<CsvEncodingWriter>,
     options: &WriteOptions,
@@ -604,6 +608,8 @@ pub(crate) fn validate_csv_options(options: &WriteOptions) -> Result<()> {
     Ok(())
 }
 
+// 保留 Result 签名以统一调用点 `?` 传播；当前恒返回 Ok(())
+#[allow(clippy::unnecessary_wraps)]
 pub(crate) fn validate_xls_options(_options: &WriteOptions) -> Result<()> {
     // XLS password is now supported via BIFF8 RC4 (Phase 5.3)
     Ok(())
@@ -716,6 +722,8 @@ pub(crate) fn csv_header_record(
         .into_record(width))
 }
 
+// 参数与 Java 对应写入路径参数一一对应，拆分结构体会破坏 1:1 可追溯性
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn csv_data_record(
     csv_sheet: &mut CsvSheet,
     row_index: u32,
@@ -810,7 +818,7 @@ where
         ));
     }
     let mut write_options = options.clone();
-    write_options.sheet_name = target_name.clone();
+    write_options.sheet_name.clone_from(&target_name);
     let start_row = package.next_row_for_sheet(&target_name)?;
     for range in automatic_dynamic_head_merge_ranges::<T>(&write_options, start_row, true)? {
         package.add_merge_range(&target_name, merge_range_to_biff8(range)?)?;
@@ -870,7 +878,7 @@ where
 {
     let sheet_name = effective_sheet_name(options);
     let mut write_options = options.clone();
-    write_options.sheet_name = sheet_name.clone();
+    write_options.sheet_name.clone_from(&sheet_name);
     book.use_1904_windowing = write_options.use_1904_windowing;
     create_sheet(book, &sheet_name)?;
     let sheet_context = WriteSheetContext::new(&sheet_name);
@@ -895,6 +903,8 @@ where
     Ok(progress)
 }
 
+// 参数与 Java 写入路径一一对应且函数体覆盖完整 BIFF8 追加流程，拆分破坏可追溯性
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 pub(crate) fn append_rows_to_biff8_sheet<T, I>(
     book: &mut Biff8Book,
     sheet_name: &str,
@@ -948,8 +958,8 @@ where
                 sheet.set_row_height(row, height);
             }
         }
-        if options.automatic_merge_head {
-            if let Some(head) = &options.dynamic_head {
+        if options.automatic_merge_head
+            && let Some(head) = &options.dynamic_head {
                 let head = selected_dynamic_head_paths(&columns, head)?;
                 merge_biff8_dynamic_head_groups(
                     book.sheet_mut(sheet_name),
@@ -958,7 +968,6 @@ where
                     row_index,
                 )?;
             }
-        }
         row_index = row_index
             .checked_add(head_rows)
             .ok_or_else(|| ExcelError::Format("BIFF8 row overflow".to_owned()))?;
@@ -1058,6 +1067,8 @@ where
     })
 }
 
+// 参数与 Java 对应写入路径参数一一对应，拆分结构体会破坏 1:1 可追溯性
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn write_biff8_headers(
     book: &mut Biff8Book,
     sheet_name: &str,
@@ -1136,6 +1147,10 @@ pub(crate) fn write_biff8_headers(
     Ok(())
 }
 
+// 参数与 Java BIFF8 单元格写入签名一一对应；label/format_ctx 按值传入是调用点惯例
+#[allow(clippy::too_many_arguments, clippy::needless_pass_by_value)]
+// CellFormatContext 是 Java 写入上下文 1:1 映射的聚合值类型，borrow 化会牵动整条调用链。
+#[allow(clippy::large_types_passed_by_value)]
 pub(crate) fn write_biff8_styled_text_cell(
     book: &mut Biff8Book,
     sheet_name: &str,
@@ -1227,7 +1242,7 @@ pub(crate) fn cell_value_to_biff8(
         CellValue::Images { value, images } => {
             // Write the base value; image bytes are persisted via
             // write_raw_bytes on the Biff8Book (called by caller).
-            for img in images.iter() {
+            for img in images {
                 let _ = img.image();
             }
             cell_value_to_biff8(value, global)
@@ -1243,6 +1258,8 @@ pub(crate) fn cell_value_to_biff8(
     }
 }
 
+// 按值传入与调用点构造惯例一致，改引用会增加不必要的借用链
+#[allow(clippy::large_types_passed_by_value)]
 pub(crate) fn cell_value_to_biff8_styled(
     value: &CellValue,
     styles: &mut Biff8StyleTable,
@@ -1254,6 +1271,8 @@ pub(crate) fn cell_value_to_biff8_styled(
     Ok(cell.with_xf(xf))
 }
 
+// 按值传入与调用点构造惯例一致，改引用会增加不必要的借用链
+#[allow(clippy::large_types_passed_by_value)]
 pub(crate) fn biff8_style_request(
     styles: &mut Biff8StyleTable,
     context: CellFormatContext<'_>,
@@ -1795,7 +1814,7 @@ where
     }
 
     let mut write_options = options.clone();
-    write_options.sheet_name = target_name.clone();
+    write_options.sheet_name.clone_from(&target_name);
     apply_template_holder_layout::<T>(&mut package, &target_name, &write_options, handlers, &[])?;
     let start_row = package.next_row_for_sheet(&target_name)?.saturating_sub(1);
     let head_merges = automatic_dynamic_head_merge_ranges::<T>(&write_options, start_row, true)?;
@@ -2017,6 +2036,8 @@ where
 /// Compiles annotation, explicit and strategy styles with `rust_xlsxwriter`,
 /// imports their OOXML records into the preserved template, and returns a
 /// style-index matrix aligned with `rows`.
+// 参数与 Java 样式编译流程一一对应，函数体覆盖完整样式矩阵编译，拆分会割裂上下文
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 pub(crate) fn template_append_cell_styles<T>(
     package: &mut crate::template_write::TemplatePackage,
     options: &WriteOptions,
@@ -2215,8 +2236,8 @@ where
             .write_blank(row, 0, format)
             .map_err(format_error)?;
     }
-    let compiled = compiler.save_to_buffer().map_err(format_error)?;
-    let mapped = package.import_compiled_styles(&compiled, formats.len())?;
+    let bytes = compiler.save_to_buffer().map_err(format_error)?;
+    let mapped = package.import_compiled_styles(&bytes, formats.len())?;
     Ok(local_styles
         .into_iter()
         .map(|row| {
@@ -2228,6 +2249,8 @@ where
 }
 
 /// Builds sparse `(physical_column, value)` rows for ZIP `sheetData` append.
+// 四元组返回值与 Java 追加行的多路数据一一对应，提取别名反而割裂阅读
+#[allow(clippy::type_complexity)]
 pub(crate) fn collect_template_append_rows<T, I>(
     options: &WriteOptions,
     rows: I,
@@ -2406,7 +2429,7 @@ where
     crate::template_write::seed_workbook_from_template(workbook, &sheets)?;
 
     let mut write_options = options.clone();
-    write_options.sheet_name = target_name.clone();
+    write_options.sheet_name.clone_from(&target_name);
 
     if create_new {
         // Java creates a new sheet when the requested name/index is absent.
@@ -2415,8 +2438,7 @@ where
 
     let start_row = sheets
         .get(target_index)
-        .map(|sheet| sheet.next_row)
-        .unwrap_or(0);
+        .map_or(0, |sheet| sheet.next_row);
     let worksheet = workbook
         .worksheet_from_name(&target_name)
         .map_err(format_error)?;
@@ -2740,11 +2762,9 @@ where
     let mut merges = Vec::new();
     if let Some(merge) = T::write_metadata().once_absolute_merge
         && !excluded_merges.contains(&merge)
-    {
-        if let Some(range) = absolute_merge_range(merge) {
+        && let Some(range) = absolute_merge_range(merge) {
             merges.push(range);
         }
-    }
     for handler in handlers {
         if let Some(merge) = handler.style_once_absolute_merge()
             && !excluded_merges.contains(&merge)
@@ -3339,6 +3359,8 @@ fn write_headers(
     )
 }
 
+// 参数与 Java 对应写入路径参数一一对应，拆分结构体会破坏 1:1 可追溯性
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn write_headers_with_handlers(
     worksheet: &mut Worksheet,
     columns: &[(usize, usize, &'static ExcelColumn)],
@@ -3366,6 +3388,8 @@ pub(crate) fn write_headers_with_handlers(
     )
 }
 
+// 参数与 Java 对应写入路径参数一一对应，拆分结构体会破坏 1:1 可追溯性
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn write_dynamic_headers_with_handlers(
     worksheet: &mut Worksheet,
     columns: &[(usize, usize, &'static ExcelColumn)],
@@ -3605,7 +3629,10 @@ pub(crate) fn write_data_row_with_handlers(
     Ok(())
 }
 
-#[allow(clippy::too_many_lines)]
+// CellFormatContext 是 Java 写入上下文 1:1 映射的聚合值类型，borrow 化会牵动
+// 整条调用链；函数体端到端覆盖单元格写入流程，故豁免 too_many_lines /
+// large_types_passed_by_value。
+#[allow(clippy::too_many_lines, clippy::large_types_passed_by_value)]
 fn write_cell(
     worksheet: &mut Worksheet,
     row_index: u32,
@@ -4019,6 +4046,8 @@ fn resolve_anchor_coordinate(
         .ok_or_else(|| ExcelError::Format(format!("image anchor {label} is outside the worksheet")))
 }
 
+// 按值传入与调用点构造惯例一致，改引用会增加不必要的借用链
+#[allow(clippy::large_types_passed_by_value)]
 fn cell_format(context: CellFormatContext<'_>) -> Format {
     let mut format = Format::new();
     // Annotation style merged with handler strategy style
@@ -4049,11 +4078,10 @@ fn cell_format(context: CellFormatContext<'_>) -> Format {
         }
         format = apply_annotation_cell_style(format, style);
     }
-    if !merged_has_data_format {
-        if let Some(number_format) = context.converted_data_format {
+    if !merged_has_data_format
+        && let Some(number_format) = context.converted_data_format {
             format = format.set_num_format(number_format);
         }
-    }
     if let Some(font) = font {
         format = apply_annotation_font_style(format, font);
     }
@@ -4788,28 +4816,28 @@ mod tests_extra {
         fn schema() -> &'static [ExcelColumn] {
             const HEAD_STYLE: ExcelCellStyle = ExcelCellStyle {
                 font: Some(ExcelFontStyle {
-                    color: Some(ExcelColor::Rgb(0x112233)),
+                    color: Some(ExcelColor::Rgb(0x11_2233)),
                     font_height_in_points: Some(12.0),
                     ..ExcelFontStyle::new()
                 }),
                 fill_pattern: Some(ExcelFillPattern::Solid),
-                fill_foreground_color: Some(ExcelColor::Rgb(0x010203)),
-                fill_background_color: Some(ExcelColor::Rgb(0x040506)),
+                fill_foreground_color: Some(ExcelColor::Rgb(0x01_0203)),
+                fill_background_color: Some(ExcelColor::Rgb(0x04_0506)),
                 ..ExcelCellStyle::new()
             };
             const HEAD_FONT: ExcelFontStyle = ExcelFontStyle {
-                color: Some(ExcelColor::Rgb(0x778899)),
+                color: Some(ExcelColor::Rgb(0x77_8899)),
                 font_height_in_points: Some(11.0),
                 ..ExcelFontStyle::new()
             };
             const CONTENT_STYLE: ExcelCellStyle = ExcelCellStyle {
                 font: Some(ExcelFontStyle {
-                    color: Some(ExcelColor::Rgb(0xDDEEFF)),
+                    color: Some(ExcelColor::Rgb(0xDD_EEFF)),
                     font_height_in_points: Some(10.0),
                     ..ExcelFontStyle::new()
                 }),
                 fill_pattern: Some(ExcelFillPattern::Solid),
-                fill_foreground_color: Some(ExcelColor::Rgb(0x0A0B0C)),
+                fill_foreground_color: Some(ExcelColor::Rgb(0x0A_0B0C)),
                 ..ExcelCellStyle::new()
             };
             const COLUMNS: &[ExcelColumn] = &[
@@ -4824,7 +4852,7 @@ mod tests_extra {
 
         fn write_metadata() -> &'static ExcelWriteMetadata {
             const HEAD_FONT: ExcelFontStyle = ExcelFontStyle {
-                color: Some(ExcelColor::Rgb(0x778899)),
+                color: Some(ExcelColor::Rgb(0x77_8899)),
                 font_height_in_points: Some(11.0),
                 ..ExcelFontStyle::new()
             };
@@ -5051,7 +5079,7 @@ mod tests_extra {
         writer.write([dyn_row(&[(0, "fresh")])], &WriteSheet::new("NewSheet"))?;
         writer.finish()?;
         let mut workbook = open_xlsx(&path)?;
-        let names = workbook.sheet_names().to_owned();
+        let names = workbook.sheet_names();
         assert!(names.contains(&"NewSheet".to_owned()));
         let range = workbook.worksheet_range("NewSheet").map_err(format_error)?;
         assert_eq!(
@@ -5075,9 +5103,9 @@ mod tests_extra {
         assert!(
             lines
                 .iter()
-                .any(|line| line.contains("a") && line.contains("b"))
+                .any(|line| line.contains('a') && line.contains('b'))
         );
-        assert!(lines.iter().any(|line| line.contains("c")));
+        assert!(lines.iter().any(|line| line.contains('c')));
         Ok(())
     }
 
@@ -5357,8 +5385,8 @@ mod tests_extra {
             content_styles: vec![CellStyle {
                 bold: true,
                 italic: true,
-                font_color: Some(0xFF0000),
-                background_color: Some(0x00FF00),
+                font_color: Some(0xFF_0000),
+                background_color: Some(0x00_FF00),
                 horizontal_alignment: Some(HorizontalAlignment::Center),
                 vertical_alignment: Some(VerticalAlignment::Center),
                 wrap_text: true,
@@ -5902,8 +5930,8 @@ mod tests_extra {
             sheet_name: "Sheet1".to_owned(),
             content_styles: vec![CellStyle {
                 bold: true,
-                font_color: Some(0x00FF00),
-                background_color: Some(0x0000FF),
+                font_color: Some(0x00_FF00),
+                background_color: Some(0x00_00FF),
                 ..CellStyle::new()
             }],
             ..WriteOptions::default()
@@ -5983,7 +6011,7 @@ mod tests_extra {
             &options,
             [dyn_row(&[(0, "fresh")])],
         )?;
-        let mut workbook = open_xlsx(&path)?;
+        let workbook = open_xlsx(&path)?;
         assert!(workbook.sheet_names().contains(&"NewSheet".to_owned()));
         Ok(())
     }
@@ -6219,7 +6247,7 @@ mod tests_extra {
     }
 
     #[test]
-    fn biff8_create_row_overflow_errors() -> Result<()> {
+    fn biff8_create_row_overflow_errors() {
         let mut book = Biff8Book::default();
         let mut creator = Biff8RowCreator {
             sheet: book.sheet_mut("Sheet1"),
@@ -6228,7 +6256,7 @@ mod tests_extra {
         assert!(matches!(result, Err(ExcelError::Format(_))));
         let result = create_row(&mut creator, 65_535);
         assert!(result.is_ok());
-        Ok(())
+
     }
 
     #[test]
@@ -6344,8 +6372,8 @@ mod tests_extra {
         )?;
         writer.finish()?;
         let content = std::fs::read_to_string(&path)?;
-        assert!(content.contains("a"));
-        assert!(content.contains("c"));
+        assert!(content.contains('a'));
+        assert!(content.contains('c'));
         Ok(())
     }
 
@@ -6447,12 +6475,11 @@ mod tests_extra {
                 number_format: Some("0.00".to_owned()),
                 bold: true,
                 italic: true,
-                font_color: Some(0x00FF00),
-                background_color: Some(0xFF0000),
+                font_color: Some(0x00_FF00),
+                background_color: Some(0xFF_0000),
                 horizontal_alignment: Some(HorizontalAlignment::Right),
                 vertical_alignment: Some(VerticalAlignment::Top),
-                wrap_text: true,
-                ..CellStyle::new()
+                wrap_text: true
             }],
             ..WriteOptions::default()
         });
@@ -6537,7 +6564,7 @@ mod tests_extra {
             &absent_options,
             [dyn_row(&[(0, "fresh")])],
         )?;
-        let mut workbook = open_xlsx(&absent_path)?;
+        let workbook = open_xlsx(&absent_path)?;
         assert!(workbook.sheet_names().contains(&"BrandNew".to_owned()));
         Ok(())
     }
@@ -6671,7 +6698,7 @@ mod tests_extra {
     }
 
     #[test]
-    fn row_type_from_row_constructors_are_invokable() -> Result<()> {
+    fn row_type_from_row_constructors_are_invokable() {
         let row_data = easyexcel_core::RowData::new(
             "Sheet1",
             0,
@@ -6689,7 +6716,7 @@ mod tests_extra {
                 .to_row()
                 .is_ok()
         );
-        Ok(())
+
     }
 
     #[test]
@@ -6746,7 +6773,7 @@ mod tests_extra {
     fn xlsx_template_existing_sheet_uses_else_target_name() -> Result<()> {
         let directory = tempdir()?;
         let path = directory.path().join("tpl-existing.xlsx");
-        let options = WriteOptions {
+        let _options = WriteOptions {
             sheet_name: "Sheet1".to_owned(),
             template_bytes: Some(xlsx_template_bytes("Sheet1")),
             ..WriteOptions::default()
@@ -6776,7 +6803,7 @@ mod tests_extra {
     fn template_head_style_none_column_matches_head_fallback() -> Result<()> {
         let directory = tempdir()?;
         let path = directory.path().join("tpl-dyn-head.xlsx");
-        let options = WriteOptions {
+        let _options = WriteOptions {
             sheet_name: "Sheet1".to_owned(),
             template_bytes: Some(xlsx_template_bytes("Sheet1")),
             ..WriteOptions::default()
@@ -6827,7 +6854,7 @@ mod tests_extra {
     fn xlsx_template_existing_sheet_name_uses_else_target() -> Result<()> {
         let directory = tempdir()?;
         let path = directory.path().join("tpl-else-target.xlsx");
-        let options = WriteOptions {
+        let _options = WriteOptions {
             sheet_name: "Sheet1".to_owned(),
             template_bytes: Some(xlsx_template_bytes("Sheet1")),
             ..WriteOptions::default()
@@ -6850,7 +6877,7 @@ mod tests_extra {
         sheet.write_string(0, 1, "B").expect("head b");
         sheet.write_string(0, 2, "C").expect("head c");
         let template = workbook.save_to_buffer().expect("template");
-        let options = WriteOptions {
+        let _options = WriteOptions {
             sheet_name: "Sheet1".to_owned(),
             template_bytes: Some(template),
             ..WriteOptions::default()
@@ -6970,7 +6997,7 @@ mod tests_extra2 {
 
     const MINIMAL_CONTENT_TYPES_XML: &[u8] = br#"<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/></Types>"#;
 
-    /// 失败阶段可配置的处理器（对应 Java 测试里的 FailingHandler 模式）。
+    /// 失败阶段可配置的处理器（对应 Java 测试里的 `FailingHandler` 模式）。
     #[derive(Clone, Copy, PartialEq, Eq)]
     enum FailStage {
         BeforeWorkbookCreate,
@@ -7045,7 +7072,7 @@ mod tests_extra2 {
         }
     }
 
-    /// to_row 返回错误的行（对应 Java `ConvertAllFiled` 抛异常场景）。
+    /// `to_row` 返回错误的行（对应 Java `ConvertAllFiled` 抛异常场景）。
     struct FailingRow2;
 
     impl ExcelRow for FailingRow2 {
@@ -7114,7 +7141,7 @@ mod tests_extra2 {
         }
     }
 
-    /// 注解 loop_merge 非法（eachRow=1 / columnExtend=1）的行。
+    /// 注解 `loop_merge` 非法（eachRow=1 / columnExtend=1）的行。
     struct LoopMergeBadRow {
         cells: Vec<CellValue>,
     }
@@ -7297,14 +7324,14 @@ mod tests_extra2 {
 
         let xlsx_path = directory.path().join("table.xlsx");
         let mut xlsx_writer = ExcelWriter::new(&xlsx_path);
-        let xlsx_result = xlsx_writer.write_with_table_handlers(
+        let xlsx_outcome = xlsx_writer.write_with_table_handlers(
             [FailingRow2],
             &WriteSheet::<FailingRow2>::new("Sheet1"),
             &table,
             Vec::new(),
             Vec::new(),
         );
-        assert!(matches!(xlsx_result, Err(ExcelError::Data { .. })));
+        assert!(matches!(xlsx_outcome, Err(ExcelError::Data { .. })));
         Ok(())
     }
 
@@ -7639,8 +7666,10 @@ mod tests_extra2 {
     fn public_xls_dynamic_head_cell_handler_error_propagates() -> Result<()> {
         let directory = tempdir()?;
         let path = directory.path().join("head-dyn-err.xls");
-        let mut options = WriteOptions::default();
-        options.dynamic_head = Some(vec![vec!["Level".to_owned()], vec!["Field".to_owned()]]);
+        let options = WriteOptions {
+            dynamic_head: Some(vec![vec!["Level".to_owned()], vec!["Field".to_owned()]]),
+            ..WriteOptions::default()
+        };
         let mut handlers: Vec<Box<dyn WriteHandler>> =
             vec![Box::new(StageFailingHandler(FailStage::HeadCell))];
         let result = crate::write_xls::write_xls_with_handlers::<DynamicRow, _>(
@@ -7658,8 +7687,11 @@ mod tests_extra2 {
         // 对应 Java：BIFF8 合并列号超过 255 → 报错。
         let directory = tempdir()?;
         let path = directory.path().join("loop-overflow.xls");
-        let mut options = WriteOptions::default();
-        options.loop_merges = vec![MirroredLoopMergeStrategy::new(2, 1, 300)?];
+        let loop_merges = vec![MirroredLoopMergeStrategy::new(2, 1, 300)?];
+        let options = WriteOptions {
+            loop_merges,
+            ..WriteOptions::default()
+        };
         let result = crate::write_xls::write_xls::<DynamicRow, _>(
             &path,
             &options,
@@ -7849,8 +7881,10 @@ mod tests_extra2 {
     fn public_xlsx_dynamic_head_handler_error_propagates() -> Result<()> {
         let directory = tempdir()?;
         let path = directory.path().join("head-dyn.xlsx");
-        let mut options = WriteOptions::default();
-        options.dynamic_head = Some(vec![vec!["Level".to_owned()], vec!["Field".to_owned()]]);
+        let options = WriteOptions {
+            dynamic_head: Some(vec![vec!["Level".to_owned()], vec!["Field".to_owned()]]),
+            ..WriteOptions::default()
+        };
         let mut handlers: Vec<Box<dyn WriteHandler>> =
             vec![Box::new(StageFailingHandler(FailStage::HeadCell))];
         let result = crate::xlsx_write::write_xlsx_with_handlers::<DynamicRow, _>(
@@ -7971,12 +8005,12 @@ mod tests_extra3 {
     use easyexcel_core::{DynamicRow, DynamicValue};
     use tempfile::tempdir;
 
-    /// 空实现 handler（对应 Java 无副作用的 WriteHandler）。
+    /// 空实现 handler（对应 Java 无副作用的 `WriteHandler`）。
     struct NoopHandler3;
 
     impl WriteHandler for NoopHandler3 {}
 
-    /// 失败阶段可配置的 handler（对应 Java 测试里的 FailingHandler 模式）。
+    /// 失败阶段可配置的 handler（对应 Java 测试里的 `FailingHandler` 模式）。
     #[derive(Clone, Copy, PartialEq, Eq)]
     enum FailStage3 {
         BeforeWorkbookCreate,
@@ -8022,7 +8056,7 @@ mod tests_extra3 {
         }
     }
 
-    /// 具有重复 unique_value 的 handler（对应 Java `NotRepeatExecutor` 去重）。
+    /// 具有重复 `unique_value` 的 handler（对应 Java `NotRepeatExecutor` 去重）。
     struct UniqueHandler3(&'static str);
 
     impl easyexcel_core::event::NotRepeatExecutor for UniqueHandler3 {
@@ -8037,7 +8071,7 @@ mod tests_extra3 {
         }
     }
 
-    /// to_row 返回错误的行（对应 Java `toRow` 抛异常）。
+    /// `to_row` 返回错误的行（对应 Java `toRow` 抛异常）。
     struct FailingRow3;
     impl ExcelRow for FailingRow3 {
         fn schema() -> &'static [ExcelColumn] {
@@ -8297,7 +8331,7 @@ mod tests_extra3 {
     // ========================================================================
 
     #[test]
-    fn write_sheet_onto_template_rejects_csv_template_bytes() -> Result<()> {
+    fn write_sheet_onto_template_rejects_csv_template_bytes() {
         // 对应 Java：`validateTemplateSource` 拒绝 CSV 模板。
         let mut workbook = Workbook::new();
         let options = WriteOptions {
@@ -8311,7 +8345,7 @@ mod tests_extra3 {
             &mut [],
         );
         assert!(matches!(result, Err(ExcelError::Unsupported(_))));
-        Ok(())
+
     }
 
     #[test]
@@ -8416,7 +8450,7 @@ mod tests_extra3 {
     }
 
     #[test]
-    fn xls_to_writer_template_failing_row() -> Result<()> {
+    fn xls_to_writer_template_failing_row() {
         let mut output = Vec::new();
         let options = WriteOptions {
             sheet_name: "Sheet1".to_owned(),
@@ -8431,7 +8465,7 @@ mod tests_extra3 {
             &mut [],
         );
         assert!(matches!(result, Err(ExcelError::Data { .. })));
-        Ok(())
+
     }
 
     #[test]
@@ -8889,7 +8923,7 @@ mod tests_extra3 {
     }
 
     #[test]
-    fn xlsx_template_password_failing_row() -> Result<()> {
+    fn xlsx_template_password_failing_row() {
         let mut output = Vec::new();
         let options = WriteOptions {
             template_bytes: Some(xlsx_template_bytes("Sheet1")),
@@ -8904,7 +8938,7 @@ mod tests_extra3 {
             &mut [],
         );
         assert!(matches!(result, Err(ExcelError::Data { .. })));
-        Ok(())
+
     }
 
     #[test]
@@ -8945,7 +8979,7 @@ mod tests_extra3 {
     }
 
     #[test]
-    fn xlsx_legacy_seed_writer_failing_row() -> Result<()> {
+    fn xlsx_legacy_seed_writer_failing_row() {
         let mut output = Vec::new();
         let options = WriteOptions {
             template_bytes: Some(xlsx_template_bytes("Sheet1")),
@@ -8960,7 +8994,7 @@ mod tests_extra3 {
             &mut [],
         );
         assert!(matches!(result, Err(ExcelError::Data { .. })));
-        Ok(())
+
     }
 
     // ========================================================================
@@ -9069,11 +9103,11 @@ mod tests_extra3 {
     }
 
     #[test]
-    fn stage_failing_handler3_non_matching_stage_passes_cells() -> Result<()> {
+    fn stage_failing_handler3_non_matching_stage_passes_cells() {
         // 对应 Java：失败阶段不匹配时 beforeCellCreate 放行（Ok 分支）。
         let mut context = WriteCellContext::new("Sheet1", 0, 0, CellValue::String("v".to_owned()));
         let mut handler = StageFailingHandler3(FailStage3::AfterSheetCreate);
         assert!(handler.before_cell_create(&mut context).is_ok());
-        Ok(())
+
     }
 }

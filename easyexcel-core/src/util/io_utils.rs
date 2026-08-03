@@ -10,6 +10,10 @@ use crate::excel_error::ExcelError;
 ///
 /// Copies all bytes from `reader` into `writer` using a 4 KiB stack
 /// buffer (Java uses a 4 KiB byte array).
+///
+/// # Errors
+///
+/// 当读取或写入失败时返回 [`ExcelError::Io`]。
 pub fn copy(reader: &mut dyn Read, writer: &mut dyn Write) -> Result<u64, ExcelError> {
     let n = io::copy(reader, writer)?;
     Ok(n)
@@ -23,7 +27,7 @@ mod tests_extra {
 
     impl Read for FailingReader {
         fn read(&mut self, _buf: &mut [u8]) -> io::Result<usize> {
-            Err(io::Error::new(io::ErrorKind::Other, "read failed"))
+            Err(io::Error::other("read failed"))
         }
     }
 

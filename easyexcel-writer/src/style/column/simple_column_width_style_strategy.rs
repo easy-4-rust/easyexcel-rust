@@ -68,7 +68,6 @@ impl AbstractColumnWidthStyleStrategy for SimpleColumnWidthStyleStrategy {
 #[cfg(test)]
 mod tests_extra {
     use super::*;
-    use easyexcel_core::WriteCellContext;
 
     #[test]
     fn simple_column_width_default_matches_new() {

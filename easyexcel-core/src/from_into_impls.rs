@@ -279,6 +279,10 @@ impl FromExcelCell for NaiveDateTime {
     }
 }
 
+// 对应 Java/POI：Excel 序列号按 double 语义计算（i64→f64 与 f64→i64 的
+// 舍入/截断是有意为之）；有效序列号范围远小于 f64/i64 边界，
+// 越界值会在下方 checked_add 处统一转为转换错误
+#[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
 fn excel_serial_to_datetime(
     value: &CellValue,
     context: &ConvertContext,
@@ -577,6 +581,8 @@ mod tests_extra {
     }
 
     #[test]
+    // 1.0/1.5/1.25/2.5 均可被 f64 二进制精确表示，精确比较正是本测试的意图
+    #[allow(clippy::float_cmp)]
     fn floats_parse_all_scalar_cells_and_reject_others() {
         // 对应 Java：Float / Double 默认读转换器
         for (cell, expected) in [

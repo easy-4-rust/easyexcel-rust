@@ -10,7 +10,7 @@ use crate::{ReadOptions, list_xlsx_sheets, read_xlsx};
 
 /// 对应 Java：`XlsxSaxAnalyser implements ExcelReadExecutor`.
 ///
-/// Java constructs OPCPackage, parses shared strings, and drives SAX through
+/// Java constructs `OPCPackage`, parses shared strings, and drives SAX through
 /// `XlsxRowHandler`. Rust keeps the same public surface but delegates the
 /// actual parse to [`read_xlsx`] on the quick-xml path.
 pub struct XlsxSaxAnalyser {
@@ -212,8 +212,10 @@ mod tests {
     #[test]
     fn execute_with_listener_delegates_to_read_xlsx() -> Result<()> {
         let file = write_xlsx();
-        let mut options = ReadOptions::default();
-        options.head_row_number = 1;
+        let options = ReadOptions {
+            head_row_number: 1,
+            ..ReadOptions::default()
+        };
         let mut analyser = XlsxSaxAnalyser::from_path(file.path(), options)?;
         let mut listener = CollectingListener::default();
         analyser.execute_with_listener::<DynamicRow, _>(&mut listener)?;
@@ -224,8 +226,10 @@ mod tests {
     #[test]
     fn trait_execute_runs_the_real_xlsx_parser() -> Result<()> {
         let file = write_xlsx();
-        let mut options = ReadOptions::default();
-        options.head_row_number = 1;
+        let options = ReadOptions {
+            head_row_number: 1,
+            ..ReadOptions::default()
+        };
         let mut analyser =
             XlsxSaxAnalyser::from_path(file.path(), options.clone()).expect("analyser");
         let mut listener = CollectingListener::default();
@@ -292,9 +296,8 @@ mod tests_extra {
             )?;
             writer.finish()?;
         }
-        let error = match XlsxSaxAnalyser::from_path(&path, ReadOptions::default()) {
-            Ok(_) => panic!("empty workbook must fail"),
-            Err(error) => error,
+        let Err(error) = XlsxSaxAnalyser::from_path(&path, ReadOptions::default()) else {
+            panic!("empty workbook must fail");
         };
         assert!(error.to_string().contains("Can not find any sheet"));
         Ok(())
@@ -336,8 +339,10 @@ mod tests_extra {
     fn execute_records_errors_in_last_error() -> Result<()> {
         // 对应 Java：execute 失败时持有异常供后续查询，成功后清除
         let file = write_xlsx();
-        let mut options = ReadOptions::default();
-        options.head_row_number = 1;
+        let options = ReadOptions {
+            head_row_number: 1,
+            ..ReadOptions::default()
+        };
         let mut analyser = XlsxSaxAnalyser::from_path(file.path(), options)?;
 
         let mut failing = FailingListener;

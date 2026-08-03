@@ -41,6 +41,10 @@ impl SheetHandlerExecutionChain {
     }
 
     /// Runs Java `beforeSheetCreate` in chain order.
+    /// # Errors
+    ///
+    /// Propagates errors from the registered handlers (chain stops at the
+    /// first failing handler).
     pub fn before_sheet_create(
         &mut self,
         context: &WriteSheetContext,
@@ -55,6 +59,10 @@ impl SheetHandlerExecutionChain {
     }
 
     /// Runs Java `afterSheetCreate` in chain order.
+    /// # Errors
+    ///
+    /// Propagates errors from the registered handlers (chain stops at the
+    /// first failing handler).
     pub fn after_sheet_create(
         &mut self,
         context: &WriteSheetContext,

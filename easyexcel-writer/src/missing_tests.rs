@@ -1,6 +1,6 @@
 //! Missing test coverage to match Java easyexcel test suite.
 //!
-//! Tests that use types from easyexcel-writer (LoopMergeStrategy, etc.)
+//! Tests that use types from `easyexcel-writer` (`LoopMergeStrategy`, etc.)
 
 use super::*;
 
@@ -67,11 +67,11 @@ fn fill_style_data_head_background() {
     use easyexcel_core::{ExcelCellStyle, ExcelColor, ExcelFillPattern};
     let style = ExcelCellStyle {
         fill_pattern: Some(ExcelFillPattern::Solid),
-        fill_foreground_color: Some(ExcelColor::Rgb(0x0000FF)),
+        fill_foreground_color: Some(ExcelColor::Rgb(0x0000_00FF)),
         ..ExcelCellStyle::new()
     };
     assert_eq!(style.fill_pattern, Some(ExcelFillPattern::Solid));
-    assert_eq!(style.fill_foreground_color, Some(ExcelColor::Rgb(0x0000FF)));
+    assert_eq!(style.fill_foreground_color, Some(ExcelColor::Rgb(0x0000_00FF)));
 }
 
 #[test]
@@ -216,10 +216,12 @@ fn writer_global_flags_default() {
 
 #[test]
 fn writer_global_flags_with_options() {
-    let mut options = WriteOptions::default();
-    options.auto_trim = false;
-    options.use_1904_windowing = true;
-    options.use_scientific_format = true;
+    let options = WriteOptions {
+        auto_trim: false,
+        use_1904_windowing: true,
+        use_scientific_format: true,
+        ..WriteOptions::default()
+    };
     let flags = crate::writer_helpers::WriteGlobalFlags::from(&options);
     assert!(!flags.auto_trim);
     assert!(flags.use_1904_windowing);
@@ -228,18 +230,22 @@ fn writer_global_flags_with_options() {
 
 #[test]
 fn effective_sheet_name_no_trim() {
-    let mut options = WriteOptions::default();
-    options.sheet_name = "Sheet1".to_owned();
-    options.auto_trim = false;
+    let options = WriteOptions {
+        sheet_name: "Sheet1".to_owned(),
+        auto_trim: false,
+        ..WriteOptions::default()
+    };
     let name = crate::writer_helpers::effective_sheet_name(&options);
     assert_eq!(name, "Sheet1");
 }
 
 #[test]
 fn effective_sheet_name_with_trim() {
-    let mut options = WriteOptions::default();
-    options.sheet_name = "  Sheet1  ".to_owned();
-    options.auto_trim = true;
+    let options = WriteOptions {
+        sheet_name: "  Sheet1  ".to_owned(),
+        auto_trim: true,
+        ..WriteOptions::default()
+    };
     let name = crate::writer_helpers::effective_sheet_name(&options);
     assert_eq!(name, "Sheet1");
 }
@@ -401,7 +407,7 @@ fn handler_execution_scope_child_inherits_parent() {
 fn stateful_sheet_state_construction() {
     use crate::metadata::write_sheet::WriteSheet as MirroredWriteSheet;
     use easyexcel_core::ExcelWriteMetadata;
-    let sheet = MirroredWriteSheet::new();
+    let _sheet = MirroredWriteSheet::new();
     let options = WriteOptions::default();
     let metadata = ExcelWriteMetadata::default();
     let _state = crate::writer_helpers::StatefulSheetState {
@@ -435,6 +441,8 @@ fn shared_write_handler_clone() {
 fn shared_write_handler_with_mut() {
     use easyexcel_core::WriteWorkbookContext;
     use easyexcel_core::{Result, WriteHandler};
+    // count 字段用于演示可变 Handler 被 with_mut 调用的场景，测试不读取该值。
+    #[allow(dead_code)]
     struct CountingHandler {
         count: i32,
     }

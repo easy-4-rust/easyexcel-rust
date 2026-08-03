@@ -180,7 +180,7 @@ fn expand_excel_row(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream>
                     use_1904_windowing: column.use_1904_windowing.unwrap_or(false),
                 };
                 (|| -> #crate_path::Result<#crate_path::CellValue> {
-                    Ok(#write_conversion)
+                    #write_conversion
                 })().map_err(|error| context.write_error(error))?
             }
         });
@@ -196,7 +196,7 @@ fn expand_excel_row(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream>
                     use_1904_windowing: column.use_1904_windowing.unwrap_or(false),
                 };
                 (|| -> #crate_path::Result<#crate_path::CellValue> {
-                    Ok(#original_write_conversion)
+                    #original_write_conversion
                 })().map_err(|error| context.write_error(error))?
             }
         };
@@ -222,7 +222,7 @@ fn expand_excel_row(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream>
                     use_1904_windowing: column.use_1904_windowing.unwrap_or(false),
                 };
                 (|| -> #crate_path::Result<#crate_path::CellValue> {
-                    Ok(#registered_write_conversion)
+                    #registered_write_conversion
                 })().map_err(|error| context.write_error(error))?
             }
         });
@@ -238,7 +238,7 @@ fn expand_excel_row(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream>
                     use_1904_windowing: column.use_1904_windowing.unwrap_or(false),
                 };
                 (|| -> #crate_path::Result<#crate_path::WriteCellData> {
-                    Ok(#registered_write_cell_data_conversion)
+                    #registered_write_cell_data_conversion
                 })().map_err(|error| context.write_error(error))?
             }
         };
@@ -321,7 +321,9 @@ fn expand_excel_row(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream>
     })
 }
 
-#[allow(clippy::too_many_lines)]
+// 装饰列辅助函数参数较多，但均为可选项配置，保持平铺签名便于宏调用方阅读，
+// 故豁免 too_many_arguments（重构为结构体会增加 quote! 调用方的负担）。
+#[allow(clippy::too_many_lines, clippy::too_many_arguments)]
 fn decorate_column(
     mut column: proc_macro2::TokenStream,
     width: Option<LitInt>,
@@ -483,7 +485,7 @@ fn field_write_conversion(
     converter.map_or_else(
         || {
             quote! {
-                #crate_path::IntoExcelCell::to_excel_cell(&self.#ident, &context)?
+                #crate_path::IntoExcelCell::to_excel_cell(&self.#ident, &context)
             }
         },
         |converter| {
@@ -498,7 +500,7 @@ fn field_write_conversion(
                     ),
                     )?,
                     &context,
-                )?
+                )
             }
         },
     )
@@ -520,9 +522,9 @@ fn field_registered_write_conversion(
                     &context,
                     #value_is_null,
                 )? {
-                    #crate_path::IntoExcelCell::to_excel_cell(&value, &context)?
+                    #crate_path::IntoExcelCell::to_excel_cell(&value, &context)
                 } else {
-                    #crate_path::IntoExcelCell::to_excel_cell(&self.#ident, &context)?
+                    #crate_path::IntoExcelCell::to_excel_cell(&self.#ident, &context)
                 }
             }
         },
@@ -538,7 +540,7 @@ fn field_registered_write_conversion(
                         ),
                     )?,
                     &context,
-                )?
+                )
             }
         },
     )
@@ -560,11 +562,11 @@ fn field_registered_write_cell_data_conversion(
                     &context,
                     #value_is_null,
                 )? {
-                    value
+                    Ok(value)
                 } else {
-                    #crate_path::WriteCellData::new(
-                        #crate_path::IntoExcelCell::to_excel_cell(&self.#ident, &context)?
-                    )
+                    let cell =
+                        #crate_path::IntoExcelCell::to_excel_cell(&self.#ident, &context)?;
+                    Ok(#crate_path::WriteCellData::new(cell))
                 }
             }
         },
@@ -577,7 +579,7 @@ fn field_registered_write_cell_data_conversion(
                         column,
                         &context,
                     ),
-                )?
+                )
             }
         },
     )
@@ -607,14 +609,14 @@ fn field_original_write_conversion(
 ) -> proc_macro2::TokenStream {
     if converter.is_none() || is_side_effect_free_original_type(ty) {
         quote! {
-            #crate_path::IntoExcelCell::to_excel_cell(&self.#ident, &context)?
+            #crate_path::IntoExcelCell::to_excel_cell(&self.#ident, &context)
         }
     } else {
         // Java stores the original object reference without converting it.
         // Rust's backend-neutral handler context stores CellValue, so resource
         // types (URL, stream, file-like custom objects) must not be eagerly
         // consumed merely to manufacture an "original" snapshot.
-        quote!(#crate_path::CellValue::Empty)
+        quote!(Ok(#crate_path::CellValue::Empty))
     }
 }
 
@@ -1387,7 +1389,7 @@ fn found_crate_path(found: FoundCrate) -> proc_macro2::TokenStream {
 /// 测试辅助：解构 `Data::Struct` 并返回其字段集合；非 struct 输入触发 panic。
 ///
 /// 正常测试中 `parse_quote!` 恒产出 struct，panic 臂数学不可达，由
-/// `expect_struct_fields_rejects_non_struct_input`（should_panic 契约测试）显式触发，
+/// `expect_struct_fields_rejects_non_struct_input`（`should_panic` 契约测试）显式触发，
 /// 替代散落在各测试里的 `let Data::Struct(data) = ... else { panic!("expected struct") }`。
 #[cfg(test)]
 fn expect_struct_fields(input: DeriveInput) -> Fields {
@@ -1425,7 +1427,7 @@ mod tests_extra {
             qself: None,
             path: syn::Path {
                 leading_colon: None,
-                segments: Default::default(),
+                segments: syn::punctuated::Punctuated::default(),
             },
             attrs: Vec::new(),
         });
@@ -1517,8 +1519,8 @@ mod tests_extra {
             .to_string()
             .replace(' ', "");
         assert!(tokens.contains("-1"), "{tokens}");
-        assert!(tokens.contains("3"), "{tokens}");
-        assert!(tokens.contains("5"), "{tokens}");
+        assert!(tokens.contains('3'), "{tokens}");
+        assert!(tokens.contains('5'), "{tokens}");
 
         let input: DeriveInput = parse_quote! {
             #[excel(once_absolute_merge(first_row_index = -name))]

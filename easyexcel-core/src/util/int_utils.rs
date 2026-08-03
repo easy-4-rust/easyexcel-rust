@@ -7,14 +7,19 @@
 /// Clamps a wider integer (`i64`) into `i32` instead of panicking on
 /// overflow: values outside `i32::MIN..=i32::MAX` are clipped to the
 /// nearest bound.
+///
+/// # Panics
+///
+/// 不会 panic（范围检查保证转换恒成功，`expect` 仅为静态证明）。
 #[must_use]
 pub fn saturated_cast(value: i64) -> i32 {
-    if value > i32::MAX as i64 {
+    if value > i64::from(i32::MAX) {
         i32::MAX
-    } else if value < i32::MIN as i64 {
+    } else if value < i64::from(i32::MIN) {
         i32::MIN
     } else {
-        value as i32
+        // 已由上面的范围检查保证 value 落在 i32 范围内，try_from 恒成功
+        i32::try_from(value).expect("saturated_cast 范围检查保证 value 在 i32 范围内")
     }
 }
 
@@ -27,16 +32,16 @@ mod tests_extra {
         // 对应 Java：Ints.saturatedCast 直接转换
         assert_eq!(saturated_cast(0), 0);
         assert_eq!(saturated_cast(42), 42);
-        assert_eq!(saturated_cast(i32::MAX as i64), i32::MAX);
-        assert_eq!(saturated_cast(i32::MIN as i64), i32::MIN);
+        assert_eq!(saturated_cast(i64::from(i32::MAX)), i32::MAX);
+        assert_eq!(saturated_cast(i64::from(i32::MIN)), i32::MIN);
     }
 
     #[test]
     fn saturated_cast_clamps_out_of_range() {
         // 对应 Java：超出范围时收敛到边界而非溢出
-        assert_eq!(saturated_cast(i32::MAX as i64 + 1), i32::MAX);
+        assert_eq!(saturated_cast(i64::from(i32::MAX) + 1), i32::MAX);
         assert_eq!(saturated_cast(i64::MAX), i32::MAX);
-        assert_eq!(saturated_cast(i32::MIN as i64 - 1), i32::MIN);
+        assert_eq!(saturated_cast(i64::from(i32::MIN) - 1), i32::MIN);
         assert_eq!(saturated_cast(i64::MIN), i32::MIN);
     }
 }

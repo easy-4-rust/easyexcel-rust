@@ -4,7 +4,7 @@
 
 /// Mirrors `com.alibaba.excel.util.SheetUtils#match`.
 ///
-/// Java matches a Java RegEx against the sheet name. Rust uses the
+/// Java matches a Java `RegEx` against the sheet name. Rust uses the
 /// `regex` crate's syntax via `str::contains` for the placeholder, the
 /// writer/reader crates own the real matching.
 #[must_use]

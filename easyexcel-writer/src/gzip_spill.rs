@@ -43,7 +43,7 @@ pub struct GzipSheetDataWriter {
     encoder: GzEncoder<File>,
     uncompressed_len: u64,
     /// Keeps the parent temp directory alive for the spill lifetime.
-    _dir: Option<TempDir>,
+    dir: Option<TempDir>,
 }
 
 impl GzipSheetDataWriter {
@@ -67,7 +67,7 @@ impl GzipSheetDataWriter {
             path,
             encoder,
             uncompressed_len: 0,
-            _dir: None,
+            dir: None,
         })
     }
 
@@ -79,7 +79,7 @@ impl GzipSheetDataWriter {
     pub fn create_owned(sheet_name: impl Into<String>) -> Result<Self> {
         let dir = TempDir::new().map_err(ExcelError::Io)?;
         let mut writer = Self::create(dir.path(), sheet_name)?;
-        writer._dir = Some(dir);
+        writer.dir = Some(dir);
         Ok(writer)
     }
 
@@ -115,8 +115,7 @@ impl GzipSheetDataWriter {
     pub fn snapshot(&mut self) -> Result<GzipSpillSnapshot> {
         self.flush()?;
         let compressed_len = std::fs::metadata(&self.path)
-            .map(|meta| meta.len())
-            .unwrap_or(0);
+            .map_or(0, |meta| meta.len());
         let is_gzip = file_has_gzip_magic(&self.path);
         Ok(GzipSpillSnapshot {
             sheet_name: self.sheet_name.clone(),
@@ -136,9 +135,9 @@ impl GzipSheetDataWriter {
         let path = self.path;
         let uncompressed_len = self.uncompressed_len;
         let sheet_name = self.sheet_name;
-        let _dir = self._dir;
+        let dir = self.dir;
         self.encoder.finish().map_err(ExcelError::Io)?;
-        let compressed_len = std::fs::metadata(&path).map(|meta| meta.len()).unwrap_or(0);
+        let compressed_len = std::fs::metadata(&path).map_or(0, |meta| meta.len());
         let file = OpenOptions::new()
             .read(true)
             .open(&path)
@@ -149,7 +148,7 @@ impl GzipSheetDataWriter {
             decoder: GzDecoder::new(file),
             uncompressed_len,
             compressed_len,
-            _dir,
+            dir,
         })
     }
 }
@@ -161,7 +160,10 @@ pub struct GzipSpillReader {
     decoder: GzDecoder<File>,
     uncompressed_len: u64,
     compressed_len: u64,
-    _dir: Option<TempDir>,
+    // dir 字段用于在读取期间保持 TempDir 存活（防临时目录被提前回收），
+    // 不参与业务读取，属刻意保留字段。
+    #[allow(dead_code)]
+    dir: Option<TempDir>,
 }
 
 impl GzipSpillReader {
@@ -523,38 +525,32 @@ mod tests {
         let mut cursor = 0usize;
         // Decimal parse failure.
         let decimal_err = decode_cell(&[5, 3, 0, 0, 0, b'a', b'b', b'c'], &mut cursor)
-            .err()
-            .expect("invalid decimal must fail");
+            .expect_err("invalid decimal must fail");
         assert!(matches!(decimal_err, ExcelError::Format(_)));
         // Date parse failure.
         cursor = 0;
         let date_err = decode_cell(&[6, 3, 0, 0, 0, b'b', b'a', b'd'], &mut cursor)
-            .err()
-            .expect("invalid date must fail");
+            .expect_err("invalid date must fail");
         assert!(matches!(date_err, ExcelError::Format(_)));
         // DateTime parse failure (both fallback formats fail).
         cursor = 0;
         let datetime_err = decode_cell(&[7, 3, 0, 0, 0, b'b', b'a', b'd'], &mut cursor)
-            .err()
-            .expect("invalid datetime must fail");
+            .expect_err("invalid datetime must fail");
         assert!(matches!(datetime_err, ExcelError::Format(_)));
         // Unknown tag.
         cursor = 0;
         let unknown = decode_cell(&[99], &mut cursor)
-            .err()
-            .expect("unknown tag must fail");
+            .expect_err("unknown tag must fail");
         assert!(matches!(unknown, ExcelError::Format(_)));
         // String payload shorter than its declared length.
         cursor = 0;
         let truncated = decode_cell(&[1, 10, 0, 0, 0], &mut cursor)
-            .err()
-            .expect("truncated payload must fail");
+            .expect_err("truncated payload must fail");
         assert!(matches!(truncated, ExcelError::Format(_)));
         // Non-UTF-8 string payload.
         cursor = 0;
         let invalid_utf8 = decode_cell(&[8, 1, 0, 0, 0, 0xFF], &mut cursor)
-            .err()
-            .expect("invalid UTF-8 must fail");
+            .expect_err("invalid UTF-8 must fail");
         assert!(matches!(invalid_utf8, ExcelError::Format(_)));
     }
 
@@ -570,9 +566,9 @@ mod tests {
             decoder: GzDecoder::new(file),
             uncompressed_len: 0,
             compressed_len: 0,
-            _dir: None,
+            dir: None,
         };
-        let error = reader.next_row().err().expect("corrupt stream must fail");
+        let error = reader.next_row().expect_err("corrupt stream must fail");
         assert!(matches!(error, ExcelError::Io(_)));
     }
 

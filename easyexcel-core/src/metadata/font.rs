@@ -11,6 +11,9 @@ use crate::WriteFont;
 /// - 类：`com.alibaba.excel.metadata.Font`
 /// - 替代：`com.alibaba.excel.write.metadata.style.WriteFont` → [`WriteFont`]
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
+// 字段名与 Java `Font` 的 `fontName` / `fontHeightInPoints` 一一对应，
+// 保持原名便于对照 Java 源码，故豁免 struct_field_names
+#[allow(clippy::struct_field_names)]
 pub struct Font {
     /// 字体名称。Java `fontName` / `getFontName()` / `setFontName`
     font_name: Option<String>,

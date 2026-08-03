@@ -148,8 +148,7 @@ fn read_test_index_or_name_read() {
         rows[0]
             .string
             .as_ref()
-            .map(|s| !s.is_empty())
-            .unwrap_or(false)
+            .is_some_and(|s| !s.is_empty())
     );
 }
 
@@ -205,9 +204,6 @@ fn read_test_complex_header_read() {
 /// Java: `com.alibaba.easyexcel.test.demo.read.ReadTest#headerRead`
 #[test]
 fn read_test_header_read() {
-    let path = require_fixture("demo/demo.xlsx");
-    let saw_head = Arc::new(Mutex::new(false));
-    let saw = Arc::clone(&saw_head);
     struct HeadListener {
         saw: Arc<Mutex<bool>>,
     }
@@ -225,6 +221,9 @@ fn read_test_header_read() {
             Ok(())
         }
     }
+    let path = require_fixture("demo/demo.xlsx");
+    let saw_head = Arc::new(Mutex::new(false));
+    let saw = Arc::clone(&saw_head);
     EasyExcel::read::<DemoData, _>(&path, HeadListener { saw })
         .sheet(0usize)
         .do_read()
@@ -274,14 +273,6 @@ fn read_test_cell_data_read() {
 /// continues on convert errors via `ErrorAction::Continue`.
 #[test]
 fn read_test_exception_read() {
-    #[derive(Debug, Clone, ExcelRow)]
-    struct ExceptionDemoData {
-        #[excel(index = 0)]
-        date: NaiveDate,
-    }
-    let path = require_fixture("demo/demo.xlsx");
-    let exceptions = Arc::new(AtomicUsize::new(0));
-    let hits = Arc::clone(&exceptions);
     struct DemoExceptionListener {
         hits: Arc<AtomicUsize>,
     }
@@ -294,6 +285,14 @@ fn read_test_exception_read() {
             Ok(())
         }
     }
+    #[derive(Debug, Clone, ExcelRow)]
+    struct ExceptionDemoData {
+        #[excel(index = 0)]
+        date: NaiveDate,
+    }
+    let path = require_fixture("demo/demo.xlsx");
+    let exceptions = Arc::new(AtomicUsize::new(0));
+    let hits = Arc::clone(&exceptions);
     EasyExcel::read::<ExceptionDemoData, _>(&path, DemoExceptionListener { hits })
         .sheet(0usize)
         .do_read()
@@ -508,8 +507,6 @@ fn write_test_converter_write() {
 /// Java: `com.alibaba.easyexcel.test.demo.write.WriteTest#imageWrite`
 #[test]
 fn write_test_image_write() {
-    let img = require_fixture("converter/img.jpg");
-    let bytes = std::fs::read(&img).unwrap();
     #[derive(Debug, Clone, ExcelRow)]
     struct ImageDemoData {
         #[excel(name = "byteArray")]
@@ -517,6 +514,8 @@ fn write_test_image_write() {
         #[excel(name = "writeCellDataFile")]
         write_cell_data_file: WriteCellData,
     }
+    let img = require_fixture("converter/img.jpg");
+    let bytes = std::fs::read(&img).unwrap();
     let path = temp_path("imageWrite.xlsx");
     let row = ImageDemoData {
         byte_array: WriteCellData::from_image(bytes.clone()),
@@ -839,7 +838,7 @@ fn fill_test_simple_fill() {
         .unwrap();
     assert!(!rows.is_empty());
     let text = format!("{rows:?}");
-    assert!(text.contains("张三") || text.contains("5"), "{text}");
+    assert!(text.contains("张三") || text.contains('5'), "{text}");
 }
 
 /// Java: `com.alibaba.easyexcel.test.demo.fill.FillTest#listFill`
@@ -851,7 +850,7 @@ fn fill_test_list_fill() {
         .map(|i| {
             TemplateData::new()
                 .with("name", format!("张三{i}"))
-                .with("number", i as f64)
+                .with("number", f64::from(i))
         })
         .collect();
     EasyExcel::fill_template_list(
@@ -979,12 +978,6 @@ fn rare_test_compressed_temporary_file() {
 /// does not expose a mutable sheet).
 #[test]
 fn rare_test_specified_cell_write() {
-    let gap = ExcelError::Unsupported(
-        "afterWorkbookDispose Sheet.createRow(99) — WriteWorkbookContext has no Sheet handle"
-            .to_owned(),
-    );
-    assert!(matches!(gap, ExcelError::Unsupported(_)));
-
     struct SpecifiedCellHandler {
         after_workbook_hits: Arc<AtomicUsize>,
     }
@@ -1001,6 +994,12 @@ fn rare_test_specified_cell_write() {
             Ok(())
         }
     }
+    let gap = ExcelError::Unsupported(
+        "afterWorkbookDispose Sheet.createRow(99) — WriteWorkbookContext has no Sheet handle"
+            .to_owned(),
+    );
+    assert!(matches!(gap, ExcelError::Unsupported(_)));
+
 
     let hits = Arc::new(AtomicUsize::new(0));
     let path = temp_path("rare_specifiedCellWrite.xlsx");

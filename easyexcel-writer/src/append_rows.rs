@@ -48,6 +48,11 @@ where
 ///
 /// Java mapping: when `compress_temp_files` is on, [`crate::gzip_spill::GzipSheetDataWriter`]
 /// mirrors POI `GZIPSheetDataWriter` for observability and disk spill.
+///
+/// # Errors
+///
+/// Returns sheet/write errors from the worksheet writer and I/O errors from
+/// the gzip spill.
 #[allow(clippy::too_many_arguments)]
 pub fn append_rows_to_worksheet_with_gzip<T, I>(
     worksheet: &mut Worksheet,

@@ -10,6 +10,10 @@ use crate::excel_error::ExcelError;
 ///
 /// Rust `chrono` only accepts a single format string per call, so the Java
 /// multi-format fallback is simulated by trying each format in order.
+///
+/// # Errors
+///
+/// 当所有格式都无法解析 `str` 时返回 [`ExcelError::Format`]。
 pub fn parse_date<'a>(
     str: &str,
     parse_patterns: impl IntoIterator<Item = &'a str>,
@@ -81,12 +85,12 @@ pub fn remove_thread_local_cache() {
 }
 
 /// Best-effort translation of Java `SimpleDateFormat` pattern letters to
-/// `chrono` format specifiers. Only the letters actually used by EasyExcel
+/// `chrono` format specifiers. Only the letters actually used by `EasyExcel`
 /// are mapped; unknown chars pass through verbatim.
 ///
 /// 对应 Java：SimpleDateFormat 的 y/M/d/H/m/s/S 字母在 chrono 中必须以 `%`
 /// 前缀出现，且连续的相同字母表示同一单位（如 `yyyy` 是四位年），因此
-/// 折叠为一个 chrono 说明符；`'foo'` 字面量块按 SimpleDateFormat 语义
+/// 折叠为一个 chrono 说明符；`'foo'` 字面量块按 `SimpleDateFormat` 语义
 /// 原样输出。
 fn chrono_java_to_rust(pattern: &str) -> String {
     let mut out = String::with_capacity(pattern.len() * 2);
@@ -205,6 +209,5 @@ mod tests_extra {
         remove_thread_local_cache();
         remove_thread_local_cache();
         // 两次调用不 panic 即视为通过
-        assert!(true);
     }
 }

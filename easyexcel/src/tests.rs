@@ -2063,9 +2063,9 @@ fn registered_converter_runs_in_sync_and_event_read_paths() -> Result<()> {
 
 #[test]
 fn registered_write_converter_uses_latest_registration_and_field_precedence() -> Result<()> {
-    struct OriginalValueProbe(
-        Arc<Mutex<Vec<(Option<CellValue>, Option<&'static str>, CellValue)>>>,
-    );
+    // 探针记录 (原始值, 字段类型, 转换后值) 三元组。
+    type ProbeEntry = (Option<CellValue>, Option<&'static str>, CellValue);
+    struct OriginalValueProbe(Arc<Mutex<Vec<ProbeEntry>>>);
 
     impl WriteHandler for OriginalValueProbe {
         fn after_cell_data_converted(&mut self, context: &WriteCellContext) -> Result<()> {
@@ -2133,7 +2133,7 @@ fn write_converter_errors_report_physical_sheet_row_column_and_field() -> Result
         }
     }
 
-    fn assert_location(error: ExcelError, expected_row: u32) {
+    fn assert_location(error: &ExcelError, expected_row: u32) {
         // 守卫断言替代 match 兜底 panic 臂（写入转换错误恒为 Data 变体）。
         assert!(
             matches!(
@@ -2166,7 +2166,7 @@ fn write_converter_errors_report_physical_sheet_row_column_and_field() -> Result
             .with_bom(false)
             .do_write([row("ok"), row("fail")])
             .expect_err("the second data row must fail conversion");
-        assert_location(error, 2);
+        assert_location(&error, 2);
     }
 
     let template = directory.path().join("located-write-template.xlsx");
@@ -2181,7 +2181,7 @@ fn write_converter_errors_report_physical_sheet_row_column_and_field() -> Result
         .need_head(false)
         .do_write([row("ok"), row("fail")])
         .expect_err("template conversion must use the appended physical row");
-    assert_location(template_error, 2);
+    assert_location(&template_error, 2);
 
     for extension in ["xlsx", "xls", "csv"] {
         EasyExcel::write::<LocatedWriteFailureRow>(
@@ -2451,7 +2451,7 @@ fn with_template_new_sheet_keeps_existing_styles_and_merges() -> Result<()> {
         }])?;
 
     let styles_before = zip_entry_text(&template, "xl/styles.xml")?;
-    let styled_before = zip_entry_text(&template, "xl/worksheets/sheet1.xml")?;
+    let sheet_before = zip_entry_text(&template, "xl/worksheets/sheet1.xml")?;
 
     EasyExcel::write::<Value>(&output)
         .with_template(&template)
@@ -2460,13 +2460,13 @@ fn with_template_new_sheet_keeps_existing_styles_and_merges() -> Result<()> {
         .do_write([Value("on-new".to_owned())])?;
 
     let styles_after = zip_entry_text(&output, "xl/styles.xml")?;
-    let styled_after = zip_entry_text(&output, "xl/worksheets/sheet1.xml")?;
+    let sheet_after = zip_entry_text(&output, "xl/worksheets/sheet1.xml")?;
     assert_eq!(
         styles_before, styles_after,
         "styles.xml must stay untouched"
     );
     assert_eq!(
-        styled_before, styled_after,
+        sheet_before, sheet_after,
         "existing Styled sheet (incl. mergeCells) must stay byte-identical"
     );
 

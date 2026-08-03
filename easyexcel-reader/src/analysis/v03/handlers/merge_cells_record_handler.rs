@@ -75,8 +75,8 @@ impl XlsRecordHandler for MergeCellsRecordHandler {
             if offset + 8 > data.len() {
                 break;
             }
-            let first_row = u16::from_le_bytes([data[offset], data[offset + 1]]) as u32;
-            let last_row = u16::from_le_bytes([data[offset + 2], data[offset + 3]]) as u32;
+            let first_row = u32::from(u16::from_le_bytes([data[offset], data[offset + 1]]));
+            let last_row = u32::from(u16::from_le_bytes([data[offset + 2], data[offset + 3]]));
             let first_column = u16::from_le_bytes([data[offset + 4], data[offset + 5]]) as usize;
             let last_column = u16::from_le_bytes([data[offset + 6], data[offset + 7]]) as usize;
             self.process_area(first_row, last_row, first_column, last_column);

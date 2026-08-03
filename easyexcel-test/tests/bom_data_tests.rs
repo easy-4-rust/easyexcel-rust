@@ -1,4 +1,4 @@
-//! BomDataTest parity — mirrors Java
+//! `BomDataTest` parity — mirrors Java
 //! `com.alibaba.easyexcel.test.core.bom.BomDataTest`.
 //!
 //! Java methods:
@@ -151,7 +151,7 @@ fn bom_t02_read_and_write_csv() {
     );
 }
 
-/// PageReadListener path (Java demos) should also see 10 rows for office_bom.
+/// `PageReadListener` path (Java demos) should also see 10 rows for `office_bom`.
 #[test]
 fn bom_page_read_listener_office_bom() {
     let path = fixture("bom/office_bom.csv");

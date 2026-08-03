@@ -1,6 +1,6 @@
 //! 合并单元格范围类型。
 //!
-//! 对应 Java：`org.apache.poi.ss.util.CellRangeAddress`（EasyExcel 通过 `OnceAbsoluteMergeStrategy` 引用）。
+//! 对应 Java：`org.apache.poi.ss.util.CellRangeAddress`（`EasyExcel` 通过 `OnceAbsoluteMergeStrategy` 引用）。
 //! 原文件：easyexcel-core/src/main/java/org/apache/poi/ss/util/CellRangeAddress.java
 
 /// 绝对合并范围（行区间 × 列区间）。

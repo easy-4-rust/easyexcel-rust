@@ -41,6 +41,10 @@ impl WorkbookHandlerExecutionChain {
     }
 
     /// Runs Java `beforeWorkbookCreate` in chain order.
+    /// # Errors
+    ///
+    /// Propagates errors from the registered handlers (chain stops at the
+    /// first failing handler).
     pub fn before_workbook_create(
         &mut self,
         context: &WriteWorkbookContext,
@@ -55,6 +59,10 @@ impl WorkbookHandlerExecutionChain {
     }
 
     /// Runs Java `afterWorkbookCreate` in chain order.
+    /// # Errors
+    ///
+    /// Propagates errors from the registered handlers (chain stops at the
+    /// first failing handler).
     pub fn after_workbook_create(
         &mut self,
         context: &WriteWorkbookContext,
@@ -69,6 +77,10 @@ impl WorkbookHandlerExecutionChain {
     }
 
     /// Runs Java `afterWorkbookDispose` in chain order.
+    /// # Errors
+    ///
+    /// Propagates errors from the registered handlers (chain stops at the
+    /// first failing handler).
     pub fn after_workbook_dispose(
         &mut self,
         context: &WriteWorkbookContext,

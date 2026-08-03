@@ -483,7 +483,7 @@ mod tests {
         assert!(holder.include_column_field_names().is_none());
         assert!(holder.exclude_column_indexes().is_empty());
         assert!(holder.exclude_column_field_names().is_empty());
-        assert!(probe.current_write_holder().has_data() == false);
+        assert!(!probe.current_write_holder().has_data());
     }
 }
 

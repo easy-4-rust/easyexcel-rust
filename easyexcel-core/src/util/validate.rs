@@ -5,6 +5,10 @@
 use crate::excel_error::ExcelError;
 
 /// Mirrors `org.apache.commons.lang3.Validate#isTrue`.
+///
+/// # Errors
+///
+/// 当 `expression` 为 `false` 时返回 [`ExcelError::Unsupported`]，错误消息为 `message`。
 pub fn is_true(expression: bool, message: impl Into<String>) -> Result<(), ExcelError> {
     if expression {
         Ok(())

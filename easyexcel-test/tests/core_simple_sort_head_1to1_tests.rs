@@ -1,7 +1,7 @@
 //! Method-level 1:1 parity for Java core tests:
-//! SimpleDataTest, SortDataTest, SkipDataTest, NoModelDataTest, ParameterDataTest,
-//! RepetitionDataTest, MultipleSheetsDataTest, ComplexHeadDataTest, ListHeadDataTest,
-//! NoHeadDataTest, UnCamelDataTest, TemplateDataTest.
+//! `SimpleDataTest`, `SortDataTest`, `SkipDataTest`, `NoModelDataTest`, `ParameterDataTest`,
+//! `RepetitionDataTest`, `MultipleSheetsDataTest`, `ComplexHeadDataTest`, `ListHeadDataTest`,
+//! `NoHeadDataTest`, `UnCamelDataTest`, `TemplateDataTest`.
 //!
 //! Naming: `mod <java_class_snake>` + `fn <java_method_snake>` so each Rust test
 //! uniquely maps to `ClassName#methodName`.

@@ -261,6 +261,11 @@ impl ConverterRegistry {
     /// Derive-generated `Option<T>` fields pass `true` for `value_is_null`.
     /// An ordinary converter is skipped and the caller writes an empty cell;
     /// a converter registered through [`Self::register_nullable`] is invoked.
+    ///
+    /// # Errors
+    ///
+    /// Returns the underlying converter's error when `convert_to_excel_data`
+    /// fails.
     pub fn convert_to_excel_data_with_null_state<T>(
         &self,
         value: &T,

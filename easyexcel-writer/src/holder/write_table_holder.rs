@@ -187,9 +187,9 @@ mod tests_extra {
 
     #[test]
     fn table_holder_deref_mut_reaches_abstract_holder() {
+        use crate::holder::write_holder::WriteHolder;
         let mut holder = WriteTableHolder::new(0);
         holder.set_excel_write_head_property(ExcelWriteHeadProperty::new());
-        use crate::holder::write_holder::WriteHolder;
         let target: &mut crate::holder::abstract_write_holder::AbstractWriteHolder = &mut holder;
         assert!(target.need_head());
     }

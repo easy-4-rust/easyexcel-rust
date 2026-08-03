@@ -19,7 +19,7 @@ use crate::write_converter_context::WriteConverterContext;
 /// Java `UrlImageConverter` equivalent with Java's default timeout values.
 ///
 /// Uses the `ureq` crate for HTTP; defaulting to 1s connect and 5s read
-/// matches Java EasyExcel.
+/// matches Java `EasyExcel`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct UrlImageConverter {
     connect_timeout: Duration,

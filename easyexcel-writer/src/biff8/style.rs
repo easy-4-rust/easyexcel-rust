@@ -1,6 +1,6 @@
 //! BIFF8 workbook-level FONT / XF / palette registry.
 //!
-//! Maps Java EasyExcel / POI HSSF style knobs (`WriteCellStyle`, `WriteFont`,
+//! Maps Java `EasyExcel` / POI HSSF style knobs (`WriteCellStyle`, `WriteFont`,
 //! `IndexedColors`, `CellStyle` builder) onto FONT + XF records. Borders,
 //! custom number formats beyond date/datetime, rich-text runs, and conditional
 //! formatting remain unsupported for Minimal BIFF8.
@@ -17,6 +17,9 @@ use super::encode::{
 };
 
 /// Resolved write-style inputs used when allocating an XF index.
+// 语义敏感：bold/italic/strikeout/wrap 与 Java `WriteCellStyle`/`WriteFont`
+// 布尔字段一一对应，合并会破坏 1:1 可追溯性，故豁免 struct_excessive_bools。
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Default)]
 pub struct Biff8StyleRequest {
     /// Bold font.
@@ -46,7 +49,7 @@ pub struct Biff8StyleRequest {
 }
 
 impl Biff8StyleRequest {
-    /// Returns `true` when this request would produce XF_GENERAL with default font.
+    /// Returns `true` when this request would produce `XF_GENERAL` with default font.
     #[must_use]
     pub fn is_default(&self) -> bool {
         !self.bold
@@ -191,6 +194,8 @@ impl Biff8StyleTable {
             key.fill_fg_icv,
             key.fill_bg_icv,
         );
+        // 语义敏感：自定义 XF 数量远小于 u16 上限，保留 as 以对齐 BIFF8 索引。
+        #[allow(clippy::cast_possible_truncation)]
         let index = XF_CUSTOM_BASE + self.xfs.len() as u16;
         self.xfs.push(packed);
         self.xf_cache.insert(key, index);
@@ -267,6 +272,8 @@ impl Biff8StyleTable {
     }
 
     /// Allocates or reuses a palette ICV for an RGB triple.
+    // 语义敏感：BIFF8 调色板最多 56 色（索引 8..=63），usize->u16 不可能截断。
+    #[allow(clippy::cast_possible_truncation)]
     pub fn alloc_rgb_icv(&mut self, rgb: u32) -> u16 {
         let r = ((rgb >> 16) & 0xFF) as u8;
         let g = ((rgb >> 8) & 0xFF) as u8;
@@ -287,6 +294,8 @@ impl Biff8StyleTable {
 /// Maps FONT record ordinal (0-based among all FONT records) to XF font index.
 ///
 /// Excel / HSSF skip index 4: records `[0,1,2,3,4]` → indices `[0,1,2,3,5]`.
+// 语义敏感：slot 来自 FONT 记录表长度（远小于 u16 上限），保留 as 转换。
+#[allow(clippy::cast_possible_truncation)]
 #[must_use]
 pub const fn font_index_for_slot(slot: usize) -> u16 {
     if slot < 4 {
@@ -322,6 +331,9 @@ pub fn color_to_icv(table: &mut Biff8StyleTable, color: ExcelColor) -> u16 {
     }
 }
 
+// 语义敏感：距离平方和 dr²+dg²+db² 恒非负且远小于 i32::MAX，
+// i32->u32 转换不可能出现符号丢失。
+#[allow(clippy::cast_sign_loss)]
 fn nearest_indexed(r: u8, g: u8, b: u8) -> u16 {
     // Minimal subset of POI IndexedColors used by Style / Annotation tests.
     const TABLE: &[(u8, u8, u8, u16)] = &[
@@ -422,8 +434,10 @@ mod tests {
     #[test]
     fn resolve_bold_allocates_custom_xf() {
         let mut table = Biff8StyleTable::default();
-        let mut req = Biff8StyleRequest::default();
-        req.bold = true;
+        let req = Biff8StyleRequest {
+            bold: true,
+            ..Biff8StyleRequest::default()
+        };
         let xf = table.resolve_xf(&req, XF_GENERAL);
         assert!(xf >= XF_CUSTOM_BASE);
         assert_eq!(table.custom_xfs().len(), 1);
@@ -534,8 +548,10 @@ mod tests_extra {
     #[test]
     fn resolve_xf_preserves_date_and_datetime_number_formats() {
         let mut table = Biff8StyleTable::default();
-        let mut req = Biff8StyleRequest::default();
-        req.bold = true;
+        let req = Biff8StyleRequest {
+            bold: true,
+            ..Biff8StyleRequest::default()
+        };
         let date_xf = table.resolve_xf(&req, XF_DATE);
         let datetime_xf = table.resolve_xf(&req, XF_DATETIME);
         assert_eq!(date_xf, XF_CUSTOM_BASE);

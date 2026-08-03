@@ -7,17 +7,17 @@
 //!
 //! 1. Password bytes (UTF-16LE) → MD5 → 16-byte hash
 //! 2. Generate 16 random bytes (`salt`), 16 random bytes (`verifier`)
-//! 3. RC4 key = MD5(salt || password_hash)  — first 5 bytes used (40-bit)
-//! 4. `verifier_hash` = RC4_encrypt(verifier, rc4_key)
-//! 5. Write `FilePass` BIFF record: type=1, salt(16), verifier_hash(16)
-//! 6. RC4_encrypt remaining BIFF8 stream bytes with same key
+//! 3. RC4 key = MD5(salt || `password_hash`)  — first 5 bytes used (40-bit)
+//! 4. `verifier_hash` = `RC4_encrypt(verifier`, `rc4_key`)
+//! 5. Write `FilePass` BIFF record: type=1, salt(16), `verifier_hash(16)`
+//! 6. `RC4_encrypt` remaining BIFF8 stream bytes with same key
 //!
 //! # Reading
 //!
-//! 1. Parse `FilePass` → salt, verifier_hash
+//! 1. Parse `FilePass` → salt, `verifier_hash`
 //! 2. Derive RC4 key from password + salt
-//! 3. RC4_decrypt verifier_hash → should match verifier for correct password
-//! 4. RC4_decrypt remaining stream
+//! 3. `RC4_decrypt` `verifier_hash` → should match verifier for correct password
+//! 4. `RC4_decrypt` remaining stream
 
 #![allow(dead_code)]
 
@@ -36,7 +36,7 @@ pub struct Biff8EncryptionInfoPlaceholder;
 fn derive_key(password: &str, salt: &[u8]) -> Vec<u8> {
     let pw_bytes: Vec<u8> = password
         .encode_utf16()
-        .flat_map(|u| u.to_le_bytes())
+        .flat_map(u16::to_le_bytes)
         .collect();
     let pw_hash = Md5::digest(&pw_bytes);
     let mut hasher = Md5::new();
@@ -45,7 +45,7 @@ fn derive_key(password: &str, salt: &[u8]) -> Vec<u8> {
     hasher.finalize().to_vec()
 }
 
-/// RC4 stream cipher (Rivest Cipher 4), identical to POI's Biff8RC4.
+/// RC4 stream cipher (Rivest Cipher 4), identical to POI's `Biff8RC4`.
 fn rc4_crypt(data: &[u8], key: &[u8]) -> Vec<u8> {
     let mut s: Vec<u8> = (0u8..=255).collect();
     let mut j: u8 = 0;
@@ -57,7 +57,7 @@ fn rc4_crypt(data: &[u8], key: &[u8]) -> Vec<u8> {
     let mut i: u8 = 0;
     j = 0;
     let mut result = data.to_vec();
-    for byte in result.iter_mut() {
+    for byte in &mut result {
         i = i.wrapping_add(1);
         j = j.wrapping_add(s[i as usize]);
         s.swap(i as usize, j as usize);
@@ -73,6 +73,11 @@ fn rc4_crypt(data: &[u8], key: &[u8]) -> Vec<u8> {
 /// The encryption wraps the entire workbook stream (including BOF/EOF
 /// records) so that the `FilePass` record can be inserted before the
 /// first BOF in the globals section.
+///
+/// # Panics
+///
+/// Panics when the OS random source fails (`getrandom` error).
+#[must_use]
 pub fn encrypt_biff8_stream(
     workbook_bytes: &[u8],
     password: &str,
@@ -94,8 +99,13 @@ pub fn encrypt_biff8_stream(
     (encrypted, salt, vh_arr)
 }
 
-/// Decrypts a BIFF8 workbook stream given password, salt, and verifier_hash.
+/// Decrypts a BIFF8 workbook stream given password, salt, and `verifier_hash`.
 /// Returns the decrypted bytes, or an error if the password doesn't match.
+///
+/// # Errors
+///
+/// Returns an error string when the password is wrong or the decrypted
+/// stream is malformed (too short).
 pub fn decrypt_biff8_stream(
     encrypted: &[u8],
     password: &str,
@@ -163,8 +173,7 @@ mod tests_extra {
     #[test]
     fn decrypt_biff8_stream_rejects_short_input() {
         let error = decrypt_biff8_stream(&[1, 2, 3], "pwd", &[0u8; 16], &[0u8; 16])
-            .err()
-            .expect("short stream must fail");
+            .expect_err("short stream must fail");
         assert_eq!(error, "decrypted BIFF8 stream too short");
     }
 }

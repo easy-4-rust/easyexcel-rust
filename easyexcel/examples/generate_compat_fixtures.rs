@@ -1,6 +1,6 @@
 //! Generates a representative fixture set for external-application
 //! compatibility checks (compatibility.md verification evidence 4: Excel and
-//! LibreOffice open every generated fixture without repair warnings).
+//! `LibreOffice` open every generated fixture without repair warnings).
 //!
 //! Fixtures cover the main write surfaces:
 //!
@@ -9,7 +9,7 @@
 //! - `03-styled.xlsx` — header/content styles and column widths
 //! - `04-merged.xlsx` — merged cell ranges
 //! - `protected/05-encrypted.xlsx` — ECMA-376 Agile password-encrypted XLSX
-//!   (kept in a `protected/` subdirectory because LibreOffice headless cannot
+//!   (kept in a `protected/` subdirectory because `LibreOffice` headless cannot
 //!   open a password-protected file non-interactively)
 //! - `06-image.xlsx` — embedded JPEG image
 //! - `07-legacy.xls` — Minimal BIFF8 write
@@ -64,6 +64,13 @@ fn missing_fixture(name: &str) -> easyexcel::ExcelError {
     ))
 }
 
+/// 内嵌图片写入行（局部使用，提到模块级以避免在语句后声明条目）。
+#[derive(Debug, Clone, ExcelRow)]
+struct ImageRow {
+    #[excel(name = "Image")]
+    image: WriteCellData,
+}
+
 fn main() -> easyexcel::Result<()> {
     let out = std::env::args()
         .nth(1)
@@ -99,8 +106,8 @@ fn main() -> easyexcel::Result<()> {
     // 3. Header/content styles and column widths.
     let styled = out.join("03-styled.xlsx");
     EasyExcel::write::<DemoRow>(&styled)
-        .head_style(CellStyle::new().bold(true).background_color(0xDDDDDD))
-        .content_style(CellStyle::new().background_color(0xF5F5F5))
+        .head_style(CellStyle::new().bold(true).background_color(0x00DD_DDDD))
+        .content_style(CellStyle::new().background_color(0x00F5_F5F5))
         .column_width(0, 12)
         .column_width(1, 30)
         .do_write(demo_rows(20))?;
@@ -130,11 +137,6 @@ fn main() -> easyexcel::Result<()> {
         return Err(missing_fixture(&img.display().to_string()));
     }
     let bytes = std::fs::read(&img)?;
-    #[derive(Debug, Clone, ExcelRow)]
-    struct ImageRow {
-        #[excel(name = "Image")]
-        image: WriteCellData,
-    }
     let image = out.join("06-image.xlsx");
     EasyExcel::write::<ImageRow>(&image).do_write(vec![ImageRow {
         image: WriteCellData::from_image(bytes),

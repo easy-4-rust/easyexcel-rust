@@ -27,7 +27,7 @@ pub fn assert_fill_list() {
         .map(|i| {
             TemplateData::new()
                 .with("name", format!("张三{i}"))
-                .with("number", i as f64)
+                .with("number", f64::from(i))
         })
         .collect();
     EasyExcel::fill_template_list(
@@ -116,7 +116,7 @@ pub fn assert_fill_composite() {
     assert!(output.exists());
 }
 
-/// issue1663 named FillWrapper.
+/// issue1663 named `FillWrapper`.
 pub fn assert_fill_issue1663() {
     let template = fixture("java/temp/issue1663/template.xlsx");
     assert_fixture(&template);

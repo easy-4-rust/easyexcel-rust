@@ -1,6 +1,6 @@
 //! In-memory BIFF8 workbook model and OLE/CFB serialization.
 //!
-//! Java mapping: Alibaba EasyExcel `excelType(ExcelTypeEnum.XLS)` → POI HSSF.
+//! Java mapping: Alibaba `EasyExcel` `excelType(ExcelTypeEnum.XLS)` → POI HSSF.
 //! This module is a **minimal** BIFF8 writer (not a full HSSF port):
 //! - Supported: single/multi sheet, header + data rows, string / number / bool /
 //!   date / datetime cells, SST shared strings, 1900 date system, column widths
@@ -137,7 +137,7 @@ impl Biff8Sheet {
     /// # Errors
     ///
     /// Returns [`ExcelError::Format`] when the coordinate exceeds BIFF8 limits
-    /// (65_536 rows × 256 columns).
+    /// (`65_536` rows × 256 columns).
     pub fn set(&mut self, row: u32, col: usize, cell: Biff8Cell) -> Result<()> {
         let row = u16::try_from(row)
             .map_err(|_| ExcelError::Format("BIFF8 supports at most 65536 rows".to_owned()))?;
@@ -158,6 +158,11 @@ impl Biff8Sheet {
     }
 
     /// Appends a merge region when it spans more than one cell.
+    ///
+    /// # Errors
+    ///
+    /// Returns a format error when `last_row`/`last_col` precede
+    /// `first_row`/`first_col` (reversed range).
     pub fn add_merge(&mut self, merge: Biff8Merge) -> Result<()> {
         if merge.last_row < merge.first_row || merge.last_col < merge.first_col {
             return Err(ExcelError::Format(
@@ -207,16 +212,18 @@ impl Biff8Book {
         self.extra_bytes.extend_from_slice(bytes);
     }
 
-    /// Encodes image bytes as BIFF8 Obj + MSODrawing records (Escher BSE
-    /// container) and appends them to extra_bytes. This produces output
-    /// compatible with POI's HSSFWorkbook image writing.
+    /// Encodes image bytes as BIFF8 Obj + `MSODrawing` records (Escher BSE
+    /// container) and appends them to `extra_bytes`. This produces output
+    /// compatible with POI's `HSSFWorkbook` image writing.
+    // 语义敏感：Escher 容器长度与 BIFF 记录长度按规范为 u32/u16 字段，
+    // 与原实现（POI HSSF 单记录嵌入）行为一致，保留 as 转换。
+    #[allow(clippy::cast_possible_truncation)]
     pub fn write_image(&mut self, image_data: &[u8], _col: u8, _row: u32) {
         // Determine image type from magic bytes
         let blip_type: u8 = if image_data.len() >= 2 {
             match &image_data[..2] {
-                [0xFF, 0xD8] => 0x07, // JPEG
                 [0x89, b'P'] => 0x09, // PNG
-                _ => 0x07,            // default JPEG
+                _ => 0x07,            // JPEG / default
             }
         } else {
             0x07
@@ -339,6 +346,11 @@ impl Biff8Book {
         self.extra_bytes.extend_from_slice(&record_data);
     }
     /// Returns a mutable sheet by name, creating it if missing.
+    ///
+    /// # Panics
+    ///
+    /// Never in practice; `last_mut` is only reached right after the new
+    /// sheet was pushed onto the list.
     pub fn sheet_mut(&mut self, name: &str) -> &mut Biff8Sheet {
         if let Some(index) = self.sheets.iter().position(|s| s.name == name) {
             return &mut self.sheets[index];
@@ -353,7 +365,7 @@ impl Biff8Book {
     ///
     /// Returns I/O or CFB construction errors.
     pub fn to_cfb_bytes(&self) -> Result<Vec<u8>> {
-        let stream = build_workbook_stream(self)?;
+        let stream = build_workbook_stream(self);
         let mut mem = Cursor::new(Vec::<u8>::new());
         {
             #[rustfmt::skip]
@@ -393,6 +405,10 @@ pub fn date_to_excel_serial(date: NaiveDate) -> f64 {
 }
 
 /// Converts a calendar date using either the 1900 or 1904 date windowing system.
+///
+/// # Panics
+///
+/// Never in practice; the 1899/1900/1904 epoch constants are statically valid.
 #[must_use]
 pub fn date_to_excel_serial_with_windowing(date: NaiveDate, use_1904_windowing: bool) -> f64 {
     let epoch = if use_1904_windowing {
@@ -428,7 +444,10 @@ pub fn datetime_to_excel_serial_with_windowing(
 }
 
 /// Builds the BIFF8 `Workbook` stream (globals + worksheet substreams).
-fn build_workbook_stream(book: &Biff8Book) -> Result<Vec<u8>> {
+// 语义敏感：BOUNDSHEET 偏移为 BIFF8 规范的 u32 绝对偏移，文件流不可能
+// 超过 4GiB，usize->u32 在此场景不可能截断。
+#[allow(clippy::cast_possible_truncation)]
+fn build_workbook_stream(book: &Biff8Book) -> Vec<u8> {
     let mut out: Vec<u8> = Vec::new();
     write_bof(&mut out, DT_GLOBALS);
     record(&mut out, CODEPAGE, &1200u16.to_le_bytes());
@@ -487,7 +506,7 @@ fn build_workbook_stream(book: &Biff8Book) -> Result<Vec<u8>> {
     for (patch_off, pos) in boundsheet_patches.into_iter().zip(sheet_offsets) {
         out[patch_off..patch_off + 4].copy_from_slice(&pos.to_le_bytes());
     }
-    Ok(out)
+    out
 }
 
 fn write_bof(out: &mut Vec<u8>, dt: u16) {
@@ -537,6 +556,9 @@ fn write_boundsheet_placeholder(out: &mut Vec<u8>, name: &str) -> usize {
     record_start + 4
 }
 
+// 语义敏感：SST 条目数与 Excel 字符串表规模一致（远小于 u32 上限），
+// usize->u32 不可能截断；保留 as 以对齐 BIFF8 规范。
+#[allow(clippy::cast_possible_truncation)]
 fn build_sst(sheets: &[Biff8Sheet]) -> (Vec<String>, HashMap<String, u32>, u32) {
     let mut strings = Vec::new();
     let mut index = HashMap::new();
@@ -556,6 +578,8 @@ fn build_sst(sheets: &[Biff8Sheet]) -> (Vec<String>, HashMap<String, u32>, u32) 
     (strings, index, total_refs)
 }
 
+// 语义敏感：同上，SST 字符串计数转换为 BIFF8 u32 计数字段。
+#[allow(clippy::cast_possible_truncation)]
 fn build_sst_records(strings: &[String], total_refs: u32) -> Vec<u8> {
     let mut pieces: Vec<Vec<u8>> = Vec::new();
     let mut header = Vec::new();
@@ -714,6 +738,9 @@ mod tests {
     use super::*;
 
     #[test]
+    // 语义敏感：POI 序列号必须是精确的 f64 常量（1.0/59.0/61.0/0.0），
+    // 严格比较即测试意图，不能改用误差容忍。
+    #[allow(clippy::float_cmp)]
     fn excel_serials_match_poi_across_1900_leap_bug_and_1904_epoch() {
         assert_eq!(
             date_to_excel_serial_with_windowing(
@@ -858,7 +885,7 @@ mod tests_extra {
     #[test]
     fn empty_book_writes_default_sheet1() {
         let book = Biff8Book::default();
-        let stream = build_workbook_stream(&book).unwrap();
+        let stream = build_workbook_stream(&book);
         let recs = records(&stream);
         let boundsheets: Vec<&[u8]> = recs
             .iter()
@@ -886,7 +913,7 @@ mod tests_extra {
             .unwrap();
         let mut book = Biff8Book::default();
         book.sheets.push(sheet);
-        let stream = build_workbook_stream(&book).unwrap();
+        let stream = build_workbook_stream(&book);
         let mut sst = 0;
         let mut continues = 0;
         for (typ, data) in records(&stream) {
@@ -937,7 +964,7 @@ mod tests_extra {
             .unwrap();
         let mut book = Biff8Book::default();
         book.sheets.push(sheet);
-        let stream = build_workbook_stream(&book).unwrap();
+        let stream = build_workbook_stream(&book);
         let mut boolerr = 0;
         let mut number = 0;
         let mut rk = 0;

@@ -7,12 +7,12 @@
 //! MERGECELLS / existing cells). New values are inserted as inline `LABEL`
 //! (0x0204) or `NUMBER` / `BOOLERR` / `BLANK` records immediately before the
 //! target sheet's `EOF`, then `DIMENSION` and `BOUNDSHEET` stream offsets are
-//! repaired. Other OLE streams (SummaryInformation, …) are kept by rewriting
+//! repaired. Other OLE streams (`SummaryInformation`, …) are kept by rewriting
 //! only the `Workbook` / `Book` stream in place.
 //!
 //! # Java mapping
 //!
-//! | Java EasyExcel / POI | Rust |
+//! | Java `EasyExcel` / POI | Rust |
 //! |---|---|
 //! | `EasyExcel.write(...).withTemplate(xls).sheet().doWrite(data)` | [`Biff8TemplatePackage`] + writer wiring |
 //! | `HSSFWorkbook(templateStream)` | OLE open + Workbook record parse |
@@ -116,7 +116,7 @@ impl Biff8TemplatePackage {
         Self::from_bytes(&bytes)
     }
 
-    /// Returns worksheet names in BoundSheet order.
+    /// Returns worksheet names in `BoundSheet` order.
     #[must_use]
     pub fn sheet_names(&self) -> Vec<String> {
         self.sheets.iter().map(|sheet| sheet.name.clone()).collect()
@@ -145,7 +145,7 @@ impl Biff8TemplatePackage {
         sheet_name: &str,
         row: u32,
         col: usize,
-        cell: Biff8Cell,
+        cell: &Biff8Cell,
     ) -> Result<()> {
         let row = u16::try_from(row)
             .map_err(|_| ExcelError::Format("BIFF8 supports at most 65536 rows".to_owned()))?;
@@ -172,7 +172,7 @@ impl Biff8TemplatePackage {
             self.records.insert(insert_at, payload);
             self.adjust_indices_after_insert(sheet_index, insert_at);
         }
-        self.refresh_dimension(sheet_index)?;
+        self.refresh_dimension(sheet_index);
         Ok(())
     }
 
@@ -189,7 +189,7 @@ impl Biff8TemplatePackage {
         value: &CellValue,
     ) -> Result<()> {
         let cell = cell_value_to_template_cell(value)?;
-        self.set_cell(sheet_name, row, col, cell)
+        self.set_cell(sheet_name, row, col, &cell)
     }
 
     /// Appends sparse rows starting at the sheet's next free row.
@@ -217,6 +217,10 @@ impl Biff8TemplatePackage {
     /// Java `HSSFSheet.addMergedRegionUnsafe` permits multiple MERGECELLS
     /// records, so a one-range record can be inserted directly before the
     /// target worksheet EOF without rewriting pre-existing merge tables.
+    ///
+    /// # Errors
+    ///
+    /// Returns a format error when the sheet does not exist.
     pub fn add_merge_range(&mut self, sheet_name: &str, range: Biff8Merge) -> Result<()> {
         let sheet_index = self.sheet_index(sheet_name)?;
         let mut data = Vec::with_capacity(10);
@@ -272,11 +276,10 @@ impl Biff8TemplatePackage {
                     }
                     _ => continue,
                 };
-                if let Some(ref text) = text {
-                    if text.contains('{') && text.contains('}') {
+                if let Some(ref text) = text
+                    && text.contains('{') && text.contains('}') {
                         placeholders.push((sheet.name.clone(), row, col, text.clone()));
                     }
-                }
             }
         }
         placeholders
@@ -325,7 +328,7 @@ impl Biff8TemplatePackage {
             self.records.insert(insert_at, payload);
             self.adjust_indices_after_insert(sheet_index, insert_at);
         }
-        self.refresh_dimension(sheet_index)?;
+        self.refresh_dimension(sheet_index);
         Ok(())
     }
 
@@ -391,7 +394,7 @@ impl Biff8TemplatePackage {
         }
     }
 
-    fn refresh_dimension(&mut self, sheet_index: usize) -> Result<()> {
+    fn refresh_dimension(&mut self, sheet_index: usize) {
         let sheet = self.sheets[sheet_index].clone();
         let (max_row, max_col) = sheet_dimensions(&self.records, &sheet);
         let mut data = Vec::with_capacity(14);
@@ -417,7 +420,6 @@ impl Biff8TemplatePackage {
             self.sheets[sheet_index].dimension_index = Some(insert_at);
             self.adjust_indices_after_insert(sheet_index, insert_at);
         }
-        Ok(())
     }
 }
 
@@ -431,7 +433,9 @@ fn cell_value_to_template_cell(value: &CellValue) -> Result<Biff8Cell> {
         | CellValue::Formula(text) => Biff8Value::Text(text.clone()),
         CellValue::RichText(rich) => Biff8Value::Text(rich.text_string().to_owned()),
         CellValue::Bool(flag) => Biff8Value::Bool(*flag),
-        CellValue::Int(number) => Biff8Value::Number(*number as f64),
+        // 语义敏感：BIFF8 数值单元格按 double 存储（与 Java POI 一致），
+        // i64->f64 的精度损耗是 1:1 对应行为，不能改为检查式转换。
+        CellValue::Int(number) => Biff8Value::Number(#[allow(clippy::cast_precision_loss)] { *number as f64 }),
         CellValue::Float(number) => Biff8Value::Number(*number),
         CellValue::Decimal(number) => {
             let numeric = crate::finite_decimal_f64(number, "BIFF8")?;
@@ -497,7 +501,7 @@ fn encode_cell_record(row: u16, col: u8, xf: u16, value: &Biff8Value) -> Result<
 }
 
 /// Encodes a BIFF8 LABEL record (0x0204) directly, without going
-/// through the full Biff8Value dispatch. Used by `replace_label`
+/// through the full `Biff8Value` dispatch. Used by `replace_label`
 /// to force an inline-string cell even when the original was LABELSST.
 fn encode_label_record(row: u16, col: u8, xf: u16, text: &str) -> Result<RawRecord> {
     let mut data = Vec::new();
@@ -724,6 +728,9 @@ fn parse_sst(records: &[RawRecord]) -> Vec<String> {
 }
 
 /// Decodes just the SST index from a LABELSST record.
+// 语义敏感：BIFF8 列号合法范围 0..=255（工作簿最多 256 列），
+// u16->u8 截断对合法文件无损；保留 as 以对齐 Java 的 byte 列号。
+#[allow(clippy::cast_possible_truncation)]
 fn decode_labelsst_index(data: &[u8]) -> (u16, u8, Option<u32>) {
     if data.len() < 10 {
         return (0, 0, None);
@@ -735,6 +742,8 @@ fn decode_labelsst_index(data: &[u8]) -> (u16, u8, Option<u32>) {
 }
 
 /// Decodes a BIFF8 LABEL record payload, returning `(row, col, text)`.
+// 语义敏感：BIFF8 列号合法范围 0..=255，u16->u8 截断对合法文件无损。
+#[allow(clippy::cast_possible_truncation)]
 fn decode_label_payload(data: &[u8]) -> (u16, u8, Option<String>) {
     if data.len() < 8 {
         return (0, 0, None);
@@ -745,24 +754,22 @@ fn decode_label_payload(data: &[u8]) -> (u16, u8, Option<String>) {
     // followed by `grbit` + character data (BIFF8 LABEL inline string).
     let cch = u16::from_le_bytes([data[6], data[7]]) as usize;
     let string_data = &data[8..];
-    let text = if !string_data.is_empty() {
-        if string_data[0] & 0x01 == 0 {
-            // Compressed 8-bit characters.
-            let take = cch.min(string_data.len().saturating_sub(1));
-            String::from_utf8_lossy(&string_data[1..1 + take]).into_owned()
-        } else {
-            // 16-bit Unicode characters.
-            let take = cch
-                .saturating_mul(2)
-                .min(string_data.len().saturating_sub(1));
-            let units: Vec<u16> = string_data[1..1 + take]
-                .chunks_exact(2)
-                .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]))
-                .collect();
-            String::from_utf16_lossy(&units)
-        }
-    } else {
+    let text = if string_data.is_empty() {
         String::new()
+    } else if string_data[0] & 0x01 == 0 {
+        // Compressed 8-bit characters.
+        let take = cch.min(string_data.len().saturating_sub(1));
+        String::from_utf8_lossy(&string_data[1..=take]).into_owned()
+    } else {
+        // 16-bit Unicode characters.
+        let take = cch
+            .saturating_mul(2)
+            .min(string_data.len().saturating_sub(1));
+        let units: Vec<u16> = string_data[1..=take]
+            .chunks_exact(2)
+            .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]))
+            .collect();
+        String::from_utf16_lossy(&units)
     };
     (
         row,
@@ -776,6 +783,8 @@ fn decode_label_payload(data: &[u8]) -> (u16, u8, Option<String>) {
 /// the SST available here, we return None for the text and let the
 /// caller handle SST lookups separately.
 #[allow(dead_code)]
+// 语义敏感：BIFF8 列号合法范围 0..=255，u16->u8 截断对合法文件无损。
+#[allow(clippy::cast_possible_truncation)]
 fn decode_labelsst_payload(data: &[u8]) -> (u16, u8, Option<String>) {
     if data.len() < 8 {
         return (0, 0, None);
@@ -831,14 +840,18 @@ fn cell_coords(record: &RawRecord) -> Option<(u16, u8)> {
 }
 
 fn find_cell_record(records: &[RawRecord], sheet: &SheetSpan, row: u16, col: u8) -> Option<usize> {
-    for index in sheet.bof_index..=sheet.eof_index {
-        if cell_coords(&records[index]) == Some((row, col)) {
-            return Some(index);
-        }
-    }
-    None
+    records
+        .iter()
+        .enumerate()
+        .take(sheet.eof_index + 1)
+        .skip(sheet.bof_index)
+        .find(|(_, record)| cell_coords(record) == Some((row, col)))
+        .map(|(index, _)| index)
 }
 
+// 语义敏感：BOUNDSHEET 的 lbPlyPos 是 BIFF8 规范中的 u32 绝对偏移，
+// 文件流不可能超过 4GiB，usize->u32 截断在此场景不可能发生。
+#[allow(clippy::cast_possible_truncation)]
 fn assemble_workbook(records: &[RawRecord]) -> Result<Vec<u8>> {
     let mut out = Vec::new();
     let mut boundsheet_patches = Vec::new();
@@ -866,6 +879,9 @@ fn assemble_workbook(records: &[RawRecord]) -> Result<Vec<u8>> {
     Ok(out)
 }
 
+// 语义敏感：上方已校验 data.len() <= MAX_RECORD_DATA（远小于 u16 上限），
+// 记录长度字段按 BIFF8 规范为 u16，保留 as 转换。
+#[allow(clippy::cast_possible_truncation)]
 fn write_raw_record(out: &mut Vec<u8>, record: &RawRecord) -> Result<()> {
     if record.data.len() > MAX_RECORD_DATA {
         return Err(ExcelError::Format(format!(
@@ -888,9 +904,13 @@ pub fn looks_like_xls(bytes: &[u8]) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use calamine::{Data, DataType, Reader, Xls, open_workbook_from_rs};
     use crate::biff8::{Biff8Book, Biff8Cell, Biff8Value};
 
     #[test]
+    // 语义敏感：断言 calamine 往返解码后的数值必须精确等于 99.0（测试数据
+    // 恰好可表示），严格比较正是测试意图，不能改用误差容忍。
+    #[allow(clippy::float_cmp)]
     fn loads_self_written_template_writes_cell_and_preserves_other_cells() {
         let mut book = Biff8Book::default();
         {
@@ -913,14 +933,14 @@ mod tests {
 
         // Overwrite one cell and append another — other cells must survive.
         package
-            .set_cell("Sheet1", 1, 0, Biff8Cell::general(Biff8Value::Number(99.0)))
+            .set_cell("Sheet1", 1, 0, &Biff8Cell::general(Biff8Value::Number(99.0)))
             .unwrap();
         package
             .set_cell(
                 "Sheet1",
                 2,
                 0,
-                Biff8Cell::general(Biff8Value::Text("appended".into())),
+                &Biff8Cell::general(Biff8Value::Text("appended".into())),
             )
             .unwrap();
 
@@ -935,7 +955,6 @@ mod tests {
         );
 
         // Round-trip via calamine to assert values.
-        use calamine::{Data, DataType, Reader, Xls, open_workbook_from_rs};
         let mut xls: Xls<_> = open_workbook_from_rs(Cursor::new(out)).unwrap();
         let range = xls.worksheet_range("Sheet1").unwrap();
         assert_eq!(
@@ -1005,9 +1024,9 @@ mod tests {
         book.to_cfb_bytes().unwrap()
     }
 
-    fn reload(records: Vec<RawRecord>) -> Biff8TemplatePackage {
+    fn reload(records: &[RawRecord]) -> Biff8TemplatePackage {
         let template = build_single_sheet_template();
-        let workbook = assemble_workbook(&records).unwrap();
+        let workbook = assemble_workbook(records).unwrap();
         let cfb = rewrite_workbook_stream(&template, "Workbook", &workbook).unwrap();
         Biff8TemplatePackage::from_bytes(&cfb).unwrap()
     }
@@ -1015,8 +1034,7 @@ mod tests {
     #[test]
     fn from_bytes_rejects_non_ole_header() {
         let error = Biff8TemplatePackage::from_bytes(&[0, 1, 2, 3])
-            .err()
-            .expect("non-OLE bytes must fail");
+            .expect_err("non-OLE bytes must fail");
         assert!(matches!(error, ExcelError::Format(_)));
     }
 
@@ -1036,8 +1054,7 @@ mod tests {
         let patched = assemble_workbook(&records).unwrap();
         let cfb = rewrite_workbook_stream(&template, "Workbook", &patched).unwrap();
         let error = Biff8TemplatePackage::from_bytes(&cfb)
-            .err()
-            .expect("workbook without worksheets must fail");
+            .expect_err("workbook without worksheets must fail");
         assert!(matches!(error, ExcelError::Format(_)));
     }
 
@@ -1065,8 +1082,7 @@ mod tests {
 
         let missing = directory.path().join("missing.xls");
         let error = Biff8TemplatePackage::from_path(&missing)
-            .err()
-            .expect("missing file must fail");
+            .expect_err("missing file must fail");
         assert!(matches!(error, ExcelError::Io(_)));
     }
 
@@ -1075,19 +1091,16 @@ mod tests {
         let mut package = Biff8TemplatePackage::from_bytes(&build_single_sheet_template()).unwrap();
         let too_many_rows = Biff8Cell::general(Biff8Value::Number(1.0));
         let row_error = package
-            .set_cell("Sheet1", 70_000, 0, too_many_rows.clone())
-            .err()
-            .expect("row overflow must fail");
+            .set_cell("Sheet1", 70_000, 0, &too_many_rows.clone())
+            .expect_err("row overflow must fail");
         assert!(matches!(row_error, ExcelError::Format(_)));
         let col_error = package
-            .set_cell("Sheet1", 0, 300, too_many_rows)
-            .err()
-            .expect("column overflow must fail");
+            .set_cell("Sheet1", 0, 300, &too_many_rows)
+            .expect_err("column overflow must fail");
         assert!(matches!(col_error, ExcelError::Format(_)));
         let sheet_error = package
-            .set_cell("Nope", 0, 0, Biff8Cell::general(Biff8Value::Blank))
-            .err()
-            .expect("unknown sheet must fail");
+            .set_cell("Nope", 0, 0, &Biff8Cell::general(Biff8Value::Blank))
+            .expect_err("unknown sheet must fail");
         assert!(matches!(sheet_error, ExcelError::SheetNotFound(_)));
     }
 
@@ -1105,7 +1118,7 @@ mod tests {
         );
         package.adjust_indices_after_insert(0, insert_at);
         package
-            .set_cell("Sheet1", 5, 5, Biff8Cell::general(Biff8Value::Number(7.0)))
+            .set_cell("Sheet1", 5, 5, &Biff8Cell::general(Biff8Value::Number(7.0)))
             .unwrap();
         assert!(
             matches!(package.records[insert_at].typ, NUMBER | RK),
@@ -1115,6 +1128,7 @@ mod tests {
 
     #[test]
     fn multi_sheet_insert_adjusts_later_sheet_indices() {
+        use calamine::{DataType, Reader, Xls, open_workbook_from_rs};
         let mut book = Biff8Book::default();
         book.sheet_mut("Sheet1")
             .set(0, 0, Biff8Cell::general(Biff8Value::Text("a".into())))
@@ -1130,7 +1144,7 @@ mod tests {
         );
         let sheet2_bof_before = package.sheets[1].bof_index;
         package
-            .set_cell("Sheet1", 5, 0, Biff8Cell::general(Biff8Value::Number(1.0)))
+            .set_cell("Sheet1", 5, 0, &Biff8Cell::general(Biff8Value::Number(1.0)))
             .unwrap();
         assert!(
             package.sheets[1].bof_index > sheet2_bof_before,
@@ -1138,7 +1152,6 @@ mod tests {
         );
 
         let out = package.to_bytes().unwrap();
-        use calamine::{DataType, Reader, Xls, open_workbook_from_rs};
         let mut xls: Xls<_> = open_workbook_from_rs(Cursor::new(out)).unwrap();
         let first = xls.worksheet_range("Sheet1").unwrap();
         assert_eq!(
@@ -1158,10 +1171,10 @@ mod tests {
         let (_, workbook) = read_workbook_stream(&template).unwrap();
         let mut records = split_records(&workbook).unwrap();
         records.retain(|record| record.typ != DIMENSION);
-        let mut package = reload(records);
+        let mut package = reload(&records);
         assert!(package.sheets[0].dimension_index.is_none());
         package
-            .set_cell("Sheet1", 3, 1, Biff8Cell::general(Biff8Value::Number(2.0)))
+            .set_cell("Sheet1", 3, 1, &Biff8Cell::general(Biff8Value::Number(2.0)))
             .unwrap();
         assert!(
             package.records.iter().any(|record| record.typ == DIMENSION),
@@ -1242,8 +1255,7 @@ mod tests {
 
         let sheet_error = package
             .replace_label("Nope", 0, 0, "x")
-            .err()
-            .expect("unknown sheet must fail");
+            .expect_err("unknown sheet must fail");
         assert!(matches!(sheet_error, ExcelError::SheetNotFound(_)));
     }
 
@@ -1314,8 +1326,7 @@ mod tests {
         .unwrap();
         assert!(matches!(images.value, Biff8Value::Number(_)));
         let image_error = cell_value_to_template_cell(&CellValue::Image(vec![1, 2, 3]))
-            .err()
-            .expect("legacy XLS images must be unsupported");
+            .expect_err("legacy XLS images must be unsupported");
         assert!(matches!(image_error, ExcelError::Unsupported(_)));
     }
 
@@ -1331,8 +1342,7 @@ mod tests {
         assert_eq!(number.typ, NUMBER);
         let long_text = "x".repeat(MAX_RECORD_DATA + 100);
         let oversize = encode_cell_record(0, 0, XF_GENERAL, &Biff8Value::Text(long_text))
-            .err()
-            .expect("oversized LABEL must fail");
+            .expect_err("oversized LABEL must fail");
         assert!(matches!(oversize, ExcelError::Format(_)));
     }
 
@@ -1340,8 +1350,7 @@ mod tests {
     fn encode_label_record_rejects_oversize_text() {
         let long_text = "x".repeat(MAX_RECORD_DATA + 100);
         let error = encode_label_record(0, 0, XF_GENERAL, &long_text)
-            .err()
-            .expect("oversized LABEL must fail");
+            .expect_err("oversized LABEL must fail");
         assert!(matches!(error, ExcelError::Format(_)));
     }
 
@@ -1403,8 +1412,7 @@ mod tests {
 
         // decode_boundsheet_name: too short, compressed, and Unicode.
         let too_short = decode_boundsheet_name(&[0, 0, 0, 0, 0, 0, 0])
-            .err()
-            .expect("short BOUNDSHEET must fail");
+            .expect_err("short BOUNDSHEET must fail");
         assert!(matches!(too_short, ExcelError::Format(_)));
         let mut compressed = vec![0u8; 8];
         compressed[6] = 2;
@@ -1487,13 +1495,14 @@ mod tests {
     fn split_records_and_discover_sheets_error_paths() {
         // Truncated BIFF record.
         let truncated = split_records(&[0x00, 0x02, 0x00, 0x05, 0x01])
-            .err()
-            .expect("truncated record must fail");
+            .expect_err("truncated record must fail");
         assert!(matches!(truncated, ExcelError::Format(_)));
         // Empty record list.
-        let empty = split_records(&[]).err().expect("empty stream must fail");
+        let empty = split_records(&[]).expect_err("empty stream must fail");
         assert!(matches!(empty, ExcelError::Format(_)));
 
+        // 语义敏感：BIFF8 工作表名上限 31 字节，usize->u8 不会截断。
+        #[allow(clippy::cast_possible_truncation)]
         let boundsheet = |name: &[u8]| RawRecord {
             typ: BOUNDSHEET,
             data: {
@@ -1520,13 +1529,11 @@ mod tests {
             worksheet_bof.clone(),
             worksheet_bof.clone(),
         ])
-        .err()
-        .expect("nested BOF must fail");
+        .expect_err("nested BOF must fail");
         assert!(matches!(nested, ExcelError::Format(_)));
         // Worksheet BOF missing its EOF.
         let missing_eof = discover_sheets(&[boundsheet(b"A"), worksheet_bof])
-            .err()
-            .expect("missing EOF must fail");
+            .expect_err("missing EOF must fail");
         assert!(matches!(missing_eof, ExcelError::Format(_)));
     }
 
@@ -1537,8 +1544,7 @@ mod tests {
             typ: BOUNDSHEET,
             data: vec![0u8; 8],
         }])
-        .err()
-        .expect("unbalanced BOUNDSHEET must fail");
+        .expect_err("unbalanced BOUNDSHEET must fail");
         assert!(matches!(unbalanced, ExcelError::Format(_)));
         // Oversized record payload.
         let oversized = write_raw_record(
@@ -1548,8 +1554,7 @@ mod tests {
                 data: vec![0u8; MAX_RECORD_DATA + 1],
             },
         )
-        .err()
-        .expect("oversized payload must fail");
+        .expect_err("oversized payload must fail");
         assert!(matches!(oversized, ExcelError::Format(_)));
     }
 
@@ -1575,16 +1580,14 @@ mod tests {
             cf.flush().unwrap();
         }
         let missing = read_workbook_stream(&other_mem.into_inner())
-            .err()
-            .expect("missing Workbook stream must fail");
+            .expect_err("missing Workbook stream must fail");
         assert!(matches!(missing, ExcelError::Format(_)));
 
         // OLE magic but a broken container.
         let mut broken = vec![0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
         broken.extend_from_slice(&[0u8; 32]);
         let corrupt = read_workbook_stream(&broken)
-            .err()
-            .expect("corrupt container must fail");
+            .expect_err("corrupt container must fail");
         assert!(matches!(corrupt, ExcelError::Format(_)));
     }
 

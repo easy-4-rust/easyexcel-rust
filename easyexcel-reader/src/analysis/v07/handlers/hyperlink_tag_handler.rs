@@ -32,6 +32,10 @@ impl HyperlinkTagHandler {
     /// Java `HyperlinkTagHandler.startElement`.
     ///
     /// `resolve_r_id` maps `r:id` → target URI (Java `PackageRelationshipCollection`).
+    ///
+    /// # Errors
+    ///
+    /// 当 `ref` 单元格区域解析失败时返回 [`ExcelError::Format`]。
     pub fn start_hyperlink(
         &mut self,
         attrs: &HashMap<String, String>,
@@ -76,6 +80,11 @@ impl HyperlinkTagHandler {
     ///
     /// Missing / empty `ref`, missing `id`/`location`, and unresolved
     /// relationships all return [`ExcelError`] (historical Rust reader behaviour).
+    ///
+    /// # Errors
+    ///
+    /// 当 `ref` 缺失/为空、`id`/`location` 缺失、关系解析失败，或 `ref` 区域
+    /// 解析失败时返回 [`ExcelError::Format`]。
     pub fn start_hyperlink_required(
         &mut self,
         attrs: &HashMap<String, String>,
@@ -139,6 +148,9 @@ fn resolve_none(_: &str) -> Option<String> {
 }
 
 #[cfg(test)]
+// 对应 Java：测试辅助函数须与 `&dyn Fn(&str) -> Result<String>` 解析器签名一致，
+// 保留 Result 返回类型以满足调用点类型约束。
+#[allow(clippy::unnecessary_wraps)]
 fn resolve_ok(_: &str) -> Result<String> {
     Ok("https://example.com".to_owned())
 }

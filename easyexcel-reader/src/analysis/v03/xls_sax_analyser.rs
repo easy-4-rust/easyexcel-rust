@@ -245,9 +245,11 @@ mod tests {
     #[test]
     fn execute_with_listener_delegates_to_read_xls() -> Result<()> {
         let file = write_java_multisheet_xls();
-        let mut options = ReadOptions::default();
-        options.head_row_number = 1;
-        options.sheet = crate::SheetSelector::Index(0);
+        let options = ReadOptions {
+            head_row_number: 1,
+            sheet: crate::SheetSelector::Index(0),
+            ..ReadOptions::default()
+        };
         let mut analyser = XlsSaxAnalyser::from_path(file.path(), options)?;
         let mut listener = CollectingListener::default();
         analyser.execute_with_listener::<DynamicRow, _>(&mut listener)?;
@@ -258,9 +260,11 @@ mod tests {
     #[test]
     fn trait_execute_runs_the_real_xls_parser() -> Result<()> {
         let file = write_java_multisheet_xls();
-        let mut options = ReadOptions::default();
-        options.head_row_number = 1;
-        options.sheet = crate::SheetSelector::Index(0);
+        let options = ReadOptions {
+            head_row_number: 1,
+            sheet: crate::SheetSelector::Index(0),
+            ..ReadOptions::default()
+        };
         let mut analyser =
             XlsSaxAnalyser::from_path(file.path(), options.clone()).expect("analyser");
         let mut listener = CollectingListener::default();
@@ -271,6 +275,9 @@ mod tests {
     }
 
     #[test]
+    // 对应 Java：断言为 BIFF `f64` 位级往返值（`to_le_bytes`/`from_le_bytes` 无损），
+    // 精确相等即预期语义，不做容差比较。
+    #[allow(clippy::float_cmp)]
     fn process_record_dispatches_number_handler() -> Result<()> {
         let file = write_java_multisheet_xls();
         let mut analyser =
@@ -290,9 +297,11 @@ mod tests {
     #[test]
     fn execute_walks_real_workbook_biff_records() -> Result<()> {
         let file = write_java_multisheet_xls();
-        let mut options = ReadOptions::default();
-        options.head_row_number = 1;
-        options.sheet = crate::SheetSelector::Index(0);
+        let options = ReadOptions {
+            head_row_number: 1,
+            sheet: crate::SheetSelector::Index(0),
+            ..ReadOptions::default()
+        };
         let mut analyser = XlsSaxAnalyser::from_path(file.path(), options)?;
         let mut listener = CollectingListener::default();
 
@@ -393,9 +402,11 @@ mod tests_extra {
     fn accessors_and_error_recording() -> Result<()> {
         // 对应 Java：XlsSaxAnalyser 公开访问器与 lastError 记录
         let file = write_java_multisheet_xls();
-        let mut options = ReadOptions::default();
-        options.head_row_number = 1;
-        options.sheet = crate::SheetSelector::Index(0);
+        let options = ReadOptions {
+            head_row_number: 1,
+            sheet: crate::SheetSelector::Index(0),
+            ..ReadOptions::default()
+        };
         let mut analyser = XlsSaxAnalyser::from_path(file.path(), options)?;
 
         assert_eq!(analyser.path(), file.path());
@@ -429,8 +440,11 @@ mod tests_extra2 {
 
     use super::*;
 
-    /// 构造一个 BIFF 流中只有 BOF/EOF、没有任何 BoundSheet 的 OLE2 文档。
+    /// 构造一个 BIFF 流中只有 BOF/EOF、没有任何 `BoundSheet` 的 OLE2 文档。
     /// calamine 能打开但 sheet 列表为空，从而触发“Can not find any sheet”。
+    // 对应 Java：BIFF 记录长度字段为 u16，测试 payload 固定（≤4 字节），
+    // `as u16` 不可能截断。
+    #[allow(clippy::cast_possible_truncation)]
     fn write_zero_sheet_xls() -> NamedTempFile {
         let file = NamedTempFile::with_suffix(".xls").expect("temp xls");
         let directory = file.path().parent().expect("tempdir parent");
@@ -463,12 +477,14 @@ mod tests_extra2 {
     }
 
     #[test]
+    // 对应 Java：BIFF 记录长度字段为 u16，测试 payload 均 ≤ 4 字节，
+    // `as u16` 截断不可能发生（fixture 固定长度）。
+    #[allow(clippy::cast_possible_truncation)]
     fn new_rejects_workbooks_without_any_sheet() {
         // 对应 Java：XlsSaxAnalyser 构造时 sheetList 为空报错
         let file = write_zero_sheet_xls();
-        let error = match XlsSaxAnalyser::from_path(file.path(), ReadOptions::default()) {
-            Ok(_) => panic!("zero-sheet workbook must fail"),
-            Err(error) => error,
+        let Err(error) = XlsSaxAnalyser::from_path(file.path(), ReadOptions::default()) else {
+            panic!("zero-sheet workbook must fail");
         };
         assert!(error.to_string().contains("Can not find any sheet"));
     }

@@ -71,8 +71,8 @@ impl HorizontalCellStyleStrategy {
     /// Owned font names are not copied into [`ExcelFontStyle`]; set
     /// [`ExcelFontStyle::font_name`] when a static name is required.
     #[must_use]
-    pub fn with_head_write_font(mut self, font: WriteFont) -> Self {
-        self.head_style.font = Some(excel_font_style_from_write_font(&font));
+    pub fn with_head_write_font(mut self, font: &WriteFont) -> Self {
+        self.head_style.font = Some(excel_font_style_from_write_font(font));
         self
     }
 
@@ -88,8 +88,8 @@ impl HorizontalCellStyleStrategy {
 
     /// Attaches a content font from runtime [`WriteFont`].
     #[must_use]
-    pub fn with_content_write_font(mut self, font: WriteFont) -> Self {
-        let converted = excel_font_style_from_write_font(&font);
+    pub fn with_content_write_font(mut self, font: &WriteFont) -> Self {
+        let converted = excel_font_style_from_write_font(font);
         for style in &mut self.content_styles {
             style.font = Some(converted);
         }
@@ -174,7 +174,7 @@ mod tests {
     #[test]
     fn horizontal_strategy_with_head_write_font() {
         let font = WriteFont::default();
-        let s = HorizontalCellStyleStrategy::new(vec![]).with_head_write_font(font);
+        let s = HorizontalCellStyleStrategy::new(vec![]).with_head_write_font(&font);
         assert!(s.head_style().font.is_some());
     }
 
@@ -190,7 +190,7 @@ mod tests {
     fn horizontal_strategy_with_content_write_font() {
         let font = WriteFont::default();
         let style = ExcelCellStyle::new();
-        let s = HorizontalCellStyleStrategy::new(vec![style]).with_content_write_font(font);
+        let s = HorizontalCellStyleStrategy::new(vec![style]).with_content_write_font(&font);
         assert!(s.content_styles()[0].font.is_some());
     }
 

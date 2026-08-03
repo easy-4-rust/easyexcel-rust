@@ -85,7 +85,7 @@ pub(crate) struct CellFormatContext<'a> {
     pub(crate) explicit: Option<&'a CellStyle>,
     pub(crate) cell: Option<ExcelCellStyle>,
     pub(crate) font: Option<ExcelFontStyle>,
-    /// Style contributed by registered WriteHandler strategies
+    /// Style contributed by registered `WriteHandler` strategies
     /// (Java `AbstractCellStyleStrategy` merge into `WriteCellData`).
     pub(crate) handler_cell: Option<ExcelCellStyle>,
     /// Style returned by `Converter::convert_to_excel_data`.

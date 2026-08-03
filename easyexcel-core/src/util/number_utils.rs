@@ -1,7 +1,7 @@
 //! Java-compatible number conversion helpers.
 //!
 //! Mirrors `com.alibaba.excel.util.NumberUtils` and the `DecimalFormat`
-//! subset used by EasyExcel's built-in numeric string converters.
+//! subset used by `EasyExcel`'s built-in numeric string converters.
 
 use std::str::FromStr;
 
@@ -57,7 +57,7 @@ pub(crate) fn format_decimal(
     pattern.format(value, negative, rounding_mode)
 }
 
-/// Formats Java `NaN` / infinity through DecimalFormat affixes.
+/// Formats Java `NaN` / infinity through `DecimalFormat` affixes.
 pub(crate) fn format_non_finite(
     value: NonFiniteNumber,
     pattern: Option<&str>,
@@ -165,11 +165,11 @@ impl DecimalSubpattern {
     fn parse(tokens: &[PatternToken], source: &str) -> Result<Self, ExcelError> {
         let first = tokens
             .iter()
-            .position(is_numeric_pattern_token)
+            .position(|token| is_numeric_pattern_token(*token))
             .ok_or_else(|| invalid_pattern(source, "missing digit pattern"))?;
         let last = tokens
             .iter()
-            .rposition(is_numeric_pattern_token)
+            .rposition(|token| is_numeric_pattern_token(*token))
             .expect("first numeric token exists");
         let prefix_tokens = &tokens[..first];
         let number_tokens = &tokens[first..=last];
@@ -303,16 +303,20 @@ impl DecimalSubpattern {
         let mut exponent = if coefficient == BigInt::from(0) {
             0
         } else {
-            let digits = coefficient.to_str_radix(10).trim_start_matches('-').len() as i64;
+            // 系数位数与指数整数位数均远小于 i64 上限，try_from 恒成功
+            let digits = i64::try_from(coefficient.to_str_radix(10).trim_start_matches('-').len())
+                .expect("BigDecimal 系数位数不可能超过 i64::MAX");
             let scientific = digits - scale - 1;
-            let width = self.exponent_integer_digits as i64;
+            let width = i64::try_from(self.exponent_integer_digits)
+                .expect("指数整数位数不可能超过 i64::MAX");
             scientific.div_euclid(width) * width
         };
         let mut mantissa = BigDecimal::new(coefficient, scale + exponent);
         let mut formatted = self.format_plain(&mantissa, rounding_mode)?;
         let integer_digits = formatted.split('.').next().unwrap_or("").len();
         if integer_digits > self.exponent_integer_digits {
-            exponent += self.exponent_integer_digits as i64;
+            exponent += i64::try_from(self.exponent_integer_digits)
+                .expect("指数整数位数不可能超过 i64::MAX");
             let (coefficient, scale) = value.as_bigint_and_exponent();
             mantissa = BigDecimal::new(coefficient, scale + exponent);
             formatted = self.format_plain(&mantissa, rounding_mode)?;
@@ -349,14 +353,8 @@ impl DecimalSubpattern {
             {
                 saw_exponent = true;
                 true
-            } else if matches!(ch, '+' | '-')
-                && saw_exponent
-                && remaining[..index].ends_with(['E', 'e'])
-            {
-                true
-            } else {
-                false
-            };
+            } else { matches!(ch, '+' | '-')
+                && saw_exponent && remaining[..index].ends_with(['E', 'e']) };
             if !accepted {
                 break;
             }
@@ -424,7 +422,7 @@ fn tokenize_pattern(pattern: &str) -> Result<Vec<Vec<PatternToken>>, ExcelError>
     Ok(subpatterns)
 }
 
-fn is_numeric_pattern_token(token: &PatternToken) -> bool {
+fn is_numeric_pattern_token(token: PatternToken) -> bool {
     !token.literal && matches!(token.value, '#' | '0' | '.' | ',' | 'E')
 }
 
@@ -494,21 +492,37 @@ fn invalid_pattern(pattern: &str, reason: &str) -> ExcelError {
 }
 
 /// 对应 Java：`NumberUtils.parseShort` without a format.
+///
+/// # Errors
+///
+/// 当 `value` 无法解析为合法的十进制数时返回 [`ExcelError::Format`]。
 pub fn parse_short(value: &str) -> Result<i16, ExcelError> {
-    parse_decimal(value, None).and_then(|value| decimal_java_i16(&value))
+    parse_decimal(value, None).map(|value| decimal_java_i16(&value))
 }
 
 /// 对应 Java：`NumberUtils.parseLong` without a format.
+///
+/// # Errors
+///
+/// 当 `value` 无法解析为合法的十进制数时返回 [`ExcelError::Format`]。
 pub fn parse_long(value: &str) -> Result<i64, ExcelError> {
-    parse_decimal(value, None).and_then(|value| decimal_java_i64(&value))
+    parse_decimal(value, None).map(|value| decimal_java_i64(&value))
 }
 
 /// 对应 Java：`NumberUtils.parseInteger` without a format.
+///
+/// # Errors
+///
+/// 当 `value` 无法解析为合法的十进制数时返回 [`ExcelError::Format`]。
 pub fn parse_integer(value: &str) -> Result<i32, ExcelError> {
-    parse_decimal(value, None).and_then(|value| decimal_java_i32(&value))
+    parse_decimal(value, None).map(|value| decimal_java_i32(&value))
 }
 
 /// 对应 Java：`NumberUtils.parseFloat` without a format.
+///
+/// # Errors
+///
+/// 当 `value` 无法解析为合法的十进制数时返回 [`ExcelError::Format`]。
 pub fn parse_float(value: &str) -> Result<f32, ExcelError> {
     parse_decimal(value, None).and_then(|value| {
         value
@@ -519,17 +533,29 @@ pub fn parse_float(value: &str) -> Result<f32, ExcelError> {
 }
 
 /// 对应 Java：`NumberUtils.parseBigDecimal` without a format.
+///
+/// # Errors
+///
+/// 当 `value` 无法解析为合法的十进制数时返回 [`ExcelError::Format`]。
 pub fn parse_big_decimal(value: &str) -> Result<BigDecimal, ExcelError> {
     parse_decimal(value, None)
 }
 
 /// 对应 Java：`NumberUtils.parseByte` without a format.
+///
+/// # Errors
+///
+/// 当 `value` 无法解析为合法的十进制数时返回 [`ExcelError::Format`]。
 pub fn parse_byte(value: &str) -> Result<i8, ExcelError> {
     parse_decimal(value, None)
         .map(|value| i8::from_le_bytes(java_signed_low_bytes::<1>(&decimal_to_big_int(&value))))
 }
 
 /// 对应 Java：`NumberUtils.parseDouble` without a format.
+///
+/// # Errors
+///
+/// 当 `value` 无法解析为合法的十进制数时返回 [`ExcelError::Format`]。
 pub fn parse_double(value: &str) -> Result<f64, ExcelError> {
     parse_decimal(value, None).and_then(|value| {
         value
@@ -540,6 +566,10 @@ pub fn parse_double(value: &str) -> Result<f64, ExcelError> {
 }
 
 /// Mirrors Apache Commons `NumberUtils.createBigInteger`.
+///
+/// # Errors
+///
+/// 当 `value` 无法解析为合法的十进制整数时返回 [`ExcelError::Format`]。
 pub fn parse_big_int(value: &str) -> Result<BigInt, ExcelError> {
     BigInt::from_str(value)
         .map_err(|_| ExcelError::Format(format!("parseBigInteger failed for {value:?}")))
@@ -562,22 +592,17 @@ fn java_signed_low_bytes<const N: usize>(value: &BigInt) -> [u8; N] {
     output
 }
 
-fn decimal_java_i16(value: &BigDecimal) -> Result<i16, ExcelError> {
-    Ok(i16::from_le_bytes(java_signed_low_bytes::<2>(
-        &decimal_to_big_int(value),
-    )))
+// 对应 Java：按 2 的补码取低 N 字节解释为有符号整数（截断语义与 Java 一致）
+fn decimal_java_i16(value: &BigDecimal) -> i16 {
+    i16::from_le_bytes(java_signed_low_bytes::<2>(&decimal_to_big_int(value)))
 }
 
-fn decimal_java_i32(value: &BigDecimal) -> Result<i32, ExcelError> {
-    Ok(i32::from_le_bytes(java_signed_low_bytes::<4>(
-        &decimal_to_big_int(value),
-    )))
+fn decimal_java_i32(value: &BigDecimal) -> i32 {
+    i32::from_le_bytes(java_signed_low_bytes::<4>(&decimal_to_big_int(value)))
 }
 
-fn decimal_java_i64(value: &BigDecimal) -> Result<i64, ExcelError> {
-    Ok(i64::from_le_bytes(java_signed_low_bytes::<8>(
-        &decimal_to_big_int(value),
-    )))
+fn decimal_java_i64(value: &BigDecimal) -> i64 {
+    i64::from_le_bytes(java_signed_low_bytes::<8>(&decimal_to_big_int(value)))
 }
 
 #[cfg(test)]
@@ -602,7 +627,7 @@ mod tests {
             assert_eq!(
                 format_decimal(
                     &value,
-                    value < BigDecimal::from(0),
+                    value < 0,
                     Some(pattern),
                     NumberRoundingMode::HalfUp,
                 )
@@ -886,6 +911,8 @@ mod tests_extra {
     }
 
     #[test]
+    // 1.5 / 2.5 均可被 f32/f64 二进制精确表示，精确比较正是本测试的意图
+    #[allow(clippy::float_cmp)]
     fn parse_float_double_and_big_int_match_java() {
         // 对应 Java：`NumberUtils.parseFloat` / `parseDouble` / Apache Commons `createBigInteger`
         assert_eq!(parse_float("1.5").unwrap(), 1.5);

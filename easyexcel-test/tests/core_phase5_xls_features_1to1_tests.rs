@@ -1,6 +1,6 @@
 //! Phase 5 — XLS BIFF8 feature parity tests.
 //!
-//! Java: EncryptDataTest, ConverterDataTest, ExtraDataTest (XLS variants)
+//! Java: `EncryptDataTest`, `ConverterDataTest`, `ExtraDataTest` (XLS variants)
 //! Rust: BIFF8 writer paths.
 //!
 //! Naming: `mod <java_class_snake>` + `fn <java_method_snake>`.
@@ -61,7 +61,7 @@ mod converter_data_test_xls_image {
     }
 
     /// Java: ConverterDataTest#t22WriteImage03 — write image cell to XLS
-    /// with Obj + MSODrawing + Escher BSE records, verify record headers.
+    /// with Obj + `MSODrawing` + Escher BSE records, verify record headers.
     #[test]
     fn t22_write_image03() {
         let path = std::env::temp_dir().join("easyexcel_phase5_image.xls");
@@ -103,8 +103,8 @@ mod converter_data_test_xls_image {
 mod extra_data_test_xls {
     use super::*;
 
-    /// Java: ExtraDataTest#t02Read03 — read XLS fixture with extra_read enabled,
-    /// verify NOTE handler processes records and produces CellExtra events.
+    /// Java: ExtraDataTest#t02Read03 — read XLS fixture with `extra_read` enabled,
+    /// verify NOTE handler processes records and produces `CellExtra` events.
     #[test]
     fn t02_read03() {
         let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -117,9 +117,8 @@ mod extra_data_test_xls {
             .extra_read(CellExtraType::Comment)
             .extra_read(CellExtraType::Hyperlink)
             .do_read_sync();
-        match result {
-            Ok(rows) => assert!(!rows.is_empty(), "XLS fixture must be readable"),
-            Err(_) => {} // Some fixtures may not be fully supported
+        if let Ok(rows) = result {
+            assert!(!rows.is_empty(), "XLS fixture must be readable");
         }
     }
 }

@@ -27,6 +27,10 @@ impl MergeCellTagHandler {
     }
 
     /// Java `MergeCellTagHandler.startElement`.
+    ///
+    /// # Errors
+    ///
+    /// 当 `ref` 单元格区域解析失败时返回 [`ExcelError::Format`]。
     pub fn start_merge(&mut self, attrs: &HashMap<String, String>) -> Result<()> {
         if !self.enabled {
             return Ok(());
@@ -43,6 +47,10 @@ impl MergeCellTagHandler {
 
     /// Same as [`Self::start_merge`], but missing / empty `ref` is an error
     /// (matches historical `xlsx_rows::required_attribute` behaviour).
+    ///
+    /// # Errors
+    ///
+    /// 当 `ref` 缺失/为空或单元格区域解析失败时返回 [`ExcelError::Format`]。
     pub fn start_merge_required(&mut self, attrs: &HashMap<String, String>) -> Result<()> {
         if !self.enabled {
             return Ok(());

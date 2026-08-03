@@ -43,8 +43,8 @@ fn t01_t09_compatibility_fixtures_exist() {
     }
 }
 
-/// Java CompatibilityTest t02:
-///   assertEquals(3, list.size())
+/// Java `CompatibilityTest` t02:
+///   assertEquals(3, `list.size()`)
 ///   assertEquals("1，2-戊二醇", row2.get(2))
 #[test]
 fn t02_read_simple_xlsx() {
@@ -61,10 +61,10 @@ fn t02_read_simple_xlsx() {
         .unwrap();
     assert_eq!(rows.len(), 3, "Java asserts assertEquals(3, list.size())");
     // Java: assertEquals("1，2-戊二醇", row2.get(2))
-    let row2 = &rows[2];
-    let val2 = match row2.get(2).unwrap() {
-        DynamicValue::ActualData(easyexcel::CellValue::String(s)) => s.as_str(),
-        DynamicValue::String(s) => s.as_str(),
+    let second_row = &rows[2];
+    let val2 = match second_row.get(2).unwrap() {
+        DynamicValue::ActualData(easyexcel::CellValue::String(s))
+        | DynamicValue::String(s) => s.as_str(),
         other => panic!("expected String at col 2, got {other:?}"),
     };
     assert_eq!(
@@ -73,9 +73,9 @@ fn t02_read_simple_xlsx() {
     );
 }
 
-/// Java CompatibilityTest t03:
-///   assertEquals(1, list.size())
-///   assertEquals(12, row0.size())
+/// Java `CompatibilityTest` t03:
+///   assertEquals(1, `list.size()`)
+///   assertEquals(12, `row0.size()`)
 #[test]
 fn t03_read_xlsx_with_different_column_types() {
     let path = fixture("compatibility/t03.xlsx");
@@ -90,16 +90,16 @@ fn t03_read_xlsx_with_different_column_types() {
         .unwrap();
     assert_eq!(rows.len(), 1, "Java asserts assertEquals(1, list.size())");
     // Java: assertEquals(12, row0.size()) — 12 columns in first row
-    let row0 = &rows[0];
+    let first_row = &rows[0];
     assert_eq!(
-        row0.values().len(),
+        first_row.values().len(),
         12,
         "Java asserts assertEquals(12, row0.size())"
     );
 }
 
-/// Java CompatibilityTest t04:
-///   assertEquals(56, list.size())
+/// Java `CompatibilityTest` t04:
+///   assertEquals(56, `list.size()`)
 ///   assertEquals("QQSJK28F152A012242S0081", row0.get(5))
 #[test]
 fn t04_read_xlsx_with_merged_cells() {
@@ -115,10 +115,10 @@ fn t04_read_xlsx_with_merged_cells() {
         .unwrap();
     assert_eq!(rows.len(), 56, "Java asserts assertEquals(56, list.size())");
     // Java: assertEquals("QQSJK28F152A012242S0081", row0.get(5))
-    let row0 = &rows[0];
-    let val5 = match row0.get(5).unwrap() {
-        DynamicValue::ActualData(easyexcel::CellValue::String(s)) => s.as_str(),
-        DynamicValue::String(s) => s.as_str(),
+    let first_row = &rows[0];
+    let val5 = match first_row.get(5).unwrap() {
+        DynamicValue::ActualData(easyexcel::CellValue::String(s))
+        | DynamicValue::String(s) => s.as_str(),
         other => panic!("expected String at col 5, got {other:?}"),
     };
     assert_eq!(
@@ -127,7 +127,7 @@ fn t04_read_xlsx_with_merged_cells() {
     );
 }
 
-/// Java CompatibilityTest t05:
+/// Java `CompatibilityTest` t05:
 ///   assertEquals("2023-01-01 00:00:00", list.get(0).get(0))
 ///   assertEquals("2023-01-01 00:00:00", list.get(1).get(0))
 ///   assertEquals("2023-01-01 00:00:00", list.get(2).get(0))
@@ -172,7 +172,7 @@ fn t05_read_xlsx_with_formulas() {
     }
 }
 
-/// Java CompatibilityTest t06:
+/// Java `CompatibilityTest` t06:
 ///   assertEquals("2087.03", list.get(0).get(2))
 #[test]
 fn t06_read_xlsx_with_hyperlinks() {
@@ -189,11 +189,12 @@ fn t06_read_xlsx_with_hyperlinks() {
     assert!(!rows.is_empty(), "t06.xlsx should have data");
     // Java: assertEquals("2087.03", list.get(0).get(2))
     let val2 = match rows[0].get(2).unwrap() {
-        DynamicValue::String(s) => s.as_str(),
-        DynamicValue::ActualData(easyexcel::CellValue::String(s)) => s.as_str(),
+        DynamicValue::String(s) | DynamicValue::ActualData(easyexcel::CellValue::String(s)) => {
+            s.as_str()
+        }
         DynamicValue::ActualData(easyexcel::CellValue::Decimal(d)) => {
             // Format to match Java's "2087.03"
-            &format!("{:.2}", d)
+            &format!("{d:.2}")
         }
         other => panic!("expected String at col 2, got {other:?}"),
     };
@@ -203,7 +204,7 @@ fn t06_read_xlsx_with_hyperlinks() {
     );
 }
 
-/// Java CompatibilityTest t07:
+/// Java `CompatibilityTest` t07:
 ///   assertEquals(0, new BigDecimal("24.1998124").compareTo((BigDecimal)list.get(0).get(11)))
 ///   assertEquals("24.20", list.get(0).get(11))
 #[test]
@@ -247,9 +248,9 @@ fn t07_read_xlsx_with_dates() {
     );
 }
 
-/// Java CompatibilityTest t09:
-///   assertEquals(1, list.size())
-///   assertEquals("SH_x000D_Z002", list.get(0).get(0))
+/// Java `CompatibilityTest` t09:
+///   assertEquals(1, `list.size()`)
+///   `assertEquals("SH_x000D_Z002`", list.get(0).get(0))
 #[test]
 fn t09_read_xlsx_with_booleans() {
     let path = fixture("compatibility/t09.xlsx");
@@ -266,8 +267,9 @@ fn t09_read_xlsx_with_booleans() {
     // Java: assertEquals("SH_x000D_Z002", list.get(0).get(0))
     // This tests _xHHHH_ escape decoding in sharedStrings.xml
     let val0 = match rows[0].get(0).unwrap() {
-        DynamicValue::String(s) => s.as_str(),
-        DynamicValue::ActualData(easyexcel::CellValue::String(s)) => s.as_str(),
+        DynamicValue::String(s) | DynamicValue::ActualData(easyexcel::CellValue::String(s)) => {
+            s.as_str()
+        }
         other => panic!("expected String at col 0, got {other:?}"),
     };
     assert_eq!(
@@ -294,7 +296,7 @@ fn demo_xlsx_basic_read() {
         .unwrap();
     // Java SimpleDataTest reads demo.xlsx with a DemoData listener
     // DemoData has fields: id (String), name (String)
-    assert!(rows.len() >= 1, "demo.xlsx should have at least 1 row");
+    assert!(!rows.is_empty(), "demo.xlsx should have at least 1 row");
     if let Some(first) = rows.first() {
         // At least 2 cells (id, name)
         assert!(
@@ -497,7 +499,7 @@ fn cross_validation_simple_xlsx_row_count() {
     // Each row should be a valid DynamicRow
     for row in &rows {
         assert!(
-            row.values().len() > 0,
+            !row.values().is_empty(),
             "Each row should have at least one column"
         );
     }
@@ -560,31 +562,24 @@ fn cross_validation_t09_boolean_values() {
 
     let rows = EasyExcel::read_sync::<DynamicRow>(&path).do_read_sync();
     // t09.xlsx has boolean data - test passes regardless of result
-    match rows {
-        Ok(rows) => {
-            if rows.is_empty() {
-                // Empty result is acceptable - fixture may be minimal
-                return;
-            }
-            // If we got rows, verify boolean parsing
-            for row in &rows {
-                for (_, val) in row.values() {
-                    match val {
-                        DynamicValue::String(s) => {
-                            assert!(
-                                s == "true" || s == "false" || !s.is_empty(),
-                                "Boolean should be parsed as string: {s}"
-                            );
-                        }
-                        DynamicValue::Null => {}
-                        _ => {}
-                    }
+    if let Ok(rows) = rows {
+        if rows.is_empty() {
+            // Empty result is acceptable - fixture may be minimal
+            return;
+        }
+        // If we got rows, verify boolean parsing
+        for row in &rows {
+            for val in row.values().values() {
+                if let DynamicValue::String(s) = val {
+                    assert!(
+                        s == "true" || s == "false" || !s.is_empty(),
+                        "Boolean should be parsed as string: {s}"
+                    );
                 }
             }
         }
-        Err(_) => {
-            // Error is acceptable - fixture may require specific handling
-        }
+    } else {
+        // Error is acceptable - fixture may require specific handling
     }
 }
 
@@ -623,15 +618,12 @@ fn cross_validation_shared_strings() {
 
     // In ActualData mode, strings should be preserved as-is
     for row in &rows {
-        for (_, val) in row.values() {
-            match val {
-                DynamicValue::ActualData(easyexcel::CellValue::String(s)) => {
-                    assert!(
-                        !s.is_empty() || s.is_empty(),
-                        "String cells should be accessible"
-                    );
-                }
-                _ => {}
+        for val in row.values().values() {
+            if let DynamicValue::ActualData(easyexcel::CellValue::String(s)) = val {
+                assert!(
+                    !s.is_empty() || s.is_empty(),
+                    "String cells should be accessible"
+                );
             }
         }
     }
@@ -683,10 +675,6 @@ fn cross_validation_bom_csv() {
 /// matching the Java round-trip behavior.
 #[test]
 fn cross_validation_round_trip_xlsx() {
-    let temp_dir = std::env::temp_dir();
-    let output_path = temp_dir.join("cross_validation_roundtrip.xlsx");
-
-    // Write with Rust
     #[derive(ExcelRow, Debug, Clone)]
     struct TestData {
         #[excel(name = "ID", index = 0)]
@@ -694,6 +682,10 @@ fn cross_validation_round_trip_xlsx() {
         #[excel(name = "Name", index = 1)]
         name: String,
     }
+    let temp_dir = std::env::temp_dir();
+    let output_path = temp_dir.join("cross_validation_roundtrip.xlsx");
+
+    // Write with Rust
 
     let data = vec![
         TestData {
@@ -731,15 +723,15 @@ fn cross_validation_round_trip_xlsx() {
 /// matching the Java round-trip behavior.
 #[test]
 fn cross_validation_round_trip_csv() {
-    let temp_dir = std::env::temp_dir();
-    let output_path = temp_dir.join("cross_validation_roundtrip.csv");
-
-    // Write with Rust
     #[derive(ExcelRow, Debug, Clone)]
     struct CsvData {
         #[excel(name = "Value", index = 0)]
         value: String,
     }
+    let temp_dir = std::env::temp_dir();
+    let output_path = temp_dir.join("cross_validation_roundtrip.csv");
+
+    // Write with Rust
 
     let data = vec![
         CsvData {
@@ -772,10 +764,6 @@ fn cross_validation_round_trip_csv() {
 /// output compatible with Java-generated XLSX files.
 #[test]
 fn cross_validation_java_compatible_xlsx_structure() {
-    let temp_dir = std::env::temp_dir();
-    let output_path = temp_dir.join("cross_validation_java_compat.xlsx");
-
-    // Write with Rust using features that match Java EasyExcel defaults
     #[derive(ExcelRow, Debug, Clone)]
     struct CompatData {
         #[excel(name = "StringCol", index = 0)]
@@ -783,6 +771,11 @@ fn cross_validation_java_compatible_xlsx_structure() {
         #[excel(name = "IntCol", index = 1)]
         int_col: i64,
     }
+
+    let temp_dir = std::env::temp_dir();
+    let output_path = temp_dir.join("cross_validation_java_compat.xlsx");
+
+    // Write with Rust using features that match Java EasyExcel defaults
 
     let data = vec![CompatData {
         string_col: "test".to_owned(),
@@ -818,14 +811,15 @@ fn cross_validation_java_compatible_xlsx_structure() {
 /// output compatible with Java's password-encrypted XLSX.
 #[test]
 fn cross_validation_encrypted_xlsx() {
-    let temp_dir = std::env::temp_dir();
-    let output_path = temp_dir.join("cross_validation_encrypted.xlsx");
-
     #[derive(ExcelRow, Debug, Clone)]
     struct SecretData {
         #[excel(name = "Secret", index = 0)]
         secret: String,
     }
+
+    let temp_dir = std::env::temp_dir();
+    let output_path = temp_dir.join("cross_validation_encrypted.xlsx");
+
 
     let data = vec![SecretData {
         secret: "confidential".to_owned(),
@@ -893,10 +887,11 @@ fn cross_validation_no_model_read() {
         for (idx, val) in row.values() {
             // All present columns should have non-Null values
             match val {
+                // sparse cells
                 DynamicValue::ActualData(_)
                 | DynamicValue::String(_)
-                | DynamicValue::ReadCellData(_) => {}
-                DynamicValue::Null => {} // sparse cells
+                | DynamicValue::ReadCellData(_)
+                | DynamicValue::Null => {}
             }
             let _ = idx; // suppress unused warning
         }
@@ -904,7 +899,7 @@ fn cross_validation_no_model_read() {
 }
 
 /// This test verifies that the Rust XLSX reader handles
-/// the ReadCellData mode the same way Java does.
+/// the `ReadCellData` mode the same way Java does.
 #[test]
 fn cross_validation_read_cell_data_mode() {
     let path = fixture("demo/demo.xlsx");
@@ -922,14 +917,10 @@ fn cross_validation_read_cell_data_mode() {
     assert!(!rows.is_empty());
 
     for row in &rows {
-        for (_, val) in row.values() {
-            match val {
-                DynamicValue::ReadCellData(rcd) => {
-                    // ReadCellData should have row/column info
-                    assert!(rcd.row_index() < 10000, "Row index should be reasonable");
-                }
-                DynamicValue::Null => {}
-                _ => {}
+        for val in row.values().values() {
+            if let DynamicValue::ReadCellData(rcd) = val {
+                // ReadCellData should have row/column info
+                assert!(rcd.row_index() < 10000, "Row index should be reasonable");
             }
         }
     }

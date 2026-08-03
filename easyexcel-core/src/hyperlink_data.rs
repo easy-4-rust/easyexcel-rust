@@ -4,7 +4,7 @@ use crate::coordinate_data::CoordinateData;
 
 /// Hyperlink type matching Java `HyperlinkData.HyperlinkType`.
 ///
-/// Values mirror Apache POI `HyperlinkType` as used by EasyExcel 4.0.3.
+/// Values mirror Apache POI `HyperlinkType` as used by `EasyExcel` 4.0.3.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum HyperlinkType {
     /// Not a hyperlink. (Java `NONE`)

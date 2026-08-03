@@ -81,6 +81,9 @@ impl ReadSheet {
 
     /// Returns the zero-based sheet index as `i32` (Java boxing). (Java `getSheetNo()`)
     #[must_use]
+    // 对应 Java：`getSheetNo()` 返回 Integer，超出 i32 范围时按 `(int)` 截断/环绕语义处理，
+    // 故保留 `as` 转换以保证与 Java 行为一致。
+    #[allow(clippy::cast_possible_wrap, clippy::cast_possible_truncation)]
     pub const fn sheet_no_i32(&self) -> i32 {
         self.sheet_no as i32
     }
@@ -136,7 +139,7 @@ impl ReadSheet {
         self
     }
 
-    /// Copies common basic-parameter fields from another ReadSheet.
+    /// Copies common basic-parameter fields from another `ReadSheet`.
     /// (Java `copyBasicParameter(ReadSheet other)`)
     ///
     pub fn copy_basic_parameter(&mut self, other: &ReadSheet) -> &mut Self {

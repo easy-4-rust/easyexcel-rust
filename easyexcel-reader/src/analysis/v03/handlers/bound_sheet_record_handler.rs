@@ -31,6 +31,7 @@ impl BoundSheetRecordHandler {
     }
 
     /// Java `BoundSheetRecord.orderByBofPosition` — sort by BOF offset ascending.
+    #[must_use]
     pub fn ordered_sheets(&self) -> Vec<BoundSheetEntry> {
         let mut sheets = self.sheets.clone();
         sheets.sort_by_key(|entry| entry.bof_position);

@@ -23,6 +23,10 @@ pub fn declared_excel_content_property(_type_id: TypeId) -> Option<()> {
 }
 
 /// Mirrors `com.alibaba.excel.util.ClassUtils#combineExcelContentProperty`.
+///
+/// # Errors
+///
+/// 占位实现始终返回 `Ok(())`，不会出错。
 pub fn combine_excel_content_property() -> Result<(), ExcelError> {
     Ok(())
 }
@@ -68,6 +72,5 @@ mod tests_extra {
         remove_thread_local_cache();
         remove_thread_local_cache();
         // 不 panic 即通过
-        assert!(true);
     }
 }

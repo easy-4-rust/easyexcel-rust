@@ -57,7 +57,7 @@ impl CsvCell {
     }
 
     /// Stores plain text from a CSV rich-text wrapper.
-    pub fn set_rich_text(&mut self, value: CsvRichTextString) {
+    pub fn set_rich_text(&mut self, value: &CsvRichTextString) {
         self.value = CellValue::String(value.as_str().to_owned());
         self.numeric_cell_type = None;
     }
@@ -138,7 +138,7 @@ mod tests_extra {
 
         let mut cell = CsvCell::new(0);
         cell.set_value(CellValue::Int(1));
-        cell.set_rich_text(CsvRichTextString::new("文本"));
+        cell.set_rich_text(&CsvRichTextString::new("文本"));
         assert_eq!(cell.value(), &CellValue::String("文本".to_owned()));
         assert_eq!(cell.numeric_cell_type(), None);
     }

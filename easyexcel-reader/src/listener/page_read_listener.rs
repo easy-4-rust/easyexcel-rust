@@ -26,6 +26,7 @@ impl<T> PageReadListener<T> {
     }
 
     /// 对应 Java：`PageReadListener(Consumer<List<T>>, int)`.
+    #[must_use]
     pub fn with_batch_size(mut self, batch_size: usize) -> Self {
         self.batch_size = batch_size.max(1);
         self

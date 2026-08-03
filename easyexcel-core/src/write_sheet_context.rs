@@ -110,6 +110,11 @@ impl WriteSheetContext {
     }
 
     /// Returns the active sheet holder view.
+    ///
+    /// # Panics
+    ///
+    /// Panics when the callback was created without a sheet holder
+    /// (sheet callbacks always carry one).
     #[must_use]
     pub fn write_sheet_holder(&self) -> &WriteSheetHolderView {
         self.holders
@@ -142,7 +147,7 @@ mod tests_extra {
     fn sheet_accessor_returns_self() {
         // 对应 Java：SheetWriteHandlerContext 的 sheet 便捷访问器
         let context = WriteSheetContext::new("Sheet1");
-        assert!(std::ptr::eq(context.sheet(), &context));
+        assert!(std::ptr::eq(context.sheet(), &raw const context));
     }
 
     #[test]

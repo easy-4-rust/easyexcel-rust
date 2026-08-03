@@ -41,6 +41,10 @@ impl CellHandlerExecutionChain {
     }
 
     /// Runs the chain's cell lifecycle. (Java `beforeCellCreate`)
+    /// # Errors
+    ///
+    /// Propagates errors from the registered handlers (chain stops at the
+    /// first failing handler).
     pub fn before_cell_create(
         &mut self,
         context: &mut WriteCellContext,
@@ -55,6 +59,10 @@ impl CellHandlerExecutionChain {
     }
 
     /// Runs Java `afterCellCreate` in chain order.
+    /// # Errors
+    ///
+    /// Propagates errors from the registered handlers (chain stops at the
+    /// first failing handler).
     pub fn after_cell_create(&mut self, context: &WriteCellContext) -> easyexcel_core::Result<()> {
         if let Some(handler) = self.handler.as_mut() {
             handler.after_cell_create(context)?;
@@ -66,6 +74,10 @@ impl CellHandlerExecutionChain {
     }
 
     /// Runs Java `afterCellDataConverted` in chain order.
+    /// # Errors
+    ///
+    /// Propagates errors from the registered handlers (chain stops at the
+    /// first failing handler).
     pub fn after_cell_data_converted(
         &mut self,
         context: &WriteCellContext,
@@ -80,6 +92,10 @@ impl CellHandlerExecutionChain {
     }
 
     /// Runs Java `afterCellDispose` in chain order.
+    /// # Errors
+    ///
+    /// Propagates errors from the registered handlers (chain stops at the
+    /// first failing handler).
     pub fn after_cell_dispose(&mut self, context: &WriteCellContext) -> easyexcel_core::Result<()> {
         if let Some(handler) = self.handler.as_mut() {
             handler.after_cell_dispose(context)?;

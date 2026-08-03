@@ -9,7 +9,7 @@
 //! Format strategy:
 //! - `.xlsx`: Full write→read round-trip (Rust supports both read and write)
 //! - `.xls`:  Prefer real BIFF8 write→read; advanced features Unsupported or
-//!            fixture-backed read (never rewrite as XLSX)
+//!   fixture-backed read (never rewrite as XLSX)
 //! - `.csv`:  Full write→read round-trip with CSV-specific structure assertions
 
 use std::collections::HashSet;
@@ -69,7 +69,7 @@ fn exclude_include_data() -> Vec<ExcludeOrIncludeData> {
 }
 
 /// Verify exclude-index: only column2 and column3 remain.
-/// Java: excludeColumnIndexes({0,3}) → assertEquals(2, record.size()),
+/// Java: excludeColumnIndexes({0,3}) → assertEquals(2, `record.size()`),
 ///   assertEquals("column2", record.get(0)), assertEquals("column3", record.get(1))
 fn assert_exclude_index_xlsx(path: &std::path::Path) {
     let mut exclude = HashSet::new();
@@ -161,7 +161,7 @@ fn t02_exclude_index_xls() {
     assert!(!rows.is_empty(), ".xls fixture should have data");
     // Verify calamine can parse the .xls structure
     for row in &rows {
-        assert!(row.values().len() > 0, "each .xls row should have columns");
+        assert!(!row.values().is_empty(), "each .xls row should have columns");
     }
 }
 
@@ -174,7 +174,7 @@ fn t03_exclude_index_csv() {
 fn assert_exclude_field_name_xlsx(path: &std::path::Path) {
     let exclude: HashSet<String> = ["column1", "column3", "column4"]
         .iter()
-        .map(|s| s.to_string())
+        .map(std::string::ToString::to_string)
         .collect();
     EasyExcel::write::<ExcludeOrIncludeData>(path)
         .exclude_column_field_names(exclude)
@@ -201,7 +201,7 @@ fn assert_exclude_field_name_xlsx(path: &std::path::Path) {
 fn assert_exclude_field_name_csv(path: &std::path::Path) {
     let exclude: HashSet<String> = ["column1", "column3", "column4"]
         .iter()
-        .map(|s| s.to_string())
+        .map(std::string::ToString::to_string)
         .collect();
     EasyExcel::write::<ExcludeOrIncludeData>(path)
         .exclude_column_field_names(exclude)
@@ -785,7 +785,7 @@ fn t02_multiple_sheets_read_xls() {
     );
 }
 
-/// Java: doReadAll() → reads all sheets into one listener.
+/// Java: `doReadAll()` → reads all sheets into one listener.
 #[test]
 fn t03_multiple_sheets_read_all_xlsx() {
     let path = temp_path("multiplesheetsAll07.xlsx");
@@ -1325,12 +1325,12 @@ fn t03_no_head_read_and_write_csv() {
 
 #[test]
 fn t01_fill_style_xlsx() {
-    let path = temp_path("fillStyle07.xlsx");
     #[derive(Debug, Clone, ExcelRow)]
     struct FillStyleData {
         #[excel(name = "name", index = 0)]
         name: String,
     }
+    let path = temp_path("fillStyle07.xlsx");
     EasyExcel::write::<FillStyleData>(&path)
         .sheet("Sheet1")
         .do_write(vec![FillStyleData {
@@ -1359,12 +1359,12 @@ fn t02_fill_style_xls() {
 
 #[test]
 fn t11_fill_style_handler_xlsx() {
-    let path = temp_path("fillStyleHandler07.xlsx");
     #[derive(Debug, Clone, ExcelRow)]
     struct FillStyleData {
         #[excel(name = "name", index = 0)]
         name: String,
     }
+    let path = temp_path("fillStyleHandler07.xlsx");
     EasyExcel::write::<FillStyleData>(&path)
         .sheet("Sheet1")
         .do_write(vec![FillStyleData {
@@ -1491,12 +1491,12 @@ fn t02_fill_style_annotated_xls() {
 
 #[test]
 fn simple_data_round_trip_xlsx() {
-    let path = temp_path("simple07.xlsx");
     #[derive(Debug, Clone, ExcelRow)]
     struct SimpleData {
         #[excel(name = "姓名", index = 0)]
         name: String,
     }
+    let path = temp_path("simple07.xlsx");
     let data: Vec<SimpleData> = (0..10)
         .map(|i| SimpleData {
             name: format!("姓名{i}"),
@@ -1516,7 +1516,6 @@ fn simple_data_round_trip_xlsx() {
 
 #[test]
 fn converter_round_trip_xlsx() {
-    let path = temp_path("converter07.xlsx");
     #[derive(Debug, Clone, ExcelRow)]
     struct ConverterData {
         #[excel(name = "string", index = 0)]
@@ -1532,11 +1531,12 @@ fn converter_round_trip_xlsx() {
         #[excel(name = "date", index = 5, format = "%Y-%m-%d")]
         date: NaiveDate,
     }
+    let path = temp_path("converter07.xlsx");
     let data = vec![ConverterData {
         string: "hello".to_owned(),
         boolean: true,
         integer: 42,
-        long: 1234567890i64,
+        long: 1_234_567_890i64,
         double: std::f64::consts::PI,
         date: NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
     }];
@@ -1551,19 +1551,19 @@ fn converter_round_trip_xlsx() {
     assert_eq!(rows[0].string, "hello");
     assert!(rows[0].boolean);
     assert_eq!(rows[0].integer, 42);
-    assert_eq!(rows[0].long, 1234567890i64);
+    assert_eq!(rows[0].long, 1_234_567_890i64);
     assert!((rows[0].double - std::f64::consts::PI).abs() < 1e-10);
     assert_eq!(rows[0].date, NaiveDate::from_ymd_opt(2024, 1, 15).unwrap());
 }
 
 #[test]
 fn encrypt_round_trip_xlsx() {
-    let path = temp_path("encrypt07.xlsx");
     #[derive(Debug, Clone, ExcelRow)]
     struct EncryptData {
         #[excel(name = "string", index = 0)]
         string: String,
     }
+    let path = temp_path("encrypt07.xlsx");
     EasyExcel::write::<EncryptData>(&path)
         .password("123456")
         .sheet("Sheet1")

@@ -137,7 +137,7 @@ impl XlsRecordDispatchState {
         self.last_number_cell.as_ref()
     }
 
-    /// Last RK placement decoded with EasyExcel's historical empty-cell rule.
+    /// Last RK placement decoded with `EasyExcel`'s historical empty-cell rule.
     #[must_use]
     pub const fn last_rk_cell(&self) -> Option<BlankCell> {
         self.last_rk_cell
@@ -149,7 +149,7 @@ impl XlsRecordDispatchState {
         &self.shared_strings
     }
 
-    /// Last LabelSST cell resolved through the decoded shared-string table.
+    /// Last `LabelSST` cell resolved through the decoded shared-string table.
     #[must_use]
     pub const fn last_label_sst_cell(&self) -> Option<&LabelSstCell> {
         self.last_label_sst_cell.as_ref()
@@ -162,7 +162,7 @@ impl XlsRecordDispatchState {
     }
 }
 
-/// Owns the 19 Java EasyExcel XLS handlers and dispatches by BIFF SID.
+/// Owns the 19 Java `EasyExcel` XLS handlers and dispatches by BIFF SID.
 #[derive(Debug)]
 pub struct XlsRecordDispatcher {
     state: XlsRecordDispatchState,
@@ -276,6 +276,13 @@ impl XlsRecordDispatcher {
 
     /// 对应 Java：`XlsSaxAnalyser.processRecord`: unknown SIDs are ignored,
     /// disabled handlers are skipped, and known records reach their handler.
+    ///
+    /// # Errors
+    ///
+    /// 当待收尾的 SST/公式字符串记录解码失败时返回 [`ExcelError`]。
+    // 对应 Java：`processRecord` 的大 switch 与 POI 记录分派一一对应，
+    // 拆分会增加状态机顺序出错风险，保持原样。
+    #[allow(clippy::too_many_lines)]
     pub fn process_record(&mut self, record_sid: u16, data: &[u8]) -> Result<()> {
         self.state.total_record_count += 1;
         if record_sid == CONTINUE_SID {
@@ -394,6 +401,10 @@ impl XlsRecordDispatcher {
     }
 
     /// Finalizes a continuable logical record at end-of-stream.
+    ///
+    /// # Errors
+    ///
+    /// 当待收尾的 SST/公式字符串记录解码失败时返回 [`ExcelError`]。
     pub fn finish_records(&mut self) -> Result<()> {
         self.finish_pending_records()
     }
@@ -514,6 +525,9 @@ mod tests {
     use super::*;
 
     #[test]
+    // 对应 Java：断言为 BIFF `f64` 位级往返值（`to_le_bytes`/`from_le_bytes` 无损），
+    // 精确相等即预期语义，不做容差比较。
+    #[allow(clippy::float_cmp)]
     fn dispatches_number_to_real_handler_and_keeps_unknown_records_ignorable() -> Result<()> {
         let mut dispatcher = XlsRecordDispatcher::default();
         let mut number = vec![2, 0, 3, 0, 7, 0];
@@ -544,6 +558,9 @@ mod tests {
     }
 
     #[test]
+    // 对应 Java：断言为 BIFF `f64` 位级往返值（`to_le_bytes`/`from_le_bytes` 无损），
+    // 精确相等即预期语义，不做容差比较。
+    #[allow(clippy::float_cmp)]
     fn selected_sheet_skips_ignorable_records_until_next_bof() -> Result<()> {
         let mut dispatcher = XlsRecordDispatcher::default();
         let workbook_bof = [0, 0, 0x05, 0x00];
@@ -723,10 +740,15 @@ mod tests_extra {
     }
 
     #[test]
+    // 对应 Java：断言为 BIFF `f64` 位级往返值（`to_le_bytes`/`from_le_bytes` 无损），
+    // 精确相等即预期语义，不做容差比较。
+    #[allow(clippy::float_cmp)]
     fn name_selector_reads_only_the_matching_sheet() -> Result<()> {
         // 对应 Java：SheetUtils.match 按名称匹配工作表
-        let mut options = ReadOptions::default();
-        options.sheet = SheetSelector::Name("Second".to_owned());
+        let options = ReadOptions {
+            sheet: SheetSelector::Name("Second".to_owned()),
+            ..ReadOptions::default()
+        };
         let mut dispatcher = XlsRecordDispatcher::new(&options);
 
         dispatcher.process_record(BOF_SID, &[0, 0, 0x05, 0x00])?;
@@ -816,8 +838,10 @@ mod tests_extra2 {
     #[test]
     fn all_sheets_selector_reads_every_worksheet() -> Result<()> {
         // 对应 Java：SheetUtils.match 全表选择时不跳过任何工作表
-        let mut options = crate::ReadOptions::default();
-        options.sheet = SheetSelector::All;
+        let options = crate::ReadOptions {
+            sheet: SheetSelector::All,
+            ..crate::ReadOptions::default()
+        };
         let mut dispatcher = XlsRecordDispatcher::new(&options);
 
         dispatcher.process_record(BOF_SID, &[0, 0, 0x05, 0x00])?;

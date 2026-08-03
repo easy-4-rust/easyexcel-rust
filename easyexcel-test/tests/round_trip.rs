@@ -135,7 +135,7 @@ impl Converter<f64> for RuntimeStyleConverter {
         let mut cell = WriteCellData::new(CellValue::Float(*context.value()));
         cell.set_write_cell_style(Some(ExcelCellStyle {
             fill_pattern: Some(ExcelFillPattern::Solid),
-            fill_foreground_color: Some(ExcelColor::Rgb(0x00ff00)),
+            fill_foreground_color: Some(ExcelColor::Rgb(0x00_ff_00)),
             ..ExcelCellStyle::new()
         }));
         cell.get_or_create_data_format()
@@ -758,7 +758,7 @@ fn converter_write_cell_data_style_reaches_xlsx_xls_csv_and_template_backends() 
         converted[0]
             .write_cell_style()
             .and_then(|style| style.fill_foreground_color),
-        Some(ExcelColor::Rgb(0x00ff00))
+        Some(ExcelColor::Rgb(0x00_ff_00))
     );
     assert_eq!(
         converted[0]

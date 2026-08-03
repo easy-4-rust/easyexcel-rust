@@ -37,6 +37,10 @@ pub fn index_to_col_name(mut index: u32) -> String {
 /// assert_eq!(col_name_to_index("A"), Some(0));
 /// assert_eq!(col_name_to_index("AA"), Some(26));
 /// ```
+///
+/// # Panics
+///
+/// 不会 panic（列名长度远小于 `u32` 上限，`expect` 仅为静态证明）。
 #[must_use]
 pub fn col_name_to_index(name: &str) -> Option<u32> {
     let name = name.to_uppercase();
@@ -45,11 +49,12 @@ pub fn col_name_to_index(name: &str) -> Option<u32> {
     }
     let mut index = 0u32;
     for (i, ch) in name.chars().rev().enumerate() {
-        let digit = (ch as u32).saturating_sub(b'A' as u32);
+        let digit = (ch as u32).saturating_sub(u32::from(b'A'));
         if i == 0 {
             index += digit;
         } else {
-            index += (digit + 1) * 26u32.pow(i as u32);
+            // 列名长度至多 7 位（ZZZZZZZ 约为 u32 上限），try_from 恒成功
+            index += (digit + 1) * 26u32.pow(u32::try_from(i).expect("列名长度远小于 u32 上限"));
         }
     }
     Some(index)
@@ -61,7 +66,7 @@ pub fn col_name_to_index(name: &str) -> Option<u32> {
 /// OLE2 compound document magic: `D0 CF 11 E0 A1 B1 1A E1`
 #[must_use]
 pub fn is_xls_bytes(data: &[u8]) -> bool {
-    data.len() >= 8 && &data[..8] == [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]
+    data.len() >= 8 && data[..8] == [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]
 }
 
 /// Detects if bytes represent an XLSX (OOXML / ZIP) file by magic bytes.
@@ -70,7 +75,7 @@ pub fn is_xls_bytes(data: &[u8]) -> bool {
 /// ZIP magic: `PK\x03\x04`
 #[must_use]
 pub fn is_xlsx_bytes(data: &[u8]) -> bool {
-    data.len() >= 4 && &data[..4] == [b'P', b'K', 0x03, 0x04]
+    data.len() >= 4 && data[..4] == [b'P', b'K', 0x03, 0x04]
 }
 
 /// Detects if bytes represent a CSV file by checking for common CSV patterns.
@@ -81,7 +86,7 @@ pub fn is_csv_bytes(data: &[u8]) -> bool {
         return false;
     }
     // CSV starts with printable ASCII or BOM
-    if data.len() >= 3 && &data[..3] == [0xEF, 0xBB, 0xBF] {
+    if data.len() >= 3 && data[..3] == [0xEF, 0xBB, 0xBF] {
         return true; // UTF-8 BOM
     }
     data[0].is_ascii_graphic() || data[0].is_ascii_whitespace()
@@ -104,14 +109,13 @@ pub fn is_date_format(format_str: &str) -> bool {
         while i + count < chars.len() && chars[i + count] == ch {
             count += 1;
         }
-        match ch {
-            'y' | 'Y' => return true,               // year
-            'm' | 'M' if count <= 4 => return true, // month (not "mmmmm" which is literal)
-            'd' | 'D' if count <= 4 => return true, // day
-            'h' | 'H' => return true,               // hour
-            's' | 'S' if count <= 2 => return true, // second (not "sss" literal)
-            'a' | 'A' => return true,               // am/pm
-            _ => {}
+        // 对应 Java：日期格式标记判定（y/m/d/h/s/a），各标记判定条件互不相同，
+        // 合并为单一布尔条件以避免 match 同体分支告警，语义与逐臂 return true 完全一致
+        if matches!(ch, 'y' | 'Y' | 'h' | 'H' | 'a' | 'A')
+            || matches!(ch, 'm' | 'M' | 'd' | 'D') && count <= 4
+            || matches!(ch, 's' | 'S') && count <= 2
+        {
+            return true;
         }
         i += count;
     }

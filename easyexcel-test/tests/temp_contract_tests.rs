@@ -1,4 +1,4 @@
-//! Temp-package *contract* tests — EasyExcel API only (not pure POI / hardcoded paths).
+//! Temp-package *contract* tests — `EasyExcel` API only (not pure POI / hardcoded paths).
 //!
 //! Selected from Java `com.alibaba.easyexcel.test.temp.*` where the scenario is
 //! portable. Skips machine-local paths (`D:\\test\\...`) and raw POI suites.
@@ -61,7 +61,7 @@ fn temp_csv_write_and_read() {
     assert!(!dynamic.is_empty());
 }
 
-/// Java `temp.csv.CsvReadTest.writev2` / `data()` — CsvData model with comma + ignore.
+/// Java `temp.csv.CsvReadTest.writev2` / `data()` — `CsvData` model with comma + ignore.
 #[test]
 fn temp_csv_csvdata_model_round_trip() {
     #[derive(Debug, Clone, ExcelRow)]
@@ -155,7 +155,7 @@ fn temp_xls03_multiplesheets_readable() {
     assert!(!rows.is_empty());
 }
 
-/// Java `temp.large.TempLargeDataTest` / WriteLarge intent — 5000-row round trip.
+/// Java `temp.large.TempLargeDataTest` / `WriteLarge` intent — 5000-row round trip.
 #[test]
 fn temp_large_write_read_xlsx() {
     #[derive(Debug, Clone, ExcelRow)]
@@ -221,11 +221,11 @@ fn temp_write_large_batched_xlsx() {
 /// `temp_write_large_batched_xlsx` / `temp_large_write_read_xlsx`.
 #[test]
 fn temp_large_fixture_present() {
+    use std::io::Read;
     let path = fixture("large/large07.xlsx");
     assert_fixture(&path);
     let mut header = [0u8; 4];
     let mut file = std::fs::File::open(&path).unwrap();
-    use std::io::Read;
     file.read_exact(&mut header).unwrap();
     assert_eq!(&header, b"PK\x03\x04", "large07 must be OOXML zip");
     assert!(
@@ -256,7 +256,7 @@ fn temp_style_write_read() {
     assert_eq!(rows[0].col, "styled");
 }
 
-/// Java `temp.WriteV34Test` / `Lock2Test.write` — HorizontalCellStyleStrategy write.
+/// Java `temp.WriteV34Test` / `Lock2Test.write` — `HorizontalCellStyleStrategy` write.
 #[test]
 fn temp_style_horizontal_strategy_write() {
     #[derive(Debug, Clone, ExcelRow)]
@@ -288,6 +288,7 @@ fn temp_style_horizontal_strategy_write() {
 
 /// Java `temp.fill.FillTempTest` intent — simple template fill still works.
 #[test]
+#[allow(clippy::approx_constant)] // 与 Java `FillTempTest.simpleFill` 的 3.14 字面量保持一致
 fn temp_fill_simple_template() {
     let template = fixture("demo/fill/simple.xlsx");
     assert_fixture(&template);
@@ -340,7 +341,7 @@ fn temp_repeat_multiplesheets_fixture() {
     assert!(!sheet1.is_empty());
 }
 
-/// Ensure DynamicRow still works as no-model temp read path.
+/// Ensure `DynamicRow` still works as no-model temp read path.
 #[test]
 fn temp_no_model_dynamic_row() {
     let path = fixture("demo/demo.csv");

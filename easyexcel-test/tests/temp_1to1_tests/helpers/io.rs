@@ -61,7 +61,7 @@ pub fn assert_style_write() {
     assert_eq!(rows[0].col, "styled");
 }
 
-/// HorizontalCellStyleStrategy write.
+/// `HorizontalCellStyleStrategy` write.
 pub fn assert_style_handler() {
     #[derive(Debug, Clone, ExcelRow)]
     struct DemoData {
@@ -180,11 +180,11 @@ pub fn assert_large_batched() {
 
 /// large07 fixture present (do not full-read).
 pub fn assert_large_fixture() {
+    use std::io::Read;
     let path = fixture("large/large07.xlsx");
     assert_fixture(&path);
     let mut header = [0u8; 4];
     let mut file = std::fs::File::open(&path).unwrap();
-    use std::io::Read;
     file.read_exact(&mut header).unwrap();
     assert_eq!(&header, b"PK\x03\x04");
 }
@@ -436,11 +436,11 @@ pub fn assert_converter_read() {
 
 /// CSV FileMagic-style probe: fixture is not a ZIP/XLSX magic.
 pub fn assert_csv_file_magic() {
+    use std::io::Read;
     let path = fixture("demo/demo.csv");
     assert_fixture(&path);
     let mut header = [0u8; 4];
     let mut file = std::fs::File::open(&path).unwrap();
-    use std::io::Read;
     file.read_exact(&mut header).unwrap();
     assert_ne!(&header, b"PK\x03\x04", "CSV fixture must not be ZIP magic");
     let rows = EasyExcel::read_dynamic_sync(&path).do_read_sync().unwrap();
@@ -457,13 +457,13 @@ pub fn assert_cell_ref_parse() {
 
 fn col_letters_to_index(letters: &str) -> u32 {
     letters.chars().fold(0u32, |acc, c| {
-        acc * 26 + (c.to_ascii_uppercase() as u32 - b'A' as u32 + 1)
+        acc * 26 + (c.to_ascii_uppercase() as u32 - u32::from(b'A') + 1)
     }) - 1
 }
 
 fn row_digits_from_ref(cell: &str) -> u32 {
     cell.chars()
-        .skip_while(|c| c.is_ascii_alphabetic())
+        .skip_while(char::is_ascii_alphabetic)
         .collect::<String>()
         .parse()
         .unwrap()
@@ -491,34 +491,39 @@ pub fn assert_datetime_nanos_format() {
     assert_eq!(formatted, "2023-01-01 00:00:00.995");
 }
 
-/// BigDecimal scale / DecimalFormat-style probes (numberforamt6/7).
+/// `BigDecimal` scale / DecimalFormat-style probes (numberforamt6/7).
+#[allow(
+    clippy::cast_precision_loss
+    // 语义敏感：i128→f64 镜像 Java `double` 除法（HALF_UP scale 探针），
+    // 精度损耗正是 Java 侧行为，不能替换为检查式转换。
+)]
 pub fn assert_decimal_scale_smoke() {
     let n = 3_101_011_021_236_149_800i128;
     assert!(n > 0);
     // scale -4 HALF_UP style: divide by 10_000 then multiply back
     let scaled = ((n as f64) / 10_000.0).round() * 10_000.0;
     assert!(scaled > 0.0);
-    let scientific = 3.1010110212361498e18_f64;
+    let scientific = 3.101_011_021_236_15e18_f64;
     assert!(scientific.is_finite());
 }
 
-/// SimpleDateFormat-style locale date format strings (DataFormatTest probes).
+/// SimpleDateFormat-style locale date format strings (`DataFormatTest` probes).
 pub fn assert_locale_date_format_smoke() {
+    fn has_date_token(s: &str) -> bool {
+        s.chars()
+            .any(|c| matches!(c, '年' | '月' | '日' | '时' | '分' | '秒'))
+    }
     // Pattern presence checks — portable stand-in for Java SimpleDateFormat probes.
     let patterns = ["yyyy年m月d日 h点mm哈哈哈m", "yyyy年m月d日", "ah时mm分"];
     for p in patterns {
         assert!(p.contains('年') || p.contains('时') || p.contains('月'));
     }
     // Java `date_ptrn6`: must contain at least one of 年|月|日|时|分|秒
-    fn has_date_token(s: &str) -> bool {
-        s.chars()
-            .any(|c| matches!(c, '年' | '月' | '日' | '时' | '分' | '秒'))
-    }
     assert!(has_date_token("2017年"));
     assert!(!has_date_token("2017但是"));
 }
 
-/// ArrayList clear vs reallocate micro smoke (DataFormatTest#test2).
+/// `ArrayList` clear vs reallocate micro smoke (DataFormatTest#test2).
 pub fn assert_vec_clear_vs_realloc() {
     let mut list: Vec<String> = Vec::with_capacity(3000);
     for _ in 0..1_000 {
@@ -530,7 +535,7 @@ pub fn assert_vec_clear_vs_realloc() {
     assert_eq!(list.capacity(), 3000);
 }
 
-/// CellReference("B3") portable stand-in (Lock2Test#testc) via PositionUtils mirror.
+/// CellReference("B3") portable stand-in (Lock2Test#testc) via `PositionUtils` mirror.
 pub fn assert_cell_reference_b3() {
     use easyexcel::util::position_utils::{get_col, get_row};
     // B3 → col 1 (0-based), row 2 (0-based)
@@ -540,7 +545,10 @@ pub fn assert_cell_reference_b3() {
     assert_eq!(get_row("A1"), 0);
 }
 
-/// Excel serial ↔ datetime probes (Lock2Test#numberforamt) without Apache POI DateUtil.
+/// Excel serial ↔ datetime probes (Lock2Test#numberforamt) without Apache POI `DateUtil`.
+// 语义敏感：`as i64` 截断 / `as f64` 回升正是 Java `(long)` / `(double)`
+// 的 1:1 对应（Excel 序列号双精度模型），保留 as 转换。
+#[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
 pub fn assert_excel_serial_date_probes() {
     use chrono::{NaiveDate, NaiveDateTime, Timelike};
     use easyexcel::util::date_utils::get_java_date;
@@ -553,7 +561,7 @@ pub fn assert_excel_serial_date_probes() {
     );
 
     // Fractional serial → wall-clock via epoch + days + fraction-of-day
-    let serial = 44729.99998842592_f64;
+    let serial = 44_729.999_988_425_92_f64;
     let whole = serial.floor() as i64;
     let frac = serial - whole as f64;
     let base = get_java_date(whole).naive_utc();
@@ -575,10 +583,12 @@ pub fn assert_excel_serial_date_probes() {
     let days = (sample.date() - epoch).num_days() as f64;
     let secs = f64::from(sample.time().num_seconds_from_midnight());
     let excel = days + secs / 86_400.0;
-    assert!((excel - 44729.99998842592).abs() < 1e-5);
+    assert!((excel - 44_729.999_988_425_92).abs() < 1e-5);
 }
 
 /// Sampled Excel date round-trip (Lock2Test#testDateAll) — daily samples, not every-second stress.
+// 语义敏感：`as i64` / `as f64` 镜像 Java `(long)` / `(double)` 序列号模型
+#[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
 pub fn assert_excel_date_roundtrip_sampled() {
     use chrono::{NaiveDate, NaiveDateTime, Timelike};
     use easyexcel::util::date_utils::get_java_date;
@@ -653,7 +663,7 @@ pub fn assert_fill_simple_bytes() {
     assert_eq!(&bytes[0..2], b"PK");
 }
 
-/// PoiWriteTest#write0 / #write — large integer cells via EasyExcel write/read.
+/// PoiWriteTest#write0 / #write — large integer cells via `EasyExcel` write/read.
 ///
 /// Excel stores numbers as IEEE f64; integers past ~2^53 lose precision, so the
 /// portable contract mirrors Java `PoiWriteTest#write` (string cells) rather than
@@ -696,6 +706,13 @@ pub fn assert_float_decimal_smoke() {
 
 /// PoiWriteTest#write1 — long → big-endian bytes (Java long2Bytes).
 pub fn assert_long2bytes() {
+    #[allow(
+        clippy::cast_possible_wrap,
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss
+        // 语义敏感：镜像 Java `long2Bytes`（循环索引 0..8 恒在 i32/u8 值域内，
+        // 掩码后必然 0..=255），保留 as 转换以 1:1 对齐字节序。
+    )]
     fn long2bytes(num: i64) -> [u8; 8] {
         let mut out = [0u8; 8];
         for (ix, slot) in out.iter_mut().enumerate() {
@@ -711,18 +728,16 @@ pub fn assert_long2bytes() {
     assert_ne!(a, b);
 }
 
-/// Whether `s` contains a `${...}` placeholder with non-empty body (Java FILL_PATTERN).
+/// Whether `s` contains a `${...}` placeholder with non-empty body (Java `FILL_PATTERN`).
 fn has_fill_placeholder(s: &str) -> bool {
     let bytes = s.as_bytes();
     let mut i = 0;
     while i + 2 < bytes.len() {
-        if bytes[i] == b'$' && bytes[i + 1] == b'{' {
-            if let Some(end) = s[i + 2..].find('}') {
-                if end > 0 {
+        if bytes[i] == b'$' && bytes[i + 1] == b'{'
+            && let Some(end) = s[i + 2..].find('}')
+                && end > 0 {
                     return true;
                 }
-            }
-        }
         i += 1;
     }
     false

@@ -236,6 +236,7 @@ impl ExcelColumn {
     /// 1. formula override wraps the scalar (`CellValue::Formula`)
     /// 2. hyperlink wraps the display text (`CellValue::Hyperlink`)
     /// 3. comment wraps the underlying value (`CellValue::Comment`)
+    #[must_use]
     pub fn apply_decorations(&self, mut data: WriteCellData) -> WriteCellData {
         if let Some(formula) = self.formula {
             data.set_value(CellValue::Formula(formula.to_owned()));

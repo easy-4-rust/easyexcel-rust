@@ -1,6 +1,6 @@
 //! 1:1 method matrix for Java `com.alibaba.easyexcel.test.temp.poi.*`
 //!
-//! Local-path / contractable probes use repo fixtures + EasyExcel APIs.
+//! Local-path / contractable probes use repo fixtures + `EasyExcel` APIs.
 //! Pure Apache POI / Ehcache stress remains `#[ignore]` elsewhere.
 
 use super::helpers;
@@ -19,7 +19,7 @@ fn poi_poi_2_test_last_row_num_xssf() {
 }
 
 /// Java `com.alibaba.easyexcel.test.temp.poi.Poi3Test#Encryption`
-/// (POI agile encrypt of large07 → EasyExcel password round-trip)
+/// (POI agile encrypt of large07 → `EasyExcel` password round-trip)
 #[test]
 fn poi_poi_3_test_encryption() {
     helpers::assert_large_fixture();
@@ -27,7 +27,7 @@ fn poi_poi_3_test_encryption() {
 }
 
 /// Java `com.alibaba.easyexcel.test.temp.poi.Poi3Test#Encryption2`
-/// (BIFF8 password open → EasyExcel password round-trip)
+/// (BIFF8 password open → `EasyExcel` password round-trip)
 #[test]
 fn poi_poi_3_test_encryption_2() {
     helpers::assert_encrypt();
@@ -59,7 +59,7 @@ fn poi_poi_format_test_last_row_num() {
 }
 
 /// Java `com.alibaba.easyexcel.test.temp.poi.PoiFormatTest#lastRowNumXSSF`
-/// (was `/Users/.../测试格式.xlsx` — DataFormatter → dataformat fixture)
+/// (was `/Users/.../测试格式.xlsx` — `DataFormatter` → dataformat fixture)
 #[test]
 fn poi_poi_format_test_last_row_num_xssf() {
     helpers::assert_dataformat_xlsx();

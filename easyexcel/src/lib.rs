@@ -71,6 +71,11 @@ impl EasyExcel {
     ///
     /// The stream is materialised into an automatically deleted temporary
     /// file so the existing XLSX, XLS, and CSV engines retain random access.
+    ///
+    /// # Errors
+    ///
+    /// Returns an I/O error if the stream cannot be read or the temporary
+    /// file cannot be created.
     pub fn reader_from_input_stream<R>(input: R) -> Result<CompatibleExcelReaderBuilder>
     where
         R: Read,
@@ -1291,6 +1296,10 @@ where
     /// Fills scalar or collection data with Java-compatible `FillConfig`.
     ///
     /// 对应 Java：`ExcelWriterSheetBuilder.doFill(Object, FillConfig)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns template, fill, CSV/XLS unsupported, or output errors.
     pub fn do_fill_with_config(
         self,
         data: &dyn std::any::Any,
@@ -1310,6 +1319,10 @@ where
     /// Resolves fill data lazily, then delegates to [`Self::do_fill`].
     ///
     /// 对应 Java：`doFill(Supplier<Object>)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns template, fill, CSV/XLS unsupported, or output errors.
     pub fn do_fill_with<D, F>(self, supplier: F) -> Result<()>
     where
         D: std::any::Any,
@@ -1322,6 +1335,10 @@ where
     /// Resolves fill data lazily and applies an explicit fill configuration.
     ///
     /// 对应 Java：`doFill(Supplier<Object>, FillConfig)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns template, fill, CSV/XLS unsupported, or output errors.
     pub fn do_fill_with_config_supplier<D, F>(
         self,
         supplier: F,

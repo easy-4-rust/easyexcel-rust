@@ -4,16 +4,16 @@ use easyexcel::{Ehcache, ReadCache, ReadCacheMode};
 
 /// Java `com.alibaba.easyexcel.test.temp.cache.CacheTest#cache`
 ///
-/// Portable stand-in: delegates to the EasyExcel Ehcache facade test.
+/// Portable stand-in: delegates to the `EasyExcel` Ehcache facade test.
 /// The original Java test probes `org.ehcache.PersistentCacheManager`
-/// directly (not EasyExcel API); Rust equivalent is below.
+/// directly (not `EasyExcel` API); Rust equivalent is below.
 #[test]
 fn cache_cache_test_cache() {
     // Delegate to the Ehcache facade test (same semantics, Portable API)
     cache_ehcache_facade_disk_put_get();
 }
 
-/// Portable stand-in: EasyExcel `Ehcache` / `ReadCacheMode::Disk` put-get contract.
+/// Portable stand-in: `EasyExcel` `Ehcache` / `ReadCacheMode::Disk` put-get contract.
 ///
 /// Mirrors the shared-string spill path exercised by XLSX reads, without JVM
 /// `PersistentCacheManager`.

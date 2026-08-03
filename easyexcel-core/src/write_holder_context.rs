@@ -8,7 +8,7 @@ use crate::{
 
 /// Read-only runtime view of Java `WriteWorkbookHolder`.
 ///
-/// The view deliberately exposes logical EasyExcel state rather than a fake
+/// The view deliberately exposes logical `EasyExcel` state rather than a fake
 /// Apache POI workbook. Backend objects remain owned by the writer engine.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WriteWorkbookHolderView {

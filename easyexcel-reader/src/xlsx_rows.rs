@@ -40,7 +40,10 @@ use crate::read_cache::{
     SharedStringCache, SharedStringCacheReader, SharedStringCacheWriter, create_cache, memory_cache,
 };
 
-/// Prefer EasyExcel BuiltinFormats over ssfmt ECMA table (Java locale-aware codes).
+/// Prefer `EasyExcel` `BuiltinFormats` over ssfmt ECMA table (Java locale-aware codes).
+// 对应 Java：`BuiltinFormats.getBuiltinFormat((short) formatIndex)`，u32→u16
+// 截断与 Java `(short)` 强转语义一致，保留 `as` 转换。
+#[allow(clippy::cast_possible_truncation)]
 fn easyexcel_builtin_format_code(id: u32) -> Option<&'static str> {
     builtin_format_code(id as u16)
 }
@@ -393,6 +396,9 @@ impl<'a> XlsxDisplayCellReader<'a> {
         }
     }
 
+    // 对应 Java：`XlsxRowSAXHandler.readCellValue` 的大循环与 quick_xml 事件驱动
+    // 一一对应（v/f/t 子标签推进顺序敏感），拆分会改变解析顺序，保持原样。
+    #[allow(clippy::too_many_lines)]
     fn read_cell(&mut self, style_index: usize, cell_type: Option<&str>) -> Result<ParsedCell> {
         // Dual-track: accumulate via Java-parity handlers while the quick_xml
         // loop remains the event driver (只增不减).
@@ -592,7 +598,7 @@ impl<'a> XlsxDisplayCellReader<'a> {
     }
 }
 
-/// Format a numeric cell with an Excel format code (BuiltinFormats / custom).
+/// Format a numeric cell with an Excel format code (`BuiltinFormats` / custom).
 pub(crate) fn format_with_code(
     value: f64,
     code: &str,
@@ -610,7 +616,7 @@ pub(crate) fn format_with_code(
     format_with_resolved_code(value, code, &options)
 }
 
-/// Apply EasyExcel number-format cleaning then ssfmt + [`java_compat_display`].
+/// Apply `EasyExcel` number-format cleaning then ssfmt + [`java_compat_display`].
 ///
 /// Date codes go through [`java_compat_date_format_code`] (CN `上午/下午` → `AM/PM`,
 /// `mmmmm` → POI PUA wrap) while keeping escaped literals (`yyyy\-m\-dd`).

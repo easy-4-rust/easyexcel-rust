@@ -134,6 +134,13 @@ fn demo_write_converter_write() {
 /// Java `WriteTest.imageWrite`.
 #[test]
 fn demo_write_image_write() {
+    #[derive(Debug, Clone, ExcelRow)]
+    struct ImageDemoData {
+        #[excel(name = "byteArray")]
+        byte_array: WriteCellData,
+        #[excel(name = "writeCellDataFile")]
+        write_cell_data_file: WriteCellData,
+    }
     let img = fixture("converter/img.jpg");
     assert!(
         img.exists(),
@@ -142,13 +149,6 @@ fn demo_write_image_write() {
     );
     let bytes = std::fs::read(&img).unwrap();
 
-    #[derive(Debug, Clone, ExcelRow)]
-    struct ImageDemoData {
-        #[excel(name = "byteArray")]
-        byte_array: WriteCellData,
-        #[excel(name = "writeCellDataFile")]
-        write_cell_data_file: WriteCellData,
-    }
 
     let path = temp_path("imageWrite.xlsx");
     let row = ImageDemoData {

@@ -48,6 +48,10 @@ impl ExcelReaderBuilder {
     /// Java accepts a non-seekable `InputStream`, while XLSX and XLS readers
     /// need random access. The temporary file is retained by the resulting
     /// [`ExcelReader`] and deleted only after that reader is dropped.
+    ///
+    /// # Errors
+    ///
+    /// 当输入流读取失败或临时文件创建/写入失败时返回 [`ExcelError`]。
     pub fn input_stream<R>(mut self, mut input: R) -> Result<Self>
     where
         R: Read,
@@ -190,6 +194,10 @@ impl ExcelReaderBuilder {
     }
 
     /// Builds an event-driven reader. (Java `build()`)
+    ///
+    /// # Errors
+    ///
+    /// 当未设置 `file`（对应 Java 抛异常）或工作簿打开失败时返回 [`ExcelError`]。
     pub fn build<T, L>(self, listener: L) -> Result<ExcelReader<T, L>>
     where
         T: ExcelRow,
@@ -209,6 +217,10 @@ impl ExcelReaderBuilder {
     }
 
     /// Builds and immediately reads all configured sheets. (Java `doReadAll()`)
+    ///
+    /// # Errors
+    ///
+    /// 当构建失败（未设置 `file`）或任一工作表解析失败时返回 [`ExcelError`]。
     pub fn do_read_all<T, L>(self, listener: L) -> Result<()>
     where
         T: ExcelRow,
@@ -220,6 +232,10 @@ impl ExcelReaderBuilder {
 
     /// Reads synchronously and returns all converted rows.
     /// (Java `doReadAllSync()`)
+    ///
+    /// # Errors
+    ///
+    /// 当构建失败（未设置 `file`）或任一工作表解析失败时返回 [`ExcelError`]。
     pub fn do_read_all_sync<T>(self) -> Result<Vec<T>>
     where
         T: ExcelRow,
@@ -357,16 +373,28 @@ where
     }
 
     /// Builds an event-driven reader using the registered listener chain.
+    ///
+    /// # Errors
+    ///
+    /// 当未设置 `file`（对应 Java 抛异常）或工作簿打开失败时返回 [`ExcelError`]。
     pub fn build(self) -> Result<ExcelReader<T, ReadListenerList<T>>> {
         self.builder.build(self.listeners)
     }
 
     /// Builds, reads, and finishes all configured sheets.
+    ///
+    /// # Errors
+    ///
+    /// 当构建失败（未设置 `file`）或任一工作表解析失败时返回 [`ExcelError`]。
     pub fn do_read_all(self) -> Result<()> {
         self.builder.do_read_all(self.listeners)
     }
 
     /// Reads synchronously while retaining all previously registered listeners.
+    ///
+    /// # Errors
+    ///
+    /// 当构建失败（未设置 `file`）或任一工作表解析失败时返回 [`ExcelError`]。
     pub fn do_read_all_sync(self) -> Result<Vec<T>> {
         let rows = Rc::new(RefCell::new(Vec::new()));
         let mut collector = SharedCollectListener(Rc::clone(&rows));
@@ -392,6 +420,9 @@ impl<T> AbstractExcelReaderParameterBuilder<T> for RegisteredExcelReaderBuilder<
 where
     T: ExcelRow + Clone,
 {
+    // 对应 Java：`Math.max(headRowNumber, 0)` 保证非负后再存入 u32 字段，
+    // 符号位必然为 0，`as u32` 不会丢失符号。
+    #[allow(clippy::cast_sign_loss)]
     fn head_row_number(&mut self, head_row_number: i32) -> &mut Self {
         self.builder.options.head_row_number = head_row_number.max(0) as u32;
         self
@@ -622,19 +653,17 @@ mod tests_extra {
     #[test]
     fn build_without_file_fails_like_java() {
         // 对应 Java：build() 在未设置 file 时抛出异常
-        let error = match ExcelReaderBuilder::new()
+        let Err(error) = ExcelReaderBuilder::new()
             .build::<DynamicRow, _>(ExtraCollectListener::default())
-        {
-            Ok(_) => panic!("missing file must fail"),
-            Err(error) => error,
+        else {
+            panic!("missing file must fail");
         };
         assert!(error.to_string().contains("file must be set"));
 
-        let error = match ExcelReaderBuilder::new()
+        let Err(error) = ExcelReaderBuilder::new()
             .do_read_all::<DynamicRow, _>(ExtraCollectListener::default())
-        {
-            Ok(_) => panic!("missing file must fail"),
-            Err(error) => error,
+        else {
+            panic!("missing file must fail");
         };
         assert!(error.to_string().contains("file must be set"));
     }

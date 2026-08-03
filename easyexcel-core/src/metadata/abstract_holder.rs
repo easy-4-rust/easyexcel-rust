@@ -62,18 +62,18 @@ impl AbstractHolder {
             && basic_parameter.clazz.is_none()
             && let Some(parent) = parent
         {
-            holder.head = parent.head.clone();
+            holder.head.clone_from(&parent.head);
         } else {
-            holder.head = basic_parameter.head.clone();
+            holder.head.clone_from(&basic_parameter.head);
         }
 
         if basic_parameter.head.is_none()
             && basic_parameter.clazz.is_none()
             && let Some(parent) = parent
         {
-            holder.clazz = parent.clazz.clone();
+            holder.clazz.clone_from(&parent.clazz);
         } else {
-            holder.clazz = basic_parameter.clazz.clone();
+            holder.clazz.clone_from(&basic_parameter.clazz);
         }
 
         holder.global_configuration = GlobalConfiguration::new();

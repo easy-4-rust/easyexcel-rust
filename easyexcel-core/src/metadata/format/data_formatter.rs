@@ -4,12 +4,12 @@
 //! internal format engine. Rust delegates to the `ssfmt` crate at the
 //! reader call site (`easyexcel-reader`), then applies
 //! [`java_compat_format_code`] + [`java_compat_display`] so STRING mode
-//! matches EasyExcel / POI.
+//! matches `EasyExcel` / POI.
 
 /// Strip orphan decimal points left by optional `#` fraction digits.
 ///
 /// ssfmt/SSF keeps a trailing `.` for `#.##` / `#.##%` when the fractional
-/// part is empty (`9999.%`). POI / EasyExcel STRING mode drops it (`9999%`).
+/// part is empty (`9999.%`). POI / `EasyExcel` STRING mode drops it (`9999%`).
 ///
 /// Does **not** trim whitespace: Excel format codes may emit intentional
 /// trailing spaces (e.g. negative section `\-0.00\ ` → `-1.07 `).
@@ -26,7 +26,7 @@ pub fn java_compat_display(value: &str) -> String {
     out
 }
 
-/// Rewrite Excel date format codes so ssfmt matches POI / EasyExcel STRING.
+/// Rewrite Excel date format codes so ssfmt matches POI / `EasyExcel` STRING.
 ///
 /// - CN literal `上午/下午` → `AM/PM` token (locale supplies `上午`/`下午`).
 /// - `mmmmm` (first-letter month) → POI private-use wrap around short month:
@@ -44,15 +44,15 @@ pub fn java_compat_date_format_code(format_str: &str) -> String {
     with_ampm.replace("mmmmm", "\"\u{E001}\"mmm\"\u{E002}\"")
 }
 
-/// Clean a numeric format code the way EasyExcel
+/// Clean a numeric format code the way `EasyExcel`
 /// `DataFormatter.cleanFormatForNumber` does before `DecimalFormat`.
 ///
 /// - Drop `_X` / `*X` alignment pads (ssfmt would otherwise emit a space;
-///   POI / EasyExcel do not for STRING).
+///   POI / `EasyExcel` do not for STRING).
 /// - Unescape `\` / `"` so literal spaces like `\ ` survive as trailing
 ///   spaces on negative accounting formats (`-1.07 `).
 ///
-/// Date formats should **not** go through this helper (EasyExcel keeps
+/// Date formats should **not** go through this helper (`EasyExcel` keeps
 /// them on the `CellFormat` path). Callers must gate on date vs number.
 #[must_use]
 pub fn java_compat_format_code(format_str: &str) -> String {
@@ -98,6 +98,7 @@ pub fn java_compat_format_code(format_str: &str) -> String {
 /// orphan-decimal cleanup when a pre-formatted string is supplied through
 /// tests that call [`java_compat_display`] directly.
 #[allow(dead_code)]
+#[must_use]
 pub fn format_raw_cell_contents(_value: f64, _format_code: &str) -> Option<String> {
     None
 }
@@ -150,7 +151,7 @@ mod tests_extra {
     #[test]
     fn format_code_strips_star_pad_and_engineering_plus() {
         // 对应 Java：DataFormatter 数字格式清理
-        assert_eq!(java_compat_format_code(r#"* #,##0"#), "#,##0");
+        assert_eq!(java_compat_format_code(r"* #,##0"), "#,##0");
         assert_eq!(java_compat_format_code(r"0.00E+00"), "0.00E00");
         // 转义的下划线不作为填充符移除（仅去除反斜杠）
         assert_eq!(java_compat_format_code(r"\_0"), "_0");

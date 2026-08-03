@@ -53,7 +53,7 @@ impl XlsRecordHandler for NoteRecordHandler {
         if !self.enabled || record_sid != NOTE_SID || data.len() < 6 {
             return;
         }
-        let row = u16::from_le_bytes([data[0], data[1]]) as u32;
+        let row = u32::from(u16::from_le_bytes([data[0], data[1]]));
         let column = u16::from_le_bytes([data[2], data[3]]) as usize;
         self.process_note(None, row, column);
     }

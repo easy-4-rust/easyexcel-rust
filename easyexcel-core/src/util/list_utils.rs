@@ -5,7 +5,7 @@
 use std::vec::Vec;
 
 /// Mirrors `org.apache.commons.collections4.ListUtils#newArrayList` /
-/// the EasyExcel helper that wraps `new ArrayList<>()`.
+/// the `EasyExcel` helper that wraps `new ArrayList<>()`.
 #[must_use]
 pub fn new_array_list<T>() -> Vec<T> {
     Vec::new()

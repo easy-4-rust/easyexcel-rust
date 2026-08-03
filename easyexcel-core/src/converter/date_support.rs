@@ -146,7 +146,11 @@ pub(crate) fn date_to_excel_serial(value: NaiveDate, use_1904_windowing: bool) -
     } else {
         NaiveDate::from_ymd_opt(1899, 12, 30).expect("valid Excel epoch")
     };
-    (value - epoch).num_days() as f64
+    // Excel 序列号（1899/1900/1904 纪元起的天数）范围远小于 i32 上限，i32→f64 无损
+    f64::from(
+        i32::try_from((value - epoch).num_days())
+            .expect("Excel 日期序列号必然在 i32 范围内"),
+    )
 }
 
 pub(crate) fn datetime_to_excel_serial(value: NaiveDateTime, use_1904_windowing: bool) -> f64 {
@@ -413,6 +417,8 @@ mod tests_extra {
     }
 
     #[test]
+    // 日期序列号由整数天数精确转换而来，比较结果必然精确，精确断言正是测试意图
+    #[allow(clippy::float_cmp)]
     fn date_to_excel_serial_after_1900_boundary_uses_1899_12_30_epoch() {
         // 对应 Java：1900-03-01 之后使用 1899-12-30 纪元（含虚拟闰日）
         let date = NaiveDate::from_ymd_opt(2025, 1, 2).unwrap();

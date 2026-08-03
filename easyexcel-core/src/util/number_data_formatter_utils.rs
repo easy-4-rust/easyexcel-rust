@@ -22,13 +22,12 @@ pub fn format(value: f64, format_pattern: &str) -> String {
     let scale = format_pattern
         .split('.')
         .nth(1)
-        .map(|s| s.chars().take_while(|c| *c == '0').count())
-        .unwrap_or(0);
+        .map_or(0, |s| s.chars().take_while(|c| *c == '0').count());
     FORMATTER_CACHE.with(|c| {
         c.borrow_mut()
-            .insert(format_pattern.to_owned(), format!("{value:.*}", scale));
+            .insert(format_pattern.to_owned(), format!("{value:.scale$}"));
     });
-    format!("{value:.*}", scale)
+    format!("{value:.scale$}")
 }
 
 /// Mirrors `com.alibaba.excel.util.NumberDataFormatterUtils#removeThreadLocalCache`.
@@ -43,7 +42,7 @@ mod tests_extra {
     #[test]
     fn format_uses_decimal_scale_from_pattern() {
         // 对应 Java：NumberDataFormatterUtils.format 按小数点后 0 的数量取精度
-        assert_eq!(format(3.14159, "0.00"), "3.14");
+        assert_eq!(format(5.141, "0.00"), "5.14");
         assert_eq!(format(3.0, "0.00"), "3.00");
         assert_eq!(format(2.5, "0.000"), "2.500");
         assert_eq!(format(1.2, "0"), "1");

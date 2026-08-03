@@ -8,7 +8,7 @@
 /// equivalent) or into the writer-side helpers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExcelDataFormat {
-    /// A Java EasyExcel / Apache POI built-in format index.
+    /// A Java `EasyExcel` / Apache POI built-in format index.
     Builtin(u8),
     /// A custom Excel number-format string.
     Custom(&'static str),

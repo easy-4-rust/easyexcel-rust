@@ -16,7 +16,7 @@
 // ---------------------------------------------------------------------------
 
 mod excel_reader_sheet_builder_test {
-    //! Mirrors ExcelReaderSheetBuilder constructors + setters
+    //! Mirrors `ExcelReaderSheetBuilder` constructors + setters
     use easyexcel_reader::builder::excel_reader_sheet_builder::ExcelReaderSheetBuilder;
 
     /// Java: `ExcelReaderSheetBuilder()` default ctor.
@@ -55,7 +55,7 @@ mod excel_reader_sheet_builder_test {
         assert_eq!(b.use_scientific_format, Some(true));
     }
 
-    /// Java: `build()` returns a ReadSheet with sheet_no set.
+    /// Java: `build()` returns a `ReadSheet` with `sheet_no` set.
     #[test]
     fn t06_build_returns_read_sheet07() {
         let b = ExcelReaderSheetBuilder::new()
@@ -94,7 +94,7 @@ mod excel_reader_sheet_builder_test {
 // ---------------------------------------------------------------------------
 
 mod read_sheet_test {
-    //! Mirrors ReadSheet ctors + getters/setters + copyBasicParameter
+    //! Mirrors `ReadSheet` ctors + getters/setters + copyBasicParameter
     use easyexcel_reader::context::read_sheet::ReadSheet;
 
     /// Java: `ReadSheet()` no-arg ctor.
@@ -179,7 +179,7 @@ mod read_sheet_test {
 // ---------------------------------------------------------------------------
 
 mod read_table_test {
-    //! Mirrors ReadTable (4 members)
+    //! Mirrors `ReadTable` (4 members)
     use easyexcel_reader::metadata::read_table::ReadTable;
 
     /// Java: `ReadTable()` no-arg ctor.
@@ -217,7 +217,7 @@ mod read_table_test {
 // ---------------------------------------------------------------------------
 
 mod read_workbook_test {
-    //! Mirrors ReadWorkbook
+    //! Mirrors `ReadWorkbook`
     use easyexcel_reader::metadata::read_workbook::ReadWorkbook;
 
     /// Java: `ReadWorkbook()` no-arg ctor.
@@ -301,7 +301,7 @@ mod read_workbook_test {
 // ---------------------------------------------------------------------------
 
 mod write_sheet_test {
-    //! Mirrors WriteSheet setters
+    //! Mirrors `WriteSheet` setters
     use easyexcel_writer::MirroredWriteSheet;
 
     /// Java: `getSheetNo()` / `setSheetNo(Integer)`.
@@ -327,7 +327,7 @@ mod write_sheet_test {
 // ---------------------------------------------------------------------------
 
 mod write_table_test {
-    //! Mirrors WriteTable setter
+    //! Mirrors `WriteTable` setter
     use easyexcel_writer::MirroredWriteTable;
 
     /// Java: `getTableNo()` / `setTableNo(Integer)`.
@@ -345,7 +345,7 @@ mod write_table_test {
 // ---------------------------------------------------------------------------
 
 mod write_workbook_test {
-    //! Mirrors WriteWorkbook
+    //! Mirrors `WriteWorkbook`
     use easyexcel_writer::MirroredWriteWorkbook;
 
     /// Java: `getExcelType()` / `setExcelType(ExcelTypeEnum)`.
@@ -421,7 +421,7 @@ mod excel_reader_table_builder_test {
         assert_eq!(b.table_no, Some(2));
     }
 
-    /// Legacy Java: `build()` returns a ReadTable.
+    /// Legacy Java: `build()` returns a `ReadTable`.
     #[test]
     fn t03_build_returns_read_table07() {
         let b = ExcelReaderTableBuilder::new().table_no(3);

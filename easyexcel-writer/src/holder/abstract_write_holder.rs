@@ -17,6 +17,9 @@ use crate::{ExcelWriteHeadProperty, WriteHolder};
 /// parent holder. Rust keeps the same resolved state here; builders use
 /// [`crate::WriteOptions`] for the live backend while handler-facing
 /// compatibility APIs use this holder.
+// 语义敏感：needHead/useDefaultStyle/automaticMergeHead 等布尔字段与 Java
+// `AbstractWriteHolder` 一一对应，合并会破坏 1:1 可追溯性。
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone)]
 pub struct AbstractWriteHolder {
     /// Mirrors `AbstractWriteHolder.needHead`.
@@ -437,8 +440,10 @@ mod tests_extra {
         assert!(!holder.order_by_include_column());
         // None field-name / None column-index arms of WriteHolder::ignore.
         assert!(!holder.ignore(None, None));
-        let mut excluded = AbstractWriteHolder::default();
-        excluded.exclude_column_indexes = Some(HashSet::from([7]));
+        let excluded = AbstractWriteHolder {
+            exclude_column_indexes: Some(HashSet::from([7])),
+            ..AbstractWriteHolder::default()
+        };
         assert!(excluded.ignore(None, Some(7)));
     }
 }

@@ -46,6 +46,11 @@ impl CsvSheet {
     }
 
     /// Returns a cached row, or an error after it has been flushed.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ExcelError::Unsupported`] when the row does not exist or has
+    /// already been flushed.
     pub fn row(&self, row_index: u32) -> Result<&CsvRow, ExcelError> {
         self.row_cache
             .iter()

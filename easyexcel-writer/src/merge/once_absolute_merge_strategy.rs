@@ -9,6 +9,9 @@ use crate::merge::abstract_merge_strategy::AbstractMergeStrategy;
 /// Registered instances are consumed by the XLSX write path via
 /// [`WriteHandler::style_once_absolute_merge`] (in addition to type-level
 /// `@OnceAbsoluteMerge` metadata).
+// 语义敏感：字段名与 Java `OnceAbsoluteMergeStrategy(int firstRowIndex,
+// int lastRowIndex, int firstColumnIndex, int lastColumnIndex)` 一一对应。
+#[allow(clippy::struct_field_names)]
 pub struct OnceAbsoluteMergeStrategy {
     first_row_index: i32,
     last_row_index: i32,
@@ -22,7 +25,11 @@ impl OnceAbsoluteMergeStrategy {
     ///
     /// Java throws when any index is negative; Rust returns a typed error at
     /// construction time.
-    #[must_use]
+    ///
+    /// # Errors
+    ///
+    /// Returns [`easyexcel_core::ExcelError::Format`] when any index is
+    /// negative.
     pub fn new(
         first_row_index: i32,
         last_row_index: i32,
@@ -48,7 +55,11 @@ impl OnceAbsoluteMergeStrategy {
 
     /// Creates from annotation/runtime property.
     /// (Java `OnceAbsoluteMergeStrategy(OnceAbsoluteMergeProperty)`)
-    #[must_use]
+    ///
+    /// # Errors
+    ///
+    /// Returns [`easyexcel_core::ExcelError::Format`] when any property index
+    /// is negative.
     pub fn from_property(property: OnceAbsoluteMergeProperty) -> easyexcel_core::Result<Self> {
         Self::new(
             property.first_row_index,

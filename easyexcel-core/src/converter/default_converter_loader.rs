@@ -142,6 +142,7 @@ where
 }
 
 /// 对应 Java：`DefaultConverterLoader.loadDefaultWriteConverter()`.
+#[must_use]
 pub fn load_default_write_converter() -> ConverterRegistry {
     let mut registry = ConverterRegistry::default();
     macro_rules! register {
@@ -230,6 +231,7 @@ pub fn load_default_write_converter() -> ConverterRegistry {
 }
 
 /// 对应 Java：`DefaultConverterLoader.loadDefaultReadConverter()`.
+#[must_use]
 pub fn load_default_read_converter() -> ConverterRegistry {
     let mut registry = ConverterRegistry::default();
     macro_rules! register {
@@ -329,6 +331,8 @@ mod tests {
     }
 
     #[test]
+    // 该测试逐类断言默认注册表的写入转换行为，拆分会降低可读性，故保留为单体集成测试
+    #[allow(clippy::too_many_lines)]
     fn default_write_registry_contains_real_scalar_converters() {
         let registry = load_default_write_converter();
         assert!(!registry.is_empty());
@@ -445,6 +449,8 @@ mod tests {
     }
 
     #[test]
+    // 该测试逐类断言默认注册表的读取转换行为，拆分会降低可读性，故保留为单体集成测试
+    #[allow(clippy::too_many_lines)]
     fn default_read_registry_dispatches_by_target_and_cell_type() {
         let registry = load_default_read_converter();
         let column = ExcelColumn::new("value", "Value", Some(0), 0, None);

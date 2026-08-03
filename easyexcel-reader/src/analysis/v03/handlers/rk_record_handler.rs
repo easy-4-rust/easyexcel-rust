@@ -1,7 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.RkRecordHandler`.
 //!
 //! Note: Java oddly materialises an *empty* cell for RK records (historical
-//! EasyExcel behaviour). We mirror that exactly.
+//! `EasyExcel` behaviour). We mirror that exactly.
 
 use super::super::xls_record_handler::XlsRecordHandler;
 use super::blank_record_handler::BlankCell;
@@ -31,12 +31,12 @@ impl RkRecordHandler {
 pub const RK_SID: u16 = 0x027E;
 
 impl XlsRecordHandler for RkRecordHandler {
-    /// Java `RkRecordHandler.processRecord` — yields empty cell (EasyExcel quirk).
+    /// Java `RkRecordHandler.processRecord` — yields empty cell (`EasyExcel` quirk).
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
         if record_sid != RK_SID || data.len() < 4 {
             return;
         }
-        let row = u16::from_le_bytes([data[0], data[1]]) as u32;
+        let row = u32::from(u16::from_le_bytes([data[0], data[1]]));
         let column = u16::from_le_bytes([data[2], data[3]]) as usize;
         self.last_cell = Some(Self::process_rk(row, column));
     }

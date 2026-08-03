@@ -367,6 +367,8 @@ fn field_options_parse_every_supported_value_and_reject_unknown_values() {
     }
 }
 
+// 该测试逐字段断言生成代码，行数较多但结构单一，拆分反而损害可读性。
+#[allow(clippy::too_many_lines)]
 #[test]
 fn expansion_generates_schema_readers_writers_defaults_and_generics() {
     let input: DeriveInput = parse_quote! {
@@ -571,7 +573,7 @@ fn is_side_effect_free_original_type_handles_empty_path_segments() {
         qself: None,
         path: syn::Path {
             leading_colon: None,
-            segments: Default::default(),
+            segments: syn::punctuated::Punctuated::default(),
         },
         attrs: Vec::new(),
     });

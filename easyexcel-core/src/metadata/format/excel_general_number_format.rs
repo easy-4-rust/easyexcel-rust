@@ -6,6 +6,7 @@
 /// Formats a number in Excel "General" format. (Java
 /// `ExcelGeneralNumberFormat.format(Object, StringBuffer, FieldPosition)`)
 #[allow(dead_code)]
+#[must_use]
 pub fn format_general(value: f64) -> String {
     format!("{value}")
 }

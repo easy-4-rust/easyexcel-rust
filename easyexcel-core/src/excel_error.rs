@@ -89,9 +89,10 @@ impl PartialEq for ExcelError {
                     message: m2,
                 },
             ) => s1 == s2 && r1 == r2 && c1 == c2 && f1 == f2 && v1 == v2 && m1 == m2,
-            (Self::SheetNotFound(a), Self::SheetNotFound(b)) => a == b,
-            (Self::Format(a), Self::Format(b)) => a == b,
-            (Self::Unsupported(a), Self::Unsupported(b)) => a == b,
+            // 三个携带 String 负载的变体比较内容是否一致（合并同体分支）
+            (Self::SheetNotFound(a), Self::SheetNotFound(b))
+            | (Self::Format(a), Self::Format(b))
+            | (Self::Unsupported(a), Self::Unsupported(b)) => a == b,
             (Self::Io(a), Self::Io(b)) => a.kind() == b.kind() && a.to_string() == b.to_string(),
             _ => false,
         }

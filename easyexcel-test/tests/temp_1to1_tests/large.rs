@@ -39,7 +39,7 @@ fn large_temp_large_data_test_t_04_write_excel_no() {
 }
 
 /// Java `com.alibaba.easyexcel.test.temp.large.TempLargeDataTest#t04WriteExcelPoi`
-/// (SXSSFWorkbook large write → EasyExcel batched/large write)
+/// (`SXSSFWorkbook` large write → `EasyExcel` batched/large write)
 #[test]
 fn large_temp_large_data_test_t_04_write_excel_poi() {
     helpers::assert_large_write();

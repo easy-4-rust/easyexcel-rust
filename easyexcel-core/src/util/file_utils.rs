@@ -53,11 +53,19 @@ fn replace_configured_path(lock: &RwLock<PathBuf>, path: PathBuf) {
 }
 
 /// Mirrors `org.apache.commons.io.FileUtils#openInputStream`.
+///
+/// # Errors
+///
+/// 当 `path` 不存在或不可读时返回对应的 IO 错误。
 pub fn open_input_stream(path: &Path) -> io::Result<std::fs::File> {
     fs::File::open(path)
 }
 
 /// Mirrors `com.alibaba.excel.util.FileUtils#writeToFile`.
+///
+/// # Errors
+///
+/// 当无法创建或写入文件时返回 [`ExcelError::Io`]。
 pub fn write_to_file(path: &Path, data: &[u8]) -> Result<(), ExcelError> {
     let mut file = fs::File::create(path)?;
     file.write_all(data)?;
@@ -67,6 +75,10 @@ pub fn write_to_file(path: &Path, data: &[u8]) -> Result<(), ExcelError> {
 /// Mirrors `com.alibaba.excel.util.FileUtils#createCacheTmpFile`.
 ///
 /// Creates the file under the currently configured cache directory.
+///
+/// # Errors
+///
+/// 当无法创建缓存目录或临时文件时返回对应的 IO 错误。
 pub fn create_cache_tmp_file() -> io::Result<NamedTempFile> {
     let cache_path = get_cache_path();
     fs::create_dir_all(&cache_path)?;
@@ -79,6 +91,10 @@ pub fn create_cache_tmp_file() -> io::Result<NamedTempFile> {
 ///
 /// The directory remains in place after this call, matching Java's process-wide
 /// POI temp-file strategy instead of returning a short-lived `TempDir`.
+///
+/// # Errors
+///
+/// 当无法创建目录时返回对应的 IO 错误。
 pub fn create_poi_files_directory() -> io::Result<PathBuf> {
     let path = get_poi_files_path();
     fs::create_dir_all(&path)?;
@@ -86,12 +102,20 @@ pub fn create_poi_files_directory() -> io::Result<PathBuf> {
 }
 
 /// Mirrors `org.apache.commons.io.FileUtils#forceMkdir` / `createDirectory`.
+///
+/// # Errors
+///
+/// 当目录无法创建时返回 [`ExcelError::Io`]。
 pub fn create_directory(path: &Path) -> Result<(), ExcelError> {
     fs::create_dir_all(path)?;
     Ok(())
 }
 
 /// Mirrors `org.apache.commons.io.FileUtils#deleteQuietly` / `delete`.
+///
+/// # Errors
+///
+/// 当文件或目录无法删除时返回 [`ExcelError::Io`]（路径不存在视为成功）。
 pub fn delete(path: &Path) -> Result<(), ExcelError> {
     if path.is_dir() {
         fs::remove_dir_all(path)?;

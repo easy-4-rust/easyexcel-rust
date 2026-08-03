@@ -21,14 +21,14 @@ fn write_temp_write_test_image_write() {
 }
 
 /// Java `com.alibaba.easyexcel.test.temp.write.TempWriteTest#imageWritePoi`
-/// (SXSSF image write → EasyExcel image fixture + write smoke)
+/// (SXSSF image write → `EasyExcel` image fixture + write smoke)
 #[test]
 fn write_temp_write_test_image_write_poi() {
     helpers::assert_image_write();
 }
 
 /// Java `com.alibaba.easyexcel.test.temp.write.TempWriteTest#tep`
-/// (SXSSF image/tep → EasyExcel image fixture + write smoke)
+/// (SXSSF image/tep → `EasyExcel` image fixture + write smoke)
 #[test]
 fn write_temp_write_test_tep() {
     helpers::assert_image_write();

@@ -25,16 +25,23 @@ impl CountTagHandler {
     }
 
     /// Java `CountTagHandler.startElement`.
+    ///
+    /// # Errors
+    ///
+    /// 当 `ref` 的结束单元格引用无法解析行号时返回 [`ExcelError::Format`]。
     pub fn parse_dimension_ref(ref_attr: &str) -> Result<u32> {
         let end = ref_attr
             .rsplit_once(CELL_RANGE_SPLIT)
-            .map(|(_, end)| end)
-            .unwrap_or(ref_attr);
+            .map_or(ref_attr, |(_, end)| end);
         let row = row_from_cell_ref(end)?;
         Ok(row.saturating_add(1))
     }
 
     /// Applies dimension attributes onto this handler.
+    ///
+    /// # Errors
+    ///
+    /// 当 `ref` 属性存在但结束单元格引用无法解析行号时返回 [`ExcelError::Format`]。
     pub fn start_dimension(&mut self, attrs: &HashMap<String, String>) -> Result<()> {
         let Some(reference) = attrs.get(ATTRIBUTE_REF) else {
             return Ok(());
@@ -78,8 +85,7 @@ fn row_from_cell_ref(cell: &str) -> Result<u32> {
         .char_indices()
         .rev()
         .find(|(_, c)| !c.is_ascii_digit())
-        .map(|(i, _)| i + 1)
-        .unwrap_or(0);
+        .map_or(0, |(i, _)| i + 1);
     let row_part = &cell[digits_start..];
     if row_part.is_empty() {
         return Err(ExcelError::Format(format!(

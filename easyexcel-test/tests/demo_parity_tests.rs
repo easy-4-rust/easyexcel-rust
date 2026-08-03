@@ -91,7 +91,7 @@ fn count_demo_rows(path: &std::path::Path) -> usize {
 // ReadTest
 // ============================================================================
 
-/// Java `ReadTest.simpleRead` — PageReadListener + sync read of demo.xlsx.
+/// Java `ReadTest.simpleRead` — `PageReadListener` + sync read of demo.xlsx.
 #[test]
 fn demo_read_simple_read() {
     let path = fixture("demo/demo.xlsx");
@@ -139,8 +139,7 @@ fn demo_read_index_or_name_read() {
         rows[0]
             .string
             .as_ref()
-            .map(|s| !s.is_empty())
-            .unwrap_or(false)
+            .is_some_and(|s| !s.is_empty())
     );
 }
 
@@ -184,7 +183,7 @@ fn demo_read_converter_read() {
     assert!(!rows[0].string.is_empty());
 }
 
-/// Java `ReadTest.complexHeaderRead` — head_row_number.
+/// Java `ReadTest.complexHeaderRead` — `head_row_number`.
 #[test]
 fn demo_read_complex_header_read() {
     let path = fixture("demo/demo.xlsx");
@@ -202,17 +201,9 @@ fn demo_read_complex_header_read() {
     assert!(!rows.is_empty() || count_demo_rows(&path) > 0);
 }
 
-/// Java `ReadTest.headerRead` — invoke_head callback fires.
+/// Java `ReadTest.headerRead` — `invoke_head` callback fires.
 #[test]
 fn demo_read_header_read() {
-    let path = fixture("demo/demo.xlsx");
-    assert!(
-        path.exists(),
-        "required Java fixture missing: {}",
-        path.display()
-    );
-    let saw_head = Arc::new(Mutex::new(false));
-    let saw = Arc::clone(&saw_head);
     struct HeadListener {
         saw: Arc<Mutex<bool>>,
         rows: usize,
@@ -232,6 +223,14 @@ fn demo_read_header_read() {
             Ok(())
         }
     }
+    let path = fixture("demo/demo.xlsx");
+    assert!(
+        path.exists(),
+        "required Java fixture missing: {}",
+        path.display()
+    );
+    let saw_head = Arc::new(Mutex::new(false));
+    let saw = Arc::clone(&saw_head);
     EasyExcel::read::<DemoData, _>(&path, HeadListener { saw, rows: 0 })
         .sheet(0usize)
         .do_read()
@@ -410,7 +409,7 @@ fn demo_write_no_model_write() {
     assert!(!back.is_empty());
 }
 
-/// Java `WriteTest.repeatedWrite` — stateful ExcelWriter multi-sheet.
+/// Java `WriteTest.repeatedWrite` — stateful `ExcelWriter` multi-sheet.
 #[test]
 fn demo_write_repeated_write() {
     let path = temp_path("repeatedWrite.xlsx");
@@ -445,7 +444,7 @@ fn demo_write_longest_match_column_width_write() {
     );
 }
 
-/// Java `WriteTest.mergeWrite` — LoopMergeStrategy.
+/// Java `WriteTest.mergeWrite` — `LoopMergeStrategy`.
 #[test]
 fn demo_write_merge_write() {
     let path = temp_path("mergeWrite.xlsx");
@@ -464,7 +463,7 @@ fn demo_write_merge_write() {
     );
 }
 
-/// Java `WriteTest.handlerStyleWrite` — HorizontalCellStyleStrategy registered.
+/// Java `WriteTest.handlerStyleWrite` — `HorizontalCellStyleStrategy` registered.
 #[test]
 fn demo_write_handler_style_write() {
     let path = temp_path("handlerStyle.xlsx");
@@ -515,7 +514,7 @@ fn demo_fill_simple_fill() {
     assert!(!rows.is_empty());
     let text = format!("{rows:?}");
     assert!(
-        text.contains("张三") || text.contains("5"),
+        text.contains("张三") || text.contains('5'),
         "filled values must appear: {text}"
     );
 }
@@ -535,7 +534,7 @@ fn demo_fill_list_fill() {
         items.push(
             TemplateData::new()
                 .with("name", format!("张三{i}"))
-                .with("number", i as f64),
+                .with("number", f64::from(i)),
         );
     }
     let wrapper = FillWrapper::new(items);

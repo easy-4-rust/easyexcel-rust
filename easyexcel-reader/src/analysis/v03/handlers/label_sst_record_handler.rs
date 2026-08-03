@@ -29,7 +29,7 @@ pub enum LabelSstCell {
 /// 对应 Java：`LabelSstRecordHandler`.
 #[derive(Debug, Default)]
 pub struct LabelSstRecordHandler {
-    /// Most recently parsed raw LabelSST placement and cache index.
+    /// Most recently parsed raw `LabelSST` placement and cache index.
     pub last_reference: Option<LabelSstReference>,
 }
 
@@ -81,14 +81,14 @@ impl LabelSstRecordHandler {
 pub const LABEL_SST_SID: u16 = 0x00FD;
 
 impl XlsRecordHandler for LabelSstRecordHandler {
-    /// Java `LabelSstRecordHandler.processRecord` — accepts LabelSST sid and
+    /// Java `LabelSstRecordHandler.processRecord` — accepts `LabelSST` sid and
     /// validates the 10-byte BIFF body (`row|col|xf|sstIndex`). Full cache
     /// resolution uses [`LabelSstRecordHandler::process_label_sst`].
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
         if record_sid != LABEL_SST_SID || data.len() < 10 {
             return;
         }
-        let row = u16::from_le_bytes([data[0], data[1]]) as u32;
+        let row = u32::from(u16::from_le_bytes([data[0], data[1]]));
         let column = u16::from_le_bytes([data[2], data[3]]) as usize;
         let sst_index = u32::from_le_bytes([data[6], data[7], data[8], data[9]]) as usize;
         self.last_reference = Some(LabelSstReference {

@@ -2,7 +2,7 @@
 
 /// Cell coordinate contract.
 ///
-/// Java `Cell` exposes row and column indices. Rust uses snake_case getters
+/// Java `Cell` exposes row and column indices. Rust uses `snake_case` getters
 /// to match project conventions while preserving Java semantics.
 ///
 /// Rust port of Java `Cell`.

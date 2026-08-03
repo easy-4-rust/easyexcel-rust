@@ -8,7 +8,7 @@
 /// rule "`<= 64` is a palette index".
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExcelColor {
-    /// A Java EasyExcel / Apache POI indexed palette color. (Java `IndexedColors.shortValue`)
+    /// A Java `EasyExcel` / Apache POI indexed palette color. (Java `IndexedColors.shortValue`)
     Indexed(u8),
     /// A backend-neutral RGB color in `0xRRGGBB` form.
     Rgb(u32),

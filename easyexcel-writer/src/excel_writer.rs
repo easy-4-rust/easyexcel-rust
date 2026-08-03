@@ -253,6 +253,11 @@ impl ExcelWriter {
     /// This is used by Java-compatible sheet builders, where handlers are
     /// attached after the workbook writer has been constructed but before
     /// `doWrite` begins.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ExcelError::Unsupported`] when the writer has already
+    /// started writing.
     pub fn register_write_handler(&mut self, handler: Box<dyn WriteHandler>) -> Result<&mut Self> {
         if self.started {
             return Err(ExcelError::Unsupported(
@@ -272,6 +277,11 @@ impl ExcelWriter {
     /// handler wins `NotRepeatExecutor` de-duplication when both handlers have
     /// the same order and unique value. Sheet and table builders use this
     /// method to preserve that precedence.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ExcelError::Unsupported`] when the writer has already
+    /// started writing.
     pub fn prepend_write_handlers(
         &mut self,
         handlers: Vec<Box<dyn WriteHandler>>,
@@ -332,6 +342,11 @@ impl ExcelWriter {
     /// workbook hooks as supplementary callbacks when the holder is first
     /// initialized, then executes `sheet own + workbook parent` for sheet,
     /// row, and cell events.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the writer is finished, a handler fails, or
+    /// data cannot be written.
     pub fn write_with_sheet_handlers<T, I>(
         &mut self,
         rows: I,
@@ -537,6 +552,14 @@ impl ExcelWriter {
     }
 
     /// Writes through independent Sheet and Table holder handler chains.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the writer is finished, a handler fails, or
+    /// data cannot be written.
+    // 语义敏感：该函数端到端对应 Java `ExcelWriter.writeWithTableHandlers`
+    // 的完整流程，拆分会割裂上下文，故豁免 too_many_lines。
+    #[allow(clippy::too_many_lines)]
     pub fn write_with_table_handlers<T, I>(
         &mut self,
         rows: I,
@@ -675,7 +698,7 @@ impl ExcelWriter {
         }
         if let Some(state) = self.sheets.get_mut(&sheet_name) {
             let mut options = sheet.options().clone();
-            options.sheet_name = sheet_name.clone();
+            options.sheet_name.clone_from(&sheet_name);
             options.converters = self.converters.merged_with(&options.converters);
             options.compress_temp_files |= self.compress_temp_files;
             options.constant_memory |= self.default_constant_memory;
@@ -699,7 +722,7 @@ impl ExcelWriter {
         self
     }
 
-    /// Encodes image bytes as BIFF8 Obj + MSODrawing + Escher BSE
+    /// Encodes image bytes as BIFF8 Obj + `MSODrawing` + Escher BSE
     /// records (POI HSSF compatible) and embeds them in the output.
     pub fn write_image(&mut self, image_data: &[u8], col: u8, row: u32) -> &mut Self {
         self.xls_book.write_image(image_data, col, row);
@@ -1011,6 +1034,10 @@ impl ExcelWriter {
         }
     }
 
+    // 语义敏感：参数与 Java `ExcelWriter.writeXlsBatch` 的写入路径参数一一对应，
+    // 拆分结构体会破坏 1:1 可追溯性；函数体端到端覆盖完整写入流程，
+    // 拆分会割裂上下文，故豁免 too_many_arguments / too_many_lines。
+    #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
     fn write_xls_batch<T, I>(
         &mut self,
         rows: I,
@@ -1065,7 +1092,7 @@ impl ExcelWriter {
         } else {
             state.options.clone()
         };
-        batch_options.sheet_name = sheet_name.clone();
+        batch_options.sheet_name.clone_from(&sheet_name);
 
         let holder_scope =
             self.handler_holder_scope::<T>(sheet.options(), &sheet_name, active_table_no)?;
@@ -1118,6 +1145,10 @@ impl ExcelWriter {
     ///
     /// Mirrors [`Self::write_xlsx_batch_onto_template_package`] for HSSF/BIFF8.
     /// Creating sheets absent from the template remains unsupported (MVP).
+    // 语义敏感：参数与 Java 对应写入路径一一对应，拆分结构体会破坏
+    // 1:1 可追溯性；函数体端到端覆盖完整写入流程，故豁免
+    // too_many_arguments / too_many_lines。
+    #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
     fn write_xls_batch_onto_template<T, I>(
         &mut self,
         rows: I,
@@ -1158,7 +1189,7 @@ impl ExcelWriter {
             (state, false)
         } else {
             let mut options = sheet.options().clone();
-            options.sheet_name = sheet_name.clone();
+            options.sheet_name.clone_from(&sheet_name);
             options.converters = self.converters.merged_with(&options.converters);
             let next_row = self
                 .template_pending_rows
@@ -1183,7 +1214,7 @@ impl ExcelWriter {
         } else {
             state.options.clone()
         };
-        batch_options.sheet_name = sheet_name.clone();
+        batch_options.sheet_name.clone_from(&sheet_name);
         let holder_scope =
             self.handler_holder_scope::<T>(sheet.options(), &sheet_name, active_table_no)?;
         let sheet_context = holder_scope.sheet(WriteSheetContext::new(&sheet_name));
@@ -1252,6 +1283,10 @@ impl ExcelWriter {
         Ok(())
     }
 
+    // 语义敏感：参数与 Java `ExcelWriter.writeXlsxBatch` 的写入路径参数一一对应，
+    // 拆分结构体会破坏 1:1 可追溯性；函数体端到端覆盖完整写入流程，
+    // 拆分会割裂上下文，故豁免 too_many_arguments / too_many_lines。
+    #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
     fn write_xlsx_batch<T, I>(
         &mut self,
         rows: I,
@@ -1284,7 +1319,7 @@ impl ExcelWriter {
                 options.converters = self.converters.merged_with(&options.converters);
                 self.apply_workbook_spill_defaults(&mut options);
                 // Preserve the real template sheet name (index-based Java `.sheet()`).
-                options.sheet_name = sheet_name.clone();
+                options.sheet_name.clone_from(&sheet_name);
                 let holder_scope =
                     self.handler_holder_scope::<T>(sheet.options(), &sheet_name, active_table_no)?;
                 let worksheet = self
@@ -1349,7 +1384,7 @@ impl ExcelWriter {
             } else {
                 state.options.clone()
             };
-            batch_options.sheet_name = sheet_name.clone();
+            batch_options.sheet_name.clone_from(&sheet_name);
             let holder_scope =
                 self.handler_holder_scope::<T>(sheet.options(), &sheet_name, active_table_no)?;
             let worksheet = self
@@ -1431,6 +1466,10 @@ impl ExcelWriter {
     /// Keeps `styles.xml` and `mergeCells` from the template; only `sheetData`
     /// grows. When the requested sheet is absent, a new empty worksheet part is
     /// created without rewriting existing sheets.
+    // 语义敏感：参数与 Java 对应写入路径一一对应，拆分结构体会破坏
+    // 1:1 可追溯性；函数体端到端覆盖完整写入流程，故豁免
+    // too_many_arguments / too_many_lines。
+    #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
     fn write_xlsx_batch_onto_template_package<T, I>(
         &mut self,
         rows: I,
@@ -1489,17 +1528,16 @@ impl ExcelWriter {
             let mut options = sheet.options().clone();
             options.converters = self.converters.merged_with(&options.converters);
             self.apply_workbook_spill_defaults(&mut options);
-            options.sheet_name = sheet_name.clone();
+            options.sheet_name.clone_from(&sheet_name);
             options
         };
-        options.sheet_name = sheet_name.clone();
+        options.sheet_name.clone_from(&sheet_name);
 
         let write_head = first_write || initialize_holder_head;
         let next_data_index = self
             .sheets
             .get(&sheet_name)
-            .map(|state| state.next_data_index)
-            .unwrap_or(0);
+            .map_or(0, |state| state.next_data_index);
         let start_row = self
             .template_package
             .as_ref()
@@ -1598,6 +1636,10 @@ impl ExcelWriter {
         Ok(())
     }
 
+    // 语义敏感：参数与 Java `ExcelWriter.writeCsvBatch` 的写入路径参数一一对应，
+    // 拆分结构体会破坏 1:1 可追溯性；函数体端到端覆盖完整写入流程，
+    // 拆分会割裂上下文，故豁免 too_many_arguments / too_many_lines。
+    #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
     fn write_csv_batch<T, I>(
         &mut self,
         rows: I,
@@ -1652,7 +1694,7 @@ impl ExcelWriter {
         } else {
             state.options.clone()
         };
-        batch_options.sheet_name = sheet_name.clone();
+        batch_options.sheet_name.clone_from(&sheet_name);
         let holder_scope =
             self.handler_holder_scope::<T>(sheet.options(), &sheet_name, active_table_no)?;
         let sheet_context = holder_scope.sheet(WriteSheetContext::new(&sheet_name));
@@ -1707,6 +1749,9 @@ impl ExcelWriter {
             })
     }
 
+    // 语义敏感：(0..).find 查找首个空闲 sheet 序号，find 命中即终止；
+    // sheet 数量受工作簿规模约束，不存在真正的无限迭代。
+    #[allow(clippy::maybe_infinite_iter)]
     fn handler_holder_scope<T>(
         &self,
         options: &WriteOptions,
@@ -1738,6 +1783,8 @@ impl ExcelWriter {
         )
     }
 
+    // 语义敏感：同上，(0..).find 查找空闲序号，命中即终止。
+    #[allow(clippy::maybe_infinite_iter)]
     fn remember_sheet_index(&mut self, index: Option<usize>, sheet_name: &str) {
         if self.sheet_indexes.values().any(|name| name == sheet_name) {
             return;

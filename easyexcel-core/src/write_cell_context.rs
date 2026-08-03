@@ -258,6 +258,11 @@ impl WriteCellContext {
     }
 
     /// Returns the active sheet holder view.
+    ///
+    /// # Panics
+    ///
+    /// Panics when the callback was created without a sheet holder
+    /// (cell callbacks always carry one).
     #[must_use]
     pub fn write_sheet_holder(&self) -> &WriteSheetHolderView {
         self.holders

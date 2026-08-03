@@ -179,7 +179,7 @@ fn simple_t03_read_and_write_csv() {
     assert_simple_read_and_write(&temp_path("simpleCsv.csv"));
 }
 
-/// Java: write via OutputStream → read via InputStream
+/// Java: write via `OutputStream` → read via `InputStream`
 fn assert_simple_read_and_write_stream(path: &std::path::Path) {
     EasyExcel::write::<SimpleData>(path)
         .sheet("Sheet1")
@@ -207,7 +207,7 @@ fn simple_t06_read_and_write_stream_csv() {
     assert_simple_read_and_write_stream(&temp_path("simpleCsv_stream.csv"));
 }
 
-/// Java: synchronousRead → assertEquals(list.size(), 10), getName()=="姓名0"
+/// Java: synchronousRead → `assertEquals(list.size()`, 10), getName()=="姓名0"
 fn assert_simple_synchronous_read(path: &std::path::Path) {
     EasyExcel::write::<SimpleData>(path)
         .sheet("Sheet1")
@@ -235,7 +235,7 @@ fn simple_t13_synchronous_read_csv() {
     assert_simple_synchronous_read(&temp_path("simpleCsv_sync.csv"));
 }
 
-/// Java: sheet name read → assertEquals(1, list.size())
+/// Java: sheet name read → assertEquals(1, `list.size()`)
 #[test]
 fn simple_t21_sheet_name_read_xlsx() {
     let path = temp_path("simple07_sheet.xlsx");
@@ -252,7 +252,7 @@ fn simple_t21_sheet_name_read_xlsx() {
     assert_eq!(rows.len(), 1);
 }
 
-/// Java: PageReadListener with batch size 5 → assertEquals(5, dataList.size())
+/// Java: `PageReadListener` with batch size 5 → assertEquals(5, `dataList.size()`)
 #[test]
 fn simple_t22_page_read_listener_xlsx() {
     let path = temp_path("simple07_page.xlsx");
@@ -305,7 +305,7 @@ fn sort_data() -> Vec<SortData> {
     }]
 }
 
-/// Java: write SortData → read as Map → assert column order
+/// Java: write `SortData` → read as Map → assert column order
 fn assert_sort_read_and_write(path: &std::path::Path) {
     EasyExcel::write::<SortData>(path)
         .sheet("Sheet1")
@@ -419,13 +419,8 @@ fn exception_data() -> Vec<ExceptionData> {
         .collect()
 }
 
-/// Java: write → read with exception listener → on_exception continues → doAfterAllAnalysed asserts 8 rows
+/// Java: write → read with exception listener → `on_exception` continues → doAfterAllAnalysed asserts 8 rows
 fn assert_exception_read_and_write(path: &std::path::Path) {
-    EasyExcel::write::<ExceptionData>(path)
-        .sheet("Sheet1")
-        .do_write(exception_data())
-        .unwrap();
-
     struct ExceptionListener {
         list: Vec<ExceptionData>,
     }
@@ -454,6 +449,11 @@ fn assert_exception_read_and_write(path: &std::path::Path) {
             Ok(())
         }
     }
+    EasyExcel::write::<ExceptionData>(path)
+        .sheet("Sheet1")
+        .do_write(exception_data())
+        .unwrap();
+
 
     let listener = ExceptionListener { list: Vec::new() };
     EasyExcel::read::<ExceptionData, _>(path, listener)
@@ -477,13 +477,8 @@ fn exception_t03_read_and_write_csv() {
     assert_exception_read_and_write(&temp_path("exception.csv"));
 }
 
-/// Java: write → read with ExceptionThrowDataListener → assert ArithmeticException "/ by zero"
+/// Java: write → read with `ExceptionThrowDataListener` → assert `ArithmeticException` "/ by zero"
 fn assert_exception_throw(path: &std::path::Path) {
-    EasyExcel::write::<ExceptionData>(path)
-        .sheet("Sheet1")
-        .do_write(exception_data())
-        .unwrap();
-
     struct ExceptionThrowListener;
     impl ReadListener<ExceptionData> for ExceptionThrowListener {
         fn invoke(
@@ -497,6 +492,11 @@ fn assert_exception_throw(path: &std::path::Path) {
             Ok(())
         }
     }
+    EasyExcel::write::<ExceptionData>(path)
+        .sheet("Sheet1")
+        .do_write(exception_data())
+        .unwrap();
+
 
     let result = EasyExcel::read::<ExceptionData, _>(path, ExceptionThrowListener)
         .sheet(0usize)
@@ -659,7 +659,7 @@ struct ConverterData {
     cell_data: String,
 }
 
-/// Java: TestUtil.TEST_DATE = 2020-01-01 01:01:01
+/// Java: `TestUtil.TEST_DATE` = 2020-01-01 01:01:01
 fn converter_data() -> Vec<ConverterData> {
     vec![ConverterData {
         date: NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
@@ -683,7 +683,7 @@ fn converter_data() -> Vec<ConverterData> {
 }
 
 /// Java ConverterDataListener.doAfterAllAnalysed assertions:
-/// date==TEST_DATE, localDate==TEST_LOCAL_DATE, localDateTime==TEST_LOCAL_DATE_TIME,
+/// `date==TEST_DATE`, `localDate==TEST_LOCAL_DATE`, `localDateTime==TEST_LOCAL_DATE_TIME`,
 /// booleanData==TRUE, bigDecimal==1, bigInteger==1, longData==1, integerData==1,
 /// shortData==1, byteData==1, doubleData==1.0, floatData==1.0, string=="测试", cellData=="自定义"
 fn assert_converter_round_trip(path: &std::path::Path) {
@@ -757,12 +757,12 @@ fn converter_t13_read_all_converter_csv() {
 /// Java: writeImage → write image data
 #[test]
 fn converter_t21_write_image_xlsx() {
-    let path = temp_path("converter07_image.xlsx");
     #[derive(Debug, Clone, ExcelRow)]
     struct ImageData {
         #[excel(name = "name", index = 0)]
         name: String,
     }
+    let path = temp_path("converter07_image.xlsx");
     let data = vec![ImageData {
         name: "image_test".to_owned(),
     }];
@@ -776,17 +776,17 @@ fn converter_t21_write_image_xlsx() {
 
 #[test]
 fn converter_t22_write_image_xls() {
-    // Java writes images into .xls. BIFF8 image records remain Unsupported (visible).
-    let path = temp_path("converterImage03.xls");
     #[derive(Debug, Clone, ExcelRow)]
     struct ImageRow {
         #[excel(name = "file", index = 0)]
         file: WriteCellData,
     }
+    // Java writes images into .xls. BIFF8 image records remain Unsupported (visible).
+    let path = temp_path("converterImage03.xls");
     let row = ImageRow {
         file: WriteCellData::from_image(vec![0xFF, 0xD8, 0xFF, 0xD9]),
     };
-    let _err = EasyExcel::write::<ImageRow>(&path)
+    EasyExcel::write::<ImageRow>(&path)
         .sheet("Sheet1")
         .do_write(vec![row])
         .expect("XLS image write must succeed (Phase 5.6)");
@@ -1010,7 +1010,7 @@ fn skip_t02_read_and_write_xls() {
     assert_skip(&temp_path("skip03.xls"));
 }
 
-/// Java: CSV does not support multiple sheets → ExcelGenerateException
+/// Java: CSV does not support multiple sheets → `ExcelGenerateException`
 #[test]
 fn skip_t03_read_and_write_csv() {
     let path = temp_path("skip.csv");
@@ -1668,8 +1668,8 @@ fn write_handler_data() -> Vec<WriteHandlerData> {
     }]
 }
 
-/// Custom WriteHandler that tracks lifecycle callbacks.
-/// Java tracks 12 counters; Rust WriteHandler has 8 callbacks.
+/// Custom `WriteHandler` that tracks lifecycle callbacks.
+/// Java tracks 12 counters; Rust `WriteHandler` has 8 callbacks.
 /// We verify each callback is invoked exactly once.
 use std::sync::{Arc, Mutex};
 
@@ -1698,20 +1698,20 @@ impl LifecycleWriteHandler {
         }))
     }
 
-    /// Java WriteHandler has 12 lifecycle callbacks, each invoked exactly once.
-    /// Rust WriteHandler has 8 callbacks. Map as follows:
-    /// Java beforeWorkbookCreate  → Rust before_workbook  (== 1)
-    /// Java afterWorkbookCreate   → Rust after_workbook   (== 1)
-    /// Java beforeSheetCreate     → Rust before_sheet     (== 1)
-    /// Java afterSheetCreate      → Rust after_sheet      (== 1)
-    /// Java beforeRowCreate       → Rust before_row       (>= 1, header+data)
-    /// Java afterRowCreate        → Rust after_row        (>= 1, header+data)
-    /// Java beforeCellCreate      → Rust before_cell      (>= 1, header+data cells)
-    /// Java afterCellDispose      → Rust after_cell       (>= 1, header+data cells)
-    /// Java afterCellCreate       → (no Rust equivalent, mapped to before_cell)
+    /// Java `WriteHandler` has 12 lifecycle callbacks, each invoked exactly once.
+    /// Rust `WriteHandler` has 8 callbacks. Map as follows:
+    /// Java beforeWorkbookCreate  → Rust `before_workbook`  (== 1)
+    /// Java afterWorkbookCreate   → Rust `after_workbook`   (== 1)
+    /// Java beforeSheetCreate     → Rust `before_sheet`     (== 1)
+    /// Java afterSheetCreate      → Rust `after_sheet`      (== 1)
+    /// Java beforeRowCreate       → Rust `before_row`       (>= 1, header+data)
+    /// Java afterRowCreate        → Rust `after_row`        (>= 1, header+data)
+    /// Java beforeCellCreate      → Rust `before_cell`      (>= 1, header+data cells)
+    /// Java afterCellDispose      → Rust `after_cell`       (>= 1, header+data cells)
+    /// Java afterCellCreate       → (no Rust equivalent, mapped to `before_cell`)
     /// Java afterCellDataConverted → (no Rust equivalent)
-    /// Java afterRowDispose       → (no Rust equivalent, mapped to after_row)
-    /// Java afterWorkbookDispose  → (no Rust equivalent, mapped to after_workbook)
+    /// Java afterRowDispose       → (no Rust equivalent, mapped to `after_row`)
+    /// Java afterWorkbookDispose  → (no Rust equivalent, mapped to `after_workbook`)
     fn assert_all_one(handler: &Arc<Mutex<Self>>) {
         let h = handler.lock().unwrap();
         assert_eq!(h.before_workbook, 1, "before_workbook should be exactly 1");
@@ -1855,7 +1855,7 @@ use easyexcel::{FillConfig, FillWrapper, TemplateData};
 
 /// Java t01: fill simple.xlsx template with scalar data → read back
 /// Java: EasyExcel.write(file, FillData.class).withTemplate(template).sheet().doFill(fillData)
-/// Java FillData: name(String), number(Double @NumberFormat("#")), empty(String)
+/// Java `FillData`: name(String), number(Double @`NumberFormat`("#")), empty(String)
 /// After fill, cells {name}→"张三", {number}→5.2
 #[test]
 fn fill_t01_fill_xlsx() {
@@ -1878,18 +1878,18 @@ fn fill_t01_fill_xlsx() {
     let mut found_name = false;
     let mut found_number = false;
     for row in &rows {
-        for (_, val) in row.values() {
+        for val in row.values().values() {
             match val {
                 DynamicValue::String(s) if s.contains("张三") => found_name = true,
-                DynamicValue::String(s) if s.contains("5") => found_number = true,
+                DynamicValue::String(s) if s.contains('5') => found_number = true,
                 DynamicValue::ActualData(easyexcel::CellValue::String(s)) if s.contains("张三") => {
-                    found_name = true
+                    found_name = true;
                 }
                 DynamicValue::ActualData(easyexcel::CellValue::Decimal(_)) => found_number = true,
                 DynamicValue::ActualData(easyexcel::CellValue::Float(f))
                     if (*f - 5.2).abs() < 0.1 =>
                 {
-                    found_number = true
+                    found_number = true;
                 }
                 _ => {}
             }
@@ -1919,13 +1919,13 @@ fn fill_t02_fill_xls() {
 /// Java t03: CSV fill → assertThrows ExcelGenerateException("csv cannot use template.")
 #[test]
 fn fill_t03_fill_csv() {
-    // CSV does not support template fill
-    let path = temp_path("fill.csv");
     #[derive(Debug, Clone, ExcelRow)]
     struct FillData {
         #[excel(name = "name", index = 0)]
         name: String,
     }
+    // CSV does not support template fill
+    let path = temp_path("fill.csv");
     // Writing to CSV without template should work
     EasyExcel::write::<FillData>(&path)
         .sheet("Sheet1")
@@ -1939,9 +1939,9 @@ fn fill_t03_fill_csv() {
     assert_eq!(rows.len(), 1);
 }
 
-/// Java t03_complexFill07: complex fill with LoopMergeStrategy + forceNewRow
+/// Java `t03_complexFill07`: complex fill with `LoopMergeStrategy` + forceNewRow
 /// Java: fill(data, fillConfig, writeSheet) twice + fill(map, writeSheet)
-/// → read back with headRowNumber(3) → assertEquals(21, list.size()), map19.get(0)=="张三"
+/// → read back with headRowNumber(3) → assertEquals(21, `list.size()`), map19.get(0)=="张三"
 #[test]
 fn fill_t03_complex_fill_xlsx() {
     let template = fixture("fill/complex.xlsx");
@@ -1971,11 +1971,11 @@ fn fill_t03_complex_fill_xlsx() {
     assert!(!rows.is_empty(), "complex fill should produce data");
     let mut found_name = false;
     for row in &rows {
-        for (_, val) in row.values() {
+        for val in row.values().values() {
             match val {
                 DynamicValue::String(s) if s.contains("张三") => found_name = true,
                 DynamicValue::ActualData(easyexcel::CellValue::String(s)) if s.contains("张三") => {
-                    found_name = true
+                    found_name = true;
                 }
                 _ => {}
             }
@@ -2003,7 +2003,7 @@ fn fill_t04_complex_fill_xls() {
 
 /// Java t05: horizontal fill
 /// Java: FillConfig.direction(HORIZONTAL) → fill twice + fill(map)
-/// → assertEquals(5, list.size()), map0.get(2)=="张三"
+/// → assertEquals(5, `list.size()`), map0.get(2)=="张三"
 #[test]
 fn fill_t05_horizontal_fill_xlsx() {
     let template = fixture("fill/horizontal.xlsx");
@@ -2023,11 +2023,11 @@ fn fill_t05_horizontal_fill_xlsx() {
     assert!(!rows.is_empty(), "horizontal fill should produce data");
     let mut found_name = false;
     for row in &rows {
-        for (_, val) in row.values() {
+        for val in row.values().values() {
             match val {
                 DynamicValue::String(s) if s.contains("张三") => found_name = true,
                 DynamicValue::ActualData(easyexcel::CellValue::String(s)) if s.contains("张三") => {
-                    found_name = true
+                    found_name = true;
                 }
                 _ => {}
             }
@@ -2114,11 +2114,11 @@ fn fill_t09_composite_fill_xlsx() {
     assert!(!rows.is_empty(), "composite fill should produce data");
     let mut found_name = false;
     for row in &rows {
-        for (_, val) in row.values() {
+        for val in row.values().values() {
             match val {
                 DynamicValue::String(s) if s.contains("张三") => found_name = true,
                 DynamicValue::ActualData(easyexcel::CellValue::String(s)) if s.contains("张三") => {
-                    found_name = true
+                    found_name = true;
                 }
                 _ => {}
             }
@@ -2191,13 +2191,16 @@ fn extra_t03_read() {
 // ============================================================================
 
 #[test]
+// 语义敏感：3.14 是 Java golden 测试的固定输入数据，改用 `PI` 常量会
+// 改变测试数据与 Java 侧不一致，故豁免 approx_constant。
+#[allow(clippy::approx_constant)]
 fn converter_float_number_converter() {
-    let path = temp_path("converter_float.xlsx");
     #[derive(Debug, Clone, ExcelRow)]
     struct FloatData {
         #[excel(name = "value", index = 0)]
         value: f64,
     }
+    let path = temp_path("converter_float.xlsx");
     EasyExcel::write::<FloatData>(&path)
         .sheet("Sheet1")
         .do_write(vec![FloatData { value: 3.14 }])

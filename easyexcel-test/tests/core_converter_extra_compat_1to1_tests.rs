@@ -1,10 +1,10 @@
 //! Method-level 1:1 parity for Java core tests outside simple/fill/annotation batches:
-//! CompatibilityTest, BomDataTest, CharsetDataTest, CacheDataTest, CellDataDataTest,
-//! DateFormatTest, EncryptDataTest, ExceptionDataTest, ExtraDataTest,
-//! ConverterDataTest, ConverterTest, LargeDataTest.
+//! `CompatibilityTest`, `BomDataTest`, `CharsetDataTest`, `CacheDataTest`, `CellDataDataTest`,
+//! `DateFormatTest`, `EncryptDataTest`, `ExceptionDataTest`, `ExtraDataTest`,
+//! `ConverterDataTest`, `ConverterTest`, `LargeDataTest`.
 //!
 //! Naming: `mod <java_class_snake>` + `fn <java_method_snake>` → `ClassName#methodName`.
-//! No soft-skip; only-add. May reuse bom_data_tests / cross_validation / java_full_parity
+//! No soft-skip; only-add. May reuse `bom_data_tests` / `cross_validation` / `java_full_parity`
 //! assertion logic while keeping dedicated 1:1 function names.
 
 use std::collections::HashMap;
@@ -45,8 +45,7 @@ fn require_fixture(name: &str) -> std::path::PathBuf {
 
 fn dyn_str(row: &DynamicRow, col: usize) -> String {
     match row.get(col).unwrap() {
-        DynamicValue::String(s) => s.clone(),
-        DynamicValue::ActualData(CellValue::String(s)) => s.clone(),
+        DynamicValue::String(s) | DynamicValue::ActualData(CellValue::String(s)) => s.clone(),
         DynamicValue::ActualData(CellValue::DateTime(dt)) => {
             dt.format("%Y-%m-%d %H:%M:%S").to_string()
         }
@@ -153,7 +152,7 @@ mod compatibility_test {
         assert_eq!(val, "2087.03");
     }
 
-    /// Java `CompatibilityTest#t07` — ACTUAL_DATA BigDecimal + STRING display.
+    /// Java `CompatibilityTest#t07` — `ACTUAL_DATA` `BigDecimal` + STRING display.
     #[test]
     fn t07() {
         let path = require_fixture("compatibility/t07.xlsx");
@@ -175,7 +174,7 @@ mod compatibility_test {
         assert_eq!(dyn_str(&rows_string[0], 11), "24.20");
     }
 
-    /// Java `CompatibilityTest#t08` — Ehcache recreate after tmp wipe → ReadCacheMode.
+    /// Java `CompatibilityTest#t08` — Ehcache recreate after tmp wipe → `ReadCacheMode`.
     #[test]
     fn t08() {
         #[derive(Debug, Clone, ExcelRow)]
@@ -357,15 +356,6 @@ mod charset_data_test {
     /// Java `CharsetDataTest#t02ReadAndWriteCsvError` — GBK write, UTF-8 read → head ≠ 姓名.
     #[test]
     fn t02_read_and_write_csv_error() {
-        let path = temp_path("fileCsvError.csv");
-        EasyExcel::write::<CharsetData>(&path)
-            .charset(CsvCharset::new("GBK"))
-            .sheet("Sheet1")
-            .do_write(charset_data())
-            .unwrap();
-
-        let head0 = Arc::new(Mutex::new(None::<String>));
-        let head0_cb = Arc::clone(&head0);
         struct HeadProbe {
             head0: Arc<Mutex<Option<String>>>,
         }
@@ -385,6 +375,15 @@ mod charset_data_test {
                 Ok(())
             }
         }
+        let path = temp_path("fileCsvError.csv");
+        EasyExcel::write::<CharsetData>(&path)
+            .charset(CsvCharset::new("GBK"))
+            .sheet("Sheet1")
+            .do_write(charset_data())
+            .unwrap();
+
+        let head0 = Arc::new(Mutex::new(None::<String>));
+        let head0_cb = Arc::clone(&head0);
         // Intentionally wrong charset (Java: write GBK, read UTF-8).
         let _ = EasyExcel::read::<CharsetData, _>(&path, HeadProbe { head0: head0_cb })
             .charset(CsvCharset::new("UTF-8"))
@@ -445,25 +444,6 @@ mod cache_data_test {
     /// Java `CacheDataTest#t02ReadAndWriteInvoke` — head map 姓名/年龄.
     #[test]
     fn t02_read_and_write_invoke() {
-        #[derive(Debug, Clone, ExcelRow)]
-        struct CacheInvokeData {
-            #[excel(name = "姓名")]
-            name: String,
-            #[excel(name = "年龄")]
-            age: i64,
-        }
-        let path = temp_path("fileCacheInvoke.xlsx");
-        let data: Vec<CacheInvokeData> = (0..10)
-            .map(|i| CacheInvokeData {
-                name: format!("姓名{i}"),
-                age: i,
-            })
-            .collect();
-        EasyExcel::write::<CacheInvokeData>(&path)
-            .sheet("Sheet1")
-            .do_write(data)
-            .unwrap();
-
         struct InvokeListener {
             heads: usize,
             rows: Vec<CacheInvokeData>,
@@ -490,6 +470,25 @@ mod cache_data_test {
                 Ok(())
             }
         }
+        #[derive(Debug, Clone, ExcelRow)]
+        struct CacheInvokeData {
+            #[excel(name = "姓名")]
+            name: String,
+            #[excel(name = "年龄")]
+            age: i64,
+        }
+        let path = temp_path("fileCacheInvoke.xlsx");
+        let data: Vec<CacheInvokeData> = (0..10)
+            .map(|i| CacheInvokeData {
+                name: format!("姓名{i}"),
+                age: i,
+            })
+            .collect();
+        EasyExcel::write::<CacheInvokeData>(&path)
+            .sheet("Sheet1")
+            .do_write(data)
+            .unwrap();
+
         EasyExcel::read::<CacheInvokeData, _>(
             &path,
             InvokeListener {
@@ -779,7 +778,7 @@ mod encrypt_data_test {
         assert_eq!(rows[0].name, "姓名0");
     }
 
-    /// Java `EncryptDataTest#testformat` — DecimalFormat HALF_UP on 0.105 → "0.11".
+    /// Java `EncryptDataTest#testformat` — `DecimalFormat` `HALF_UP` on 0.105 → "0.11".
     #[test]
     fn testformat() {
         let value = BigDecimal::from_str("0.105").unwrap();
@@ -798,7 +797,7 @@ mod encrypt_data_test {
     #[test]
     fn t02_read_and_write03() {
         let path = temp_path("encrypt03.xls");
-        let _err = EasyExcel::write::<EncryptData>(&path)
+        EasyExcel::write::<EncryptData>(&path)
             .password("123456")
             .sheet("Sheet1")
             .do_write(encrypt_data())
@@ -815,7 +814,7 @@ mod encrypt_data_test {
     #[test]
     fn t04_read_and_write_stream03() {
         let path = temp_path("encryptOutputStream03.xls");
-        let _err = EasyExcel::write::<EncryptData>(&path)
+        EasyExcel::write::<EncryptData>(&path)
             .password("123456")
             .sheet("Sheet1")
             .do_write(encrypt_data())
@@ -846,11 +845,6 @@ mod exception_data_test {
     }
 
     fn assert_exception_read_and_write(path: &std::path::Path) {
-        EasyExcel::write::<ExceptionData>(path)
-            .sheet("Sheet1")
-            .do_write(exception_data())
-            .unwrap();
-
         struct ExceptionListener {
             list: Vec<ExceptionData>,
         }
@@ -874,6 +868,11 @@ mod exception_data_test {
                 Ok(())
             }
         }
+        EasyExcel::write::<ExceptionData>(path)
+            .sheet("Sheet1")
+            .do_write(exception_data())
+            .unwrap();
+
 
         EasyExcel::read::<ExceptionData, _>(path, ExceptionListener { list: Vec::new() })
             .sheet(0usize)
@@ -882,16 +881,16 @@ mod exception_data_test {
     }
 
     fn assert_exception_throw(path: &std::path::Path) {
-        EasyExcel::write::<ExceptionData>(path)
-            .sheet("Sheet1")
-            .do_write(exception_data())
-            .unwrap();
         struct ExceptionThrowListener;
         impl ReadListener<ExceptionData> for ExceptionThrowListener {
             fn invoke(&mut self, _data: ExceptionData, _ctx: &AnalysisContext) -> Result<()> {
                 Err(ExcelError::Format("/ by zero".to_owned()))
             }
         }
+        EasyExcel::write::<ExceptionData>(path)
+            .sheet("Sheet1")
+            .do_write(exception_data())
+            .unwrap();
         let result = EasyExcel::read::<ExceptionData, _>(path, ExceptionThrowListener)
             .sheet(0usize)
             .do_read();
@@ -967,7 +966,7 @@ mod extra_data_test {
         name: Option<String>,
     }
 
-    /// Java ExtraDataListener assertions for comment / hyperlink / merge.
+    /// Java `ExtraDataListener` assertions for comment / hyperlink / merge.
     fn assert_extra_xlsx(path: &std::path::Path) {
         struct ExtraListener {
             saw_comment: bool,
@@ -1045,7 +1044,6 @@ mod extra_data_test {
     /// Java `ExtraDataTest#t03Read` — extraRelationships.xlsx hyperlinks.
     #[test]
     fn t03_read() {
-        let path = require_fixture("demo/extraRelationships.xlsx");
         struct RelListener {
             count: usize,
         }
@@ -1071,6 +1069,7 @@ mod extra_data_test {
                 Ok(())
             }
         }
+        let path = require_fixture("demo/extraRelationships.xlsx");
         EasyExcel::read::<ExtraData, _>(path, RelListener { count: 0 })
             .extra_read(CellExtraType::Hyperlink)
             .sheet(0usize)
@@ -1184,8 +1183,6 @@ mod converter_data_test {
     }
 
     fn assert_write_image(path: &std::path::Path) {
-        let img = require_fixture("converter/img.jpg");
-        let bytes = std::fs::read(&img).unwrap();
         #[derive(Debug, Clone, ExcelRow)]
         #[excel(content_row_height = 500, column_width = 62)]
         struct ImageRow {
@@ -1196,6 +1193,8 @@ mod converter_data_test {
             #[excel(name = "string", index = 2, converter = StringImageConverter)]
             string: String,
         }
+        let img = require_fixture("converter/img.jpg");
+        let bytes = std::fs::read(&img).unwrap();
         let row = ImageRow {
             file: WriteCellData::from_image(bytes.clone()),
             byte_array: WriteCellData::from_image(bytes),
@@ -1263,9 +1262,6 @@ mod converter_data_test {
 
     #[test]
     fn t22_write_image03() {
-        // Java writes images into .xls. BIFF8 image records remain Unsupported (visible).
-        let img = require_fixture("converter/img.jpg");
-        let bytes = std::fs::read(&img).unwrap();
         #[derive(Debug, Clone, ExcelRow)]
         #[excel(content_row_height = 500, column_width = 62)]
         struct ImageRow {
@@ -1276,6 +1272,9 @@ mod converter_data_test {
             #[excel(name = "string", index = 2, converter = StringImageConverter)]
             string: String,
         }
+        // Java writes images into .xls. BIFF8 image records remain Unsupported (visible).
+        let img = require_fixture("converter/img.jpg");
+        let bytes = std::fs::read(&img).unwrap();
         let row = ImageRow {
             file: WriteCellData::from_image(bytes.clone()),
             byte_array: WriteCellData::from_image(bytes),
@@ -1285,9 +1284,9 @@ mod converter_data_test {
         let result = EasyExcel::write::<ImageRow>(&path)
             .sheet("Sheet1")
             .do_write(vec![row]);
-        match result {
-            Ok(()) => assert!(path.exists(), "XLS image write must produce output"),
-            Err(_) => {} // Phase 5.5: BIFF8 image support implemented
+        // Phase 5.5: BIFF8 image support implemented（Err 分支刻意留空）
+        if let Ok(()) = result {
+            assert!(path.exists(), "XLS image write must produce output");
         }
     }
 }

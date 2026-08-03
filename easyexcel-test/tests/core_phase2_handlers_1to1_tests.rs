@@ -188,8 +188,8 @@ mod default_write_handler_loader_test {
     //! Mirrors DefaultWriteHandlerLoaderTest#t01LoadDefaultHandler07
     use super::*;
 
-    /// Java: default XLSX handlers are Dimension, DefaultRow, FillStyle,
-    /// and DefaultStyle when `useDefaultStyle=true`.
+    /// Java: default XLSX handlers are Dimension, `DefaultRow`, `FillStyle`,
+    /// and `DefaultStyle` when `useDefaultStyle=true`.
     #[test]
     fn t01_load_default_handler07() {
         let mut handlers = DefaultWriteHandlerLoader::load_default_handler();
@@ -197,7 +197,7 @@ mod default_write_handler_loader_test {
         // Verify all handlers implement the unified WriteHandler trait
         // and can dispatch a no-op workbook lifecycle.
         let ctx = easyexcel_core::WriteWorkbookContext::new("out.xlsx");
-        for h in handlers.iter_mut() {
+        for h in &mut handlers {
             WriteHandler::before_workbook(h.as_mut(), &ctx).unwrap();
             WriteHandler::after_workbook(h.as_mut(), &ctx).unwrap();
         }

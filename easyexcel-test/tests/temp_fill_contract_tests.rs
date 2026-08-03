@@ -1,4 +1,4 @@
-//! Temp fill-package *contract* tests — portable EasyExcel fill API.
+//! Temp fill-package *contract* tests — portable `EasyExcel` fill API.
 //!
 //! 对应 Java：`com.alibaba.easyexcel.test.temp.fill.FillTempTest`,
 //! `temp.FillTempTest`, and `temp.issue1663.FillTest` using fixtures under
@@ -30,14 +30,13 @@ fn assert_fixture(path: &std::path::Path) {
 fn dynamic_contains(rows: &[DynamicRow], needle: &str) -> bool {
     rows.iter().any(|row| {
         row.values().iter().any(|(_, val)| match val {
-            DynamicValue::String(s) => s.contains(needle),
-            DynamicValue::ActualData(easyexcel::CellValue::String(s)) => s.contains(needle),
+            DynamicValue::String(s) | DynamicValue::ActualData(easyexcel::CellValue::String(s)) => s.contains(needle),
             _ => false,
         })
     })
 }
 
-/// Java `temp.fill.FillTempTest.simpleFill` — map/object fill via TemplateData.
+/// Java `temp.fill.FillTempTest.simpleFill` — map/object fill via `TemplateData`.
 #[test]
 fn temp_fill_simple_map_values() {
     let template = fixture("demo/fill/simple.xlsx");
@@ -66,7 +65,7 @@ fn temp_fill_list_template() {
         .map(|i| {
             TemplateData::new()
                 .with("name", format!("张三{i}"))
-                .with("number", i as f64)
+                .with("number", f64::from(i))
         })
         .collect();
     EasyExcel::fill_template_list(
@@ -175,7 +174,7 @@ fn temp_fill_composite() {
     assert!(output.exists());
 }
 
-/// Java `temp.issue1663.FillTest` — named FillWrapper + unknown map key ignored.
+/// Java `temp.issue1663.FillTest` — named `FillWrapper` + unknown map key ignored.
 #[test]
 fn temp_fill_issue1663_named_wrapper() {
     let template = fixture("java/temp/issue1663/template.xlsx");

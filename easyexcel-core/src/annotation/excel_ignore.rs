@@ -24,6 +24,6 @@ mod tests_extra {
     fn new_creates_marker() {
         // 对应 Java：@ExcelIgnore 标记
         assert_eq!(ExcelIgnore::new(), ExcelIgnore);
-        assert_eq!(ExcelIgnore::default(), ExcelIgnore);
+        assert_eq!(ExcelIgnore, ExcelIgnore);
     }
 }

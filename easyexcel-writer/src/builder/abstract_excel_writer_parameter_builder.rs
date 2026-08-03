@@ -280,7 +280,7 @@ mod tests {
 
     #[test]
     fn abstract_writer_parameter_builder_register_write_handler() {
-        /// Minimal no-op WriteHandler used to test handler registration.
+        /// Minimal no-op `WriteHandler` used to test handler registration.
         struct NoopHandler;
         impl WriteHandler for NoopHandler {
             fn order(&self) -> i32 {

@@ -138,6 +138,11 @@ pub trait ExcelBuilder {
     /// Creates a merged region using zero-based inclusive coordinates.
     ///
     /// Mirrors deprecated Java `merge(int, int, int, int)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a format error when the coordinates are out of range or the
+    /// writer backend cannot merge the region.
     fn merge(&mut self, first_row: u32, last_row: u32, first_col: u16, last_col: u16)
     -> Result<()>;
 
@@ -260,21 +265,21 @@ impl ExcelBuilderImpl {
         } else {
             write_sheet.options().clone()
         };
-        options.merge_ranges.extend(self.pending_merges.drain(..));
+        options.merge_ranges.append(&mut self.pending_merges);
         let sheet_name = if options.auto_trim {
             options.sheet_name.trim().to_owned()
         } else {
             options.sheet_name.clone()
         };
-        options.sheet_name = sheet_name.clone();
+        options.sheet_name.clone_from(&sheet_name);
         self.update_current_holder::<T>(&options, write_table.map(WriteTable::table_no))?;
         let sheet = WriteSheet::from_options(options);
         self.writer.write(data, &sheet).map(|_| ())
     }
 
     fn finish_resources(&mut self, on_exception: bool) -> Result<()> {
-        if self.fill_session_active {
-            if let Some(delegate) = self.fill_executor.as_mut() {
+        if self.fill_session_active
+            && let Some(delegate) = self.fill_executor.as_mut() {
                 let mut executor =
                     ExcelWriteFillExecutor::with_delegate(&self.context, delegate.as_mut());
                 executor.finish(on_exception)?;
@@ -282,7 +287,6 @@ impl ExcelBuilderImpl {
                 self.finished_via_fill = true;
                 return Ok(());
             }
-        }
         if on_exception {
             self.writer.finish_on_exception()
         } else {
@@ -692,7 +696,7 @@ mod tests {
                 .excel_write_head_property()
                 .head_map()
                 .values()
-                .flat_map(|head| head.head_name_list())
+                .flat_map(easyexcel_core::metadata::Head::head_name_list)
                 .map(String::as_str)
                 .collect::<Vec<_>>(),
             vec!["填充列"]

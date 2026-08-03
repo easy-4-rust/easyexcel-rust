@@ -100,6 +100,11 @@ pub fn local_tag(name: &str) -> &str {
 
 /// Java `SharedStringsTableHandler.utfDecode(String)` — OOXML `_xHHHH_` escapes
 /// (see OOXML §3.18.9 / POI `XSSFRichTextString`).
+///
+/// # Panics
+///
+/// 当 `value` 包含非法 UTF-8 字节序列时，逐字符回退分支的 `expect` 会 panic；
+/// 传入参数来自 XML 解析器（已保证 UTF-8 合法），正常路径不会触发。
 #[must_use]
 pub fn utf_decode(value: &str) -> String {
     if !value.contains("_x") {

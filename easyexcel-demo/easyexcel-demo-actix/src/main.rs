@@ -99,8 +99,8 @@ async fn download_failed_using_json() -> impl Responder {
 }
 
 async fn upload(mut payload: Multipart) -> impl Responder {
-    // 对应 Java `WebTest.upload(MultipartFile file)`。
-    while let Some(item) = payload.next().await {
+    // 对应 Java `WebTest.upload(MultipartFile file)`：按单个上传字段处理并立即返回。
+    if let Some(item) = payload.next().await {
         let mut field = match item {
             Ok(field) => field,
             Err(error) => return HttpResponse::BadRequest().body(error.to_string()),

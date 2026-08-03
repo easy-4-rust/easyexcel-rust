@@ -30,6 +30,9 @@ struct CollectionFillCursor {
     initialized: bool,
 }
 
+// 集合填充按“占位符解析 → 模板展开 → 游标缓存 → 行平移”线性推进，
+// 拆分会把跨步骤共享的 shared_strings/rows 状态拆散，故豁免 too_many_lines。
+#[allow(clippy::too_many_lines)]
 pub(crate) fn replace_collection_fills_in_sheet(
     entries: &mut [TemplateEntry],
     worksheet: &str,
@@ -482,7 +485,7 @@ pub(crate) fn all_cells(row: &str) -> Vec<(usize, usize, &str)> {
 ///
 /// Must not match similarly-prefixed tags such as `<cols>` / `<col>` — those
 /// false positives previously rewrote worksheet XML during scalar fill and
-/// left `complex.xlsx` unreadable by quick_xml.
+/// left `complex.xlsx` unreadable by `quick_xml`.
 fn find_next_cell(xml: &str, from: usize) -> Option<(usize, usize)> {
     let bytes = xml.as_bytes();
     let mut search = from;

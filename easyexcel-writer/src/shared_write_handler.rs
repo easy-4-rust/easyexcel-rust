@@ -44,6 +44,9 @@ pub(crate) struct SharedWriteHandler {
 }
 
 impl SharedWriteHandler {
+    // 语义敏感：对应 Java Handler 在单线程写入链内的共享设计，`Box<dyn WriteHandler>`
+    // 本身不要求 Send/Sync，Arc<Mutex<>> 仅为生命周期共享，无需线程安全约束。
+    #[allow(clippy::arc_with_non_send_sync)]
     pub(crate) fn new(handler: Box<dyn WriteHandler>) -> Self {
         let order = handler.order();
         let unique_value = handler

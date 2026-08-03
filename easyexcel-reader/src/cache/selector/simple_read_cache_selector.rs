@@ -1,7 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.cache.selector.SimpleReadCacheSelector`.
 //!
 //! Default workbook behaviour (`ReadCacheMode::Auto`) uses the same
-//! [`DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES`] (5_000_000) boundary as Java
+//! [`DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES`] (`5_000_000`) boundary as Java
 //! `EasyExcel`'s built-in selector: smaller `sharedStrings.xml` parts stay in
 //! [`MapCache`](super::super::MapCache), larger parts spill to
 //! [`Ehcache`](super::super::Ehcache) / disk.
@@ -13,6 +13,9 @@ use crate::read_cache::{DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES, ReadCacheMode};
 ///
 /// 对应 Java：`com.alibaba.excel.cache.selector.SimpleReadCacheSelector`.
 #[derive(Debug, Clone, PartialEq, Eq)]
+// 对应 Java：字段名与 Java `maxUseMapCacheSize`/`maxCacheActivateSize`/
+// `maxCacheActivateBatchCount` 保持 1:1 镜像，前缀 `max` 为镜像约定，不做改名。
+#[allow(clippy::struct_field_names)]
 pub struct SimpleReadCacheSelector {
     /// Maximum shared-string table size that keeps data in memory, in bytes.
     max_use_map_cache_size_bytes: u64,

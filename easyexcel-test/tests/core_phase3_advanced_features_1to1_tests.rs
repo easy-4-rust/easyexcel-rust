@@ -1,13 +1,13 @@
 //! Phase 3 — 1:1 test matrix for advanced features (comment / hyperlink /
-//! formula write-back, CellExtra read-back).
+//! formula write-back, `CellExtra` read-back).
 //!
-//! Java reference: `com.alibaba.easyexcel.test.core.cellData.CellDataDataTest`
-//! + `com.alibaba.easyexcel.test.demo.write.WriteTest#commentWrite` /
-//! `imageWrite` / `writeCellDataWrite` + Java handler/extra system.
+//! Java reference: `com.alibaba.easyexcel.test.core.cellData.CellDataDataTest`,
+//! `com.alibaba.easyexcel.test.demo.write.WriteTest#commentWrite`,
+//! `imageWrite` and `writeCellDataWrite` (Java handler/extra system).
 //!
 //! Rust mirror: writer paths in `crates/easyexcel-writer/src/lib.rs`
 //! `write_formula_with_format` / `write_url_with_options` / `insert_note`;
-//! reader paths in `crates/easyexcel-reader/src/xlsx_rows.rs` CellExtra
+//! reader paths in `crates/easyexcel-reader/src/xlsx_rows.rs` `CellExtra`
 //! emit (Comment / Hyperlink / Merge).
 //!
 //! Naming: `mod <java_class_snake>` + `fn <java_method_snake>`.
@@ -31,7 +31,7 @@ mod formula_cell_test {
         total: f64,
     }
 
-    /// Java: `CellValue::Formula` round-trips through CellValue::Formula enum.
+    /// Java: `CellValue::Formula` round-trips through `CellValue::Formula` enum.
     #[test]
     fn t01_read_formula07() {
         // Build a Formula CellValue and verify it carries the formula text
@@ -48,7 +48,7 @@ mod formula_cell_test {
         assert_eq!(cols[0].formula, Some("SUM(A1:A10)"));
     }
 
-    /// Java: applying formula decoration wraps scalar in CellValue::Formula.
+    /// Java: applying formula decoration wraps scalar in `CellValue::Formula`.
     #[test]
     fn t02_write_formula07() {
         let cols = <FormulaRow as ExcelRowTrait>::schema();
@@ -211,7 +211,7 @@ mod cell_extra_test {
         );
         let comment = CellExtra::new(CellExtraType::Comment, Some("note".to_owned()), 1, 1, 0, 0);
 
-        let extras = vec![merge, link, comment];
+        let extras = [merge, link, comment];
         assert_eq!(extras[0].extra_type(), CellExtraType::Merge);
         assert_eq!(extras[0].text(), None);
         assert_eq!(extras[1].extra_type(), CellExtraType::Hyperlink);

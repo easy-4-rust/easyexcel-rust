@@ -178,6 +178,7 @@ pub fn csv_encoding(charset: &CsvCharset) -> Result<CsvEncoding> {
 }
 
 /// 返回给定 CSV 编码对应的 BOM 字节序列。
+#[must_use]
 pub fn csv_bom(encoding: CsvEncoding) -> &'static [u8] {
     match encoding {
         CsvEncoding::Standard(encoding) if encoding == UTF_8 => b"\xEF\xBB\xBF",

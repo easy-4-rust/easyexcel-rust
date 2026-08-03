@@ -1,9 +1,9 @@
 //! Comprehensive test suite mirroring Java `com.alibaba.excel.test.core.*`.
 //!
-//! Java 33 test classes: SimpleDataTest, AnnotationDataTest, ConverterDataTest,
-//! CellDataDataTest, ExceptionDataTest, ExtraDataTest, FillDataTest,
-//! NoModelDataTest, ExcludeOrIncludeDataTest, LargeDataTest, TemplateDataTest,
-//! StyleDataTest, BomDataTest, CharsetDataTest, EncryptDataTest, etc.
+//! Java 33 test classes: `SimpleDataTest`, `AnnotationDataTest`, `ConverterDataTest`,
+//! `CellDataDataTest`, `ExceptionDataTest`, `ExtraDataTest`, `FillDataTest`,
+//! `NoModelDataTest`, `ExcludeOrIncludeDataTest`, `LargeDataTest`, `TemplateDataTest`,
+//! `StyleDataTest`, `BomDataTest`, `CharsetDataTest`, `EncryptDataTest`, etc.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::io;
@@ -128,7 +128,7 @@ fn cell_values_expose_converter_dispatch_types() {
         (
             CellValue::Comment {
                 value: Box::new(CellValue::String("v".to_owned())),
-                text: "".to_owned(),
+                text: String::new(),
             },
             CellDataType::String,
         ),
@@ -218,6 +218,8 @@ fn integer_conversions() {
 }
 
 #[test]
+// 42.0 可被 f64 二进制精确表示，精确比较正是本测试的意图
+#[allow(clippy::float_cmp)]
 fn float_from_integer_cell() {
     let ctx = context(None);
     assert_eq!(
@@ -320,7 +322,7 @@ fn coordinate_data_clone_eq() {
     let a = CoordinateData::new()
         .first_row_index(1)
         .first_column_index(2);
-    let b = a.clone();
+    let b = a;
     assert_eq!(a, b);
 }
 
@@ -381,10 +383,10 @@ fn image_type_variants() {
 fn richtext_string_data_builder() {
     let rt = RichTextStringData::new("Hello World")
         .apply_font(WriteFont::new().bold(true).font_name("Arial".to_owned()))
-        .apply_font_range(0, 5, WriteFont::new().color(ExcelColor::Rgb(0xFF0000)));
+        .apply_font_range(0, 5, WriteFont::new().color(ExcelColor::Rgb(0xFF_0000)));
     assert_eq!(rt.text_string(), "Hello World");
     assert!(rt.write_font().is_some());
-    assert!(rt.write_font().unwrap().get_bold() == Some(true));
+    assert_eq!(rt.write_font().unwrap().get_bold(), Some(true));
     assert_eq!(rt.interval_fonts().len(), 1);
 }
 
@@ -507,7 +509,7 @@ fn excel_error_display() {
     };
     let msg = err4.to_string();
     assert!(msg.contains("S1"));
-    assert!(msg.contains("5"));
+    assert!(msg.contains('5'));
     assert!(msg.contains("age"));
     assert!(msg.contains("bad int"));
 }
@@ -1023,7 +1025,7 @@ fn converter_registry_merged_with_takes_priority() {
         use_1904_windowing: false,
     };
     let col = ExcelColumn::new("f", "F", Some(0), 0, None);
-    let empty_cell = CellValue::String("".to_owned());
+    let empty_cell = CellValue::String(String::new());
     let rctx = ReadConverterContext::new(Some(&empty_cell), &col, &ctx);
     let result = merged
         .convert_to_rust_data::<String>(&rctx)
@@ -1223,8 +1225,8 @@ fn border_style_and_fill_pattern_enum_variants() {
 fn excel_color_indexed_and_rgb() {
     let c1 = ExcelColor::java_or_rgb(5);
     assert_eq!(c1, ExcelColor::Indexed(5));
-    let c2 = ExcelColor::java_or_rgb(0xFF0000);
-    assert_eq!(c2, ExcelColor::Rgb(0xFF0000));
+    let c2 = ExcelColor::java_or_rgb(0xFF_0000);
+    assert_eq!(c2, ExcelColor::Rgb(0xFF_0000));
 }
 
 // ============================================================================
@@ -1287,7 +1289,7 @@ fn dynamic_row_from_row_data() {
         Some(&DynamicValue::String("Alice".to_owned()))
     );
     // Empty cells become empty strings in default ReadDefaultReturn::String mode
-    assert_eq!(dynamic.get(2), Some(&DynamicValue::String("".to_owned())));
+    assert_eq!(dynamic.get(2), Some(&DynamicValue::String(String::new())));
 }
 
 // ============================================================================
@@ -1297,13 +1299,13 @@ fn dynamic_row_from_row_data() {
 #[test]
 fn row_data_display_values_override() {
     let headers = Arc::new(HashMap::new());
-    let cells = vec![CellValue::Float(12345678.1234567)];
+    let cells = vec![CellValue::Float(12_345_678.123_456_7)];
     let mut display_values = HashMap::new();
     display_values.insert(0, "12345678.12".to_owned());
     let row = RowData::new("S", 0, cells, headers).with_display_values(display_values);
     let col = ExcelColumn::new("v", "V", Some(0), 0, None);
     // When ReadDefaultReturn::String (default), dynamic_cell uses display_value
-    assert_eq!(*row.cell(&col).unwrap(), CellValue::Float(12345678.1234567));
+    assert_eq!(*row.cell(&col).unwrap(), CellValue::Float(12_345_678.123_456_7));
 }
 
 // ============================================================================
@@ -1369,7 +1371,7 @@ fn excel_color_java_or_rgb_boundary() {
     assert_eq!(ExcelColor::java_or_rgb(0), ExcelColor::Indexed(0));
     assert_eq!(ExcelColor::java_or_rgb(64), ExcelColor::Indexed(64));
     assert_eq!(ExcelColor::java_or_rgb(65), ExcelColor::Rgb(65));
-    assert_eq!(ExcelColor::java_or_rgb(0xFFFFFF), ExcelColor::Rgb(0xFFFFFF));
+    assert_eq!(ExcelColor::java_or_rgb(0xFF_FFFF), ExcelColor::Rgb(0xFF_FFFF));
 }
 
 // ============================================================================
@@ -1383,7 +1385,7 @@ fn font_style_builder() {
         font_height_in_points: Some(12.0),
         italic: Some(true),
         bold: Some(true),
-        color: Some(ExcelColor::Rgb(0x00FF00)),
+        color: Some(ExcelColor::Rgb(0x00_FF00)),
         ..ExcelFontStyle::new()
     };
     assert_eq!(fs.font_name, Some("Times New Roman"));
@@ -1452,7 +1454,7 @@ fn cell_value_clone_preserves_all_variants() {
         CellValue::String("abc".to_owned()),
         CellValue::Bool(true),
         CellValue::Int(42),
-        CellValue::Float(3.14),
+        CellValue::Float(3.5),
         CellValue::Decimal("1.5".parse().unwrap()),
         CellValue::Date(date),
         CellValue::DateTime(datetime),
@@ -1528,7 +1530,7 @@ fn analysis_context_no_custom_object() {
 
 #[test]
 fn row_data_dynamic_cell_uses_display_when_string_mode() {
-    let cells = vec![CellValue::Float(123456789.123456789)];
+    let cells = vec![CellValue::Float(123_456_789.123_456_79)];
     let mut display = HashMap::new();
     display.insert(0, "123456789.12".to_owned());
     let row = RowData::new("S", 0, cells, Arc::new(HashMap::new())).with_display_values(display);
@@ -1770,7 +1772,7 @@ fn cell_value_image_bytes() {
 
 #[test]
 fn row_data_decimal_values_override_float() {
-    let cells = vec![CellValue::Float(3.14)];
+    let cells = vec![CellValue::Float(3.5)];
     let mut decimals = HashMap::new();
     let bd = BigDecimal::from_str("3.14159265358979").unwrap();
     decimals.insert(0, bd.clone());
@@ -1847,13 +1849,13 @@ fn cell_style_all_fields() {
         border_right: Some(ExcelBorderStyle::Hair),
         border_top: Some(ExcelBorderStyle::MediumDashed),
         border_bottom: Some(ExcelBorderStyle::SlantDashDot),
-        left_border_color: Some(ExcelColor::Rgb(0xFF0000)),
+        left_border_color: Some(ExcelColor::Rgb(0xFF_0000)),
         right_border_color: Some(ExcelColor::Indexed(5)),
-        top_border_color: Some(ExcelColor::Rgb(0x00FF00)),
-        bottom_border_color: Some(ExcelColor::Rgb(0x0000FF)),
+        top_border_color: Some(ExcelColor::Rgb(0x00_FF00)),
+        bottom_border_color: Some(ExcelColor::Rgb(0x00_00FF)),
         fill_pattern: Some(ExcelFillPattern::Solid),
         fill_background_color: Some(ExcelColor::Indexed(20)),
-        fill_foreground_color: Some(ExcelColor::Rgb(0xFFFFFF)),
+        fill_foreground_color: Some(ExcelColor::Rgb(0xFF_FFFF)),
         shrink_to_fit: Some(true),
         data_format: Some(ExcelDataFormat::Builtin(0)),
         font: None,
@@ -2072,7 +2074,7 @@ fn write_font_builder_all_fields() {
         .font_height_in_points(10.5)
         .italic(true)
         .strikeout(true)
-        .color(ExcelColor::Rgb(0x00FF00))
+        .color(ExcelColor::Rgb(0x00_FF00))
         .type_offset(ExcelFontScript::Subscript)
         .underline(ExcelUnderline::Double)
         .charset(0)
@@ -2081,7 +2083,7 @@ fn write_font_builder_all_fields() {
     assert_eq!(f.get_font_height_in_points(), Some(10.5));
     assert_eq!(f.get_italic(), Some(true));
     assert_eq!(f.get_strikeout(), Some(true));
-    assert_eq!(f.get_color(), Some(ExcelColor::Rgb(0x00FF00)));
+    assert_eq!(f.get_color(), Some(ExcelColor::Rgb(0x00_FF00)));
     assert_eq!(f.get_type_offset(), Some(ExcelFontScript::Subscript));
     assert_eq!(f.get_underline(), Some(ExcelUnderline::Double));
     assert_eq!(f.get_charset(), Some(0));
@@ -2097,8 +2099,8 @@ fn richtext_apply_font_whole_string() {
     let rt = RichTextStringData::new("Hello")
         .apply_font(WriteFont::new().bold(true).font_height_in_points(14.0));
     assert!(rt.write_font().is_some());
-    assert!(rt.write_font().unwrap().get_bold() == Some(true));
-    assert!(rt.write_font().unwrap().get_font_height_in_points() == Some(14.0));
+    assert_eq!(rt.write_font().unwrap().get_bold(), Some(true));
+    assert_eq!(rt.write_font().unwrap().get_font_height_in_points(), Some(14.0));
     assert!(rt.interval_fonts().is_empty());
 }
 
@@ -2112,7 +2114,7 @@ fn interval_font_fields() {
     let if_ = IntervalFont::new(10, 20, wf);
     assert_eq!(if_.start_index(), 10);
     assert_eq!(if_.end_index(), 20);
-    assert!(if_.write_font().get_italic() == Some(true));
+    assert_eq!(if_.write_font().get_italic(), Some(true));
 }
 
 // ============================================================================
@@ -2203,7 +2205,7 @@ fn excel_error_eq() {
 fn converter_registry_debug() {
     let mut r = ConverterRegistry::default();
     r.register::<String, _>(PrefixConverter);
-    let debug = format!("{:?}", r);
+    let debug = format!("{r:?}");
     assert!(debug.contains("PrefixConverter") || debug.contains("String"));
 }
 
@@ -2270,7 +2272,7 @@ fn write_cell_context_skip_and_value() {
 #[test]
 fn excel_color_eq_across_variants() {
     assert_ne!(ExcelColor::Indexed(5), ExcelColor::Rgb(5));
-    assert_ne!(ExcelColor::Rgb(0xFF0000), ExcelColor::Indexed(0xFF));
+    assert_ne!(ExcelColor::Rgb(0xFF_0000), ExcelColor::Indexed(0xFF));
 }
 
 // ============================================================================
@@ -2363,7 +2365,7 @@ fn annotation_head_font_style() {
     };
     let col = ExcelColumn::new("f", "F", None, 0, None).with_head_font_style(fs);
     assert!(col.head_font_style.is_some());
-    assert!(col.head_font_style.unwrap().bold == Some(true));
+    assert_eq!(col.head_font_style.unwrap().bold, Some(true));
 }
 
 // ============================================================================
@@ -2423,11 +2425,11 @@ fn sort_order_default_is_max() {
 fn fill_style_head_style_fill_pattern() {
     let style = ExcelCellStyle {
         fill_pattern: Some(ExcelFillPattern::Solid),
-        fill_foreground_color: Some(ExcelColor::Rgb(0xD9EAF7)),
+        fill_foreground_color: Some(ExcelColor::Rgb(0xD9_EA_F7)),
         ..ExcelCellStyle::new()
     };
     assert_eq!(style.fill_pattern, Some(ExcelFillPattern::Solid));
-    assert_eq!(style.fill_foreground_color, Some(ExcelColor::Rgb(0xD9EAF7)));
+    assert_eq!(style.fill_foreground_color, Some(ExcelColor::Rgb(0xD9_EA_F7)));
 }
 
 #[test]
@@ -2508,7 +2510,7 @@ fn annotation_content_loop_merge_field_level() {
 fn annotation_excel_ignore() {
     // Rust uses #[excel(ignore)]
     // Ignored fields use Default::default()
-    let val: String = Default::default();
+    let val: String = String::default();
     assert!(val.is_empty());
 }
 
@@ -2516,7 +2518,7 @@ fn annotation_excel_ignore() {
 #[test]
 fn annotation_excel_ignore_unannotated() {
     // Rust uses #[excel(ignore_unannotated)]
-    let val: String = Default::default();
+    let val: String = String::default();
     assert!(val.is_empty());
 }
 
@@ -2567,11 +2569,9 @@ fn number_format_zero() {
 // --- Sort edge cases ---
 #[test]
 fn sort_order_multiple_fields() {
-    let cols = vec![
-        ExcelColumn::new("c", "C", None, 3, None),
+    let cols = [ExcelColumn::new("c", "C", None, 3, None),
         ExcelColumn::new("a", "A", None, 1, None),
-        ExcelColumn::new("b", "B", None, 2, None),
-    ];
+        ExcelColumn::new("b", "B", None, 2, None)];
     // Verify order values are accessible
     assert_eq!(cols[0].order, 3);
     assert_eq!(cols[1].order, 1);
@@ -2589,10 +2589,8 @@ fn complex_head_multi_level_names() {
 // --- List head (dynamic head via ExcelColumn) ---
 #[test]
 fn list_head_column_names() {
-    let cols = vec![
-        ExcelColumn::new("name", "Name", None, 0, None),
-        ExcelColumn::new("age", "Age", None, 1, None),
-    ];
+    let cols = [ExcelColumn::new("name", "Name", None, 0, None),
+        ExcelColumn::new("age", "Age", None, 1, None)];
     assert_eq!(cols.len(), 2);
     assert_eq!(cols[0].name, "Name");
     assert_eq!(cols[1].name, "Age");
@@ -2772,18 +2770,18 @@ fn dynamic_row_sparse() {
 // --- ConverterRegistry edge cases ---
 #[test]
 fn converter_registry_clone_independence() {
-    let mut r1 = ConverterRegistry::default();
-    r1.register::<String, _>(PrefixConverter);
-    let r2 = r1.clone();
-    // Both point to same underlying converters
-    assert_eq!(r1, r2);
-    // Adding to r1 doesn't affect r2
     struct AnotherConverter;
     impl Converter<String> for AnotherConverter {
         fn convert_to_rust_data(&self, _: &ReadConverterContext<'_>) -> Result<String> {
             Ok("another".to_owned())
         }
     }
+    let mut r1 = ConverterRegistry::default();
+    r1.register::<String, _>(PrefixConverter);
+    let r2 = r1.clone();
+    // Both point to same underlying converters
+    assert_eq!(r1, r2);
+    // Adding to r1 doesn't affect r2
     r1.register::<String, _>(AnotherConverter);
     assert_ne!(r1, r2); // Different now
 }

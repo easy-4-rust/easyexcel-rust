@@ -43,8 +43,14 @@ impl ExcelWriterSheetBuilder {
     ) -> Self {
         let mut write_sheet = WriteSheetMetadata::new();
         write_sheet.options = inherited_options;
-        write_sheet.sheet_no = write_sheet.options.sheet_index.unwrap_or(0) as i32;
-        write_sheet.sheet_name = write_sheet.options.sheet_name.clone();
+        // 语义敏感：sheet_index 是 Java `Integer` 语义（i32），值域受工作表
+        // 数量约束，不可能超出 i32 范围；保留 as 转换。
+        #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
+        let sheet_no = write_sheet.options.sheet_index.unwrap_or(0) as i32;
+        write_sheet.sheet_no = sheet_no;
+        write_sheet
+            .sheet_name
+            .clone_from(&write_sheet.options.sheet_name);
         Self {
             excel_writer: Some(excel_writer),
             write_sheet,
@@ -56,7 +62,10 @@ impl ExcelWriterSheetBuilder {
     #[must_use]
     pub fn sheet_no(mut self, sheet_no: i32) -> Self {
         self.write_sheet.set_sheet_no(sheet_no);
-        self.write_sheet.options.sheet_index = Some(sheet_no.max(0) as usize);
+        // 语义敏感：`sheet_no.max(0)` 保证非负，i32->usize 不会丢符号。
+        #[allow(clippy::cast_sign_loss)]
+        let sheet_index = sheet_no.max(0) as usize;
+        self.write_sheet.options.sheet_index = Some(sheet_index);
         self
     }
 
@@ -172,6 +181,11 @@ impl ExcelWriterSheetBuilder {
     /// Writes the supplied rows and finishes the owned writer.
     ///
     /// This mirrors Java `ExcelWriterSheetBuilder.doWrite(Collection)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a format error when the builder owns no writer, and
+    /// propagates writer errors from `write_with_sheet_handlers` / `finish`.
     pub fn do_write<T, I>(mut self, rows: I) -> Result<()>
     where
         T: ExcelRow,
@@ -186,6 +200,10 @@ impl ExcelWriterSheetBuilder {
     }
 
     /// Resolves rows lazily, then delegates to [`Self::do_write`].
+    ///
+    /// # Errors
+    ///
+    /// See [`Self::do_write`].
     pub fn do_write_with<T, I, F>(self, supplier: F) -> Result<()>
     where
         T: ExcelRow,
@@ -394,8 +412,7 @@ mod tests {
     fn do_write_without_owned_writer_returns_format_error() {
         let error = ExcelWriterSheetBuilder::new()
             .do_write(vec![dynamic_row("x")])
-            .err()
-            .expect("builder without a writer must fail");
+            .expect_err("builder without a writer must fail");
         assert!(matches!(error, ExcelError::Format(_)));
     }
 }

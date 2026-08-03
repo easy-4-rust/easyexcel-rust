@@ -47,10 +47,12 @@ mod tests {
 
     #[test]
     fn global_configuration_round_trips_read_options() {
-        let mut options = ReadOptions::default();
-        options.auto_trim = false;
-        options.use_1904_windowing = true;
-        options.scientific_format = ScientificFormatMode::Scientific;
+        let options = ReadOptions {
+            auto_trim: false,
+            use_1904_windowing: true,
+            scientific_format: ScientificFormatMode::Scientific,
+            ..ReadOptions::default()
+        };
 
         let global = global_configuration_from_read_options(&options);
         let mut restored = ReadOptions::default();
@@ -77,8 +79,10 @@ mod tests_extra {
             use_scientific_format: false,
             filed_cache_location: easyexcel_core::CacheLocation::ThreadLocal,
         };
-        let mut options = ReadOptions::default();
-        options.scientific_format = ScientificFormatMode::Scientific;
+        let mut options = ReadOptions {
+            scientific_format: ScientificFormatMode::Scientific,
+            ..ReadOptions::default()
+        };
         apply_global_configuration_to_read_options(&global, &mut options);
         assert_eq!(options.scientific_format, ScientificFormatMode::Plain);
         assert!(!options.auto_trim);
@@ -89,8 +93,10 @@ mod tests_extra {
     #[test]
     fn global_configuration_snapshot_reports_scientific_flag() {
         // 对应 Java：ReadBasicParameter -> GlobalConfiguration 快照
-        let mut options = ReadOptions::default();
-        options.scientific_format = ScientificFormatMode::Scientific;
+        let options = ReadOptions {
+            scientific_format: ScientificFormatMode::Scientific,
+            ..ReadOptions::default()
+        };
         let global = global_configuration_from_read_options(&options);
         assert!(global.use_scientific_format);
         assert_eq!(global.locale, options.locale.language_tag());
@@ -106,8 +112,10 @@ mod tests_extra2 {
     #[test]
     fn global_configuration_snapshot_reports_plain_flag() {
         // 对应 Java：Plain 模式快照中 useScientificFormat=false
-        let mut options = ReadOptions::default();
-        options.scientific_format = ScientificFormatMode::Plain;
+        let options = ReadOptions {
+            scientific_format: ScientificFormatMode::Plain,
+            ..ReadOptions::default()
+        };
         let global = global_configuration_from_read_options(&options);
         assert!(!global.use_scientific_format);
     }

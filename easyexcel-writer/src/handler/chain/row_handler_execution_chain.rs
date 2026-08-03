@@ -41,6 +41,10 @@ impl RowHandlerExecutionChain {
     }
 
     /// Runs Java `beforeRowCreate` in chain order.
+    /// # Errors
+    ///
+    /// Propagates errors from the registered handlers (chain stops at the
+    /// first failing handler).
     pub fn before_row_create(&mut self, context: &WriteRowContext) -> easyexcel_core::Result<()> {
         if let Some(handler) = self.handler.as_mut() {
             handler.before_row_create(context)?;
@@ -52,6 +56,10 @@ impl RowHandlerExecutionChain {
     }
 
     /// Runs Java `afterRowCreate` in chain order.
+    /// # Errors
+    ///
+    /// Propagates errors from the registered handlers (chain stops at the
+    /// first failing handler).
     pub fn after_row_create(&mut self, context: &WriteRowContext) -> easyexcel_core::Result<()> {
         if let Some(handler) = self.handler.as_mut() {
             handler.after_row_create(context)?;
@@ -63,6 +71,10 @@ impl RowHandlerExecutionChain {
     }
 
     /// Runs Java `afterRowDispose` in chain order.
+    /// # Errors
+    ///
+    /// Propagates errors from the registered handlers (chain stops at the
+    /// first failing handler).
     pub fn after_row_dispose(&mut self, context: &WriteRowContext) -> easyexcel_core::Result<()> {
         if let Some(handler) = self.handler.as_mut() {
             handler.after_row_dispose(context)?;

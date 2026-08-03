@@ -100,6 +100,11 @@ pub trait ExcelRow: Sized {
     /// implementations therefore skip conversion entirely for positions that
     /// are not selected. Manual implementations retain the compatibility
     /// default and blank excluded results after conversion.
+    ///
+    /// # Errors
+    ///
+    /// Propagates the error from [`IntoExcelCell::to_excel_write_row`] when
+    /// the underlying conversion fails.
     fn to_excel_write_row_selected(
         &self,
         converters: &ConverterRegistry,
@@ -184,7 +189,7 @@ where
 mod tests_extra {
     use super::*;
 
-    /// 对应 Java：最小测试模型，实现 ExcelRow 五入口
+    /// 对应 Java：最小测试模型，实现 `ExcelRow` 五入口
     #[derive(Clone, Debug, PartialEq)]
     struct ProbeRow;
 

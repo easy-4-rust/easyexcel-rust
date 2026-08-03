@@ -63,15 +63,15 @@ impl VerticalCellStyleStrategy {
     #[must_use]
     pub fn uniform_with_write_fonts(
         head: ExcelCellStyle,
-        head_font: WriteFont,
+        head_font: &WriteFont,
         content: ExcelCellStyle,
-        content_font: WriteFont,
+        content_font: &WriteFont,
     ) -> Self {
         Self::uniform_with_fonts(
             head,
-            excel_font_style_from_write_font(&head_font),
+            excel_font_style_from_write_font(head_font),
             content,
-            excel_font_style_from_write_font(&content_font),
+            excel_font_style_from_write_font(content_font),
         )
     }
 }
@@ -149,9 +149,9 @@ mod tests {
     fn vertical_strategy_uniform_with_write_fonts() {
         let s = VerticalCellStyleStrategy::uniform_with_write_fonts(
             ExcelCellStyle::new(),
-            WriteFont::default(),
+            &WriteFont::default(),
             ExcelCellStyle::new(),
-            WriteFont::default(),
+            &WriteFont::default(),
         );
         let mut context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
         context.is_head = false;

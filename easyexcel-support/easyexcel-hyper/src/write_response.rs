@@ -89,7 +89,11 @@ where
 /// 下载失败时返回 JSON 体（Hyper 原生响应）。
 ///
 /// 对应 Java `WebTest.downloadFailedUsingJson` 的 `catch` 分支与 Fastjson 输出。
+///
+/// `ExcelDownloadErrorBody` 按值传入以对齐 Java 的 `errorResponse(body)` 语义，
+/// 函数只读该值，按值传递属于 API 契约的一部分，故豁免 `needless_pass_by_value`。
 #[must_use]
+#[allow(clippy::needless_pass_by_value)]
 pub fn excel_download_error_response(body: ExcelDownloadErrorBody) -> Response<ResponseBody> {
     let mut response = Response::new(Full::from(serde_json::to_string(&body).unwrap_or_else(
         |_| r#"{"status":"failure","message":"下载文件失败JSON序列化错误"}"#.to_owned(),

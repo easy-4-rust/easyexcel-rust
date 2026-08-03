@@ -1,7 +1,7 @@
-//! Low-level BIFF8 record framing and XLUnicodeString helpers.
+//! Low-level BIFF8 record framing and `XLUnicodeString` helpers.
 //!
-//! Record layout matches [MS-XLS] / OpenOffice BIFF8: 2-byte type, 2-byte length,
-//! then payload (≤ 8224 bytes). Unicode strings use the short / long XLUnicode
+//! Record layout matches [MS-XLS] / `OpenOffice` BIFF8: 2-byte type, 2-byte length,
+//! then payload (≤ 8224 bytes). Unicode strings use the short / long `XLUnicode`
 //! forms that calamine and Excel expect.
 //!
 //! XF / COLINFO / ROW / MERGECELLS layouts follow the same field packing as
@@ -26,7 +26,7 @@ pub const BLANK: u16 = 0x0201;
 pub const XF: u16 = 0x00E0;
 pub const FORMAT: u16 = 0x041E;
 pub const FONT: u16 = 0x0031;
-/// Drawing object (Java ObjRecord, POI HSSF)
+/// Drawing object (Java `ObjRecord`, POI HSSF)
 pub const OBJ: u16 = 0x005D;
 /// Microsoft Office Drawing record (Escher container)
 pub const MSODRAWING: u16 = 0x00EC;
@@ -67,6 +67,9 @@ pub const ICV_AUTO: u16 = 0x7FFF;
 pub const ICV_PATTERN_BG_DEFAULT: u16 = 64;
 
 /// Appends a framed BIFF record (`type` + `len` + `data`) to `out`.
+// 语义敏感：上方 debug_assert 已保证 data.len() <= MAX_RECORD_DATA（远小于
+// u16 上限），记录长度字段按 BIFF8 规范为 u16，保留 as 转换。
+#[allow(clippy::cast_possible_truncation)]
 pub fn record(out: &mut Vec<u8>, typ: u16, data: &[u8]) {
     debug_assert!(data.len() <= MAX_RECORD_DATA);
     out.extend_from_slice(&typ.to_le_bytes());
@@ -74,7 +77,10 @@ pub fn record(out: &mut Vec<u8>, typ: u16, data: &[u8]) {
     out.extend_from_slice(data);
 }
 
-/// Encodes a long XLUnicodeString (`cch:u16` + `grbit` + chars).
+/// Encodes a long `XLUnicodeString` (`cch:u16` + `grbit` + chars).
+// 语义敏感：Excel 单元格文本上限 32767 字符（远小于 u16 上限）；压缩模式下
+// 每字符必 <= 0xFF，u16->u8 无损。保留 as 以对齐 BIFF8 规范。
+#[allow(clippy::cast_possible_truncation)]
 pub fn encode_unicode_string(s: &str) -> Vec<u8> {
     let chars: Vec<u16> = s.encode_utf16().collect();
     let compressed = chars.iter().all(|&c| c <= 0xFF);
@@ -94,7 +100,9 @@ pub fn encode_unicode_string(s: &str) -> Vec<u8> {
     out
 }
 
-/// Encodes a short XLUnicodeString (`cch:u8` + `grbit` + chars) for BOUNDSHEET / FONT.
+/// Encodes a short `XLUnicodeString` (`cch:u8` + `grbit` + chars) for BOUNDSHEET / FONT.
+// 语义敏感：上方 take(255) 已保证字符数 <= 255，且压缩模式下每字符必 <= 0xFF。
+#[allow(clippy::cast_possible_truncation)]
 pub fn encode_short_unicode_string(s: &str) -> Vec<u8> {
     let chars: Vec<u16> = s.encode_utf16().take(255).collect();
     let compressed = chars.iter().all(|&c| c <= 0xFF);
@@ -119,23 +127,31 @@ pub fn encode_rk(v: f64) -> Option<u32> {
     if !v.is_finite() {
         return None;
     }
-    // Integer form (bit0=0, bit1=1).
-    if v.fract() == 0.0 && v >= -0x1FFF_FFFF as f64 && v <= 0x1FFF_FFFF as f64 {
-        #[allow(clippy::cast_possible_truncation)]
-        let n = v as i32;
-        return Some(((n as u32) << 2) | 0x02);
+    // Integer form (bit0=0, bit1=1)：值占低 30 位。
+    // 语义敏感：数值已限制在 [-0x1FFF_FFFF, 0x1FFF_FFFF]，i32->u32 符号转换无损。
+    if v.fract() == 0.0 && v >= f64::from(-0x1FFF_FFFF) && v <= f64::from(0x1FFF_FFFF) {
+        // 语义敏感：数值已限制在 [-0x1FFF_FFFF, 0x1FFF_FFFF]，两个转换均无损。
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        {
+            let n = v as i32;
+            return Some(((n as u32) << 2) | 0x02);
+        }
     }
-    // Integer / 100 form (bit0=1, bit1=1).
+    // Integer / 100 form (bit0=1, bit1=1)。
     let scaled = v * 100.0;
-    if scaled.fract() == 0.0 && scaled >= -0x1FFF_FFFF as f64 && scaled <= 0x1FFF_FFFF as f64 {
-        #[allow(clippy::cast_possible_truncation)]
-        let n = scaled as i32;
-        return Some(((n as u32) << 2) | 0x03);
+    if scaled.fract() == 0.0 && scaled >= f64::from(-0x1FFF_FFFF) && scaled <= f64::from(0x1FFF_FFFF) {
+        // 语义敏感：同上，转换无损。
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        {
+            let n = scaled as i32;
+            return Some(((n as u32) << 2) | 0x03);
+        }
     }
-    // Truncated IEEE754 high 30 bits (bit0=0, bit1=0).
+    // Truncated IEEE754 high 30 bits (bit0=0, bit1=0)：要求低 34 位全零，
+    // 即 trailing_zeros >= 34，截断后无损。
     let bits = v.to_bits();
     let high = (bits >> 32) as u32;
-    if (bits & 0xFFFF_FFFF) == 0 && (high & 0x3) == 0 {
+    if bits.trailing_zeros() >= 34 {
         return Some(high);
     }
     None
@@ -143,12 +159,16 @@ pub fn encode_rk(v: f64) -> Option<u32> {
 
 /// Packs a BIFF8 cell XF (20 bytes) with optional solid fill / alignment.
 ///
-/// Field packing matches xlwt `XFRecord` / OpenOffice BIFF8 XF (Java HSSF
+/// Field packing matches xlwt `XFRecord` / `OpenOffice` BIFF8 XF (Java HSSF
 /// `ExtendedFormatRecord`).
 ///
 /// `halign` / `valign` use POI codes (`HorizontalAlignment` /
 /// `VerticalAlignment` ordinals). `fill_pattern` uses POI `FillPatternType`
 /// codes (`SolidForeground = 1`).
+// 语义敏感：fill_fg_icv/fill_bg_icv 名称与 Java HSSF `ExtendedFormatRecord` 的
+// fg/bg ICV 字段一一对应，保持原名便于对照；8 个参数均直接映射该 Java
+// 记录的字段，拆分结构体会破坏 1:1 可追溯性。
+#[allow(clippy::similar_names, clippy::too_many_arguments)]
 #[must_use]
 pub fn pack_cell_xf(
     font_index: u16,
@@ -181,7 +201,7 @@ pub fn pack_cell_xf(
     d[14..18].copy_from_slice(&brd2.to_le_bytes());
     // pattern colours (bytes 18-19).
     let pat = (fill_fg_icv & 0x7F) | ((fill_bg_icv & 0x7F) << 7);
-    d[18..20].copy_from_slice(&(pat as u16).to_le_bytes());
+    d[18..20].copy_from_slice(&pat.to_le_bytes());
     d
 }
 
@@ -229,6 +249,9 @@ pub fn pack_merge_range(first_row: u16, last_row: u16, first_col: u16, last_col:
 }
 
 /// Emits one or more MERGECELLS records (max 1027 ranges each).
+// 语义敏感：chunks(1027) 保证每记录范围数 <= 1027（远小于 u16 上限），
+// MERGECELLS 计数按 BIFF8 规范为 u16。
+#[allow(clippy::cast_possible_truncation)]
 pub fn write_merge_cells(out: &mut Vec<u8>, ranges: &[[u8; 8]]) {
     const MAX_PER_RECORD: usize = 1027;
     for chunk in ranges.chunks(MAX_PER_RECORD) {
@@ -244,6 +267,8 @@ pub fn write_merge_cells(out: &mut Vec<u8>, ranges: &[[u8; 8]]) {
 /// Writes a PALETTE record with optional RGB overrides at indices 8..
 ///
 /// Java HSSF `PaletteRecord` — first override replaces palette slot 8, etc.
+// 语义敏感：BIFF8 调色板最多 56 色，usize->u16 不可能截断。
+#[allow(clippy::cast_possible_truncation)]
 pub fn write_palette_record(out: &mut Vec<u8>, overrides: &[(u8, u8, u8)]) {
     // Standard BIFF8 customizable palette (56 colours, indices 8..63).
     let mut colours: [(u8, u8, u8); 56] = [
@@ -339,7 +364,7 @@ pub fn pack_colinfo(first_col: u8, last_col: u8, width_chars: u16, xf_index: u16
 /// Packs a ROW record payload (16 bytes).
 ///
 /// `height_points` is converted to twips (`* 20`), matching POI
-/// `row.setHeightInPoints` / Java StyleDataTest (`40pt → 800`).
+/// `row.setHeightInPoints` / Java `StyleDataTest` (`40pt → 800`).
 #[must_use]
 pub fn pack_row(row: u16, first_col: u8, last_col_exclusive: u8, height_points: u16) -> [u8; 16] {
     let miy = height_points.saturating_mul(20) & 0x7FFF; // bit15=0 → custom height

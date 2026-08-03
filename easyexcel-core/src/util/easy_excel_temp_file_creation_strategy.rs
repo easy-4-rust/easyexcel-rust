@@ -1,7 +1,7 @@
 //! 对应 Java： com.alibaba.excel.util.EasyExcelTempFileCreationStrategy.
 //!
 //! Java swaps POI's `TempFileCreationStrategy` for one that honours the
-//! EasyExcel cache path. The Rust port uses `tempfile::TempDir` /
+//! `EasyExcel` cache path. The Rust port uses `tempfile::TempDir` /
 //! `NamedTempFile` directly, so these helpers preserve the 1:1 Java
 //! file mapping while delegating to `tempfile` under the hood.
 
@@ -12,11 +12,19 @@ use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
 
 /// Mirrors `com.alibaba.excel.util.EasyExcelTempFileCreationStrategy#createTempFile`.
+///
+/// # Errors
+///
+/// 当系统无法创建临时文件时返回对应的 IO 错误。
 pub fn create_temp_file() -> std::io::Result<NamedTempFile> {
     NamedTempFile::new()
 }
 
 /// Mirrors `com.alibaba.excel.util.EasyExcelTempFileCreationStrategy#createTempDirectory`.
+///
+/// # Errors
+///
+/// 当系统无法创建临时目录时返回对应的 IO 错误。
 pub fn create_temp_directory() -> std::io::Result<(TempDir, PathBuf)> {
     let dir = TempDir::new()?;
     let path = dir.path().to_path_buf();

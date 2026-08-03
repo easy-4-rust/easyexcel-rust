@@ -150,8 +150,10 @@ mod tests {
 
     #[test]
     fn write_xlsx_to_writer_emits_xlsx_bytes() {
-        let mut options = WriteOptions::default();
-        options.sheet_name = "Sheet1".to_owned();
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            ..WriteOptions::default()
+        };
         let mut output = Cursor::new(Vec::<u8>::new());
         write_xlsx_to_writer::<DynamicRow, _, _>(
             std::path::Path::new("logical.xlsx"),
@@ -161,7 +163,7 @@ mod tests {
             &mut [],
         )
         .expect("write must succeed");
-        assert!(output.get_ref().len() > 0);
+        assert!(!output.get_ref().is_empty());
     }
 }
 
@@ -186,9 +188,11 @@ mod tests_extra {
         let sheet = workbook.add_worksheet();
         sheet.write_string(0, 0, "h").expect("write");
         let template = workbook.save_to_buffer().expect("buffer");
-        let mut options = WriteOptions::default();
-        options.sheet_name = "Sheet1".to_owned();
-        options.template_bytes = Some(template);
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            template_bytes: Some(template),
+            ..WriteOptions::default()
+        };
         let mut output = Cursor::new(Vec::<u8>::new());
         write_xlsx_to_writer::<DynamicRow, _, _>(
             std::path::Path::new("logical.xlsx"),
@@ -198,7 +202,7 @@ mod tests_extra {
             &mut [],
         )
         .expect("template write must succeed");
-        assert!(output.get_ref().len() > 0);
+        assert!(!output.get_ref().is_empty());
     }
 }
 
@@ -208,7 +212,7 @@ mod tests_extra2 {
 
     use easyexcel_core::{CellValue, ExcelColumn, ExcelError, ExcelRow, ExcelWriteMetadata};
 
-    /// 两列 typed 行：配合错误的 dynamic_head 让 `new_resolved` 校验失败。
+    /// 两列 typed 行：配合错误的 `dynamic_head` 让 `new_resolved` 校验失败。
     struct WideHeadRow {
         cells: Vec<CellValue>,
     }
@@ -239,9 +243,11 @@ mod tests_extra2 {
     #[test]
     fn write_xlsx_to_writer_rejects_mismatched_dynamic_head() {
         // 对应 Java：dynamic_head 路径数少于 schema 列数时 holder 初始化必须失败。
-        let mut options = WriteOptions::default();
-        options.sheet_name = "Sheet1".to_owned();
-        options.dynamic_head = Some(vec![vec!["Only".to_owned()]]);
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            dynamic_head: Some(vec![vec!["Only".to_owned()]]),
+            ..WriteOptions::default()
+        };
         let mut output = Vec::new();
         let result = write_xlsx_to_writer::<WideHeadRow, _, _>(
             std::path::Path::new("logical.xlsx"),

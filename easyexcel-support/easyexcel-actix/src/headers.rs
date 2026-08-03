@@ -8,7 +8,7 @@ pub const XLSX_CONTENT_TYPE: &str =
 
 /// 生成 Actix-web 可用的 XLSX 附件响应头对。
 ///
-/// 返回 `(Content-Type, Content-Disposition)`，与 Java WebTest 的
+/// 返回 `(Content-Type, Content-Disposition)`，与 Java `WebTest` 的
 /// `filename*=utf-8''` 语法一致。
 #[must_use]
 pub fn excel_xlsx_attachment_headers(file_name: &str) -> (HeaderValue, HeaderValue) {

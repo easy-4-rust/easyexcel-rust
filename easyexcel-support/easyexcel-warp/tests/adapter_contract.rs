@@ -98,7 +98,7 @@ impl<T: Send + 'static> ReadListener<T> for CollectListener<T> {
 /// `http_body_util::BoxBody<Bytes, warp::Error>`），经
 /// `http_body_util::BodyExt::collect` 在 tokio current-thread runtime 下收集。
 /// 泛型 body 的错误类型无法在无 `http-body` 直接依赖的前提下命名，
-/// 故用 `unwrap_or_else` 代替 `.expect`（收集失败视为测试失败）。
+/// 故用 `map_or_else` 的 panic 臂代替 `.expect`（收集失败视为测试失败）。
 fn body_bytes<B>(body: B) -> Vec<u8>
 where
     B: BodyExt,
@@ -109,8 +109,7 @@ where
         .block_on(async move {
             body.collect()
                 .await
-                .map(|collected| collected.to_bytes().to_vec())
-                .unwrap_or_else(|_| panic!("failed to collect response body"))
+                .map_or_else(|_| panic!("failed to collect response body"), |collected| collected.to_bytes().to_vec())
         })
 }
 
@@ -233,7 +232,9 @@ fn excel_download_or_json_response_write_error_degrades_to_json() {
 fn write_upload_temp_persists_bytes_with_dot_extension() {
     let bytes = b"file-content";
     let (path, _temp) = write_upload_temp(bytes, ".csv").expect("temp");
-    assert!(path.to_str().unwrap().ends_with(".csv"));
+    assert!(std::path::Path::new(path.to_str().unwrap())
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("csv")));
     assert_eq!(std::fs::read(&path).expect("read"), bytes);
 }
 
@@ -241,7 +242,9 @@ fn write_upload_temp_persists_bytes_with_dot_extension() {
 fn write_upload_temp_normalizes_extension_without_dot() {
     let bytes = b"file-content";
     let (path, _temp) = write_upload_temp(bytes, "xls").expect("temp");
-    assert!(path.to_str().unwrap().ends_with(".xls"));
+    assert!(std::path::Path::new(path.to_str().unwrap())
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("xls")));
     assert_eq!(std::fs::read(&path).expect("read"), bytes);
 }
 

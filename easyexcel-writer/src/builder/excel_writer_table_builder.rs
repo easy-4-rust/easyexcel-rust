@@ -188,6 +188,12 @@ impl ExcelWriterTableBuilder {
     /// Writes the supplied rows through the parent sheet/table and finishes.
     ///
     /// 对应 Java：`ExcelWriterTableBuilder.doWrite(Collection)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a format error when the builder was already consumed or the
+    /// parent write sheet is missing, and propagates writer errors from
+    /// [`crate::ExcelWriter::write_with_table_handlers`] / `finish`.
     pub fn do_write<T, I>(mut self, rows: I) -> easyexcel_core::Result<()>
     where
         T: easyexcel_core::ExcelRow,
@@ -216,6 +222,10 @@ impl ExcelWriterTableBuilder {
     }
 
     /// Resolves rows lazily, then delegates to [`Self::do_write`].
+    ///
+    /// # Errors
+    ///
+    /// See [`Self::do_write`].
     pub fn do_write_with<T, I, F>(self, supplier: F) -> easyexcel_core::Result<()>
     where
         T: easyexcel_core::ExcelRow,
@@ -282,22 +292,22 @@ pub fn merge_table_options(sheet_options: &WriteOptions, table: &WriteTable) -> 
     if let Some(indexes) = &parameter.include_column_indexes {
         merged.include_column_indexes = Some(indexes.clone());
     } else if table.options.include_column_indexes != defaults.include_column_indexes {
-        merged.include_column_indexes = table.options.include_column_indexes.clone();
+        merged.include_column_indexes.clone_from(&table.options.include_column_indexes);
     }
     if let Some(names) = &parameter.include_column_field_names {
         merged.include_column_field_names = Some(names.clone());
     } else if table.options.include_column_field_names != defaults.include_column_field_names {
-        merged.include_column_field_names = table.options.include_column_field_names.clone();
+        merged.include_column_field_names.clone_from(&table.options.include_column_field_names);
     }
     if let Some(indexes) = &parameter.exclude_column_indexes {
-        merged.exclude_column_indexes = indexes.clone();
+        merged.exclude_column_indexes.clone_from(indexes);
     } else if table.options.exclude_column_indexes != defaults.exclude_column_indexes {
-        merged.exclude_column_indexes = table.options.exclude_column_indexes.clone();
+        merged.exclude_column_indexes.clone_from(&table.options.exclude_column_indexes);
     }
     if let Some(names) = &parameter.exclude_column_field_names {
-        merged.exclude_column_field_names = names.clone();
+        merged.exclude_column_field_names.clone_from(names);
     } else if table.options.exclude_column_field_names != defaults.exclude_column_field_names {
-        merged.exclude_column_field_names = table.options.exclude_column_field_names.clone();
+        merged.exclude_column_field_names.clone_from(&table.options.exclude_column_field_names);
     }
     if let Some(use_default_style) = parameter.use_default_style {
         merged.use_default_style = use_default_style;
@@ -307,7 +317,7 @@ pub fn merge_table_options(sheet_options: &WriteOptions, table: &WriteTable) -> 
             crate::CellStyle::new()
         };
     } else if table.options.head_style != defaults.head_style {
-        merged.head_style = table.options.head_style.clone();
+        merged.head_style.clone_from(&table.options.head_style);
     }
     if !table.options.converters.is_empty() {
         merged.converters = merged.converters.merged_with(&table.options.converters);
@@ -335,10 +345,10 @@ fn apply_explicit_parameter(options: &mut WriteOptions, parameter: &WriteBasicPa
         options.include_column_field_names = Some(names.clone());
     }
     if let Some(indexes) = &parameter.exclude_column_indexes {
-        options.exclude_column_indexes = indexes.clone();
+        options.exclude_column_indexes.clone_from(indexes);
     }
     if let Some(names) = &parameter.exclude_column_field_names {
-        options.exclude_column_field_names = names.clone();
+        options.exclude_column_field_names.clone_from(names);
     }
     if let Some(use_default_style) = parameter.use_default_style {
         options.use_default_style = use_default_style;
@@ -360,7 +370,7 @@ mod tests {
 
     /// 打开输出文件并统一包装 calamine 错误。
     ///
-    /// 损坏/缺失文件时 `open_workbook` 失败走 map_err 分支；正常文件走 Ok 分支。
+    /// 损坏/缺失文件时 `open_workbook` 失败走 `map_err` 分支；正常文件走 Ok 分支。
     /// 所有测试共用这一个闭包体，保证两条路径都被覆盖。
     fn open_output_workbook(
         path: &std::path::Path,
@@ -408,9 +418,14 @@ mod tests {
     #[test]
     fn merge_table_options_overrides_head_settings() {
         let sheet = WriteOptions::default();
-        let mut table = WriteTable::new();
-        table.options.need_head = false;
-        table.options.relative_head_row_index = 4;
+        let table = WriteTable {
+            options: WriteOptions {
+                need_head: false,
+                relative_head_row_index: 4,
+                ..WriteOptions::default()
+            },
+            ..WriteTable::new()
+        };
         let merged = merge_table_options(&sheet, &table);
         assert!(!merged.need_head);
         assert_eq!(merged.relative_head_row_index, 4);
@@ -419,16 +434,18 @@ mod tests {
 
     #[test]
     fn unset_table_parameter_inherits_every_nullable_parent_value() {
-        let mut sheet = WriteOptions::default();
-        sheet.need_head = false;
-        sheet.relative_head_row_index = 3;
-        sheet.automatic_merge_head = false;
-        sheet.order_by_include_column = true;
-        sheet.include_column_indexes = Some(vec![1]);
-        sheet.include_column_field_names = Some(vec!["second".to_owned()]);
-        sheet.exclude_column_indexes = vec![0];
-        sheet.exclude_column_field_names = vec!["first".to_owned()];
-        sheet.head_style = CellStyle::new();
+        let sheet = WriteOptions {
+            need_head: false,
+            relative_head_row_index: 3,
+            automatic_merge_head: false,
+            order_by_include_column: true,
+            include_column_indexes: Some(vec![1]),
+            include_column_field_names: Some(vec!["second".to_owned()]),
+            exclude_column_indexes: vec![0],
+            exclude_column_field_names: vec!["first".to_owned()],
+            head_style: CellStyle::new(),
+            ..WriteOptions::default()
+        };
 
         let table = ExcelWriterTableBuilder::new().build();
         let merged = merge_table_options(&sheet, &table);
@@ -449,14 +466,16 @@ mod tests {
 
     #[test]
     fn explicit_table_defaults_override_non_default_parent_values() {
-        let mut sheet = WriteOptions::default();
-        sheet.need_head = false;
-        sheet.relative_head_row_index = 3;
-        sheet.automatic_merge_head = false;
-        sheet.order_by_include_column = true;
-        sheet.include_column_indexes = Some(vec![1]);
-        sheet.exclude_column_indexes = vec![1];
-        sheet.head_style = CellStyle::new();
+        let sheet = WriteOptions {
+            need_head: false,
+            relative_head_row_index: 3,
+            automatic_merge_head: false,
+            order_by_include_column: true,
+            include_column_indexes: Some(vec![1]),
+            exclude_column_indexes: vec![1],
+            head_style: CellStyle::new(),
+            ..WriteOptions::default()
+        };
 
         let table = ExcelWriterTableBuilder::new()
             .need_head(true)
@@ -550,8 +569,7 @@ mod tests {
     fn unbound_table_builder_do_write_returns_format_error() {
         let error = ExcelWriterTableBuilder::new()
             .do_write(vec![TableRow("alice")])
-            .err()
-            .expect("unbound table builder must fail");
+            .expect_err("unbound table builder must fail");
         assert!(matches!(error, easyexcel_core::ExcelError::Format(_)));
     }
 
@@ -569,8 +587,7 @@ mod tests {
         };
         let error = builder
             .do_write(vec![TableRow("alice")])
-            .err()
-            .expect("missing parent sheet must fail");
+            .expect_err("missing parent sheet must fail");
         assert!(matches!(error, easyexcel_core::ExcelError::Format(_)));
     }
 
@@ -596,8 +613,7 @@ mod tests {
         };
         let error = builder
             .do_write(vec![TableRow("alice")])
-            .err()
-            .expect("writing through a finished writer must fail");
+            .expect_err("writing through a finished writer must fail");
         assert!(matches!(error, easyexcel_core::ExcelError::Unsupported(_)));
     }
 
@@ -637,7 +653,7 @@ mod tests {
         Ok(())
     }
 
-    /// 输出文件损坏时 `open_workbook` 必须报错（map_err 格式化分支）。
+    /// 输出文件损坏时 `open_workbook` 必须报错（`map_err` 格式化分支）。
     ///
     /// 对应 Java：写出的 xlsx 无法被重新解析时（文件被截断/覆盖），
     /// 读取侧打开失败并按 `ExcelError::Format` 包装。

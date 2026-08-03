@@ -470,7 +470,7 @@ impl TemplatePackage {
                     "workbook relationship {relationship_id} for sheet {sheet_name} is missing"
                 ))
             })?;
-        let normalized = normalize_workbook_target(target)?;
+        let normalized = normalize_workbook_target(target);
         self.entries
             .iter()
             .find(|entry| entry.name.eq_ignore_ascii_case(&normalized))
@@ -575,7 +575,7 @@ pub(crate) fn load_template_sheets(bytes: &[u8]) -> Result<Vec<TemplateSheetData
     let mut workbook: Xlsx<_> = open_workbook_from_rs(Cursor::new(bytes)).map_err(|error| {
         ExcelError::Format(format!("failed to open withTemplate workbook: {error}"))
     })?;
-    let names = workbook.sheet_names().to_vec();
+    let names = workbook.sheet_names().clone();
     if names.is_empty() {
         return Err(ExcelError::Format(
             "withTemplate workbook contains no worksheets".to_owned(),
@@ -841,6 +841,7 @@ fn apply_column_widths_to_xml(xml: &str, widths: &[(u16, u16)]) -> Result<String
 }
 
 fn apply_merge_ranges_to_xml(xml: &str, ranges: &[MergeRange]) -> Result<String> {
+    use std::fmt::Write as _;
     let mut refs = Vec::new();
     for range in ranges {
         let reference = format!(
@@ -857,10 +858,10 @@ fn apply_merge_ranges_to_xml(xml: &str, ranges: &[MergeRange]) -> Result<String>
     if refs.is_empty() {
         return Ok(xml.to_owned());
     }
-    let tags = refs
-        .iter()
-        .map(|reference| format!("<mergeCell ref=\"{reference}\"/>"))
-        .collect::<String>();
+    let mut tags = String::new();
+    for reference in &refs {
+        let _ = write!(tags, "<mergeCell ref=\"{reference}\"/>");
+    }
     if let Some(start) = xml.find("<mergeCells") {
         let tag_end = start
             + xml[start..]
@@ -1040,14 +1041,12 @@ fn merge_compiled_styles(
         let destination_index = destination_xfs
             .iter()
             .chain(appended_xfs.iter())
-            .position(|existing| existing == &xf)
-            .map(|index| u32::try_from(index).unwrap_or(u32::MAX))
-            .unwrap_or_else(|| {
+            .position(|existing| existing == &xf).map_or_else(|| {
                 let index =
                     u32::try_from(destination_xfs.len() + appended_xfs.len()).unwrap_or(u32::MAX);
                 appended_xfs.push(xf);
                 index
-            });
+            }, |index| u32::try_from(index).unwrap_or(u32::MAX));
         if destination_index == u32::MAX {
             return Err(ExcelError::Format(
                 "template cell style index overflow".to_owned(),
@@ -1156,6 +1155,9 @@ fn optional_collection_elements(xml: &str, collection: &str, child: &str) -> Res
         .unwrap_or_default())
 }
 
+// 语义敏感：返回 (标签区间, 行/列/子元素计数) 三元组以驱动模板改写循环，
+// 拆 type 别名反而割裂阅读上下文，故豁免 type_complexity。
+#[allow(clippy::type_complexity)]
 fn collection_inner<'a>(
     xml: &'a str,
     collection: &str,
@@ -1397,12 +1399,12 @@ fn xml_elements<'a>(xml: &'a str, tag: &'a str) -> impl Iterator<Item = &'a str>
     })
 }
 
-fn normalize_workbook_target(target: &str) -> Result<String> {
+fn normalize_workbook_target(target: &str) -> String {
     let trimmed = target.trim_start_matches('/');
     if trimmed.starts_with("xl/") {
-        Ok(trimmed.to_owned())
+        trimmed.to_owned()
     } else {
-        Ok(format!("xl/{trimmed}"))
+        format!("xl/{trimmed}")
     }
 }
 
@@ -1422,7 +1424,11 @@ const EMPTY_WORKSHEET_XML: &str = concat!(
 fn blank_worksheet_with_inherited_format(entries: &[TemplateZipEntry]) -> Vec<u8> {
     let Some(source) = entries.iter().find(|entry| {
         let lower = entry.name.to_ascii_lowercase();
-        lower.starts_with("xl/worksheets/sheet") && lower.ends_with(".xml")
+        // 语义敏感：`lower` 已先经 `to_ascii_lowercase` 归一化，
+        // 此处的 `.ends_with(".xml")` 实际已大小写不敏感。
+        #[allow(clippy::case_sensitive_file_extension_comparisons)]
+        let is_worksheet_xml = lower.starts_with("xl/worksheets/sheet") && lower.ends_with(".xml");
+        is_worksheet_xml
     }) else {
         return EMPTY_WORKSHEET_XML.as_bytes().to_vec();
     };
@@ -1454,7 +1460,7 @@ fn extract_xml_element(xml: &str, tag: &str) -> Option<String> {
     let rest = &xml[start..];
     let close = format!("</{tag}>");
     if let Some(close_at) = rest.find(&close) {
-        return Some(rest[..=close_at + close.len() - 1].to_owned());
+        return Some(rest[..(close_at + close.len())].to_owned());
     }
     let self_close = rest.find("/>")?;
     if rest[..self_close].contains('>') {
@@ -1473,7 +1479,7 @@ fn next_worksheet_part_name(entries: &[TemplateZipEntry]) -> String {
         };
         let digits: String = rest
             .chars()
-            .take_while(|character| character.is_ascii_digit())
+            .take_while(char::is_ascii_digit)
             .collect();
         if let Ok(index) = digits.parse::<usize>() {
             maximum = maximum.max(index);
@@ -1490,7 +1496,7 @@ fn next_relationship_id(rels_xml: &str) -> String {
         let start = offset + relative + "Id=\"rId".len();
         let digits: String = rels_xml[start..]
             .chars()
-            .take_while(|character| character.is_ascii_digit())
+            .take_while(char::is_ascii_digit)
             .collect();
         if let Ok(index) = digits.parse::<usize>() {
             maximum = maximum.max(index);
@@ -1643,19 +1649,19 @@ mod tests {
 
     #[test]
     fn normalize_workbook_target_with_xl_prefix() {
-        let result = normalize_workbook_target("xl/worksheets/sheet1.xml").unwrap();
+        let result = normalize_workbook_target("xl/worksheets/sheet1.xml");
         assert_eq!(result, "xl/worksheets/sheet1.xml");
     }
 
     #[test]
     fn normalize_workbook_target_without_xl_prefix() {
-        let result = normalize_workbook_target("worksheets/sheet1.xml").unwrap();
+        let result = normalize_workbook_target("worksheets/sheet1.xml");
         assert_eq!(result, "xl/worksheets/sheet1.xml");
     }
 
     #[test]
     fn normalize_workbook_target_with_leading_slash() {
-        let result = normalize_workbook_target("/xl/styles.xml").unwrap();
+        let result = normalize_workbook_target("/xl/styles.xml");
         assert_eq!(result, "xl/styles.xml");
     }
 
@@ -1679,7 +1685,7 @@ mod tests {
 
     #[test]
     fn attribute_value_in_tag_not_found() {
-        let xml = r#"<worksheet><sheetData/></worksheet>"#;
+        let xml = r"<worksheet><sheetData/></worksheet>";
         assert_eq!(attribute_value_in_tag(xml, "worksheet", "dim"), None);
     }
 
@@ -1692,7 +1698,7 @@ mod tests {
 
     #[test]
     fn xml_elements_empty() {
-        let xml = r#"<worksheet><sheetData/></worksheet>"#;
+        let xml = r"<worksheet><sheetData/></worksheet>";
         let elements: Vec<&str> = xml_elements(xml, "row").collect();
         assert_eq!(elements.len(), 0);
     }
@@ -1745,7 +1751,7 @@ mod tests {
     #[test]
     fn render_cell_xml_bool() {
         let xml = render_cell_xml("A1", &CellValue::Bool(true), None);
-        assert!(xml.contains("1"));
+        assert!(xml.contains('1'));
     }
 
     #[test]
@@ -1788,7 +1794,7 @@ mod tests {
 
         let source = destination.clone();
 
-        let (_output, xf_indexes) = merge_compiled_styles(&mut destination, &source, &[]).unwrap();
+        let (_output, xf_indexes) = merge_compiled_styles(&destination, &source, &[]).unwrap();
         assert!(xf_indexes.is_empty());
     }
 
@@ -1834,7 +1840,7 @@ mod tests {
 
     #[test]
     fn extract_xml_element_not_found() {
-        let xml = r#"<worksheet><sheetData/></worksheet>"#;
+        let xml = r"<worksheet><sheetData/></worksheet>";
         let result = extract_xml_element(xml, "row");
         assert!(result.is_none());
     }
@@ -1916,10 +1922,12 @@ mod tests {
     }
 
     #[test]
+    // 语义敏感：该测试端到端覆盖样式合并的每个分支（对应 Java 模板写入用例），
+    // 拆分会降低可读性，故豁免 too_many_lines。
+    #[allow(clippy::too_many_lines)]
     fn create_sheet_keeps_existing_styles_and_merges() {
-        let template = concat!(
-            "PK\x03\x04" // placeholder — build via TemplatePackage entries below
-        );
+        // placeholder — build via TemplatePackage entries below
+        let template = "PK\x03\x04";
         let _ = template;
         let mut package = TemplatePackage {
             entries: vec![
@@ -2050,14 +2058,14 @@ mod tests {
                     .set_num_format("0.000"),
             )
             .expect("compiled style");
-        let compiled = compiler.save_to_buffer().expect("compiled bytes");
+        let compiled_bytes = compiler.save_to_buffer().expect("compiled bytes");
 
         let first = package
-            .import_compiled_styles(&compiled, 1)
+            .import_compiled_styles(&compiled_bytes, 1)
             .expect("first import");
         let after_first = package.entry_xml("xl/styles.xml").expect("styles");
         let second = package
-            .import_compiled_styles(&compiled, 1)
+            .import_compiled_styles(&compiled_bytes, 1)
             .expect("second import");
         let after_second = package.entry_xml("xl/styles.xml").expect("styles");
 
@@ -2166,8 +2174,11 @@ mod tests_extra {
         let mut workbook = Workbook::new();
         let worksheet = workbook.add_worksheet();
         for row in 0..rows {
+            // 语义敏感：测试种子行数远小于 u32 上限。
+            #[allow(clippy::cast_possible_truncation)]
+            let row_u32 = row as u32;
             worksheet
-                .write_string(row as u32, 0, format!("seed-{row}"))
+                .write_string(row_u32, 0, format!("seed-{row}"))
                 .expect("seed cell");
         }
         let bytes = workbook.save_to_buffer().expect("template bytes");
@@ -2788,7 +2799,7 @@ mod tests_extra {
     #[test]
     fn merge_compiled_styles_fonts_without_count() {
         let without_count = styles_xml(
-            r#"<fonts><font/></fonts>"#,
+            r"<fonts><font/></fonts>",
             r#"<fills count="1"><fill/></fills>"#,
             r#"<borders count="1"><border/></borders>"#,
             r#"<cellXfs count="1"><xf/></cellXfs>"#,
@@ -2807,7 +2818,7 @@ mod tests_extra {
     #[test]
     fn merge_compiled_styles_missing_collection() {
         let missing_fonts = "<styleSheet><fills count=\"1\"><fill/></fills><borders count=\"1\"><border/></borders><cellXfs count=\"1\"><xf/></cellXfs></styleSheet>";
-        let error = merge_compiled_styles(&missing_fonts, &standard_styles(), &[0])
+        let error = merge_compiled_styles(missing_fonts, &standard_styles(), &[0])
             .expect_err("missing fonts");
         assert!(error.to_string().contains("fonts"));
     }
@@ -2822,14 +2833,16 @@ mod tests_extra {
                 .is_empty()
         );
 
+        // 语义敏感：`compiler`/`compiled` 命名与 rust_xlsxwriter 惯用名一致。
+        #[allow(clippy::similar_names)]
         let mut compiler = Workbook::new();
         compiler
             .add_worksheet()
             .write_string(0, 0, "plain")
             .expect("unstyled cell");
-        let compiled = compiler.save_to_buffer().expect("compiled bytes");
+        let compiled_bytes = compiler.save_to_buffer().expect("compiled bytes");
         let error = package
-            .import_compiled_styles(&compiled, 1)
+            .import_compiled_styles(&compiled_bytes, 1)
             .expect_err("A1 has no style");
         assert!(error.to_string().contains("has no style index"));
     }
@@ -2928,7 +2941,7 @@ mod tests_extra {
             is_dir: false,
             compression: CompressionMethod::Stored,
             unix_mode: None,
-            bytes: br#"<worksheet><sheetData/></worksheet>"#.to_vec(),
+            bytes: br"<worksheet><sheetData/></worksheet>".to_vec(),
         }];
         let xml = String::from_utf8(blank_worksheet_with_inherited_format(&bare)).expect("xml");
         assert!(xml.contains("sheetData"));

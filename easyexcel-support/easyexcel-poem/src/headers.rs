@@ -19,7 +19,7 @@ pub const XLSX_CONTENT_TYPE: &str =
 ///
 /// `file_name` 为不含扩展名的逻辑文件名（Java 侧为 `URLEncoder.encode("测试")` 结果）。
 /// 返回的 `Content-Disposition` 使用 RFC 5987 `filename*` 语法，并将 `+` 替换为 `%20`，
-/// 与 Java WebTest 保持一致。
+/// 与 Java `WebTest` 保持一致。
 #[must_use]
 pub fn excel_xlsx_attachment_headers(file_name: &str) -> HeaderMap {
     let encoded = urlencoding::encode(file_name).replace('+', "%20");

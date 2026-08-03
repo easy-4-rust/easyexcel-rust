@@ -83,7 +83,7 @@ mod annotation_phase1_hyperlink_test {
         assert!(cols[1].hyperlink.is_none());
     }
 
-    /// Java: applying decoration should produce a Hyperlink CellValue.
+    /// Java: applying decoration should produce a Hyperlink `CellValue`.
     #[test]
     fn t09_apply_decoration07() {
         let col = <HyperlinkRow as ExcelRowTrait>::schema()[0];
@@ -120,7 +120,7 @@ mod annotation_phase1_formula_test {
         assert!(cols[1].formula.is_none());
     }
 
-    /// Java: applying formula decoration should produce a Formula CellValue.
+    /// Java: applying formula decoration should produce a Formula `CellValue`.
     #[test]
     fn t10_apply_decoration07() {
         let col = <FormulaRow as ExcelRowTrait>::schema()[0];
@@ -144,7 +144,7 @@ mod annotation_phase1_data_validation_test {
         status: String,
     }
 
-    /// Java: `@ExcelDataValidation` attribute should populate ExcelDataValidationMeta.
+    /// Java: `@ExcelDataValidation` attribute should populate `ExcelDataValidationMeta`.
     #[test]
     fn t11_excel_data_validation07() {
         let cols = <ValidationRow as ExcelRowTrait>::schema();
@@ -174,7 +174,7 @@ mod annotation_phase1_conditional_test {
         value: f64,
     }
 
-    /// Java: `@ExcelConditional` attribute should populate conditional_format.
+    /// Java: `@ExcelConditional` attribute should populate `conditional_format`.
     #[test]
     fn t12_excel_conditional07() {
         let cols = <ConditionalRow as ExcelRowTrait>::schema();
@@ -199,7 +199,7 @@ mod annotation_phase1_filter_test {
         age: u32,
     }
 
-    /// Java: `@ExcelFilter` attribute should set auto_filter = true.
+    /// Java: `@ExcelFilter` attribute should set `auto_filter` = true.
     #[test]
     fn t13_excel_filter07() {
         let cols = <FilterRow as ExcelRowTrait>::schema();
@@ -244,7 +244,7 @@ mod annotation_phase1_combined_test {
 }
 
 mod annotation_phase1_metadata_test {
-    //! Verifies ExcelColumn round-trips through ExcelWriteMetadata.
+    //! Verifies `ExcelColumn` round-trips through `ExcelWriteMetadata`.
     use easyexcel_core::ExcelRow as ExcelRowTrait;
     use easyexcel_macro::ExcelRow;
 
@@ -260,7 +260,7 @@ mod annotation_phase1_metadata_test {
         cell: String,
     }
 
-    /// Phase 1: ExcelColumn carries the new annotation-derived fields.
+    /// Phase 1: `ExcelColumn` carries the new annotation-derived fields.
     #[test]
     fn t15_metadata_carry_through07() {
         let cols = <MetadataRow as ExcelRowTrait>::schema();

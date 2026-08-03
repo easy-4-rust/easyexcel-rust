@@ -252,7 +252,7 @@ mod tests_extra {
         Ok(())
     }
 
-    /// 对应 Java：fill 载荷必须是 TemplateData 或 FillWrapper。
+    /// 对应 Java：fill 载荷必须是 `TemplateData` 或 `FillWrapper`。
     #[test]
     fn builder_fill_executor_rejects_unsupported_fill_payload() -> Result<()> {
         let directory = tempdir()?;

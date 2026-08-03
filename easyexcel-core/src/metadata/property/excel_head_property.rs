@@ -30,6 +30,10 @@ impl Default for ExcelHeadProperty {
 
 impl ExcelHeadProperty {
     /// Initializes header metadata from holder configuration. (Java constructor)
+    ///
+    /// # Panics
+    ///
+    /// 不会 panic（表头行数不可能超过 `i32` 上限，`expect` 仅为静态证明）。
     #[must_use]
     pub fn new(
         _configuration_holder: Option<&dyn ConfigurationHolder>,
@@ -43,12 +47,13 @@ impl ExcelHeadProperty {
         };
 
         if let Some(head_rows) = head.filter(|rows| !rows.is_empty()) {
-            let mut head_index = 0;
-            for row in head_rows {
+            for (head_index, row) in head_rows.into_iter().enumerate() {
+                // 表头行数受内存中字符串表限制，不可能超过 i32::MAX
+                let head_index =
+                    i32::try_from(head_index).expect("表头行数不可能超过 i32::MAX");
                 if let Ok(head) = Head::new(head_index, None, row, false, true) {
                     property.head_map.insert(head_index, head);
                 }
-                head_index += 1;
             }
             property.head_kind = HeadKind::String;
             property.init_head_row_number();
@@ -98,7 +103,11 @@ impl ExcelHeadProperty {
         self.head_row_number = self
             .head_map
             .values()
-            .map(|head| head.head_name_list.len() as i32)
+            .map(|head| {
+                // 表头行数受内存中字符串表限制，不可能超过 i32::MAX
+                i32::try_from(head.head_name_list.len())
+                    .expect("表头行数不可能超过 i32::MAX")
+            })
             .max()
             .unwrap_or(0);
 
@@ -107,7 +116,10 @@ impl ExcelHeadProperty {
                 continue;
             }
             let last = head.head_name_list.len() - 1;
-            while head.head_name_list.len() < self.head_row_number as usize {
+            // head_row_number 由各表头行数取 max 而来，恒为非负
+            let target =
+                usize::try_from(self.head_row_number).expect("head_row_number 恒非负");
+            while head.head_name_list.len() < target {
                 head.head_name_list.push(head.head_name_list[last].clone());
             }
         }

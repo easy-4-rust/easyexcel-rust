@@ -6,12 +6,14 @@
 
 /// 对应 Java：`ExcelTypeEnum`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default)]
 pub enum ExcelTypeEnum {
     /// CSV format. (Java `CSV`)
     Csv,
     /// Legacy XLS (BIFF) format. (Java `XLS`)
     Xls,
     /// XLSX (OOXML) format. (Java `XLSX`)
+    #[default]
     Xlsx,
 }
 
@@ -53,11 +55,6 @@ impl ExcelTypeEnum {
     }
 }
 
-impl Default for ExcelTypeEnum {
-    fn default() -> Self {
-        Self::Xlsx
-    }
-}
 
 #[cfg(test)]
 mod tests_extra {

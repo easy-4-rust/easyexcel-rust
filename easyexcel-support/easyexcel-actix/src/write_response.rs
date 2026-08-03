@@ -3,7 +3,6 @@
 use actix_web::HttpResponse;
 use easyexcel::{EasyExcel, ExcelRow};
 use easyexcel_core::{ExcelDownloadErrorBody, Result};
-use serde_json;
 
 /// 将 [`ExcelRow`] 行序列化为 XLSX 字节数组。
 ///
@@ -56,7 +55,11 @@ where
 }
 
 /// 下载失败时返回 JSON 体。
+///
+/// `ExcelDownloadErrorBody` 按值传入以对齐 Java 的 `errorResponse(body)` 语义，
+/// 函数只读该值，按值传递属于 API 契约的一部分，故豁免 `needless_pass_by_value`。
 #[must_use]
+#[allow(clippy::needless_pass_by_value)]
 pub fn excel_download_error_response(body: ExcelDownloadErrorBody) -> HttpResponse {
     HttpResponse::InternalServerError()
         .content_type("application/json; charset=utf-8")
@@ -103,7 +106,7 @@ mod tests_extra2 {
     }
 
     /// 对应 Java：尝试触发 `excel_download_error_response` 的 JSON 序列化失败回退分支
-    /// （write_response.rs 64-65 行）。
+    /// （`write_response.rs` 64-65 行）。
     ///
     /// `ExcelDownloadErrorBody` 仅由两个 `String` 字段派生 `Serialize`，序列化在数学上
     /// 不可能失败，因此 `unwrap_or_else` 的回退文案分支不可达。此处用边界字符串

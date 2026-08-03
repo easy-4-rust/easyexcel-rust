@@ -2,7 +2,7 @@
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
-/// POI `BOFRecord` type codes used by EasyExcel.
+/// POI `BOFRecord` type codes used by `EasyExcel`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BofType {
     /// Workbook-level BOF.
@@ -16,7 +16,7 @@ pub enum BofType {
 /// Side-effects requested by [`BofRecordHandler`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BofAction {
-    /// Reset workbook sheet cursor. (TYPE_WORKBOOK)
+    /// Reset workbook sheet cursor. (`TYPE_WORKBOOK`)
     ResetWorkbook,
     /// Ignore non-worksheet BOF.
     Ignore,

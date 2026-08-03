@@ -31,6 +31,10 @@ where
     /// Creates a reader bound to a workbook path and options.
     ///
     /// 对应 Java：`ExcelReader(ReadWorkbook)`.
+    ///
+    /// # Errors
+    ///
+    /// 当工作簿无法打开或解析（路径不存在、文件损坏等）时返回 [`ExcelError`]。
     pub fn new(path: impl Into<PathBuf>, options: ReadOptions, listener: L) -> Result<Self> {
         Ok(Self {
             analyser: ExcelAnalyserImpl::from_path(path, options)?,
@@ -62,12 +66,21 @@ where
     }
 
     /// Parses every configured worksheet. (Java `readAll()`)
+    ///
+    /// # Errors
+    ///
+    /// 当任一工作表的 SAX/记录解析失败，或读取已完成（`finish()` 之后）时返回
+    /// [`ExcelError`]。
     pub fn read_all(&mut self) -> Result<()> {
         ExcelAnalyser::analysis::<T, L>(&mut self.analyser, &mut self.listener)
     }
 
     /// Deprecated Java `read()` alias for [`Self::read_all`].
     #[deprecated(note = "please use read_all()")]
+    ///
+    /// # Errors
+    ///
+    /// 与 [`Self::read_all`] 相同：解析失败时返回 [`ExcelError`]。
     pub fn read_deprecated(&mut self) -> Result<()> {
         self.read_all()
     }
@@ -82,6 +95,11 @@ where
     }
 
     /// Parses the supplied worksheets. (Java `read(ReadSheet...)`)
+    ///
+    /// # Errors
+    ///
+    /// 当 `sheets` 为空、未解析出工作簿类型，或任一工作表的解析失败时返回
+    /// [`ExcelError`]。
     pub fn read(&mut self, sheets: &[ReadSheet]) -> Result<&mut Self> {
         Self::read_sheets_with_listener(&mut self.analyser, &mut self.listener, sheets)?;
         Ok(self)
@@ -329,9 +347,8 @@ mod tests {
         let file = multi_sheet_workbook()?;
         let listener = SheetTraceListener::default();
         let mut reader = ExcelReader::new(file.path(), ReadOptions::default(), listener)?;
-        let error = match reader.read(&[]) {
-            Ok(_) => panic!("empty sheet list must fail"),
-            Err(error) => error,
+        let Err(error) = reader.read(&[]) else {
+            panic!("empty sheet list must fail");
         };
         assert_eq!(
             error.to_string(),
@@ -433,8 +450,10 @@ mod tests_extra2 {
     fn read_processes_xls_workbook_sheets() -> Result<()> {
         // 对应 Java：ExcelReader.read(ReadSheet...) 走 XlsSaxAnalyser 分支
         let file = write_java_multisheet_xls();
-        let mut options = ReadOptions::default();
-        options.head_row_number = 1;
+        let options = ReadOptions {
+            head_row_number: 1,
+            ..ReadOptions::default()
+        };
         let listener = ExtraCollectListener::default();
         let mut reader = ExcelReader::new(file.path(), options, listener)?;
         let mut sheet = ReadSheet::new(0);
@@ -458,8 +477,10 @@ mod tests_extra2 {
     fn read_applies_sheet_scientific_format_override() -> Result<()> {
         // 对应 Java：ReadSheet.useScientificFormat 覆盖工作簿级配置
         let file = two_sheet_workbook()?;
-        let mut options = ReadOptions::default();
-        options.scientific_format = crate::ScientificFormatMode::Plain;
+        let options = ReadOptions {
+            scientific_format: crate::ScientificFormatMode::Plain,
+            ..ReadOptions::default()
+        };
         let mut reader = ExcelReader::new(file.path(), options, ExtraCollectListener::default())?;
 
         let mut scientific = ReadSheet::new(0);

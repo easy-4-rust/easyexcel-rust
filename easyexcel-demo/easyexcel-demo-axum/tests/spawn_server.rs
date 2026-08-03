@@ -62,7 +62,7 @@ fn stop_gracefully(child: &mut Child) {
     }
 }
 
-/// 发起一个 `HTTP/1.1` 请求并返回 (status_line, headers, body)。
+/// 发起一个 `HTTP/1.1` 请求并返回 `(status_line, headers, body)`。
 ///
 /// 有界读取：先读到 `\r\n\r\n` 头结束，再按 `Content-Length` 精确读取响应体，
 /// 避免 keep-alive 连接上阻塞等待 EOF。

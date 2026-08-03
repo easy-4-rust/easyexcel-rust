@@ -23,6 +23,8 @@ use easyexcel_core::{
 use tempfile::tempdir;
 use zip::ZipArchive;
 
+// 测试模块需要访问 lib 内部全部符号，逐项导入会随实现持续漂移
+#[allow(clippy::wildcard_imports)]
 use super::*;
 
 #[allow(unused_imports)]
@@ -662,6 +664,9 @@ fn csv_uses_java_target_string_converter_before_cell_handlers() -> Result<()> {
 }
 
 #[test]
+// 语义敏感：xlsx/xls 双后端并行断言（对应 Java 双引擎测试），命名刻意
+// 只差一个字母以对照两端结果，故豁免 similar_names。
+#[allow(clippy::similar_names)]
 fn stateless_xlsx_and_xls_materialize_default_write_converters() -> Result<()> {
     let directory = tempdir()?;
     let xlsx = directory.path().join("default-converters.xlsx");
@@ -678,14 +683,14 @@ fn stateless_xlsx_and_xls_materialize_default_write_converters() -> Result<()> {
     let xlsx_range = xlsx_book.worksheet_range("Sheet1").map_err(test_error)?;
     assert!(matches!(
         xlsx_range.get((0, 0)),
-        Some(Data::Int(7)) | Some(Data::Float(7.0))
+        Some(Data::Int(7) | Data::Float(7.0))
     ));
 
     let mut xls_book: Xls<_> = open_workbook(&xls).map_err(test_error)?;
     let xls_range = xls_book.worksheet_range("Sheet1").map_err(test_error)?;
     assert!(matches!(
         xls_range.get((0, 0)),
-        Some(Data::Int(7)) | Some(Data::Float(7.0))
+        Some(Data::Int(7) | Data::Float(7.0))
     ));
     Ok(())
 }
@@ -731,6 +736,9 @@ fn annotation_config_loads_real_ordered_handlers_for_every_java_strategy() -> Re
 }
 
 #[test]
+// 语义敏感：断言 XML 解析出的行高/列宽必须精确等于写入值（浮点往返
+// 无损），严格比较即测试意图，故豁免 float_cmp。
+#[allow(clippy::float_cmp)]
 fn stateful_sheet_persists_annotation_handlers_and_deduplicates_merges() -> Result<()> {
     let directory = tempdir()?;
     let output = directory.path().join("annotation-handler-scope.xlsx");
@@ -1443,6 +1451,9 @@ fn stateful_sheet_handlers_are_isolated_and_reused_by_holder() -> Result<()> {
 }
 
 #[test]
+// 语义敏感：该测试端到端覆盖 Java 对应用例的完整流程，
+// 拆分会降低可读性，故豁免 too_many_lines。
+#[allow(clippy::too_many_lines)]
 fn table_holder_runs_supplementary_callbacks_then_own_parent_row_chain() -> Result<()> {
     struct LogProbe {
         scope: &'static str,
@@ -1626,7 +1637,7 @@ fn holder_handler_scope_deduplicates_effective_chain_but_runs_each_own_chain() -
     }
 
     impl NotRepeatExecutor for UniqueProbe {
-        fn unique_value(&self) -> &str {
+        fn unique_value(&self) -> &'static str {
             "same-holder-handler"
         }
     }
@@ -1734,6 +1745,9 @@ fn handler_registered_before_empty_finish_participates_in_dispose_chain() -> Res
 }
 
 #[test]
+// 语义敏感：断言 XML 解析出的行高/列宽必须精确等于写入值（浮点往返
+// 无损），严格比较即测试意图，故豁免 float_cmp。
+#[allow(clippy::float_cmp)]
 fn multiple_tables_keep_independent_schema_options_and_single_head() -> Result<()> {
     struct FirstTableRow(&'static str);
 
@@ -1824,6 +1838,12 @@ fn multiple_tables_keep_independent_schema_options_and_single_head() -> Result<(
 }
 
 #[test]
+// 语义敏感：该测试端到端覆盖 Java 对应用例的完整流程，
+// 拆分会降低可读性，故豁免 too_many_lines。
+#[allow(clippy::too_many_lines)]
+// 语义敏感：断言 XML 解析出的行高/列宽必须精确等于写入值（浮点往返
+// 无损），严格比较即测试意图，故豁免 float_cmp。
+#[allow(clippy::float_cmp)]
 fn template_annotation_layout_stays_absolute_and_preserves_package() -> Result<()> {
     struct TemplateRow(&'static str, i64);
 
@@ -1966,6 +1986,9 @@ fn template_annotation_layout_stays_absolute_and_preserves_package() -> Result<(
 }
 
 #[test]
+// 语义敏感：该测试端到端覆盖 Java 对应用例的完整流程，
+// 拆分会降低可读性，故豁免 too_many_lines。
+#[allow(clippy::too_many_lines)]
 fn template_zip_path_runs_row_cell_lifecycle_and_applies_mutation_and_skip() -> Result<()> {
     struct TemplateRow;
 
@@ -2124,6 +2147,9 @@ fn template_zip_path_runs_row_cell_lifecycle_and_applies_mutation_and_skip() -> 
 }
 
 #[test]
+// 语义敏感：该测试端到端覆盖 Java 对应用例的完整流程，
+// 拆分会降低可读性，故豁免 too_many_lines。
+#[allow(clippy::too_many_lines)]
 fn handler_context_matches_java_conversion_stages_and_ignore_fill_style() -> Result<()> {
     struct ContextRow;
 
@@ -2275,6 +2301,9 @@ fn handler_context_matches_java_conversion_stages_and_ignore_fill_style() -> Res
 }
 
 #[test]
+// 语义敏感：该测试端到端覆盖 Java 对应用例的完整流程，
+// 拆分会降低可读性，故豁免 too_many_lines。
+#[allow(clippy::too_many_lines)]
 fn handler_context_exposes_real_pre_converter_value_across_write_backends() -> Result<()> {
     struct ConvertedContextRow(i64);
 
@@ -2321,7 +2350,10 @@ fn handler_context_exposes_real_pre_converter_value_across_write_backends() -> R
 
     impl WriteHandler for ConversionProbe {
         fn before_cell_create(&mut self, context: &mut WriteCellContext) -> Result<()> {
-            if !context.is_head {
+            if context.is_head {
+                assert_eq!(context.original_value, None);
+                assert_eq!(context.original_field_type, None);
+            } else {
                 self.snapshots
                     .lock()
                     .map_err(|_| test_error("snapshot poisoned"))?
@@ -2343,9 +2375,6 @@ fn handler_context_exposes_real_pre_converter_value_across_write_backends() -> R
                             .write_table_holder()
                             .map(easyexcel_core::WriteTableHolderView::table_no),
                     });
-            } else {
-                assert_eq!(context.original_value, None);
-                assert_eq!(context.original_field_type, None);
             }
             Ok(())
         }
@@ -2466,6 +2495,9 @@ fn handler_context_exposes_real_pre_converter_value_across_write_backends() -> R
 }
 
 #[test]
+// 语义敏感：该测试端到端覆盖 Java 对应用例的完整流程，
+// 拆分会降低可读性，故豁免 too_many_lines。
+#[allow(clippy::too_many_lines)]
 fn logical_row_and_cell_handles_commit_real_backend_mutations() -> Result<()> {
     struct HandleRow;
 
@@ -2501,7 +2533,7 @@ fn logical_row_and_cell_handles_commit_real_backend_mutations() -> Result<()> {
                     .set_value(CellValue::String("mutated".to_owned()));
                 context.cell().set_style(ExcelCellStyle {
                     fill_pattern: Some(ExcelFillPattern::Solid),
-                    fill_foreground_color: Some(ExcelColor::Rgb(0x4472C4)),
+                    fill_foreground_color: Some(ExcelColor::Rgb(0x0044_72C4)),
                     ..ExcelCellStyle::new()
                 });
             }
@@ -3225,6 +3257,9 @@ fn annotation_styles_apply_field_type_and_builder_precedence() -> Result<()> {
 }
 
 #[test]
+// 语义敏感：该测试端到端覆盖 Java 对应用例的完整流程，
+// 拆分会降低可读性，故豁免 too_many_lines。
+#[allow(clippy::too_many_lines)]
 fn excel_write_head_property_resolves_metadata_and_java_merge_ranges() -> Result<()> {
     let mut parent_head_style = ExcelCellStyle::new();
     parent_head_style.wrapped = Some(true);
@@ -3242,11 +3277,7 @@ fn excel_write_head_property_resolves_metadata_and_java_merge_ranges() -> Result
         ExcelColumn::new("d", "D", Some(3), 0, None),
         ExcelColumn::new("e", "E", Some(4), 0, None),
     ];
-    let effective_columns = columns
-        .iter()
-        .enumerate()
-        .map(|(index, column)| (index, column))
-        .collect::<Vec<_>>();
+    let effective_columns = columns.iter().enumerate().collect::<Vec<_>>();
     let head = vec![
         vec!["顶格".to_owned(), "顶格".to_owned(), "两格".to_owned()],
         vec!["顶格".to_owned(), "顶格".to_owned(), "两格".to_owned()],
@@ -3406,6 +3437,8 @@ fn dynamic_multi_level_head_merges_parents_and_offsets_data_rows() -> Result<()>
 }
 
 #[test]
+// 语义敏感：xlsx/xls 双后端模板并行断言，命名刻意对照，故豁免 similar_names。
+#[allow(clippy::similar_names)]
 fn dynamic_head_merges_are_preserved_on_xlsx_and_xls_templates() -> Result<()> {
     let directory = tempdir()?;
     let dynamic_head = vec![
@@ -3845,7 +3878,7 @@ fn duplicate_manual_indexes_fail_before_handlers_filters_templates_and_output() 
         }
     }
 
-    fn assert_duplicate(error: ExcelError) {
+    fn assert_duplicate(error: &ExcelError) {
         assert_eq!(
             error.to_string(),
             "excel format error: The index of 'first' and 'second' must be inconsistent"
@@ -3888,7 +3921,7 @@ fn duplicate_manual_indexes_fail_before_handlers_filters_templates_and_output() 
             .expect_err("duplicate CSV index must fail"),
             _ => unreachable!(),
         };
-        assert_duplicate(error);
+        assert_duplicate(&error);
         assert_eq!(callbacks.load(Ordering::SeqCst), 0);
         assert!(!output.exists(), "{extension} output must not be created");
     }
@@ -3907,7 +3940,7 @@ fn duplicate_manual_indexes_fail_before_handlers_filters_templates_and_output() 
         &mut handlers,
     )
     .expect_err("schema validation must precede template parsing");
-    assert_duplicate(error);
+    assert_duplicate(&error);
     assert_eq!(callbacks.load(Ordering::SeqCst), 0);
 
     let stateful_output = directory.path().join("duplicate-stateful.xlsx");
@@ -3915,11 +3948,10 @@ fn duplicate_manual_indexes_fail_before_handlers_filters_templates_and_output() 
     let mut writer = ExcelWriter::new(&stateful_output);
     writer.register_write_handler(Box::new(WorkbookProbe(Arc::clone(&callbacks))))?;
     let sheet = WriteSheet::<DuplicateIndexRow>::new("Data");
-    let error = match writer.write(vec![DuplicateIndexRow], &sheet) {
-        Ok(_) => panic!("stateful schema validation must precede writer start"),
-        Err(error) => error,
+    let Err(error) = writer.write(vec![DuplicateIndexRow], &sheet) else {
+        panic!("stateful schema validation must precede writer start");
     };
-    assert_duplicate(error);
+    assert_duplicate(&error);
     assert_eq!(callbacks.load(Ordering::SeqCst), 0);
     assert!(!stateful_output.exists());
 
@@ -4007,6 +4039,8 @@ fn dynamic_row_layout_omits_a_synthetic_head_and_accepts_a_dynamic_head() -> Res
 }
 
 #[test]
+// 语义敏感：xlsx/xls 双后端并行断言，命名刻意对照，故豁免 similar_names。
+#[allow(clippy::similar_names)]
 fn dynamic_basic_row_keeps_values_beyond_the_head_map_across_backends() -> Result<()> {
     let directory = tempdir()?;
     let options = WriteOptions {
@@ -4172,6 +4206,11 @@ fn collection_and_map_row_data_enter_the_public_writer_backends() -> Result<()> 
 }
 
 #[test]
+// 语义敏感：xlsx/xls 双后端并行断言，命名刻意对照，故豁免 similar_names。
+#[allow(clippy::similar_names)]
+// 语义敏感：该测试端到端覆盖 Java 对应用例的完整流程，
+// 拆分会降低可读性，故豁免 too_many_lines。
+#[allow(clippy::too_many_lines)]
 fn absent_option_rows_keep_indexes_without_rows_cells_or_handlers() -> Result<()> {
     struct NeverConvert;
 
@@ -6262,12 +6301,12 @@ fn write_font_merges_size_and_color_into_strategy_styles() -> Result<()> {
         ExcelCellStyle::new(),
     )
     .with_head_write_font(
-        WriteFont::new()
+        &WriteFont::new()
             .font_height_in_points(18.0)
             .color(ExcelColor::Rgb(0x00FF_0000)),
     )
     .with_content_write_font(
-        WriteFont::new()
+        &WriteFont::new()
             .font_height_in_points(11.0)
             .color(ExcelColor::Rgb(0x0000_00FF)),
     );
@@ -6341,7 +6380,7 @@ fn longest_match_sets_column_width_from_byte_length() -> Result<()> {
     let path = directory.path().join("longest-match-bytes.xlsx");
     // 20 ASCII bytes → character width 20 (head "name" is shorter).
     let content = "abcdefghijklmnopqrst".to_owned();
-    assert_eq!(content.as_bytes().len(), 20);
+    assert_eq!(content.len(), 20);
     let mut handlers: Vec<Box<dyn WriteHandler>> =
         vec![Box::new(LongestMatchColumnWidthStyleStrategy::new())];
     write_xlsx_with_handlers::<PlainRow, _>(
@@ -6416,11 +6455,6 @@ fn image_layout_reads_handler_column_width() -> Result<()> {
 /// (Java `registerWriteHandler(new OnceAbsoluteMergeStrategy(...))`).
 #[test]
 fn once_absolute_merge_strategy_register_applies_merge() -> Result<()> {
-    assert!(OnceAbsoluteMergeStrategy::new(-1, 0, 0, 1).is_err());
-    assert!(OnceAbsoluteMergeStrategy::new(0, -1, 0, 1).is_err());
-    assert!(OnceAbsoluteMergeStrategy::new(0, 0, -1, 1).is_err());
-    assert!(OnceAbsoluteMergeStrategy::new(0, 0, 0, -1).is_err());
-
     #[derive(Debug, Clone)]
     struct PlainRow {
         left: String,
@@ -6450,6 +6484,11 @@ fn once_absolute_merge_strategy_register_applies_merge() -> Result<()> {
             ])
         }
     }
+
+    assert!(OnceAbsoluteMergeStrategy::new(-1, 0, 0, 1).is_err());
+    assert!(OnceAbsoluteMergeStrategy::new(0, -1, 0, 1).is_err());
+    assert!(OnceAbsoluteMergeStrategy::new(0, 0, -1, 1).is_err());
+    assert!(OnceAbsoluteMergeStrategy::new(0, 0, 0, -1).is_err());
 
     let directory = tempdir()?;
     let path = directory.path().join("once-absolute-register.xlsx");
@@ -6483,7 +6522,7 @@ fn once_absolute_merge_strategy_register_applies_merge() -> Result<()> {
 
 /// Integration: write styled + merged `.xls` via `write_xls`, read back with calamine.
 ///
-/// Java mapping: StyleDataTest / LoopMergeStrategy subset for BIFF8 — asserts
+/// Java mapping: `StyleDataTest` / `LoopMergeStrategy` subset for BIFF8 — asserts
 /// cell values and MERGECELLS presence (XF colours are write-side only).
 #[test]
 fn write_xls_style_merge_round_trip() -> Result<()> {
@@ -6542,7 +6581,7 @@ fn write_xls_annotation_dimensions_and_style() -> Result<()> {
     )?;
     let mut book: Xls<_> = open_workbook(&path).map_err(test_error)?;
     let range = book.worksheet_range("styled").map_err(test_error)?;
-    assert_eq!(range.get((1, 0)).map(|c| format!("{c:?}")).is_some(), true);
+    assert!(range.get((1, 0)).map(|c| format!("{c:?}")).is_some());
     // DimensionRow-like widths via StyledAnnotationRow schema — file must be real BIFF8
     let magic = std::fs::read(&path).map_err(test_error)?;
     assert_eq!(&magic[..4], &[0xD0, 0xCF, 0x11, 0xE0], "OLE compound magic");
@@ -6553,7 +6592,7 @@ fn write_xls_annotation_dimensions_and_style() -> Result<()> {
 #[test]
 fn write_xls_rejects_password_and_images() {
     let directory = tempdir().expect("tempdir");
-    let _ = write_xls::<DimensionRow, _>(
+    write_xls::<DimensionRow, _>(
         &directory.path().join("protected03.xls"),
         &WriteOptions {
             password: Some("secret".to_owned()),

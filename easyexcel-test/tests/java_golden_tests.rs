@@ -1,6 +1,6 @@
 //! Java golden cross-check — load checked-in `tests/golden/*.expected.json`
-//! exported by `scripts/export-java-golden.sh` (true Java EasyExcel read/write)
-//! and compare Rust read / write+read results (row_count + display cells).
+//! exported by `scripts/export-java-golden.sh` (true Java `EasyExcel` read/write)
+//! and compare Rust read / write+read results (`row_count` + display cells).
 //!
 //! Missing golden files **fail** (no soft-skip). Run:
 //! `./scripts/export-java-golden.sh` (requires JDK + Maven).
@@ -87,12 +87,10 @@ fn load_golden(name: &str) -> GoldenExpectation {
 /// Resolve the file path referenced by a golden (`fixtures/...` or `artifacts/...`).
 fn resolve_golden_path(golden: &GoldenExpectation) -> PathBuf {
     let rel = golden.fixture.as_str();
-    if rel.is_empty() {
-        panic!(
-            "golden has empty fixture field (source={}); re-run scripts/export-java-golden.sh",
-            golden.source
-        );
-    }
+    assert!(!rel.is_empty(), 
+        "golden has empty fixture field (source={}); re-run scripts/export-java-golden.sh",
+        golden.source
+    );
     if let Some(rest) = rel.strip_prefix("artifacts/") {
         let path = golden_artifact(rest);
         assert!(
@@ -126,16 +124,14 @@ fn read_display_rows(path: &Path, golden: &GoldenExpectation) -> Vec<DynamicRow>
     let mut builder = EasyExcel::read_sync::<DynamicRow>(path)
         .head_row_number(golden.head_row_number)
         .read_default_return(ReadDefaultReturn::String);
-    if let Some(password) = golden.password.as_deref() {
-        if !password.is_empty() {
+    if let Some(password) = golden.password.as_deref()
+        && !password.is_empty() {
             builder = builder.password(password);
         }
-    }
-    if let Some(charset) = golden.charset.as_deref() {
-        if !charset.is_empty() {
+    if let Some(charset) = golden.charset.as_deref()
+        && !charset.is_empty() {
             builder = builder.charset(charset);
         }
-    }
     builder = match golden.sheet_name.as_deref() {
         Some(name) if !name.is_empty() => builder.sheet(name),
         _ => builder.sheet(golden.sheet_index),
@@ -250,8 +246,7 @@ fn golden_compatibility_t02() {
         .unwrap();
     assert_eq!(actual_data_rows.len(), 3);
     let val = match actual_data_rows[2].get(2).unwrap() {
-        DynamicValue::ActualData(CellValue::String(s)) => s.as_str(),
-        DynamicValue::String(s) => s.as_str(),
+        DynamicValue::ActualData(CellValue::String(s)) | DynamicValue::String(s) => s.as_str(),
         other => panic!("unexpected {other:?}"),
     };
     assert_eq!(val, "1，2-戊二醇");
@@ -283,8 +278,7 @@ fn golden_compatibility_t04() {
         .unwrap();
     assert_eq!(actual_data_rows.len(), 56);
     let val = match actual_data_rows[0].get(5).unwrap() {
-        DynamicValue::ActualData(CellValue::String(s)) => s.as_str(),
-        DynamicValue::String(s) => s.as_str(),
+        DynamicValue::ActualData(CellValue::String(s)) | DynamicValue::String(s) => s.as_str(),
         other => panic!("unexpected {other:?}"),
     };
     assert_eq!(val, "QQSJK28F152A012242S0081");
@@ -295,6 +289,8 @@ fn golden_compatibility_t04() {
 
 /// CompatibilityTest#t01 — Java .xls fixture STRING read对照.
 #[test]
+// 语义敏感：golden fixture 文件名规范为小写 `.xls`，精确匹配即测试意图。
+#[allow(clippy::case_sensitive_file_extension_comparisons)]
 fn golden_compatibility_t01_xls() {
     let golden = load_golden("compatibility_t01_xls.expected.json");
     assert!(
@@ -302,8 +298,11 @@ fn golden_compatibility_t01_xls() {
         "unexpected source: {}",
         golden.source
     );
+    // golden 文件名为固定小写；Path::extension 比较保持大小写敏感语义
     assert!(
-        golden.fixture.ends_with(".xls"),
+        std::path::Path::new(&golden.fixture)
+            .extension()
+            .is_some_and(|ext| ext == "xls"),
         "expected .xls fixture, got {}",
         golden.fixture
     );
@@ -312,7 +311,7 @@ fn golden_compatibility_t01_xls() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// BOM fixtures must match Java BomDataTest expectations + Java golden JSON.
+/// BOM fixtures must match Java `BomDataTest` expectations + Java golden JSON.
 #[test]
 fn golden_bom_office_csv() {
     #[derive(Debug, Clone, easyexcel::ExcelRow)]
@@ -346,7 +345,7 @@ fn golden_bom_office_csv() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// no_bom.csv — same logical content as office_bom without UTF-8 BOM.
+/// `no_bom.csv` — same logical content as `office_bom` without UTF-8 BOM.
 #[test]
 fn golden_bom_no_bom_csv() {
     assert_golden_file("bom_no_bom.expected.json");
@@ -391,7 +390,7 @@ fn golden_simple_simple07_sheet_name() {
     assert_golden_file("simple_simple07.expected.json");
 }
 
-/// Java-written SimpleData xlsx artifact must match golden; Rust write+read must match too.
+/// Java-written `SimpleData` xlsx artifact must match golden; Rust write+read must match too.
 #[test]
 fn golden_simple_data_xlsx_write() {
     #[derive(Debug, Clone, easyexcel::ExcelRow)]
@@ -433,7 +432,7 @@ fn golden_simple_data_xlsx_write() {
     assert_matches_golden(&golden, &rust_rows);
 }
 
-/// Java-written SimpleData csv artifact + Rust csv write/read vs golden.
+/// Java-written `SimpleData` csv artifact + Rust csv write/read vs golden.
 #[test]
 fn golden_simple_data_csv_write() {
     #[derive(Debug, Clone, easyexcel::ExcelRow)]
@@ -475,7 +474,7 @@ fn golden_simple_data_csv_write() {
     assert_matches_golden(&golden, &rust_rows);
 }
 
-/// Java-written SimpleData `.xls` artifact — Rust **read**对照 only (write unsupported).
+/// Java-written `SimpleData` `.xls` artifact — Rust **read**对照 only (write unsupported).
 #[test]
 fn golden_simple_data_xls_read() {
     let golden = load_golden("simple_data_xls.expected.json");
@@ -484,8 +483,11 @@ fn golden_simple_data_xls_read() {
         "unexpected source: {}",
         golden.source
     );
+    // golden 文件名为固定小写；Path::extension 比较保持大小写敏感语义
     assert!(
-        golden.fixture.ends_with(".xls"),
+        std::path::Path::new(&golden.fixture)
+            .extension()
+            .is_some_and(|ext| ext == "xls"),
         "expected .xls artifact, got {}",
         golden.fixture
     );
@@ -517,8 +519,11 @@ fn golden_converter_converter07() {
 #[test]
 fn golden_converter_converter03_xls() {
     let golden = load_golden("converter_converter03_xls.expected.json");
+    // golden 文件名为固定小写；Path::extension 比较保持大小写敏感语义
     assert!(
-        golden.fixture.ends_with(".xls"),
+        std::path::Path::new(&golden.fixture)
+            .extension()
+            .is_some_and(|ext| ext == "xls"),
         "expected .xls fixture, got {}",
         golden.fixture
     );
@@ -545,7 +550,7 @@ fn golden_converter_converter_csv() {
     assert_golden_file("converter_converter_csv.expected.json");
 }
 
-/// Java ConverterWriteData artifact — date / localDate / localDateTime STRING对齐.
+/// Java `ConverterWriteData` artifact — date / localDate / localDateTime STRING对齐.
 #[test]
 fn golden_converter_write() {
     let golden = load_golden("converter_write.expected.json");
@@ -719,13 +724,13 @@ fn golden_dataformat_date2() {
     assert_golden_file("dataformat_date2.expected.json");
 }
 
-/// ExtraDataTest content (xlsx).
+/// `ExtraDataTest` content (xlsx).
 #[test]
 fn golden_demo_extra_xlsx() {
     assert_golden_file("demo_extra_xlsx.expected.json");
 }
 
-/// ExtraDataTest content (xls).
+/// `ExtraDataTest` content (xls).
 #[test]
 fn golden_demo_extra_xls() {
     assert_golden_file("demo_extra_xls.expected.json");
@@ -755,7 +760,7 @@ fn golden_template_template03_xls() {
     assert_golden_file("template_template03_xls.expected.json");
 }
 
-/// StyleDataTest write artifact — STRING content对照 (styles are write-side).
+/// `StyleDataTest` write artifact — STRING content对照 (styles are write-side).
 #[test]
 fn golden_style_data() {
     let golden = load_golden("style_data.expected.json");
@@ -769,13 +774,13 @@ fn golden_style_data() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// StyleDataTest `.xls` artifact — Rust read对照.
+/// `StyleDataTest` `.xls` artifact — Rust read对照.
 #[test]
 fn golden_style_data_xls() {
     assert_golden_file("style_data_xls.expected.json");
 }
 
-/// AnnotationData — DateTimeFormat + `#.##%` full STRING (`java_compat_display` → `9999%`).
+/// `AnnotationData` — `DateTimeFormat` + `#.##%` full STRING (`java_compat_display` → `9999%`).
 #[test]
 fn golden_annotation_data() {
     let golden = load_golden("annotation_data.expected.json");
@@ -807,7 +812,7 @@ fn golden_annotation_data() {
     );
 }
 
-/// ExcludeOrInclude excludeColumnIndexes — only column2/column3 remain.
+/// `ExcludeOrInclude` excludeColumnIndexes — only column2/column3 remain.
 #[test]
 fn golden_exclude_index() {
     let golden = load_golden("exclude_index.expected.json");
@@ -821,31 +826,31 @@ fn golden_exclude_index() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// ExcludeOrInclude exclude index CSV.
+/// `ExcludeOrInclude` exclude index CSV.
 #[test]
 fn golden_exclude_index_csv() {
     assert_golden_file("exclude_index_csv.expected.json");
 }
 
-/// ExcludeOrInclude exclude field names.
+/// `ExcludeOrInclude` exclude field names.
 #[test]
 fn golden_exclude_field() {
     assert_golden_file("exclude_field.expected.json");
 }
 
-/// ExcludeOrInclude include indexes.
+/// `ExcludeOrInclude` include indexes.
 #[test]
 fn golden_include_index() {
     assert_golden_file("include_index.expected.json");
 }
 
-/// ExcludeOrInclude include field names.
+/// `ExcludeOrInclude` include field names.
 #[test]
 fn golden_include_field() {
     assert_golden_file("include_field.expected.json");
 }
 
-/// ExcludeOrInclude include field names with order.
+/// `ExcludeOrInclude` include field names with order.
 #[test]
 fn golden_include_field_order() {
     assert_golden_file("include_field_order.expected.json");
@@ -867,19 +872,19 @@ fn golden_fill_horizontal() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// NoHeadDataTest — needHead(false).
+/// `NoHeadDataTest` — needHead(false).
 #[test]
 fn golden_no_head_data() {
     assert_golden_file("no_head_data.expected.json");
 }
 
-/// SortDataTest — index/order columns.
+/// `SortDataTest` — index/order columns.
 #[test]
 fn golden_sort_data() {
     assert_golden_file("sort_data.expected.json");
 }
 
-/// EncryptDataTest — Java encrypted artifact; Rust read with password.
+/// `EncryptDataTest` — Java encrypted artifact; Rust read with password.
 #[test]
 fn golden_encrypt_data() {
     let golden = load_golden("encrypt_data.expected.json");
@@ -898,7 +903,7 @@ fn golden_encrypt_data() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// CacheDataTest — 姓名/年龄 full-table STRING.
+/// `CacheDataTest` — 姓名/年龄 full-table STRING.
 #[test]
 fn golden_cache_data() {
     let golden = load_golden("cache_data.expected.json");
@@ -916,14 +921,14 @@ fn golden_cache_data() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// CacheDataTest `.xls` / `.csv` 格式变体.
+/// `CacheDataTest` `.xls` / `.csv` 格式变体.
 #[test]
 fn golden_cache_data_xls_csv() {
     assert_golden_file("cache_data_xls.expected.json");
     assert_golden_file("cache_data_csv.expected.json");
 }
 
-/// CellDataDataTest xlsx — date/number/formula STRING full table.
+/// `CellDataDataTest` xlsx — date/number/formula STRING full table.
 #[test]
 fn golden_celldata_data() {
     let golden = load_golden("celldata_data.expected.json");
@@ -941,7 +946,7 @@ fn golden_celldata_data() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// CharsetDataTest GBK CSV — charset field required.
+/// `CharsetDataTest` GBK CSV — charset field required.
 #[test]
 fn golden_charset_gbk() {
     let golden = load_golden("charset_gbk.expected.json");
@@ -955,7 +960,7 @@ fn golden_charset_gbk() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// CharsetDataTest UTF-8 CSV.
+/// `CharsetDataTest` UTF-8 CSV.
 #[test]
 fn golden_charset_utf8() {
     let golden = load_golden("charset_utf8.expected.json");
@@ -965,13 +970,13 @@ fn golden_charset_utf8() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// ExceptionDataTest content.
+/// `ExceptionDataTest` content.
 #[test]
 fn golden_exception_data() {
     assert_golden_file("exception_data.expected.json");
 }
 
-/// ExceptionDataTest multi-sheet stop fixture — sheet0.
+/// `ExceptionDataTest` multi-sheet stop fixture — sheet0.
 #[test]
 fn golden_exception_stop_sheet0() {
     let golden = load_golden("exception_stop_sheet0.expected.json");
@@ -986,7 +991,7 @@ fn golden_exception_stop_sheet0() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// WriteHandlerTest content — 姓名0..9 full table.
+/// `WriteHandlerTest` content — 姓名0..9 full table.
 #[test]
 fn golden_handler_data() {
     let golden = load_golden("handler_data.expected.json");
@@ -998,13 +1003,13 @@ fn golden_handler_data() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// WriteHandlerTest CSV content.
+/// `WriteHandlerTest` CSV content.
 #[test]
 fn golden_handler_data_csv() {
     assert_golden_file("handler_data_csv.expected.json");
 }
 
-/// LargeDataTest sample (100×25) — not large07.
+/// `LargeDataTest` sample (100×25) — not large07.
 #[test]
 fn golden_large_sample() {
     let golden = load_golden("large_sample.expected.json");
@@ -1015,7 +1020,7 @@ fn golden_large_sample() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// LargeDataTest CSV sample (100×25).
+/// `LargeDataTest` CSV sample (100×25).
 #[test]
 fn golden_large_sample_csv() {
     let golden = load_golden("large_sample_csv.expected.json");
@@ -1038,7 +1043,7 @@ fn golden_converter_write_csv() {
     assert_golden_file("converter_write_csv.expected.json");
 }
 
-/// CellDataDataTest `.xls` — full STRING（CN DateTimeFormat 已对齐）.
+/// `CellDataDataTest` `.xls` — full STRING（CN `DateTimeFormat` 已对齐）.
 #[test]
 fn golden_celldata_data_xls() {
     let golden = load_golden("celldata_data_xls.expected.json");
@@ -1057,7 +1062,7 @@ fn golden_celldata_data_xls() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// CellDataDataTest CSV — full STRING (literal CN date text).
+/// `CellDataDataTest` CSV — full STRING (literal CN date text).
 #[test]
 fn golden_celldata_data_csv() {
     let golden = load_golden("celldata_data_csv.expected.json");
@@ -1071,7 +1076,7 @@ fn golden_celldata_data_csv() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// ComplexHeadDataTest — multi-level head, headRowNumber(3).
+/// `ComplexHeadDataTest` — multi-level head, headRowNumber(3).
 #[test]
 fn golden_complex_head() {
     let golden = load_golden("complex_head.expected.json");
@@ -1083,7 +1088,7 @@ fn golden_complex_head() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// AnnotationIndexAndNameDataTest — sparse column index 4.
+/// `AnnotationIndexAndNameDataTest` — sparse column index 4.
 #[test]
 fn golden_annotation_index_name() {
     let golden = load_golden("annotation_index_name.expected.json");
@@ -1104,7 +1109,7 @@ fn golden_annotation_index_name() {
     );
 }
 
-/// ListHeadDataTest xlsx — full STRING including date + 额外数据.
+/// `ListHeadDataTest` xlsx — full STRING including date + 额外数据.
 #[test]
 fn golden_list_head() {
     let golden = load_golden("list_head.expected.json");
@@ -1122,13 +1127,13 @@ fn golden_list_head() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// ListHeadDataTest `.xls` — full STRING.
+/// `ListHeadDataTest` `.xls` — full STRING.
 #[test]
 fn golden_list_head_xls() {
     assert_golden_file("list_head_xls.expected.json");
 }
 
-/// ComplexHeadDataTest `.xls` — headRowNumber(3).
+/// `ComplexHeadDataTest` `.xls` — headRowNumber(3).
 #[test]
 fn golden_complex_head_xls() {
     let golden = load_golden("complex_head_xls.expected.json");
@@ -1139,13 +1144,13 @@ fn golden_complex_head_xls() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// AnnotationIndexAndNameDataTest `.xls`.
+/// `AnnotationIndexAndNameDataTest` `.xls`.
 #[test]
 fn golden_annotation_index_name_xls() {
     assert_golden_file("annotation_index_name_xls.expected.json");
 }
 
-/// LargeDataTest sample `.xls` (100×25).
+/// `LargeDataTest` sample `.xls` (100×25).
 #[test]
 fn golden_large_sample_xls() {
     let golden = load_golden("large_sample_xls.expected.json");
@@ -1156,25 +1161,25 @@ fn golden_large_sample_xls() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// NoHeadDataTest `.xls` / CSV.
+/// `NoHeadDataTest` `.xls` / CSV.
 #[test]
 fn golden_no_head_data_xls() {
     assert_golden_file("no_head_data_xls.expected.json");
 }
 
-/// NoHeadDataTest CSV.
+/// `NoHeadDataTest` CSV.
 #[test]
 fn golden_no_head_data_csv() {
     assert_golden_file("no_head_data_csv.expected.json");
 }
 
-/// FillDataTest horizontal `.xls`.
+/// `FillDataTest` horizontal `.xls`.
 #[test]
 fn golden_fill_horizontal_xls() {
     assert_golden_file("fill_horizontal_xls.expected.json");
 }
 
-/// FillDataTest byName Sheet2.
+/// `FillDataTest` byName Sheet2.
 #[test]
 fn golden_fill_by_name() {
     let golden = load_golden("fill_by_name.expected.json");
@@ -1196,7 +1201,7 @@ fn golden_fill_by_name_xls_and_complex() {
     assert_golden_file("fill_complex_xls.expected.json");
 }
 
-/// ListHeadDataTest CSV — full STRING including date text.
+/// `ListHeadDataTest` CSV — full STRING including date text.
 #[test]
 fn golden_list_head_csv() {
     let golden = load_golden("list_head_csv.expected.json");
@@ -1210,13 +1215,13 @@ fn golden_list_head_csv() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// ParameterDataTest `.xls` read对照.
+/// `ParameterDataTest` `.xls` read对照.
 #[test]
 fn golden_parameter_data_xls() {
     assert_golden_file("parameter_data_xls.expected.json");
 }
 
-/// NoModelDataTest — headRowNumber(0) full table.
+/// `NoModelDataTest` — headRowNumber(0) full table.
 #[test]
 fn golden_nomodel_data() {
     let golden = load_golden("nomodel_data.expected.json");
@@ -1227,7 +1232,7 @@ fn golden_nomodel_data() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// NoModelDataTest repeat 写回 — xlsx/xls/csv.
+/// `NoModelDataTest` repeat 写回 — xlsx/xls/csv.
 #[test]
 fn golden_nomodel_repeat_variants() {
     assert_golden_file("nomodel_repeat.expected.json");
@@ -1235,19 +1240,19 @@ fn golden_nomodel_repeat_variants() {
     assert_golden_file("nomodel_repeat_csv.expected.json");
 }
 
-/// UnCamelDataTest.
+/// `UnCamelDataTest`.
 #[test]
 fn golden_noncamel_data() {
     assert_golden_file("noncamel_data.expected.json");
 }
 
-/// ParameterDataTest.
+/// `ParameterDataTest`.
 #[test]
 fn golden_parameter_data() {
     assert_golden_file("parameter_data.expected.json");
 }
 
-/// RepetitionDataTest — double write → 2 data rows.
+/// `RepetitionDataTest` — double write → 2 data rows.
 #[test]
 fn golden_repetition_data() {
     let golden = load_golden("repetition_data.expected.json");
@@ -1258,7 +1263,7 @@ fn golden_repetition_data() {
     assert_matches_golden(&golden, &display_rows);
 }
 
-/// SkipDataTest — sheet name `第二个`.
+/// `SkipDataTest` — sheet name `第二个`.
 #[test]
 fn golden_skip_sheet1() {
     let golden = load_golden("skip_sheet1.expected.json");
@@ -1275,7 +1280,7 @@ fn golden_all_expected_json_files() {
     let dir = golden_dir();
     let mut names: Vec<String> = std::fs::read_dir(&dir)
         .unwrap_or_else(|e| panic!("golden dir missing {}: {e}", dir.display()))
-        .filter_map(|e| e.ok())
+        .filter_map(std::result::Result::ok)
         .filter(|e| {
             e.path()
                 .extension()
@@ -1303,7 +1308,7 @@ fn golden_missing_file_fails() {
     let _ = load_golden("__does_not_exist__.expected.json");
 }
 
-/// P0 STRING 全表回归：dataformat / annotation / converter03 / t07 / celldata / list_head。
+/// P0 STRING 全表回归：dataformat / annotation / converter03 / t07 / celldata / `list_head`。
 #[test]
 fn golden_p0_format_full_rows() {
     for (label, name) in [

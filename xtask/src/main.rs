@@ -22,8 +22,7 @@ fn main() -> ExitCode {
     let mut args = env::args().skip(1);
     let result = match args.next().as_deref() {
         Some("migration-audit") => audit(false),
-        Some("migration-audit-strict") => audit(true),
-        Some("--strict") => audit(true),
+        Some("migration-audit-strict" | "--strict") => audit(true),
         _ => {
             eprintln!(
                 "usage: cargo run -p xtask -- <migration-audit [--strict]|migration-audit-strict>"

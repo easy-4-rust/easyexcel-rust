@@ -32,6 +32,11 @@ impl RowTagHandler {
     /// `PositionUtils.getRowByRowTagt(rowTagt, before)`.
     ///
     /// Returns the zero-based row index for the opened `<row>`.
+    ///
+    /// # Errors
+    ///
+    /// 当 `r` 非空但无法解析为数字，或超出 XLSX 行上限（`1..=1_048_576`）时
+    /// 返回 [`ExcelError::Format`]。
     pub fn resolve_row_index(row_attr: Option<&str>, before: u32) -> Result<u32> {
         match row_attr {
             Some(value) if !value.is_empty() => {
@@ -50,6 +55,10 @@ impl RowTagHandler {
     }
 
     /// Java `RowTagHandler.startElement` body (without empty-row gap fill).
+    ///
+    /// # Errors
+    ///
+    /// 当 `r` 非空但无法解析为数字，或超出 XLSX 行上限时返回 [`ExcelError::Format`]。
     pub fn start_row(&mut self, attrs: &HashMap<String, String>) -> Result<u32> {
         let before = self.row_index.unwrap_or(0);
         let row = Self::resolve_row_index(attrs.get(ATTRIBUTE_R).map(String::as_str), before)?;

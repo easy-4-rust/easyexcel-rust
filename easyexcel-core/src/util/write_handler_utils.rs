@@ -28,6 +28,10 @@ pub fn create_workbook_write_handler_context_from_path(
 }
 
 /// Dispatches Java `beforeWorkbookCreate`.
+///
+/// # Errors
+///
+/// 当任一 handler 返回错误时，该错误会被原样传播。
 pub fn before_workbook_create(
     handlers: &mut [Box<dyn WriteHandler>],
     context: &WriteWorkbookContext,
@@ -39,6 +43,10 @@ pub fn before_workbook_create(
 }
 
 /// Dispatches Java `afterWorkbookCreate`.
+///
+/// # Errors
+///
+/// 当任一 handler 返回错误时，该错误会被原样传播。
 pub fn after_workbook_create(
     handlers: &mut [Box<dyn WriteHandler>],
     context: &WriteWorkbookContext,
@@ -50,6 +58,10 @@ pub fn after_workbook_create(
 }
 
 /// Dispatches Java `afterWorkbookDispose`.
+///
+/// # Errors
+///
+/// 当任一 handler 返回错误时，该错误会被原样传播。
 pub fn after_workbook_dispose(
     handlers: &mut [Box<dyn WriteHandler>],
     context: &WriteWorkbookContext,
@@ -81,6 +93,10 @@ pub fn create_sheet_write_handler_context_from_name(
 }
 
 /// Dispatches Java `beforeSheetCreate`.
+///
+/// # Errors
+///
+/// 当任一 handler 返回错误时，该错误会被原样传播。
 pub fn before_sheet_create(
     handlers: &mut [Box<dyn WriteHandler>],
     context: &WriteSheetContext,
@@ -92,6 +108,10 @@ pub fn before_sheet_create(
 }
 
 /// Dispatches Java `afterSheetCreate`.
+///
+/// # Errors
+///
+/// 当任一 handler 返回错误时，该错误会被原样传播。
 pub fn after_sheet_create(
     handlers: &mut [Box<dyn WriteHandler>],
     context: &WriteSheetContext,
@@ -135,6 +155,10 @@ pub fn create_row_write_handler_context_from_sheet(
 }
 
 /// Dispatches Java `beforeRowCreate`.
+///
+/// # Errors
+///
+/// 当任一 handler 返回错误时，该错误会被原样传播。
 pub fn before_row_create(
     handlers: &mut [Box<dyn WriteHandler>],
     context: &WriteRowContext,
@@ -146,6 +170,10 @@ pub fn before_row_create(
 }
 
 /// Dispatches Java `afterRowCreate`.
+///
+/// # Errors
+///
+/// 当任一 handler 返回错误时，该错误会被原样传播。
 pub fn after_row_create(
     handlers: &mut [Box<dyn WriteHandler>],
     context: &WriteRowContext,
@@ -157,6 +185,10 @@ pub fn after_row_create(
 }
 
 /// Dispatches Java `afterRowDispose`.
+///
+/// # Errors
+///
+/// 当任一 handler 返回错误时，该错误会被原样传播。
 pub fn after_row_dispose(
     handlers: &mut [Box<dyn WriteHandler>],
     context: &WriteRowContext,
@@ -225,6 +257,10 @@ pub fn create_cell_write_handler_context_from_sheet(
 }
 
 /// Dispatches Java `beforeCellCreate`.
+///
+/// # Errors
+///
+/// 当任一 handler 返回错误时，该错误会被原样传播。
 pub fn before_cell_create(
     handlers: &mut [Box<dyn WriteHandler>],
     context: &mut WriteCellContext,
@@ -236,6 +272,10 @@ pub fn before_cell_create(
 }
 
 /// Dispatches Java `afterCellCreate`.
+///
+/// # Errors
+///
+/// 当任一 handler 返回错误时，该错误会被原样传播。
 pub fn after_cell_create(
     handlers: &mut [Box<dyn WriteHandler>],
     context: &WriteCellContext,
@@ -248,6 +288,10 @@ pub fn after_cell_create(
 
 /// Finalizes converted cell metadata and dispatches Java
 /// `afterCellDataConverted` for content cells.
+///
+/// # Errors
+///
+/// 当任一 handler 返回错误时，该错误会被原样传播。
 pub fn after_cell_data_converted(
     handlers: &mut [Box<dyn WriteHandler>],
     context: &mut WriteCellContext,
@@ -264,6 +308,10 @@ pub fn after_cell_data_converted(
 }
 
 /// Dispatches Java `afterCellDispose`.
+///
+/// # Errors
+///
+/// 当任一 handler 返回错误时，该错误会被原样传播。
 pub fn after_cell_dispose(
     handlers: &mut [Box<dyn WriteHandler>],
     context: &WriteCellContext,
@@ -380,7 +428,7 @@ mod tests {
                 .excel_write_head_property()
                 .head_map()
                 .get(&0)
-                .map(|head| head.head_name_list()),
+                .map(crate::metadata::head::Head::head_name_list),
             Some(&["Name".to_owned()][..])
         );
         Ok(())

@@ -21,7 +21,8 @@ pub trait AbstractIgnoreExceptionReadListener<T>: ReadListener<T> {
     }
 }
 
-fn _import_marker(m: HashMap<usize, String>) {
+#[allow(dead_code)]
+fn import_marker(m: &HashMap<usize, String>) {
     let _ = m;
 }
 
@@ -62,7 +63,7 @@ mod tests_extra {
             1,
         );
         listener.extra_silent(&extra, &context);
-        _import_marker(HashMap::from([(0, "Name".to_owned())]));
+        import_marker(&HashMap::from([(0, "Name".to_owned())]));
     }
 
     #[test]

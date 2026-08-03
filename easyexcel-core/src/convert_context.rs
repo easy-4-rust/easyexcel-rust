@@ -104,7 +104,7 @@ mod tests_extra {
                     && *row == 3
                     && *column == Some(1)
                     && *field == "value"
-                    && value == ""
+                    && value.is_empty()
                     && message.contains("boom")
             ),
             "unexpected error: {error:?}"

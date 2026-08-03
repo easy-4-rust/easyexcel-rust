@@ -24,6 +24,6 @@ mod tests_extra {
     fn new_creates_marker() {
         // 对应 Java：@ExcelIgnoreUnannotated 标记
         assert_eq!(ExcelIgnoreUnannotated::new(), ExcelIgnoreUnannotated);
-        assert_eq!(ExcelIgnoreUnannotated::default(), ExcelIgnoreUnannotated);
+        assert_eq!(ExcelIgnoreUnannotated, ExcelIgnoreUnannotated);
     }
 }

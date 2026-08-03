@@ -28,6 +28,9 @@ impl EofRecordHandler {
 
     /// Java `EofRecordHandler.processRecord` decision tree (pure).
     #[must_use]
+    // 对应 Java：判定树四个布尔参数与 Java `processRecord` 内部状态一一对应，
+    // 为保持 1:1 语义映射不做参数合并。
+    #[allow(clippy::fn_params_excessive_bools)]
     pub fn decide(
         has_sheet_holder: bool,
         ignore_record: bool,
@@ -44,10 +47,10 @@ impl EofRecordHandler {
                 EofAction::Ignore
             };
         }
-        if !cell_map_empty {
-            EofAction::FlushRowThenEndSheet
-        } else {
+        if cell_map_empty {
             EofAction::EndSheet
+        } else {
+            EofAction::FlushRowThenEndSheet
         }
     }
 }

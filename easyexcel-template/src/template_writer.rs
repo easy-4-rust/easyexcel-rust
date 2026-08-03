@@ -815,9 +815,9 @@ mod tests_extra {
     use tempfile::tempdir;
     use zip::CompressionMethod;
 
-    /// 错误转换直接复用生产 `format_error`（与 `zip_writer_operation` 一致），
-    /// 不再保留独立测试副本：`map_err` 闭包只在出错时执行，测试中恒成功，
-    /// 原 test_error 函数体是死代码，已删除。
+    // 错误转换直接复用生产 `format_error`（与 `zip_writer_operation` 一致），
+    // 不再保留独立测试副本：`map_err` 闭包只在出错时执行，测试中恒成功，
+    // 原 test_error 函数体是死代码，已删除。
 
     /// 手写 ZIP 包（用于构造缺失/损坏 worksheet 部件的模板）。
     fn write_custom_zip(path: &Path, entries: &[(&str, &[u8])]) -> Result<()> {
@@ -836,7 +836,7 @@ mod tests_extra {
         Ok(())
     }
 
-    /// 用 rust_xlsxwriter 生成一个含 `{name}` 占位符的 XLSX 模板。
+    /// 用 `rust_xlsxwriter` 生成一个含 `{name}` 占位符的 XLSX 模板。
     fn xlsx_template(directory: &Path, name: &str) -> Result<PathBuf> {
         let template = directory.join(name);
         let mut workbook = rust_xlsxwriter::Workbook::new();
@@ -886,8 +886,8 @@ mod tests_extra {
 
     /// 对应 Java：`fillXlsTemplate` 列表填充（BIFF8 `.xls`）。
     ///
-    /// 用 easyexcel-writer 的 Biff8Book 生成带各类占位符的 `.xls` 模板：
-    /// `{.name}`（未命名 is_dot 分支）、`{plain}`（普通分支）、
+    /// 用 `easyexcel-writer` 的 `Biff8Book` 生成带各类占位符的 `.xls` 模板：
+    /// `{.name}`（未命名 `is_dot` 分支）、`{plain}`（普通分支）、
     /// `x{name}`（else 分支）、`{}`（空 key）、`{.}`（点号空 key）、
     /// `{missing}`（未命中 key），以及命名 wrapper 的 `{users.name}`（prefix 分支）。
     #[test]

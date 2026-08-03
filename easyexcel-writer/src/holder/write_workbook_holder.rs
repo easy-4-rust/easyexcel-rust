@@ -132,7 +132,7 @@ mod tests {
 
     #[test]
     fn write_workbook_holder_push_handler() {
-        /// No-op WriteHandler for testing.
+        /// No-op `WriteHandler` for testing.
         struct NoopHandler;
         impl WriteHandler for NoopHandler {
             fn order(&self) -> i32 {

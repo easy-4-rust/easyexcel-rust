@@ -1,6 +1,6 @@
 //! Method-level 1:1 parity for Java core tests:
-//! AnnotationDataTest, AnnotationIndexAndNameDataTest, StyleDataTest,
-//! WriteHandlerTest, ExcludeOrIncludeDataTest.
+//! `AnnotationDataTest`, `AnnotationIndexAndNameDataTest`, `StyleDataTest`,
+//! `WriteHandlerTest`, `ExcludeOrIncludeDataTest`.
 //!
 //! Naming: `mod <java_class_snake>` + `fn <java_method_snake>` so each Rust test
 //! uniquely maps to `ClassName#methodName`.
@@ -465,7 +465,7 @@ fn assert_loop_merge(path: &Path) {
     );
 }
 
-/// Custom WriteHandler that tracks lifecycle callbacks (Java WriteHandler.afterAll).
+/// Custom `WriteHandler` that tracks lifecycle callbacks (Java WriteHandler.afterAll).
 struct LifecycleWriteHandler {
     before_workbook: u32,
     after_workbook: u32,
@@ -541,7 +541,7 @@ impl WriteHandler for SharedLifecycleWriteHandler {
     }
 }
 
-/// Java workbook/sheet/table WriteHandler — Rust registers at writer builder level.
+/// Java workbook/sheet/table `WriteHandler` — Rust registers at writer builder level.
 fn assert_write_handler(path: &Path) {
     let handler = LifecycleWriteHandler::new();
     let shared = SharedLifecycleWriteHandler(handler.clone());

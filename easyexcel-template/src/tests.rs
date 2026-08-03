@@ -932,6 +932,9 @@ fn repeated_fill_applies_each_calls_force_row_and_auto_style_config() -> Result<
     Ok(())
 }
 
+// 该测试串行覆盖集合填充的游标防御路径与模板行平移场景，
+// 拆分多个测试会重复搭建模板/填充夹具，故豁免 too_many_lines。
+#[allow(clippy::too_many_lines)]
 #[test]
 fn collection_cursor_defensive_paths_and_shifted_cached_templates_are_covered() -> Result<()> {
     let wrapper = FillWrapper::named("items", [TemplateData::new().with("name", "value")]);

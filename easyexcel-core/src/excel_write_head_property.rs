@@ -55,7 +55,7 @@ impl ExcelWriteHeadProperty {
             }
             None => ExcelHeadProperty::new(configuration_holder, head),
         };
-        Self::from_inner(inner, metadata)
+        Self::from_inner(inner, &metadata)
     }
 
     /// Resolves Java `Head` entries from Rust derive metadata.
@@ -126,10 +126,10 @@ impl ExcelWriteHeadProperty {
             HeadKind::String
         };
         let inner = ExcelHeadProperty::from_head_map(head_clazz, head_kind, head_map);
-        Ok(Self::from_inner(inner, metadata))
+        Ok(Self::from_inner(inner, &metadata))
     }
 
-    fn from_inner(inner: ExcelHeadProperty, metadata: ExcelWriteMetadata) -> Self {
+    fn from_inner(inner: ExcelHeadProperty, metadata: &ExcelWriteMetadata) -> Self {
         Self {
             inner,
             head_row_height_property: metadata.head_row_height.map(RowHeightProperty::new),
@@ -164,6 +164,12 @@ impl ExcelWriteHeadProperty {
 
     /// Calculates every automatic header merge. (Java `headCellRangeList()`)
     #[must_use]
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_possible_wrap
+        // 语义敏感：行列索引需转换为 Java 端 i32 单元格坐标，值域受表头规模约束，
+        // 不可能超出 i32 范围；保留 `as` 转换以 1:1 对应 Java `headCellRangeList()`。
+    )]
     pub fn head_cell_range_list(&self) -> Vec<CellRange> {
         let head_list = self.inner.head_map.values().collect::<Vec<_>>();
         let mut already_ranged = HashSet::new();
@@ -177,11 +183,13 @@ impl ExcelWriteHeadProperty {
                 let name = &head.head_name_list[row];
                 let mut last_column_position = column_position;
                 let mut last_row = row;
-                for candidate in column_position + 1..head_list.len() {
+                for (candidate, head_c) in head_list
+                    .iter()
+                    .enumerate()
+                    .skip(column_position + 1)
+                {
                     let key = (candidate, row);
-                    if head_list[candidate].head_name_list[row] == *name
-                        && already_ranged.insert(key)
-                    {
+                    if head_c.head_name_list[row] == *name && already_ranged.insert(key) {
                         last_column_position = candidate;
                     } else {
                         break;
@@ -190,9 +198,14 @@ impl ExcelWriteHeadProperty {
 
                 'rows: for candidate_row in row + 1..head.head_name_list.len() {
                     let mut row_cells = Vec::new();
-                    for candidate_column in column_position..=last_column_position {
+                    for (candidate_column, head_c) in head_list
+                        .iter()
+                        .enumerate()
+                        .take(last_column_position + 1)
+                        .skip(column_position)
+                    {
                         let key = (candidate_column, candidate_row);
-                        if head_list[candidate_column].head_name_list[candidate_row] != *name
+                        if head_c.head_name_list[candidate_row] != *name
                             || already_ranged.contains(&key)
                         {
                             break 'rows;
@@ -339,7 +352,7 @@ mod tests_extra {
                 .inner()
                 .head_map()
                 .get(&0)
-                .map(|head| head.head_name_list()),
+                .map(super::super::metadata::head::Head::head_name_list),
             Some(&["姓名".to_owned()][..])
         );
     }

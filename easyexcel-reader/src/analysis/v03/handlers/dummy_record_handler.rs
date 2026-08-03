@@ -39,7 +39,11 @@ impl DummyRecordHandler {
     /// Java `MissingCellDummyRecord` branch — `putIfAbsent` semantics.
     ///
     /// Returns `Some(MissingCell)` only when the column is not already present
-    /// (see EasyExcel issue #2236).
+    /// (see `EasyExcel` issue #2236).
+    #[must_use]
+    // 对应 Java：参数 `Map<Long, ?>` 仅作“列是否已存在”的键集合使用，
+    // 保留 `HashMap<usize, ()>` 形态以镜像 Java 侧容器类型。
+    #[allow(clippy::zero_sized_map_values)]
     pub fn process_missing_cell(
         row: u32,
         column: usize,
@@ -66,6 +70,9 @@ mod tests {
     use super::*;
 
     #[test]
+    // 对应 Java：测试构造 `HashMap<usize, ()>` 与 `process_missing_cell` 参数
+    // 形态保持一致（见上 allow 说明）。
+    #[allow(clippy::zero_sized_map_values)]
     fn missing_cell_skips_existing_columns() {
         let mut map = HashMap::new();
         map.insert(1usize, ());

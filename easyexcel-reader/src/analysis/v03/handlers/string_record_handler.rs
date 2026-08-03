@@ -37,6 +37,10 @@ impl StringRecordHandler {
     }
 
     /// Decodes one logical BIFF8 String record and its CONTINUE bodies.
+    ///
+    /// # Errors
+    ///
+    /// 当 BIFF 字符串编码非法（长度/标志位不一致）时返回 [`ExcelError`]。
     pub fn decode_segments(segments: &[Vec<u8>]) -> easyexcel_core::Result<String> {
         decode_unicode_string_segments(segments)
     }

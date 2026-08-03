@@ -1,5 +1,5 @@
 //! Method-level 1:1 parity for Java core fill tests:
-//! FillDataTest, FillAnnotationDataTest, FillStyleDataTest, FillStyleAnnotatedTest.
+//! `FillDataTest`, `FillAnnotationDataTest`, `FillStyleDataTest`, `FillStyleAnnotatedTest`.
 //!
 //! Naming: `mod <java_class_snake>` + `fn <java_method_snake>` so each Rust test
 //! uniquely maps to `ClassName#methodName`.
@@ -54,8 +54,7 @@ fn assert_xls_readable(path: &std::path::Path) {
 fn dynamic_contains(rows: &[DynamicRow], needle: &str) -> bool {
     rows.iter().any(|row| {
         row.values().iter().any(|(_, val)| match val {
-            DynamicValue::String(s) => s.contains(needle),
-            DynamicValue::ActualData(CellValue::String(s)) => s.contains(needle),
+            DynamicValue::String(s) | DynamicValue::ActualData(CellValue::String(s)) => s.contains(needle),
             _ => false,
         })
     })

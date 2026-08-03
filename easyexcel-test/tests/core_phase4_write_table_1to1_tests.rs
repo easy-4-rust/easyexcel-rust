@@ -63,7 +63,7 @@ mod writer_table_builder_test {
     //! Mirrors ExcelWriterBuilder#table07
     use super::*;
 
-    /// Java: builder accepts table_no + head style + need_head overrides.
+    /// Java: builder accepts `table_no` + head style + `need_head` overrides.
     #[test]
     fn t03_writer_table_builder07() {
         let builder = EasyExcel::writer_table_builder(3)
@@ -130,7 +130,7 @@ mod write_with_table_test {
 // ---------------------------------------------------------------------------
 
 mod write_two_arg_still_works_test {
-    //! Regression: two-arg write must still work after adding write_with_table.
+    //! Regression: two-arg write must still work after adding `write_with_table`.
     use super::*;
 
     /// Java: existing two-arg call pattern must continue to compile and run.

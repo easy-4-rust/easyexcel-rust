@@ -23,6 +23,10 @@ pub trait ExcelReadExecutor {
     ///
     /// Java retrieves erased listeners and sheet parameters from
     /// `ReadWorkbook`; Rust makes those dependencies explicit.
+    ///
+    /// # Errors
+    ///
+    /// 当工作簿解析（SAX/记录读取）失败时返回 [`ExcelError`]。
     fn execute<T, L>(&mut self, options: &ReadOptions, listener: &mut L) -> Result<()>
     where
         T: ExcelRow,
@@ -34,6 +38,9 @@ pub trait ExcelReadExecutor {
 /// Java stores one `ExcelReadExecutor` interface object. Rust uses an enum so
 /// callers can inspect the same concrete XLSX/XLS/CSV executor that owns sheet
 /// discovery while typed listener execution remains statically dispatched.
+// 对应 Java：三个变体与 Java 具体 executor 对象一一对应；体积差异来自 SAX 解析器
+// 持有的缓存/上下文字段，为保持直接字段访问语义（与 Java 相同）不做 Box 装箱。
+#[allow(clippy::large_enum_variant)]
 pub enum ExcelReadExecutorKind {
     /// OOXML SAX executor.
     Xlsx(XlsxSaxAnalyser),
@@ -45,6 +52,10 @@ pub enum ExcelReadExecutorKind {
 
 impl ExcelReadExecutorKind {
     /// Constructs the concrete executor selected from the resolved workbook type.
+    ///
+    /// # Errors
+    ///
+    /// 当工作簿无法打开或解析（对应 Java 抛异常）时返回 [`ExcelError`]。
     pub fn new(
         excel_type: ExcelTypeEnum,
         path: impl Into<PathBuf>,
@@ -59,6 +70,10 @@ impl ExcelReadExecutorKind {
     }
 
     /// Executes through the selected real parser with the current analyser options.
+    ///
+    /// # Errors
+    ///
+    /// 当工作簿解析失败时返回 [`ExcelError`]。
     pub fn execute_with_listener<T, L>(
         &mut self,
         options: &ReadOptions,
@@ -147,8 +162,10 @@ mod tests_extra {
     fn xlsx_executor_variant_reads_and_reports_type() -> Result<()> {
         // 对应 Java：choiceExcelExecutor 选择 XlsxSaxAnalyser 后执行
         let file = write_xlsx();
-        let mut options = ReadOptions::default();
-        options.head_row_number = 1;
+        let options = ReadOptions {
+            head_row_number: 1,
+            ..ReadOptions::default()
+        };
         let mut executor =
             ExcelReadExecutorKind::new(ExcelTypeEnum::Xlsx, file.path(), options.clone())?;
         assert_eq!(executor.excel_type(), ExcelTypeEnum::Xlsx);
@@ -190,7 +207,7 @@ mod tests_extra2 {
         }
     }
 
-    /// 物化 Java 官方多 sheet .xls fixture（与 xls_sax_analyser 测试共用）。
+    /// 物化 Java 官方多 sheet .xls fixture（与 `xls_sax_analyser` 测试共用）。
     fn write_java_multisheet_xls() -> NamedTempFile {
         let file = NamedTempFile::with_suffix(".xls").expect("temp xls");
         let compressed = base64::engine::general_purpose::STANDARD
@@ -207,9 +224,11 @@ mod tests_extra2 {
     fn xls_executor_variant_discovers_sheets_and_reads_rows() -> Result<()> {
         // 对应 Java：choiceExcelExecutor 选择 XlsSaxAnalyser 后执行
         let file = write_java_multisheet_xls();
-        let mut options = ReadOptions::default();
-        options.head_row_number = 1;
-        options.sheet = crate::SheetSelector::Index(0);
+        let options = ReadOptions {
+            head_row_number: 1,
+            sheet: crate::SheetSelector::Index(0),
+            ..ReadOptions::default()
+        };
         let mut executor =
             ExcelReadExecutorKind::new(ExcelTypeEnum::Xls, file.path(), options.clone())?;
         assert_eq!(executor.excel_type(), ExcelTypeEnum::Xls);

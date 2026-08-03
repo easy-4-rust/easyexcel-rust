@@ -32,7 +32,7 @@ impl NumberRecordHandler {
         Self::default()
     }
 
-    /// Java `NumberRecordHandler.processRecord` (without BuiltinFormats lookup).
+    /// Java `NumberRecordHandler.processRecord` (without `BuiltinFormats` lookup).
     #[must_use]
     pub fn process_number(row: u32, column: usize, value: f64, format_index: u16) -> NumberCell {
         NumberCell {
@@ -54,7 +54,7 @@ impl XlsRecordHandler for NumberRecordHandler {
         if record_sid != NUMBER_SID || data.len() < 14 {
             return;
         }
-        let row = u16::from_le_bytes([data[0], data[1]]) as u32;
+        let row = u32::from(u16::from_le_bytes([data[0], data[1]]));
         let column = u16::from_le_bytes([data[2], data[3]]) as usize;
         let mut bits = [0u8; 8];
         bits.copy_from_slice(&data[6..14]);
@@ -69,6 +69,9 @@ mod tests {
     use super::*;
 
     #[test]
+    // 对应 Java：测试断言为位级精确的 `f64` 往返值（`from_le_bytes` 后原值不变），
+    // 精确相等即预期语义，不做容差比较。
+    #[allow(clippy::float_cmp)]
     fn process_number_keeps_value() {
         let cell = NumberRecordHandler::process_number(1, 2, 3.5, 0);
         assert_eq!(cell.row, 1);

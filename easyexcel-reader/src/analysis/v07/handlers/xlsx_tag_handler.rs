@@ -1,4 +1,4 @@
-//! 对应 Java： SAX ContentHandler for XLSX tag dispatch.
+//! 对应 Java： SAX `ContentHandler` for XLSX tag dispatch.
 
 /// XLSX 解析标签处理器：按 XML 标签分派 SAX 事件，对应 Java `ContentHandler`。
 pub trait XlsxTagHandler {

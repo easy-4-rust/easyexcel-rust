@@ -167,7 +167,7 @@ mod tests {
             relative_head_row_index: Some(2),
             ..WriteBasicParameter::default()
         };
-        let debug = format!("{:?}", param);
+        let debug = format!("{param:?}");
         assert!(debug.contains("need_head"));
         assert!(debug.contains("relative_head_row_index"));
     }

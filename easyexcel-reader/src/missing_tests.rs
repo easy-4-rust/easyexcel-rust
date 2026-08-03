@@ -85,24 +85,30 @@ fn multiple_sheets_distinct_types() {
 
 #[test]
 fn no_head_basic_options() {
-    let mut opts = ReadOptions::default();
-    opts.ignore_empty_row = true;
-    opts.auto_trim = false;
+    let opts = ReadOptions {
+        ignore_empty_row: true,
+        auto_trim: false,
+        ..ReadOptions::default()
+    };
     assert!(opts.ignore_empty_row);
     assert!(!opts.auto_trim);
 }
 
 #[test]
 fn no_head_with_use_1904_windowing() {
-    let mut opts = ReadOptions::default();
-    opts.use_1904_windowing = true;
+    let opts = ReadOptions {
+        use_1904_windowing: true,
+        ..ReadOptions::default()
+    };
     assert!(opts.use_1904_windowing);
 }
 
 #[test]
 fn no_head_with_scientific_format() {
-    let mut opts = ReadOptions::default();
-    opts.scientific_format = ScientificFormatMode::Scientific;
+    let opts = ReadOptions {
+        scientific_format: ScientificFormatMode::Scientific,
+        ..ReadOptions::default()
+    };
     assert_eq!(opts.scientific_format, ScientificFormatMode::Scientific);
 }
 
@@ -120,8 +126,10 @@ fn no_head_default_options() {
 
 #[test]
 fn list_head_dynamic_default() {
-    let mut opts = ReadOptions::default();
-    opts.head_row_number = 2;
+    let opts = ReadOptions {
+        head_row_number: 2,
+        ..ReadOptions::default()
+    };
     assert_eq!(opts.head_row_number, 2);
 }
 
@@ -133,15 +141,19 @@ fn list_head_with_single_level() {
 
 #[test]
 fn list_head_with_three_levels() {
-    let mut opts = ReadOptions::default();
-    opts.head_row_number = 3;
+    let opts = ReadOptions {
+        head_row_number: 3,
+        ..ReadOptions::default()
+    };
     assert_eq!(opts.head_row_number, 3);
 }
 
 #[test]
 fn list_head_with_zero() {
-    let mut opts = ReadOptions::default();
-    opts.head_row_number = 0;
+    let opts = ReadOptions {
+        head_row_number: 0,
+        ..ReadOptions::default()
+    };
     assert_eq!(opts.head_row_number, 0);
 }
 
@@ -157,15 +169,19 @@ fn cell_data_type_string_default() {
 
 #[test]
 fn cell_data_type_actual_data_mode() {
-    let mut opts = ReadOptions::default();
-    opts.read_default_return = ReadDefaultReturn::ActualData;
+    let opts = ReadOptions {
+        read_default_return: ReadDefaultReturn::ActualData,
+        ..ReadOptions::default()
+    };
     assert_eq!(opts.read_default_return, ReadDefaultReturn::ActualData);
 }
 
 #[test]
 fn cell_data_type_read_cell_data_mode() {
-    let mut opts = ReadOptions::default();
-    opts.read_default_return = ReadDefaultReturn::ReadCellData;
+    let opts = ReadOptions {
+        read_default_return: ReadDefaultReturn::ReadCellData,
+        ..ReadOptions::default()
+    };
     assert_eq!(opts.read_default_return, ReadDefaultReturn::ReadCellData);
 }
 

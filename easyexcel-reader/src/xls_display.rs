@@ -1,9 +1,9 @@
 //! XLS BIFF format overlay for STRING-mode display.
 //!
 //! Calamine converts date-formatted numbers to `Data::DateTime` and discards the
-//! Excel format code. EasyExcel / POI keep the XF → FORMAT mapping and render
-//! via `DataFormatter` (BuiltinFormats + custom codes). This module re-reads the
-//! Workbook stream's FORMAT / XF / NUMBER / RK / MulRk records so Rust STRING
+//! Excel format code. `EasyExcel` / POI keep the XF → FORMAT mapping and render
+//! via `DataFormatter` (`BuiltinFormats` + custom codes). This module re-reads the
+//! Workbook stream's FORMAT / XF / NUMBER / RK / `MulRk` records so Rust STRING
 //! mode can match Java short dates (`yyyy-m-d h:mm`) and related formats.
 
 use std::collections::HashMap;
@@ -20,17 +20,14 @@ pub(crate) type SheetDisplays = HashMap<(u32, usize), String>;
 
 /// Load formatted display strings for every numeric cell in an `.xls` workbook.
 ///
-/// Returns one map per worksheet (BoundSheet order). Failures are soft: callers
+/// Returns one map per worksheet (`BoundSheet` order). Failures are soft: callers
 /// may fall back to calamine `as_text()` when a sheet map is missing.
 pub(crate) fn load_xls_displays(
     path: &Path,
     date_1904: bool,
     locale: &Locale,
 ) -> Vec<SheetDisplays> {
-    match load_xls_displays_inner(path, date_1904, locale) {
-        Ok(sheets) => sheets,
-        Err(_) => Vec::new(),
-    }
+    load_xls_displays_inner(path, date_1904, locale).unwrap_or_default()
 }
 
 fn load_xls_displays_inner(
@@ -42,6 +39,9 @@ fn load_xls_displays_inner(
     Ok(parse_workbook_displays(&wb, date_1904, locale))
 }
 
+// 对应 Java：`XlsSaxAnalyser` 对 Workbook 流 FORMAT/XF/NUMBER/RK/MulRk 的
+// 顺序解析与 Java 记录遍历一一对应，拆分会改变记录推进顺序，保持原样。
+#[allow(clippy::too_many_lines)]
 fn parse_workbook_displays(wb: &[u8], date_1904: bool, locale: &Locale) -> Vec<SheetDisplays> {
     let mut custom_formats: HashMap<u16, String> = HashMap::new();
     let mut xfs: Vec<u16> = Vec::new();
@@ -65,6 +65,9 @@ fn parse_workbook_displays(wb: &[u8], date_1904: bool, locale: &Locale) -> Vec<S
                 let dt = u16::from_le_bytes([payload[2], payload[3]]);
                 if dt == 0x0010 {
                     sheet_idx += 1;
+                    // 对应 Java：sheet_idx 从 -1 起计，`sheets.len() as isize` 比较
+                    // 仅在工作表数超 isize 上限时才会环绕（实际不可能），保持 as 转换。
+                    #[allow(clippy::cast_possible_wrap)]
                     while sheets.len() as isize <= sheet_idx {
                         sheets.push(HashMap::new());
                     }
@@ -83,7 +86,7 @@ fn parse_workbook_displays(wb: &[u8], date_1904: bool, locale: &Locale) -> Vec<S
                 xfs.push(ifmt);
             }
             0x0203 if in_sheet && payload.len() >= 14 => {
-                let row = u16::from_le_bytes([payload[0], payload[1]]) as u32;
+                let row = u32::from(u16::from_le_bytes([payload[0], payload[1]]));
                 let col = u16::from_le_bytes([payload[2], payload[3]]) as usize;
                 let xf = u16::from_le_bytes([payload[4], payload[5]]) as usize;
                 let value = f64::from_le_bytes(payload[6..14].try_into().unwrap_or([0; 8]));
@@ -101,7 +104,7 @@ fn parse_workbook_displays(wb: &[u8], date_1904: bool, locale: &Locale) -> Vec<S
                 );
             }
             0x027E if in_sheet && payload.len() >= 10 => {
-                let row = u16::from_le_bytes([payload[0], payload[1]]) as u32;
+                let row = u32::from(u16::from_le_bytes([payload[0], payload[1]]));
                 let col = u16::from_le_bytes([payload[2], payload[3]]) as usize;
                 let xf = u16::from_le_bytes([payload[4], payload[5]]) as usize;
                 let value = decode_rk(&payload[6..10]);
@@ -120,7 +123,7 @@ fn parse_workbook_displays(wb: &[u8], date_1904: bool, locale: &Locale) -> Vec<S
             }
             0x00BD if in_sheet && payload.len() >= 6 => {
                 // MulRk: row, firstCol, then repeating (xf, rk) until lastCol
-                let row = u16::from_le_bytes([payload[0], payload[1]]) as u32;
+                let row = u32::from(u16::from_le_bytes([payload[0], payload[1]]));
                 let first_col = u16::from_le_bytes([payload[2], payload[3]]) as usize;
                 let last_col =
                     u16::from_le_bytes([payload[payload.len() - 2], payload[payload.len() - 1]])
@@ -152,6 +155,9 @@ fn parse_workbook_displays(wb: &[u8], date_1904: bool, locale: &Locale) -> Vec<S
     sheets
 }
 
+// 对应 Java：`pushDisplay(sheetIdx, row, col, xf, value, ...)` 参数与 Java
+// 记录分派一一对应，为保持 Java 签名语义不做参数聚合。
+#[allow(clippy::too_many_arguments)]
 fn push_display(
     sheets: &mut [SheetDisplays],
     sheet_idx: isize,
@@ -184,6 +190,9 @@ fn push_display(
     let Some(display) = format_with_code(value, code, date_1904, locale) else {
         return;
     };
+    // 对应 Java：sheetIdx 已由上方 `sheet_idx < 0` 分支排除负值，
+    // `as usize` 不会丢失符号。
+    #[allow(clippy::cast_sign_loss)]
     if let Some(sheet) = sheets.get_mut(sheet_idx as usize) {
         sheet.insert((row, col), display);
     }
@@ -218,6 +227,9 @@ fn parse_format_record(payload: &[u8]) -> Option<(u16, String)> {
 }
 
 /// Decode an RK number (see MS-XLS 2.5.209).
+// 对应 Java：`RKRecord` 解码中 `(int)(rk >> 2)` 的位运算，u32→i32 环绕与
+// Java 强转语义一致，保留 `as` 转换。
+#[allow(clippy::cast_possible_wrap)]
 fn decode_rk(bytes: &[u8]) -> f64 {
     if bytes.len() < 4 {
         return 0.0;
@@ -226,7 +238,7 @@ fn decode_rk(bytes: &[u8]) -> f64 {
     let d100 = rk & 0x01 != 0;
     let is_int = rk & 0x02 != 0;
     let value = if is_int {
-        ((rk as i32) >> 2) as f64
+        f64::from((rk as i32) >> 2)
     } else {
         f64::from_bits((u64::from(rk & !0x03)) << 32)
     };
@@ -255,7 +267,7 @@ mod tests {
         );
     }
 
-    /// POI / EasyExcel: `_ ` pads are dropped; `\ ` on the negative section is kept.
+    /// POI / `EasyExcel`: `_ ` pads are dropped; `\ ` on the negative section is kept.
     #[test]
     fn java_compat_trailing_space_accounting_format() {
         let locale = Locale::default();
@@ -271,7 +283,7 @@ mod tests {
         // Accounting `_)` must not leave a trailing pad space (Java `24.20`).
         let acct = r"0.00_);[Red]\(0.00\)";
         assert_eq!(
-            format_with_code(24.199812400000013, acct, false, &locale).as_deref(),
+            format_with_code(24.199_812_400_000_013, acct, false, &locale).as_deref(),
             Some("24.20")
         );
     }
@@ -340,6 +352,8 @@ mod tests {
 
     /// BIFF8 compressed Unicode FORMAT records are Latin-1 (¥ = 0xA5), not UTF-8.
     #[test]
+    // 对应 Java：测试固定短 payload（≤255 字节），`as u8` 不可能截断。
+    #[allow(clippy::cast_possible_truncation)]
     fn parse_format_record_latin1_yen() {
         // ifmt=5, cch=len, flags=0, body = `"¥"#,##0` in Latin-1
         let mut payload = vec![5, 0, 0, 0, 0];
@@ -359,6 +373,9 @@ mod tests_extra {
     use ssfmt::Locale;
 
     /// 组装 BIFF 记录：sid + 长度 + 载荷。
+    // 对应 Java：BIFF 记录长度字段为 u16，测试 payload 固定且远小于 65535 字节，
+    // `as u16` 不可能截断。
+    #[allow(clippy::cast_possible_truncation)]
     fn record(sid: u16, payload: &[u8]) -> Vec<u8> {
         let mut out = Vec::new();
         out.extend_from_slice(&sid.to_le_bytes());
@@ -374,6 +391,8 @@ mod tests_extra {
     fn custom_format_record(ifmt: u16, code: &str) -> Vec<u8> {
         let mut payload = vec![0, 0, 0, 0, 0];
         payload[0..2].copy_from_slice(&ifmt.to_le_bytes());
+        // 对应 Java：cch 为 u16，测试格式码固定且短小，`as u16` 不可能截断。
+        #[allow(clippy::cast_possible_truncation)]
         payload[2..4].copy_from_slice(&(code.len() as u16).to_le_bytes());
         payload.extend_from_slice(code.as_bytes());
         record(0x041E, &payload)
@@ -395,6 +414,9 @@ mod tests_extra {
     }
 
     fn rk_bytes(value: i32) -> [u8; 4] {
+        // 对应 Java：RK 整数编码的位运算（int 移位后按位或），i32→u32 仅按位
+        // 解释、不改变数值位模式，与 Java 位运算语义一致。
+        #[allow(clippy::cast_sign_loss)]
         ((value << 2) as u32 | 0x02).to_le_bytes()
     }
 
@@ -493,6 +515,9 @@ mod tests_extra {
     }
 
     #[test]
+    // 对应 Java：`decode_rk` 对短输入返回 0.0，与 0.0 的精确比较即预期语义
+    // （位级确定的返回值），不做容差比较。
+    #[allow(clippy::float_cmp)]
     fn decode_rk_guards_short_input() {
         // 对应 Java：RK 解码输入不足返回 0
         assert_eq!(decode_rk(&[1, 2]), 0.0);
@@ -515,6 +540,9 @@ mod tests_extra2 {
     use ssfmt::Locale;
 
     /// 组装 BIFF 记录：sid + 长度 + 载荷。
+    // 对应 Java：BIFF 记录长度字段为 u16，测试 payload 固定且远小于 65535 字节，
+    // `as u16` 不可能截断。
+    #[allow(clippy::cast_possible_truncation)]
     fn record(sid: u16, payload: &[u8]) -> Vec<u8> {
         let mut out = Vec::new();
         out.extend_from_slice(&sid.to_le_bytes());
@@ -536,6 +564,8 @@ mod tests_extra2 {
     fn custom_format_record(ifmt: u16, code: &str) -> Vec<u8> {
         let mut payload = vec![0, 0, 0, 0, 0];
         payload[0..2].copy_from_slice(&ifmt.to_le_bytes());
+        // 对应 Java：cch 为 u16，测试格式码固定且短小，`as u16` 不可能截断。
+        #[allow(clippy::cast_possible_truncation)]
         payload[2..4].copy_from_slice(&(code.len() as u16).to_le_bytes());
         payload.extend_from_slice(code.as_bytes());
         record(0x041E, &payload)

@@ -33,7 +33,7 @@ use crate::{WriteOptions, WriteProgress, append_rows_to_worksheet, write_xlsx};
 ///
 /// The Java side holds `add(Collection<?>)`, `addOneRowOfDataToExcel`,
 /// `addBasicTypeToExcel`, `doAddBasicTypeToExcel`, and `addJavaObjectToExcel`.
-/// Rust keeps the same method names (snake_case) and delegates to the existing
+/// Rust keeps the same method names (`snake_case`) and delegates to the existing
 /// `write_xlsx` / `append_rows_to_worksheet` writer path so `lib.rs` behaviour
 /// is preserved.
 pub struct ExcelWriteAddExecutor<'a> {
@@ -123,7 +123,7 @@ impl<'a> ExcelWriteAddExecutor<'a> {
     /// 2. Row/cell handler hooks run inside `append_rows_to_worksheet` /
     ///    `write_data_row_with_handlers` (Java `WriteHandlerUtils.beforeRowCreate`
     ///    / `afterRowCreate` / `afterRowDispose`).
-    /// 3. Collection / Map / JavaBean branching is expressed by the `T: ExcelRow`
+    /// 3. Collection / Map / `JavaBean` branching is expressed by the `T: ExcelRow`
     ///    impl (`DynamicRow` for basic types, derived structs for beans).
     ///
     /// # Errors
@@ -715,7 +715,7 @@ mod tests {
         assert_eq!(progress.next_data_index, 9);
     }
 
-    /// Proves `add_java_object_to_excel` (the JavaBean branch) writes a row.
+    /// Proves `add_java_object_to_excel` (the `JavaBean` branch) writes a row.
     #[test]
     fn add_java_object_to_excel_writes_row() {
         let mut workbook = Workbook::new();

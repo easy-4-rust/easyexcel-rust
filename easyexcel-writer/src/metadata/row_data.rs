@@ -6,7 +6,7 @@ use easyexcel_core::CellValue;
 ///
 /// Java models each cell of a basic-type row through a common interface so
 /// `ExcelWriteAddExecutor` can branch on `CollectionRowData`, `MapRowData`,
-/// or JavaBean row uniformly. Rust achieves the same uniformity by
+/// or `JavaBean` row uniformly. Rust achieves the same uniformity by
 /// accepting `&[CellValue]` slices from any source, so this trait is a
 /// 1:1 API marker without runtime polymorphism.
 pub trait RowData {
@@ -56,14 +56,14 @@ mod tests {
 
     #[test]
     fn slice_row_data_is_empty_on_empty_slice() {
-        let cells: Vec<CellValue> = vec![];
+        let cells: Vec<CellValue> = Vec::new();
         let slice: &[CellValue] = &cells;
         assert!(slice.is_empty());
     }
 
     #[test]
     fn slice_row_data_is_not_empty_on_non_empty_slice() {
-        let cells = vec![CellValue::String("a".to_owned())];
+        let cells = [CellValue::String("a".to_owned())];
         let slice: &[CellValue] = &cells;
         assert!(!slice.is_empty());
     }
@@ -82,13 +82,13 @@ mod tests {
 
     #[test]
     fn vec_row_data_is_empty_on_empty_vec() {
-        let cells: Vec<CellValue> = vec![];
+        let cells: Vec<CellValue> = Vec::new();
         assert!(cells.is_empty());
     }
 
     #[test]
     fn vec_row_data_is_not_empty_on_non_empty_vec() {
-        let cells = vec![CellValue::String("a".to_owned())];
+        let cells = [CellValue::String("a".to_owned())];
         assert!(!cells.is_empty());
     }
 

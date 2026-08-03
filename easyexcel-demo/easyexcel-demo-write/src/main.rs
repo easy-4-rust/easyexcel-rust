@@ -36,9 +36,7 @@ fn sample_rows() -> Vec<DemoRow> {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = env::args()
-        .nth(1)
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("target/demo-write.xlsx"));
+        .nth(1).map_or_else(|| PathBuf::from("target/demo-write.xlsx"), PathBuf::from);
 
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;

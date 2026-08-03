@@ -1,7 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.read.metadata.ReadWorkbook`.
 //!
-//! Java signature (47 members: 18 fields × 3 each for get/set/equals
-//! + equals/hashCode + 5 ctor overloads). The Rust port stores the
+//! Java signature: 47 members (18 fields × 3 each for get/set/equals,
+//! equals/hashCode and 5 ctor overloads). The Rust port stores the
 //! configuration in [`crate::ReadOptions`] and exposes a 1:1 named
 //! wrapper struct for callers that mirror the Java shape.
 //!
@@ -205,15 +205,16 @@ mod tests {
         ));
         assert!(workbook.read_cache_selector().is_some());
 
-        assert_eq!(workbook.options().ignore_empty_row, false);
+        assert!(!workbook.options().ignore_empty_row);
     }
 
     #[test]
     fn excel_type_mirrors_index_sheet_selection() {
         // 对应 Java：getExcelType() 由 sheet 选择器推导
-        let mut options = ReadOptions::default();
-        options.sheet = crate::SheetSelector::Index(3);
-        let workbook = ReadWorkbook::from(options);
+        let workbook = ReadWorkbook::from(ReadOptions {
+            sheet: crate::SheetSelector::Index(3),
+            ..ReadOptions::default()
+        });
         assert_eq!(workbook.excel_type(), Some(crate::SheetSelector::Index(0)));
         assert_eq!(ReadWorkbook::default().excel_type(), None);
     }

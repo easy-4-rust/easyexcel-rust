@@ -2,7 +2,7 @@
 
 /// Java `ClientAnchorData.AnchorType` equivalent.
 ///
-/// Variant names are normalised to PascalCase while preserving the four POI
+/// Variant names are normalised to `PascalCase` while preserving the four POI
 /// anchor modes.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum AnchorType {

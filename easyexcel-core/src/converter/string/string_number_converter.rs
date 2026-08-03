@@ -43,7 +43,7 @@ impl crate::Converter<String> for StringNumberConverter {
             }
             return crate::util::number_utils::format_decimal(
                 &decimal,
-                decimal < BigDecimal::from(0),
+                decimal < 0,
                 Some(pattern),
                 context.column().number_rounding_mode.unwrap_or_default(),
             );

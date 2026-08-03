@@ -20,12 +20,11 @@ pub fn get_row_by_row_tagt(row_tag: &str) -> u32 {
 pub fn get_row(cell_ref: &str) -> u32 {
     let digits: String = cell_ref
         .chars()
-        .skip_while(|c| c.is_ascii_alphabetic())
+        .skip_while(char::is_ascii_alphabetic)
         .collect();
     digits
         .parse::<u32>()
-        .map(|n| n.saturating_sub(1))
-        .unwrap_or(0)
+        .map_or(0, |n| n.saturating_sub(1))
 }
 
 /// Mirrors `com.alibaba.excel.util.PositionUtils#getCol`.
@@ -35,7 +34,7 @@ pub fn get_row(cell_ref: &str) -> u32 {
 #[must_use]
 pub fn get_col(cell_ref: &str) -> u32 {
     let mut col: u32 = 0;
-    for c in cell_ref.chars().take_while(|c| c.is_ascii_alphabetic()) {
+    for c in cell_ref.chars().take_while(char::is_ascii_alphabetic) {
         col = col
             .saturating_mul(26)
             .saturating_add((c.to_ascii_uppercase() as u32).saturating_sub('A' as u32));

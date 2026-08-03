@@ -16,7 +16,7 @@ mod tests {
     #[test]
     fn root_and_support_empty_are_the_same_zero_sized_marker() {
         let marker = Empty;
-        assert_eq!(marker, Empty::default());
+        assert_eq!(marker, Empty);
         assert_eq!(std::mem::size_of::<Empty>(), 0);
         assert_eq!(
             TypeId::of::<Empty>(),

@@ -11,6 +11,10 @@ use crate::excel_error::ExcelError;
 /// The Rust port performs cell-to-field conversion via the
 /// `FromExcelCell` trait; this function is the Java-API-shaped anchor
 /// returning an `Unsupported` error until wired in by the reader crate.
+///
+/// # Errors
+///
+/// 始终返回 [`ExcelError::Unsupported`]，提示改用 `FromExcelCell` trait。
 pub fn convert_to_java_object(_source: &str, _target_type: TypeId) -> Result<String, ExcelError> {
     Err(ExcelError::Unsupported(
         "ConverterUtils.convertToJavaObject: use the FromExcelCell trait instead".to_owned(),

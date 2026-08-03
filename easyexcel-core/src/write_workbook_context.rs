@@ -47,6 +47,11 @@ impl WriteWorkbookContext {
     }
 
     /// Returns the live workbook holder view carried by this callback.
+    ///
+    /// # Panics
+    ///
+    /// Panics when the callback was created without a workbook holder
+    /// (workbook callbacks always carry one).
     #[must_use]
     pub fn write_workbook_holder(&self) -> &WriteWorkbookHolderView {
         self.holders
@@ -70,7 +75,7 @@ mod tests_extra {
         // 对应 Java：WorkbookWriteHandlerContext 路径访问器
         let context = WriteWorkbookContext::new("out.xlsx");
         assert_eq!(context.path(), Path::new("out.xlsx"));
-        assert!(std::ptr::eq(context.workbook(), &context));
+        assert!(std::ptr::eq(context.workbook(), &raw const context));
         assert_eq!(
             context.write_workbook_holder().path(),
             Path::new("out.xlsx")

@@ -62,7 +62,7 @@ fn stop_gracefully(child: &mut Child) {
     }
 }
 
-/// 发起一个 `HTTP/1.1` 请求并返回 (status_line, headers, body)。
+/// 发起一个 `HTTP/1.1` 请求并返回 `(status_line, headers, body)`。
 ///
 /// 有界读取：先读到 `\r\n\r\n` 头结束，再按 `Content-Length` 精确读取响应体，
 /// 避免 keep-alive 连接上阻塞等待 EOF。
@@ -141,6 +141,9 @@ fn wait_ready(child: &mut Child, address: &str) {
     panic!("demo server did not become ready within 20s");
 }
 
+// 端到端用例按“起服 → 下载 → 上传 → 失败降级”顺序串行断言，
+// 拆分多个测试会重复起服/等端口，故豁免 too_many_lines。
+#[allow(clippy::too_many_lines)]
 #[test]
 fn demo_actix_serves_download_upload_and_error_endpoints() {
     // 随机空闲端口（对应 Java 可配置 quarkus.http.port），避免与残留进程冲突

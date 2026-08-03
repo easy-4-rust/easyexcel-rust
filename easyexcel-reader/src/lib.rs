@@ -831,8 +831,8 @@ fn read_range(
             row_index,
             cells,
             SourceRowMetadata {
-                present_columns,
                 display_values,
+                present_columns,
                 ..SourceRowMetadata::default()
             },
             options,

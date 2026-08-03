@@ -5,7 +5,7 @@
 /// Extra worksheet information selectable during a read.
 ///
 /// Rust port of Java `CellExtraTypeEnum`. Variant names are normalised to
-/// PascalCase to match `CellExtra` callers while preserving semantics.
+/// `PascalCase` to match `CellExtra` callers while preserving semantics.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CellExtraType {
     /// A cell comment/note.                  (Java `COMMENT`)

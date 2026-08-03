@@ -17,6 +17,10 @@ pub trait ExcelAnalyser {
     /// Java stores erased listeners in `ReadWorkbook`; Rust passes the typed
     /// listener explicitly and applies sheet/read-all selection through
     /// `ReadOptions` before this call.
+    ///
+    /// # Errors
+    ///
+    /// 当工作簿解析（SAX/记录读取）失败时返回 [`ExcelError`]。
     fn analysis<T, L>(&mut self, listener: &mut L) -> Result<()>
     where
         T: ExcelRow,

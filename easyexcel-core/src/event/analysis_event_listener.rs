@@ -13,13 +13,18 @@ pub trait AnalysisEventListener<T>: crate::ReadListener<T> {
         let _ = (head_map, context);
     }
     /// 全部数据分析完成后的回调，默认实现不做任何事。
+    ///
+    /// # Errors
+    ///
+    /// 默认实现总是返回 `Ok(())`，不会失败。
     fn do_after_all_analysed(&mut self, context: &crate::AnalysisContext) -> crate::Result<()> {
         let _ = context;
         Ok(())
     }
 }
 
-fn _import_marker(v: CellValue) {
+#[allow(dead_code)]
+fn import_marker(v: &CellValue) {
     let _ = v;
 }
 
@@ -52,7 +57,7 @@ mod tests_extra {
             &context,
         );
         listener.do_after_all_analysed(&context).expect("after ok");
-        _import_marker(crate::CellValue::Int(1));
+        import_marker(&crate::CellValue::Int(1));
     }
 
     #[test]

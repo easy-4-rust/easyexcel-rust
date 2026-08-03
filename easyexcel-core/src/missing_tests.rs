@@ -65,7 +65,7 @@ fn exclude_column_field_names_unicode() {
 #[test]
 fn include_column_field_names_empty_option() {
     let names: Option<Vec<String>> = Some(vec![]);
-    assert!(names.unwrap().is_empty());
+    assert!(names.is_some_and(|names| names.is_empty()));
 }
 
 #[test]
@@ -86,7 +86,7 @@ fn exclude_and_include_combined() {
     let exclude: Vec<usize> = vec![0, 1];
     let include: Option<Vec<usize>> = Some(vec![0, 2]);
     assert_eq!(exclude.len(), 2);
-    assert_eq!(include.unwrap().len(), 2);
+    assert_eq!(include.as_ref().map(Vec::len), Some(2));
 }
 
 #[test]
@@ -101,7 +101,7 @@ fn exclude_column_field_names_special_chars() {
 #[test]
 fn include_column_field_names_unicode() {
     let names: Option<Vec<String>> = Some(vec!["姓名".to_owned(), "年龄".to_owned()]);
-    assert_eq!(names.unwrap().len(), 2);
+    assert_eq!(names.as_ref().map(Vec::len), Some(2));
 }
 
 #[test]
@@ -178,10 +178,8 @@ fn complex_head_empty() {
 #[test]
 fn complex_head_with_column_names() {
     let head: Vec<Vec<String>> = vec![vec!["ID".to_owned(), "Name".to_owned()]];
-    let cols = vec![
-        ExcelColumn::new("id", "ID", Some(0), 0, None),
-        ExcelColumn::new("name", "Name", Some(1), 1, None),
-    ];
+    let cols = [ExcelColumn::new("id", "ID", Some(0), 0, None),
+        ExcelColumn::new("name", "Name", Some(1), 1, None)];
     assert_eq!(head[0].len(), cols.len());
 }
 
@@ -293,7 +291,7 @@ fn multiple_sheets_default_first() {
 
 #[test]
 fn multiple_sheets_all() {
-    let all = vec!["S1".to_owned(), "S2".to_owned(), "S3".to_owned()];
+    let all = ["S1".to_owned(), "S2".to_owned(), "S3".to_owned()];
     assert_eq!(all.len(), 3);
 }
 
@@ -347,11 +345,11 @@ fn annotation_index_and_name_with_order() {
 fn fill_style_data_head_background() {
     let style = ExcelCellStyle {
         fill_pattern: Some(ExcelFillPattern::Solid),
-        fill_foreground_color: Some(ExcelColor::Rgb(0x0000FF)),
+        fill_foreground_color: Some(ExcelColor::Rgb(0x00_00FF)),
         ..ExcelCellStyle::new()
     };
     assert_eq!(style.fill_pattern, Some(ExcelFillPattern::Solid));
-    assert_eq!(style.fill_foreground_color, Some(ExcelColor::Rgb(0x0000FF)));
+    assert_eq!(style.fill_foreground_color, Some(ExcelColor::Rgb(0x00_00FF)));
 }
 
 #[test]
@@ -526,7 +524,7 @@ fn parameter_excel_column_with_styles() {
         ..ExcelCellStyle::new()
     };
     let col = ExcelColumn::new("f", "F", None, 0, None).with_content_style(style);
-    assert!(col.content_style.unwrap().hidden == Some(true));
+    assert_eq!(col.content_style.unwrap().hidden, Some(true));
 }
 
 // ============================================================================
@@ -595,7 +593,8 @@ fn sort_data_index_overrides_order() {
     let col = ExcelColumn::new("f", "F", Some(3), 10, None);
     assert_eq!(col.index, Some(3));
     assert_eq!(col.order, 10);
-    assert!(col.index.unwrap() < col.order as usize);
+    // order 为排序值恒非负，usize 转换恒成功（避免符号丢失的 as 转换）
+    assert!(col.index.unwrap() < usize::try_from(col.order).expect("order 恒非负"));
 }
 
 #[test]
@@ -631,11 +630,9 @@ fn template_data_scalar_basic() {
 
 #[test]
 fn template_data_collection() {
-    let users = vec![
-        CellValue::String("Alice".to_owned()),
+    let users = [CellValue::String("Alice".to_owned()),
         CellValue::String("Bob".to_owned()),
-        CellValue::String("Carol".to_owned()),
-    ];
+        CellValue::String("Carol".to_owned())];
     assert_eq!(users.len(), 3);
     assert_eq!(users[0], CellValue::String("Alice".to_owned()));
     assert_eq!(users[2], CellValue::String("Carol".to_owned()));

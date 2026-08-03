@@ -16,6 +16,12 @@ pub(crate) trait BooleanScalar: Sized {
 macro_rules! impl_boolean_scalar {
     ($($target:ty),+ $(,)?) => {
         $(
+            #[allow(
+                clippy::cast_precision_loss,
+                clippy::float_cmp
+                // 语义敏感：1/0 对所有 target 均精确可表示，且 Java `isOne()` 对
+                // Float/Double 使用严格 `==`；保留 as 转换与 == 比较以 1:1 对应 Java 行为。
+            )]
             impl BooleanScalar for $target {
                 fn from_boolean(value: bool) -> Self {
                     if value { 1 as $target } else { 0 as $target }
@@ -79,6 +85,9 @@ pub(crate) fn read_boolean(context: &ReadConverterContext<'_>) -> Result<bool, E
     }
 }
 
+#[allow(clippy::float_cmp)]
+// 语义敏感：对应 Java `BooleanNumberConverter` 对 Double 单元格的严格 `== 1.0`
+// 判断，必须保留精确比较，不能用误差容忍替代。
 pub(crate) fn read_number_boolean(context: &ReadConverterContext<'_>) -> Result<bool, ExcelError> {
     match context.cell() {
         Some(CellValue::Int(value)) => Ok(*value == 1),

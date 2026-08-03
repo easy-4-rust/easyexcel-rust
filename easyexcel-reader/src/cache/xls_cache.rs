@@ -52,8 +52,7 @@ impl ReadCache for XlsCache {
     fn get(&self, key: Option<usize>) -> Result<Option<String>> {
         Ok(match key {
             Some(index) if index < self.values.len() => Some(self.values[index].clone()),
-            Some(_) => None,
-            None => None,
+            _ => None,
         })
     }
 

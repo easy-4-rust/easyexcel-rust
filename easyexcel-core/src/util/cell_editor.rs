@@ -26,7 +26,7 @@ pub trait CellEditor: Send + Sync {
 ///
 /// Mirrors hutool `TrimEditor`.
 /// Note: easyexcel-rust has `auto_trim(true)` which does this globally
-/// without needing a CellEditor. This editor is for selective trimming.
+/// without needing a `CellEditor`. This editor is for selective trimming.
 #[derive(Debug, Default, Clone)]
 pub struct TrimEditor;
 
@@ -46,6 +46,8 @@ impl CellEditor for TrimEditor {
 pub struct NumericToIntEditor;
 
 impl CellEditor for NumericToIntEditor {
+    // 对应 Java（hutool）：NumericToIntEditor 对浮点做截断取整，截断正是本转换器的语义
+    #[allow(clippy::cast_possible_truncation)]
     fn edit(&self, original: &CellValue, _sheet_name: &str, _row: u32, _col: u32) -> CellValue {
         match original {
             CellValue::Int(n) => CellValue::Int(*n),
@@ -58,7 +60,7 @@ impl CellEditor for NumericToIntEditor {
                     CellValue::Int(0)
                 }
             }
-            CellValue::Bool(b) => CellValue::Int(if *b { 1 } else { 0 }),
+            CellValue::Bool(b) => CellValue::Int(i64::from(*b)),
             CellValue::String(s) => {
                 if let Ok(n) = s.trim().parse::<i64>() {
                     CellValue::Int(n)
@@ -93,7 +95,7 @@ mod tests {
     fn numeric_editor_converts_float_to_int() {
         let editor = NumericToIntEditor;
         assert_eq!(
-            editor.edit(&CellValue::Float(3.14), "", 0, 0),
+            editor.edit(&CellValue::Float(3.7), "", 0, 0),
             CellValue::Int(3)
         );
         assert_eq!(

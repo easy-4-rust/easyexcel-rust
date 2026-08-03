@@ -267,9 +267,9 @@ impl JavaNumber for f64 {
 
 fn java_f32_string(value: f32) -> String {
     java_float_string(
-        value as f64,
+        f64::from(value),
         value.to_string(),
-        format!("{value:e}"),
+        &format!("{value:e}"),
         value.is_sign_negative(),
     )
 }
@@ -278,12 +278,12 @@ fn java_f64_string(value: f64) -> String {
     java_float_string(
         value,
         value.to_string(),
-        format!("{value:e}"),
+        &format!("{value:e}"),
         value.is_sign_negative(),
     )
 }
 
-fn java_float_string(value: f64, plain: String, scientific: String, negative: bool) -> String {
+fn java_float_string(value: f64, plain: String, scientific: &str, negative: bool) -> String {
     if value.is_nan() {
         return "NaN".to_owned();
     }
@@ -351,6 +351,9 @@ mod tests {
         }
     }
 
+    // 测试辅助：具体转换器均为零尺寸单元结构体，按值传递是调用点惯例；
+    // 泛型参数 C 仅按引用使用，但改为 &C 会改变泛型约束，故保留按值传递
+    #[allow(clippy::needless_pass_by_value)]
     fn read<T, C>(converter: C, value: &str) -> T
     where
         C: Converter<T>,
@@ -363,6 +366,8 @@ mod tests {
     }
 
     #[test]
+    // 1.25 可被 f32/f64 二进制精确表示，精确比较正是本测试的意图
+    #[allow(clippy::float_cmp)]
     fn number_converters_match_java_big_decimal_accessors() {
         assert_eq!(
             read::<BigDecimal, _>(BigDecimalNumberConverter, "123.450"),
@@ -429,6 +434,8 @@ mod tests {
         }
     }
 
+    // 测试辅助：同 `read`，保留按值传递
+    #[allow(clippy::needless_pass_by_value)]
     fn read_string<T, C>(converter: C, value: &str, column: &ExcelColumn) -> Result<T, ExcelError>
     where
         C: Converter<T>,
@@ -438,6 +445,8 @@ mod tests {
         converter.convert_to_rust_data(&ReadConverterContext::new(Some(&cell), column, &context))
     }
 
+    // 测试辅助：同 `read`，保留按值传递
+    #[allow(clippy::needless_pass_by_value)]
     fn write_string<T, C>(converter: C, value: &T, column: &ExcelColumn) -> String
     where
         C: Converter<T>,
@@ -451,6 +460,8 @@ mod tests {
     }
 
     #[test]
+    // 1.25 可被 f32/f64 二进制精确表示，精确比较正是本测试的意图
+    #[allow(clippy::float_cmp)]
     fn string_number_converters_cover_all_java_numeric_types_and_wrapping() {
         assert_eq!(
             read_string::<BigDecimal, _>(BigDecimalStringConverter, "123.450", &COLUMN).unwrap(),
@@ -491,6 +502,11 @@ mod tests {
     #[test]
     fn string_number_converters_match_decimal_format_and_rounding_modes() {
         const PERCENT: ExcelColumn = ExcelColumn::new("value", "Value", Some(0), 0, Some("#.##%"));
+        const HALF_DOWN: ExcelColumn = ExcelColumn::new("value", "Value", Some(0), 0, Some("0.00"))
+            .with_number_rounding_mode(NumberRoundingMode::HalfDown);
+        const UNNECESSARY: ExcelColumn =
+            ExcelColumn::new("value", "Value", Some(0), 0, Some("0.00"))
+                .with_number_rounding_mode(NumberRoundingMode::Unnecessary);
         assert_eq!(
             read_string::<BigDecimal, _>(BigDecimalStringConverter, "12.34%", &PERCENT).unwrap(),
             "0.1234".parse::<BigDecimal>().unwrap()
@@ -500,8 +516,6 @@ mod tests {
             "123.5%"
         );
 
-        const HALF_DOWN: ExcelColumn = ExcelColumn::new("value", "Value", Some(0), 0, Some("0.00"))
-            .with_number_rounding_mode(NumberRoundingMode::HalfDown);
         assert_eq!(
             write_string(
                 BigDecimalStringConverter,
@@ -511,9 +525,6 @@ mod tests {
             "1.22"
         );
 
-        const UNNECESSARY: ExcelColumn =
-            ExcelColumn::new("value", "Value", Some(0), 0, Some("0.00"))
-                .with_number_rounding_mode(NumberRoundingMode::Unnecessary);
         let context = context();
         assert!(
             BigDecimalStringConverter
@@ -528,6 +539,7 @@ mod tests {
 
     #[test]
     fn floating_string_converters_match_java_to_string_and_special_values() {
+        const PERCENT: ExcelColumn = ExcelColumn::new("value", "Value", Some(0), 0, Some("#.##%"));
         for (value, expected) in [
             (1.0, "1.0"),
             (0.0001, "1.0E-4"),
@@ -542,7 +554,6 @@ mod tests {
                 expected
             );
         }
-        const PERCENT: ExcelColumn = ExcelColumn::new("value", "Value", Some(0), 0, Some("#.##%"));
         assert_eq!(
             write_string(DoubleStringConverter, &f64::INFINITY, &PERCENT),
             "∞%"
@@ -690,6 +701,8 @@ mod tests_extra {
     }
 
     #[test]
+    // 1.25 可被 f32/f64 二进制精确表示，精确比较正是本测试的意图
+    #[allow(clippy::float_cmp)]
     fn float_from_decimal_success_paths_match_java() {
         // 对应 Java：`BigDecimal.floatValue` / `doubleValue` 的转换路径
         let decimal: BigDecimal = "1.25".parse().unwrap();

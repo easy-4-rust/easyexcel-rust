@@ -77,9 +77,9 @@ mod tests {
         assert_workbook_options(xlsx.xlsx_read_workbook_holder().inner());
         assert!(xlsx.xlsx_read_sheet_holder().is_none());
         xlsx.current_sheet(&sheet)?;
-        let xlsx_sheet = xlsx.xlsx_read_sheet_holder().expect("XLSX sheet holder");
-        assert_eq!(xlsx_sheet.inner().sheet_no, 2);
-        assert_eq!(xlsx_sheet.inner().sheet_name, "Data");
+        let xlsx_sheet_holder = xlsx.xlsx_read_sheet_holder().expect("XLSX sheet holder");
+        assert_eq!(xlsx_sheet_holder.inner().sheet_no, 2);
+        assert_eq!(xlsx_sheet_holder.inner().sheet_name, "Data");
         Ok(())
     }
 

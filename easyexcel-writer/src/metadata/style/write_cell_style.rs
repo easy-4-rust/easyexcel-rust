@@ -16,6 +16,7 @@ pub type WriteCellStyle = ExcelCellStyle;
 /// Java merges the source's non-null fields into the target, including
 /// nested `WriteFont.merge`. The Rust port performs the same union over
 /// [`ExcelCellStyle`]'s `Option` fields and [`ExcelCellStyle::font`].
+#[must_use]
 pub fn merge_write_cell_style(
     source: &ExcelCellStyle,
     mut target: ExcelCellStyle,

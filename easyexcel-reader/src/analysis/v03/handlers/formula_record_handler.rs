@@ -81,6 +81,10 @@ impl FormulaRecordHandler {
     }
 
     /// Java `FormulaRecordHandler.processRecord` with the record XF index.
+    // 对应 Java：`processRecord(row, column, formula, cachedResultType,
+    // numberValue, booleanValue, xfIndex)` 参数一一对应，为保持 Java 签名
+    // 语义不做参数聚合。
+    #[allow(clippy::too_many_arguments)]
     pub fn process_formula_with_format(
         &mut self,
         row: u32,
@@ -142,7 +146,7 @@ impl XlsRecordHandler for FormulaRecordHandler {
         if record_sid != FORMULA_SID || data.len() < 14 {
             return;
         }
-        let row = u16::from_le_bytes([data[0], data[1]]) as u32;
+        let row = u32::from(u16::from_le_bytes([data[0], data[1]]));
         let column = u16::from_le_bytes([data[2], data[3]]) as usize;
         let format_index = u16::from_le_bytes([data[4], data[5]]);
         let result = &data[6..14];
@@ -151,7 +155,7 @@ impl XlsRecordHandler for FormulaRecordHandler {
                 0x00 => (FormulaCachedType::String, None, None),
                 0x01 => (FormulaCachedType::Boolean, None, Some(result[2] != 0)),
                 0x02 => (FormulaCachedType::Error, None, None),
-                0x03 => (FormulaCachedType::Empty, None, None),
+                // 0x03（空值）与其余未定义缓存类型同按 Empty 处理（对应 Java 默认分支）
                 _ => (FormulaCachedType::Empty, None, None),
             }
         } else {

@@ -14,7 +14,7 @@ pub const GENERAL: u16 = 0;
 /// Returns the built-in format string for the given index and locale.
 /// (Java `getBuiltinFormat(Short, String, Locale)`)
 ///
-/// Lookup order matches Java: ALL_LANGUAGES first, then CN locale table,
+/// Lookup order matches Java: `ALL_LANGUAGES` first, then CN locale table,
 /// finally `default_format` / `"General"`.
 #[must_use]
 pub fn get_builtin_format(index: u16, default_format: &str) -> &'static str {
@@ -30,7 +30,7 @@ pub fn get_builtin_format(index: u16, default_format: &str) -> &'static str {
     }
 }
 
-/// Resolves a builtin format code the same way EasyExcel STRING display does.
+/// Resolves a builtin format code the same way `EasyExcel` STRING display does.
 #[must_use]
 pub fn builtin_format_code(index: u16) -> Option<&'static str> {
     BUILTIN_FORMATS_ALL_LANGUAGES
@@ -101,7 +101,7 @@ pub static BUILTIN_FORMATS_ALL_LANGUAGES: [Option<&str>; 50] = [
     Some("@"),                                                                   // 49
 ];
 
-/// Locale-CN built-in formats used when ALL_LANGUAGES has no entry.
+/// Locale-CN built-in formats used when `ALL_LANGUAGES` has no entry.
 /// (Java `BUILTIN_FORMATS_CN` — date/time slots 27–36 / 50–58)
 pub static BUILTIN_FORMATS_CN: [Option<&str>; 59] = [
     Some("General"),                                // 0

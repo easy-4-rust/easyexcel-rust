@@ -85,7 +85,7 @@ impl ReadListener<UploadData> for UploadDataListener {
     }
 }
 
-/// 构造与 Java WebTest 相同的 10 行样例数据。
+/// 构造与 Java `WebTest` 相同的 10 行样例数据。
 fn sample_download_rows() -> Vec<DownloadData> {
     let date = NaiveDateTime::parse_from_str("2020-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")
         .expect("valid demo date");
@@ -117,7 +117,8 @@ async fn download_failed_using_json() -> axum::response::Response {
 
 /// `POST /upload` — 读取 multipart 文件并事件解析。
 async fn upload(mut multipart: Multipart) -> Result<String, (StatusCode, String)> {
-    while let Some(field) = multipart
+    // 对应 Java `WebTest.upload(MultipartFile file)`：按单个上传字段处理并立即返回。
+    if let Some(field) = multipart
         .next_field()
         .await
         .map_err(|error| (StatusCode::BAD_REQUEST, error.to_string()))?

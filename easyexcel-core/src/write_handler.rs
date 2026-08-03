@@ -228,7 +228,7 @@ pub trait WriteHandler {
 
 // `CellValue` import retained for downstream conversions; suppress unused warning.
 #[allow(dead_code)]
-fn _import_marker(v: CellValue) {
+fn import_marker(v: &CellValue) {
     let _ = v;
 }
 
@@ -239,6 +239,6 @@ mod tests_extra {
     #[test]
     fn import_marker_holds_value() {
         // 对应 Java：CellValue 导入标记
-        _import_marker(CellValue::Int(1));
+        import_marker(&CellValue::Int(1));
     }
 }

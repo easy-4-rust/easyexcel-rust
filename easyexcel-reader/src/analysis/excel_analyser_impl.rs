@@ -335,7 +335,7 @@ fn detect_excel_type(path: &Path) -> Result<ExcelTypeEnum> {
         .and_then(|value| value.to_str())
         .map(str::to_ascii_lowercase);
     match extension.as_deref() {
-        Some("xlsx") | Some("xlsm") => Ok(ExcelTypeEnum::Xlsx),
+        Some("xlsx" | "xlsm") => Ok(ExcelTypeEnum::Xlsx),
         Some("xls") => Ok(ExcelTypeEnum::Xls),
         Some("csv") => Ok(ExcelTypeEnum::Csv),
         Some(other) => Err(ExcelError::Format(format!(
@@ -407,8 +407,10 @@ mod tests {
     #[test]
     fn analysis_with_listener_delegates_to_read_csv() -> Result<()> {
         let file = write_csv();
-        let mut options = ReadOptions::default();
-        options.head_row_number = 1;
+        let options = ReadOptions {
+            head_row_number: 1,
+            ..ReadOptions::default()
+        };
         let mut analyser = ExcelAnalyserImpl::from_path(file.path(), options)?;
         let mut listener = CollectingListener::default();
         analyser.analysis_with_listener::<DynamicRow, _>(&mut listener)?;
@@ -427,8 +429,10 @@ mod tests {
     #[test]
     fn trait_analysis_dispatches_to_the_real_typed_executor() -> Result<()> {
         let file = write_csv();
-        let mut options = ReadOptions::default();
-        options.head_row_number = 1;
+        let options = ReadOptions {
+            head_row_number: 1,
+            ..ReadOptions::default()
+        };
         let mut analyser = ExcelAnalyserImpl::from_path(file.path(), options)?;
         let mut listener = CollectingListener::default();
         ExcelAnalyser::analysis::<DynamicRow, _>(&mut analyser, &mut listener)?;
@@ -510,9 +514,8 @@ mod tests_extra {
         let directory = tempfile::tempdir().expect("tempdir");
         let txt = directory.path().join("data.txt");
         std::fs::write(&txt, "x").expect("write");
-        let error = match ExcelAnalyserImpl::from_path(&txt, ReadOptions::default()) {
-            Ok(_) => panic!("unsupported extension must fail"),
-            Err(error) => error,
+        let Err(error) = ExcelAnalyserImpl::from_path(&txt, ReadOptions::default()) else {
+            panic!("unsupported extension must fail");
         };
         assert!(error.to_string().contains("unsupported excel extension"));
     }
@@ -548,7 +551,7 @@ mod tests_extra2 {
         }
     }
 
-    /// 构造一个带 excel_type 但缺少 path 的 analyser，覆盖分析前的路径校验。
+    /// 构造一个带 `excel_type` 但缺少 path 的 analyser，覆盖分析前的路径校验。
     fn analyser_with_type_without_path() -> ExcelAnalyserImpl {
         ExcelAnalyserImpl {
             path: None,
@@ -567,9 +570,8 @@ mod tests_extra2 {
         // 对应 Java：choiceExcelExecutor 中构造 XlsxSaxAnalyser 失败时向上抛出
         let directory = tempfile::tempdir().expect("tempdir");
         let missing = directory.path().join("missing.xlsx");
-        let error = match ExcelAnalyserImpl::from_path(&missing, ReadOptions::default()) {
-            Ok(_) => panic!("missing xlsx workbook must fail"),
-            Err(error) => error,
+        let Err(error) = ExcelAnalyserImpl::from_path(&missing, ReadOptions::default()) else {
+            panic!("missing xlsx workbook must fail");
         };
         assert!(error.to_string().contains("open") || error.to_string().contains("No such"));
     }

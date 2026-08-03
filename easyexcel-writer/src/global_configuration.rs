@@ -26,7 +26,7 @@ pub fn apply_global_configuration_to_write_options(
 ) {
     options.auto_trim = global.auto_trim;
     options.use_1904_windowing = global.use1904windowing;
-    options.locale = global.locale.clone();
+    options.locale.clone_from(&global.locale);
     options.use_scientific_format = global.use_scientific_format;
     options.filed_cache_location = global.filed_cache_location;
 }
@@ -51,12 +51,14 @@ mod tests {
 
     #[test]
     fn global_configuration_round_trips_write_options() {
-        let mut options = WriteOptions::default();
-        options.auto_trim = false;
-        options.use_1904_windowing = true;
-        options.use_scientific_format = true;
-        options.locale = "zh_CN".to_owned();
-        options.filed_cache_location = CacheLocation::Memory;
+        let options = WriteOptions {
+            auto_trim: false,
+            use_1904_windowing: true,
+            use_scientific_format: true,
+            locale: "zh_CN".to_owned(),
+            filed_cache_location: CacheLocation::Memory,
+            ..WriteOptions::default()
+        };
 
         let global = global_configuration_from_write_options(&options);
         let mut restored = WriteOptions::default();

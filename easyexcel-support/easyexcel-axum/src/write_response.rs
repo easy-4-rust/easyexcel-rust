@@ -12,7 +12,6 @@ use axum::http::{Response, StatusCode};
 use axum::response::IntoResponse;
 use easyexcel::{EasyExcel, ExcelRow};
 use easyexcel_core::{ExcelDownloadErrorBody, Result};
-use serde_json;
 
 use crate::headers::excel_xlsx_attachment_headers;
 
@@ -77,7 +76,11 @@ where
 /// 下载失败时返回 JSON 体（Axum [`IntoResponse`]）。
 ///
 /// 对应 Java `WebTest.downloadFailedUsingJson` 的 `catch` 分支与 Fastjson 输出。
+///
+/// `ExcelDownloadErrorBody` 按值传入以对齐 Java 的 `errorResponse(body)` 语义，
+/// 函数只读该值，按值传递属于 API 契约的一部分，故豁免 `needless_pass_by_value`。
 #[must_use]
+#[allow(clippy::needless_pass_by_value)]
 pub fn excel_download_error_response(body: ExcelDownloadErrorBody) -> axum::response::Response {
     (
         StatusCode::INTERNAL_SERVER_ERROR,
@@ -132,7 +135,7 @@ mod tests_extra2 {
     }
 
     /// 对应 Java：尝试触发 `excel_download_error_response` 的 JSON 序列化失败回退分支
-    /// （write_response.rs 89-90 行）。
+    /// （`write_response.rs` 89-90 行）。
     ///
     /// `ExcelDownloadErrorBody` 仅由两个 `String` 字段派生 `Serialize`，序列化在数学上
     /// 不可能失败，因此 `unwrap_or_else` 的回退文案分支不可达。此处用边界字符串
@@ -153,7 +156,7 @@ mod tests_extra2 {
     }
 
     /// 对应 Java：尝试让 `excel_download_response_from_bytes` 失败以触发
-    /// `excel_download_or_json_response` 成功分支的降级闭包（write_response.rs 111-112 行）。
+    /// `excel_download_or_json_response` 成功分支的降级闭包（`write_response.rs` 111-112 行）。
     ///
     /// 文件名经 `urlencoding` 百分号编码后必为合法 ASCII `HeaderValue`，函数恒返回 Ok，
     /// 降级闭包在数学上不可达。此处以边界文件名（中文 / 空格 / emoji / 制表符 / 百分号）

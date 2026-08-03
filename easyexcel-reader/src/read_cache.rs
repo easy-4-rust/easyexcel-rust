@@ -1,7 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.cache.ReadCache` / `ReadCacheSelector`
 //!
 //! 共享字符串缓存：`ReadCacheMode` 选择纯内存或并发磁盘缓存，
-//! 等价于 Java EasyExcel 的 `DefaultReadCache`（内存上限内缓存、超出后落盘）。
+//! 等价于 Java `EasyExcel` 的 `DefaultReadCache`（内存上限内缓存、超出后落盘）。
 
 use std::cell::RefCell;
 use std::fs::File;
@@ -244,6 +244,9 @@ impl SharedStringCacheWriter for ConcurrentDiskCache {
         Ok(())
     }
 
+    // 对应 Java：`_temporary_file` 字段仅作 RAII 生命周期持有（自身从不读取），
+    // 下划线前缀用于抑制 dead_code；`finish` 时转移所有权属于正常使用。
+    #[allow(clippy::used_underscore_binding)]
     fn finish(mut self: Box<Self>) -> Result<Box<dyn SharedStringCacheReader>> {
         let path = self.path.clone();
         let entries = self.entries.clone();
@@ -499,7 +502,7 @@ mod tests_extra {
     #[test]
     fn put_and_finish_shortcut_wraps_finish() -> Result<()> {
         // 对应 Java：MapCache put 后一次调用完成写入阶段
-        let cache: Box<MemorySharedStringCache> = Box::new(MemorySharedStringCache::default());
+        let cache: Box<MemorySharedStringCache> = Box::default();
         let mut cache = cache;
         cache.put("alpha".to_owned())?;
         let reader = cache.put_and_finish()?;
@@ -535,11 +538,9 @@ mod tests_extra {
     }
 
     #[test]
-    fn memory_cache_get_out_of_bounds_errors_during_write_phase() -> Result<()> {
+    fn memory_cache_get_out_of_bounds_errors_during_write_phase() {
         // 写入阶段的 MemorySharedStringCache 越界同样报错
         let cache = MemorySharedStringCache::default();
-        let cache = cache;
         assert!(cache.get(0).is_err());
-        Ok(())
     }
 }

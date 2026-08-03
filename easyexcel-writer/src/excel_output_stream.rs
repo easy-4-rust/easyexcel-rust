@@ -1,7 +1,7 @@
 //! Excel 输出流类型。
 //!
 //! 对应 Java：`java.io.OutputStream` 的 Excel 包装。
-//! 原文件：easyexcel-core 内部 OutputStream 包装。
+//! 原文件：easyexcel-core 内部 `OutputStream` 包装。
 
 use std::io::Write;
 use std::sync::{Arc, Mutex};

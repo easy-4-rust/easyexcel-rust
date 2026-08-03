@@ -206,6 +206,11 @@ impl ExcelWriterBuilder {
     }
 
     /// Builds a stateful writer. (Java `build()`)
+    ///
+    /// # Errors
+    ///
+    /// Returns a format error when no output file was configured via
+    /// `file(...)` before `build()`.
     pub fn build(self) -> Result<ExcelWriter> {
         let path = self.write_workbook.output_file.ok_or_else(|| {
             ExcelError::Format("ExcelWriterBuilder.file must be set before build()".to_owned())
@@ -218,6 +223,10 @@ impl ExcelWriterBuilder {
     }
 
     /// Builds a writer-bound default sheet.
+    ///
+    /// # Errors
+    ///
+    /// Propagates the error from [`Self::build`].
     pub fn sheet(self) -> Result<ExcelWriterSheetBuilder> {
         let inherited_options = self.write_workbook.options.clone();
         Ok(ExcelWriterSheetBuilder::with_excel_writer_and_options(
@@ -227,16 +236,28 @@ impl ExcelWriterBuilder {
     }
 
     /// Builds a writer-bound sheet selected by number.
+    ///
+    /// # Errors
+    ///
+    /// Propagates the error from [`Self::build`].
     pub fn sheet_no(self, sheet_no: i32) -> Result<ExcelWriterSheetBuilder> {
         Ok(self.sheet()?.sheet_no(sheet_no))
     }
 
     /// Builds a writer-bound sheet selected by name.
+    ///
+    /// # Errors
+    ///
+    /// Propagates the error from [`Self::build`].
     pub fn sheet_name(self, sheet_name: impl Into<String>) -> Result<ExcelWriterSheetBuilder> {
         Ok(self.sheet()?.sheet_name(sheet_name))
     }
 
     /// Builds a writer-bound sheet selected by number and name.
+    ///
+    /// # Errors
+    ///
+    /// Propagates the error from [`Self::build`].
     pub fn sheet_with(
         self,
         sheet_no: i32,
@@ -928,7 +949,7 @@ mod tests {
 
         let mut workbook: Xlsx<_> = open_workbook(&output)
             .map_err(|error: calamine::XlsxError| ExcelError::Format(error.to_string()))?;
-        let names = workbook.sheet_names().to_vec();
+        let names = workbook.sheet_names();
         assert!(!names.is_empty(), "expected at least one worksheet");
         let range = workbook
             .worksheet_range(&names[0])

@@ -70,7 +70,11 @@ where
 /// 下载失败时返回 JSON 体（Salvo [`Response`]）。
 ///
 /// 对应 Java `WebTest.downloadFailedUsingJson` 的 `catch` 分支与 Fastjson 输出。
+///
+/// `ExcelDownloadErrorBody` 按值传入以对齐 Java 的 `errorResponse(body)` 语义，
+/// 函数只读该值，按值传递属于 API 契约的一部分，故豁免 `needless_pass_by_value`。
 #[must_use]
+#[allow(clippy::needless_pass_by_value)]
 pub fn excel_download_error_response(body: ExcelDownloadErrorBody) -> Response {
     let mut response = Response::new();
     response.status_code = Some(StatusCode::INTERNAL_SERVER_ERROR);
