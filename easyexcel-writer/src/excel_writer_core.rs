@@ -1599,30 +1599,34 @@ impl HandlerHolderScope {
         })
     }
 
-    fn live_context(&self, sheet_name: &str) -> WriteHolderContext {
-        let mut context = WriteHolderContext::new()
-            .with_workbook(self.workbook.clone())
-            .with_sheet(WriteSheetHolderView::new(sheet_name).with_sheet_no(self.sheet_no))
-            .with_current_holder_state(self.current_holder_state.clone());
-        if let Some(table_no) = self.table_no {
-            context = context.with_table(WriteTableHolderView::new(table_no, sheet_name));
-        }
-        context
-    }
-
     fn row(&self, context: WriteRowContext) -> WriteRowContext {
-        let live_context = self.live_context(&context.sheet_name);
-        context.with_write_context(&live_context)
+        // 跳过临时 live_context 构造与解构——直接注入字段，省去中间全套克隆
+        context.with_resolved_holder_context(
+            self.workbook.clone(),
+            self.sheet_no,
+            self.table_no,
+            self.current_holder_state.clone(),
+        )
     }
 
+    /// 每单元格注入 holder 状态。跳过临时 `live_context` 值构造与解构，
+    /// 直接调用 `with_resolved_holder_context` 省去中间全套克隆。
     fn cell(&self, context: WriteCellContext) -> WriteCellContext {
-        let live_context = self.live_context(&context.sheet_name);
-        context.with_write_context(&live_context)
+        context.with_resolved_holder_context(
+            self.workbook.clone(),
+            self.sheet_no,
+            self.table_no,
+            self.current_holder_state.clone(),
+        )
     }
 
     pub(crate) fn sheet(&self, context: WriteSheetContext) -> WriteSheetContext {
-        let live_context = self.live_context(context.sheet_name());
-        context.with_write_context(&live_context)
+        context.with_resolved_holder_context(
+            self.workbook.clone(),
+            self.sheet_no,
+            self.table_no,
+            self.current_holder_state.clone(),
+        )
     }
 }
 
