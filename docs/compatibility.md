@@ -155,13 +155,16 @@ in the categories above.
   encryption round-trip tests, and LibreOffice/Excel open them on machines
   where a password can be entered interactively.
 
-**Last run: 2026-08-03 — SKIPPED** (`./scripts/verify-libreoffice-open.sh`,
-exit 0): LibreOffice is not installed on the verification machine
-(`/Applications/LibreOffice.app` absent, `soffice`/`libreoffice` not on
-PATH). Per the script contract the check is skipped and documented, not
-failed; the Excel half (OOXML round-trip + golden tests) ran green on the
-same date. Re-run on a machine with LibreOffice (`brew install --cask
-libreoffice`) to complete the gate.
+**Last run: 2026-08-03 — PASS** (`./scripts/verify-libreoffice-open.sh`,
+exit 0, LibreOffice via `brew install --cask libreoffice`): all 7 top-level
+fixtures (01-simple.xlsx, 02-template-fill.xlsx, 03-styled.xlsx,
+04-merged.xlsx, 06-image.xlsx, 07-legacy.xls, 08-data.csv) opened with
+`soffice --headless --convert-to csv` **without any repair warning**;
+`protected/05-encrypted.xlsx` skipped by design (password). Note: the
+`generate_compat_fixtures` example resolves its template/image fixtures from
+`easyexcel-test/tests/fixtures` (they moved with the test-suite migration in
+August 2026). The Excel half (OOXML round-trip + golden tests) ran green on
+the same date.
 
 ## XLSX streaming boundary
 

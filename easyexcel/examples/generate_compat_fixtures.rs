@@ -77,8 +77,14 @@ fn main() -> easyexcel::Result<()> {
         .do_write(demo_rows(50))?;
     println!("{}", simple.display());
 
-    // 2. Template fill (Java `simple.xlsx` placeholder template).
-    let template = manifest_dir().join("tests/fixtures/demo/fill/simple.xlsx");
+    // 2. Template fill (Java `simple.xlsx` placeholder template). The
+    //    fixtures live in the easyexcel-test crate since the test-suite
+    //    migration; CARGO_MANIFEST_DIR here is the easyexcel crate.
+    let fixtures_root = manifest_dir()
+        .parent()
+        .expect("easyexcel crate has a workspace parent")
+        .join("easyexcel-test/tests/fixtures");
+    let template = fixtures_root.join("demo/fill/simple.xlsx");
     if !template.exists() {
         return Err(missing_fixture(&template.display().to_string()));
     }
@@ -119,7 +125,7 @@ fn main() -> easyexcel::Result<()> {
     println!("{}", encrypted.display());
 
     // 6. Embedded image.
-    let img = manifest_dir().join("tests/fixtures/converter/img.jpg");
+    let img = fixtures_root.join("converter/img.jpg");
     if !img.exists() {
         return Err(missing_fixture(&img.display().to_string()));
     }
