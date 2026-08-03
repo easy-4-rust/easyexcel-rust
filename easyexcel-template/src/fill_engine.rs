@@ -638,7 +638,11 @@ pub(crate) fn shift_formula_elements(xml: &str, threshold_row: usize, delta: usi
     output
 }
 
-pub(crate) fn shift_formula_references(formula: &str, threshold_row: usize, delta: usize) -> String {
+pub(crate) fn shift_formula_references(
+    formula: &str,
+    threshold_row: usize,
+    delta: usize,
+) -> String {
     let bytes = formula.as_bytes();
     let mut output = String::new();
     let mut offset = 0;
@@ -979,7 +983,10 @@ fn replace_collection_values(value: &str, data: &TemplateData, prefix: Option<&s
 }
 
 #[cfg(test)]
-pub(crate) fn replace_scalar_cells(entries: &mut [TemplateEntry], data: &TemplateData) -> Result<()> {
+pub(crate) fn replace_scalar_cells(
+    entries: &mut [TemplateEntry],
+    data: &TemplateData,
+) -> Result<()> {
     replace_scalar_cells_matching(entries, None, data)
 }
 
@@ -1215,7 +1222,11 @@ pub(crate) fn cell_references(xml: &str) -> Vec<(usize, usize, &str)> {
     references
 }
 
-pub(crate) fn shift_cell_reference(reference: &str, row_delta: usize, column_delta: usize) -> String {
+pub(crate) fn shift_cell_reference(
+    reference: &str,
+    row_delta: usize,
+    column_delta: usize,
+) -> String {
     let split = reference
         .bytes()
         .position(|byte| byte.is_ascii_digit())

@@ -279,14 +279,15 @@ impl ExcelBuilderImpl {
 
     fn finish_resources(&mut self, on_exception: bool) -> Result<()> {
         if self.fill_session_active
-            && let Some(delegate) = self.fill_executor.as_mut() {
-                let mut executor =
-                    ExcelWriteFillExecutor::with_delegate(&self.context, delegate.as_mut());
-                executor.finish(on_exception)?;
-                self.writer.mark_finished();
-                self.finished_via_fill = true;
-                return Ok(());
-            }
+            && let Some(delegate) = self.fill_executor.as_mut()
+        {
+            let mut executor =
+                ExcelWriteFillExecutor::with_delegate(&self.context, delegate.as_mut());
+            executor.finish(on_exception)?;
+            self.writer.mark_finished();
+            self.finished_via_fill = true;
+            return Ok(());
+        }
         if on_exception {
             self.writer.finish_on_exception()
         } else {

@@ -653,15 +653,15 @@ mod tests_extra {
     #[test]
     fn build_without_file_fails_like_java() {
         // 对应 Java：build() 在未设置 file 时抛出异常
-        let Err(error) = ExcelReaderBuilder::new()
-            .build::<DynamicRow, _>(ExtraCollectListener::default())
+        let Err(error) =
+            ExcelReaderBuilder::new().build::<DynamicRow, _>(ExtraCollectListener::default())
         else {
             panic!("missing file must fail");
         };
         assert!(error.to_string().contains("file must be set"));
 
-        let Err(error) = ExcelReaderBuilder::new()
-            .do_read_all::<DynamicRow, _>(ExtraCollectListener::default())
+        let Err(error) =
+            ExcelReaderBuilder::new().do_read_all::<DynamicRow, _>(ExtraCollectListener::default())
         else {
             panic!("missing file must fail");
         };

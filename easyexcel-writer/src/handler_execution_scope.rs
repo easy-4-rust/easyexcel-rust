@@ -9,12 +9,10 @@ use easyexcel_core::{
 };
 
 use crate::excel_writer_core::{selected_columns, to_column};
-use crate::metadata::style::write_font::merge_excel_font_style as merge_handler_font_style;
 use crate::merge::loop_merge_strategy::LoopMergeStrategy as MirroredLoopMergeStrategy;
 use crate::merge::once_absolute_merge_strategy::OnceAbsoluteMergeStrategy;
-use crate::shared_write_handler::{
-    SharedWriteHandler, boxed_handlers, normalized_shared_handlers,
-};
+use crate::metadata::style::write_font::merge_excel_font_style as merge_handler_font_style;
+use crate::shared_write_handler::{SharedWriteHandler, boxed_handlers, normalized_shared_handlers};
 use crate::style::column::simple_column_width_style_strategy::SimpleColumnWidthStyleStrategy;
 use crate::style::row::simple_row_height_style_strategy::SimpleRowHeightStyleStrategy;
 use crate::write_options::WriteOptions;

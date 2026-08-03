@@ -87,7 +87,8 @@ fn load_golden(name: &str) -> GoldenExpectation {
 /// Resolve the file path referenced by a golden (`fixtures/...` or `artifacts/...`).
 fn resolve_golden_path(golden: &GoldenExpectation) -> PathBuf {
     let rel = golden.fixture.as_str();
-    assert!(!rel.is_empty(), 
+    assert!(
+        !rel.is_empty(),
         "golden has empty fixture field (source={}); re-run scripts/export-java-golden.sh",
         golden.source
     );
@@ -125,13 +126,15 @@ fn read_display_rows(path: &Path, golden: &GoldenExpectation) -> Vec<DynamicRow>
         .head_row_number(golden.head_row_number)
         .read_default_return(ReadDefaultReturn::String);
     if let Some(password) = golden.password.as_deref()
-        && !password.is_empty() {
-            builder = builder.password(password);
-        }
+        && !password.is_empty()
+    {
+        builder = builder.password(password);
+    }
     if let Some(charset) = golden.charset.as_deref()
-        && !charset.is_empty() {
-            builder = builder.charset(charset);
-        }
+        && !charset.is_empty()
+    {
+        builder = builder.charset(charset);
+    }
     builder = match golden.sheet_name.as_deref() {
         Some(name) if !name.is_empty() => builder.sheet(name),
         _ => builder.sheet(golden.sheet_index),

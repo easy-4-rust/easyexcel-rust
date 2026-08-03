@@ -34,10 +34,7 @@ pub struct Biff8EncryptionInfoPlaceholder;
 /// Returns the full 16-byte MD5 output; callers should truncate
 /// to the first 5 bytes for 40-bit RC4 export encryption.
 fn derive_key(password: &str, salt: &[u8]) -> Vec<u8> {
-    let pw_bytes: Vec<u8> = password
-        .encode_utf16()
-        .flat_map(u16::to_le_bytes)
-        .collect();
+    let pw_bytes: Vec<u8> = password.encode_utf16().flat_map(u16::to_le_bytes).collect();
     let pw_hash = Md5::digest(&pw_bytes);
     let mut hasher = Md5::new();
     hasher.update(salt);

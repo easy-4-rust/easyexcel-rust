@@ -277,9 +277,11 @@ impl Biff8TemplatePackage {
                     _ => continue,
                 };
                 if let Some(ref text) = text
-                    && text.contains('{') && text.contains('}') {
-                        placeholders.push((sheet.name.clone(), row, col, text.clone()));
-                    }
+                    && text.contains('{')
+                    && text.contains('}')
+                {
+                    placeholders.push((sheet.name.clone(), row, col, text.clone()));
+                }
             }
         }
         placeholders
@@ -435,7 +437,12 @@ fn cell_value_to_template_cell(value: &CellValue) -> Result<Biff8Cell> {
         CellValue::Bool(flag) => Biff8Value::Bool(*flag),
         // 语义敏感：BIFF8 数值单元格按 double 存储（与 Java POI 一致），
         // i64->f64 的精度损耗是 1:1 对应行为，不能改为检查式转换。
-        CellValue::Int(number) => Biff8Value::Number(#[allow(clippy::cast_precision_loss)] { *number as f64 }),
+        CellValue::Int(number) => Biff8Value::Number(
+            #[allow(clippy::cast_precision_loss)]
+            {
+                *number as f64
+            },
+        ),
         CellValue::Float(number) => Biff8Value::Number(*number),
         CellValue::Decimal(number) => {
             let numeric = crate::finite_decimal_f64(number, "BIFF8")?;
@@ -904,8 +911,8 @@ pub fn looks_like_xls(bytes: &[u8]) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use calamine::{Data, DataType, Reader, Xls, open_workbook_from_rs};
     use crate::biff8::{Biff8Book, Biff8Cell, Biff8Value};
+    use calamine::{Data, DataType, Reader, Xls, open_workbook_from_rs};
 
     #[test]
     // 语义敏感：断言 calamine 往返解码后的数值必须精确等于 99.0（测试数据
@@ -933,7 +940,12 @@ mod tests {
 
         // Overwrite one cell and append another — other cells must survive.
         package
-            .set_cell("Sheet1", 1, 0, &Biff8Cell::general(Biff8Value::Number(99.0)))
+            .set_cell(
+                "Sheet1",
+                1,
+                0,
+                &Biff8Cell::general(Biff8Value::Number(99.0)),
+            )
             .unwrap();
         package
             .set_cell(
@@ -1033,8 +1045,8 @@ mod tests {
 
     #[test]
     fn from_bytes_rejects_non_ole_header() {
-        let error = Biff8TemplatePackage::from_bytes(&[0, 1, 2, 3])
-            .expect_err("non-OLE bytes must fail");
+        let error =
+            Biff8TemplatePackage::from_bytes(&[0, 1, 2, 3]).expect_err("non-OLE bytes must fail");
         assert!(matches!(error, ExcelError::Format(_)));
     }
 
@@ -1081,8 +1093,7 @@ mod tests {
         assert!(!sink.is_empty());
 
         let missing = directory.path().join("missing.xls");
-        let error = Biff8TemplatePackage::from_path(&missing)
-            .expect_err("missing file must fail");
+        let error = Biff8TemplatePackage::from_path(&missing).expect_err("missing file must fail");
         assert!(matches!(error, ExcelError::Io(_)));
     }
 
@@ -1411,8 +1422,8 @@ mod tests {
         assert_eq!(cell_coords(&short_cell), None);
 
         // decode_boundsheet_name: too short, compressed, and Unicode.
-        let too_short = decode_boundsheet_name(&[0, 0, 0, 0, 0, 0, 0])
-            .expect_err("short BOUNDSHEET must fail");
+        let too_short =
+            decode_boundsheet_name(&[0, 0, 0, 0, 0, 0, 0]).expect_err("short BOUNDSHEET must fail");
         assert!(matches!(too_short, ExcelError::Format(_)));
         let mut compressed = vec![0u8; 8];
         compressed[6] = 2;
@@ -1494,8 +1505,8 @@ mod tests {
     #[test]
     fn split_records_and_discover_sheets_error_paths() {
         // Truncated BIFF record.
-        let truncated = split_records(&[0x00, 0x02, 0x00, 0x05, 0x01])
-            .expect_err("truncated record must fail");
+        let truncated =
+            split_records(&[0x00, 0x02, 0x00, 0x05, 0x01]).expect_err("truncated record must fail");
         assert!(matches!(truncated, ExcelError::Format(_)));
         // Empty record list.
         let empty = split_records(&[]).expect_err("empty stream must fail");
@@ -1532,8 +1543,8 @@ mod tests {
         .expect_err("nested BOF must fail");
         assert!(matches!(nested, ExcelError::Format(_)));
         // Worksheet BOF missing its EOF.
-        let missing_eof = discover_sheets(&[boundsheet(b"A"), worksheet_bof])
-            .expect_err("missing EOF must fail");
+        let missing_eof =
+            discover_sheets(&[boundsheet(b"A"), worksheet_bof]).expect_err("missing EOF must fail");
         assert!(matches!(missing_eof, ExcelError::Format(_)));
     }
 
@@ -1586,8 +1597,7 @@ mod tests {
         // OLE magic but a broken container.
         let mut broken = vec![0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
         broken.extend_from_slice(&[0u8; 32]);
-        let corrupt = read_workbook_stream(&broken)
-            .expect_err("corrupt container must fail");
+        let corrupt = read_workbook_stream(&broken).expect_err("corrupt container must fail");
         assert!(matches!(corrupt, ExcelError::Format(_)));
     }
 

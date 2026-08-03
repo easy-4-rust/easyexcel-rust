@@ -733,11 +733,13 @@ fn has_fill_placeholder(s: &str) -> bool {
     let bytes = s.as_bytes();
     let mut i = 0;
     while i + 2 < bytes.len() {
-        if bytes[i] == b'$' && bytes[i + 1] == b'{'
+        if bytes[i] == b'$'
+            && bytes[i + 1] == b'{'
             && let Some(end) = s[i + 2..].find('}')
-                && end > 0 {
-                    return true;
-                }
+            && end > 0
+        {
+            return true;
+        }
         i += 1;
     }
     false

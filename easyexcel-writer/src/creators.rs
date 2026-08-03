@@ -2,7 +2,9 @@
 //!
 //! 对应 Java：`com.alibaba.excel.util.WorkBookUtil` 的 XLSX / BIFF8 Creator 实现（内部类型）。
 
-use easyexcel_core::util::work_book_util::{CellCreator, RowCreator, SheetCreator, WorkBookCreator};
+use easyexcel_core::util::work_book_util::{
+    CellCreator, RowCreator, SheetCreator, WorkBookCreator,
+};
 use easyexcel_core::{ExcelError, Result};
 use rust_xlsxwriter::{Workbook, Worksheet};
 
@@ -94,7 +96,6 @@ impl CellCreator for XlsxRow<'_> {
         })
     }
 }
-
 
 pub(crate) struct Biff8RowCreator<'a> {
     pub(crate) sheet: &'a mut Biff8Sheet,

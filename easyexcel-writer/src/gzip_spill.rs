@@ -114,8 +114,7 @@ impl GzipSheetDataWriter {
     /// Returns an I/O error when flushing or stating the file fails.
     pub fn snapshot(&mut self) -> Result<GzipSpillSnapshot> {
         self.flush()?;
-        let compressed_len = std::fs::metadata(&self.path)
-            .map_or(0, |meta| meta.len());
+        let compressed_len = std::fs::metadata(&self.path).map_or(0, |meta| meta.len());
         let is_gzip = file_has_gzip_magic(&self.path);
         Ok(GzipSpillSnapshot {
             sheet_name: self.sheet_name.clone(),
@@ -539,18 +538,17 @@ mod tests {
         assert!(matches!(datetime_err, ExcelError::Format(_)));
         // Unknown tag.
         cursor = 0;
-        let unknown = decode_cell(&[99], &mut cursor)
-            .expect_err("unknown tag must fail");
+        let unknown = decode_cell(&[99], &mut cursor).expect_err("unknown tag must fail");
         assert!(matches!(unknown, ExcelError::Format(_)));
         // String payload shorter than its declared length.
         cursor = 0;
-        let truncated = decode_cell(&[1, 10, 0, 0, 0], &mut cursor)
-            .expect_err("truncated payload must fail");
+        let truncated =
+            decode_cell(&[1, 10, 0, 0, 0], &mut cursor).expect_err("truncated payload must fail");
         assert!(matches!(truncated, ExcelError::Format(_)));
         // Non-UTF-8 string payload.
         cursor = 0;
-        let invalid_utf8 = decode_cell(&[8, 1, 0, 0, 0, 0xFF], &mut cursor)
-            .expect_err("invalid UTF-8 must fail");
+        let invalid_utf8 =
+            decode_cell(&[8, 1, 0, 0, 0, 0xFF], &mut cursor).expect_err("invalid UTF-8 must fail");
         assert!(matches!(invalid_utf8, ExcelError::Format(_)));
     }
 

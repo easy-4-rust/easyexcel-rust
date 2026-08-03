@@ -63,8 +63,9 @@ fn t02_read_simple_xlsx() {
     // Java: assertEquals("1，2-戊二醇", row2.get(2))
     let second_row = &rows[2];
     let val2 = match second_row.get(2).unwrap() {
-        DynamicValue::ActualData(easyexcel::CellValue::String(s))
-        | DynamicValue::String(s) => s.as_str(),
+        DynamicValue::ActualData(easyexcel::CellValue::String(s)) | DynamicValue::String(s) => {
+            s.as_str()
+        }
         other => panic!("expected String at col 2, got {other:?}"),
     };
     assert_eq!(
@@ -117,8 +118,9 @@ fn t04_read_xlsx_with_merged_cells() {
     // Java: assertEquals("QQSJK28F152A012242S0081", row0.get(5))
     let first_row = &rows[0];
     let val5 = match first_row.get(5).unwrap() {
-        DynamicValue::ActualData(easyexcel::CellValue::String(s))
-        | DynamicValue::String(s) => s.as_str(),
+        DynamicValue::ActualData(easyexcel::CellValue::String(s)) | DynamicValue::String(s) => {
+            s.as_str()
+        }
         other => panic!("expected String at col 5, got {other:?}"),
     };
     assert_eq!(
@@ -819,7 +821,6 @@ fn cross_validation_encrypted_xlsx() {
 
     let temp_dir = std::env::temp_dir();
     let output_path = temp_dir.join("cross_validation_encrypted.xlsx");
-
 
     let data = vec![SecretData {
         secret: "confidential".to_owned(),

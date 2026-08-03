@@ -353,8 +353,9 @@ impl DecimalSubpattern {
             {
                 saw_exponent = true;
                 true
-            } else { matches!(ch, '+' | '-')
-                && saw_exponent && remaining[..index].ends_with(['E', 'e']) };
+            } else {
+                matches!(ch, '+' | '-') && saw_exponent && remaining[..index].ends_with(['E', 'e'])
+            };
             if !accepted {
                 break;
             }
@@ -625,13 +626,8 @@ mod tests {
         ] {
             let value = decimal(value);
             assert_eq!(
-                format_decimal(
-                    &value,
-                    value < 0,
-                    Some(pattern),
-                    NumberRoundingMode::HalfUp,
-                )
-                .unwrap(),
+                format_decimal(&value, value < 0, Some(pattern), NumberRoundingMode::HalfUp,)
+                    .unwrap(),
                 expected
             );
         }

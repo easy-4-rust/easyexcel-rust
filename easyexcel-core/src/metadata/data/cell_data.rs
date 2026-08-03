@@ -78,10 +78,9 @@ impl<T> CellData<T> {
                     self.cell_type = Some(CellDataType::Empty);
                 }
             }
-            Some(CellDataType::Boolean)
-                if self.boolean_value.is_none() => {
-                    self.cell_type = Some(CellDataType::Empty);
-                }
+            Some(CellDataType::Boolean) if self.boolean_value.is_none() => {
+                self.cell_type = Some(CellDataType::Empty);
+            }
             _ => {}
         }
     }

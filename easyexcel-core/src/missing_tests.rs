@@ -178,8 +178,10 @@ fn complex_head_empty() {
 #[test]
 fn complex_head_with_column_names() {
     let head: Vec<Vec<String>> = vec![vec!["ID".to_owned(), "Name".to_owned()]];
-    let cols = [ExcelColumn::new("id", "ID", Some(0), 0, None),
-        ExcelColumn::new("name", "Name", Some(1), 1, None)];
+    let cols = [
+        ExcelColumn::new("id", "ID", Some(0), 0, None),
+        ExcelColumn::new("name", "Name", Some(1), 1, None),
+    ];
     assert_eq!(head[0].len(), cols.len());
 }
 
@@ -349,7 +351,10 @@ fn fill_style_data_head_background() {
         ..ExcelCellStyle::new()
     };
     assert_eq!(style.fill_pattern, Some(ExcelFillPattern::Solid));
-    assert_eq!(style.fill_foreground_color, Some(ExcelColor::Rgb(0x00_00FF)));
+    assert_eq!(
+        style.fill_foreground_color,
+        Some(ExcelColor::Rgb(0x00_00FF))
+    );
 }
 
 #[test]
@@ -630,9 +635,11 @@ fn template_data_scalar_basic() {
 
 #[test]
 fn template_data_collection() {
-    let users = [CellValue::String("Alice".to_owned()),
+    let users = [
+        CellValue::String("Alice".to_owned()),
         CellValue::String("Bob".to_owned()),
-        CellValue::String("Carol".to_owned())];
+        CellValue::String("Carol".to_owned()),
+    ];
     assert_eq!(users.len(), 3);
     assert_eq!(users[0], CellValue::String("Alice".to_owned()));
     assert_eq!(users[2], CellValue::String("Carol".to_owned()));

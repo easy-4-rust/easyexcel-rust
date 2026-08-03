@@ -1041,12 +1041,16 @@ fn merge_compiled_styles(
         let destination_index = destination_xfs
             .iter()
             .chain(appended_xfs.iter())
-            .position(|existing| existing == &xf).map_or_else(|| {
-                let index =
-                    u32::try_from(destination_xfs.len() + appended_xfs.len()).unwrap_or(u32::MAX);
-                appended_xfs.push(xf);
-                index
-            }, |index| u32::try_from(index).unwrap_or(u32::MAX));
+            .position(|existing| existing == &xf)
+            .map_or_else(
+                || {
+                    let index = u32::try_from(destination_xfs.len() + appended_xfs.len())
+                        .unwrap_or(u32::MAX);
+                    appended_xfs.push(xf);
+                    index
+                },
+                |index| u32::try_from(index).unwrap_or(u32::MAX),
+            );
         if destination_index == u32::MAX {
             return Err(ExcelError::Format(
                 "template cell style index overflow".to_owned(),
@@ -1477,10 +1481,7 @@ fn next_worksheet_part_name(entries: &[TemplateZipEntry]) -> String {
         let Some(rest) = lower.strip_prefix("xl/worksheets/sheet") else {
             continue;
         };
-        let digits: String = rest
-            .chars()
-            .take_while(char::is_ascii_digit)
-            .collect();
+        let digits: String = rest.chars().take_while(char::is_ascii_digit).collect();
         if let Ok(index) = digits.parse::<usize>() {
             maximum = maximum.max(index);
         }

@@ -49,8 +49,7 @@ impl ExcelHeadProperty {
         if let Some(head_rows) = head.filter(|rows| !rows.is_empty()) {
             for (head_index, row) in head_rows.into_iter().enumerate() {
                 // 表头行数受内存中字符串表限制，不可能超过 i32::MAX
-                let head_index =
-                    i32::try_from(head_index).expect("表头行数不可能超过 i32::MAX");
+                let head_index = i32::try_from(head_index).expect("表头行数不可能超过 i32::MAX");
                 if let Ok(head) = Head::new(head_index, None, row, false, true) {
                     property.head_map.insert(head_index, head);
                 }
@@ -105,8 +104,7 @@ impl ExcelHeadProperty {
             .values()
             .map(|head| {
                 // 表头行数受内存中字符串表限制，不可能超过 i32::MAX
-                i32::try_from(head.head_name_list.len())
-                    .expect("表头行数不可能超过 i32::MAX")
+                i32::try_from(head.head_name_list.len()).expect("表头行数不可能超过 i32::MAX")
             })
             .max()
             .unwrap_or(0);
@@ -117,8 +115,7 @@ impl ExcelHeadProperty {
             }
             let last = head.head_name_list.len() - 1;
             // head_row_number 由各表头行数取 max 而来，恒为非负
-            let target =
-                usize::try_from(self.head_row_number).expect("head_row_number 恒非负");
+            let target = usize::try_from(self.head_row_number).expect("head_row_number 恒非负");
             while head.head_name_list.len() < target {
                 head.head_name_list.push(head.head_name_list[last].clone());
             }

@@ -25,7 +25,8 @@ struct DemoRow {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = env::args()
-        .nth(1).map_or_else(|| PathBuf::from("target/demo-read.xlsx"), PathBuf::from);
+        .nth(1)
+        .map_or_else(|| PathBuf::from("target/demo-read.xlsx"), PathBuf::from);
 
     let rows = EasyExcel::read_sync::<DemoRow>(&path).do_read_sync()?;
     println!("读取 {} 行自 {}", rows.len(), path.display());

@@ -454,7 +454,6 @@ fn assert_exception_read_and_write(path: &std::path::Path) {
         .do_write(exception_data())
         .unwrap();
 
-
     let listener = ExceptionListener { list: Vec::new() };
     EasyExcel::read::<ExceptionData, _>(path, listener)
         .sheet(0usize)
@@ -496,7 +495,6 @@ fn assert_exception_throw(path: &std::path::Path) {
         .sheet("Sheet1")
         .do_write(exception_data())
         .unwrap();
-
 
     let result = EasyExcel::read::<ExceptionData, _>(path, ExceptionThrowListener)
         .sheet(0usize)
@@ -1882,7 +1880,8 @@ fn fill_t01_fill_xlsx() {
             match val {
                 DynamicValue::String(s) if s.contains("张三") => found_name = true,
                 DynamicValue::String(s) if s.contains('5') => found_number = true,
-                DynamicValue::ActualData(easyexcel::CellValue::String(s)) if s.contains("张三") => {
+                DynamicValue::ActualData(easyexcel::CellValue::String(s)) if s.contains("张三") =>
+                {
                     found_name = true;
                 }
                 DynamicValue::ActualData(easyexcel::CellValue::Decimal(_)) => found_number = true,
@@ -1974,7 +1973,8 @@ fn fill_t03_complex_fill_xlsx() {
         for val in row.values().values() {
             match val {
                 DynamicValue::String(s) if s.contains("张三") => found_name = true,
-                DynamicValue::ActualData(easyexcel::CellValue::String(s)) if s.contains("张三") => {
+                DynamicValue::ActualData(easyexcel::CellValue::String(s)) if s.contains("张三") =>
+                {
                     found_name = true;
                 }
                 _ => {}
@@ -2026,7 +2026,8 @@ fn fill_t05_horizontal_fill_xlsx() {
         for val in row.values().values() {
             match val {
                 DynamicValue::String(s) if s.contains("张三") => found_name = true,
-                DynamicValue::ActualData(easyexcel::CellValue::String(s)) if s.contains("张三") => {
+                DynamicValue::ActualData(easyexcel::CellValue::String(s)) if s.contains("张三") =>
+                {
                     found_name = true;
                 }
                 _ => {}
@@ -2117,7 +2118,8 @@ fn fill_t09_composite_fill_xlsx() {
         for val in row.values().values() {
             match val {
                 DynamicValue::String(s) if s.contains("张三") => found_name = true,
-                DynamicValue::ActualData(easyexcel::CellValue::String(s)) if s.contains("张三") => {
+                DynamicValue::ActualData(easyexcel::CellValue::String(s)) if s.contains("张三") =>
+                {
                     found_name = true;
                 }
                 _ => {}

@@ -161,7 +161,10 @@ fn t02_exclude_index_xls() {
     assert!(!rows.is_empty(), ".xls fixture should have data");
     // Verify calamine can parse the .xls structure
     for row in &rows {
-        assert!(!row.values().is_empty(), "each .xls row should have columns");
+        assert!(
+            !row.values().is_empty(),
+            "each .xls row should have columns"
+        );
     }
 }
 

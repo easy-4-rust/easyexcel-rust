@@ -71,7 +71,10 @@ fn fill_style_data_head_background() {
         ..ExcelCellStyle::new()
     };
     assert_eq!(style.fill_pattern, Some(ExcelFillPattern::Solid));
-    assert_eq!(style.fill_foreground_color, Some(ExcelColor::Rgb(0x0000_00FF)));
+    assert_eq!(
+        style.fill_foreground_color,
+        Some(ExcelColor::Rgb(0x0000_00FF))
+    );
 }
 
 #[test]

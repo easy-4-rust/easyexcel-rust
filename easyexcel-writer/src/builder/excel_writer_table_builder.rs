@@ -292,22 +292,30 @@ pub fn merge_table_options(sheet_options: &WriteOptions, table: &WriteTable) -> 
     if let Some(indexes) = &parameter.include_column_indexes {
         merged.include_column_indexes = Some(indexes.clone());
     } else if table.options.include_column_indexes != defaults.include_column_indexes {
-        merged.include_column_indexes.clone_from(&table.options.include_column_indexes);
+        merged
+            .include_column_indexes
+            .clone_from(&table.options.include_column_indexes);
     }
     if let Some(names) = &parameter.include_column_field_names {
         merged.include_column_field_names = Some(names.clone());
     } else if table.options.include_column_field_names != defaults.include_column_field_names {
-        merged.include_column_field_names.clone_from(&table.options.include_column_field_names);
+        merged
+            .include_column_field_names
+            .clone_from(&table.options.include_column_field_names);
     }
     if let Some(indexes) = &parameter.exclude_column_indexes {
         merged.exclude_column_indexes.clone_from(indexes);
     } else if table.options.exclude_column_indexes != defaults.exclude_column_indexes {
-        merged.exclude_column_indexes.clone_from(&table.options.exclude_column_indexes);
+        merged
+            .exclude_column_indexes
+            .clone_from(&table.options.exclude_column_indexes);
     }
     if let Some(names) = &parameter.exclude_column_field_names {
         merged.exclude_column_field_names.clone_from(names);
     } else if table.options.exclude_column_field_names != defaults.exclude_column_field_names {
-        merged.exclude_column_field_names.clone_from(&table.options.exclude_column_field_names);
+        merged
+            .exclude_column_field_names
+            .clone_from(&table.options.exclude_column_field_names);
     }
     if let Some(use_default_style) = parameter.use_default_style {
         merged.use_default_style = use_default_style;

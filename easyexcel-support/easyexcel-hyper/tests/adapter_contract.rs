@@ -216,9 +216,11 @@ fn excel_download_or_json_response_write_error_degrades_to_json() {
 fn write_upload_temp_persists_bytes_with_dot_extension() {
     let bytes = b"file-content";
     let (path, _temp) = write_upload_temp(bytes, ".csv").expect("temp");
-    assert!(std::path::Path::new(path.to_str().unwrap())
-        .extension()
-        .is_some_and(|ext| ext.eq_ignore_ascii_case("csv")));
+    assert!(
+        std::path::Path::new(path.to_str().unwrap())
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("csv"))
+    );
     assert_eq!(std::fs::read(&path).expect("read"), bytes);
 }
 
@@ -226,9 +228,11 @@ fn write_upload_temp_persists_bytes_with_dot_extension() {
 fn write_upload_temp_normalizes_extension_without_dot() {
     let bytes = b"file-content";
     let (path, _temp) = write_upload_temp(bytes, "xls").expect("temp");
-    assert!(std::path::Path::new(path.to_str().unwrap())
-        .extension()
-        .is_some_and(|ext| ext.eq_ignore_ascii_case("xls")));
+    assert!(
+        std::path::Path::new(path.to_str().unwrap())
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("xls"))
+    );
     assert_eq!(std::fs::read(&path).expect("read"), bytes);
 }
 

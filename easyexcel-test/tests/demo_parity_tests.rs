@@ -135,12 +135,7 @@ fn demo_read_index_or_name_read() {
         .do_read_sync()
         .unwrap();
     assert!(!rows.is_empty());
-    assert!(
-        rows[0]
-            .string
-            .as_ref()
-            .is_some_and(|s| !s.is_empty())
-    );
+    assert!(rows[0].string.as_ref().is_some_and(|s| !s.is_empty()));
 }
 
 /// Java `ReadTest.repeatedRead` — all sheets + selected sheets.

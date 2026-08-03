@@ -26,14 +26,14 @@ use crate::excel_writer_core::{
     apply_once_absolute_merge_property, apply_template_holder_layout,
     automatic_dynamic_head_merge_ranges, before_sheet, before_workbook,
     collect_handler_once_absolute_merges, collect_once_absolute_merges,
-    create_csv_record_writer, create_stateful_csv_writer, finish_csv_record_writer,
-    format_error, handlers_request_auto_width, head_rows_for_schema, is_csv_path, is_xls_path,
-    merge_range_to_biff8, relative_head_start_row, resolve_excel_type,
-    run_own_workbook_callbacks, save_template_package, save_workbook, save_workbook_to_writer,
-    save_xls_book, set_xlsx_column_width_chars, sort_handlers, take_captured_output,
-    template_append_cell_styles, template_append_row_heights, validate_excel_row_schema,
-    validate_stateful_backend, validate_stateful_schema, write_sheet_to_workbook_with_gzip,
-    collect_template_append_rows, run_template_handler_callbacks,
+    collect_template_append_rows, create_csv_record_writer, create_stateful_csv_writer,
+    finish_csv_record_writer, format_error, handlers_request_auto_width, head_rows_for_schema,
+    is_csv_path, is_xls_path, merge_range_to_biff8, relative_head_start_row, resolve_excel_type,
+    run_own_workbook_callbacks, run_template_handler_callbacks, save_template_package,
+    save_workbook, save_workbook_to_writer, save_xls_book, set_xlsx_column_width_chars,
+    sort_handlers, take_captured_output, template_append_cell_styles, template_append_row_heights,
+    validate_excel_row_schema, validate_stateful_backend, validate_stateful_schema,
+    write_sheet_to_workbook_with_gzip,
 };
 use crate::handler::default_write_handler_loader::DefaultWriteHandlerLoader;
 use crate::handler_execution_scope::{

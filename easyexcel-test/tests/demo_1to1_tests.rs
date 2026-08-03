@@ -144,12 +144,7 @@ fn read_test_index_or_name_read() {
         .do_read_sync()
         .unwrap();
     assert!(!rows.is_empty());
-    assert!(
-        rows[0]
-            .string
-            .as_ref()
-            .is_some_and(|s| !s.is_empty())
-    );
+    assert!(rows[0].string.as_ref().is_some_and(|s| !s.is_empty()));
 }
 
 /// Java: `com.alibaba.easyexcel.test.demo.read.ReadTest#repeatedRead`
@@ -999,7 +994,6 @@ fn rare_test_specified_cell_write() {
             .to_owned(),
     );
     assert!(matches!(gap, ExcelError::Unsupported(_)));
-
 
     let hits = Arc::new(AtomicUsize::new(0));
     let path = temp_path("rare_specifiedCellWrite.xlsx");

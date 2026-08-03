@@ -183,11 +183,7 @@ impl ExcelWriteHeadProperty {
                 let name = &head.head_name_list[row];
                 let mut last_column_position = column_position;
                 let mut last_row = row;
-                for (candidate, head_c) in head_list
-                    .iter()
-                    .enumerate()
-                    .skip(column_position + 1)
-                {
+                for (candidate, head_c) in head_list.iter().enumerate().skip(column_position + 1) {
                     let key = (candidate, row);
                     if head_c.head_name_list[row] == *name && already_ranged.insert(key) {
                         last_column_position = candidate;

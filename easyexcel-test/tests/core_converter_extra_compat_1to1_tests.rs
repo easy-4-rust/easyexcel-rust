@@ -873,7 +873,6 @@ mod exception_data_test {
             .do_write(exception_data())
             .unwrap();
 
-
         EasyExcel::read::<ExceptionData, _>(path, ExceptionListener { list: Vec::new() })
             .sheet(0usize)
             .do_read()

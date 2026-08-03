@@ -480,7 +480,10 @@ mod tests_extra {
         let mut list = ReadListenerList::new(ProbeListener::default());
         list.on_exception(&error, &context);
         let inner: &mut ReadListenerList<i32> = &mut list;
-        assert_eq!(ReadListener::on_exception(inner, &error, &context), ErrorAction::Stop);
+        assert_eq!(
+            ReadListener::on_exception(inner, &error, &context),
+            ErrorAction::Stop
+        );
     }
 
     #[test]

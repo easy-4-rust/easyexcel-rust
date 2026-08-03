@@ -147,10 +147,7 @@ pub(crate) fn date_to_excel_serial(value: NaiveDate, use_1904_windowing: bool) -
         NaiveDate::from_ymd_opt(1899, 12, 30).expect("valid Excel epoch")
     };
     // Excel 序列号（1899/1900/1904 纪元起的天数）范围远小于 i32 上限，i32→f64 无损
-    f64::from(
-        i32::try_from((value - epoch).num_days())
-            .expect("Excel 日期序列号必然在 i32 范围内"),
-    )
+    f64::from(i32::try_from((value - epoch).num_days()).expect("Excel 日期序列号必然在 i32 范围内"))
 }
 
 pub(crate) fn datetime_to_excel_serial(value: NaiveDateTime, use_1904_windowing: bool) -> f64 {

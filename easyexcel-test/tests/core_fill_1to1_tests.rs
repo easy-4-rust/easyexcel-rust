@@ -54,7 +54,9 @@ fn assert_xls_readable(path: &std::path::Path) {
 fn dynamic_contains(rows: &[DynamicRow], needle: &str) -> bool {
     rows.iter().any(|row| {
         row.values().iter().any(|(_, val)| match val {
-            DynamicValue::String(s) | DynamicValue::ActualData(CellValue::String(s)) => s.contains(needle),
+            DynamicValue::String(s) | DynamicValue::ActualData(CellValue::String(s)) => {
+                s.contains(needle)
+            }
             _ => false,
         })
     })

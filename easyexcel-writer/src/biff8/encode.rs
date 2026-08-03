@@ -139,7 +139,10 @@ pub fn encode_rk(v: f64) -> Option<u32> {
     }
     // Integer / 100 form (bit0=1, bit1=1)。
     let scaled = v * 100.0;
-    if scaled.fract() == 0.0 && scaled >= f64::from(-0x1FFF_FFFF) && scaled <= f64::from(0x1FFF_FFFF) {
+    if scaled.fract() == 0.0
+        && scaled >= f64::from(-0x1FFF_FFFF)
+        && scaled <= f64::from(0x1FFF_FFFF)
+    {
         // 语义敏感：同上，转换无损。
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         {

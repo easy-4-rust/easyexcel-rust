@@ -166,8 +166,6 @@ pub(crate) fn is_scientific_magnitude(value: f64) -> bool {
     absolute >= 1E11 || (absolute <= 1E-10 && absolute > 0.0)
 }
 
-
-
 pub(crate) fn validate_stateful_backend(is_csv: bool, password: Option<&str>) -> Result<()> {
     match (is_csv, password.is_some()) {
         (true, true) => Err(ExcelError::Unsupported(
@@ -959,15 +957,16 @@ where
             }
         }
         if options.automatic_merge_head
-            && let Some(head) = &options.dynamic_head {
-                let head = selected_dynamic_head_paths(&columns, head)?;
-                merge_biff8_dynamic_head_groups(
-                    book.sheet_mut(sheet_name),
-                    &columns,
-                    &head,
-                    row_index,
-                )?;
-            }
+            && let Some(head) = &options.dynamic_head
+        {
+            let head = selected_dynamic_head_paths(&columns, head)?;
+            merge_biff8_dynamic_head_groups(
+                book.sheet_mut(sheet_name),
+                &columns,
+                &head,
+                row_index,
+            )?;
+        }
         row_index = row_index
             .checked_add(head_rows)
             .ok_or_else(|| ExcelError::Format("BIFF8 row overflow".to_owned()))?;
@@ -1620,7 +1619,6 @@ impl HandlerHolderScope {
         context.with_write_context(&live_context)
     }
 }
-
 
 pub(crate) fn excel_column_width_pixels(width: u16) -> u32 {
     if width == 0 {
@@ -2436,9 +2434,7 @@ where
         return write_sheet_to_workbook::<T, I>(workbook, &write_options, rows, handlers, None);
     }
 
-    let start_row = sheets
-        .get(target_index)
-        .map_or(0, |sheet| sheet.next_row);
+    let start_row = sheets.get(target_index).map_or(0, |sheet| sheet.next_row);
     let worksheet = workbook
         .worksheet_from_name(&target_name)
         .map_err(format_error)?;
@@ -2494,7 +2490,6 @@ where
     apply_handler_column_widths::<T>(worksheet, &write_options, handlers)?;
     Ok(progress)
 }
-
 
 pub(crate) fn apply_loop_merges(
     worksheet: &mut Worksheet,
@@ -2762,9 +2757,10 @@ where
     let mut merges = Vec::new();
     if let Some(merge) = T::write_metadata().once_absolute_merge
         && !excluded_merges.contains(&merge)
-        && let Some(range) = absolute_merge_range(merge) {
-            merges.push(range);
-        }
+        && let Some(range) = absolute_merge_range(merge)
+    {
+        merges.push(range);
+    }
     for handler in handlers {
         if let Some(merge) = handler.style_once_absolute_merge()
             && !excluded_merges.contains(&merge)
@@ -4078,10 +4074,9 @@ fn cell_format(context: CellFormatContext<'_>) -> Format {
         }
         format = apply_annotation_cell_style(format, style);
     }
-    if !merged_has_data_format
-        && let Some(number_format) = context.converted_data_format {
-            format = format.set_num_format(number_format);
-        }
+    if !merged_has_data_format && let Some(number_format) = context.converted_data_format {
+        format = format.set_num_format(number_format);
+    }
     if let Some(font) = font {
         format = apply_annotation_font_style(format, font);
     }
@@ -6256,7 +6251,6 @@ mod tests_extra {
         assert!(matches!(result, Err(ExcelError::Format(_))));
         let result = create_row(&mut creator, 65_535);
         assert!(result.is_ok());
-
     }
 
     #[test]
@@ -6479,7 +6473,7 @@ mod tests_extra {
                 background_color: Some(0xFF_0000),
                 horizontal_alignment: Some(HorizontalAlignment::Right),
                 vertical_alignment: Some(VerticalAlignment::Top),
-                wrap_text: true
+                wrap_text: true,
             }],
             ..WriteOptions::default()
         });
@@ -6716,7 +6710,6 @@ mod tests_extra {
                 .to_row()
                 .is_ok()
         );
-
     }
 
     #[test]
@@ -8345,7 +8338,6 @@ mod tests_extra3 {
             &mut [],
         );
         assert!(matches!(result, Err(ExcelError::Unsupported(_))));
-
     }
 
     #[test]
@@ -8465,7 +8457,6 @@ mod tests_extra3 {
             &mut [],
         );
         assert!(matches!(result, Err(ExcelError::Data { .. })));
-
     }
 
     #[test]
@@ -8938,7 +8929,6 @@ mod tests_extra3 {
             &mut [],
         );
         assert!(matches!(result, Err(ExcelError::Data { .. })));
-
     }
 
     #[test]
@@ -8994,7 +8984,6 @@ mod tests_extra3 {
             &mut [],
         );
         assert!(matches!(result, Err(ExcelError::Data { .. })));
-
     }
 
     // ========================================================================
@@ -9108,6 +9097,5 @@ mod tests_extra3 {
         let mut context = WriteCellContext::new("Sheet1", 0, 0, CellValue::String("v".to_owned()));
         let mut handler = StageFailingHandler3(FailStage3::AfterSheetCreate);
         assert!(handler.before_cell_create(&mut context).is_ok());
-
     }
 }

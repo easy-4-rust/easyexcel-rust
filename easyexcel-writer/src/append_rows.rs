@@ -2,7 +2,9 @@
 //!
 //! 对应 Java：`com.alibaba.excel.write.executor.ExcelWriteAddExecutor`（追加写入口）。
 
-use easyexcel_core::{ExcelError, ExcelRow, ExcelWriteMetadata, Result, WriteCellData, WriteHandler};
+use easyexcel_core::{
+    ExcelError, ExcelRow, ExcelWriteMetadata, Result, WriteCellData, WriteHandler,
+};
 use rust_xlsxwriter::Worksheet;
 
 use crate::excel_writer_core::{

@@ -1305,7 +1305,10 @@ fn row_data_display_values_override() {
     let row = RowData::new("S", 0, cells, headers).with_display_values(display_values);
     let col = ExcelColumn::new("v", "V", Some(0), 0, None);
     // When ReadDefaultReturn::String (default), dynamic_cell uses display_value
-    assert_eq!(*row.cell(&col).unwrap(), CellValue::Float(12_345_678.123_456_7));
+    assert_eq!(
+        *row.cell(&col).unwrap(),
+        CellValue::Float(12_345_678.123_456_7)
+    );
 }
 
 // ============================================================================
@@ -1371,7 +1374,10 @@ fn excel_color_java_or_rgb_boundary() {
     assert_eq!(ExcelColor::java_or_rgb(0), ExcelColor::Indexed(0));
     assert_eq!(ExcelColor::java_or_rgb(64), ExcelColor::Indexed(64));
     assert_eq!(ExcelColor::java_or_rgb(65), ExcelColor::Rgb(65));
-    assert_eq!(ExcelColor::java_or_rgb(0xFF_FFFF), ExcelColor::Rgb(0xFF_FFFF));
+    assert_eq!(
+        ExcelColor::java_or_rgb(0xFF_FFFF),
+        ExcelColor::Rgb(0xFF_FFFF)
+    );
 }
 
 // ============================================================================
@@ -2100,7 +2106,10 @@ fn richtext_apply_font_whole_string() {
         .apply_font(WriteFont::new().bold(true).font_height_in_points(14.0));
     assert!(rt.write_font().is_some());
     assert_eq!(rt.write_font().unwrap().get_bold(), Some(true));
-    assert_eq!(rt.write_font().unwrap().get_font_height_in_points(), Some(14.0));
+    assert_eq!(
+        rt.write_font().unwrap().get_font_height_in_points(),
+        Some(14.0)
+    );
     assert!(rt.interval_fonts().is_empty());
 }
 
@@ -2429,7 +2438,10 @@ fn fill_style_head_style_fill_pattern() {
         ..ExcelCellStyle::new()
     };
     assert_eq!(style.fill_pattern, Some(ExcelFillPattern::Solid));
-    assert_eq!(style.fill_foreground_color, Some(ExcelColor::Rgb(0xD9_EA_F7)));
+    assert_eq!(
+        style.fill_foreground_color,
+        Some(ExcelColor::Rgb(0xD9_EA_F7))
+    );
 }
 
 #[test]
@@ -2569,9 +2581,11 @@ fn number_format_zero() {
 // --- Sort edge cases ---
 #[test]
 fn sort_order_multiple_fields() {
-    let cols = [ExcelColumn::new("c", "C", None, 3, None),
+    let cols = [
+        ExcelColumn::new("c", "C", None, 3, None),
         ExcelColumn::new("a", "A", None, 1, None),
-        ExcelColumn::new("b", "B", None, 2, None)];
+        ExcelColumn::new("b", "B", None, 2, None),
+    ];
     // Verify order values are accessible
     assert_eq!(cols[0].order, 3);
     assert_eq!(cols[1].order, 1);
@@ -2589,8 +2603,10 @@ fn complex_head_multi_level_names() {
 // --- List head (dynamic head via ExcelColumn) ---
 #[test]
 fn list_head_column_names() {
-    let cols = [ExcelColumn::new("name", "Name", None, 0, None),
-        ExcelColumn::new("age", "Age", None, 1, None)];
+    let cols = [
+        ExcelColumn::new("name", "Name", None, 0, None),
+        ExcelColumn::new("age", "Age", None, 1, None),
+    ];
     assert_eq!(cols.len(), 2);
     assert_eq!(cols[0].name, "Name");
     assert_eq!(cols[1].name, "Age");

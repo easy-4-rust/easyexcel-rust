@@ -22,9 +22,7 @@ pub fn get_row(cell_ref: &str) -> u32 {
         .chars()
         .skip_while(char::is_ascii_alphabetic)
         .collect();
-    digits
-        .parse::<u32>()
-        .map_or(0, |n| n.saturating_sub(1))
+    digits.parse::<u32>().map_or(0, |n| n.saturating_sub(1))
 }
 
 /// Mirrors `com.alibaba.excel.util.PositionUtils#getCol`.

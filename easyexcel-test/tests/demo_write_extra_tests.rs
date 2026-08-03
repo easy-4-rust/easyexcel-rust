@@ -149,7 +149,6 @@ fn demo_write_image_write() {
     );
     let bytes = std::fs::read(&img).unwrap();
 
-
     let path = temp_path("imageWrite.xlsx");
     let row = ImageDemoData {
         byte_array: WriteCellData::from_image(bytes.clone()),
