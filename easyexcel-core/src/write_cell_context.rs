@@ -371,8 +371,9 @@ mod tests_extra {
     #[test]
     fn activate_original_value_uses_explicit_override() {
         // 对应 Java：热路径每单元格 new 后立即 with_original_value 覆盖默认
-        let mut context = WriteCellContext::new("Sheet1", 1, 0, CellValue::String("src".to_owned()))
-            .with_original_value(CellValue::String("original".to_owned()));
+        let mut context =
+            WriteCellContext::new("Sheet1", 1, 0, CellValue::String("src".to_owned()))
+                .with_original_value(CellValue::String("original".to_owned()));
         context.activate_original_value();
         assert_eq!(
             context.original_value,
