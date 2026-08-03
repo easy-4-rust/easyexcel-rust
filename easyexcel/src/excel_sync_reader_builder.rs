@@ -6,17 +6,17 @@
 use std::marker::PhantomData;
 use std::path::PathBuf;
 
+use crate::IntoSheetSelector;
 use crate::collect_listener::{collect_listener, drain_listener};
 use crate::core::{
     CellExtraType, Converter, CsvCharset, CustomReadObject, ExcelRow, NullableObjectConverter,
     ReadDefaultReturn, Result,
 };
-use crate::reader::{
+use crate::read::{
     ExcelLocale, ReadCacheMode, ReadOptions, ScientificFormatMode, SheetSelector,
     StoredReadCacheSelector, read_csv, read_xls, read_xlsx,
 };
 use crate::write_type_helpers::{is_csv_path, is_xls_path};
-use crate::IntoSheetSelector;
 
 /// Synchronous collecting reader builder.
 pub struct ExcelSyncReaderBuilder<T> {

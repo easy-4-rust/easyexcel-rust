@@ -8,7 +8,7 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::{Path, PathBuf};
 
 use crate::core::{CellValue, ExcelError, Result};
-use crate::writer::ExcelOutputStream;
+use crate::write::ExcelOutputStream;
 use zip::read::ZipArchive;
 use zip::write::{SimpleFileOptions, ZipWriter};
 
@@ -442,7 +442,7 @@ pub fn fill_xlsx_template_list(
 /// for XLS workbooks.
 fn fill_xls_template_scalar(template: &Path, output: &Path, data: &TemplateData) -> Result<()> {
     let bytes = std::fs::read(template)?;
-    let mut pkg = crate::writer::biff8::Biff8TemplatePackage::from_bytes(&bytes)?;
+    let mut pkg = crate::write::biff8::Biff8TemplatePackage::from_bytes(&bytes)?;
     let placeholders = pkg.scan_placeholders();
     for (sheet_name, row, col, text) in &placeholders {
         let key = text
@@ -465,7 +465,7 @@ fn fill_xls_template_list(
     _config: FillConfig,
 ) -> Result<()> {
     let bytes = std::fs::read(template)?;
-    let mut pkg = crate::writer::biff8::Biff8TemplatePackage::from_bytes(&bytes)?;
+    let mut pkg = crate::write::biff8::Biff8TemplatePackage::from_bytes(&bytes)?;
     let placeholders = pkg.scan_placeholders();
     let prefix = data.name().map(|n| format!("{n}.")).unwrap_or_default();
     let is_dot = prefix.is_empty();
@@ -899,11 +899,11 @@ mod tests_extra {
         let unnamed_output = directory.path().join("list-unnamed-output.xls");
         let named_output = directory.path().join("list-named-output.xls");
 
-        let mut book = crate::writer::biff8::Biff8Book::default();
+        let mut book = crate::write::biff8::Biff8Book::default();
         {
             let sheet = book.sheet_mut("Sheet1");
             let text = |value: &str| {
-                crate::writer::biff8::Biff8Cell::general(crate::writer::biff8::Biff8Value::Text(
+                crate::write::biff8::Biff8Cell::general(crate::write::biff8::Biff8Value::Text(
                     value.to_owned(),
                 ))
             };

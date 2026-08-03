@@ -16,7 +16,7 @@ use easyexcel_macro::ExcelRow;
 
 mod encrypt_data_test_xls {
     use super::*;
-    use easyexcel::writer::ExcelWriter;
+    use easyexcel::write::ExcelWriter;
 
     #[derive(Debug, Clone, ExcelRow)]
     struct EncryptRow {
@@ -51,7 +51,7 @@ mod encrypt_data_test_xls {
 
 mod converter_data_test_xls_image {
     use super::*;
-    use easyexcel::writer::ExcelWriter;
+    use easyexcel::write::ExcelWriter;
     use easyexcel_macro::ExcelRow;
 
     #[derive(Debug, Clone, ExcelRow)]

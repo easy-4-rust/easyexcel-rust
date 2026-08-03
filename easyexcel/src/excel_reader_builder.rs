@@ -2,21 +2,21 @@
 //!
 //! 对应 Java：`com.alibaba.excel.read.builder.ExcelReaderBuilder`
 //! （typed `read()` 路径专用；no-model Java 风格入口见
-//! [`crate::reader::CompatibleExcelReaderBuilder`]）。
+//! [`crate::read::CompatibleExcelReaderBuilder`]）。
 
 use std::marker::PhantomData;
 use std::path::PathBuf;
 
+use crate::IntoSheetSelector;
 use crate::core::{
     CellExtraType, CompositeReadListener, Converter, CsvCharset, CustomReadObject, ExcelRow,
     NullableObjectConverter, ReadDefaultReturn, ReadListener, Result,
 };
-use crate::reader::{
+use crate::read::{
     ExcelLocale, ReadCacheMode, ReadOptions, ScientificFormatMode, SheetSelector,
     StoredReadCacheSelector, read_csv, read_xls, read_xlsx,
 };
 use crate::write_type_helpers::{is_csv_path, is_xls_path};
-use crate::IntoSheetSelector;
 
 /// Event-driven reader builder.
 pub struct ExcelReaderBuilder<T, L> {

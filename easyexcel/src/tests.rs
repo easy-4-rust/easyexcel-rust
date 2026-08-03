@@ -5,7 +5,7 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-use bigdecimal::BigDecimal;
+use ::bigdecimal::BigDecimal;
 use chrono::NaiveDate;
 use tempfile::tempdir;
 use zip::ZipArchive;
@@ -352,7 +352,7 @@ fn writer_builder_excel_type_overrides_path_extension() -> Result<()> {
     let path = directory.path().join("values.data");
 
     EasyExcel::write::<Value>(&path)
-        .excel_type(crate::core::support::ExcelTypeEnum::Csv)
+        .excel_type(crate::support::ExcelTypeEnum::Csv)
         .with_bom(false)
         .do_write(vec![Value("one".to_owned())])?;
 

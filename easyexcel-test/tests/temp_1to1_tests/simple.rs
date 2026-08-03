@@ -4,7 +4,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use chrono::NaiveDate;
-use easyexcel::core::util::bean_map_utils;
+use easyexcel::util::bean_map_utils;
 use easyexcel::{
     CellValue, EasyExcel, ExcelCellStyle, ExcelColor, ExcelDataFormat, ExcelError, ExcelRow,
     WriteHandler, WriteOptions, WriteSheet, WriteSheetContext,

@@ -5,8 +5,8 @@
 
 use std::path::Path;
 
-use crate::core::support::ExcelTypeEnum;
-use crate::writer::WriteOptions;
+use crate::support::ExcelTypeEnum;
+use crate::write::WriteOptions;
 
 /// 路径是否指向 CSV（不区分大小写）。
 pub(crate) fn is_csv_path(path: &Path) -> bool {

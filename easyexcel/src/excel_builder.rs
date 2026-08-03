@@ -8,8 +8,8 @@ use std::path::PathBuf;
 
 use crate::core::{DynamicRow, Result};
 use crate::template::create_builder_fill_executor;
-use crate::writer::BuilderFillConfig;
-use crate::writer::{ExcelBuilder, ExcelBuilderImpl, ExcelWriter, WriteSheet};
+use crate::write::BuilderFillConfig;
+use crate::write::{ExcelBuilder, ExcelBuilderImpl, ExcelWriter, WriteSheet};
 
 /// Creates an [`ExcelBuilderImpl`] from a stateful writer without fill wiring.
 ///

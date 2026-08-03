@@ -6,7 +6,7 @@ use std::any::Any;
 use std::io::{Read, Seek, Write};
 use std::path::PathBuf;
 
-use crate::writer::ExcelOutputStream;
+use crate::write::ExcelOutputStream;
 use zip::write::ZipWriter;
 
 pub(crate) enum TemplateOutput<'a> {

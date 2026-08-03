@@ -16,7 +16,7 @@ use crate::{
     ExcelTemplateWriter, FillConfig, FillDirection, FillWrapper, TemplateData, TemplateSheet,
 };
 
-/// Stateful template fill executor for [`crate::writer::ExcelBuilderImpl`].
+/// Stateful template fill executor for [`crate::write::ExcelBuilderImpl`].
 ///
 /// 对应 Java：`ExcelWriteFillExecutor` backed by the same loaded XLSX
 /// package as [`ExcelTemplateWriter`].
@@ -62,7 +62,7 @@ impl BuilderFillExecutor {
     }
 }
 
-/// Creates a boxed fill executor for facade wiring into [`ExcelBuilderImpl`](crate::writer::ExcelBuilderImpl).
+/// Creates a boxed fill executor for facade wiring into [`ExcelBuilderImpl`](crate::write::ExcelBuilderImpl).
 ///
 /// # Errors
 ///

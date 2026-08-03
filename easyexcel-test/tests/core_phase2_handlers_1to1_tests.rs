@@ -5,13 +5,13 @@
 //! ConstraintHandler}` and `DefaultWriteHandlerLoader`.
 //!
 //! Rust mirror: sub-trait split in
-//! `easyexcel::writer::handler::{workbook,sheet,row,cell,merge,constraint}_write_handler`
+//! `easyexcel::write::handler::{workbook,sheet,row,cell,merge,constraint}_write_handler`
 //! and `DefaultWriteHandlerLoader::load_default_handler()`.
 //!
 //! Naming: `mod <java_class_snake>` + `fn <java_method_snake>`.
 
 use easyexcel::core::WriteHandler;
-use easyexcel::writer::handler::{
+use easyexcel::write::handler::{
     cell_write_handler::CellWriteHandler, default_write_handler_loader::DefaultWriteHandlerLoader,
     row_write_handler::RowWriteHandler, sheet_write_handler::SheetWriteHandler,
     workbook_write_handler::WorkbookWriteHandler,
@@ -216,7 +216,7 @@ mod default_write_handler_loader_test {
 
     #[test]
     fn t03_load_default_handler_by_excel_type07() {
-        use easyexcel::core::support::ExcelTypeEnum;
+        use easyexcel::support::ExcelTypeEnum;
 
         assert_eq!(
             DefaultWriteHandlerLoader::load_default_handler_for(true, ExcelTypeEnum::Xlsx).len(),

@@ -7,9 +7,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use crate::core::{CellValue, ExcelError, Result};
-use crate::writer::ExcelOutputStream;
+use crate::write::ExcelOutputStream;
+use ::bigdecimal::BigDecimal;
 use base64::Engine;
-use bigdecimal::BigDecimal;
 use calamine::{Data, Reader, Xlsx, open_workbook};
 use chrono::NaiveDate;
 use flate2::read::GzDecoder;

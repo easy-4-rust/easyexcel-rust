@@ -17,7 +17,7 @@
 
 mod excel_reader_sheet_builder_test {
     //! Mirrors `ExcelReaderSheetBuilder` constructors + setters
-    use easyexcel::reader::builder::excel_reader_sheet_builder::ExcelReaderSheetBuilder;
+    use easyexcel::read::builder::excel_reader_sheet_builder::ExcelReaderSheetBuilder;
 
     /// Java: `ExcelReaderSheetBuilder()` default ctor.
     #[test]
@@ -95,7 +95,7 @@ mod excel_reader_sheet_builder_test {
 
 mod read_sheet_test {
     //! Mirrors `ReadSheet` ctors + getters/setters + copyBasicParameter
-    use easyexcel::reader::context::read_sheet::ReadSheet;
+    use easyexcel::context::read_sheet::ReadSheet;
 
     /// Java: `ReadSheet()` no-arg ctor.
     #[test]
@@ -180,7 +180,7 @@ mod read_sheet_test {
 
 mod read_table_test {
     //! Mirrors `ReadTable` (4 members)
-    use easyexcel::reader::metadata::read_table::ReadTable;
+    use easyexcel::read::metadata::read_table::ReadTable;
 
     /// Java: `ReadTable()` no-arg ctor.
     #[test]
@@ -218,7 +218,7 @@ mod read_table_test {
 
 mod read_workbook_test {
     //! Mirrors `ReadWorkbook`
-    use easyexcel::reader::metadata::read_workbook::ReadWorkbook;
+    use easyexcel::read::metadata::read_workbook::ReadWorkbook;
 
     /// Java: `ReadWorkbook()` no-arg ctor.
     #[test]
@@ -292,7 +292,7 @@ mod read_workbook_test {
     #[test]
     fn t09_set_read_cache07() {
         let mut w = ReadWorkbook::new();
-        w.set_read_cache(easyexcel::reader::ReadCacheMode::Auto);
+        w.set_read_cache(easyexcel::read::ReadCacheMode::Auto);
     }
 }
 
@@ -302,7 +302,7 @@ mod read_workbook_test {
 
 mod write_sheet_test {
     //! Mirrors `WriteSheet` setters
-    use easyexcel::writer::MirroredWriteSheet;
+    use easyexcel::write::MirroredWriteSheet;
 
     /// Java: `getSheetNo()` / `setSheetNo(Integer)`.
     #[test]
@@ -328,7 +328,7 @@ mod write_sheet_test {
 
 mod write_table_test {
     //! Mirrors `WriteTable` setter
-    use easyexcel::writer::MirroredWriteTable;
+    use easyexcel::write::MirroredWriteTable;
 
     /// Java: `getTableNo()` / `setTableNo(Integer)`.
     #[test]
@@ -346,15 +346,15 @@ mod write_table_test {
 
 mod write_workbook_test {
     //! Mirrors `WriteWorkbook`
-    use easyexcel::writer::MirroredWriteWorkbook;
+    use easyexcel::write::MirroredWriteWorkbook;
 
     /// Java: `getExcelType()` / `setExcelType(ExcelTypeEnum)`.
     #[test]
     fn t01_excel_type07() {
         let mut w = MirroredWriteWorkbook::new();
         let initial = w.excel_type();
-        w.set_excel_type(easyexcel::core::support::ExcelTypeEnum::Xls);
-        assert_eq!(w.excel_type(), easyexcel::core::support::ExcelTypeEnum::Xls);
+        w.set_excel_type(easyexcel::support::ExcelTypeEnum::Xls);
+        assert_eq!(w.excel_type(), easyexcel::support::ExcelTypeEnum::Xls);
         let _ = initial;
     }
 
@@ -405,7 +405,7 @@ mod write_workbook_test {
 
 mod excel_reader_table_builder_test {
     //! Preserves the pre-4.x `ExcelReaderTableBuilder` compatibility surface.
-    use easyexcel::reader::builder::excel_reader_table_builder::ExcelReaderTableBuilder;
+    use easyexcel::read::builder::excel_reader_table_builder::ExcelReaderTableBuilder;
 
     /// Legacy Java: `ExcelReaderTableBuilder()` default ctor.
     #[test]

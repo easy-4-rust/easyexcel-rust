@@ -5,6 +5,8 @@
 //! `NoModelDataTest`, `ExcludeOrIncludeDataTest`, `LargeDataTest`, `TemplateDataTest`,
 //! `StyleDataTest`, `BomDataTest`, `CharsetDataTest`, `EncryptDataTest`, etc.
 
+use ::bigdecimal::BigDecimal;
+use ::url::Url;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::io;
 use std::path::PathBuf;
@@ -15,11 +17,11 @@ use std::time::Duration;
 use chrono::{NaiveDate, NaiveDateTime};
 
 use super::*;
-use crate::core::constant::{
+use crate::constant::{
     CELL_FORMULA_TAG, CELL_TAG, CELL_VALUE_TAG, EXCEL_MATH_CONTEXT_PRECISION, ROW_TAG,
     get_builtin_format,
 };
-use crate::core::support::ExcelTypeEnum;
+use crate::support::ExcelTypeEnum;
 
 // ============================================================================
 // 1. CsvCharset tests (Java: CsvCharsetTest)

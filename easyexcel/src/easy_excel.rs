@@ -9,12 +9,12 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use crate::core::{DynamicRow, ExcelRow, ReadListener, Result};
-use crate::reader::{CompatibleExcelReaderBuilder, CompatibleExcelReaderSheetBuilder};
+use crate::read::{CompatibleExcelReaderBuilder, CompatibleExcelReaderSheetBuilder};
 use crate::template::{
     ExcelTemplateWriter, FillConfig, FillWrapper, TemplateData, fill_xlsx_template,
     fill_xlsx_template_list,
 };
-use crate::writer::{
+use crate::write::{
     CompatibleExcelWriterBuilder, CompatibleExcelWriterOutputStreamBuilder,
     CompatibleExcelWriterSheetBuilder, ExcelOutputStream, WriteSheet,
 };
@@ -203,8 +203,8 @@ impl EasyExcel {
     /// Creates a `WriteTable` value mirroring Java
     /// `EasyExcelFactory.writerTable(Integer)`. (Java `writerTable(int)`)
     #[must_use]
-    pub fn writer_table(table_no: i32) -> crate::writer::MirroredWriteTable {
-        crate::writer::MirroredWriteTable::with_table_no(table_no)
+    pub fn writer_table(table_no: i32) -> crate::write::MirroredWriteTable {
+        crate::write::MirroredWriteTable::with_table_no(table_no)
     }
 
     /// Begins a multi-table write flow that produces an `ExcelWriterTableBuilder`.
@@ -216,14 +216,14 @@ impl EasyExcel {
     /// Phase 4 addition: provides the three-arg `write(Collection, WriteSheet, WriteTable)`
     /// overload at the public facade level.
     #[must_use]
-    pub fn writer_table_builder(table_no: i32) -> crate::writer::ExcelWriterTableBuilder {
-        crate::writer::ExcelWriterTableBuilder::new().table_no(table_no)
+    pub fn writer_table_builder(table_no: i32) -> crate::write::ExcelWriterTableBuilder {
+        crate::write::ExcelWriterTableBuilder::new().table_no(table_no)
     }
 
     /// Builds Java's unbound `writerTable()` builder.
     #[must_use]
-    pub fn writer_table_builder_default() -> crate::writer::ExcelWriterTableBuilder {
-        crate::writer::ExcelWriterTableBuilder::new()
+    pub fn writer_table_builder_default() -> crate::write::ExcelWriterTableBuilder {
+        crate::write::ExcelWriterTableBuilder::new()
     }
 
     /// Fills scalar `{key}` placeholders in an existing XLSX template.

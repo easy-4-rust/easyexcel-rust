@@ -3,7 +3,7 @@
 //! 对应 Java：`com.alibaba.excel.read.builder.ExcelReaderBuilder.sheet(...)` 接受的
 //! `Integer` / `String` 形参，由 Rust 在 facade 层做工厂式归一。
 
-use crate::reader::SheetSelector;
+use crate::read::SheetSelector;
 
 /// Input accepted by `.sheet(...)`.
 pub trait IntoSheetSelector {

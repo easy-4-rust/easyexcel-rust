@@ -5,10 +5,22 @@
 //! 当前作用域供测试（`super::*`）使用，不再定义任何类型。所有 facade 类型
 //! 拆分到独立文件（每个类型一个 `.rs`，命名 1:1 对应 Java 类）。
 
+pub mod analysis;
+pub mod annotation;
+pub mod cache;
+pub mod constant;
+pub mod context;
+pub mod converters;
 pub mod core;
-pub mod reader;
+pub mod enums;
+pub mod event;
+pub mod exception;
+pub mod metadata;
+pub mod read;
+pub mod support;
 pub mod template;
-pub mod writer;
+pub mod util;
+pub mod write;
 
 mod collect_listener;
 mod easy_excel;
@@ -22,19 +34,21 @@ mod excel_writer_builder;
 mod into_sheet_selector;
 mod write_type_helpers;
 
-pub use crate::core::metadata::GlobalConfiguration;
+pub use crate::cache::{
+    Ehcache, EternalReadCacheSelector, MapCache, ReadCache, ReadCacheSelector,
+    SimpleReadCacheSelector, XlsCache,
+};
 pub use crate::core::*;
-pub use crate::reader::{
-    CompatibleExcelReaderBuilder, CompatibleExcelReaderSheetBuilder, Ehcache,
-    EternalReadCacheSelector, ExcelLocale, ExcelReader, MapCache, ReadCache, ReadCacheMode,
-    ReadCacheSelector, SimpleReadCacheSelector, StoredReadCacheSelector, XlsCache,
+pub use crate::metadata::GlobalConfiguration;
+pub use crate::read::{
+    CompatibleExcelReaderBuilder, CompatibleExcelReaderSheetBuilder, ExcelLocale, ExcelReader,
     apply_global_configuration_to_read_options, global_configuration_from_read_options,
 };
 pub use crate::template::{
     ExcelTemplateWriter, FillConfig, FillDirection, FillWrapper, IntoTemplateValue, TemplateData,
     TemplateSheet, fill_xlsx_template, fill_xlsx_template_list,
 };
-pub use crate::writer::{
+pub use crate::write::{
     CellStyle, CompatibleExcelWriterBuilder, CompatibleExcelWriterOutputStreamBuilder,
     CompatibleExcelWriterSheetBuilder, CsvEncodingWriter, ExcelBuilder, ExcelBuilderImpl,
     ExcelOutputStream, ExcelWriter, HorizontalAlignment, HorizontalCellStyleStrategy,
@@ -53,7 +67,7 @@ pub use excel_builder::{
 // crate 根作用域的内部 `use`：这些名称被 `reader` 等子模块通过
 // `crate::ReadOptions` / `crate::SheetSelector` / `crate::read_csv` 等路径引用，
 // 删除会导致整个 crate 内部的路径解析断裂。保持与原 `lib.rs` 一致。
-use crate::reader::{
+use crate::read::{
     ReadOptions, ScientificFormatMode, SheetSelector, read_csv, read_xls, read_xlsx,
 };
 
@@ -83,3 +97,17 @@ mod tests;
 
 #[cfg(test)]
 mod tests_extra;
+
+// 补充缺失的顶层导出
+pub use converters::read_converter_context::ReadConverterContext;
+pub use converters::write_converter_context::WriteConverterContext;
+
+pub use util::java_date::JavaDate;
+
+pub use read::read_cache::ReadCacheMode;
+pub use read::stored_read_cache_selector::StoredReadCacheSelector;
+
+// 外部类型重导出（保持 crate::Url 等路径兼容）
+pub use ::bigdecimal::BigDecimal;
+pub use ::num_bigint::BigInt;
+pub use ::url::Url;

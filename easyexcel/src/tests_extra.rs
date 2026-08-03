@@ -8,14 +8,14 @@ use std::io::Cursor;
 
 use tempfile::tempdir;
 
+use crate::EasyExcel;
 use crate::core::{
     AnalysisContext, Converter, DynamicRow, DynamicValue, ExcelError, NullableObjectConverter,
     ReadListener, Result,
 };
-use crate::reader::{EternalReadCacheSelector, SimpleReadCacheSelector, StoredReadCacheSelector};
+use crate::read::{EternalReadCacheSelector, SimpleReadCacheSelector, StoredReadCacheSelector};
 use crate::template::{FillConfig, FillDirection, FillWrapper, TemplateData};
-use crate::writer::ExcelOutputStream;
-use crate::EasyExcel;
+use crate::write::ExcelOutputStream;
 
 /// 对应 Java：测试用可空转换器（NullableObjectConverter 标记）。
 #[derive(Debug, Clone, Copy)]
@@ -198,7 +198,7 @@ fn xls_write_via_explicit_excel_type_emits_biff8() -> Result<()> {
     let directory = tempdir()?;
     let path = directory.path().join("explicit-type.xls");
     EasyExcel::write::<DynamicRow>(&path)
-        .excel_type(crate::core::support::ExcelTypeEnum::Xls)
+        .excel_type(crate::support::ExcelTypeEnum::Xls)
         .need_head(false)
         .do_write([dynamic_row(0, "xls-row")])?;
     let bytes = std::fs::read(&path)?;

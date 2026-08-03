@@ -2,7 +2,7 @@
 //!
 //! 对应 Java：`com.alibaba.excel.write.builder.ExcelWriterBuilder`
 //! （typed `write(path)` 路径；Java 兼容的无类型入口见
-//! [`crate::writer::CompatibleExcelWriterBuilder`]）。
+//! [`crate::write::CompatibleExcelWriterBuilder`]）。
 
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
@@ -15,7 +15,7 @@ use crate::excel_builder::{do_fill_template, do_fill_template_with_config};
 use crate::excel_output_stream_builder::ExcelOutputStreamBuilder;
 use crate::excel_owned_output_stream_builder::ExcelOwnedOutputStreamBuilder;
 use crate::template::{FillConfig, FillDirection};
-use crate::writer::{
+use crate::write::{
     BuilderFillConfig, CellStyle, DefaultWriteHandlerLoader, ExcelWriter, MergeRange,
     MirroredLoopMergeStrategy as LoopMergeStrategy, WriteOptions, WriteSheet,
     write_csv_with_handlers, write_xls_with_handlers, write_xlsx_with_handlers,
@@ -47,7 +47,7 @@ where
     /// Sets an explicit output type, overriding the file extension.
     /// (Java `ExcelWriterBuilder.excelType`)
     #[must_use]
-    pub const fn excel_type(mut self, excel_type: crate::core::support::ExcelTypeEnum) -> Self {
+    pub const fn excel_type(mut self, excel_type: crate::support::ExcelTypeEnum) -> Self {
         self.options.excel_type = Some(excel_type);
         self
     }
@@ -284,7 +284,7 @@ where
     ///
     /// - CSV templates are rejected (`csv cannot use template.`), matching Java.
     /// - **XLS templates:** record-preserving BIFF8 overlay via
-    ///   `crate::writer::biff8::Biff8TemplatePackage` (unmodified records kept;
+    ///   `crate::write::biff8::Biff8TemplatePackage` (unmodified records kept;
     ///   new cells appended as LABEL/NUMBER). Creating sheets absent from the
     ///   template remains unsupported.
     /// - **Default (XLSX):** styles and merges are preserved via ZIP/OOXML append
@@ -347,7 +347,7 @@ where
     #[must_use]
     pub fn to_output_stream<W>(
         self,
-        output: crate::writer::ExcelOutputStream<W>,
+        output: crate::write::ExcelOutputStream<W>,
     ) -> ExcelOwnedOutputStreamBuilder<T, W>
     where
         W: std::io::Write + Send + 'static,
