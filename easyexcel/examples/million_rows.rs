@@ -50,8 +50,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     }
 
     let write_started = Instant::now();
+    // 内存模式：MODE=full 关闭恒定内存（全量驻留换取速度），默认恒定内存流式。
+    let constant_memory = std::env::var("MODE").as_deref() != Ok("full");
     EasyExcel::write::<BenchmarkRow>(&path)
-        .constant_memory(true)
+        .constant_memory(constant_memory)
         .do_write_iter((0..rows).map(|id| BenchmarkRow {
             id,
             value: format!("row-{id}"),

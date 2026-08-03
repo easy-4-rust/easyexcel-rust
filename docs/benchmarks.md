@@ -204,3 +204,29 @@ mvn -q dependency:build-classpath -pl easyexcel-test -Dmdep.outputFile=/tmp/eex-
   -cp "easyexcel-test/target/test-classes:easyexcel-test/target/classes:$(cat /tmp/eex-cp.txt)" \
   com.alibaba.easyexcel.test.benchmark.MillionRowBenchmark 1000000 /tmp/out.xlsx stream
 ```
+
+### 2026-08-03 memory-mode probe: memory-for-speed is not available
+
+The public `constant_memory` switch (`WriteOptions.constant_memory`,
+`WriteSheetBuilder::constant_memory`) is the "memory for speed" dial. A
+1M-row probe comparing `MODE=full` (constant_memory off, full RAM) with the
+default constant-memory streaming (same machine, same day, Rust 1.97.1):
+
+| | constant memory | full memory |
+|---|---|---|
+| Write | 6.05 s | 7.74 s (slower) |
+| Read | 2.49 s | 5.05 s (2x slower) |
+| XLSX bytes | 12,336,909 | 14,578,335 (larger) |
+| Peak RSS | 10.8 MiB | 1.06 GiB (100x) |
+
+Structural cause: full-memory mode emits a shared-strings table
+(sharedStrings.xml ≈ 25 MB raw for 1M unique `row-N` strings) and
+cell `<v>index</v>` references; constant-memory mode emits inline
+strings (`<is><t>row-N</t></is>`) with no SST. For workloads with unique
+strings the SST is pure overhead (larger file, slower read via SST lookup,
+no space win); for highly repetitive strings SST would win, but the
+constant-memory path is already the fastest of the two on this benchmark.
+Conclusion: the memory dial cannot buy speed in the current backend —
+constant-memory streaming is the optimal point on both axes. The path to
+faster writes is the hot-path regression recovery (101d668 semantic-parity
+cost), not a memory-mode switch. Reproduce: `MODE=full ./scripts/benchmark-million-rows.sh`.
