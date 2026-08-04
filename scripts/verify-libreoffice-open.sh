@@ -111,7 +111,20 @@ for file in "$fixtures_out"/*.xlsx "$fixtures_out"/*.xls "$fixtures_out"/*.csv; 
         -env:UserInstallation="file://$workdir/profile" \
         --convert-to csv --outdir "$outdir" "$file"; then
         combined="$(cat "$stdout_log" "$stderr_log")"
-        if printf '%s' "$combined" | grep -qi 'repair'; then
+        # 内容校验：CSV 必须存在、非空、且不是原始 OLE/二进制容器字节
+        # （soffice 对无法解析的文件会"成功"退出并输出原始字节——只查退出码
+        # 和 repair 字样会产生假阳性）。
+        csv_out="$outdir/${name%.*}.csv"
+        content_ok=1
+        if [ ! -s "$csv_out" ]; then
+            content_ok=0
+        elif head -c 4 "$csv_out" | od -An -tx1 | grep -q 'd0 cf 11 e0'; then
+            content_ok=0
+        fi
+        if [ "$content_ok" -eq 0 ]; then
+            echo "FAIL  $name  (soffice did not parse the file: CSV output is missing/empty/binary)"
+            failed=$((failed + 1))
+        elif printf '%s' "$combined" | grep -qi 'repair'; then
             echo "FAIL  $name  (soffice reported a repair warning)"
             printf '%s\n' "$combined" | grep -i 'repair' | sed 's/^/      /' || true
             failed=$((failed + 1))

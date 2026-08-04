@@ -18,15 +18,16 @@
 //! **Supported:** strings (SST), numbers, booleans, dates/datetimes (1900 system),
 //! single or multiple sheets, header row + data rows, column widths, row heights,
 //! basic fonts (bold/italic/size/indexed colour), solid fill colours, merge
-//! regions, calamine / `EasyExcel::read` round-trip for those scalars + merges.
+//! regions, formulas (see [`ptg`]), calamine / `EasyExcel::read` round-trip for
+//! those scalars + merges.
 //!
 //! **Still unsupported (explicit `Unsupported` or degraded):**
 //! - **Password / RC4 / XOR encryption** — typed `Unsupported` (not OOXML Agile).
 //! - **Images** — typed `Unsupported` for `CellValue::Image` / non-empty `Images`
 //!   (no MSODrawing/OBJ/Escher; never silently drop image bytes).
 //! - in-place OLE style/merge preservation beyond template MVP, collection/horizontal
-//!   `.xls` fill, true formula tokens, hyperlink/comment records, rich-text runs,
-//!   borders, arbitrary custom number formats, charts, macros.
+//!   `.xls` fill, cross-sheet formula references, hyperlink/comment records,
+//!   rich-text runs, borders, arbitrary custom number formats, charts, macros.
 //!
 //! Gaps fail visibly — never silently rewrite as XLSX.
 //!
@@ -37,6 +38,7 @@
 
 mod encode;
 pub mod encrypt;
+pub(crate) mod ptg;
 mod style;
 mod template;
 mod workbook;

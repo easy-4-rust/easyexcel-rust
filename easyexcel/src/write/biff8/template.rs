@@ -36,7 +36,7 @@ use crate::core::{CellValue, ExcelError, Result};
 use cfb::CompoundFile;
 
 use super::encode::{
-    BLANK, BOF, BOOLERR, BOUNDSHEET, DIMENSION, DT_WORKSHEET, EOF, LABEL, LABELSST,
+    BLANK, BOF, BOOLERR, BOUNDSHEET, DIMENSION, DT_WORKSHEET, EOF, FORMULA, LABEL, LABELSST,
     MAX_RECORD_DATA, MERGECELLS, NUMBER, RK, SST, XF_GENERAL, encode_rk, encode_unicode_string,
     pack_merge_range,
 };
@@ -492,6 +492,17 @@ fn encode_cell_record(row: u16, col: u8, xf: u16, value: &Biff8Value) -> Result<
                 data.extend_from_slice(&number.to_le_bytes());
                 Ok(RawRecord { typ: NUMBER, data })
             }
+        }
+        Biff8Value::Formula(expr) => {
+            let rgce = super::ptg::encode_formula_rpn(expr)?;
+            data.extend_from_slice(&0.0f64.to_le_bytes());
+            data.extend_from_slice(&0u16.to_le_bytes());
+            data.extend_from_slice(&0u32.to_le_bytes());
+            // rgce 长度受 BIFF8 记录上限约束，usize->u16 不会截断
+            #[allow(clippy::cast_possible_truncation)]
+            data.extend_from_slice(&(rgce.len() as u16).to_le_bytes());
+            data.extend_from_slice(&rgce);
+            Ok(RawRecord { typ: FORMULA, data })
         }
         Biff8Value::Text(text) => {
             // Inline LABEL avoids mutating the template SST (preserves indices).

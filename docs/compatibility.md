@@ -256,7 +256,10 @@ results are recorded in [benchmarks.md](benchmarks.md).
 
 `.xls` paths and streams dispatch to a **Minimal BIFF8** writer (OLE/CFB
 `Workbook` stream), not to the XLSX engine. This is a deliberate HSSF subset,
-not a full POI port.
+not a full POI port. OLE container uses CFB V3 (512-byte sectors) matching
+Excel/LibreOffice output — the previous V4 (4096-byte) container was not
+parseable by LibreOffice (2026-08-04 fix, verified by
+`scripts/verify-libreoffice-open.sh` content checks).
 
 | Capability | Status |
 |---|---|
@@ -272,7 +275,8 @@ not a full POI port.
 | Column width / row height (`COLINFO` / `ROW`) | supported |
 | Basic FONT / XF (bold, italic, size, indexed/approx RGB fill, align, wrap) | supported (subset) |
 | Merged cells (`MERGECELLS`) | supported |
-| True formula tokens, hyperlink / comment records | unsupported or degraded (formulas → plain text) |
+| True formula tokens | implemented (2026-08-04): BIFF8 `FORMULA` records with real `Ptg` RPN tokens — A1-style refs/areas with `$` absolute flags, arithmetic/comparison/text operators, 257 built-in functions (`[MS-XLS]` indices incl. CETAB like COUNTIF/SUMIF), strings/booleans/errors, percent, unary ops, empty args (`tMissArg`); cached result `0` + `CALCMODE` auto-recalc so Excel/LibreOffice recalculate on load (verified: LibreOffice recalculates `A1+B1`/`SUM`/`IF` correctly). Cross-sheet refs remain typed `Unsupported` |
+| Hyperlink / comment records | unsupported |
 | Rich-text runs, charts, macros | unsupported |
 | Borders / arbitrary custom number formats (beyond date/datetime XF) | unsupported / degraded |
 

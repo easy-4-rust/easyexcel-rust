@@ -19,9 +19,10 @@ use crate::core::{ExcelError, Result};
 use chrono::{NaiveDate, NaiveDateTime, Timelike};
 
 use super::encode::{
-    BIFF8_VERSION, BLANK, BOF, BOOLERR, BOUNDSHEET, CODEPAGE, COLINFO, CONTINUE, DATEMODE,
-    DIMENSION, DT_GLOBALS, DT_WORKSHEET, EOF, EXTSST, FONT, LABELSST, MAX_RECORD_DATA, MSODRAWING,
-    NUMBER, OBJ, RK, ROW, SST, STYLE, WINDOW2, XF, XF_DATE, XF_DATETIME, XF_GENERAL, encode_rk,
+    BIFF8_VERSION, BLANK, BOF, BOOLERR, BOUNDSHEET, CALCMODE, CODENAME, CODEPAGE, COLINFO,
+    CONTINUE, DATEMODE, DIMENSION, DT_GLOBALS, DT_WORKSHEET, EOF, EXTSST, FONT, FORMULA,
+    INTERFACEEND, INTERFACEHDR, LABELSST, MAX_RECORD_DATA, MMS, MSODRAWING, NUMBER, OBJ, RK, ROW,
+    SST, STYLE, WINDOW2, WRITEACCESS, XF, XF_DATE, XF_DATETIME, XF_GENERAL, encode_rk,
     encode_short_unicode_string, encode_unicode_string, pack_colinfo, pack_merge_range, pack_row,
     record, write_merge_cells, write_palette_record,
 };
@@ -83,6 +84,10 @@ pub enum Biff8Value {
     Number(f64),
     /// Boolean.
     Bool(bool),
+    /// Formula expression (without leading `=`), encoded as `BIFF8` `Ptg`
+    /// tokens at serialization time. Cached result defaults to `0` so
+    /// `Excel` / `LibreOffice` recalculate on load.
+    Formula(String),
 }
 
 /// One inclusive merge region in BIFF coordinates (Java HSSF `CellRangeAddress`).
@@ -369,7 +374,10 @@ impl Biff8Book {
         let mut mem = Cursor::new(Vec::<u8>::new());
         {
             #[rustfmt::skip]
-            let mut cf = cfb::CompoundFile::create(&mut mem).map_err(|error| ExcelError::Format(format!("cannot create OLE2 container: {error}")))?;
+            // 使用 V3（512 字节扇区）：与 Excel / LibreOffice 生成的 .xls 一致，
+            // 兼容性最广（部分解析器不支持 V4 的 4096 扇区）。
+            let mut cf = cfb::CompoundFile::create_with_version(cfb::Version::V3, &mut mem)
+                .map_err(|error| ExcelError::Format(format!("cannot create OLE2 container: {error}")))?;
             {
                 #[rustfmt::skip]
                 let mut workbook = cf.create_stream("Workbook").map_err(|error| ExcelError::Format(format!("cannot create Workbook stream: {error}")))?;
@@ -451,8 +459,17 @@ fn build_workbook_stream(book: &Biff8Book) -> Vec<u8> {
     let mut out: Vec<u8> = Vec::new();
     write_bof(&mut out, DT_GLOBALS);
     record(&mut out, CODEPAGE, &1200u16.to_le_bytes());
+    record(&mut out, INTERFACEHDR, &0x04B0u16.to_le_bytes());
+    record(&mut out, MMS, &[0x00]);
+    record(&mut out, INTERFACEEND, &[]);
+    let mut write_access = vec![0u8; 112];
+    write_access[..14].copy_from_slice(b"easyexcel-rust");
+    record(&mut out, WRITEACCESS, &write_access);
+    record(&mut out, CODENAME, &encode_unicode_string("easyexcel"));
     let date_mode = u16::from(book.use_1904_windowing);
     record(&mut out, DATEMODE, &date_mode.to_le_bytes());
+    // CALCMODE：自动重算（0x0001），确保公式在打开时重新计算
+    record(&mut out, CALCMODE, &1u16.to_le_bytes());
 
     for _ in 0..5 {
         write_default_font(&mut out);
@@ -648,7 +665,7 @@ fn write_worksheet(out: &mut Vec<u8>, sheet: &Biff8Sheet, sst_index: &HashMap<St
         record(out, ROW, &pack_row(row, 0, last_col_exclusive, height));
     }
     for (&(row, col), cell) in &sheet.cells {
-        write_cell(out, row, col, cell, sst_index);
+        write_cell(out, row, col, cell, sst_index).expect("BIFF8 单元格序列化失败");
     }
     if !sheet.merges.is_empty() {
         let ranges: Vec<[u8; 8]> = sheet
@@ -680,7 +697,7 @@ fn write_cell(
     col: u8,
     cell: &Biff8Cell,
     sst_index: &HashMap<String, u32>,
-) {
+) -> Result<()> {
     match &cell.value {
         Biff8Value::Blank => write_blank(out, row, col, cell.xf),
         Biff8Value::Text(text) => {
@@ -689,7 +706,27 @@ fn write_cell(
         }
         Biff8Value::Number(n) => write_number(out, row, col, cell.xf, *n),
         Biff8Value::Bool(b) => write_boolerr(out, row, col, cell.xf, u8::from(*b), false),
+        Biff8Value::Formula(expr) => write_formula(out, row, col, cell.xf, expr)?,
     }
+    Ok(())
+}
+
+/// 发射 FORMULA 记录（0x0006）：8 字节缓存结果（默认 0.0，全零触发
+/// 打开时重算）+ options(2) + chn(4) + cce(2) + rgce（Ptg 令牌数组）。
+fn write_formula(out: &mut Vec<u8>, row: u16, col: u8, xf: u16, expr: &str) -> Result<()> {
+    let rgce = super::ptg::encode_formula_rpn(expr)?;
+    let mut data = Vec::with_capacity(22 + rgce.len());
+    cell_header(&mut data, row, col, xf);
+    // 缓存结果：数字 0.0（全零）→ Excel/LibreOffice 打开时自动重算
+    data.extend_from_slice(&0.0f64.to_le_bytes());
+    data.extend_from_slice(&0u16.to_le_bytes()); // options: fAlwaysCalc=0
+    data.extend_from_slice(&0u32.to_le_bytes()); // chn
+    // rgce 长度受 BIFF8 记录上限约束，usize->u16 不会截断
+    #[allow(clippy::cast_possible_truncation)]
+    data.extend_from_slice(&(rgce.len() as u16).to_le_bytes()); // cce
+    data.extend_from_slice(&rgce);
+    record(out, FORMULA, &data);
+    Ok(())
 }
 
 fn cell_header(data: &mut Vec<u8>, row: u16, col: u8, xf: u16) {

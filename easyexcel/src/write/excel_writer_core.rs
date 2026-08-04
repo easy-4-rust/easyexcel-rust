@@ -1216,11 +1216,12 @@ pub(crate) fn cell_value_to_biff8(
 ) -> Result<Biff8Cell> {
     match value {
         CellValue::Empty => Ok(Biff8Cell::general(Biff8Value::Blank)),
-        CellValue::String(text) | CellValue::Error(text) | CellValue::Formula(text) => {
+        CellValue::String(text) | CellValue::Error(text) | CellValue::Hyperlink { text, .. } => {
             Ok(Biff8Cell::general(Biff8Value::Text(
                 maybe_trim_cell_string(text, global.auto_trim).into_owned(),
             )))
         }
+        CellValue::Formula(text) => Ok(Biff8Cell::general(Biff8Value::Formula(text.clone()))),
         CellValue::Bool(flag) => Ok(Biff8Cell::general(Biff8Value::Bool(*flag))),
         CellValue::Int(number) =>
         {
@@ -1245,9 +1246,6 @@ pub(crate) fn cell_value_to_biff8(
         CellValue::DateTime(date_time) => Ok(Biff8Cell::datetime_serial(
             datetime_to_excel_serial_with_windowing(*date_time, global.use_1904_windowing),
         )),
-        CellValue::Hyperlink { text, .. } => Ok(Biff8Cell::general(Biff8Value::Text(
-            maybe_trim_cell_string(text, global.auto_trim).into_owned(),
-        ))),
         CellValue::Comment { value, .. } => cell_value_to_biff8(value, global),
         CellValue::Images { value, images } => {
             // Write the base value; image bytes are persisted via
@@ -5276,6 +5274,36 @@ mod tests_extra {
         writer.finish()?;
         let bytes = std::fs::read(&path)?;
         assert!(bytes.starts_with(b"PK"));
+        Ok(())
+    }
+
+    #[test]
+    fn xls_formula_cells_emit_formula_records() -> Result<()> {
+        // 对应 Java：POI HSSF setCellFormula → FORMULA 记录（rgce Ptg 编码）
+        let directory = tempdir()?;
+        let path = directory.path().join("formula.xls");
+        let mut writer = ExcelWriter::new(&path);
+        writer.write(
+            [dyn_row_values(&[
+                (0, CellValue::Int(2)),
+                (1, CellValue::Int(3)),
+                (2, CellValue::Formula("A1+B1".to_owned())),
+            ])],
+            &WriteSheet::new("Sheet1"),
+        )?;
+        writer.finish()?;
+        assert!(path.exists());
+        // calamine 回读：普通单元格为原值；公式单元格存在（缓存 0 回读为数字 0）
+        let mut workbook = calamine::Xls::<std::io::BufReader<std::fs::File>>::new(
+            std::io::BufReader::new(std::fs::File::open(&path)?),
+        )
+        .map_err(|e| crate::core::ExcelError::Format(e.to_string()))?;
+        let range = workbook
+            .worksheet_range("Sheet1")
+            .map_err(|e| crate::core::ExcelError::Format(e.to_string()))?;
+        assert_eq!(range.get_value((0, 0)), Some(&calamine::Data::Int(2)));
+        assert_eq!(range.get_value((0, 1)), Some(&calamine::Data::Int(3)));
+        assert!(range.get_value((0, 2)).is_some());
         Ok(())
     }
 
