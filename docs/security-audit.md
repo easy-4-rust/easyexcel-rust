@@ -1,20 +1,27 @@
 # easyexcel-rust 依赖安全审计
 
-> 审计日期：2026-08-03（修复后复跑）｜ 范围：workspace `Cargo.lock` + Rust 工具链
+> 审计日期：2026-08-05（office-crypto 回退官方后复跑）｜ 范围：workspace `Cargo.lock` + Rust 工具链
 > 对应 `docs/compatibility.md` 验证证据 7（security audit 门禁）。
 
 ## 结论
 
-**0 vulnerabilities，`cargo audit` 退出码 0**，证据 7（安全审计门禁）**绿**。
-2026-08-01 审计发现的 2 个高危漏洞（`quick-xml 0.38.4` 传递依赖）已修复：
-上游 `office-crypto 0.3.0` 固定 `quick-xml 0.38.4`（该 0.38.x 线无修复版），
-故将 `office-crypto` vendor 至 `vendor/office-crypto`，依赖提升为 `quick-xml 0.41`
-（与 workspace 直接依赖同版本），经 `[patch.crates-io]` 全局替换；其 quick-xml
-API 使用面（`Reader`/`Event`）在 0.38 → 0.41 兼容，加密读写测试（
-`temp_encrypt_password_round_trip`、`golden_encrypt_data`）回归通过。
-`Cargo.lock` 中 `quick-xml 0.38.4` 已完全移除，全 workspace 单一 0.41.0。
+**`cargo audit` 退出码 0（0 vulnerabilities 报出），证据 7（安全审计门禁）绿**。
+2 条高危公告（`quick-xml 0.38.4` 上的 RUSTSEC-2026-0194/0195）为**已记录豁免**
+（`.cargo/audit.toml` ignore），非漏洞状态：
 
-剩余 10 条 informational 警告（`unmaintained`/`notice`/`unsound` 级，非漏洞，
+- 2026-08-01 发现：上游 `office-crypto 0.3.0` 固定 `quick-xml 0.38.4`
+  （解析型 DoS，攻击面 = 用户本地密码保护 XLSX 的 `EncryptionInfo` 元数据解析）；
+- 2026-08-03 曾 vendor 至 `vendor/office-crypto` 并提升 quick-xml 到 0.41
+  （与 workspace 直接依赖同版本）实现真 0 漏洞；
+- **2026-08-05 按项目决策回退**：直接使用 crates.io 官方 `office-crypto 0.3.0`
+  （上游最新版，2026-07-22 发布；GitHub master 亦未升级 quick-xml），
+  删除 vendor 与 `[patch.crates-io]`。`quick-xml 0.38.4` 随官方依赖回到
+  `Cargo.lock`，两条 high 公告转入**已记录豁免**（ignore + 本条分析），
+  门禁保持绿。workspace 自身的 SAX 解析仍用直接依赖 `quick-xml 0.41.0`
+  （已修复），不受影响。加密读写测试（`temp_encrypt_password_round_trip`、
+  `golden_encrypt_data`）回归通过。
+
+剩余 informational 警告（`unmaintained`/`notice`/`unsound` 级，非漏洞，
 不使 `cargo audit` 失败）：`aes-soft`/`aesni`/`cpuid-bool`（aes 生态旧分 crate，
 由 `office-crypto` 的 `aes 0.8` 线传递）
 `bincode`/`instant`/`stdweb`（深层传递）、`rand 0.7.3`（unsound 仅当使用
@@ -35,16 +42,22 @@ cargo audit
   结果与 `cargo audit` 一致（离线脚本未处理 withdrawn 状态，ring 等已撤回公告需
   排除；generic-array 0.14.7 因多行 patched 列表解析误差曾误报，真实工具不报）。
 
-## 漏洞明细（已修复，历史记录）
+## 漏洞明细（历史记录）
 
-| Crate | 锁定版本 | ID | 严重度 | 说明 | 修复 |
+| Crate | 锁定版本 | ID | 严重度 | 说明 | 状态（2026-08-05） |
 |---|---|---|---|---|---|
-| `quick-xml`（传递） | 0.38.4 | RUSTSEC-2026-0195 | 7.5 high | `NsReader` 命名空间声明无界分配 → 内存耗尽 DoS | 升级到 >= 0.41.0 |
-| `quick-xml`（传递） | 0.38.4 | RUSTSEC-2026-0194 | 7.5 high | 起始标签重复属性名检查二次方运行时间（DoS） | 升级到 >= 0.41.0 |
+| `quick-xml`（传递） | 0.38.4 | RUSTSEC-2026-0195 | 7.5 high | `NsReader` 命名空间声明无界分配 → 内存耗尽 DoS | 已记录豁免：官方 office-crypto 0.3.0 固定 0.38.4，无修复版；攻击面仅本地文件 EncryptionInfo 元数据 |
+| `quick-xml`（传递） | 0.38.4 | RUSTSEC-2026-0194 | 7.5 high | 起始标签重复属性名检查二次方运行时间（DoS） | 同上 |
 
-**2026-08-03 修复记录**：`vendor/office-crypto`（上游 0.3.0 源码 fork）+
+**2026-08-03 修复记录（已回退）**：`vendor/office-crypto`（上游 0.3.0 源码 fork）+
 root `Cargo.toml` `[patch.crates-io]`，quick-xml 提升到 0.41.0。复跑
 `cargo audit` 0 vulnerabilities，exit 0。`Cargo.lock` 不再含 0.38.4。
+
+**2026-08-05 回退记录**：按项目决策直接使用 crates.io 官方 `office-crypto 0.3.0`
+（删 `vendor/office-crypto` 与 `[patch.crates-io]`），`quick-xml 0.38.4` 回到
+lock，两条 high 公告转已记录豁免（`.cargo/audit.toml` ignore + 本表），
+`cargo audit` 仍 exit 0。若上游发布升级 quick-xml 的新版，直接 `cargo update`
+并移除对应 ignore。
 
 ## 受影响代码路径（已消除）
 
@@ -61,9 +74,11 @@ quick-xml v0.38.4
   easyexcel-reader 自身的 SAX 解析使用 0.41.0（已修复版本），不受影响。
 - 受影响的 0.38.4 由 `office-crypto 0.3.0`（OOXML 加密元数据解析，用于密码保护
   XLSX 读取）传递引入，图中存在两个 quick-xml 版本。
-- 修复后：`cargo tree -i quick-xml` 仅返回 0.41.0 单一版本，上述双版本场景消除。
+- 修复后（2026-08-03 状态）：`cargo tree -i quick-xml` 仅返回 0.41.0 单一版本。
+- 回退后（2026-08-05 状态）：`quick-xml 0.38.4`（office-crypto 官方依赖）与
+  `0.41.0`（workspace 直接依赖）双版本并存，0.38.4 由 ignore 豁免（见结论）。
 
-## 修复执行记录
+## 修复执行记录（2026-08-03 vendor，2026-08-05 已回退）
 
 1. 2026-08-03 检查上游：`office-crypto` 最新版仍为 0.3.0（master 亦未升级 quick-xml），
    无升级空间；
@@ -75,8 +90,11 @@ quick-xml v0.38.4
    `golden_encrypt_data` 测试通过；
 6. `cargo audit` → 0 vulnerabilities，exit 0。
 
-两条原漏洞均为解析型 DoS（非 RCE/数据泄露），仅影响密码保护 XLSX 读取的
-解包阶段，且现已被 0.41.0 修复版覆盖。
+**2026-08-05 回退**：按项目决策删 `vendor/office-crypto` 与 `[patch.crates-io]`，
+直接依赖 crates.io 官方 `office-crypto 0.3.0`（2026-07-22 发布的最新版）。
+`quick-xml 0.38.4` 回到 lock，两条 high 公告转 `.cargo/audit.toml` ignore
+豁免（攻击面为解析型 DoS，非 RCE/数据泄露，仅影响密码保护 XLSX 读取的
+解包阶段），`cargo audit` 仍 exit 0。
 
 ## 未发现问题项（审计确认干净）
 

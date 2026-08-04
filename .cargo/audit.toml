@@ -1,8 +1,9 @@
 # cargo audit 豁免配置（docs/security-audit.md 有完整分析）
-# 通过 office-crypto 0.3.0 传递依赖的 quick-xml 0.38.4（crates.io 最新版 office-crypto 仍固定 0.38.x）
+# 官方 office-crypto 0.3.0（crates.io 直接依赖）固定 quick-xml 0.38.4：
 # - 攻击面：仅密码保护 XLSX 的 EncryptionInfo 元数据解析（用户提供的本地文件）
 # - SAX 解析路径使用工作区直接依赖 quick-xml 0.41.0（已修复），不受影响
-# - 上游 office-crypto 未发布修复版本；无法通过 Cargo patch 跨大版本替换
+# - 上游未发布修复版本（0.3.0 为最新）；曾 vendor 至 vendor/office-crypto 提升
+#   quick-xml，2026-08-05 按项目决策回退官方 crates.io 版本，豁免随附保留
 [advisories]
 ignore = [
     "RUSTSEC-2026-0195",  # quick-xml 0.38.4 NsReader 无界分配 DoS（office-crypto 传递依赖）

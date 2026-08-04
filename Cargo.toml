@@ -88,11 +88,3 @@ missing_docs = "warn"
 [workspace.lints.clippy]
 all = "warn"
 pedantic = "warn"
-
-# office-crypto 0.3.0 (upstream) pins quick-xml 0.38.4, which carries
-# RUSTSEC-2026-0194/0195 (high, parsing DoS). The 0.38.x line has no patched
-# release, so we vendor the crate (vendor/office-crypto) with quick-xml bumped
-# to 0.41 — the same version the workspace already uses. See
-# docs/security-audit.md.
-[patch.crates-io]
-office-crypto = { path = "vendor/office-crypto" }

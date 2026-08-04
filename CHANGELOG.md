@@ -18,7 +18,7 @@
   重复区域游标对齐 Java `FillConfig`
 - **8 个 Web 框架适配器**：axum / actix-web / rocket / warp / salvo /
   poem / tide / hyper，统一 `excel_download_response` / `read_upload_*` API
-- **加密读写**：ECMA-376 Agile 密码保护 XLSX（office-crypto vendor）
+- **加密读写**：ECMA-376 Agile 密码保护 XLSX（crates.io 官方 office-crypto）
 
 ### 质量保证（对照 docs/compatibility.md 1.0 门禁 7 条证据）
 
@@ -41,4 +41,5 @@
 ### 安全
 
 - 0 vulnerabilities（`cargo audit`）；`quick-xml 0.38.4` 高危传递依赖
-  已通过 vendor `office-crypto` + `[patch.crates-io]` 升级到 0.41 修复
+  经 vendor `office-crypto` + `[patch.crates-io]` 升级到 0.41 修复（2026-08-05
+  回退官方 crates.io 版本，0.38.4 两条 high 转已记录豁免，`cargo audit` 仍 exit 0）
