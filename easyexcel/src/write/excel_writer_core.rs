@@ -51,6 +51,7 @@ pub use crate::write::append_rows::{append_rows_to_worksheet, append_rows_to_wor
 pub use crate::write::excel_writer::ExcelWriter;
 
 pub use crate::write::builder::abstract_excel_writer_parameter_builder::AbstractExcelWriterParameterBuilder;
+pub use crate::write::builder::excel_writer_sheet_builder::ExcelWriterSheetBuilder as CompatibleExcelWriterSheetBuilder;
 pub use crate::write::builder::excel_writer_table_builder::ExcelWriterTableBuilder;
 pub use crate::write::cell_style::CellStyle;
 pub use crate::write::csv_encoding_writer::{
@@ -121,7 +122,6 @@ pub use crate::write::style::horizontal_cell_style_strategy::HorizontalCellStyle
 pub use crate::write::style::row::simple_row_height_style_strategy::SimpleRowHeightStyleStrategy;
 pub use crate::write::style::vertical_cell_style_strategy::VerticalCellStyleStrategy;
 pub use crate::write::vertical_alignment::VerticalAlignment;
-pub use crate::write::write::builder::excel_writer_sheet_builder::ExcelWriterSheetBuilder as CompatibleExcelWriterSheetBuilder;
 pub use crate::write::write_options::WriteOptions;
 pub use crate::write::write_progress::WriteProgress;
 pub use crate::write::write_sheet::WriteSheet;

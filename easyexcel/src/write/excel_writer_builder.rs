@@ -6,8 +6,8 @@ use std::path::PathBuf;
 use crate::core::{CsvCharset, ExcelError, Result, WriteHandler};
 use crate::support::ExcelTypeEnum;
 
+use crate::write::builder::excel_writer_sheet_builder::ExcelWriterSheetBuilder;
 use crate::write::metadata::write_workbook::WriteWorkbook;
-use crate::write::write::builder::excel_writer_sheet_builder::ExcelWriterSheetBuilder;
 use crate::{ExcelOutputStream, ExcelWriter};
 
 /// Java-compatible workbook writer builder backed by the real Rust writer.

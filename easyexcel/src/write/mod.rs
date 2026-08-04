@@ -27,7 +27,6 @@ pub mod style;
 pub(crate) mod template_write;
 pub mod vertical_alignment;
 /// Java `com.alibaba.excel.write` package-compatible API paths.
-pub mod write;
 pub mod write_csv;
 pub mod write_options;
 pub mod write_progress;

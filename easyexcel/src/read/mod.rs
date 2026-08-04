@@ -19,9 +19,8 @@ mod xlsx_rows;
 mod xlsx_source;
 
 pub mod metadata;
-/// Java `com.alibaba.excel.read` 包路径镜像（含 `ReadBasicParameter`）。
-pub mod read;
 
+/// Java `com.alibaba.excel.read` 包路径镜像（含 `ReadBasicParameter`）。
 pub mod builder;
 pub mod listener;
 pub mod processor;
@@ -31,8 +30,8 @@ pub use crate::read::metadata::holder;
 
 #[path = "../excel_reader.rs"]
 mod excel_reader;
-mod global_configuration;
 
+mod global_configuration;
 pub use crate::analysis::v03::XlsSaxAnalyser;
 pub use crate::analysis::v07::XlsxSaxAnalyser;
 pub use crate::cache::{
@@ -73,9 +72,6 @@ pub(crate) use row_processing::{
 };
 #[cfg(test)]
 pub(crate) use xlsx_rows::XlsxRowMetadata;
-#[cfg(test)]
-pub(crate) use xlsx_source::{XlsxInput, XlsxSource, is_compound_document};
-
 #[cfg(test)]
 mod missing_tests;
 #[cfg(test)]

@@ -9,7 +9,7 @@ use crate::read::ReadOptions;
 
 /// 对应 Java：`ReadBasicParameter extends BasicParameter`
 ///
-/// 读取基本参数，包含表头行数和自定义监听器列表。
+/// 读取基本参数，包含表头行数和自定义监听器列表（对应 Java `ReadBasicParameter`）。
 /// 实际字段已分散到 `ReadOptions` 和 builder 中。
 #[derive(Debug, Clone, Default)]
 pub struct ReadBasicParameter {
@@ -24,7 +24,7 @@ impl ReadBasicParameter {
         Self { head_row_number: 1 }
     }
 
-    /// 从 ReadOptions 构造。
+    /// 从 `ReadOptions` 构造。
     #[must_use]
     pub fn from_options(options: &ReadOptions) -> Self {
         Self {

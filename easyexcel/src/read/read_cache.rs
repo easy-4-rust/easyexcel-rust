@@ -32,23 +32,42 @@ pub(crate) const DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES: u64 = 5_000_000;
 /// Write-phase cache: sequential `put` calls.
 pub trait SharedStringCacheWriter {
     /// 写入一条共享字符串。
+    ///
+    /// # Errors
+    ///
+    /// 写入失败（如磁盘空间不足）时返回 [`ExcelError`]。
     fn put(&mut self, value: String) -> Result<()>;
     /// 结束写入阶段并返回只读缓存视图。
+    ///
+    /// # Errors
+    ///
+    /// 落盘或切换只读视图失败时返回 [`ExcelError`]。
     fn finish(self: Box<Self>) -> Result<Box<dyn SharedStringCacheReader>>;
 }
 
 /// Read-phase cache: concurrent `get` calls via `&self` (no `&mut`).
 pub trait SharedStringCacheReader: Send + Sync {
     /// 按下标读取共享字符串。
+    ///
+    /// # Errors
+    ///
+    /// 下标越界或读取失败时返回 [`ExcelError`]。
     fn get(&self, index: usize) -> Result<String>;
     /// 返回缓存中共享字符串的数量（仅供测试使用）。
-    #[cfg(test)]
     fn len(&self) -> usize;
+    /// 判断缓存是否为空。
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 /// 统一的共享字符串缓存抽象：组合写入与读取两个阶段。
 pub trait SharedStringCache: SharedStringCacheWriter + SharedStringCacheReader {
     /// 一次性写入并结束写入阶段，返回只读缓存视图（内部缓存 API 脚手架）。
+    ///
+    /// # Errors
+    ///
+    /// 写入或切换只读视图失败时返回 [`ExcelError`]。
     // 内部缓存 API 脚手架，暂未在 crate 内直接调用。
     #[allow(dead_code)]
     fn put_and_finish(self: Box<Self>) -> Result<Box<dyn SharedStringCacheReader>>
@@ -105,7 +124,6 @@ impl SharedStringCacheReader for MemorySharedStringCache {
         })
     }
 
-    #[cfg(test)]
     fn len(&self) -> usize {
         self.values.len()
     }
@@ -126,7 +144,6 @@ impl SharedStringCacheReader for MemorySharedStringReader {
         })
     }
 
-    #[cfg(test)]
     fn len(&self) -> usize {
         self.values.len()
     }
@@ -273,7 +290,6 @@ impl SharedStringCacheReader for ConcurrentDiskCache {
         })
     }
 
-    #[cfg(test)]
     fn len(&self) -> usize {
         self.entries.len()
     }
@@ -301,7 +317,6 @@ impl SharedStringCacheReader for ConcurrentDiskReader {
         })
     }
 
-    #[cfg(test)]
     fn len(&self) -> usize {
         self.entries.len()
     }

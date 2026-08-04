@@ -1,3 +1,4 @@
+use super::xlsx_source::{XlsxSource, is_compound_document};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io::{BufRead, Read, Write};

@@ -28,18 +28,14 @@ pub use crate::metadata::data::{
 pub use crate::read::listener::read_listener;
 
 // Result 类型别名
+/// `Result` 类型别名，错误类型为 `ExcelError`。
 pub type Result<T> = std::result::Result<T, crate::support::excel_error::ExcelError>;
 
 // write/ 相关类型
 pub use crate::write::write_backend_handle::*;
-pub use crate::write::write_cell_context::*;
 pub use crate::write::write_context::*;
 pub use crate::write::write_fill_executor::*;
-pub use crate::write::write_handler::*;
 pub use crate::write::write_holder_context::*;
-pub use crate::write::write_row_context::*;
-pub use crate::write::write_sheet_context::*;
-pub use crate::write::write_workbook_context::*;
 
 // metadata 子包重导出
 pub use crate::metadata::property::{
