@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# 排除项：derive 宏属性行与生成代码。git 依赖（xls 公式引擎 fork）源码位于
+# ~/.cargo/git/checkouts，不在 workspace 编译单元内，llvm-cov 天然不统计。
+ignore='easyexcel-derive/src/lib\.rs|easyexcel-reader/src/locale_generated\.rs'
+
 cargo llvm-cov clean --workspace
 cargo llvm-cov \
   --workspace \
   --all-features \
-  --ignore-filename-regex 'easyexcel-derive/src/lib\.rs|easyexcel-reader/src/locale_generated\.rs' \
+  --ignore-filename-regex "$ignore" \
   --html \
   --output-dir coverage
 
@@ -16,7 +20,7 @@ cargo llvm-cov \
 # 故 CI 门禁 = 不低于 95%（容差 1.4~3.7 个百分点，仅防回归）；
 # "每行可达代码均被覆盖"的权威声明由 evidence 6 承载。
 cargo llvm-cov report \
-  --ignore-filename-regex 'easyexcel-derive/src/lib\.rs|easyexcel-reader/src/locale_generated\.rs' \
+  --ignore-filename-regex "$ignore" \
   --fail-under-lines 95 \
   --fail-under-regions 95 \
   --fail-under-functions 95 \

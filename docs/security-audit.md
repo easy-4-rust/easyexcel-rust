@@ -120,18 +120,28 @@ error: 2 vulnerabilities found!
 warning: 1 allowed warning found
 ```
 
-## 附：2026-08-04 vendor xls 后的新增警告分析
+## 附：2026-08-04 接入 xls 公式引擎后的新增警告分析
 
-公式缓存值求值引擎集成后，`xls` fork 被 vendor 至 `vendor/xls`
-（`easyexcel/Cargo.toml` 声明 `default-features = false`，CLI/TUI 前端关闭）。
-依赖解析在 `Cargo.lock` 中新增了 optional feature 的依赖闭包，`cargo audit`
-随之报出 2 条 Warning 级（非漏洞）条目，已加入 `.cargo/audit.toml` ignore：
+公式缓存值求值引擎以 git 依赖接入（`easyexcel/Cargo.toml`：
+`xls = { git = "https://github.com/easy-4-rust/xls.git", rev = "…" }`，
+声明 `default-features = false`，fork 的 CLI/TUI 前端关闭）。
 
-| Crate | 版本 | ID | 警告 | 链路 | 实际影响 |
+- 早期 `path` 依赖（`../../xls` / `vendor/xls`）解析时，`Cargo.lock` 曾把
+  fork 的 optional `tui` feature 闭包（`ratatui 0.29` → `tui-textarea` →
+  `lru 0.12.5`、`paste 1.0.15`）解析进 lock，`cargo audit` 报出 2 条
+  Warning 级（非漏洞）条目；
+- 切换为 git 依赖（`rev` pin）后，lock 重新解析，该 optional 闭包不再进入
+  lock（`ratatui`/`paste` 消失，`lru` 仅存 workspace 编译链的 0.16.4 已修复
+  版），当前 `cargo audit` **0 vulnerabilities、无警告，exit 0**；
+- `.cargo/audit.toml` 中相应 ignore 条目（RUSTSEC-2024-0436 / RUSTSEC-2026-0002）
+  **保留作为防御**：若未来 fork 的 feature 声明变化导致闭包重新进 lock，
+  护栏已就位；届时按下方表格重新核实受影响范围。
+
+| Crate | 版本 | ID | 警告 | 链路 | 实际影响（当前） |
 |---|---|---|---|---|---|
-| `paste` | 1.0.15 | RUSTSEC-2024-0436 | unmaintained（无修复版） | ratatui 0.29 → tui-textarea → xls `tui` feature | 未编译：`tui` feature 关闭，产物不含该链 |
-| `lru` | 0.12.5 | RUSTSEC-2026-0002 | unsound（patched ≥0.16.3） | ratatui 0.29 → tui-textarea → xls `tui` feature | 未编译：同上；workspace 编译链中的 `lru` 为 0.16.4（已修复） |
+| `paste` | 1.0.15 | RUSTSEC-2024-0436 | unmaintained（无修复版） | ratatui 0.29 → tui-textarea → xls `tui` feature | 不在 lock（git 依赖解析后）；即便进 lock 也未被编译（feature 关闭） |
+| `lru` | 0.12.5 | RUSTSEC-2026-0002 | unsound（patched ≥0.16.3） | ratatui 0.29 → tui-textarea → xls `tui` feature | 不在 lock；workspace 编译链中的 `lru` 为 0.16.4（已修复） |
 
 验证：`cargo tree -e features -p easyexcel` 显示 `xls` 无任何 feature 激活；
-`cargo tree -i lru@0.12.5` 仅经 `ratatui`（optional）。`cargo audit` 复跑
+`Cargo.lock` 中 `ratatui`/`paste` 不存在。`cargo audit` 复跑
 **0 vulnerabilities，exit 0**。

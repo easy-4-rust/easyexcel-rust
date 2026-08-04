@@ -8,10 +8,10 @@ ignore = [
     "RUSTSEC-2026-0195",  # quick-xml 0.38.4 NsReader 无界分配 DoS（office-crypto 传递依赖）
     "RUSTSEC-2026-0194",  # quick-xml 0.38.4 重复属性二次方 DoS（同上）
     "RUSTSEC-2024-0388",  # derivative 2.2.0 unmaintained（间接依赖，无已知利用）
-    # vendor/xls 的 optional tui feature（default-features=false 关闭）解析出的
-    # 未编译依赖：paste 1.0.15 unmaintained、lru 0.12.5 unsound（ratatui→tui-textarea
-    # 链）。两者仅存在于 Cargo.lock，easyexcel 实际构建产物不含它们；workspace 编译
-    # 链中的 lru 为 0.16.4（>= 0.16.3 patched）。
+    # xls fork（git 依赖）的 optional tui feature（default-features=false 关闭）
+    # 解析出的未编译依赖：paste 1.0.15 unmaintained、lru 0.12.5 unsound
+    # （ratatui→tui-textarea 链）。两者仅存在于 Cargo.lock，easyexcel 实际构建
+    # 产物不含它们；workspace 编译链中的 lru 为 0.16.4（>= 0.16.3 patched）。
     "RUSTSEC-2024-0436",  # paste 1.0.15 unmaintained（xls tui feature 未编译链）
     "RUSTSEC-2026-0002",  # lru <0.16.3 unsound（xls tui feature 未编译链；编译链 0.16.4）
 ]

@@ -98,8 +98,10 @@ release. See the audit document for the change.
 
 Measured with `cargo llvm-cov --workspace --all-features` (full workspace,
 all crates incl. support adapters, demos, xtask) on 2026-08-03 — the same
-measurement runs in CI (`scripts/coverage.sh`). x86_64-linux, rustc 1.97.1,
-2771 tests, all green:
+measurement runs in CI (`scripts/coverage.sh`), triggered only on release /
+manual dispatch (2026-08-05): the full llvm-cov pass takes ~20 minutes, so
+daily push/PR gates skip it (see `.github/workflows/ci.yml`). x86_64-linux,
+rustc 1.97.1, 2771 tests, all green:
 
 | Metric | Value |
 |--------|-------|
@@ -276,7 +278,7 @@ parseable by LibreOffice (2026-08-04 fix, verified by
 | Basic FONT / XF (bold, italic, size, indexed/approx RGB fill, align, wrap) | supported (subset) |
 | Merged cells (`MERGECELLS`) | supported |
 | Freeze panes (`freeze_head` / `freeze_panes`) | supported (2026-08-04): `PANE` record + `WINDOW2` fFrozen/fFrozenNoSplit flags — frozen header rows, frozen columns, and row+column combinations, byte-identical to xlwt `PanesRecord` layout (px/py/rwTop/colLeft/pnnAct); out-of-BIFF8-range splits (row>65535 or col>255) return a typed error like `rust_xlsxwriter::set_freeze_panes` |
-| True formula tokens | implemented (2026-08-04): BIFF8 `FORMULA` records with real `Ptg` RPN tokens — A1-style refs/areas with `$` absolute flags, arithmetic/comparison/text operators, 257 built-in functions (`[MS-XLS]` indices incl. CETAB like COUNTIF/SUMIF), strings/booleans/errors, percent, unary ops, empty args (`tMissArg`); cached results are **evaluated at write time** via the `xls` formula engine (path dependency on a local fork, MIT/Apache-2.0) — numbers/booleans/errors/strings encoded in the 8-byte result + `STRING` record like POI `FormulaEvaluator`; unsupported formulas fall back to `0` + `CALCMODE` auto-recalc. Verified: calamine reads back `A1+B1` = 5.0, LibreOffice recalculates `A1+B1`/`SUM`/`IF` correctly. Cross-sheet refs remain typed `Unsupported` |
+| True formula tokens | implemented (2026-08-04): BIFF8 `FORMULA` records with real `Ptg` RPN tokens — A1-style refs/areas with `$` absolute flags, arithmetic/comparison/text operators, 257 built-in functions (`[MS-XLS]` indices incl. CETAB like COUNTIF/SUMIF), strings/booleans/errors, percent, unary ops, empty args (`tMissArg`); cached results are **evaluated at write time** via the `xls` formula engine (git dependency pinned by `rev` on the `easy-4-rust/xls` fork of `zemse/xls`, MIT/Apache-2.0) — numbers/booleans/errors/strings encoded in the 8-byte result + `STRING` record like POI `FormulaEvaluator`; unsupported formulas fall back to `0` + `CALCMODE` auto-recalc. Verified: calamine reads back `A1+B1` = 5.0, LibreOffice recalculates `A1+B1`/`SUM`/`IF` correctly. Cross-sheet refs remain typed `Unsupported` |
 | Hyperlink / comment records | unsupported |
 | Rich-text runs, charts, macros | unsupported |
 | Borders | unsupported |

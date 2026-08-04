@@ -26,9 +26,11 @@ url.workspace = true
 # 原 easyexcel-reader 依赖
 calamine.workspace = true
 cfb.workspace = true
-# 公式缓存值求值引擎：vendored fork of zemse/xls（vendor/xls，MIT OR Apache-2.0）。
-# 不用仓库外 path —— 干净 CI checkout 无 ../../xls，构建必须自包含。
-xls = { version = "0.1", path = "../vendor/xls", default-features = false }
+# 公式缓存值求值引擎：fork of zemse/xls（https://github.com/easy-4-rust/xls，
+# MIT OR Apache-2.0）。git 依赖 + rev pin：升级 = 改 rev + cargo update；
+# rev 锁死保证干净 CI checkout 可复现构建（不用仓库外 path，也不 vendor
+# 源码进仓库——fork 活跃演进，vendor 会让升级变成手动同步）。
+xls = { git = "https://github.com/easy-4-rust/xls.git", rev = "d8ede4fbbe503e7b53f4d7e660df5f478995516c", default-features = false }
 csv.workspace = true
 encoding_rs.workspace = true
 encoding_rs_io.workspace = true
