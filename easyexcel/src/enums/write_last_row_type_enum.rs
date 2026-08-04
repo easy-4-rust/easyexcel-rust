@@ -1,7 +1,17 @@
-//! 1:1 包路径镜像：Java `com.alibaba.excel.enums.WriteLastRowTypeEnum`。
+//! 对应 Java：`com.alibaba.excel.enums.WriteLastRowTypeEnum`.
 //!
-//! 既有实现：`enum_write_last_row.rs` → [`crate::WriteLastRow`] /
-//! [`crate::WriteLastRowTypeEnum`]。
+//! Tracks whether a worksheet has been initialized with template data or
+//! remains empty.
 
-#![allow(unused_imports)]
-pub use crate::WriteLastRowTypeEnum;
+/// State of the worksheet's last row.
+///
+/// Rust port of Java `WriteLastRowTypeEnum`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WriteLastRowTypeEnum {
+    /// Excel created without a template and nothing has been written.
+    CommonEmpty,
+    /// Excel created from a template and nothing has been written.
+    TemplateEmpty,
+    /// At least one row has been written.
+    HasData,
+}

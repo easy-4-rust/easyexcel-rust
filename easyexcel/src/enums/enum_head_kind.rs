@@ -1,15 +1,6 @@
-//! 对应 Java：`com.alibaba.excel.enums.HeadKindEnum`.
+//! Rust 原生名 `HeadKind` 的别名文件。
+//!
+//! 数据定义（Java `HeadKindEnum` 对象）在 `head_kind_enum.rs`，本文件仅做命名别名重导出。
 
-/// The types of header.
-///
-/// Rust port of Java `HeadKindEnum`. Distinguishes no-header, class-driven
-/// headers, and ad-hoc string-list headers.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum HeadKind {
-    /// No header configured.
-    None,
-    /// Header derived from a `#[derive(ExcelRow)]` class.
-    Class,
-    /// Header derived from a literal string list.
-    String,
-}
+/// Java `HeadKindEnum` 的 Rust 原生名别名。
+pub use crate::enums::head_kind_enum::HeadKindEnum as HeadKind;

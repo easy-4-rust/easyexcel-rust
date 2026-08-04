@@ -1,18 +1,6 @@
-//! 对应 Java：`com.alibaba.excel.enums.ReadDefaultReturnEnum`.
+//! Rust 原生名 `ReadDefaultReturn` 的别名文件。
 //!
-//! `STRING` (default) / `ACTUAL_DATA` / `READ_CELL_DATA`.
+//! 数据定义（Java `ReadDefaultReturnEnum` 对象）在 `read_default_return_enum.rs`，本文件仅做命名别名重导出。
 
-/// Value mode used when reading rows without a declared Rust model.
-///
-/// Rust port of Java `ReadDefaultReturnEnum`. Mirrors the same three modes
-/// while the `Default` impl reproduces Java's `STRING` default.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub enum ReadDefaultReturn {
-    /// Convert every present cell to the text a user sees in the workbook. (Java `STRING`, default)
-    #[default]
-    String,
-    /// Preserve the backend-neutral scalar type of each cell. (Java `ACTUAL_DATA`)
-    ActualData,
-    /// Return the scalar together with its raw value, location, and formula. (Java `READ_CELL_DATA`)
-    ReadCellData,
-}
+/// Java `ReadDefaultReturnEnum` 的 Rust 原生名别名。
+pub use crate::enums::read_default_return_enum::ReadDefaultReturnEnum as ReadDefaultReturn;

@@ -77,7 +77,8 @@ use std::path::PathBuf;
 
 // Facade 类型重导出（每个类型对应独立文件，公开 API 表面保持不变）。
 pub use crate::write::builder::excel_writer_builder::ExcelWriterBuilder;
-pub use easy_excel::{EasyExcel, EasyExcelFactory};
+pub use easy_excel::EasyExcel;
+pub use easy_excel_factory::EasyExcelFactory;
 pub use excel_output_stream_builder::ExcelOutputStreamBuilder;
 pub use excel_owned_output_stream_builder::ExcelOwnedOutputStreamBuilder;
 pub use excel_reader_builder::ExcelReaderBuilder;

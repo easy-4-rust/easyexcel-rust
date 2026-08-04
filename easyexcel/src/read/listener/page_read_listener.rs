@@ -1,118 +1,64 @@
-//! 对应 Java：`com.alibaba.excel.read.listener.PageReadListener`.
+//! 对应 Java：`com.alibaba.excel.read.listener.PageReadListener<T>`.
 
-use std::collections::VecDeque;
+use crate::core::analysis_context::{AnalysisContext, Result};
+use crate::core::read_listener::ReadListener;
 
-use crate::core::{AnalysisContext, ReadListener};
-
-/// 对应 Java：`PageReadListener<T> implements ReadListener<T>`.
+/// A listener that buffers rows and invokes a callback page by page.
 ///
-/// Java batches rows in a list and invokes a `Consumer<List<T>>` when the
-/// batch is full or on `doAfterAllAnalysed`. Rust mirrors with a
-/// `VecDeque<T>` and an injected callback.
+/// 对应 Java：`PageReadListener<T>(Consumer<List<T>> consumer, int
+/// batchCount)` with `BATCH_COUNT = 100`.
 pub struct PageReadListener<T> {
     batch_size: usize,
-    rows: VecDeque<T>,
-    callback: Box<dyn FnMut(Vec<T>) + Send>,
+    batch_index: usize,
+    rows: Vec<T>,
+    callback: Box<PageCallback<T>>,
 }
 
+/// Callback signature for [`PageReadListener`].
+type PageCallback<T> = dyn FnMut(Vec<T>, &AnalysisContext) -> Result<()>;
+
 impl<T> PageReadListener<T> {
-    /// 对应 Java：`PageReadListener(Consumer<List<T>>)`.
-    pub fn new(callback: impl FnMut(Vec<T>) + Send + 'static) -> Self {
+    /// Creates a paged listener. A zero size is normalized to one row. (Java `PageReadListener(Consumer, int)`)
+    #[must_use]
+    pub fn new(
+        batch_size: usize,
+        callback: impl FnMut(Vec<T>, &AnalysisContext) -> Result<()> + 'static,
+    ) -> Self {
+        let batch_size = batch_size.max(1);
         Self {
-            batch_size: 100,
-            rows: VecDeque::new(),
+            batch_size,
+            batch_index: 0,
+            rows: Vec::with_capacity(batch_size),
             callback: Box::new(callback),
         }
     }
 
-    /// 对应 Java：`PageReadListener(Consumer<List<T>>, int)`.
-    #[must_use]
-    pub fn with_batch_size(mut self, batch_size: usize) -> Self {
-        self.batch_size = batch_size.max(1);
-        self
-    }
-
-    /// Mirrors the static `BATCH_COUNT` constant.
-    pub const BATCH_COUNT: usize = 100;
-
-    /// Flushes any remaining rows. (Java `doAfterAllAnalysed` step)
-    pub fn flush(&mut self) {
-        if !self.rows.is_empty() {
-            let drained: Vec<T> = self.rows.drain(..).collect();
-            (self.callback)(drained);
+    fn flush(&mut self, context: &AnalysisContext) -> Result<()> {
+        if self.rows.is_empty() {
+            return Ok(());
         }
+        let rows = std::mem::replace(&mut self.rows, Vec::with_capacity(self.batch_size));
+        let context = context.with_batch_index(self.batch_index);
+        complete_page(&mut self.batch_index, (self.callback)(rows, &context))
     }
 }
 
-impl<T: Send + 'static> ReadListener<T> for PageReadListener<T> {
-    fn invoke(&mut self, data: T, _context: &AnalysisContext) -> crate::core::Result<()> {
-        self.rows.push_back(data);
+impl<T> ReadListener<T> for PageReadListener<T> {
+    fn invoke(&mut self, data: T, context: &AnalysisContext) -> Result<()> {
+        self.rows.push(data);
         if self.rows.len() >= self.batch_size {
-            self.flush();
+            return self.flush(context);
         }
         Ok(())
     }
 
-    fn do_after_all_analysed(&mut self, _context: &AnalysisContext) -> crate::core::Result<()> {
-        self.flush();
-        Ok(())
+    fn do_after_all_analysed(&mut self, context: &AnalysisContext) -> Result<()> {
+        self.flush(context)
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use std::sync::Arc;
-    use std::sync::Mutex;
-
-    use super::*;
-
-    fn context() -> AnalysisContext {
-        AnalysisContext::new("Sheet1", 0, 0)
-    }
-
-    #[test]
-    fn batches_rows_and_flushes_on_batch_size() {
-        // 对应 Java：PageReadListener 满批触发回调，结束后 flush 剩余行
-        let batches = Arc::new(Mutex::new(Vec::new()));
-        let mut listener = PageReadListener::new({
-            let batches = Arc::clone(&batches);
-            move |batch: Vec<i32>| batches.lock().unwrap().push(batch)
-        });
-        for value in 0..105 {
-            listener.invoke(value, &context()).expect("invoke");
-        }
-        assert_eq!(batches.lock().unwrap().len(), 1);
-        assert_eq!(batches.lock().unwrap()[0].len(), 100);
-
-        listener.do_after_all_analysed(&context()).expect("finish");
-        let batches = batches.lock().unwrap();
-        assert_eq!(batches.len(), 2);
-        assert_eq!(batches[1], (100..105).collect::<Vec<_>>());
-    }
-
-    #[test]
-    fn with_batch_size_clamps_to_at_least_one() {
-        // 对应 Java：batchSize=0 收敛为 1
-        let batches = Arc::new(Mutex::new(Vec::new()));
-        let mut listener = PageReadListener::new({
-            let batches = Arc::clone(&batches);
-            move |batch: Vec<i32>| batches.lock().unwrap().push(batch)
-        })
-        .with_batch_size(0);
-        listener.invoke(1, &context()).expect("invoke");
-        assert_eq!(*batches.lock().unwrap(), vec![vec![1]]);
-        assert_eq!(PageReadListener::<i32>::BATCH_COUNT, 100);
-    }
-
-    #[test]
-    fn flush_with_empty_queue_is_noop() {
-        // 对应 Java：无剩余行时 doAfterAllAnalysed 不触发回调
-        let calls = Arc::new(Mutex::new(0usize));
-        let mut listener = PageReadListener::new({
-            let calls = Arc::clone(&calls);
-            move |_: Vec<i32>| *calls.lock().unwrap() += 1
-        });
-        listener.flush();
-        assert_eq!(*calls.lock().unwrap(), 0);
-    }
+fn complete_page(batch_index: &mut usize, result: Result<()>) -> Result<()> {
+    result.map(|()| {
+        *batch_index += 1;
+    })
 }

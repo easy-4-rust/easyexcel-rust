@@ -1,9 +1,17 @@
-//! 1:1 包路径镜像：Java `com.alibaba.excel.enums.CellExtraTypeEnum`。
+//! 对应 Java：`com.alibaba.excel.enums.CellExtraTypeEnum`.
 //!
-//! 既有实现：`enum_cell_extra_type.rs` → [`crate::CellExtraType`]。
+//! `COMMENT / HYPERLINK / MERGE`.
 
-#![allow(unused_imports)]
-/// Java `CellExtraTypeEnum` 命名别名。
-// Java 镜像 API 别名，保留以兼容 Java 命名。
-#[allow(dead_code)]
-pub type CellExtraTypeEnum = crate::CellExtraType;
+/// Extra worksheet information selectable during a read.
+///
+/// Rust port of Java `CellExtraTypeEnum`. Variant names are normalised to
+/// `PascalCase` to match `CellExtra` callers while preserving semantics.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum CellExtraTypeEnum {
+    /// A cell comment/note.                  (Java `COMMENT`)
+    Comment,
+    /// A cell or range hyperlink.             (Java `HYPERLINK`)
+    Hyperlink,
+    /// A merged-cell range.                  (Java `MERGE`)
+    Merge,
+}

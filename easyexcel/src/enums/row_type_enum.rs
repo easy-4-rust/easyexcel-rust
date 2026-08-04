@@ -1,9 +1,14 @@
-//! 1:1 包路径镜像：Java `com.alibaba.excel.enums.RowTypeEnum`。
+//! 对应 Java：`com.alibaba.excel.enums.RowTypeEnum`.
 //!
-//! 既有实现：`enum_row_type.rs` → [`crate::RowType`]。
+//! Used to distinguish data rows from empty rows during SAX streaming.
 
-#![allow(unused_imports)]
-/// Java `RowTypeEnum` 命名别名。
-// Java 镜像 API 别名，保留以兼容 Java 命名。
-#[allow(dead_code)]
-pub type RowTypeEnum = crate::RowType;
+/// The types of row.
+///
+/// Rust port of Java `RowTypeEnum`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RowTypeEnum {
+    /// Data row.                  (Java `DATA`)
+    Data,
+    /// Empty row (only empty cells). (Java `EMPTY`)
+    Empty,
+}

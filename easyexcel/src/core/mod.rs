@@ -50,7 +50,6 @@ pub use crate::enums::enum_cache_location::CacheLocation;
 pub use crate::enums::enum_holder::Holder;
 pub use crate::metadata::cell_extra::{CellExtra, CellExtraType};
 pub use crate::metadata::data::cell_value::CellValue;
-pub use crate::metadata::data::write_font::WriteFont;
 pub use crate::metadata::excel_cell_style::ExcelCellStyle;
 pub use crate::metadata::excel_font_style::ExcelFontStyle;
 pub use crate::metadata::excel_row::ExcelRow;
@@ -58,6 +57,7 @@ pub use crate::read::listener::read_listener::ReadListener;
 pub use crate::support::Empty;
 pub use crate::support::csv_charset::CsvCharset;
 pub use crate::support::excel_error::ExcelError;
+pub use crate::write::metadata::style::write_font::WriteFont;
 pub use crate::write::write_cell_data::WriteCellData;
 
 #[cfg(test)]

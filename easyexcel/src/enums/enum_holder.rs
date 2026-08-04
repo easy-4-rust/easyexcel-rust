@@ -1,18 +1,6 @@
-//! 对应 Java：`com.alibaba.excel.enums.HolderEnum`.
+//! Rust 原生名 `Holder` 的别名文件。
+//!
+//! 数据定义（Java `HolderEnum` 对象）在 `holder_enum.rs`，本文件仅做命名别名重导出。
 
-/// The types of holder.
-///
-/// Rust port of Java `HolderEnum`. Used to tag workbook / sheet / table / row
-/// containers, although Rust collapses most of these into `ReadOptions` /
-/// `WriteOptions` plus private state inside the writer.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Holder {
-    /// Workbook-scoped holder.
-    Workbook,
-    /// Sheet-scoped holder.
-    Sheet,
-    /// Table-scoped holder.
-    Table,
-    /// Row-scoped holder.
-    Row,
-}
+/// Java `HolderEnum` 的 Rust 原生名别名。
+pub use crate::enums::holder_enum::HolderEnum as Holder;

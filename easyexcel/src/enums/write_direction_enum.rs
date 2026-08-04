@@ -1,9 +1,18 @@
-//! 1:1 包路径镜像：Java `com.alibaba.excel.enums.WriteDirectionEnum`。
+//! 对应 Java：`com.alibaba.excel.enums.WriteDirectionEnum`.
 //!
-//! 既有实现：`enum_write_direction.rs` → [`crate::WriteDirection`]。
+//! `VERTICAL` vs `HORIZONTAL` for template fills.
+//!
+//! Java uses this enum; the `easyexcel-template` crate uses
+//! `easyexcel_template::FillDirection` which already provides the same two
+//! variants. This enum is kept as a type alias to avoid diverging names.
 
-#![allow(unused_imports)]
-/// Java `WriteDirectionEnum` 命名别名。
-// Java 镜像 API 别名，保留以兼容 Java 命名。
-#[allow(dead_code)]
-pub type WriteDirectionEnum = crate::WriteDirection;
+/// Direction in which a template fill expands.
+///
+/// Rust port of Java `WriteDirectionEnum`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WriteDirectionEnum {
+    /// Expand downward.
+    Vertical,
+    /// Expand rightward.
+    Horizontal,
+}

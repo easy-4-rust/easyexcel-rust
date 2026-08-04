@@ -1,12 +1,6 @@
-//! 对应 Java：`com.alibaba.excel.enums.NumericCellTypeEnum`.
+//! Rust 原生名 `NumericCellType` 的别名文件。
 //!
-//! POI-specific supplement; not surfaced publicly by Rust.
+//! 数据定义（Java `NumericCellTypeEnum` 对象）在 `numeric_cell_type_enum.rs`，本文件仅做命名别名重导出。
 
-/// Supplements POI `CellType` so write paths can distinguish date from number.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum NumericCellType {
-    /// Plain number.
-    Number,
-    /// Date encoded as a serial number.
-    Date,
-}
+/// Java `NumericCellTypeEnum` 的 Rust 原生名别名。
+pub use crate::enums::numeric_cell_type_enum::NumericCellTypeEnum as NumericCellType;

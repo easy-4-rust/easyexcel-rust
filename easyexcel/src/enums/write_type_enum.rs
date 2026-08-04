@@ -1,9 +1,15 @@
-//! 1:1 包路径镜像：Java `com.alibaba.excel.enums.WriteTypeEnum`。
+//! 对应 Java：`com.alibaba.excel.enums.WriteTypeEnum`.
 //!
-//! 既有实现：`enum_write_type.rs` → [`crate::WriteType`]。
+//! `ADD` vs `FILL`. Used internally by `ExcelBuilderImpl` (Java) to switch
+//! between `ExcelWriteAddExecutor` and `ExcelWriteFillExecutor`.
 
-#![allow(unused_imports)]
-/// Java `WriteTypeEnum` 命名别名。
-// Java 镜像 API 别名，保留以兼容 Java 命名。
-#[allow(dead_code)]
-pub type WriteTypeEnum = crate::WriteType;
+/// Write mode flag.
+///
+/// Rust port of Java `WriteTypeEnum`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WriteTypeEnum {
+    /// Append new rows. (Java `ADD`)
+    Add,
+    /// Fill template placeholders. (Java `FILL`)
+    Fill,
+}

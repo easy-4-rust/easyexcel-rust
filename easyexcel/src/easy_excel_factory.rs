@@ -1,7 +1,8 @@
-//! `EasyExcel` 工厂。
-//!
-//! 对应 Java：`com.alibaba.excel.EasyExcelFactory`
-//! Java 中 `EasyExcel extends EasyExcelFactory`；Rust 合并为同一 [`crate::EasyExcel`]。
+//! 对应 Java：`com.alibaba.excel.EasyExcelFactory`。
 
-#![allow(unused_imports)]
-pub use crate::EasyExcel as EasyExcelFactory;
+use crate::EasyExcel;
+
+/// Java-compatible alias for [`EasyExcel`].
+///
+/// 对应 Java：`EasyExcelFactory`; `EasyExcel` extends the same factory in Java.
+pub type EasyExcelFactory = EasyExcel;

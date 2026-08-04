@@ -6,6 +6,7 @@ pub mod builder;
 pub mod cell_style;
 pub mod csv_encoding_writer;
 pub(crate) mod excel_builder;
+pub(crate) mod excel_builder_impl;
 pub mod excel_output_stream;
 #[path = "../excel_writer.rs"]
 pub mod excel_writer;

@@ -45,7 +45,7 @@ pub use property::{
 
 pub use data::{CellData, DataFormatData};
 pub use font::Font;
-pub use holder::{ExcelHolder, HolderEnum};
+pub use holder::Holder;
 
 pub use data::anchor_type::*;
 pub mod cell_extra;

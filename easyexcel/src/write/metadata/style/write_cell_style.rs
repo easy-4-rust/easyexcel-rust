@@ -1,26 +1,137 @@
 //! 对应 Java：`com.alibaba.excel.write.metadata.style.WriteCellStyle`.
 
-use crate::core::ExcelCellStyle;
-
+use crate::core::excel_border_style::ExcelBorderStyle;
+use crate::core::excel_color::ExcelColor;
+use crate::core::excel_data_format::ExcelDataFormat;
+use crate::core::excel_fill_pattern::ExcelFillPattern;
+use crate::core::excel_font_style::ExcelFontStyle;
+use crate::core::excel_horizontal_alignment::ExcelHorizontalAlignment;
+use crate::core::excel_vertical_alignment::ExcelVerticalAlignment;
 use crate::write::metadata::style::write_font::merge_excel_font_style;
 
-/// 对应 Java：`WriteCellStyle`.
+/// Cell-style properties generated from `HeadStyle` or `ContentStyle` equivalents.
 ///
-/// The Java side carries POI-typed fields plus nested `writeFont` and a
-/// static `merge` helper. Rust reuses [`ExcelCellStyle`] for the data
-/// (including [`ExcelCellStyle::font`]) and mirrors the merge method.
-pub type WriteCellStyle = ExcelCellStyle;
+/// Fields correspond to Java's `WriteCellStyle`. Java's boxed `Short` /
+/// `Integer` becomes `Option<u16>` / `Option<i16>`; Java's `BooleanEnum`
+/// becomes `Option<bool>`. Nested `writeFont` is carried as [`ExcelFontStyle`]
+/// (Copy annotation/strategy font; runtime owned [`crate::WriteFont`] converts
+/// via writer helpers).
+///
+/// `Eq` is not derived because [`ExcelFontStyle`] embeds `f64` font size.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct WriteCellStyle {
+    /// Whether the cell is hidden when the sheet is protected.
+    pub hidden: Option<bool>,
+    /// Whether the cell is locked when the sheet is protected.
+    pub locked: Option<bool>,
+    /// Whether Excel treats the value as explicitly quoted text.
+    pub quote_prefix: Option<bool>,
+    /// Horizontal alignment.
+    pub horizontal_alignment: Option<ExcelHorizontalAlignment>,
+    /// Whether text wraps within the cell.
+    pub wrapped: Option<bool>,
+    /// Vertical alignment.
+    pub vertical_alignment: Option<ExcelVerticalAlignment>,
+    /// Text rotation in degrees.
+    pub rotation: Option<i16>,
+    /// Text indentation level.
+    pub indent: Option<u8>,
+    /// Left border style.
+    pub border_left: Option<ExcelBorderStyle>,
+    /// Right border style.
+    pub border_right: Option<ExcelBorderStyle>,
+    /// Top border style.
+    pub border_top: Option<ExcelBorderStyle>,
+    /// Bottom border style.
+    pub border_bottom: Option<ExcelBorderStyle>,
+    /// Left border indexed or RGB color.
+    pub left_border_color: Option<ExcelColor>,
+    /// Right border indexed or RGB color.
+    pub right_border_color: Option<ExcelColor>,
+    /// Top border indexed or RGB color.
+    pub top_border_color: Option<ExcelColor>,
+    /// Bottom border indexed or RGB color.
+    pub bottom_border_color: Option<ExcelColor>,
+    /// Fill pattern.
+    pub fill_pattern: Option<ExcelFillPattern>,
+    /// Fill background indexed or RGB color.
+    pub fill_background_color: Option<ExcelColor>,
+    /// Fill foreground indexed or RGB color.
+    pub fill_foreground_color: Option<ExcelColor>,
+    /// Whether text shrinks to fit the cell.
+    pub shrink_to_fit: Option<bool>,
+    /// Built-in or custom Excel number format.
+    pub data_format: Option<ExcelDataFormat>,
+    /// Nested font. (Java `WriteCellStyle.writeFont` / `WriteFont`)
+    pub font: Option<ExcelFontStyle>,
+}
+
+impl WriteCellStyle {
+    /// Creates an annotation style with every property unspecified. (Java `WriteCellStyle()`)
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
+            hidden: None,
+            locked: None,
+            quote_prefix: None,
+            horizontal_alignment: None,
+            wrapped: None,
+            vertical_alignment: None,
+            rotation: None,
+            indent: None,
+            border_left: None,
+            border_right: None,
+            border_top: None,
+            border_bottom: None,
+            left_border_color: None,
+            right_border_color: None,
+            top_border_color: None,
+            bottom_border_color: None,
+            fill_pattern: None,
+            fill_background_color: None,
+            fill_foreground_color: None,
+            shrink_to_fit: None,
+            data_format: None,
+            font: None,
+        }
+    }
+
+    /// Attaches a nested font. (Java `WriteCellStyle.setWriteFont(WriteFont)`)
+    #[must_use]
+    pub const fn with_font(mut self, font: ExcelFontStyle) -> Self {
+        self.font = Some(font);
+        self
+    }
+}
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn with_font_attaches_nested_font() {
+        // 对应 Java：WriteCellStyle.setWriteFont
+        let font = ExcelFontStyle {
+            bold: Some(true),
+            ..ExcelFontStyle::default()
+        };
+        let style = WriteCellStyle::new().with_font(font);
+        assert_eq!(style.font, Some(font));
+        let plain = WriteCellStyle::new();
+        assert_eq!(plain.font, None);
+    }
+}
 
 /// 对应 Java：`WriteCellStyle.merge(WriteCellStyle source, WriteCellStyle target)`.
 ///
 /// Java merges the source's non-null fields into the target, including
 /// nested `WriteFont.merge`. The Rust port performs the same union over
-/// [`ExcelCellStyle`]'s `Option` fields and [`ExcelCellStyle::font`].
+/// [`WriteCellStyle`]'s `Option` fields and [`WriteCellStyle::font`].
 #[must_use]
 pub fn merge_write_cell_style(
-    source: &ExcelCellStyle,
-    mut target: ExcelCellStyle,
-) -> ExcelCellStyle {
+    source: &WriteCellStyle,
+    mut target: WriteCellStyle,
+) -> WriteCellStyle {
     macro_rules! or {
         ($field:ident) => {
             if source.$field.is_some() {
@@ -62,60 +173,60 @@ pub fn merge_write_cell_style(
 #[cfg(test)]
 mod tests {
     use crate::core::{
-        ExcelBorderStyle, ExcelCellStyle, ExcelColor, ExcelDataFormat, ExcelFillPattern,
-        ExcelFontStyle, ExcelHorizontalAlignment, ExcelVerticalAlignment,
+        ExcelBorderStyle, ExcelColor, ExcelDataFormat, ExcelFillPattern, ExcelFontStyle,
+        ExcelHorizontalAlignment, ExcelVerticalAlignment,
     };
 
     use super::*;
 
     #[test]
     fn merge_empty_source_preserves_target() {
-        let source = ExcelCellStyle::new();
-        let target = ExcelCellStyle::new();
+        let source = WriteCellStyle::new();
+        let target = WriteCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
-        assert_eq!(merged, ExcelCellStyle::new());
+        assert_eq!(merged, WriteCellStyle::new());
     }
 
     #[test]
     fn merge_copies_hidden_field() {
-        let source = ExcelCellStyle {
+        let source = WriteCellStyle {
             hidden: Some(true),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
-        let target = ExcelCellStyle::new();
+        let target = WriteCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.hidden, Some(true));
     }
 
     #[test]
     fn merge_copies_locked_field() {
-        let source = ExcelCellStyle {
+        let source = WriteCellStyle {
             locked: Some(true),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
-        let target = ExcelCellStyle::new();
+        let target = WriteCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.locked, Some(true));
     }
 
     #[test]
     fn merge_copies_quote_prefix_field() {
-        let source = ExcelCellStyle {
+        let source = WriteCellStyle {
             quote_prefix: Some(true),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
-        let target = ExcelCellStyle::new();
+        let target = WriteCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.quote_prefix, Some(true));
     }
 
     #[test]
     fn merge_copies_horizontal_alignment() {
-        let source = ExcelCellStyle {
+        let source = WriteCellStyle {
             horizontal_alignment: Some(ExcelHorizontalAlignment::Center),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
-        let target = ExcelCellStyle::new();
+        let target = WriteCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(
             merged.horizontal_alignment,
@@ -125,22 +236,22 @@ mod tests {
 
     #[test]
     fn merge_copies_wrapped_field() {
-        let source = ExcelCellStyle {
+        let source = WriteCellStyle {
             wrapped: Some(true),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
-        let target = ExcelCellStyle::new();
+        let target = WriteCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.wrapped, Some(true));
     }
 
     #[test]
     fn merge_copies_vertical_alignment() {
-        let source = ExcelCellStyle {
+        let source = WriteCellStyle {
             vertical_alignment: Some(ExcelVerticalAlignment::Center),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
-        let target = ExcelCellStyle::new();
+        let target = WriteCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(
             merged.vertical_alignment,
@@ -150,36 +261,36 @@ mod tests {
 
     #[test]
     fn merge_copies_rotation_field() {
-        let source = ExcelCellStyle {
+        let source = WriteCellStyle {
             rotation: Some(45),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
-        let target = ExcelCellStyle::new();
+        let target = WriteCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.rotation, Some(45));
     }
 
     #[test]
     fn merge_copies_indent_field() {
-        let source = ExcelCellStyle {
+        let source = WriteCellStyle {
             indent: Some(2),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
-        let target = ExcelCellStyle::new();
+        let target = WriteCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.indent, Some(2));
     }
 
     #[test]
     fn merge_copies_border_fields() {
-        let source = ExcelCellStyle {
+        let source = WriteCellStyle {
             border_left: Some(ExcelBorderStyle::Thin),
             border_right: Some(ExcelBorderStyle::Medium),
             border_top: Some(ExcelBorderStyle::Dashed),
             border_bottom: Some(ExcelBorderStyle::Dotted),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
-        let target = ExcelCellStyle::new();
+        let target = WriteCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.border_left, Some(ExcelBorderStyle::Thin));
         assert_eq!(merged.border_right, Some(ExcelBorderStyle::Medium));
@@ -189,14 +300,14 @@ mod tests {
 
     #[test]
     fn merge_copies_border_colors() {
-        let source = ExcelCellStyle {
+        let source = WriteCellStyle {
             left_border_color: Some(ExcelColor::Indexed(1)),
             right_border_color: Some(ExcelColor::Indexed(2)),
             top_border_color: Some(ExcelColor::Indexed(3)),
             bottom_border_color: Some(ExcelColor::Indexed(4)),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
-        let target = ExcelCellStyle::new();
+        let target = WriteCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.left_border_color, Some(ExcelColor::Indexed(1)));
         assert_eq!(merged.right_border_color, Some(ExcelColor::Indexed(2)));
@@ -206,13 +317,13 @@ mod tests {
 
     #[test]
     fn merge_copies_fill_pattern_and_colors() {
-        let source = ExcelCellStyle {
+        let source = WriteCellStyle {
             fill_pattern: Some(ExcelFillPattern::Solid),
             fill_background_color: Some(ExcelColor::Indexed(10)),
             fill_foreground_color: Some(ExcelColor::Indexed(20)),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
-        let target = ExcelCellStyle::new();
+        let target = WriteCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.fill_pattern, Some(ExcelFillPattern::Solid));
         assert_eq!(merged.fill_background_color, Some(ExcelColor::Indexed(10)));
@@ -221,22 +332,22 @@ mod tests {
 
     #[test]
     fn merge_copies_shrink_to_fit() {
-        let source = ExcelCellStyle {
+        let source = WriteCellStyle {
             shrink_to_fit: Some(true),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
-        let target = ExcelCellStyle::new();
+        let target = WriteCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.shrink_to_fit, Some(true));
     }
 
     #[test]
     fn merge_copies_data_format() {
-        let source = ExcelCellStyle {
+        let source = WriteCellStyle {
             data_format: Some(ExcelDataFormat::Builtin(0)),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
-        let target = ExcelCellStyle::new();
+        let target = WriteCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.data_format, Some(ExcelDataFormat::Builtin(0)));
     }
@@ -247,11 +358,11 @@ mod tests {
             bold: Some(true),
             ..ExcelFontStyle::default()
         };
-        let source = ExcelCellStyle {
+        let source = WriteCellStyle {
             font: Some(source_font),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
-        let target = ExcelCellStyle::new();
+        let target = WriteCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert!(merged.font.is_some());
         assert_eq!(merged.font.unwrap().bold, Some(true));
@@ -267,13 +378,13 @@ mod tests {
             italic: Some(true),
             ..ExcelFontStyle::default()
         };
-        let source = ExcelCellStyle {
+        let source = WriteCellStyle {
             font: Some(source_font),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
-        let target = ExcelCellStyle {
+        let target = WriteCellStyle {
             font: Some(target_font),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
         let merged = merge_write_cell_style(&source, target);
         let font = merged.font.unwrap();
@@ -283,13 +394,13 @@ mod tests {
 
     #[test]
     fn merge_overwrites_target_when_source_has_value() {
-        let source = ExcelCellStyle {
+        let source = WriteCellStyle {
             hidden: Some(true),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
-        let target = ExcelCellStyle {
+        let target = WriteCellStyle {
             hidden: Some(false),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.hidden, Some(true));
@@ -297,10 +408,10 @@ mod tests {
 
     #[test]
     fn merge_preserves_target_when_source_field_is_none() {
-        let source = ExcelCellStyle::new();
-        let target = ExcelCellStyle {
+        let source = WriteCellStyle::new();
+        let target = WriteCellStyle {
             hidden: Some(true),
-            ..ExcelCellStyle::new()
+            ..WriteCellStyle::new()
         };
         let merged = merge_write_cell_style(&source, target);
         assert_eq!(merged.hidden, Some(true));
@@ -308,8 +419,8 @@ mod tests {
 
     #[test]
     fn write_cell_style_is_excel_cell_style_alias() {
-        let style = ExcelCellStyle::new();
+        let style = WriteCellStyle::new();
         let alias: WriteCellStyle = style;
-        assert_eq!(alias, ExcelCellStyle::new());
+        assert_eq!(alias, WriteCellStyle::new());
     }
 }

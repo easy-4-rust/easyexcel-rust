@@ -1,15 +1,6 @@
-//! 对应 Java：`com.alibaba.excel.enums.WriteTypeEnum`.
+//! Rust 原生名 `WriteType` 的别名文件。
 //!
-//! `ADD` vs `FILL`. Used internally by `ExcelBuilderImpl` (Java) to switch
-//! between `ExcelWriteAddExecutor` and `ExcelWriteFillExecutor`.
+//! 数据定义（Java `WriteTypeEnum` 对象）在 `write_type_enum.rs`，本文件仅做命名别名重导出。
 
-/// Write mode flag.
-///
-/// Rust port of Java `WriteTypeEnum`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum WriteType {
-    /// Append new rows. (Java `ADD`)
-    Add,
-    /// Fill template placeholders. (Java `FILL`)
-    Fill,
-}
+/// Java `WriteTypeEnum` 的 Rust 原生名别名。
+pub use crate::enums::write_type_enum::WriteTypeEnum as WriteType;

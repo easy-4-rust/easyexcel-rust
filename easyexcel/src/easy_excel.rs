@@ -27,11 +27,6 @@ use crate::write::builder::excel_writer_builder::ExcelWriterBuilder;
 /// Static factory matching Java `EasyExcel`'s entry point.
 pub struct EasyExcel;
 
-/// Java-compatible alias for [`EasyExcel`].
-///
-/// 对应 Java：`EasyExcelFactory`; `EasyExcel` extends the same factory in Java.
-pub type EasyExcelFactory = EasyExcel;
-
 impl EasyExcel {
     /// Starts Java's path-independent `read()` builder.
     #[must_use]

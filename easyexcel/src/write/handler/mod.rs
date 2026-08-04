@@ -12,3 +12,4 @@ pub mod r#impl;
 pub mod row_write_handler;
 pub mod sheet_write_handler;
 pub mod workbook_write_handler;
+pub mod write_handler;

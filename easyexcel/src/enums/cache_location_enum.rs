@@ -1,9 +1,18 @@
-//! 1:1 包路径镜像：Java `com.alibaba.excel.enums.CacheLocationEnum`。
+//! 对应 Java：`com.alibaba.excel.enums.CacheLocationEnum`.
 //!
-//! 既有实现：`enum_cache_location.rs` → [`crate::CacheLocation`]。
+//! Used by Java `BasicParameter.filedCacheLocation`. Rust has collapsed this
+//! concept into `easyexcel_reader::ReadCacheMode`, but the enum is kept for
+//! API completeness when reading Java `ReadWorkbookHolder` payloads.
 
-#![allow(unused_imports)]
-/// Java `CacheLocationEnum` 命名别名。
-// Java 镜像 API 别名，保留以兼容 Java 命名。
-#[allow(dead_code)]
-pub type CacheLocationEnum = crate::CacheLocation;
+/// Cache location strategy.
+///
+/// Rust port of Java `CacheLocationEnum`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CacheLocationEnum {
+    /// Stored in `ThreadLocal`; cleared when the read or write completes.
+    ThreadLocal,
+    /// Never cleared unless the application exits.
+    Memory,
+    /// Caching disabled.
+    None,
+}

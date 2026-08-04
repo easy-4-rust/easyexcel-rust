@@ -1,10 +1,44 @@
-//! 填充包装。
+//! 命名或未命名集合填充包装。
 //!
 //! 对应 Java：`com.alibaba.excel.write.metadata.fill.FillWrapper`
-//! 权威实现位于 `easyexcel_template::FillWrapper`。
 
-// 注意：writer 不直接依赖 template，避免环依赖；
-// 请从 `easyexcel_template::FillWrapper` 或门面使用。
+use crate::TemplateData;
 
-/// 迁移说明：FillWrapper 实现见 `easyexcel-template`。
-pub struct FillWrapperPathDocs;
+/// Named or unnamed collection data corresponding to Java `EasyExcel`'s `FillWrapper`.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct FillWrapper {
+    pub(crate) name: Option<String>,
+    rows: Vec<TemplateData>,
+}
+
+impl FillWrapper {
+    /// Creates an unnamed collection for `{.field}` placeholders.
+    #[must_use]
+    pub fn new(rows: impl IntoIterator<Item = TemplateData>) -> Self {
+        Self {
+            name: None,
+            rows: rows.into_iter().collect(),
+        }
+    }
+
+    /// Creates a named collection for `{name.field}` placeholders.
+    #[must_use]
+    pub fn named(name: impl Into<String>, rows: impl IntoIterator<Item = TemplateData>) -> Self {
+        Self {
+            name: Some(name.into()),
+            rows: rows.into_iter().collect(),
+        }
+    }
+
+    /// Returns the optional collection prefix.
+    #[must_use]
+    pub fn name(&self) -> Option<&str> {
+        self.name.as_deref()
+    }
+
+    /// Returns collection rows in fill order.
+    #[must_use]
+    pub fn rows(&self) -> &[TemplateData] {
+        &self.rows
+    }
+}
