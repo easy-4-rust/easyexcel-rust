@@ -5293,7 +5293,8 @@ mod tests_extra {
         )?;
         writer.finish()?;
         assert!(path.exists());
-        // calamine 回读：普通单元格为原值；公式单元格存在（缓存 0 回读为数字 0）
+        // calamine 回读：普通单元格为原值；公式单元格回读写入时的缓存值
+        // （xls 求值引擎当场计算：A1+B1 = 5，而非 0）
         let mut workbook = calamine::Xls::<std::io::BufReader<std::fs::File>>::new(
             std::io::BufReader::new(std::fs::File::open(&path)?),
         )
@@ -5303,7 +5304,7 @@ mod tests_extra {
             .map_err(|e| crate::core::ExcelError::Format(e.to_string()))?;
         assert_eq!(range.get_value((0, 0)), Some(&calamine::Data::Int(2)));
         assert_eq!(range.get_value((0, 1)), Some(&calamine::Data::Int(3)));
-        assert!(range.get_value((0, 2)).is_some());
+        assert_eq!(range.get_value((0, 2)), Some(&calamine::Data::Float(5.0)));
         Ok(())
     }
 

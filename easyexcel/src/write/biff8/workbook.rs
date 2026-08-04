@@ -18,11 +18,12 @@ use std::io::{Cursor, Write};
 use crate::core::{ExcelError, Result};
 use chrono::{NaiveDate, NaiveDateTime, Timelike};
 
+use super::cached::Biff8Cached;
 use super::encode::{
     BIFF8_VERSION, BLANK, BOF, BOOLERR, BOUNDSHEET, CALCMODE, CODENAME, CODEPAGE, COLINFO,
     CONTINUE, DATEMODE, DIMENSION, DT_GLOBALS, DT_WORKSHEET, EOF, EXTSST, FONT, FORMULA,
     INTERFACEEND, INTERFACEHDR, LABELSST, MAX_RECORD_DATA, MMS, MSODRAWING, NUMBER, OBJ, RK, ROW,
-    SST, STYLE, WINDOW2, WRITEACCESS, XF, XF_DATE, XF_DATETIME, XF_GENERAL, encode_rk,
+    SST, STRING, STYLE, WINDOW2, WRITEACCESS, XF, XF_DATE, XF_DATETIME, XF_GENERAL, encode_rk,
     encode_short_unicode_string, encode_unicode_string, pack_colinfo, pack_merge_range, pack_row,
     record, write_merge_cells, write_palette_record,
 };
@@ -370,7 +371,9 @@ impl Biff8Book {
     ///
     /// Returns I/O or CFB construction errors.
     pub fn to_cfb_bytes(&self) -> Result<Vec<u8>> {
-        let stream = build_workbook_stream(self);
+        // 写入前对全部工作表公式求值，得到缓存值表（借用 xls 求值引擎）
+        let caches = super::cached::recalc_cached_values(&self.sheets);
+        let stream = build_workbook_stream(self, &caches);
         let mut mem = Cursor::new(Vec::<u8>::new());
         {
             #[rustfmt::skip]
@@ -455,7 +458,7 @@ pub fn datetime_to_excel_serial_with_windowing(
 // 语义敏感：BOUNDSHEET 偏移为 BIFF8 规范的 u32 绝对偏移，文件流不可能
 // 超过 4GiB，usize->u32 在此场景不可能截断。
 #[allow(clippy::cast_possible_truncation)]
-fn build_workbook_stream(book: &Biff8Book) -> Vec<u8> {
+fn build_workbook_stream(book: &Biff8Book, caches: &[HashMap<(u16, u8), Biff8Cached>]) -> Vec<u8> {
     let mut out: Vec<u8> = Vec::new();
     write_bof(&mut out, DT_GLOBALS);
     record(&mut out, CODEPAGE, &1200u16.to_le_bytes());
@@ -516,9 +519,11 @@ fn build_workbook_stream(book: &Biff8Book) -> Vec<u8> {
     record(&mut out, EOF, &[]);
 
     let mut sheet_offsets = Vec::with_capacity(sheets.len());
-    for sheet in &sheets {
+    for (sheet_idx, sheet) in sheets.iter().enumerate() {
         sheet_offsets.push(out.len() as u32);
-        write_worksheet(&mut out, sheet, &sst_index);
+        // 默认 sheet 场景（book.sheets 为空）无缓存表，回退空表
+        let cache = caches.get(sheet_idx).cloned().unwrap_or_default();
+        write_worksheet(&mut out, sheet, &sst_index, &cache);
     }
     for (patch_off, pos) in boundsheet_patches.into_iter().zip(sheet_offsets) {
         out[patch_off..patch_off + 4].copy_from_slice(&pos.to_le_bytes());
@@ -643,7 +648,12 @@ fn flush_sst_chunk(out: &mut Vec<u8>, current: &mut Vec<u8>, first: &mut bool) {
     current.clear();
 }
 
-fn write_worksheet(out: &mut Vec<u8>, sheet: &Biff8Sheet, sst_index: &HashMap<String, u32>) {
+fn write_worksheet(
+    out: &mut Vec<u8>,
+    sheet: &Biff8Sheet,
+    sst_index: &HashMap<String, u32>,
+    caches: &HashMap<(u16, u8), Biff8Cached>,
+) {
     write_bof(out, DT_WORKSHEET);
     let (max_row, max_col) = sheet.dimensions();
     {
@@ -665,7 +675,8 @@ fn write_worksheet(out: &mut Vec<u8>, sheet: &Biff8Sheet, sst_index: &HashMap<St
         record(out, ROW, &pack_row(row, 0, last_col_exclusive, height));
     }
     for (&(row, col), cell) in &sheet.cells {
-        write_cell(out, row, col, cell, sst_index).expect("BIFF8 单元格序列化失败");
+        write_cell(out, row, col, cell, sst_index, caches.get(&(row, col)))
+            .expect("BIFF8 单元格序列化失败");
     }
     if !sheet.merges.is_empty() {
         let ranges: Vec<[u8; 8]> = sheet
@@ -697,6 +708,7 @@ fn write_cell(
     col: u8,
     cell: &Biff8Cell,
     sst_index: &HashMap<String, u32>,
+    cached: Option<&Biff8Cached>,
 ) -> Result<()> {
     match &cell.value {
         Biff8Value::Blank => write_blank(out, row, col, cell.xf),
@@ -706,19 +718,63 @@ fn write_cell(
         }
         Biff8Value::Number(n) => write_number(out, row, col, cell.xf, *n),
         Biff8Value::Bool(b) => write_boolerr(out, row, col, cell.xf, u8::from(*b), false),
-        Biff8Value::Formula(expr) => write_formula(out, row, col, cell.xf, expr)?,
+        Biff8Value::Formula(expr) => write_formula(out, row, col, cell.xf, expr, cached)?,
     }
     Ok(())
 }
 
-/// 发射 FORMULA 记录（0x0006）：8 字节缓存结果（默认 0.0，全零触发
-/// 打开时重算）+ options(2) + chn(4) + cce(2) + rgce（Ptg 令牌数组）。
-fn write_formula(out: &mut Vec<u8>, row: u16, col: u8, xf: u16, expr: &str) -> Result<()> {
+/// 发射 FORMULA 记录（0x0006）：8 字节缓存结果 + options(2) + chn(4) +
+/// cce(2) + rgce（Ptg 令牌数组）。
+///
+/// 缓存结果优先取写入前求值得到的 [`Biff8Cached`]；缺失时写 0.0（全零，
+/// 触发 `Excel` / `LibreOffice` 打开时重算）。
+fn write_formula(
+    out: &mut Vec<u8>,
+    row: u16,
+    col: u8,
+    xf: u16,
+    expr: &str,
+    cached: Option<&Biff8Cached>,
+) -> Result<()> {
     let rgce = super::ptg::encode_formula_rpn(expr)?;
     let mut data = Vec::with_capacity(22 + rgce.len());
     cell_header(&mut data, row, col, xf);
-    // 缓存结果：数字 0.0（全零）→ Excel/LibreOffice 打开时自动重算
-    data.extend_from_slice(&0.0f64.to_le_bytes());
+    match cached {
+        Some(Biff8Cached::Number(number)) => {
+            data.extend_from_slice(&number.to_le_bytes());
+        }
+        Some(Biff8Cached::Bool(flag)) => {
+            let mut result = [0u8; 8];
+            result[0] = 1; // 布尔类型标记
+            result[2] = u8::from(*flag);
+            result[6] = 0xFF;
+            result[7] = 0xFF;
+            data.extend_from_slice(&result);
+        }
+        Some(Biff8Cached::Error(code)) => {
+            let mut result = [0u8; 8];
+            result[0] = 2; // 错误类型标记
+            result[2] = *code;
+            result[6] = 0xFF;
+            result[7] = 0xFF;
+            data.extend_from_slice(&result);
+        }
+        Some(Biff8Cached::Text(text)) => {
+            let mut result = [0u8; 8];
+            result[6] = 0xFF; // 字符串标记：结果在后续 STRING 记录
+            result[7] = 0xFF;
+            data.extend_from_slice(&result);
+            // 字符串缓存值：FORMULA 记录后跟随 STRING 记录（0x0207）
+            let encoded = encode_unicode_string(text);
+            if encoded.len() <= MAX_RECORD_DATA {
+                record(out, STRING, &encoded);
+            }
+        }
+        None => {
+            // 数字 0.0（全零）→ Excel/LibreOffice 打开时自动重算
+            data.extend_from_slice(&0.0f64.to_le_bytes());
+        }
+    }
     data.extend_from_slice(&0u16.to_le_bytes()); // options: fAlwaysCalc=0
     data.extend_from_slice(&0u32.to_le_bytes()); // chn
     // rgce 长度受 BIFF8 记录上限约束，usize->u16 不会截断
@@ -922,7 +978,7 @@ mod tests_extra {
     #[test]
     fn empty_book_writes_default_sheet1() {
         let book = Biff8Book::default();
-        let stream = build_workbook_stream(&book);
+        let stream = build_workbook_stream(&book, &[]);
         let recs = records(&stream);
         let boundsheets: Vec<&[u8]> = recs
             .iter()
@@ -950,7 +1006,7 @@ mod tests_extra {
             .unwrap();
         let mut book = Biff8Book::default();
         book.sheets.push(sheet);
-        let stream = build_workbook_stream(&book);
+        let stream = build_workbook_stream(&book, &[]);
         let mut sst = 0;
         let mut continues = 0;
         for (typ, data) in records(&stream) {
@@ -1001,7 +1057,7 @@ mod tests_extra {
             .unwrap();
         let mut book = Biff8Book::default();
         book.sheets.push(sheet);
-        let stream = build_workbook_stream(&book);
+        let stream = build_workbook_stream(&book, &[]);
         let mut boolerr = 0;
         let mut number = 0;
         let mut rk = 0;

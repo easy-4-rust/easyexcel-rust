@@ -26,6 +26,7 @@ url.workspace = true
 # 原 easyexcel-reader 依赖
 calamine.workspace = true
 cfb.workspace = true
+xls = { version = "0.1", path = "../../xls", default-features = false }
 csv.workspace = true
 encoding_rs.workspace = true
 encoding_rs_io.workspace = true

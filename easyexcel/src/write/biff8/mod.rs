@@ -36,6 +36,7 @@
 //! cells on an existing sheet. Placeholder `{key}` fill and brand-new sheets remain
 //! unsupported at higher layers.
 
+pub(crate) mod cached;
 mod encode;
 pub mod encrypt;
 pub(crate) mod ptg;
