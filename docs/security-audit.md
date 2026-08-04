@@ -119,3 +119,19 @@ ID:        RUSTSEC-2024-0388
 error: 2 vulnerabilities found!
 warning: 1 allowed warning found
 ```
+
+## 附：2026-08-04 vendor xls 后的新增警告分析
+
+公式缓存值求值引擎集成后，`xls` fork 被 vendor 至 `vendor/xls`
+（`easyexcel/Cargo.toml` 声明 `default-features = false`，CLI/TUI 前端关闭）。
+依赖解析在 `Cargo.lock` 中新增了 optional feature 的依赖闭包，`cargo audit`
+随之报出 2 条 Warning 级（非漏洞）条目，已加入 `.cargo/audit.toml` ignore：
+
+| Crate | 版本 | ID | 警告 | 链路 | 实际影响 |
+|---|---|---|---|---|---|
+| `paste` | 1.0.15 | RUSTSEC-2024-0436 | unmaintained（无修复版） | ratatui 0.29 → tui-textarea → xls `tui` feature | 未编译：`tui` feature 关闭，产物不含该链 |
+| `lru` | 0.12.5 | RUSTSEC-2026-0002 | unsound（patched ≥0.16.3） | ratatui 0.29 → tui-textarea → xls `tui` feature | 未编译：同上；workspace 编译链中的 `lru` 为 0.16.4（已修复） |
+
+验证：`cargo tree -e features -p easyexcel` 显示 `xls` 无任何 feature 激活；
+`cargo tree -i lru@0.12.5` 仅经 `ratatui`（optional）。`cargo audit` 复跑
+**0 vulnerabilities，exit 0**。
