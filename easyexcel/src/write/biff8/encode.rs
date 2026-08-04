@@ -25,8 +25,8 @@ pub const BOOLERR: u16 = 0x0205;
 pub const BLANK: u16 = 0x0201;
 pub const FORMULA: u16 = 0x0006;
 pub const STRING: u16 = 0x0207;
-pub const XF: u16 = 0x00E0;
 pub const FORMAT: u16 = 0x041E;
+pub const XF: u16 = 0x00E0;
 pub const FONT: u16 = 0x0031;
 /// Drawing object (Java `ObjRecord`, POI HSSF)
 pub const OBJ: u16 = 0x005D;

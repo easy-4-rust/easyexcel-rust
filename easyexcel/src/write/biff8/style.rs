@@ -7,6 +7,7 @@
 
 use std::collections::HashMap;
 
+use crate::core::excel_data_format::ExcelDataFormat;
 use crate::core::{
     ExcelCellStyle, ExcelColor, ExcelFillPattern, ExcelFontStyle, ExcelHorizontalAlignment,
     ExcelVerticalAlignment,
@@ -46,6 +47,8 @@ pub struct Biff8StyleRequest {
     pub fill_fg_icv: Option<u16>,
     /// Fill background palette ICV.
     pub fill_bg_icv: Option<u16>,
+    /// Number format (Java `DataFormatData`): built-in index or custom code.
+    pub number_format: Option<ExcelDataFormat>,
 }
 
 impl Biff8StyleRequest {
@@ -63,6 +66,7 @@ impl Biff8StyleRequest {
             && !self.wrap
             && self.fill_pattern.unwrap_or(0) == 0
             && self.fill_fg_icv.is_none()
+            && self.number_format.is_none()
     }
 
     /// Merges annotation / strategy [`ExcelCellStyle`] (Java `WriteCellStyle`).
@@ -90,6 +94,9 @@ impl Biff8StyleRequest {
         }
         if let Some(font) = style.font {
             self.apply_excel_font_style(font);
+        }
+        if let Some(format) = style.data_format {
+            self.number_format = Some(format);
         }
     }
 
@@ -146,6 +153,51 @@ struct XfKey {
 /// Java mapping: POI `HSSFWorkbook` font/style tables. Built-in XF 0..15 are
 /// style XFs; 16/17 are date/datetime helpers; custom cell XFs start at
 /// [`XF_CUSTOM_BASE`] (18).
+/// 内建数字格式码表（POI `BuiltinFormats`，code → BIFF8 ifmt）。
+fn builtin_format_id(code: &str) -> Option<u16> {
+    Some(match code {
+        "General" => 0,
+        "0" => 1,
+        "0.00" => 2,
+        "#,##0" => 3,
+        "#,##0.00" => 4,
+        "$#,##0_);($#,##0)" => 5,
+        "$#,##0_);[Red]($#,##0)" => 6,
+        "$#,##0.00_);($#,##0.00)" => 7,
+        "$#,##0.00_);[Red]($#,##0.00)" => 8,
+        "0%" => 9,
+        "0.00%" => 10,
+        "0.00E+00" => 11,
+        "# ?/?" => 12,
+        "# ??/??" => 13,
+        "m/d/yy" => 14,
+        "d-mmm-yy" => 15,
+        "d-mmm" => 16,
+        "mmm-yy" => 17,
+        "h:mm AM/PM" => 18,
+        "h:mm:ss AM/PM" => 19,
+        "h:mm" => 20,
+        "h:mm:ss" => 21,
+        "m/d/yy h:mm" => 22,
+        "#,##0_);(#,##0)" => 37,
+        "#,##0_);[Red](#,##0)" => 38,
+        "#,##0.00_);(#,##0.00)" => 39,
+        "#,##0.00_);[Red](#,##0.00)" => 40,
+        "_(* #,##0_);_(* (#,##0);_(* \"-\"_);_(@_)" => 41,
+        "_(* #,##0.00_);_(* (#,##0.00);_(* \"-\"??_);_(@_)" => 43,
+        "mm:ss" => 45,
+        "[h]:mm:ss" => 46,
+        "mm:ss.0" => 47,
+        "##0.0E+0" => 48,
+        "@" => 49,
+        _ => return None,
+    })
+}
+
+/// 自定义数字格式起始索引（BIFF8：ifmt ≥ 164 为自定义格式）。
+const FORMAT_CUSTOM_BASE: u16 = 164;
+
+/// Workbook-global FONT / XF / number-format allocator。
 #[derive(Debug, Clone, Default)]
 pub struct Biff8StyleTable {
     /// Custom fonts beyond the five default Arial records.
@@ -156,17 +208,22 @@ pub struct Biff8StyleTable {
     xf_cache: HashMap<XfKey, u16>,
     /// RGB colours allocated into the customizable palette (indices 8..).
     palette_rgb: Vec<(u8, u8, u8)>,
+    /// Registered custom number formats `(ifmt, code)` in emission order.
+    formats: Vec<(u16, String)>,
+    /// Custom format code → ifmt lookup.
+    format_lookup: HashMap<String, u16>,
 }
 
 impl Biff8StyleTable {
     /// Resolves an XF index for `request`, preserving `base_xf` number format
     /// (`XF_GENERAL` / `XF_DATE` / `XF_DATETIME`).
     pub fn resolve_xf(&mut self, request: &Biff8StyleRequest, base_xf: u16) -> u16 {
-        let ifmt = match base_xf {
+        let base_ifmt = match base_xf {
             XF_DATE => 14,
             XF_DATETIME => 22,
             _ => 0,
         };
+        let ifmt = self.resolve_ifmt(request.number_format, base_ifmt);
         if request.is_default() {
             return base_xf;
         }
@@ -224,6 +281,37 @@ impl Biff8StyleTable {
     #[must_use]
     pub fn custom_xfs(&self) -> &[[u8; 20]] {
         &self.xfs
+    }
+
+    /// 解析数字格式为 BIFF8 ifmt：显式格式优先，其次 base（日期/时间），
+    /// 最后 General(0)。自定义格式码从 164 起注册（同码复用）。
+    fn resolve_ifmt(&mut self, format: Option<ExcelDataFormat>, base_ifmt: u16) -> u16 {
+        let Some(format) = format else {
+            return base_ifmt;
+        };
+        match format {
+            ExcelDataFormat::Builtin(index) => u16::from(index),
+            ExcelDataFormat::Custom(code) => {
+                if let Some(builtin) = builtin_format_id(code) {
+                    return builtin;
+                }
+                if let Some(existing) = self.format_lookup.get(code) {
+                    return *existing;
+                }
+                // 语义敏感：自定义格式数量远小于 u16 上限，保留 as 以对齐 BIFF8 索引
+                #[allow(clippy::cast_possible_truncation)]
+                let ifmt = FORMAT_CUSTOM_BASE + self.formats.len() as u16;
+                self.formats.push((ifmt, code.to_owned()));
+                self.format_lookup.insert(code.to_owned(), ifmt);
+                ifmt
+            }
+        }
+    }
+
+    /// Registered custom FORMAT records in emission order.
+    #[must_use]
+    pub fn custom_formats(&self) -> &[(u16, String)] {
+        &self.formats
     }
 
     /// Whether a PALETTE record is required for custom RGB colours.
@@ -421,6 +509,53 @@ fn excel_valign(align: ExcelVerticalAlignment) -> u8 {
 mod tests {
     use super::*;
     use crate::write::biff8::encode::XF_GENERAL;
+
+    #[test]
+    fn custom_number_format_registers_from_164_and_reuses() {
+        // 对应 Java：POI createDataFormat().getFormat("0.00") → ifmt ≥ 164
+        let mut table = Biff8StyleTable::default();
+        let request = Biff8StyleRequest {
+            number_format: Some(ExcelDataFormat::Custom("0.000")),
+            ..Biff8StyleRequest::default()
+        };
+        let xf1 = table.resolve_xf(&request, XF_GENERAL);
+        let xf2 = table.resolve_xf(&request, XF_GENERAL);
+        assert_eq!(xf1, xf2, "同码复用同一 XF");
+        assert_eq!(table.custom_formats(), &[(164, "0.000".to_owned())]);
+        assert_eq!(table.custom_xfs()[0][2..4], [164u8, 0u8]); // ifmt 字段
+        // 不同格式码注册新 ifmt
+        let other = Biff8StyleRequest {
+            number_format: Some(ExcelDataFormat::Custom("0.0000")),
+            ..Biff8StyleRequest::default()
+        };
+        let xf3 = table.resolve_xf(&other, XF_GENERAL);
+        assert_ne!(xf1, xf3);
+        assert_eq!(table.custom_formats().len(), 2);
+        assert_eq!(table.custom_formats()[1].0, 165);
+    }
+
+    #[test]
+    fn builtin_number_format_maps_to_builtin_ifmt() {
+        let mut table = Biff8StyleTable::default();
+        let request = Biff8StyleRequest {
+            number_format: Some(ExcelDataFormat::Builtin(2)), // "0.00"
+            ..Biff8StyleRequest::default()
+        };
+        let xf = table.resolve_xf(&request, XF_GENERAL);
+        assert_eq!(table.custom_xfs()[0][2..4], [2u8, 0u8]);
+        assert!(
+            table.custom_formats().is_empty(),
+            "内置格式不注册 FORMAT 记录"
+        );
+        // 格式码精确匹配内置表（如 "#,##0.00" → 4）
+        let request2 = Biff8StyleRequest {
+            number_format: Some(ExcelDataFormat::Custom("#,##0.00")),
+            ..Biff8StyleRequest::default()
+        };
+        let xf2 = table.resolve_xf(&request2, XF_GENERAL);
+        let _ = (xf, xf2);
+        assert_eq!(table.custom_formats().len(), 0, "内置码不注册自定义");
+    }
 
     #[test]
     fn resolve_default_keeps_general_xf() {

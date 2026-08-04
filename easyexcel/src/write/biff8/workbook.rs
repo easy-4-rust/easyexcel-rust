@@ -21,7 +21,7 @@ use chrono::{NaiveDate, NaiveDateTime, Timelike};
 use super::cached::Biff8Cached;
 use super::encode::{
     BIFF8_VERSION, BLANK, BOF, BOOLERR, BOUNDSHEET, CALCMODE, CODENAME, CODEPAGE, COLINFO,
-    CONTINUE, DATEMODE, DIMENSION, DT_GLOBALS, DT_WORKSHEET, EOF, EXTSST, FONT, FORMULA,
+    CONTINUE, DATEMODE, DIMENSION, DT_GLOBALS, DT_WORKSHEET, EOF, EXTSST, FONT, FORMAT, FORMULA,
     INTERFACEEND, INTERFACEHDR, LABELSST, MAX_RECORD_DATA, MMS, MSODRAWING, NUMBER, OBJ, RK, ROW,
     SST, STRING, STYLE, WINDOW2, WRITEACCESS, XF, XF_DATE, XF_DATETIME, XF_GENERAL, encode_rk,
     encode_short_unicode_string, encode_unicode_string, pack_colinfo, pack_merge_range, pack_row,
@@ -480,6 +480,13 @@ fn build_workbook_stream(book: &Biff8Book, caches: &[HashMap<(u16, u8), Biff8Cac
     for font in book.styles.custom_fonts() {
         record(&mut out, FONT, &font);
     }
+    // FORMAT：自定义数字格式（BIFF8 规范位于 FONT 之后、XF 之前）
+    for (ifmt, code) in book.styles.custom_formats() {
+        let mut data = Vec::new();
+        data.extend_from_slice(&ifmt.to_le_bytes());
+        data.extend_from_slice(&encode_short_unicode_string(code));
+        record(&mut out, FORMAT, &data);
+    }
     if book.styles.needs_palette() {
         write_palette_record(&mut out, book.styles.palette_overrides());
     }
@@ -866,6 +873,63 @@ mod tests {
 #[cfg(test)]
 mod tests_extra {
     use super::*;
+    #[test]
+    fn custom_number_format_emits_format_record_and_xf_ifmt() -> Result<()> {
+        use std::io::Read as _;
+        // 对应 Java：POI createDataFormat().getFormat("0.000") →
+        // FORMAT 记录（ifmt ≥ 164）+ XF ifmt 字段
+        let mut book = Biff8Book {
+            sheets: vec![Biff8Sheet::new("Sheet1")],
+            styles: Biff8StyleTable::default(),
+            use_1904_windowing: false,
+            extra_bytes: Vec::new(),
+        };
+        let request = crate::write::biff8::style::Biff8StyleRequest {
+            number_format: Some(crate::core::ExcelDataFormat::Custom("0.000")),
+            ..crate::write::biff8::style::Biff8StyleRequest::default()
+        };
+        let xf = book.styles.resolve_xf(&request, XF_GENERAL);
+        let sheet = book.sheet_mut("Sheet1");
+        sheet.set(
+            0,
+            0,
+            Biff8Cell::general(Biff8Value::Number(1234.567)).with_xf(xf),
+        )?;
+        let bytes = book.to_cfb_bytes()?;
+        // 字节级断言：FORMAT(0x041E) 记录 = ifmt(164) + "0.000"
+        // 先提取 CFB 容器内的 Workbook 流
+        let mut cfb = cfb::CompoundFile::open(std::io::Cursor::new(&bytes))
+            .map_err(|e| crate::core::ExcelError::Format(e.to_string()))?;
+        let mut stream = Vec::new();
+        cfb.open_stream("Workbook")
+            .map_err(|e| crate::core::ExcelError::Format(e.to_string()))?
+            .read_to_end(&mut stream)
+            .map_err(|e| crate::core::ExcelError::Format(e.to_string()))?;
+        let records = records(&stream);
+        let format_records: Vec<_> = records
+            .iter()
+            .filter(|(typ, _)| *typ == 0x041E)
+            .map(|(_, data)| data.clone())
+            .collect();
+        assert_eq!(format_records.len(), 1);
+        let data = &format_records[0];
+        assert_eq!(u16::from_le_bytes([data[0], data[1]]), 164);
+        let slen = u16::from_le_bytes([data[2], data[3]]) as usize;
+        assert_eq!(&data[4..4 + slen], b"0.000");
+        // 单元格 XF 的 ifmt 指向 164
+        let xf_records: Vec<Vec<u8>> = records
+            .iter()
+            .filter(|(typ, data)| *typ == 0x00E0 && data.len() == 20)
+            .map(|(_, data)| data.clone())
+            .collect();
+        assert!(
+            xf_records
+                .iter()
+                .any(|data| u16::from_le_bytes([data[2], data[3]]) == 164),
+            "存在 ifmt=164 的 XF"
+        );
+        Ok(())
+    }
 
     /// Walks the BIFF record stream, returning (record type, payload) pairs and
     /// asserting the framing is well formed end to end.
