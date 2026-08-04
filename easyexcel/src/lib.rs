@@ -30,7 +30,6 @@ mod excel_output_stream_builder;
 mod excel_owned_output_stream_builder;
 mod excel_reader_builder;
 mod excel_sync_reader_builder;
-mod excel_writer_builder;
 mod into_sheet_selector;
 mod write_type_helpers;
 
@@ -77,12 +76,12 @@ use crate::read::{
 use std::path::PathBuf;
 
 // Facade 类型重导出（每个类型对应独立文件，公开 API 表面保持不变）。
+pub use crate::write::builder::excel_writer_builder::ExcelWriterBuilder;
 pub use easy_excel::{EasyExcel, EasyExcelFactory};
 pub use excel_output_stream_builder::ExcelOutputStreamBuilder;
 pub use excel_owned_output_stream_builder::ExcelOwnedOutputStreamBuilder;
 pub use excel_reader_builder::ExcelReaderBuilder;
 pub use excel_sync_reader_builder::ExcelSyncReaderBuilder;
-pub use excel_writer_builder::ExcelWriterBuilder;
 pub use into_sheet_selector::IntoSheetSelector;
 
 // 内部 helper / crate 内类型仅引入当前作用域，供 `tests.rs` 通过 `super::*` 访问

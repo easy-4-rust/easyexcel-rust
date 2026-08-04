@@ -1,7 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.read.metadata.property.ExcelReadHeadProperty`.
 
-use super::super::configuration_holder::ConfigurationHolder;
-use super::excel_head_property::ExcelHeadProperty;
+use crate::metadata::configuration_holder::ConfigurationHolder;
+use crate::metadata::property::excel_head_property::ExcelHeadProperty;
 
 /// Read-side header metadata.
 ///
@@ -39,7 +39,7 @@ impl ExcelReadHeadProperty {
 
     /// Returns the header map. (Java `getHeadMap()`)
     #[must_use]
-    pub fn head_map(&self) -> &std::collections::BTreeMap<i32, super::super::head::Head> {
+    pub fn head_map(&self) -> &std::collections::BTreeMap<i32, crate::metadata::head::Head> {
         self.0.head_map()
     }
 }

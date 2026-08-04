@@ -6,7 +6,7 @@
 use std::io::Write;
 
 use crate::core::{ExcelRow, Result};
-use crate::excel_writer_builder::ExcelWriterBuilder;
+use crate::write::builder::excel_writer_builder::ExcelWriterBuilder;
 use crate::write::{ExcelOutputStream, ExcelWriter, WriteSheet};
 
 /// Owned, cloneable output-stream builder for one-shot or stateful writes.

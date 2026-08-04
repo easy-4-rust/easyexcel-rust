@@ -6,7 +6,7 @@
 use std::io::Write;
 
 use crate::core::{ExcelError, ExcelRow, Result};
-use crate::excel_writer_builder::ExcelWriterBuilder;
+use crate::write::builder::excel_writer_builder::ExcelWriterBuilder;
 use crate::write::{
     DefaultWriteHandlerLoader, write_csv_to_buffer, write_xls_to_writer, write_xlsx_to_writer,
 };

@@ -14,6 +14,19 @@ pub use crate::event::*;
 pub use crate::metadata::*;
 pub use crate::support::*;
 
+// 模块路径重导出（保持 crate::core::<module>::Type 路径兼容）
+pub use crate::context::analysis_context;
+
+// metadata::data 子模块路径镜像（保持 crate::core::<data_module> 路径兼容）
+pub use crate::metadata::data::{
+    anchor_type, cell_value, client_anchor_data, comment_data, coordinate_data, dynamic_row,
+    dynamic_value, formula_data, hyperlink_data, image_data, image_type, interval_font,
+    read_cell_data, rich_text_string_data, row_data, write_font,
+};
+
+// read::listener::read_listener 模块路径镜像
+pub use crate::read::listener::read_listener;
+
 // Result 类型别名
 pub type Result<T> = std::result::Result<T, crate::support::excel_error::ExcelError>;
 
@@ -34,18 +47,18 @@ pub use crate::metadata::property::{
 };
 
 // 具名类型重导出
+pub use crate::context::analysis_context::AnalysisContext;
 pub use crate::converters::converter_registry::ConverterRegistry;
 pub use crate::converters::nullable_object_converter::NullableObjectConverter;
 pub use crate::enums::enum_cache_location::CacheLocation;
 pub use crate::enums::enum_holder::Holder;
-pub use crate::event::analysis_context::AnalysisContext;
-pub use crate::event::read_listener::ReadListener;
 pub use crate::metadata::cell_extra::{CellExtra, CellExtraType};
-pub use crate::metadata::cell_value::CellValue;
+pub use crate::metadata::data::cell_value::CellValue;
+pub use crate::metadata::data::write_font::WriteFont;
 pub use crate::metadata::excel_cell_style::ExcelCellStyle;
 pub use crate::metadata::excel_font_style::ExcelFontStyle;
 pub use crate::metadata::excel_row::ExcelRow;
-pub use crate::metadata::write_font::WriteFont;
+pub use crate::read::listener::read_listener::ReadListener;
 pub use crate::support::Empty;
 pub use crate::support::csv_charset::CsvCharset;
 pub use crate::support::excel_error::ExcelError;

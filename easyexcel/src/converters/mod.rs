@@ -1,7 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.converters.*` sub-packages.
 
-pub mod converter_trait;
-pub use converter_trait::*;
+pub mod converter;
+pub use converter::*;
 
 pub mod auto_converter;
 pub mod converter_key_build;
@@ -47,8 +47,7 @@ pub mod into_excel_cell;
 pub use into_excel_cell::*;
 pub mod read_converter_context;
 pub use read_converter_context::*;
-pub mod string_image_converter;
-pub use string_image_converter::*;
+pub use string::string_image_converter::*;
 pub mod url_image_converter;
 pub use url_image_converter::*;
 pub mod write_converter_context;

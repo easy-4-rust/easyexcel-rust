@@ -22,7 +22,7 @@ use crate::write::{
 // 显式引用 builder 模块，便于 facade 方法的类型解析。
 use crate::excel_reader_builder::ExcelReaderBuilder;
 use crate::excel_sync_reader_builder::ExcelSyncReaderBuilder;
-use crate::excel_writer_builder::ExcelWriterBuilder;
+use crate::write::builder::excel_writer_builder::ExcelWriterBuilder;
 
 /// Static factory matching Java `EasyExcel`'s entry point.
 pub struct EasyExcel;

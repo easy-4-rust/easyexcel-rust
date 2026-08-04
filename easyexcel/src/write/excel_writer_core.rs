@@ -60,6 +60,8 @@ pub use crate::write::excel_builder::{
     ExcelBuilder, ExcelBuilderImpl, FillConfig as BuilderFillConfig,
 };
 pub use crate::write::excel_output_stream::ExcelOutputStream;
+pub use crate::write::excel_writer_builder::ExcelWriterBuilder as CompatibleExcelWriterBuilder;
+pub use crate::write::excel_writer_builder::ExcelWriterOutputStreamBuilder as CompatibleExcelWriterOutputStreamBuilder;
 pub use crate::write::executor::abstract_excel_write_executor::AbstractExcelWriteExecutor;
 pub use crate::write::executor::excel_write_add_executor::ExcelWriteAddExecutor;
 pub use crate::write::executor::excel_write_executor::ExcelWriteExecutor;
@@ -119,8 +121,6 @@ pub use crate::write::style::horizontal_cell_style_strategy::HorizontalCellStyle
 pub use crate::write::style::row::simple_row_height_style_strategy::SimpleRowHeightStyleStrategy;
 pub use crate::write::style::vertical_cell_style_strategy::VerticalCellStyleStrategy;
 pub use crate::write::vertical_alignment::VerticalAlignment;
-pub use crate::write::write::builder::excel_writer_builder::ExcelWriterBuilder as CompatibleExcelWriterBuilder;
-pub use crate::write::write::builder::excel_writer_builder::ExcelWriterOutputStreamBuilder as CompatibleExcelWriterOutputStreamBuilder;
 pub use crate::write::write::builder::excel_writer_sheet_builder::ExcelWriterSheetBuilder as CompatibleExcelWriterSheetBuilder;
 pub use crate::write::write_options::WriteOptions;
 pub use crate::write::write_progress::WriteProgress;

@@ -7,7 +7,7 @@ use crate::context::read_sheet::ReadSheet;
 use crate::read::holder::xls::xls_read_sheet_holder::XlsReadSheetHolder;
 use crate::read::holder::xls::xls_read_workbook_holder::XlsReadWorkbookHolder;
 
-use super::analysis_context_impl::AnalysisContextImpl;
+use crate::context::analysis_context_impl::AnalysisContextImpl;
 
 /// 对应 Java：`XlsReadContext extends AnalysisContext`.
 pub trait XlsReadContext {

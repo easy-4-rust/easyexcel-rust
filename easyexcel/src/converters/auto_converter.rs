@@ -1,6 +1,6 @@
 //! 对应 Java：`com.alibaba.excel.converters.AutoConverter`.
 
-use super::converter_trait::Converter;
+use super::converter::Converter;
 
 /// 对应 Java：`AutoConverter implements Converter<Object>`.
 ///

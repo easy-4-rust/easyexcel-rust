@@ -1,6 +1,6 @@
 //! 对应 Java：`com.alibaba.excel.converters.NullableObjectConverter`.
 
-use super::converter_trait::Converter;
+use super::converter::Converter;
 
 /// Marker for converters that intentionally receive empty cells or absent values.
 ///

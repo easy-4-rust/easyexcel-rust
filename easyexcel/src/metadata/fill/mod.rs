@@ -1,5 +1,3 @@
 //! 对应 Java：`com.alibaba.excel.write.metadata.fill.*`.
 
-pub mod analysis_cell;
-
-pub use analysis_cell::AnalysisCell;
+pub use crate::write::metadata::fill::analysis_cell::AnalysisCell;

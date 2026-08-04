@@ -23,10 +23,13 @@ pub mod metadata;
 pub mod read;
 
 pub mod builder;
-pub mod holder;
 pub mod listener;
 pub mod processor;
 
+/// Holder 模块镜像 — 指向 `read/metadata/holder`。
+pub use crate::read::metadata::holder;
+
+#[path = "../excel_reader.rs"]
 mod excel_reader;
 mod global_configuration;
 

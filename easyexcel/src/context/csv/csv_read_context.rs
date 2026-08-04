@@ -7,7 +7,7 @@ use crate::context::read_sheet::ReadSheet;
 use crate::read::holder::csv::csv_read_sheet_holder::CsvReadSheetHolder;
 use crate::read::holder::csv::csv_read_workbook_holder::CsvReadWorkbookHolder;
 
-use super::analysis_context_impl::AnalysisContextImpl;
+use crate::context::analysis_context_impl::AnalysisContextImpl;
 
 /// 对应 Java：`CsvReadContext extends AnalysisContext`.
 pub trait CsvReadContext {

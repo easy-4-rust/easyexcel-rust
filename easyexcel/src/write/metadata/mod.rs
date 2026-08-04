@@ -1,6 +1,8 @@
 //! 对应 Java：`com.alibaba.excel.write.metadata.*` sub-packages.
 
 pub mod collection_row_data;
+pub mod fill;
+pub mod holder;
 pub mod map_row_data;
 pub mod row_data;
 pub mod style;
