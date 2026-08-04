@@ -9,7 +9,6 @@ members = [
     "easyexcel-support/easyexcel-poem",
     "easyexcel-support/easyexcel-rocket",
     "easyexcel-support/easyexcel-salvo",
-    "easyexcel-support/easyexcel-tide",
     "easyexcel-support/easyexcel-warp",
     "easyexcel-test",
     "easyexcel-demo/easyexcel-demo-axum",
@@ -54,7 +53,6 @@ hyper = "1.11.0"
 poem = "3.1.12"
 rocket = "0.5.1"
 salvo = "0.95.1"
-tide = "0.16.0"
 warp = "0.4.3"
 md-5 = "0.11.0"
 ms-offcrypto-writer = "1.0.7"

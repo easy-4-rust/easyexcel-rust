@@ -16,8 +16,7 @@ API 使用面（`Reader`/`Event`）在 0.38 → 0.41 兼容，加密读写测试
 
 剩余 10 条 informational 警告（`unmaintained`/`notice`/`unsound` 级，非漏洞，
 不使 `cargo audit` 失败）：`aes-soft`/`aesni`/`cpuid-bool`（aes 生态旧分 crate，
-由 `office-crypto` 的 `aes 0.8` 线传递）、`async-std`/`http-types`/`tide`
-（`easyexcel-tide` 适配器使用的 tide 0.16 框架自身已停维护，属框架固有风险）、
+由 `office-crypto` 的 `aes 0.8` 线传递）
 `bincode`/`instant`/`stdweb`（深层传递）、`rand 0.7.3`（unsound 仅当使用
 `rand::rng()` 自定义 logger 时触发，workspace 未使用该 API）。
 

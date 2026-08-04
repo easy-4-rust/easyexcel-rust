@@ -26,7 +26,6 @@ easyexcel-rust/                        (workspace root)
 │   │   ├── easyexcel-warp/
 │   │   ├── easyexcel-salvo/
 │   │   ├── easyexcel-poem/
-│   │   ├── easyexcel-tide/
 │   │   └── easyexcel-hyper/← 底层 HTTP 薄适配
 │   └── easyexcel-demo/              ← 【planned】scenario demos
 │       ├── easyexcel-demo-axum/
