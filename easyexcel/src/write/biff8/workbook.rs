@@ -22,10 +22,10 @@ use super::cached::Biff8Cached;
 use super::encode::{
     BIFF8_VERSION, BLANK, BOF, BOOLERR, BOUNDSHEET, CALCMODE, CODENAME, CODEPAGE, COLINFO,
     CONTINUE, DATEMODE, DIMENSION, DT_GLOBALS, DT_WORKSHEET, EOF, EXTSST, FONT, FORMAT, FORMULA,
-    INTERFACEEND, INTERFACEHDR, LABELSST, MAX_RECORD_DATA, MMS, MSODRAWING, NUMBER, OBJ, RK, ROW,
-    SST, STRING, STYLE, WINDOW2, WRITEACCESS, XF, XF_DATE, XF_DATETIME, XF_GENERAL, encode_rk,
-    encode_short_unicode_string, encode_unicode_string, pack_colinfo, pack_merge_range, pack_row,
-    record, write_merge_cells, write_palette_record,
+    INTERFACEEND, INTERFACEHDR, LABELSST, MAX_RECORD_DATA, MMS, MSODRAWING, MULBLANK, MULRK,
+    NUMBER, OBJ, RK, ROW, SST, STRING, STYLE, WINDOW2, WRITEACCESS, XF, XF_DATE, XF_DATETIME,
+    XF_GENERAL, encode_rk, encode_short_unicode_string, encode_unicode_string, pack_colinfo,
+    pack_merge_range, pack_row, record, write_merge_cells, write_palette_record,
 };
 use super::style::Biff8StyleTable;
 
@@ -681,10 +681,7 @@ fn write_worksheet(
     for (&row, &height) in &sheet.row_heights {
         record(out, ROW, &pack_row(row, 0, last_col_exclusive, height));
     }
-    for (&(row, col), cell) in &sheet.cells {
-        write_cell(out, row, col, cell, sst_index, caches.get(&(row, col)))
-            .expect("BIFF8 单元格序列化失败");
-    }
+    write_cells(out, sheet, sst_index, caches);
     if !sheet.merges.is_empty() {
         let ranges: Vec<[u8; 8]> = sheet
             .merges
@@ -707,6 +704,122 @@ fn write_worksheet(
         record(out, WINDOW2, &data);
     }
     record(out, EOF, &[]);
+}
+
+/// 逐行扫描单元格，把连续的 RK 可编码数字合并为 MULRK、连续空白合并为
+/// MULBLANK（文件更小、Excel 打开更快）；其余类型逐格写出。
+/// 对应 Java：POI `MulRKRecord` / `MulBlankRecord`。
+fn write_cells(
+    out: &mut Vec<u8>,
+    sheet: &Biff8Sheet,
+    sst_index: &HashMap<String, u32>,
+    caches: &HashMap<(u16, u8), Biff8Cached>,
+) {
+    // BTreeMap 按键 (row, col) 有序：按行分组扫描
+    let mut row_cells: Vec<(u16, u8, &Biff8Cell)> = Vec::new();
+    let mut last_row = None;
+    for (&(row, col), cell) in &sheet.cells {
+        if last_row != Some(row) && !row_cells.is_empty() {
+            flush_row(out, &mut row_cells, sst_index, caches);
+            row_cells.clear();
+        }
+        last_row = Some(row);
+        row_cells.push((row, col, cell));
+    }
+    if !row_cells.is_empty() {
+        flush_row(out, &mut row_cells, sst_index, caches);
+    }
+}
+
+fn flush_row(
+    out: &mut Vec<u8>,
+    cells: &mut [(u16, u8, &Biff8Cell)],
+    sst_index: &HashMap<String, u32>,
+    caches: &HashMap<(u16, u8), Biff8Cached>,
+) {
+    // 行内按列扫描，收集可合并段
+    let mut i = 0;
+    while i < cells.len() {
+        let (row, col, cell) = cells[i];
+        match &cell.value {
+            Biff8Value::Blank => {
+                // 收集连续 Blank
+                let mut j = i;
+                let mut cols = vec![(col, cell.xf)];
+                while j + 1 < cells.len()
+                    && cells[j + 1].1 == cols.last().map_or(0, |(c, _)| *c) + 1
+                    && matches!(cells[j + 1].2.value, Biff8Value::Blank)
+                {
+                    j += 1;
+                    cols.push((cells[j].1, cells[j].2.xf));
+                }
+                if cols.len() >= 2 {
+                    write_mulblank(out, row, &cols);
+                } else {
+                    write_blank(out, row, col, cell.xf);
+                }
+                i = j + 1;
+            }
+            Biff8Value::Number(number) => {
+                // 收集连续 RK 可编码数字
+                let mut j = i;
+                let mut entries: Vec<(u8, u16, u32)> = Vec::new();
+                if let Some(rk) = encode_rk(*number) {
+                    entries.push((col, cell.xf, rk));
+                    while j + 1 < cells.len() {
+                        let (nrow, ncol, ncell) = cells[j + 1];
+                        if nrow != row || ncol != entries.last().map_or(0, |(c, _, _)| *c) + 1 {
+                            break;
+                        }
+                        if let Biff8Value::Number(n) = &ncell.value
+                            && let Some(nrk) = encode_rk(*n)
+                        {
+                            entries.push((ncol, ncell.xf, nrk));
+                            j += 1;
+                            continue;
+                        }
+                        break;
+                    }
+                }
+                if entries.len() >= 2 {
+                    write_mulrk(out, row, &entries);
+                } else {
+                    write_number(out, row, col, cell.xf, *number);
+                }
+                i = j + 1;
+            }
+            _ => {
+                write_cell(out, row, col, cell, sst_index, caches.get(&(row, col)))
+                    .expect("BIFF8 单元格序列化失败");
+                i += 1;
+            }
+        }
+    }
+}
+
+/// MULRK（0x00BD）：rw + colFirst + (xf, rk)*n + colLast
+fn write_mulrk(out: &mut Vec<u8>, row: u16, entries: &[(u8, u16, u32)]) {
+    let mut data = Vec::with_capacity(8 + entries.len() * 6);
+    data.extend_from_slice(&row.to_le_bytes());
+    data.extend_from_slice(&u16::from(entries[0].0).to_le_bytes());
+    for &(_, xf, rk) in entries {
+        data.extend_from_slice(&xf.to_le_bytes());
+        data.extend_from_slice(&rk.to_le_bytes());
+    }
+    data.extend_from_slice(&u16::from(entries[entries.len() - 1].0).to_le_bytes());
+    record(out, MULRK, &data);
+}
+
+/// MULBLANK（0x00BE）：rw + colFirst + xf*n + colLast
+fn write_mulblank(out: &mut Vec<u8>, row: u16, entries: &[(u8, u16)]) {
+    let mut data = Vec::with_capacity(6 + entries.len() * 2);
+    data.extend_from_slice(&row.to_le_bytes());
+    data.extend_from_slice(&u16::from(entries[0].0).to_le_bytes());
+    for &(_, xf) in entries {
+        data.extend_from_slice(&xf.to_le_bytes());
+    }
+    data.extend_from_slice(&u16::from(entries[entries.len() - 1].0).to_le_bytes());
+    record(out, MULBLANK, &data);
 }
 
 fn write_cell(
@@ -1100,6 +1213,59 @@ mod tests_extra {
             .unwrap_err();
         assert!(matches!(err, ExcelError::Format(_)));
         assert!(sheet.cells.is_empty());
+    }
+
+    #[test]
+    fn consecutive_numbers_merge_into_mulrk_and_blanks_into_mulblank() {
+        // 对应 Java：POI MulRKRecord / MulBlankRecord 连续单元格压缩
+        let mut sheet = Biff8Sheet::new("S");
+        // 连续数字 (0,0..3)：1, 2, 3, 4 → 单条 MULRK
+        for col in 0..4u8 {
+            sheet
+                .set(
+                    0,
+                    usize::from(col),
+                    Biff8Cell::general(Biff8Value::Number(f64::from(col) + 1.0)),
+                )
+                .unwrap();
+        }
+        // 连续空白 (1,0..2) → 单条 MULBLANK
+        for col in 0..3u8 {
+            sheet
+                .set(1, usize::from(col), Biff8Cell::general(Biff8Value::Blank))
+                .unwrap();
+        }
+        // 非连续：数字夹字符串 → 各自独立记录
+        sheet
+            .set(2, 0, Biff8Cell::general(Biff8Value::Number(7.0)))
+            .unwrap();
+        sheet
+            .set(2, 1, Biff8Cell::general(Biff8Value::Text("x".to_owned())))
+            .unwrap();
+        // 1/3 不是 0.01 的整数倍，RK 编码不了 → 必须是 NUMBER
+        sheet
+            .set(2, 2, Biff8Cell::general(Biff8Value::Number(1.0 / 3.0)))
+            .unwrap();
+        let mut book = Biff8Book::default();
+        book.sheets.push(sheet);
+        let stream = build_workbook_stream(&book, &[]);
+        let mut mulrk = 0;
+        let mut mulblank = 0;
+        let mut rk = 0;
+        let mut number = 0;
+        for (typ, _) in records(&stream) {
+            match typ {
+                MULRK => mulrk += 1,
+                MULBLANK => mulblank += 1,
+                RK => rk += 1,
+                NUMBER => number += 1,
+                _ => {}
+            }
+        }
+        assert_eq!(mulrk, 1, "连续 4 个数字合并为 1 条 MULRK");
+        assert_eq!(mulblank, 1, "连续 3 个空白合并为 1 条 MULBLANK");
+        assert_eq!(rk, 1, "孤立数字 7 用 RK");
+        assert_eq!(number, 1, "孤立数字 1/3 用 NUMBER");
     }
 
     #[test]
