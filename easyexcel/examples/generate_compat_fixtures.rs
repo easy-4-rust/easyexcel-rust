@@ -14,6 +14,7 @@
 //! - `06-image.xlsx` — embedded JPEG image
 //! - `07-legacy.xls` — Minimal BIFF8 write
 //! - `08-data.csv` — CSV write
+//! - `09-freeze.xls` — BIFF8 with frozen header row (`freeze_head` → PANE)
 //!
 //! Run from the repository root:
 //!
@@ -147,6 +148,13 @@ fn main() -> easyexcel::Result<()> {
     let xls = out.join("07-legacy.xls");
     EasyExcel::write::<DemoRow>(&xls).do_write(demo_rows(10))?;
     println!("{}", xls.display());
+
+    // 9. BIFF8 with frozen header row (freeze_head → PANE + WINDOW2 fFrozen).
+    let frozen_xls = out.join("09-freeze.xls");
+    EasyExcel::write::<DemoRow>(&frozen_xls)
+        .freeze_head(true)
+        .do_write(demo_rows(10))?;
+    println!("{}", frozen_xls.display());
 
     // 8. CSV write.
     let csv = out.join("08-data.csv");

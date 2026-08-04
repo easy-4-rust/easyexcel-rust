@@ -45,6 +45,8 @@ pub const INTERFACEEND: u16 = 0x00E2;
 pub const WRITEACCESS: u16 = 0x005C;
 pub const CODENAME: u16 = 0x004A;
 pub const WINDOW2: u16 = 0x023E;
+/// Frozen / split pane layout. (Java HSSF `PaneRecord`)
+pub const PANE: u16 = 0x0041;
 pub const STYLE: u16 = 0x0293;
 /// Column width / default XF for a column range. (Java HSSF `ColumnInfoRecord`)
 pub const COLINFO: u16 = 0x007D;

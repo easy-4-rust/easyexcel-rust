@@ -942,6 +942,23 @@ where
         for range in &options.merge_ranges {
             add_biff8_merge_range(book.sheet_mut(sheet_name), *range)?;
         }
+        // Java `Sheet.createFreezePane(row, col)` — 与 XLSX 路径同一表达式
+        // (`freeze_head && need_head` → 冻结表头行数)。BIFF8 边界：行≤65535、
+        // 列≤255，越界与 rust_xlsxwriter `set_freeze_panes` 一样返回错误。
+        let freeze_panes = options
+            .freeze_panes
+            .or_else(|| (options.freeze_head && options.need_head).then_some((head_rows, 0)));
+        if let Some((rows, cols)) = freeze_panes {
+            if rows > u32::from(u16::MAX) || cols > u16::from(u8::MAX) {
+                return Err(ExcelError::Format(format!(
+                    "freeze panes ({rows},{cols}) 超出 BIFF8 范围（行≤65535, 列≤255）"
+                )));
+            }
+            // 行越界已在上方校验，u32→u16 不会截断
+            #[allow(clippy::cast_possible_truncation)]
+            let rows = rows as u16;
+            book.sheet_mut(sheet_name).freeze = Some((rows, cols));
+        }
     }
 
     if write_head && head_rows > 0 {

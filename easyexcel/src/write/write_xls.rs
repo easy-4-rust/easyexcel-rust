@@ -138,7 +138,7 @@ mod tests {
     use crate::core::{DynamicRow, DynamicValue};
     use crate::write::write_options::WriteOptions;
     use std::collections::BTreeMap;
-    use std::io::Cursor;
+    use std::io::{Cursor, Read};
 
     fn dynamic_row() -> DynamicRow {
         let mut values = BTreeMap::new();
@@ -162,6 +162,60 @@ mod tests {
         )
         .expect("write must succeed");
         assert!(!output.get_ref().is_empty());
+    }
+
+    #[test]
+    fn freeze_head_emits_pane_record_in_written_xls() {
+        let options = WriteOptions {
+            sheet_name: "Sheet1".to_owned(),
+            freeze_head: true,
+            need_head: true,
+            // DynamicRow 无静态 schema：显式表头 → head_rows=1 → 冻结首行
+            dynamic_head: Some(vec![vec!["Name".to_owned()]]),
+            ..WriteOptions::default()
+        };
+        let mut output = Cursor::new(Vec::<u8>::new());
+        write_xls_to_writer::<DynamicRow, _, _>(
+            std::path::Path::new("logical.xls"),
+            &mut output,
+            &options,
+            vec![dynamic_row()],
+            &mut [],
+        )
+        .expect("write must succeed");
+        // 从 CFB 容器提取 Workbook 流并扫描记录
+        let mut cfb =
+            cfb::CompoundFile::open(Cursor::new(output.get_ref().as_slice())).expect("valid cfb");
+        let mut stream = cfb.open_stream("Workbook").expect("Workbook stream");
+        let mut stream_bytes = Vec::new();
+        stream
+            .read_to_end(&mut stream_bytes)
+            .expect("read Workbook stream");
+        let stream = stream_bytes;
+        let mut pane = None;
+        let mut window2 = None;
+        let mut i = 0;
+        while i + 4 <= stream.len() {
+            let typ = u16::from_le_bytes([stream[i], stream[i + 1]]);
+            let len = u16::from_le_bytes([stream[i + 2], stream[i + 3]]) as usize;
+            let data = &stream[i + 4..i + 4 + len];
+            if typ == 0x0041 {
+                pane = Some(data.to_vec());
+            }
+            if typ == 0x023E {
+                window2 = Some(data.to_vec());
+            }
+            i += 4 + len;
+        }
+        // 冻结表头 1 行: PANE = px=0 py=1 rwTop=1 colLeft=0 pnnAct=2
+        assert_eq!(
+            pane.as_deref(),
+            Some(&[0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00][..]),
+            "freeze_head 写出 PANE 记录"
+        );
+        let w2 = window2.expect("WINDOW2 必须存在");
+        let window_options = u16::from_le_bytes([w2[0], w2[1]]);
+        assert_eq!(window_options & 0x0008, 0x0008, "WINDOW2 fFrozen 位置位");
     }
 }
 

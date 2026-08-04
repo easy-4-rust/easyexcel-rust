@@ -23,7 +23,7 @@ use super::encode::{
     BIFF8_VERSION, BLANK, BOF, BOOLERR, BOUNDSHEET, CALCMODE, CODENAME, CODEPAGE, COLINFO,
     CONTINUE, DATEMODE, DIMENSION, DT_GLOBALS, DT_WORKSHEET, EOF, EXTSST, FONT, FORMAT, FORMULA,
     INTERFACEEND, INTERFACEHDR, LABELSST, MAX_RECORD_DATA, MMS, MSODRAWING, MULBLANK, MULRK,
-    NUMBER, OBJ, RK, ROW, SST, STRING, STYLE, WINDOW2, WRITEACCESS, XF, XF_DATE, XF_DATETIME,
+    NUMBER, OBJ, PANE, RK, ROW, SST, STRING, STYLE, WINDOW2, WRITEACCESS, XF, XF_DATE, XF_DATETIME,
     XF_GENERAL, encode_rk, encode_short_unicode_string, encode_unicode_string, pack_colinfo,
     pack_merge_range, pack_row, record, write_merge_cells, write_palette_record,
 };
@@ -117,6 +117,9 @@ pub struct Biff8Sheet {
     pub row_heights: BTreeMap<u16, u16>,
     /// Merged regions (Java `addMergedRegion` / `MergedCellsTable`).
     pub merges: Vec<Biff8Merge>,
+    /// Frozen panes as `(rows, cols)` — Java `Sheet.createFreezePane(row, col)`,
+    /// emitted as a `PANE` record + `WINDOW2` fFrozen flags.
+    pub freeze: Option<(u16, u16)>,
     /// Next free row index (includes any header rows already written).
     pub next_row: u32,
     /// Next data-row index used for content-style cycling parity with XLSX.
@@ -133,6 +136,7 @@ impl Biff8Sheet {
             column_widths: BTreeMap::new(),
             row_heights: BTreeMap::new(),
             merges: Vec::new(),
+            freeze: None,
             next_row: 0,
             next_data_index: 0,
         }
@@ -699,11 +703,42 @@ fn write_worksheet(
     }
     {
         let mut data = vec![0u8; 18];
+        // options: fDspGrid | fDspRwCol | fDspZeros | fDefaultHdr | fDspGuts |
+        // fUnsynced | fSelected | fDspSheet（与 LibreOffice 默认值 0x06B6 一致）
         data[0] = 0xB6;
         data[1] = 0x06;
+        if let Some((_rows, _cols)) = sheet.freeze.filter(|&(r, c)| r > 0 || c > 0) {
+            // fFrozen(bit3=0x0008) + fFrozenNoSplit(bit12=0x1000)
+            data[0] |= 0x08;
+            data[1] |= 0x10;
+        }
         record(out, WINDOW2, &data);
+        // WINDOW2 之后发射 PANE（xlwt/POI 流序一致）
+        if let Some((rows, cols)) = sheet.freeze.filter(|&(r, c)| r > 0 || c > 0) {
+            write_pane(out, rows, cols);
+        }
     }
     record(out, EOF, &[]);
+}
+
+/// PANE 记录（0x0041）：冻结窗格布局。与 xlwt `PanesRecord` 字节一致——
+/// px=冻结列数, py=冻结行数, rwTop=底窗格首个可见行, colLeft=右窗格首个
+/// 可见列, pnnAct=活动窗格（行列都冻结→0, 仅列→1, 仅行→2）, 末字节保留。
+/// 对应 Java：POI `PaneRecord`（字段顺序相同，POI 另写 pnnFrz）。
+fn write_pane(out: &mut Vec<u8>, rows: u16, cols: u16) {
+    let mut data = Vec::with_capacity(10);
+    data.extend_from_slice(&cols.to_le_bytes()); // px: 冻结列数
+    data.extend_from_slice(&rows.to_le_bytes()); // py: 冻结行数
+    data.extend_from_slice(&rows.to_le_bytes()); // rwTop
+    data.extend_from_slice(&cols.to_le_bytes()); // colLeft
+    data.push(match (cols > 0, rows > 0) {
+        (true, true) => 0,
+        (true, false) => 1,
+        (false, true) => 2,
+        (false, false) => 3,
+    });
+    data.push(0); // BIFF8 保留字节（xlwt 不写 pnnFrz）
+    record(out, PANE, &data);
 }
 
 /// 逐行扫描单元格，把连续的 RK 可编码数字合并为 MULRK、连续空白合并为
@@ -1266,6 +1301,82 @@ mod tests_extra {
         assert_eq!(mulblank, 1, "连续 3 个空白合并为 1 条 MULBLANK");
         assert_eq!(rk, 1, "孤立数字 7 用 RK");
         assert_eq!(number, 1, "孤立数字 1/3 用 NUMBER");
+    }
+
+    #[test]
+    fn freeze_panes_emit_pane_record_and_window2_flags() {
+        // golden 字节对照 xlwt 1.3.0 PanesRecord（冻结合并行、冻结列、
+        // 行列都冻结三种形态逐一验证）
+        for (rows, cols, expected_pane) in [
+            // 冻结首行: px=0 py=1 rwTop=1 colLeft=0 pnnAct=2
+            (
+                1u16,
+                0u16,
+                [0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00],
+            ),
+            // 冻结首列: px=1 py=0 rwTop=0 colLeft=1 pnnAct=1
+            (
+                0u16,
+                1u16,
+                [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00],
+            ),
+            // 行列都冻结: px=1 py=1 rwTop=1 colLeft=1 pnnAct=0
+            (
+                1u16,
+                1u16,
+                [0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00],
+            ),
+        ] {
+            let mut sheet = Biff8Sheet::new("S");
+            sheet
+                .set(0, 0, Biff8Cell::general(Biff8Value::Number(1.0)))
+                .unwrap();
+            sheet.freeze = Some((rows, cols));
+            let mut book = Biff8Book::default();
+            book.sheets.push(sheet);
+            let stream = build_workbook_stream(&book, &[]);
+            let mut panes = Vec::new();
+            let mut window2 = None;
+            for (typ, data) in records(&stream) {
+                match typ {
+                    PANE => panes.push(data),
+                    WINDOW2 => window2 = Some(data),
+                    _ => {}
+                }
+            }
+            assert_eq!(panes.len(), 1, "恰好一条 PANE");
+            assert_eq!(
+                panes[0], expected_pane,
+                "freeze ({rows},{cols}) PANE golden"
+            );
+            let w2 = window2.expect("sheet 必有 WINDOW2");
+            assert_eq!(w2.len(), 18);
+            let options = u16::from_le_bytes([w2[0], w2[1]]);
+            // 基础选项 0x06B6 保留 + fFrozen(0x0008) + fFrozenNoSplit(0x1000)
+            assert_eq!(
+                options,
+                0x06B6 | 0x0008 | 0x1000,
+                "freeze 时 WINDOW2 置冻结位"
+            );
+        }
+    }
+
+    #[test]
+    fn no_freeze_keeps_window2_default_options() {
+        let mut sheet = Biff8Sheet::new("S");
+        sheet
+            .set(0, 0, Biff8Cell::general(Biff8Value::Number(1.0)))
+            .unwrap();
+        let mut book = Biff8Book::default();
+        book.sheets.push(sheet);
+        let stream = build_workbook_stream(&book, &[]);
+        let mut has_pane = false;
+        for (typ, _) in records(&stream) {
+            if typ == PANE {
+                has_pane = true;
+            }
+        }
+        assert!(!has_pane, "未冻结时不得发射 PANE");
     }
 
     #[test]

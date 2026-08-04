@@ -47,7 +47,7 @@ This document is the release gate, not a marketing checklist. A row is marked
 | `writeExcelOnException` / `finish(boolean)` | `write_excel_on_exception` / `finish_on_exception` | implemented: default exception completion discards accumulated output; opt-in emits it; handlers and close cleanup still run |
 | `sheet(Integer/String)` | `sheet_index(index)` / `sheet(name)` | implemented |
 | `needHead` | `need_head` | implemented |
-| freeze panes | `freeze_head` / `freeze_panes` | implemented |
+| freeze panes | `freeze_head` / `freeze_panes` | implemented for XLSX and (2026-08-04) BIFF8 `.xls` via `PANE`/`WINDOW2` |
 | `doWrite(Collection)` | `do_write(IntoIterator)` | implemented |
 | streaming write | `do_write_iter(IntoIterator)` | implemented |
 | `ExcelWriter` multi-write lifecycle | `ExcelWriter::write` / `finish` | implemented |
@@ -275,10 +275,12 @@ parseable by LibreOffice (2026-08-04 fix, verified by
 | Column width / row height (`COLINFO` / `ROW`) | supported |
 | Basic FONT / XF (bold, italic, size, indexed/approx RGB fill, align, wrap) | supported (subset) |
 | Merged cells (`MERGECELLS`) | supported |
+| Freeze panes (`freeze_head` / `freeze_panes`) | supported (2026-08-04): `PANE` record + `WINDOW2` fFrozen/fFrozenNoSplit flags — frozen header rows, frozen columns, and row+column combinations, byte-identical to xlwt `PanesRecord` layout (px/py/rwTop/colLeft/pnnAct); out-of-BIFF8-range splits (row>65535 or col>255) return a typed error like `rust_xlsxwriter::set_freeze_panes` |
 | True formula tokens | implemented (2026-08-04): BIFF8 `FORMULA` records with real `Ptg` RPN tokens — A1-style refs/areas with `$` absolute flags, arithmetic/comparison/text operators, 257 built-in functions (`[MS-XLS]` indices incl. CETAB like COUNTIF/SUMIF), strings/booleans/errors, percent, unary ops, empty args (`tMissArg`); cached results are **evaluated at write time** via the `xls` formula engine (path dependency on a local fork, MIT/Apache-2.0) — numbers/booleans/errors/strings encoded in the 8-byte result + `STRING` record like POI `FormulaEvaluator`; unsupported formulas fall back to `0` + `CALCMODE` auto-recalc. Verified: calamine reads back `A1+B1` = 5.0, LibreOffice recalculates `A1+B1`/`SUM`/`IF` correctly. Cross-sheet refs remain typed `Unsupported` |
 | Hyperlink / comment records | unsupported |
 | Rich-text runs, charts, macros | unsupported |
-| Borders / arbitrary custom number formats (beyond date/datetime XF) | unsupported / degraded |
+| Borders | unsupported |
+| Custom number formats | supported (2026-08-04): `ExcelDataFormat::Custom` → `FORMAT` record registered from index 164 (POI `BuiltinFormats` 27-entry code table for built-ins), `XF` ifmt wired — format code round-trips through LibreOffice/calamine display |
 
 Out-of-boundary requests return a typed `ExcelError::Unsupported` (or a
 documented degraded encoding such as formula text as a plain string). They
