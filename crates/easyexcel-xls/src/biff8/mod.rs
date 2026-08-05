@@ -2,6 +2,7 @@
 
 mod cached;
 mod continuation_chain;
+mod continuation_decoder;
 pub mod encode;
 pub mod encrypt;
 pub mod event_record;
@@ -20,6 +21,10 @@ pub use numeric::{
     format_numeric_displays, load_numeric_displays, parse_format_record, scan_numeric_cells,
 };
 pub use continuation_chain::Biff8ContinuationChain;
+pub use continuation_decoder::{
+    Biff8ContinuableRecordDecoder, Biff8ContinuableRecordKind, Biff8ContinuationStatus,
+    Biff8DecodedContinuableRecord,
+};
 pub use style::{
     Biff8Color, Biff8FillPattern, Biff8HorizontalAlignment, Biff8NumberFormat,
     Biff8StyleRequest, Biff8StyleTable, Biff8VerticalAlignment,

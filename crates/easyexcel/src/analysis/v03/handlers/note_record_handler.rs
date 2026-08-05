@@ -50,11 +50,11 @@ impl XlsRecordHandler for NoteRecordHandler {
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
         /// BIFF `Note` sid (POI `NoteRecord.sid`)
         const NOTE_SID: u16 = easyexcel_xls::biff8::record_sid::NOTE_SID;
-        if !self.enabled || record_sid != NOTE_SID || data.len() < 6 {
+        if !self.enabled || record_sid != NOTE_SID {
             return;
         }
         if let Some((row, column)) =
-            easyexcel_xls::biff8::event_record::decode_cell_position(data)
+            easyexcel_xls::biff8::event_record::decode_note_record_position(data)
         {
             self.process_note(None, row, column);
         }

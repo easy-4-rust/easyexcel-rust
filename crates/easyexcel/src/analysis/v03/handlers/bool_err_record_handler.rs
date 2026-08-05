@@ -44,7 +44,7 @@ impl XlsRecordHandler for BoolErrRecordHandler {
     /// Java `BoolErrRecordHandler.processRecord` — boolean branch only.
     /// Layout: `row|col|xf|value:u8|isError:u8`.
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
-        if record_sid != BOOL_ERR_SID || data.len() < 8 {
+        if record_sid != BOOL_ERR_SID {
             return;
         }
         if let Some(Some((header, value))) =

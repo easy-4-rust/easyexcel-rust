@@ -51,7 +51,7 @@ impl XlsRecordHandler for NumberRecordHandler {
     /// Java `NumberRecordHandler.processRecord` — parses BIFF Number body
     /// (`row|col|xf|f64`). Formatting lookup stays in [`Self::process_number`].
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
-        if record_sid != NUMBER_SID || data.len() < 14 {
+        if record_sid != NUMBER_SID {
             return;
         }
         if let Some(record) = easyexcel_xls::biff8::event_record::decode_number_record(data) {

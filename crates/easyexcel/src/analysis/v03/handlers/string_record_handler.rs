@@ -51,9 +51,7 @@ impl XlsRecordHandler for StringRecordHandler {
         if record_sid != STRING_SID {
             return;
         }
-        if let Ok(value) =
-            easyexcel_xls::biff8::Biff8ContinuationChain::new(data).decode_unicode_string()
-        {
+        if let Ok(value) = easyexcel_xls::biff8::string::decode_unicode_string_record(data) {
             self.process_decoded(value);
         }
     }

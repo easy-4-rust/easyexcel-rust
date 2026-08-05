@@ -42,9 +42,6 @@ impl XlsRecordHandler for TextObjectRecordHandler {
         if record_sid != TEXT_OBJECT_SID && record_sid != CONTINUE_SID {
             return;
         }
-        if record_sid == CONTINUE_SID && data.len() < 2 {
-            return;
-        }
         match easyexcel_xls::biff8::event_record::decode_text_object_fragment(
             record_sid,
             TEXT_OBJECT_SID,

@@ -38,6 +38,15 @@ pub fn decode_unicode_string_segments(segments: &[Vec<u8>]) -> Result<String> {
     cursor.read_characters(character_count, flags & 0x01 != 0, "String")
 }
 
+/// 解码未分段的 BIFF8 `XLUnicodeString` 记录体。
+///
+/// # Errors
+///
+/// 字符计数、编码标志或字符数据损坏/截断时返回错误。
+pub fn decode_unicode_string_record(data: &[u8]) -> Result<String> {
+    decode_unicode_string_segments(&[data.to_vec()])
+}
+
 struct SegmentCursor<'a> {
     segments: &'a [Vec<u8>],
     segment_index: usize,

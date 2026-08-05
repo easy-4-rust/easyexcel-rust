@@ -55,7 +55,7 @@ impl XlsRecordHandler for HyperlinkRecordHandler {
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
         /// BIFF `Hyperlink` sid (POI `HyperlinkRecord.sid`)
         const HYPERLINK_SID: u16 = easyexcel_xls::biff8::record_sid::HYPERLINK_SID;
-        if !self.enabled || record_sid != HYPERLINK_SID || data.len() < 8 {
+        if !self.enabled || record_sid != HYPERLINK_SID {
             return;
         }
         if let Some(range) = easyexcel_xls::biff8::event_record::decode_cell_range(data) {

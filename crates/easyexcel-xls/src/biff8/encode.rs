@@ -16,50 +16,20 @@
 /// Maximum BIFF record data payload (excluding the 4-byte header).
 pub const MAX_RECORD_DATA: usize = 8224;
 
-pub const BOF: u16 = 0x0809;
-pub const EOF: u16 = 0x000A;
-pub const BOUNDSHEET: u16 = 0x0085;
-pub const SST: u16 = 0x00FC;
-pub const EXTSST: u16 = 0x00FF;
-pub const LABELSST: u16 = 0x00FD;
-pub const LABEL: u16 = 0x0204;
-pub const NUMBER: u16 = 0x0203;
-pub const RK: u16 = 0x027E;
-pub const MULRK: u16 = 0x00BD;
-pub const MULBLANK: u16 = 0x00BE;
-pub const BOOLERR: u16 = 0x0205;
-pub const BLANK: u16 = 0x0201;
-pub const FORMULA: u16 = 0x0006;
-pub const STRING: u16 = 0x0207;
-pub const FORMAT: u16 = 0x041E;
-pub const XF: u16 = 0x00E0;
-pub const FONT: u16 = 0x0031;
-/// Drawing object (Java `ObjRecord`, POI HSSF)
-pub const OBJ: u16 = 0x005D;
-/// Microsoft Office Drawing record (Escher container)
-pub const MSODRAWING: u16 = 0x00EC;
-pub const DIMENSION: u16 = 0x0200;
-pub const DATEMODE: u16 = 0x0022;
-pub const CODEPAGE: u16 = 0x0042;
-pub const CONTINUE: u16 = 0x003C;
-pub const CALCMODE: u16 = 0x000D;
-pub const INTERFACEHDR: u16 = 0x00E1;
-pub const MMS: u16 = 0x00C1;
-pub const INTERFACEEND: u16 = 0x00E2;
-pub const WRITEACCESS: u16 = 0x005C;
-pub const CODENAME: u16 = 0x004A;
-pub const WINDOW2: u16 = 0x023E;
-/// Frozen / split pane layout. (Java HSSF `PaneRecord`)
-pub const PANE: u16 = 0x0041;
-pub const STYLE: u16 = 0x0293;
-/// Column width / default XF for a column range. (Java HSSF `ColumnInfoRecord`)
-pub const COLINFO: u16 = 0x007D;
-/// Per-row height and outline flags. (Java HSSF `RowRecord`)
-pub const ROW: u16 = 0x0208;
-/// Merged-cell ranges. (Java HSSF `MergedCellsTable` / record 0x00E5)
-pub const MERGECELLS: u16 = 0x00E5;
-/// Custom palette colours (indices 8..). (Java HSSF `PaletteRecord`)
-pub const PALETTE: u16 = 0x0092;
+pub use super::record_sid::{
+    BLANK_SID as BLANK, BOF_SID as BOF, BOOL_ERR_SID as BOOLERR,
+    BOUND_SHEET_SID as BOUNDSHEET, CALC_MODE_SID as CALCMODE, CODE_NAME_SID as CODENAME,
+    CODE_PAGE_SID as CODEPAGE, COLUMN_INFO_SID as COLINFO, CONTINUE_SID as CONTINUE,
+    DATE_MODE_SID as DATEMODE, DIMENSION_SID as DIMENSION, EOF_SID as EOF,
+    EXT_SST_SID as EXTSST, FONT_SID as FONT, FORMAT_SID as FORMAT, FORMULA_SID as FORMULA,
+    INTERFACE_END_SID as INTERFACEEND, INTERFACE_HEADER_SID as INTERFACEHDR,
+    LABEL_SID as LABEL, LABEL_SST_SID as LABELSST, MERGE_CELLS_SID as MERGECELLS,
+    MMS_SID as MMS, MSO_DRAWING_SID as MSODRAWING, MUL_BLANK_SID as MULBLANK,
+    MUL_RK_SID as MULRK, NUMBER_SID as NUMBER, OBJ_SID as OBJ, PALETTE_SID as PALETTE,
+    PANE_SID as PANE, RK_SID as RK, ROW_SID as ROW, SST_SID as SST, STRING_SID as STRING,
+    STYLE_SID as STYLE, WINDOW2_SID as WINDOW2, WRITE_ACCESS_SID as WRITEACCESS,
+    XF_SID as XF,
+};
 
 /// Workbook globals substream type.
 pub const DT_GLOBALS: u16 = 0x0005;

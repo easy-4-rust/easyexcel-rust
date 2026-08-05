@@ -65,7 +65,7 @@ impl XlsRecordHandler for MergeCellsRecordHandler {
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
         /// BIFF `MergeCells` sid (POI `MergeCellsRecord.sid`)
         const MERGE_CELLS_SID: u16 = easyexcel_xls::biff8::record_sid::MERGE_CELLS_SID;
-        if !self.enabled || record_sid != MERGE_CELLS_SID || data.len() < 2 {
+        if !self.enabled || record_sid != MERGE_CELLS_SID {
             return;
         }
         self.last_extras.clear();

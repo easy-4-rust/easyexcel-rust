@@ -43,11 +43,11 @@ impl XlsRecordHandler for LabelRecordHandler {
     /// Java `LabelRecordHandler.processRecord` — parses coordinates; string body
     /// decoding is left to a higher-level BIFF reader / [`Self::process_label`].
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
-        if record_sid != LABEL_SID || data.len() < 8 {
+        if record_sid != LABEL_SID {
             return;
         }
         if let Some((row, column)) =
-            easyexcel_xls::biff8::event_record::decode_cell_position(data)
+            easyexcel_xls::biff8::event_record::decode_label_record_position(data)
         {
             let _ = Self::process_label(row, column, "", false);
         }

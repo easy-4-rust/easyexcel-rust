@@ -45,7 +45,7 @@ pub use easyexcel_xls::biff8::record_sid::SST_SID;
 impl XlsRecordHandler for SstRecordHandler {
     /// Java `SstRecordHandler.processRecord` — reads `cstTotal`/`cstUnique` header.
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
-        if record_sid != SST_SID || data.len() < 8 {
+        if record_sid != SST_SID {
             return;
         }
         if let Some(unique) = easyexcel_xls::biff8::event_record::decode_sst_unique_count(data) {

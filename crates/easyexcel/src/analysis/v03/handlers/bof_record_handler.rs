@@ -67,7 +67,7 @@ pub use easyexcel_xls::biff8::record_sid::BOF_SID;
 impl XlsRecordHandler for BofRecordHandler {
     /// Java `BofRecordHandler.processRecord` — parses type code; use [`Self::decide`].
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
-        if record_sid != BOF_SID || data.len() < 4 {
+        if record_sid != BOF_SID {
             return;
         }
         let Some(bof_type) = easyexcel_xls::biff8::event_record::decode_bof_type(data) else {

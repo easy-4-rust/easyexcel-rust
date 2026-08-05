@@ -71,6 +71,7 @@ flowchart LR
 | 格式识别、BOM、资源限制、RowSource/RowSink | `easyexcel-io` | `easyexcel::io` 显式重导出及 Java 枚举映射 |
 | Workbook/Sheet/Cell/Style 中立模型 | `easyexcel-model` | `easyexcel::model` 显式重导出 |
 | CSV 字符集、转码、CSV codec | `easyexcel-csv` | `easyexcel::csv` 与旧 Java 路径兼容重导出 |
+| 共享字符串内存/Moka/临时文件缓存 | `easyexcel-cache` | Java `ReadCache`、`Ehcache` 与 selector 契约适配 |
 | BIFF8 record、SST/Unicode、Ptg、RC4、OLE | `easyexcel-xls` | 错误类型与 listener 生命周期 adapter |
 | OOXML ZIP、流式行、RoundTrip、加解密 | `easyexcel-xlsx` | converter/handler 编排与 `rust_xlsxwriter` 生成 adapter |
 | 公式 AST/求值/重算 | `easyexcel-formula` | `easyexcel::formula` 重导出及 Java API 调用适配 |
@@ -85,7 +86,7 @@ flowchart LR
 | `write/biff8/style.rs` 的 FONT/XF/FORMAT/调色板分配及对齐/填充/颜色协议码 | `easyexcel-xls::biff8::style` | `ExcelCellStyle`、`ExcelFontStyle` 到语义化 `Biff8StyleRequest` 的映射 |
 | `write/biff8/template.rs` 的 OLE/BIFF record-preserving 修改与 XLS 占位符解析/替换 | `easyexcel-xls::biff8::template` | `CellValue` 到中立文本或 `Biff8Cell` 的转换 |
 | `read/xls_display.rs` 的 FORMAT/XF/NUMBER/RK/MULRK 扫描 | `easyexcel-xls::biff8::numeric` | POI/EasyExcel 本地化显示格式选择 |
-| `analysis/v03` 的 BIFF SID 与 BOF 子流类型码 | `easyexcel-xls::biff8::{record_sid,event_record}` | Java handler 名称、开关、状态与事件路由 |
+| `analysis/v03` 的 BIFF SID、记录长度、CONTINUE 分段状态机与 BOF 子流类型码 | `easyexcel-xls::biff8::{record_sid,event_record,continuation_decoder}` | Java handler 名称、开关、状态与事件路由 |
 | `read/xlsx_rows.rs` 的 OPC 路径与关系解析 | `easyexcel-xlsx::xlsx::package` | listener、读取缓存、extra handler 与 Java 显示语义 |
 | `write/template_write.rs` 的 ZIP 条目保留/重打包 | `easyexcel-xlsx::xlsx::ooxml_package` | 模板来源选择与 EasyExcel 写入编排 |
 | `write/template_write.rs` 的行 XML、列宽、合并、dimension | `easyexcel-xlsx::xlsx::template_xml` | `CellValue`、`MergeRange` 到中立输入的转换 |
@@ -93,6 +94,7 @@ flowchart LR
 | `rust_xlsxwriter::Workbook` 的 XLSX 序列化、落盘、流输出和加密 | `easyexcel-xlsx::xlsx::generation` | 工作簿生成流程与 Java handler/context 编排 |
 | `util/file_utils.rs`、`util/io_utils.rs` | `easyexcel-io::io::{file_utils,io_utils}` | Java 包路径和错误类型兼容代理 |
 | `write/gzip_spill.rs` 的临时文件/gzip/framing/单元格协议 | `easyexcel-io::io::{gzip_record,gzip_cell_record}` | EasyExcel `CellValue` 与中立 `GzipCellValue` 的映射 |
+| Java `Ehcache` 的活跃条目淘汰和持久后备 | `easyexcel-cache::cache::shared_string_cache`（Moka + 临时文件） | `Ehcache` 构造参数、`ReadCache` 生命周期和错误映射 |
 
 `crates/easyexcel/src/analysis/v03` 中保留的同名文件只做 EasyExcel 错误和事件回调适配，不再实现底层格式算法。`read/xlsx_rows.rs` 与 `write/template_write.rs` 仍然较大，是因为它们承载 listener/cache/handler 和 Java 模板语义；其 ZIP、OPC、BIFF、gzip 与 XML 修改原语已经由基础 crate 提供。
 

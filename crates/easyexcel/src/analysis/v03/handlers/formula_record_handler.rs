@@ -143,7 +143,7 @@ impl XlsRecordHandler for FormulaRecordHandler {
     /// Java `FormulaRecordHandler.processRecord` — parses coordinates, XF and
     /// every cached-result variant. Formula token text remains a higher layer.
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
-        if record_sid != FORMULA_SID || data.len() < 14 {
+        if record_sid != FORMULA_SID {
             return;
         }
         let Some(record) = easyexcel_xls::biff8::event_record::decode_formula_record(data) else {

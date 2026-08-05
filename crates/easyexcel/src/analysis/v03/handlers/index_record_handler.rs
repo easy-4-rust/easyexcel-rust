@@ -28,7 +28,7 @@ pub use easyexcel_xls::biff8::record_sid::INDEX_SID;
 impl XlsRecordHandler for IndexRecordHandler {
     /// Java `IndexRecordHandler.processRecord` — reads `lastRowAdd1` when present.
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
-        if record_sid != INDEX_SID || data.len() < 16 {
+        if record_sid != INDEX_SID {
             return;
         }
         if let Some(last_row_add_1) =

@@ -112,6 +112,24 @@ pub fn decode_cell_position(data: &[u8]) -> Option<(u32, usize)> {
     ))
 }
 
+/// 解码 LABEL 记录的单元格坐标，并校验 BIFF8 LABEL 固定头长度。
+#[must_use]
+pub fn decode_label_record_position(data: &[u8]) -> Option<(u32, usize)> {
+    if data.len() < 8 {
+        return None;
+    }
+    decode_cell_position(data)
+}
+
+/// 解码 NOTE 记录的单元格坐标，并校验 BIFF8 NOTE 固定头长度。
+#[must_use]
+pub fn decode_note_record_position(data: &[u8]) -> Option<(u32, usize)> {
+    if data.len() < 6 {
+        return None;
+    }
+    decode_cell_position(data)
+}
+
 /// 解码带有 `row|column|xf` 的单元格公共头。
 #[must_use]
 pub fn decode_cell_header(data: &[u8]) -> Option<Biff8CellHeader> {
@@ -222,6 +240,9 @@ pub fn decode_bound_sheet_record(data: &[u8]) -> Option<Biff8BoundSheetRecord> {
 /// 解码 INDEX 记录的 `lastRowAdd1`。
 #[must_use]
 pub fn decode_index_last_row(data: &[u8]) -> Option<u32> {
+    if data.len() < 16 {
+        return None;
+    }
     data.get(8..12)
         .and_then(|bytes| bytes.try_into().ok())
         .map(u32::from_le_bytes)
@@ -280,6 +301,9 @@ pub fn decode_text_object_fragment(
         return Some(Biff8TextObjectFragment::Start { object_id, text });
     }
     if record_sid == continue_sid {
+        if data.len() < 2 {
+            return None;
+        }
         let text = decode_latin1_zero_terminated(data);
         return (!text.is_empty()).then_some(Biff8TextObjectFragment::Continue(text));
     }

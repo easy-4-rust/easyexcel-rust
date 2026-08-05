@@ -42,7 +42,7 @@ pub use easyexcel_xls::biff8::record_sid::BLANK_SID;
 impl XlsRecordHandler for BlankRecordHandler {
     /// Java `BlankRecordHandler.processRecord` — parses `row|col|xf`.
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
-        if record_sid != BLANK_SID || data.len() < 6 {
+        if record_sid != BLANK_SID {
             return;
         }
         if let Some(header) = easyexcel_xls::biff8::event_record::decode_cell_header(data) {

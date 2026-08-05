@@ -85,7 +85,7 @@ impl XlsRecordHandler for LabelSstRecordHandler {
     /// validates the 10-byte BIFF body (`row|col|xf|sstIndex`). Full cache
     /// resolution uses [`LabelSstRecordHandler::process_label_sst`].
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
-        if record_sid != LABEL_SST_SID || data.len() < 10 {
+        if record_sid != LABEL_SST_SID {
             return;
         }
         if let Some(record) = easyexcel_xls::biff8::event_record::decode_label_sst_record(data) {

@@ -1,7 +1,10 @@
 //! BIFF SID-to-handler dispatch matching Java `XlsSaxAnalyser.processRecord`.
 
 use crate::core::{CellExtraType, Result};
-use easyexcel_xls::biff8::Biff8ContinuationChain;
+use easyexcel_xls::biff8::{
+    Biff8ContinuableRecordDecoder, Biff8ContinuableRecordKind, Biff8ContinuationStatus,
+    Biff8DecodedContinuableRecord,
+};
 
 use crate::{ReadOptions, SheetSelector};
 
@@ -34,7 +37,7 @@ const HYPERLINK_SID: u16 = easyexcel_xls::biff8::record_sid::HYPERLINK_SID;
 const MERGE_CELLS_SID: u16 = easyexcel_xls::biff8::record_sid::MERGE_CELLS_SID;
 const NOTE_SID: u16 = easyexcel_xls::biff8::record_sid::NOTE_SID;
 const DUMMY_RECORD_SID: u16 = u16::MAX;
-const CONTINUE_SID: u16 = easyexcel_xls::biff8::encode::CONTINUE;
+const CONTINUE_SID: u16 = easyexcel_xls::biff8::record_sid::CONTINUE_SID;
 
 /// Observable result of running Java-compatible BIFF handler dispatch.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -189,8 +192,7 @@ pub struct XlsRecordDispatcher {
     next_sheet_index: usize,
     ignore_record: bool,
     auto_trim: bool,
-    pending_sst_segments: Option<Biff8ContinuationChain>,
-    pending_formula_string_segments: Option<Biff8ContinuationChain>,
+    continuable_record: Biff8ContinuableRecordDecoder,
 }
 
 impl XlsRecordDispatcher {
@@ -226,8 +228,7 @@ impl XlsRecordDispatcher {
             next_sheet_index: 0,
             ignore_record: false,
             auto_trim: options.auto_trim,
-            pending_sst_segments: None,
-            pending_formula_string_segments: None,
+            continuable_record: Biff8ContinuableRecordDecoder::default(),
         }
     }
 
@@ -263,8 +264,7 @@ impl XlsRecordDispatcher {
             next_sheet_index: 0,
             ignore_record: false,
             auto_trim,
-            pending_sst_segments: None,
-            pending_formula_string_segments: None,
+            continuable_record: Biff8ContinuableRecordDecoder::default(),
         };
     }
 
@@ -280,20 +280,14 @@ impl XlsRecordDispatcher {
     /// # Errors
     ///
     /// 当待收尾的 SST/公式字符串记录解码失败时返回 [`ExcelError`]。
-    // 对应 Java：`processRecord` 的大 switch 与 POI 记录分派一一对应，
-    // 拆分会增加状态机顺序出错风险，保持原样。
+    // 对应 Java：`processRecord` 的大 switch 与 POI handler 路由顺序一一对应；
+    // SST/STRING 的物理 CONTINUE 生命周期由 easyexcel-xls 状态机管理。
     #[allow(clippy::too_many_lines)]
     pub fn process_record(&mut self, record_sid: u16, data: &[u8]) -> Result<()> {
         self.state.total_record_count += 1;
         if record_sid == CONTINUE_SID {
-            if let Some(segments) = self.pending_sst_segments.as_mut() {
-                segments.push(data);
-                self.try_finalize_sst(false)?;
-                return Ok(());
-            }
-            if let Some(segments) = self.pending_formula_string_segments.as_mut() {
-                segments.push(data);
-                self.try_finalize_formula_string(false)?;
+            if self.continuable_record.push(data) {
+                self.try_finalize_continuable_record(false)?;
                 return Ok(());
             }
             self.state.unknown_record_count += 1;
@@ -383,12 +377,14 @@ impl XlsRecordDispatcher {
             SST_SID => {
                 self.sst.process_record(record_sid, data);
                 self.state.unique_string_count = self.sst.unique_string_count;
-                self.pending_sst_segments = Some(Biff8ContinuationChain::new(data));
-                self.try_finalize_sst(false)?;
+                self.continuable_record
+                    .begin(Biff8ContinuableRecordKind::SharedStringTable, data);
+                self.try_finalize_continuable_record(false)?;
             }
             STRING_SID => {
-                self.pending_formula_string_segments = Some(Biff8ContinuationChain::new(data));
-                self.try_finalize_formula_string(false)?;
+                self.continuable_record
+                    .begin(Biff8ContinuableRecordKind::UnicodeString, data);
+                self.try_finalize_continuable_record(false)?;
             }
             TEXT_OBJECT_SID => self.text_object.process_record(record_sid, data),
             _ => {
@@ -443,50 +439,36 @@ impl XlsRecordDispatcher {
     }
 
     fn finish_pending_records(&mut self) -> Result<()> {
-        self.try_finalize_sst(true)?;
-        self.try_finalize_formula_string(true)
+        self.try_finalize_continuable_record(true)
     }
 
-    fn try_finalize_sst(&mut self, require_complete: bool) -> Result<()> {
-        let Some(segments) = self.pending_sst_segments.as_ref() else {
-            return Ok(());
-        };
-        match segments.decode_sst() {
-            Ok(strings) => {
+    fn try_finalize_continuable_record(&mut self, require_complete: bool) -> Result<()> {
+        match self.continuable_record.try_finish(require_complete)? {
+            Biff8ContinuationStatus::Complete(
+                Biff8DecodedContinuableRecord::SharedStrings(strings),
+            ) => {
                 let unique = u32::try_from(strings.len()).map_err(|_| {
                     crate::core::ExcelError::Format(
                         "decoded SST size exceeds BIFF u32 range".to_owned(),
                     )
                 })?;
-                self.pending_sst_segments = None;
                 self.sst.process_decoded_sst(unique, strings.clone());
                 self.state.unique_string_count = Some(unique);
                 self.state.shared_strings = strings;
-                Ok(())
             }
-            Err(_) if !require_complete => Ok(()),
-            Err(error) => Err(error.into()),
-        }
-    }
-
-    fn try_finalize_formula_string(&mut self, require_complete: bool) -> Result<()> {
-        let Some(segments) = self.pending_formula_string_segments.as_ref() else {
-            return Ok(());
-        };
-        match segments.decode_unicode_string() {
-            Ok(value) => {
-                self.pending_formula_string_segments = None;
+            Biff8ContinuationStatus::Complete(
+                Biff8DecodedContinuableRecord::UnicodeString(value),
+            ) => {
                 self.string.process_decoded(value.clone());
                 if let Some((cell, _)) =
                     StringRecordHandler::process_string(&mut self.formula, value, self.auto_trim)
                 {
                     self.state.last_formula_cell = Some(cell);
                 }
-                Ok(())
             }
-            Err(_) if !require_complete => Ok(()),
-            Err(error) => Err(error.into()),
+            Biff8ContinuationStatus::Idle | Biff8ContinuationStatus::Pending => {}
         }
+        Ok(())
     }
 }
 

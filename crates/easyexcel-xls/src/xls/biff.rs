@@ -4,39 +4,17 @@
 
 // ---- Record type constants -------------------------------------------------
 
-pub const BOF: u16 = 0x0809;
-pub const EOF: u16 = 0x000A;
-pub const BOUNDSHEET: u16 = 0x0085;
-pub const SST: u16 = 0x00FC;
-pub const EXTSST: u16 = 0x00FF;
-pub const LABELSST: u16 = 0x00FD;
-pub const LABEL: u16 = 0x0204;
-pub const NUMBER: u16 = 0x0203;
-pub const RK: u16 = 0x027E;
-pub const MULRK: u16 = 0x00BD;
-pub const BOOLERR: u16 = 0x0205;
-pub const FORMULA: u16 = 0x0006;
-pub const STRING: u16 = 0x0207;
-pub const BLANK: u16 = 0x0201;
-pub const MULBLANK: u16 = 0x00BE;
-pub const XF: u16 = 0x00E0;
-pub const FORMAT: u16 = 0x041E;
-pub const FONT: u16 = 0x0031;
-pub const DIMENSION: u16 = 0x0200;
-#[allow(dead_code)]
-pub const ROW: u16 = 0x0208;
-pub const MERGECELLS: u16 = 0x00E5;
-pub const DATEMODE: u16 = 0x0022;
-pub const FILEPASS: u16 = 0x002F;
-pub const CODEPAGE: u16 = 0x0042;
-pub const CONTINUE: u16 = 0x003C;
-pub const WINDOW2: u16 = 0x023E;
-pub const PANE: u16 = 0x0041;
-pub const STYLE: u16 = 0x0293;
-/// ROW / COLINFO are part of the record set but not currently emitted/consumed;
-/// kept named for documentation and future use.
-#[allow(dead_code)]
-pub const COLINFO: u16 = 0x007D;
+pub use crate::biff8::record_sid::{
+    BLANK_SID as BLANK, BOF_SID as BOF, BOOL_ERR_SID as BOOLERR,
+    BOUND_SHEET_SID as BOUNDSHEET, CODE_PAGE_SID as CODEPAGE, COLUMN_INFO_SID as COLINFO,
+    CONTINUE_SID as CONTINUE, DATE_MODE_SID as DATEMODE, DIMENSION_SID as DIMENSION,
+    EOF_SID as EOF, EXT_SST_SID as EXTSST, FILE_PASS_SID as FILEPASS, FONT_SID as FONT,
+    FORMAT_SID as FORMAT, FORMULA_SID as FORMULA, LABEL_SID as LABEL,
+    LABEL_SST_SID as LABELSST, MERGE_CELLS_SID as MERGECELLS, MUL_BLANK_SID as MULBLANK,
+    MUL_RK_SID as MULRK, NUMBER_SID as NUMBER, PANE_SID as PANE, RK_SID as RK,
+    ROW_SID as ROW, SST_SID as SST, STRING_SID as STRING, STYLE_SID as STYLE,
+    WINDOW2_SID as WINDOW2, XF_SID as XF,
+};
 
 /// Substream type for the workbook globals.
 pub const DT_GLOBALS: u16 = 0x0005;

@@ -33,7 +33,7 @@ pub use easyexcel_xls::biff8::record_sid::RK_SID;
 impl XlsRecordHandler for RkRecordHandler {
     /// Java `RkRecordHandler.processRecord` — yields empty cell (`EasyExcel` quirk).
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
-        if record_sid != RK_SID || data.len() < 4 {
+        if record_sid != RK_SID {
             return;
         }
         if let Some((row, column)) =

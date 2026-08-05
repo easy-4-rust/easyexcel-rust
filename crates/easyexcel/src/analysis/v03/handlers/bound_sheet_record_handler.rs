@@ -46,7 +46,7 @@ impl XlsRecordHandler for BoundSheetRecordHandler {
     /// Java `BoundSheetRecordHandler.processRecord` — reads BOF position and
     /// the BIFF8 short-Unicode sheet name.
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
-        if record_sid != BOUND_SHEET_SID || data.len() < 8 {
+        if record_sid != BOUND_SHEET_SID {
             return;
         }
         if let Some(record) = easyexcel_xls::biff8::event_record::decode_bound_sheet_record(data) {
