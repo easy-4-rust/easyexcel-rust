@@ -54,13 +54,14 @@ impl XlsRecordHandler for NumberRecordHandler {
         if record_sid != NUMBER_SID || data.len() < 14 {
             return;
         }
-        let row = u32::from(u16::from_le_bytes([data[0], data[1]]));
-        let column = u16::from_le_bytes([data[2], data[3]]) as usize;
-        let mut bits = [0u8; 8];
-        bits.copy_from_slice(&data[6..14]);
-        let value = f64::from_le_bytes(bits);
-        let format_index = u16::from_le_bytes([data[4], data[5]]);
-        self.last_cell = Some(Self::process_number(row, column, value, format_index));
+        if let Some(record) = easyexcel_xls::biff8::event_record::decode_number_record(data) {
+            self.last_cell = Some(Self::process_number(
+                record.header.row,
+                record.header.column,
+                record.value,
+                record.header.xf_index,
+            ));
+        }
     }
 }
 

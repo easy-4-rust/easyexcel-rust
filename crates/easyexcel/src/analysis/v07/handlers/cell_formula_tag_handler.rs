@@ -30,7 +30,7 @@ impl CellFormulaTagHandler {
 impl XlsxTagHandler for CellFormulaTagHandler {
     /// Java `CellFormulaTagHandler.startElement`.
     fn start_element(&mut self, name: &str, _attrs: &str) {
-        let local = name.rsplit(':').next().unwrap_or(name);
+        let local = easyexcel_xlsx::local_tag_name(name);
         if local == "f" {
             self.begin_formula();
         }
@@ -38,7 +38,7 @@ impl XlsxTagHandler for CellFormulaTagHandler {
 
     /// Java `CellFormulaTagHandler.endElement`.
     fn end_element(&mut self, name: &str) {
-        let local = name.rsplit(':').next().unwrap_or(name);
+        let local = easyexcel_xlsx::local_tag_name(name);
         if local == "f" {
             let _ = self.finish_formula();
         }

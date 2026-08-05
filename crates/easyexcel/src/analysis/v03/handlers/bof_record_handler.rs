@@ -70,8 +70,9 @@ impl XlsRecordHandler for BofRecordHandler {
         if record_sid != BOF_SID || data.len() < 4 {
             return;
         }
-        // bytes 2..4 = type (workbook=0x0005, worksheet=0x0010)
-        let type_code = u16::from_le_bytes([data[2], data[3]]);
+        let Some(type_code) = easyexcel_xls::biff8::event_record::decode_bof_type_code(data) else {
+            return;
+        };
         let bof_type = match type_code {
             0x0005 => BofType::Workbook,
             0x0010 => BofType::Worksheet,

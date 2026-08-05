@@ -46,9 +46,11 @@ impl XlsRecordHandler for LabelRecordHandler {
         if record_sid != LABEL_SID || data.len() < 8 {
             return;
         }
-        let row = u32::from(u16::from_le_bytes([data[0], data[1]]));
-        let column = u16::from_le_bytes([data[2], data[3]]) as usize;
-        let _ = Self::process_label(row, column, "", false);
+        if let Some((row, column)) =
+            easyexcel_xls::biff8::event_record::decode_cell_position(data)
+        {
+            let _ = Self::process_label(row, column, "", false);
+        }
     }
 }
 

@@ -15,20 +15,26 @@ pub enum Format {
 }
 
 impl Format {
+    /// 根据不含点号的文件扩展名识别格式。
+    #[must_use]
+    pub fn from_extension(extension: &str) -> Option<Self> {
+        match extension.to_ascii_lowercase().as_str() {
+            "xlsx" | "xlsm" => Some(Self::Xlsx),
+            "xls" => Some(Self::Xls),
+            "csv" | "tsv" | "txt" => Some(Self::Csv),
+            _ => None,
+        }
+    }
+
     /// 根据文件扩展名识别格式。
     #[must_use]
     pub fn from_path(path: &Path) -> Option<Self> {
-        match path
-            .extension()
-            .and_then(|extension| extension.to_str())
-            .map(str::to_ascii_lowercase)
-            .as_deref()
-        {
-            Some("xlsx" | "xlsm") => Some(Self::Xlsx),
-            Some("xls") => Some(Self::Xls),
-            Some("csv" | "tsv" | "txt") => Some(Self::Csv),
-            _ => None,
-        }
+        Self::from_extension(
+            path
+                .extension()
+                .and_then(|extension| extension.to_str())
+                .unwrap_or_default(),
+        )
     }
 
     /// 根据文件头识别格式；无法识别时按 CSV 处理。

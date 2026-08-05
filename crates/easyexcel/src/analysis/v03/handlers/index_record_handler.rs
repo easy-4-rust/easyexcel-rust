@@ -31,9 +31,11 @@ impl XlsRecordHandler for IndexRecordHandler {
         if record_sid != INDEX_SID || data.len() < 16 {
             return;
         }
-        // IndexRecord: reserved(4) + firstRow(4) + lastRowAdd1(4) + ...
-        let last_row_add_1 = u32::from_le_bytes([data[8], data[9], data[10], data[11]]);
-        self.process_index(last_row_add_1);
+        if let Some(last_row_add_1) =
+            easyexcel_xls::biff8::event_record::decode_index_last_row(data)
+        {
+            self.process_index(last_row_add_1);
+        }
     }
 }
 

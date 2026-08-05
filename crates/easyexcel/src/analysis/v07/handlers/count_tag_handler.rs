@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 
-use crate::constant::excel_xml_constants::{ATTRIBUTE_REF, CELL_RANGE_SPLIT};
+use crate::constant::excel_xml_constants::ATTRIBUTE_REF;
 use crate::core::{ExcelError, Result};
 
 use super::xlsx_tag_handler::XlsxTagHandler;
@@ -30,10 +30,7 @@ impl CountTagHandler {
     ///
     /// 当 `ref` 的结束单元格引用无法解析行号时返回 [`ExcelError::Format`]。
     pub fn parse_dimension_ref(ref_attr: &str) -> Result<u32> {
-        let end = ref_attr
-            .rsplit_once(CELL_RANGE_SPLIT)
-            .map_or(ref_attr, |(_, end)| end);
-        let row = row_from_cell_ref(end)?;
+        let row = easyexcel_xlsx::dimension_last_row(ref_attr).map_err(ExcelError::from)?;
         Ok(row.saturating_add(1))
     }
 
@@ -65,7 +62,7 @@ impl CountTagHandler {
 impl XlsxTagHandler for CountTagHandler {
     /// Java `CountTagHandler.startElement`.
     fn start_element(&mut self, name: &str, attrs: &str) {
-        let local = name.rsplit(':').next().unwrap_or(name);
+        let local = easyexcel_xlsx::local_tag_name(name);
         if local != "dimension" {
             return;
         }
@@ -77,25 +74,6 @@ impl XlsxTagHandler for CountTagHandler {
         }
         let _ = self.start_dimension(&map);
     }
-}
-
-/// Java `PositionUtils.getRow(String)` — zero-based row from an A1 token.
-fn row_from_cell_ref(cell: &str) -> Result<u32> {
-    let digits_start = cell
-        .char_indices()
-        .rev()
-        .find(|(_, c)| !c.is_ascii_digit())
-        .map_or(0, |(i, _)| i + 1);
-    let row_part = &cell[digits_start..];
-    if row_part.is_empty() {
-        return Err(ExcelError::Format(format!(
-            "dimension ref missing row: {cell}"
-        )));
-    }
-    let one_based: u32 = row_part
-        .parse()
-        .map_err(|error| ExcelError::Format(format!("{error}")))?;
-    Ok(one_based.saturating_sub(1))
 }
 
 #[cfg(test)]

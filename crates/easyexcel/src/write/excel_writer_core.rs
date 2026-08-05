@@ -8,7 +8,6 @@ use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
 
 pub use crate::core::{
     AnchorType, CacheLocation, CellValue, Converter, ConverterRegistry, CsvCharset,
@@ -240,29 +239,10 @@ pub(crate) fn with_default_write_converters(options: &WriteOptions) -> WriteOpti
 ///
 /// Returns a conversion, worksheet-configuration, BIFF8-format, or I/O error.
 
-#[derive(Clone, Default)]
-pub(crate) struct CapturedOutput(Arc<Mutex<Vec<u8>>>);
-
-impl Write for CapturedOutput {
-    fn write(&mut self, buffer: &[u8]) -> std::io::Result<usize> {
-        self.0
-            .lock()
-            .map_err(|_| std::io::Error::other("CSV capture lock poisoned"))?
-            .extend_from_slice(buffer);
-        Ok(buffer.len())
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        Ok(())
-    }
-}
+pub(crate) type CapturedOutput = easyexcel_io::SharedByteBuffer;
 
 pub(crate) fn take_captured_output(output: &CapturedOutput) -> Result<Vec<u8>> {
-    let mut bytes = output
-        .0
-        .lock()
-        .map_err(|_| ExcelError::Io(std::io::Error::other("CSV capture lock poisoned")))?;
-    Ok(std::mem::take(&mut *bytes))
+    output.take().map_err(ExcelError::Io)
 }
 
 pub(crate) struct PreparedWriteRow {

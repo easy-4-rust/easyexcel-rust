@@ -289,33 +289,13 @@ impl HandlerExecutionScope {
     }
 }
 
-/// 用于 CSV 捕获输出的包装器。
-#[derive(Clone, Default)]
-pub(crate) struct CapturedOutput(pub(crate) Arc<Mutex<Vec<u8>>>);
-
-impl std::io::Write for CapturedOutput {
-    fn write(&mut self, buffer: &[u8]) -> std::io::Result<usize> {
-        self.0
-            .lock()
-            .map_err(|_| std::io::Error::other("CSV capture lock poisoned"))?
-            .extend_from_slice(buffer);
-        Ok(buffer.len())
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        Ok(())
-    }
-}
+/// 用于 CSV 捕获输出的底层共享缓冲区。
+pub(crate) type CapturedOutput = easyexcel_io::SharedByteBuffer;
 
 /// Test helper to drain captured output bytes.
 #[allow(dead_code)]
 pub(crate) fn take_captured_output_helper(output: &CapturedOutput) -> Vec<u8> {
-    output
-        .0
-        .lock()
-        .map_err(|_| std::io::Error::other("CSV capture lock poisoned"))
-        .map(|mut bytes| std::mem::take(&mut *bytes))
-        .unwrap_or_default()
+    output.take().unwrap_or_default()
 }
 
 #[cfg(test)]

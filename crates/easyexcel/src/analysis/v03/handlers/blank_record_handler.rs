@@ -45,9 +45,9 @@ impl XlsRecordHandler for BlankRecordHandler {
         if record_sid != BLANK_SID || data.len() < 6 {
             return;
         }
-        let row = u32::from(u16::from_le_bytes([data[0], data[1]]));
-        let column = u16::from_le_bytes([data[2], data[3]]) as usize;
-        self.last_cell = Some(Self::process_blank(row, column));
+        if let Some(header) = easyexcel_xls::biff8::event_record::decode_cell_header(data) {
+            self.last_cell = Some(Self::process_blank(header.row, header.column));
+        }
     }
 }
 

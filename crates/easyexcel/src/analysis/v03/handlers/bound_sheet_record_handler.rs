@@ -49,30 +49,9 @@ impl XlsRecordHandler for BoundSheetRecordHandler {
         if record_sid != BOUND_SHEET_SID || data.len() < 8 {
             return;
         }
-        let bof_position = u32::from_le_bytes([data[0], data[1], data[2], data[3]]);
-        let character_count = data[6] as usize;
-        let is_utf16 = data[7] & 0x01 != 0;
-        let raw = &data[8..];
-        let name = if is_utf16 {
-            let byte_count = character_count.saturating_mul(2);
-            if raw.len() < byte_count {
-                return;
-            }
-            let units = raw[..byte_count]
-                .chunks_exact(2)
-                .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
-                .collect::<Vec<_>>();
-            String::from_utf16_lossy(&units)
-        } else {
-            if raw.len() < character_count {
-                return;
-            }
-            raw[..character_count]
-                .iter()
-                .map(|byte| char::from(*byte))
-                .collect()
-        };
-        self.process_bound_sheet(name, bof_position);
+        if let Some(record) = easyexcel_xls::biff8::event_record::decode_bound_sheet_record(data) {
+            self.process_bound_sheet(record.name, record.bof_position);
+        }
     }
 }
 

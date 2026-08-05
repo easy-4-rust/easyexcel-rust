@@ -53,9 +53,11 @@ impl XlsRecordHandler for NoteRecordHandler {
         if !self.enabled || record_sid != NOTE_SID || data.len() < 6 {
             return;
         }
-        let row = u32::from(u16::from_le_bytes([data[0], data[1]]));
-        let column = u16::from_le_bytes([data[2], data[3]]) as usize;
-        self.process_note(None, row, column);
+        if let Some((row, column)) =
+            easyexcel_xls::biff8::event_record::decode_cell_position(data)
+        {
+            self.process_note(None, row, column);
+        }
     }
 }
 

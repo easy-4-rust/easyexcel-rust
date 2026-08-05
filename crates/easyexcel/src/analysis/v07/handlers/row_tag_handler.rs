@@ -86,7 +86,7 @@ impl RowTagHandler {
 impl XlsxTagHandler for RowTagHandler {
     /// Java `RowTagHandler.startElement`.
     fn start_element(&mut self, name: &str, attrs: &str) {
-        let local = name.rsplit(':').next().unwrap_or(name);
+        let local = easyexcel_xlsx::local_tag_name(name);
         if local != "row" {
             return;
         }
@@ -101,7 +101,7 @@ impl XlsxTagHandler for RowTagHandler {
 
     /// Java `RowTagHandler.endElement`.
     fn end_element(&mut self, name: &str) {
-        let local = name.rsplit(':').next().unwrap_or(name);
+        let local = easyexcel_xlsx::local_tag_name(name);
         if local == "row" {
             let _ = self.end_row();
         }

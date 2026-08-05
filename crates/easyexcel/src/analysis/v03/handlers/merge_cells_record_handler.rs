@@ -69,18 +69,13 @@ impl XlsRecordHandler for MergeCellsRecordHandler {
             return;
         }
         self.last_extras.clear();
-        let count = u16::from_le_bytes([data[0], data[1]]) as usize;
-        let mut offset = 2;
-        for _ in 0..count {
-            if offset + 8 > data.len() {
-                break;
-            }
-            let first_row = u32::from(u16::from_le_bytes([data[offset], data[offset + 1]]));
-            let last_row = u32::from(u16::from_le_bytes([data[offset + 2], data[offset + 3]]));
-            let first_column = u16::from_le_bytes([data[offset + 4], data[offset + 5]]) as usize;
-            let last_column = u16::from_le_bytes([data[offset + 6], data[offset + 7]]) as usize;
-            self.process_area(first_row, last_row, first_column, last_column);
-            offset += 8;
+        for range in easyexcel_xls::biff8::event_record::decode_merge_ranges(data) {
+            self.process_area(
+                range.first_row,
+                range.last_row,
+                range.first_column,
+                range.last_column,
+            );
         }
     }
 }

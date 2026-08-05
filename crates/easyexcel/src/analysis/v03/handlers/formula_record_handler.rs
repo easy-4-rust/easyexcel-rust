@@ -146,35 +146,34 @@ impl XlsRecordHandler for FormulaRecordHandler {
         if record_sid != FORMULA_SID || data.len() < 14 {
             return;
         }
-        let row = u32::from(u16::from_le_bytes([data[0], data[1]]));
-        let column = u16::from_le_bytes([data[2], data[3]]) as usize;
-        let format_index = u16::from_le_bytes([data[4], data[5]]);
-        let result = &data[6..14];
-        let (cached_type, number_value, bool_value) = if result[6] == 0xFF && result[7] == 0xFF {
-            match result[0] {
-                0x00 => (FormulaCachedType::String, None, None),
-                0x01 => (FormulaCachedType::Boolean, None, Some(result[2] != 0)),
-                0x02 => (FormulaCachedType::Error, None, None),
-                // 0x03（空值）与其余未定义缓存类型同按 Empty 处理（对应 Java 默认分支）
-                _ => (FormulaCachedType::Empty, None, None),
+        let Some(record) = easyexcel_xls::biff8::event_record::decode_formula_record(data) else {
+            return;
+        };
+        let (cached_type, number_value, bool_value) = match record.cached_value {
+            easyexcel_xls::biff8::event_record::Biff8FormulaCachedValue::String => {
+                (FormulaCachedType::String, None, None)
             }
-        } else {
-            let mut bytes = [0; 8];
-            bytes.copy_from_slice(result);
-            (
-                FormulaCachedType::Numeric,
-                Some(f64::from_le_bytes(bytes)),
-                None,
-            )
+            easyexcel_xls::biff8::event_record::Biff8FormulaCachedValue::Number(value) => {
+                (FormulaCachedType::Numeric, Some(value), None)
+            }
+            easyexcel_xls::biff8::event_record::Biff8FormulaCachedValue::Boolean(value) => {
+                (FormulaCachedType::Boolean, None, Some(value))
+            }
+            easyexcel_xls::biff8::event_record::Biff8FormulaCachedValue::Error => {
+                (FormulaCachedType::Error, None, None)
+            }
+            easyexcel_xls::biff8::event_record::Biff8FormulaCachedValue::Empty => {
+                (FormulaCachedType::Empty, None, None)
+            }
         };
         let _ = self.process_formula_with_format(
-            row,
-            column,
+            record.header.row,
+            record.header.column,
             None,
             cached_type,
             number_value,
             bool_value,
-            format_index,
+            record.header.xf_index,
         );
     }
 }

@@ -47,14 +47,11 @@ impl XlsRecordHandler for BoolErrRecordHandler {
         if record_sid != BOOL_ERR_SID || data.len() < 8 {
             return;
         }
-        let is_error = data[7] != 0;
-        if is_error {
-            return;
+        if let Some(Some((header, value))) =
+            easyexcel_xls::biff8::event_record::decode_bool_err_record(data)
+        {
+            self.last_cell = Some(Self::process_bool(header.row, header.column, value));
         }
-        let row = u32::from(u16::from_le_bytes([data[0], data[1]]));
-        let column = u16::from_le_bytes([data[2], data[3]]) as usize;
-        let value = data[6] != 0;
-        self.last_cell = Some(Self::process_bool(row, column, value));
     }
 }
 

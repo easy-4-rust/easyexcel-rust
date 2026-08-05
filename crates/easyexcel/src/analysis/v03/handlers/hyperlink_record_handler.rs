@@ -58,11 +58,15 @@ impl XlsRecordHandler for HyperlinkRecordHandler {
         if !self.enabled || record_sid != HYPERLINK_SID || data.len() < 8 {
             return;
         }
-        let first_row = u32::from(u16::from_le_bytes([data[0], data[1]]));
-        let last_row = u32::from(u16::from_le_bytes([data[2], data[3]]));
-        let first_column = u16::from_le_bytes([data[4], data[5]]) as usize;
-        let last_column = u16::from_le_bytes([data[6], data[7]]) as usize;
-        self.process_hyperlink(None, first_row, last_row, first_column, last_column);
+        if let Some(range) = easyexcel_xls::biff8::event_record::decode_cell_range(data) {
+            self.process_hyperlink(
+                None,
+                range.first_row,
+                range.last_row,
+                range.first_column,
+                range.last_column,
+            );
+        }
     }
 }
 

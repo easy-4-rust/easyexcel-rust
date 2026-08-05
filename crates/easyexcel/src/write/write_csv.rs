@@ -14,11 +14,7 @@ use crate::write::write_options::WriteOptions;
 use crate::write::writer_helpers::CapturedOutput;
 
 fn take_captured_output(output: &CapturedOutput) -> Result<Vec<u8>> {
-    let mut bytes = output
-        .0
-        .lock()
-        .map_err(|_| ExcelError::Io(std::io::Error::other("CSV capture lock poisoned")))?;
-    Ok(std::mem::take(&mut *bytes))
+    output.take().map_err(ExcelError::Io)
 }
 
 /// 使用自定义处理器将类型化行写入 CSV 文件。

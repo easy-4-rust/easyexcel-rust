@@ -71,7 +71,7 @@ impl XlsxTagHandler for MergeCellTagHandler {
 
     /// Java `MergeCellTagHandler.startElement`.
     fn start_element(&mut self, name: &str, attrs: &str) {
-        let local = name.rsplit(':').next().unwrap_or(name);
+        let local = easyexcel_xlsx::local_tag_name(name);
         if local != "mergeCell" {
             return;
         }
@@ -93,17 +93,8 @@ pub(crate) fn cell_extra_from_ref(
     text: Option<String>,
     reference: &str,
 ) -> Result<CellExtra> {
-    let (first, last) = match reference.split_once(':') {
-        Some((first, last)) => (first, last),
-        None => (reference, reference),
-    };
-    let (first_row, first_column) = parse_a1(first)?;
-    let (last_row, last_column) = parse_a1(last)?;
-    if first_row > last_row || first_column > last_column {
-        return Err(ExcelError::Format(format!(
-            "invalid cell range ordering: {reference}"
-        )));
-    }
+    let (first_row, last_row, first_column, last_column) =
+        easyexcel_xlsx::parse_a1_cell_range(reference).map_err(ExcelError::from)?;
     Ok(CellExtra::new(
         extra_type,
         text,
@@ -112,45 +103,6 @@ pub(crate) fn cell_extra_from_ref(
         first_column,
         last_column,
     ))
-}
-
-fn parse_a1(reference: &str) -> Result<(u32, usize)> {
-    const MAX_ROW: u32 = 1_048_576;
-    const MAX_COL: usize = 16_384;
-    let reference = reference.strip_prefix('$').unwrap_or(reference);
-    let column_end = reference
-        .find(|character: char| !character.is_ascii_alphabetic())
-        .unwrap_or(reference.len());
-    let (column, row) = reference.split_at(column_end);
-    let row = row.strip_prefix('$').unwrap_or(row);
-    if column.is_empty() || row.is_empty() || !row.bytes().all(|byte| byte.is_ascii_digit()) {
-        return Err(ExcelError::Format(format!(
-            "invalid cell reference: {reference}"
-        )));
-    }
-    let mut one_based_column = 0_usize;
-    for letter in column.bytes() {
-        one_based_column = one_based_column
-            .checked_mul(26)
-            .and_then(|value| {
-                value.checked_add(usize::from(letter.to_ascii_uppercase() - b'A' + 1))
-            })
-            .ok_or_else(|| ExcelError::Format(format!("invalid cell reference: {reference}")))?;
-    }
-    if !(1..=MAX_COL).contains(&one_based_column) {
-        return Err(ExcelError::Format(format!(
-            "column index exceeds XLSX limits: {reference}"
-        )));
-    }
-    let one_based_row: u32 = row
-        .parse()
-        .map_err(|error| ExcelError::Format(format!("{error}")))?;
-    if !(1..=MAX_ROW).contains(&one_based_row) {
-        return Err(ExcelError::Format(format!(
-            "row index exceeds XLSX limits: {reference}"
-        )));
-    }
-    Ok((one_based_row - 1, one_based_column - 1))
 }
 
 #[cfg(test)]

@@ -42,40 +42,36 @@ impl XlsRecordHandler for TextObjectRecordHandler {
         if record_sid != TEXT_OBJECT_SID && record_sid != CONTINUE_SID {
             return;
         }
-        if record_sid == TEXT_OBJECT_SID && data.len() >= 4 {
-            let object_id = u32::from(u16::from_le_bytes([data[2], data[3]]));
-            // Extract text from TxO record data starting at byte 10
-            // (after grbit[2] + shapeId[2] + reserved[8] = 12 bytes min)
-            if data.len() > 12 {
-                let text_bytes = &data[12..];
-                // Simple byte to string (ISO-8859-1 / ASCII for BIFF8 TxO)
-                let text: String = text_bytes
-                    .iter()
-                    .take_while(|&&b| b != 0)
-                    .map(|&b| b as char)
-                    .collect();
-                if !text.is_empty() {
+        if record_sid == CONTINUE_SID && data.len() < 2 {
+            return;
+        }
+        match easyexcel_xls::biff8::event_record::decode_text_object_fragment(
+            record_sid,
+            TEXT_OBJECT_SID,
+            CONTINUE_SID,
+            data,
+        ) {
+            Some(easyexcel_xls::biff8::event_record::Biff8TextObjectFragment::Start {
+                object_id,
+                text,
+            }) => {
+                if let Some(text) = text {
                     self.object_cache.insert(object_id, text);
-                    return;
+                } else {
+                    self.object_cache
+                        .entry(object_id)
+                        .or_insert_with(|| format!("TxO_{object_id}"));
                 }
             }
-            self.object_cache
-                .entry(object_id)
-                .or_insert_with(|| format!("TxO_{object_id}"));
-        }
-        // Handle CONTINUE record (0x003C) — text continuation
-        if record_sid == CONTINUE_SID && data.len() >= 2 {
-            let text: String = data
-                .iter()
-                .take_while(|&&b| b != 0)
-                .map(|&b| b as char)
-                .collect();
-            if !text.is_empty() && !self.object_cache.is_empty() {
+            Some(easyexcel_xls::biff8::event_record::Biff8TextObjectFragment::Continue(
+                text,
+            )) if !self.object_cache.is_empty() => {
                 // Attach to the most recent TxO entry
                 if let Some((_, val)) = self.object_cache.iter_mut().last() {
                     val.push_str(&text);
                 }
             }
+            _ => {}
         }
     }
 }

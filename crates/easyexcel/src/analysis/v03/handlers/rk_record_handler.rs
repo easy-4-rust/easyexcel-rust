@@ -36,9 +36,11 @@ impl XlsRecordHandler for RkRecordHandler {
         if record_sid != RK_SID || data.len() < 4 {
             return;
         }
-        let row = u32::from(u16::from_le_bytes([data[0], data[1]]));
-        let column = u16::from_le_bytes([data[2], data[3]]) as usize;
-        self.last_cell = Some(Self::process_rk(row, column));
+        if let Some((row, column)) =
+            easyexcel_xls::biff8::event_record::decode_cell_position(data)
+        {
+            self.last_cell = Some(Self::process_rk(row, column));
+        }
     }
 }
 

@@ -118,8 +118,7 @@ where
         options,
     )?;
     write_sheet_to_biff8_book::<T, I>(&mut book, options, rows, handlers, Some(&holder_scope))?;
-    book.write_to(&mut output)?;
-    output.flush()?;
+    book.write_to_and_flush(&mut output)?;
     after_workbook(handlers, &workbook_context)?;
     Ok(())
 }

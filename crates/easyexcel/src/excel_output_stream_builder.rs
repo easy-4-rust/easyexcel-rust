@@ -53,8 +53,7 @@ where
                 rows,
                 &mut self.builder.handlers,
             )?;
-            self.output.write_all(&bytes)?;
-            self.output.flush()?;
+            easyexcel_io::write_all_and_flush(self.output, &bytes)?;
             return Ok(());
         }
         if is_xls_write(&self.builder.path, &self.builder.options) {

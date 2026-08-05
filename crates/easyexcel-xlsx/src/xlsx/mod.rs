@@ -7,6 +7,7 @@ use easyexcel_io::Result;
 use easyexcel_model::model::Workbook;
 
 mod crypto;
+mod cell_reference;
 mod encrypt;
 mod event_reader;
 pub mod generation;
@@ -29,6 +30,10 @@ mod writer;
 mod xmlutil;
 
 pub use encrypt::{ReadWriteSeek, encrypt_package_to};
+pub use cell_reference::{
+    MAX_XLSX_COLUMN_NUMBER, MAX_XLSX_ROW_NUMBER, dimension_last_row,
+    parse_a1_cell_range, parse_a1_cell_reference,
+};
 pub use event_reader::{
     ReadSeek, XlsxCellEvent, XlsxCellEventReader, XlsxCellValue, XlsxDisplayOptions,
     XlsxEventMetadata, XlsxExtra, XlsxExtraKind, XlsxNumberFormat,
@@ -56,6 +61,7 @@ pub use template_source::{
     xml_elements,
 };
 pub use writer::write;
+pub use xmlutil::{decode_ooxml_escape, local_tag_name};
 
 /// Read an XLSX workbook from a path.
 pub fn read_path(path: &std::path::Path) -> Result<Workbook> {

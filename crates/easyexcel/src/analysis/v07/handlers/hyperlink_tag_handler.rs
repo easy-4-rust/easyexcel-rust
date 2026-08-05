@@ -124,7 +124,7 @@ impl XlsxTagHandler for HyperlinkTagHandler {
 
     /// Java `HyperlinkTagHandler.startElement` (location-only; `r:id` needs a resolver).
     fn start_element(&mut self, name: &str, attrs: &str) {
-        let local = name.rsplit(':').next().unwrap_or(name);
+        let local = easyexcel_xlsx::local_tag_name(name);
         if local != "hyperlink" {
             return;
         }

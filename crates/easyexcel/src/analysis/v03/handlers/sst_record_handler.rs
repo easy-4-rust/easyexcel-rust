@@ -48,8 +48,9 @@ impl XlsRecordHandler for SstRecordHandler {
         if record_sid != SST_SID || data.len() < 8 {
             return;
         }
-        let unique = u32::from_le_bytes([data[4], data[5], data[6], data[7]]);
-        self.process_sst(unique);
+        if let Some(unique) = easyexcel_xls::biff8::event_record::decode_sst_unique_count(data) {
+            self.process_sst(unique);
+        }
     }
 }
 

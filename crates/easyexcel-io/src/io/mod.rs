@@ -14,6 +14,7 @@ mod row_sink;
 mod row_source;
 mod stream_cell;
 mod stream_info;
+mod shared_byte_buffer;
 mod write_mode;
 
 pub use error::{Error, Result};
@@ -26,4 +27,5 @@ pub use row_sink::RowSink;
 pub use row_source::RowSource;
 pub use stream_cell::StreamCell;
 pub use stream_info::StreamInfo;
+pub use shared_byte_buffer::SharedByteBuffer;
 pub use write_mode::WriteMode;

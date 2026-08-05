@@ -307,8 +307,10 @@ impl XlsRecordDispatcher {
         match record_sid {
             BLANK_SID => self.dispatch_blank(record_sid, data),
             BOF_SID => {
-                if data.len() >= 4 {
-                    match u16::from_le_bytes([data[2], data[3]]) {
+                if let Some(type_code) =
+                    easyexcel_xls::biff8::event_record::decode_bof_type_code(data)
+                {
+                    match type_code {
                         0x0005 => {
                             self.state.workbook_bof_count += 1;
                             self.next_sheet_index = 0;

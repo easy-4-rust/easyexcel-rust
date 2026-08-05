@@ -101,7 +101,7 @@ impl XlsxRowHandler {
 
     /// Java `XlsxRowHandler.startElement`.
     pub fn start_element(&mut self, name: &str, attrs: &str) {
-        let local = name.rsplit(':').next().unwrap_or(name);
+        let local = easyexcel_xlsx::local_tag_name(name);
         let Some(handler) = self.handlers.get_mut(local) else {
             return;
         };
@@ -129,7 +129,7 @@ impl XlsxRowHandler {
 
     /// Java `XlsxRowHandler.endElement`.
     pub fn end_element(&mut self, name: &str) {
-        let local = name.rsplit(':').next().unwrap_or(name);
+        let local = easyexcel_xlsx::local_tag_name(name);
         let Some(handler) = self.handlers.get_mut(local) else {
             return;
         };

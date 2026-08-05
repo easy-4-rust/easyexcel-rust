@@ -22,9 +22,10 @@ use quick_xml::{Decoder, Reader as XmlReader, XmlVersion};
 
 use super::package::{RawRelationships, Relationships, relationship_part_name, resolve_target};
 use super::package_reader::XlsxPackageReader;
-
-const MAX_XLSX_ROW_NUMBER: u32 = 1_048_576;
-const MAX_XLSX_COLUMN_NUMBER: usize = 16_384;
+use super::{
+    decode_ooxml_escape, dimension_last_row as parse_dimension_last_row, parse_a1_cell_range,
+    parse_a1_cell_reference,
+};
 
 /// 可被 XLSX 事件读取器持有的输入流。
 pub trait ReadSeek: Read + Seek {}
@@ -397,7 +398,7 @@ impl<'a> XlsxCellEventReader<'a> {
                     let values = attributes(&element, self.reader.decoder())?;
                     let position = values.get("r").map_or(
                         Ok((self.row_index, self.column_index)),
-                        |reference| parse_cell_reference(reference),
+                        |reference| parse_a1_cell_reference(reference),
                     )?;
                     let style_index = values
                         .get("s")
@@ -535,7 +536,7 @@ impl<'a> XlsxCellEventReader<'a> {
                     XlsxCellValue::String(self.shared_strings.get(index)?)
                 }
             }
-            Some("inlineStr" | "str") => XlsxCellValue::String(utf_decode(if inline_value.is_empty() {
+            Some("inlineStr" | "str") => XlsxCellValue::String(decode_ooxml_escape(if inline_value.is_empty() {
                 raw_value
             } else {
                 inline_value
@@ -618,7 +619,7 @@ fn parse_worksheet_extras(
                     let values = attributes(&element, reader.decoder())?;
                     let reference = required_attribute(&values, "ref", "mergeCell")?;
                     let (first_row, last_row, first_column, last_column) =
-                        parse_cell_range(reference)?;
+                        parse_a1_cell_range(reference)?;
                     extras.push(XlsxExtra {
                         kind: XlsxExtraKind::Merge,
                         text: None,
@@ -650,7 +651,7 @@ fn parse_worksheet_extras(
                             })?
                     };
                     let (first_row, last_row, first_column, last_column) =
-                        parse_cell_range(reference)?;
+                        parse_a1_cell_range(reference)?;
                     extras.push(XlsxExtra {
                         kind: XlsxExtraKind::Hyperlink,
                         text: Some(target),
@@ -694,7 +695,7 @@ fn parse_comments(input: &mut dyn BufRead, comments_path: &str) -> Result<Vec<Xl
             Event::Start(element) if element.local_name().as_ref() == b"comment" => {
                 let values = attributes(&element, reader.decoder())?;
                 let reference = required_attribute(&values, "ref", "comment")?;
-                current = Some(parse_cell_range(reference)?);
+                current = Some(parse_a1_cell_range(reference)?);
                 text.clear();
             }
             Event::Start(element) if current.is_some() && element.local_name().as_ref() == b"t" => {
@@ -866,7 +867,7 @@ fn parse_shared_strings(
             }
             Event::End(element) if element.local_name().as_ref() == b"si" => {
                 in_si = false;
-                cache.put(utf_decode(&current))?;
+                cache.put(decode_ooxml_escape(&current))?;
             }
             Event::Eof => break,
             _ => {}
@@ -994,66 +995,6 @@ fn required_attribute<'a>(
         .ok_or_else(|| Error::Xlsx(format!("{element} {name} is missing")))
 }
 
-fn parse_dimension_last_row(reference: &str) -> Result<u32> {
-    let end = reference
-        .rsplit_once(':')
-        .map_or(reference, |(_, end)| end);
-    parse_cell_reference(end).map(|(row, _)| row)
-}
-
-fn parse_cell_range(reference: &str) -> Result<(u32, u32, usize, usize)> {
-    let (first, last) = reference
-        .split_once(':')
-        .map_or((reference, reference), |range| range);
-    let (first_row, first_column) = parse_cell_reference(first)?;
-    let (last_row, last_column) = parse_cell_reference(last)?;
-    if first_row > last_row || first_column > last_column {
-        return Err(Error::Xlsx(format!(
-            "invalid cell range ordering: {reference}"
-        )));
-    }
-    Ok((first_row, last_row, first_column, last_column))
-}
-
-fn parse_cell_reference(reference: &str) -> Result<(u32, usize)> {
-    let reference = reference.strip_prefix('$').unwrap_or(reference);
-    let column_end = reference
-        .find(|character: char| !character.is_ascii_alphabetic())
-        .unwrap_or(reference.len());
-    let (column, row) = reference.split_at(column_end);
-    let row = row.strip_prefix('$').unwrap_or(row);
-    if column.is_empty() || row.is_empty() || !row.bytes().all(|byte| byte.is_ascii_digit()) {
-        return Err(Error::Xlsx(format!(
-            "invalid cell reference: {reference}"
-        )));
-    }
-    let mut one_based_column = 0_usize;
-    for letter in column.bytes() {
-        one_based_column = one_based_column
-            .checked_mul(26)
-            .and_then(|value| {
-                value.checked_add(usize::from(letter.to_ascii_uppercase() - b'A' + 1))
-            })
-            .ok_or_else(|| Error::Xlsx(format!("invalid cell reference: {reference}")))?;
-    }
-    if !(1..=MAX_XLSX_COLUMN_NUMBER).contains(&one_based_column) {
-        return Err(Error::Xlsx(format!(
-            "column index exceeds XLSX limits: {reference}"
-        )));
-    }
-    Ok((parse_row_number(row)?, one_based_column - 1))
-}
-
-fn parse_row_number(value: &str) -> Result<u32> {
-    let one_based = value.parse::<u32>().map_err(xlsx_error)?;
-    if !(1..=MAX_XLSX_ROW_NUMBER).contains(&one_based) {
-        return Err(Error::Xlsx(format!(
-            "row index exceeds XLSX limits: {value}"
-        )));
-    }
-    Ok(one_based - 1)
-}
-
 fn xml_reader<'a, R: Read + Seek>(
     package: &'a mut XlsxPackageReader<R>,
     path: &str,
@@ -1081,34 +1022,6 @@ fn configure_xml<R: BufRead>(reader: &mut XmlReader<R>) {
     config.check_end_names = false;
     config.check_comments = false;
     config.expand_empty_elements = true;
-}
-
-fn utf_decode(value: &str) -> String {
-    if !value.contains("_x") {
-        return value.to_owned();
-    }
-    let bytes = value.as_bytes();
-    let mut output = String::with_capacity(value.len());
-    let mut index = 0;
-    while index < bytes.len() {
-        if index + 7 <= bytes.len()
-            && bytes[index] == b'_'
-            && bytes[index + 1] == b'x'
-            && bytes[index + 6] == b'_'
-            && let Ok(hex) = std::str::from_utf8(&bytes[index + 2..index + 6])
-            && let Ok(code) = u16::from_str_radix(hex, 16)
-            && let Some(character) = char::from_u32(u32::from(code))
-        {
-            output.push(character);
-            index += 7;
-        } else if let Some(character) = value[index..].chars().next() {
-            output.push(character);
-            index += character.len_utf8();
-        } else {
-            break;
-        }
-    }
-    output
 }
 
 fn xlsx_error(error: impl std::fmt::Display) -> Error {

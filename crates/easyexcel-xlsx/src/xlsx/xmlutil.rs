@@ -5,6 +5,42 @@ use quick_xml::escape::resolve_predefined_entity;
 use quick_xml::events::{BytesEnd, BytesRef, BytesStart, BytesText};
 use quick_xml::name::QName;
 
+/// 返回去除命名空间前缀后的 XML 标签名。
+#[must_use]
+pub fn local_tag_name(name: &str) -> &str {
+    name.rsplit(':').next().unwrap_or(name)
+}
+
+/// 解码 OOXML 文本中的 `_xHHHH_` 转义序列。
+#[must_use]
+pub fn decode_ooxml_escape(value: &str) -> String {
+    if !value.contains("_x") {
+        return value.to_owned();
+    }
+    let bytes = value.as_bytes();
+    let mut output = String::with_capacity(value.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        if index + 7 <= bytes.len()
+            && bytes[index] == b'_'
+            && bytes[index + 1] == b'x'
+            && bytes[index + 6] == b'_'
+            && let Ok(hex) = std::str::from_utf8(&bytes[index + 2..index + 6])
+            && let Ok(code) = u16::from_str_radix(hex, 16)
+            && let Some(character) = char::from_u32(u32::from(code))
+        {
+            output.push(character);
+            index += 7;
+        } else if let Some(character) = value[index..].chars().next() {
+            output.push(character);
+            index += character.len_utf8();
+        } else {
+            break;
+        }
+    }
+    output
+}
+
 /// The local (namespace-stripped) name of a start element. Keeps original case
 /// but strips any `prefix:` so Strict and Transitional namespaces both match.
 pub fn local_name(e: &BytesStart) -> String {

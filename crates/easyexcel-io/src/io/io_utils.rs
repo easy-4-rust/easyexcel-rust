@@ -27,7 +27,10 @@ pub fn read_all(reader: &mut dyn Read) -> Result<Vec<u8>, ExcelError> {
 }
 
 /// 写入全部字节并刷新输出流。
-pub fn write_all_and_flush(writer: &mut dyn Write, bytes: &[u8]) -> Result<(), ExcelError> {
+pub fn write_all_and_flush<W>(writer: &mut W, bytes: &[u8]) -> Result<(), ExcelError>
+where
+    W: Write + ?Sized,
+{
     writer.write_all(bytes)?;
     writer.flush()?;
     Ok(())

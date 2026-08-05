@@ -95,7 +95,7 @@ impl SharedStringsTableHandler {
 /// `ExcelXmlConstants.SHAREDSTRINGS_*` local names.
 #[must_use]
 pub fn local_tag(name: &str) -> &str {
-    name.rsplit(':').next().unwrap_or(name)
+    easyexcel_xlsx::local_tag_name(name)
 }
 
 /// Java `SharedStringsTableHandler.utfDecode(String)` — OOXML `_xHHHH_` escapes
@@ -107,33 +107,7 @@ pub fn local_tag(name: &str) -> &str {
 /// 传入参数来自 XML 解析器（已保证 UTF-8 合法），正常路径不会触发。
 #[must_use]
 pub fn utf_decode(value: &str) -> String {
-    if !value.contains("_x") {
-        return value.to_owned();
-    }
-    let bytes = value.as_bytes();
-    let mut output = String::with_capacity(value.len());
-    let mut index = 0;
-    while index < bytes.len() {
-        if index + 7 <= bytes.len()
-            && bytes[index] == b'_'
-            && bytes[index + 1] == b'x'
-            && bytes[index + 6] == b'_'
-            && let Ok(hex) = std::str::from_utf8(&bytes[index + 2..index + 6])
-            && let Ok(code) = u16::from_str_radix(hex, 16)
-            && let Some(character) = char::from_u32(u32::from(code))
-        {
-            output.push(character);
-            index += 7;
-        } else {
-            let character = value[index..]
-                .chars()
-                .next()
-                .expect("index is inside the UTF-8 string");
-            output.push(character);
-            index += character.len_utf8();
-        }
-    }
-    output
+    easyexcel_xlsx::decode_ooxml_escape(value)
 }
 
 #[cfg(test)]

@@ -807,8 +807,7 @@ impl ExcelWriter {
                         .output_stream
                         .as_mut()
                         .expect("CSV capture requires an output stream");
-                    output.write_all(&bytes)?;
-                    output.flush()?;
+                    easyexcel_io::write_all_and_flush(output.as_mut(), &bytes)?;
                     Ok(())
                 }) {
                     Ok(()) => {}

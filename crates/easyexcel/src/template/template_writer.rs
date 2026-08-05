@@ -553,15 +553,12 @@ pub(crate) fn write_entries_to_output(
         TemplateOutput::Path(path) => write_entries(path, entries),
         TemplateOutput::Borrowed(writer) => {
             let bytes = encode_entries(entries)?;
-            writer.write_all(&bytes)?;
-            writer.flush()?;
+            easyexcel_io::write_all_and_flush(*writer, &bytes)?;
             Ok(())
         }
         TemplateOutput::Owned(writer) => {
             let write_result = encode_entries(entries).and_then(|bytes| {
-                writer
-                    .write_all(&bytes)
-                    .and_then(|()| writer.flush())
+                easyexcel_io::write_all_and_flush(writer.as_mut(), &bytes)
                     .map_err(ExcelError::from)
             });
             let close_result = if auto_close_stream {

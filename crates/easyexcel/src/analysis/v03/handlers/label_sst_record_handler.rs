@@ -88,14 +88,13 @@ impl XlsRecordHandler for LabelSstRecordHandler {
         if record_sid != LABEL_SST_SID || data.len() < 10 {
             return;
         }
-        let row = u32::from(u16::from_le_bytes([data[0], data[1]]));
-        let column = u16::from_le_bytes([data[2], data[3]]) as usize;
-        let sst_index = u32::from_le_bytes([data[6], data[7], data[8], data[9]]) as usize;
-        self.last_reference = Some(LabelSstReference {
-            row,
-            column,
-            sst_index,
-        });
+        if let Some(record) = easyexcel_xls::biff8::event_record::decode_label_sst_record(data) {
+            self.last_reference = Some(LabelSstReference {
+                row: record.header.row,
+                column: record.header.column,
+                sst_index: record.sst_index,
+            });
+        }
     }
 }
 

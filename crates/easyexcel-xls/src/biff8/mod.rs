@@ -3,6 +3,7 @@
 mod cached;
 pub mod encode;
 pub mod encrypt;
+pub mod event_record;
 mod format;
 mod numeric;
 pub mod ptg;

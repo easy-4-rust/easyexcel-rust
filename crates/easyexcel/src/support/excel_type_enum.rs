@@ -30,25 +30,25 @@ impl ExcelTypeEnum {
     /// Sniffs the type from magic bytes. (Java `recognitionExcelType(InputStream)`)
     #[must_use]
     pub fn from_magic(bytes: &[u8]) -> Self {
-        // XLSX magic: 50 4B 03 04
-        if bytes.len() >= 4 && bytes[0..4] == [0x50, 0x4B, 0x03, 0x04] {
-            return Self::Xlsx;
+        match easyexcel_io::Format::from_magic(bytes) {
+            easyexcel_io::Format::Csv => Self::Csv,
+            easyexcel_io::Format::Xls => Self::Xls,
+            easyexcel_io::Format::Xlsx => Self::Xlsx,
+            _ => Self::Csv,
         }
-        // XLS magic: D0 CF 11 E0 A1 B1 1A E1
-        if bytes.len() >= 8 && bytes[0..8] == [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1] {
-            return Self::Xls;
-        }
-        // CSV has no fixed prefix; default to CSV.
-        Self::Csv
     }
 
     /// Sniffs the type from a file extension.
     #[must_use]
     pub fn from_extension(extension: &str) -> Option<Self> {
-        match extension.to_ascii_lowercase().as_str() {
-            "csv" => Some(Self::Csv),
-            "xls" => Some(Self::Xls),
-            "xlsx" => Some(Self::Xlsx),
+        match easyexcel_io::Format::from_extension(extension) {
+            Some(easyexcel_io::Format::Csv) if extension.eq_ignore_ascii_case("csv") => {
+                Some(Self::Csv)
+            }
+            Some(easyexcel_io::Format::Xls) => Some(Self::Xls),
+            Some(easyexcel_io::Format::Xlsx) if extension.eq_ignore_ascii_case("xlsx") => {
+                Some(Self::Xlsx)
+            }
             _ => None,
         }
     }

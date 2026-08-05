@@ -413,6 +413,17 @@ impl Biff8Book {
         Ok(())
     }
 
+    /// Writes the CFB bytes and flushes the caller-owned writer.
+    ///
+    /// # Errors
+    ///
+    /// Returns serialization, write, or flush errors.
+    pub fn write_to_and_flush<W: Write>(&self, mut writer: W) -> Result<()> {
+        self.write_to(&mut writer)?;
+        writer.flush()?;
+        Ok(())
+    }
+
     /// 将 BIFF8/OLE2 工作簿写入文件路径。
     ///
     /// # Errors
@@ -425,8 +436,7 @@ impl Biff8Book {
             std::fs::create_dir_all(parent)?;
         }
         let mut file = std::fs::File::create(path)?;
-        self.write_to(&mut file)?;
-        file.flush()?;
+        self.write_to_and_flush(&mut file)?;
         Ok(())
     }
 
