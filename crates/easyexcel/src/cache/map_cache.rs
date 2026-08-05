@@ -9,7 +9,6 @@
 use crate::core::Result;
 
 use super::read_cache::{ReadCache, SharedStringCacheAdapter, new_map_cache};
-use crate::read::read_cache::SharedStringCache;
 
 /// In-memory shared-string cache matching Java `MapCache`.
 ///
@@ -22,14 +21,8 @@ impl MapCache {
     /// Creates an empty map-backed cache. (Java `new MapCache()`)
     #[must_use]
     pub fn new() -> Self {
-        Self::from_backend(new_map_cache())
-    }
-
-    /// Wraps an existing shared-string backend.
-    #[must_use]
-    pub fn from_backend(backend: Box<dyn SharedStringCache>) -> Self {
         Self {
-            adapter: SharedStringCacheAdapter::new(backend),
+            adapter: SharedStringCacheAdapter::new(new_map_cache()),
         }
     }
 }

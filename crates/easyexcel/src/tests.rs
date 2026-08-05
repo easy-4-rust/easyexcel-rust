@@ -714,8 +714,14 @@ fn sheet_selector_inputs_map_indices_borrowed_and_owned_names() {
         "Owned".to_owned().into_sheet_selector(),
         SheetSelector::Name("Owned".to_owned())
     );
-    assert!(is_xls_path(Path::new("legacy.XLS")));
-    assert!(!is_xls_path(Path::new("modern.xlsx")));
+    assert!(easyexcel_io::path_has_extension(
+        Path::new("legacy.XLS"),
+        "xls"
+    ));
+    assert!(!easyexcel_io::path_has_extension(
+        Path::new("modern.xlsx"),
+        "xls"
+    ));
 }
 
 #[test]

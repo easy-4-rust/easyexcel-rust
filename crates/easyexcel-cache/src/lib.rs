@@ -7,5 +7,5 @@ pub use cache::{
     DEFAULT_MOKA_ACTIVE_ENTRIES, SHARED_STRING_CACHE_BATCH_SIZE, ReadCacheMode,
     SharedStringCache, SharedStringCacheReader, SharedStringCacheWriter, create_cache,
     create_moka_cache, create_moka_cache_for_batches, create_weighted_moka_cache,
-    create_weighted_moka_cache_mb, memory_cache, remove_thread_local_cache,
+    create_weighted_moka_cache_mb, memory_cache, prebuilt_cache, remove_thread_local_cache,
 };

@@ -14,7 +14,6 @@
 use crate::core::Result;
 
 use super::read_cache::{ReadCache, SharedStringCacheAdapter};
-use crate::read::read_cache::SharedStringCache;
 
 /// Batch count used by Java `Ehcache.BATCH_COUNT`.
 // 内部缓存 API 脚手架，暂未在 crate 内直接使用。
@@ -52,9 +51,11 @@ impl Ehcache {
             .unwrap_or(DEFAULT_MAX_EHCACHE_ACTIVATE_BATCH_COUNT)
             .max(1);
         let active_batches = u64::try_from(batch_count).unwrap_or(1);
-        Ok(Self::from_backend(
-            easyexcel_cache::create_moka_cache_for_batches(active_batches)?,
-        ))
+        Ok(Self {
+            adapter: SharedStringCacheAdapter::new(
+                easyexcel_cache::create_moka_cache_for_batches(active_batches)?,
+            ),
+        })
     }
 
     /// Creates a cache with the deprecated Java `maxCacheActivateSize` MB knob.
@@ -69,17 +70,11 @@ impl Ehcache {
     ) -> Result<Self> {
         let megabytes = max_cache_activate_size_mb.unwrap_or(16).max(1);
         let active_megabytes = u64::try_from(megabytes).unwrap_or(1);
-        Ok(Self::from_backend(
-            easyexcel_cache::create_weighted_moka_cache_mb(active_megabytes)?,
-        ))
-    }
-
-    /// Wraps an existing shared-string backend.
-    #[must_use]
-    pub fn from_backend(backend: Box<dyn SharedStringCache>) -> Self {
-        Self {
-            adapter: SharedStringCacheAdapter::new(backend),
-        }
+        Ok(Self {
+            adapter: SharedStringCacheAdapter::new(
+                easyexcel_cache::create_weighted_moka_cache_mb(active_megabytes)?,
+            ),
+        })
     }
 }
 

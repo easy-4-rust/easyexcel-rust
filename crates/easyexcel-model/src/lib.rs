@@ -11,7 +11,10 @@
 pub mod model;
 
 pub use model::{
-    Cell, CellAddress, CellError, CellRange, CellValue, DateSystem, Error, Result, Sheet, Workbook,
+    Cell, CellAddress, CellError, CellRange, CellValue, DataFormatData, DateSystem, Error,
+    ExcelDataFormat, Result, Sheet, Workbook,
     chrono_date_format, date_to_excel_serial, datetime_to_excel_serial,
 };
-pub use model::{addr, dates, error, numfmt, styles, value};
+pub use model::{
+    addr, data_format_data, dates, error, excel_data_format, numfmt, styles, value,
+};

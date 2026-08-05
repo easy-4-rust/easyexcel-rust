@@ -16,7 +16,6 @@ use crate::read::{
     ExcelLocale, ReadCacheMode, ReadOptions, ScientificFormatMode, SheetSelector,
     StoredReadCacheSelector, read_csv, read_xls, read_xlsx,
 };
-use crate::write_type_helpers::{is_csv_path, is_xls_path};
 
 /// Event-driven reader builder.
 pub struct ExcelReaderBuilder<T, L> {
@@ -243,9 +242,9 @@ where
     ///
     /// Returns a workbook, sheet-selection, conversion, or listener error.
     pub fn do_read(mut self) -> Result<()> {
-        if is_csv_path(&self.path) {
+        if easyexcel_io::path_has_extension(&self.path, "csv") {
             read_csv::<T, L>(&self.path, &self.options, &mut self.listener)
-        } else if is_xls_path(&self.path) {
+        } else if easyexcel_io::path_has_extension(&self.path, "xls") {
             read_xls::<T, L>(&self.path, &self.options, &mut self.listener)
         } else {
             read_xlsx::<T, L>(&self.path, &self.options, &mut self.listener)

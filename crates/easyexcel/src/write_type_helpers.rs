@@ -8,23 +8,11 @@ use std::path::Path;
 use crate::support::ExcelTypeEnum;
 use crate::write::WriteOptions;
 
-/// 路径是否指向 CSV（不区分大小写）。
-pub(crate) fn is_csv_path(path: &Path) -> bool {
-    path.extension()
-        .is_some_and(|extension| extension.eq_ignore_ascii_case("csv"))
-}
-
-/// 路径是否指向旧版 XLS（不区分大小写）。
-pub(crate) fn is_xls_path(path: &Path) -> bool {
-    path.extension()
-        .is_some_and(|extension| extension.eq_ignore_ascii_case("xls"))
-}
-
 /// 写入是否走 CSV：显式 `excel_type` 优先，否则按路径扩展名判断。
 pub(crate) fn is_csv_write(path: &Path, options: &WriteOptions) -> bool {
     match options.excel_type {
         Some(excel_type) => excel_type == ExcelTypeEnum::Csv,
-        None => is_csv_path(path),
+        None => easyexcel_io::path_has_extension(path, "csv"),
     }
 }
 
@@ -32,7 +20,7 @@ pub(crate) fn is_csv_write(path: &Path, options: &WriteOptions) -> bool {
 pub(crate) fn is_xls_write(path: &Path, options: &WriteOptions) -> bool {
     match options.excel_type {
         Some(excel_type) => excel_type == ExcelTypeEnum::Xls,
-        None => is_xls_path(path),
+        None => easyexcel_io::path_has_extension(path, "xls"),
     }
 }
 

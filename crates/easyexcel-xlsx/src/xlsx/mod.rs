@@ -14,6 +14,7 @@ mod image_anchor;
 pub mod generation;
 mod legacy_template;
 mod ooxml_package;
+pub mod ooxml_constants;
 pub mod package;
 mod package_reader;
 mod reader;

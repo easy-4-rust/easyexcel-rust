@@ -79,6 +79,15 @@ pub fn memory_cache() -> Box<dyn SharedStringCacheReader> {
     Box::new(MemorySharedStringReader::default())
 }
 
+/// 从已经解码的 BIFF SST 创建不可变共享字符串缓存。
+///
+/// 该后端对应 Java `XlsCache(SSTRecord)`：写入是空操作，所有字符串在
+/// 构造时已经按 SST 索引固定。
+#[must_use]
+pub fn prebuilt_cache(values: Vec<String>) -> Box<dyn SharedStringCache> {
+    Box::new(PrebuiltSharedStringCache { values })
+}
+
 /// 按模式和 XML 大小创建共享字符串缓存。
 ///
 /// # Errors
@@ -181,6 +190,34 @@ impl SharedStringCacheReader for MemorySharedStringCache {
 }
 
 impl SharedStringCache for MemorySharedStringCache {}
+
+struct PrebuiltSharedStringCache {
+    values: Vec<String>,
+}
+
+impl SharedStringCacheWriter for PrebuiltSharedStringCache {
+    fn put(&mut self, _value: String) -> Result<()> {
+        Ok(())
+    }
+
+    fn finish(self: Box<Self>) -> Result<Box<dyn SharedStringCacheReader>> {
+        Ok(Box::new(MemorySharedStringReader {
+            values: self.values,
+        }))
+    }
+}
+
+impl SharedStringCacheReader for PrebuiltSharedStringCache {
+    fn get(&self, index: usize) -> Result<String> {
+        value_at(&self.values, index)
+    }
+
+    fn len(&self) -> usize {
+        self.values.len()
+    }
+}
+
+impl SharedStringCache for PrebuiltSharedStringCache {}
 
 #[derive(Default)]
 struct MemorySharedStringReader {

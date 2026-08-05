@@ -106,6 +106,20 @@ impl SharedStringCacheAdapter {
         }
     }
 
+    /// 返回写入侧或已完成读取侧的字符串数量。
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.reader
+            .as_ref()
+            .map_or_else(|| self.inner.len(), |reader| reader.len())
+    }
+
+    /// 返回缓存是否为空。
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     /// Returns the read-only cache produced by [`ReadCache::put_finished`].
     ///
     /// # Panics

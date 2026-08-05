@@ -16,7 +16,6 @@ use crate::read::{
     ExcelLocale, ReadCacheMode, ReadOptions, ScientificFormatMode, SheetSelector,
     StoredReadCacheSelector, read_csv, read_xls, read_xlsx,
 };
-use crate::write_type_helpers::{is_csv_path, is_xls_path};
 
 /// Synchronous collecting reader builder.
 pub struct ExcelSyncReaderBuilder<T> {
@@ -215,9 +214,9 @@ where
     /// Returns a workbook, sheet-selection, or row-conversion error.
     pub fn do_read_sync(self) -> Result<Vec<T>> {
         let mut listener = collect_listener::<T>();
-        if is_csv_path(&self.path) {
+        if easyexcel_io::path_has_extension(&self.path, "csv") {
             read_csv::<T, _>(&self.path, &self.options, &mut listener)?;
-        } else if is_xls_path(&self.path) {
+        } else if easyexcel_io::path_has_extension(&self.path, "xls") {
             read_xls::<T, _>(&self.path, &self.options, &mut listener)?;
         } else {
             read_xlsx::<T, _>(&self.path, &self.options, &mut listener)?;

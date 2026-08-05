@@ -1160,6 +1160,7 @@ version = "0.1.0-alpha.1"
 dependencies = [
  "chrono",
  "csv",
+ "easyexcel-format",
  "easyexcel-io",
  "easyexcel-model",
  "encoding_rs",

@@ -28,13 +28,14 @@ use crate::write::excel_writer_core::{
     collect_handler_once_absolute_merges, collect_once_absolute_merges,
     collect_template_append_rows, create_csv_record_writer, create_stateful_csv_writer,
     finish_csv_record_writer, format_error, handlers_request_auto_width, head_rows_for_schema,
-    is_csv_path, is_xls_path, merge_range_to_biff8, relative_head_start_row, resolve_excel_type,
+    merge_range_to_biff8, relative_head_start_row,
     run_own_workbook_callbacks, run_template_handler_callbacks, save_template_package,
     save_workbook, save_workbook_to_writer, save_xls_book, set_xlsx_column_width_chars,
     sort_handlers, take_captured_output, template_append_cell_styles, template_append_row_heights,
     validate_excel_row_schema, validate_stateful_backend, validate_stateful_schema,
     write_sheet_to_workbook_with_gzip,
 };
+use crate::write_type_helpers::effective_write_type;
 use crate::write::handler::default_write_handler_loader::DefaultWriteHandlerLoader;
 use crate::write::handler_execution_scope::{
     HandlerExecutionScope, ensure_gzip_spill, load_annotation_handlers,
@@ -136,7 +137,7 @@ impl ExcelWriter {
         options: WriteOptions,
     ) -> Self {
         let path = path.into();
-        let excel_type = resolve_excel_type(&path, &options);
+        let excel_type = effective_write_type(&path, &options);
         handlers.extend(DefaultWriteHandlerLoader::load_default_handler_for(
             options.use_default_style,
             excel_type,
@@ -197,7 +198,7 @@ impl ExcelWriter {
         W: Write + Send + 'static,
     {
         let path = logical_path.into();
-        let excel_type = resolve_excel_type(&path, &options);
+        let excel_type = effective_write_type(&path, &options);
         handlers.extend(DefaultWriteHandlerLoader::load_default_handler_for(
             options.use_default_style,
             excel_type,
@@ -1024,14 +1025,14 @@ impl ExcelWriter {
     pub(crate) fn is_csv(&self) -> bool {
         match self.excel_type {
             Some(excel_type) => excel_type == crate::support::ExcelTypeEnum::Csv,
-            None => is_csv_path(&self.path),
+            None => easyexcel_io::path_has_extension(&self.path, "csv"),
         }
     }
 
     pub(crate) fn is_xls(&self) -> bool {
         match self.excel_type {
             Some(excel_type) => excel_type == crate::support::ExcelTypeEnum::Xls,
-            None => is_xls_path(&self.path),
+            None => easyexcel_io::path_has_extension(&self.path, "xls"),
         }
     }
 

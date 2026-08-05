@@ -1,93 +1,78 @@
-//! 对应 Java：`com.alibaba.excel.cache.XlsCache`.
+//! 对应 Java：`com.alibaba.excel.cache.XlsCache`。
 //!
-//! Java builds the cache from a POI `SSTRecord` during BIFF event parsing.
-//! Rust calamine resolves SST internally; this type remains for API parity and
-//! for callers that already materialized a string table out-of-band.
+//! 预构建 SST 的存储与索引实现由 `easyexcel-cache` 提供；本类型仅适配
+//! Java `ReadCache` 生命周期。
 
 use crate::core::Result;
 
-use super::read_cache::ReadCache;
+use super::read_cache::{ReadCache, SharedStringCacheAdapter};
 
-/// XLS shared-string cache backed by a pre-built string table.
-///
-/// 对应 Java：`com.alibaba.excel.cache.XlsCache`.
-///
-/// [`put`](ReadCache::put) is a no-op because the SST is immutable after
-/// construction, matching Java usage after `SstRecordHandler` finishes.
+/// BIFF SST 预构建共享字符串缓存的 Java 兼容门面。
 pub struct XlsCache {
-    values: Vec<String>,
+    adapter: SharedStringCacheAdapter,
 }
 
 impl XlsCache {
-    /// Creates a cache from an SST string table. (Java `new XlsCache(SSTRecord)`)
+    /// 从 SST 索引顺序字符串创建缓存。
     #[must_use]
     pub fn new(values: Vec<String>) -> Self {
-        Self { values }
+        Self {
+            adapter: SharedStringCacheAdapter::new(easyexcel_cache::prebuilt_cache(values)),
+        }
     }
 
-    /// Creates an empty cache placeholder.
+    /// 创建空的 SST 缓存占位符。
     #[must_use]
     pub fn empty() -> Self {
-        Self { values: Vec::new() }
+        Self::new(Vec::new())
     }
 
-    /// Returns the number of indexed strings.
+    /// 返回字符串数量。
     #[must_use]
     pub fn len(&self) -> usize {
-        self.values.len()
+        self.adapter.len()
     }
 
-    /// Returns whether the cache contains no strings.
+    /// 返回缓存是否为空。
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.values.is_empty()
+        self.adapter.is_empty()
     }
 }
 
 impl ReadCache for XlsCache {
-    fn put(&mut self, _value: String) -> Result<()> {
-        Ok(())
+    fn put(&mut self, value: String) -> Result<()> {
+        self.adapter.put(value)
     }
 
     fn get(&self, key: Option<usize>) -> Result<Option<String>> {
-        Ok(match key {
-            Some(index) if index < self.values.len() => Some(self.values[index].clone()),
-            _ => None,
-        })
+        let Some(index) = key else {
+            return Ok(None);
+        };
+        if index >= self.adapter.len() {
+            return Ok(None);
+        }
+        self.adapter.get(Some(index))
     }
 
     fn put_finished(&mut self) -> Result<()> {
-        Ok(())
+        self.adapter.put_finished()
     }
 }
 
 #[cfg(test)]
-mod tests_extra {
+mod tests {
     use super::*;
 
     #[test]
-    fn xls_cache_reads_the_prebuilt_string_table() -> Result<()> {
-        // 对应 Java：XlsCache(SSTRecord) 只读查询
-        let cache = XlsCache::new(vec!["alpha".to_owned(), "beta".to_owned()]);
-        assert_eq!(cache.len(), 2);
-        assert!(!cache.is_empty());
-        assert_eq!(cache.get(Some(0))?, Some("alpha".to_owned()));
-        assert_eq!(cache.get(Some(1))?, Some("beta".to_owned()));
-        // 越界与空 key 均返回 None（对应 Java：get 未命中返回 null）
-        assert_eq!(cache.get(Some(2))?, None);
-        assert_eq!(cache.get(None)?, None);
-        Ok(())
-    }
-
-    #[test]
-    fn xls_cache_empty_placeholder_is_noop() -> Result<()> {
-        // 对应 Java：new XlsCache() 空缓存占位
-        let mut cache = XlsCache::empty();
-        assert_eq!(cache.len(), 0);
-        assert!(cache.is_empty());
+    fn reads_prebuilt_sst_and_ignores_puts() -> Result<()> {
+        let mut cache = XlsCache::new(vec!["alpha".to_owned(), "beta".to_owned()]);
         cache.put("ignored".to_owned())?;
+        assert_eq!(cache.len(), 2);
+        assert_eq!(cache.get(Some(0))?, Some("alpha".to_owned()));
+        assert_eq!(cache.get(Some(2))?, None);
         cache.put_finished()?;
-        assert_eq!(cache.get(Some(0))?, None);
+        assert_eq!(cache.get(Some(1))?, Some("beta".to_owned()));
         Ok(())
     }
 }

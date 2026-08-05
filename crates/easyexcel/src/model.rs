@@ -4,6 +4,7 @@
 //! 完全相同，不引入包装层或额外转换成本。
 
 pub use easyexcel_model::{
-    Cell, CellAddress, CellError, CellRange, CellValue, DateSystem, Error, Result, Sheet, Workbook,
-    addr, dates, error, numfmt, styles, value,
+    Cell, CellAddress, CellError, CellRange, CellValue, DataFormatData, DateSystem, Error,
+    ExcelDataFormat, Result, Sheet, Workbook, addr, data_format_data, dates, error,
+    excel_data_format, numfmt, styles, value,
 };

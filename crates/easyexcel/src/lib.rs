@@ -97,9 +97,6 @@ pub use into_sheet_selector::IntoSheetSelector;
 #[cfg(test)]
 use collect_listener::CollectListener;
 #[cfg(test)]
-use write_type_helpers::is_xls_path;
-
-#[cfg(test)]
 mod tests;
 
 #[cfg(test)]

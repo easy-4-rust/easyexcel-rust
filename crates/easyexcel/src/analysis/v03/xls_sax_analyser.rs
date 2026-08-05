@@ -5,7 +5,6 @@ use std::path::{Path, PathBuf};
 use crate::core::{AnalysisContext, ExcelError, ExcelRow, ReadListener, Result};
 
 use crate::analysis::excel_read_executor::ExcelReadExecutor;
-use crate::analysis::v03::biff_record_stream::{read_workbook_stream, walk_biff_records};
 use crate::analysis::v03::xls_list_sheet_listener::XlsListSheetListener;
 use crate::analysis::v03::xls_record_dispatcher::{XlsRecordDispatchState, XlsRecordDispatcher};
 use crate::context::{DefaultXlsReadContext, ReadSheet, XlsReadContext};
@@ -110,11 +109,17 @@ impl XlsSaxAnalyser {
     }
 
     fn dispatch_workbook_records(&mut self) -> Result<()> {
-        let workbook = read_workbook_stream(&self.path)?;
+        let workbook = easyexcel_xls::biff8::record_stream::read_workbook_stream(&self.path)
+            .map_err(ExcelError::from)?;
         self.record_dispatcher.reset();
-        walk_biff_records(&workbook, |record_sid, data| {
-            self.process_record(record_sid, data)
-        })?;
+        easyexcel_xls::biff8::record_stream::walk_biff_records(
+            &workbook,
+            |record_sid, data| {
+                self.process_record(record_sid, data)
+                    .map_err(|error| easyexcel_io::Error::Other(error.to_string()))
+            },
+        )
+        .map_err(ExcelError::from)?;
         self.record_dispatcher.finish_records()
     }
 

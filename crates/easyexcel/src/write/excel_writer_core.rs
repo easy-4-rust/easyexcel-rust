@@ -164,29 +164,6 @@ pub(crate) fn validate_stateful_backend(is_csv: bool, password: Option<&str>) ->
     }
 }
 
-pub(crate) fn is_csv_path(path: &Path) -> bool {
-    easyexcel_io::path_has_extension(path, "csv")
-}
-
-pub(crate) fn is_xls_path(path: &Path) -> bool {
-    easyexcel_io::path_has_extension(path, "xls")
-}
-
-pub(crate) fn resolve_excel_type(
-    path: &Path,
-    options: &WriteOptions,
-) -> crate::support::ExcelTypeEnum {
-    options.excel_type.unwrap_or_else(|| {
-        if is_csv_path(path) {
-            crate::support::ExcelTypeEnum::Csv
-        } else if is_xls_path(path) {
-            crate::support::ExcelTypeEnum::Xls
-        } else {
-            crate::support::ExcelTypeEnum::Xlsx
-        }
-    })
-}
-
 pub(crate) fn uses_constant_memory_spill(options: &WriteOptions) -> bool {
     options.constant_memory || options.compress_temp_files
 }
