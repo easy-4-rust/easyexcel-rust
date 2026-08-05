@@ -8,6 +8,9 @@ use std::str::FromStr;
 use bigdecimal::{BigDecimal, RoundingMode, ToPrimitive};
 use num_bigint::BigInt;
 
+/// Excel's decimal math context retains at most 15 significant digits.
+pub const EXCEL_MATH_CONTEXT_PRECISION: u32 = 15;
+
 /// 数字格式解析和渲染错误。
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("{message}")]

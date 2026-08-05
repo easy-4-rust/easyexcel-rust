@@ -105,6 +105,28 @@ pub struct Biff8Merge {
     pub last_col: u8,
 }
 
+impl Biff8Merge {
+    /// Converts format-neutral inclusive bounds into BIFF8 coordinates.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ExcelError::Xls`] when a row exceeds the BIFF8 65,536-row
+    /// limit or a column exceeds the 256-column limit.
+    pub fn try_from_bounds(
+        first_row: u32,
+        last_row: u32,
+        first_col: u16,
+        last_col: u16,
+    ) -> Result<Self> {
+        Ok(Self {
+            first_row: checked_row_index(first_row)?,
+            last_row: checked_row_index(last_row)?,
+            first_col: checked_column_index(usize::from(first_col))?,
+            last_col: checked_column_index(usize::from(last_col))?,
+        })
+    }
+}
+
 /// Sparse worksheet buffer accumulated by the stateful / one-shot writers.
 #[derive(Debug, Clone, Default)]
 pub struct Biff8Sheet {
@@ -143,6 +165,24 @@ impl Biff8Sheet {
         }
     }
 
+    /// Validates a format-neutral row index against BIFF8 limits.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ExcelError::Xls`] when `row` is outside the BIFF8 range.
+    pub fn validate_row_index(row: u32) -> Result<()> {
+        checked_row_index(row).map(|_| ())
+    }
+
+    /// Narrows a format-neutral column index after applying BIFF8 limits.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ExcelError::Xls`] when `col` is outside the BIFF8 range.
+    pub fn column_index(col: usize) -> Result<u16> {
+        checked_column_index(col).map(u16::from)
+    }
+
     /// Writes a cell at `(row, col)`, enforcing BIFF8 row/column limits.
     ///
     /// # Errors
@@ -150,11 +190,19 @@ impl Biff8Sheet {
     /// Returns [`ExcelError::Xls`] when the coordinate exceeds BIFF8 limits
     /// (`65_536` rows × 256 columns).
     pub fn set(&mut self, row: u32, col: usize, cell: Biff8Cell) -> Result<()> {
-        let row = u16::try_from(row)
-            .map_err(|_| ExcelError::Xls("BIFF8 supports at most 65536 rows".to_owned()))?;
-        let col = u8::try_from(col)
-            .map_err(|_| ExcelError::Xls("BIFF8 supports at most 256 columns".to_owned()))?;
+        let row = checked_row_index(row)?;
+        let col = checked_column_index(col)?;
         self.cells.insert((row, col), cell);
+        Ok(())
+    }
+
+    /// Validates and sets a column width using a format-neutral column index.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ExcelError::Xls`] when `col` exceeds the BIFF8 column limit.
+    pub fn set_column_width_at(&mut self, col: usize, width_chars: u16) -> Result<()> {
+        self.set_column_width(checked_column_index(col)?, width_chars);
         Ok(())
     }
 
@@ -166,6 +214,29 @@ impl Biff8Sheet {
     /// Sets row height in points (POI `setHeightInPoints`).
     pub fn set_row_height(&mut self, row: u16, height_points: u16) {
         self.row_heights.insert(row, height_points);
+    }
+
+    /// Validates and sets a row height using a format-neutral row index.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ExcelError::Xls`] when `row` exceeds the BIFF8 row limit.
+    pub fn set_row_height_at(&mut self, row: u32, height_points: u16) -> Result<()> {
+        self.set_row_height(checked_row_index(row)?, height_points);
+        Ok(())
+    }
+
+    /// Configures frozen panes while enforcing BIFF8 row and column bounds.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ExcelError::Xls`] when the frozen row or column count is
+    /// outside the BIFF8 coordinate range.
+    pub fn set_freeze_panes(&mut self, rows: u32, cols: u16) -> Result<()> {
+        let rows = checked_row_index(rows)?;
+        checked_column_index(usize::from(cols))?;
+        self.freeze = Some((rows, cols));
+        Ok(())
     }
 
     /// Appends a merge region when it spans more than one cell.
@@ -201,6 +272,16 @@ impl Biff8Sheet {
         }
         (max_row, max_col)
     }
+}
+
+fn checked_row_index(row: u32) -> Result<u16> {
+    u16::try_from(row)
+        .map_err(|_| ExcelError::Xls("BIFF8 supports at most 65536 rows".to_owned()))
+}
+
+fn checked_column_index(col: usize) -> Result<u8> {
+    u8::try_from(col)
+        .map_err(|_| ExcelError::Xls("BIFF8 supports at most 256 columns".to_owned()))
 }
 
 /// Multi-sheet BIFF8 workbook buffer.
@@ -356,6 +437,22 @@ impl Biff8Book {
 
         self.extra_bytes.extend_from_slice(&record_data);
     }
+    /// Creates a new worksheet and rejects duplicate names.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ExcelError::Xls`] when `name` is already in use.
+    pub fn create_sheet(&mut self, name: impl Into<String>) -> Result<&mut Biff8Sheet> {
+        let name = name.into();
+        if self.sheets.iter().any(|sheet| sheet.name == name) {
+            return Err(ExcelError::Xls(format!(
+                "worksheet name is already in use: {name}"
+            )));
+        }
+        self.sheets.push(Biff8Sheet::new(name));
+        Ok(self.sheets.last_mut().expect("sheet was just pushed"))
+    }
+
     /// Returns a mutable sheet by name, creating it if missing.
     ///
     /// # Panics

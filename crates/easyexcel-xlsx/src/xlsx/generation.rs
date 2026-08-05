@@ -17,6 +17,12 @@ pub use rust_xlsxwriter::{
 
 use super::encrypt::{ReadWriteSeek, encrypt_package_to};
 
+/// XLSX worksheet row count limit defined by ECMA-376.
+pub const XLSX_MAX_ROWS: u32 = 1_048_576;
+
+/// XLSX worksheet column count limit defined by ECMA-376.
+pub const XLSX_MAX_COLUMNS: u16 = 16_384;
+
 /// 创建 XLSX 生成工作簿。
 #[must_use]
 pub fn new_workbook() -> Workbook {
@@ -127,6 +133,36 @@ pub const fn row_height_pixels(height: Option<u16>) -> u32 {
 /// 索引超出 `u16` 范围时返回错误。
 pub fn column_index(index: usize) -> Result<u16> {
     u16::try_from(index).map_err(|_| Error::Xlsx("column index exceeds XLSX limit".to_owned()))
+}
+
+/// Validates a zero-based XLSX row index.
+///
+/// # Errors
+///
+/// Returns [`Error::Xlsx`] when the index exceeds the worksheet row limit.
+pub fn validate_row_index(row: u32) -> Result<()> {
+    if row >= XLSX_MAX_ROWS {
+        return Err(Error::Xlsx(format!(
+            "XLSX row index {row} exceeds {}",
+            XLSX_MAX_ROWS - 1
+        )));
+    }
+    Ok(())
+}
+
+/// Validates a zero-based XLSX column index.
+///
+/// # Errors
+///
+/// Returns [`Error::Xlsx`] when the index exceeds the worksheet column limit.
+pub fn validate_column_index(column: u16) -> Result<()> {
+    if column >= XLSX_MAX_COLUMNS {
+        return Err(Error::Xlsx(format!(
+            "XLSX column index {column} exceeds {}",
+            XLSX_MAX_COLUMNS - 1
+        )));
+    }
+    Ok(())
 }
 
 /// 设置行高（磅）。

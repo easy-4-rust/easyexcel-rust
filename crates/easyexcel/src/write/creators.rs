@@ -58,11 +58,7 @@ impl RowCreator for XlsxRowCreator<'_> {
         Self: 'a;
 
     fn create_row(&mut self, row_index: u32) -> Result<Self::Row<'_>> {
-        if row_index >= 1_048_576 {
-            return Err(ExcelError::Format(format!(
-                "XLSX row index {row_index} exceeds 1048575"
-            )));
-        }
+        generation::validate_row_index(row_index).map_err(ExcelError::from)?;
         Ok(XlsxRow {
             worksheet: self.worksheet,
             row_index,
@@ -77,11 +73,7 @@ impl CellCreator for XlsxRow<'_> {
         Self: 'a;
 
     fn create_cell(&mut self, column_index: u16) -> Result<Self::Cell<'_>> {
-        if column_index >= 16_384 {
-            return Err(ExcelError::Format(format!(
-                "XLSX column index {column_index} exceeds 16383"
-            )));
-        }
+        generation::validate_column_index(column_index).map_err(ExcelError::from)?;
         Ok(XlsxCell {
             worksheet: self.worksheet,
             row_index: self.row_index,
@@ -112,13 +104,7 @@ impl SheetCreator for Biff8Book {
         Self: 'a;
 
     fn create_sheet(&mut self, sheet_name: &str) -> Result<Self::Sheet<'_>> {
-        if self.sheets.iter().any(|sheet| sheet.name == sheet_name) {
-            return Err(ExcelError::Format(format!(
-                "worksheet name is already in use: {sheet_name}"
-            )));
-        }
-        self.sheets.push(Biff8Sheet::new(sheet_name));
-        Ok(self.sheets.last_mut().expect("just pushed"))
+        Biff8Book::create_sheet(self, sheet_name).map_err(ExcelError::from)
     }
 }
 
@@ -129,11 +115,7 @@ impl RowCreator for Biff8RowCreator<'_> {
         Self: 'a;
 
     fn create_row(&mut self, row_index: u32) -> Result<Self::Row<'_>> {
-        if row_index >= 65_536 {
-            return Err(ExcelError::Format(
-                "BIFF8 supports at most 65536 rows".to_owned(),
-            ));
-        }
+        Biff8Sheet::validate_row_index(row_index).map_err(ExcelError::from)?;
         Ok(Biff8Row {
             sheet: self.sheet,
             row_index,
@@ -148,11 +130,7 @@ impl CellCreator for Biff8Row<'_> {
         Self: 'a;
 
     fn create_cell(&mut self, column_index: u16) -> Result<Self::Cell<'_>> {
-        if column_index >= 256 {
-            return Err(ExcelError::Format(
-                "BIFF8 supports at most 256 columns".to_owned(),
-            ));
-        }
+        Biff8Sheet::column_index(usize::from(column_index)).map_err(ExcelError::from)?;
         Ok(Biff8CellHandle {
             sheet: self.sheet,
             row_index: self.row_index,

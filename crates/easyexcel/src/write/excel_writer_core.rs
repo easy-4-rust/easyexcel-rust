@@ -819,15 +819,7 @@ where
             .freeze_panes
             .or_else(|| (options.freeze_head && options.need_head).then_some((head_rows, 0)));
         if let Some((rows, cols)) = freeze_panes {
-            if rows > u32::from(u16::MAX) || cols > u16::from(u8::MAX) {
-                return Err(ExcelError::Format(format!(
-                    "freeze panes ({rows},{cols}) 超出 BIFF8 范围（行≤65535, 列≤255）"
-                )));
-            }
-            // 行越界已在上方校验，u32→u16 不会截断
-            #[allow(clippy::cast_possible_truncation)]
-            let rows = rows as u16;
-            book.sheet_mut(sheet_name).freeze = Some((rows, cols));
+            book.sheet_mut(sheet_name).set_freeze_panes(rows, cols)?;
         }
     }
 
@@ -847,9 +839,7 @@ where
         if let Some(height) = head_height {
             let sheet = book.sheet_mut(sheet_name);
             for head_row in row_index..row_index + head_rows {
-                let row = u16::try_from(head_row)
-                    .map_err(|_| ExcelError::Format("BIFF8 row overflow".to_owned()))?;
-                sheet.set_row_height(row, height);
+                sheet.set_row_height_at(head_row, height)?;
             }
         }
         if options.automatic_merge_head {
@@ -878,9 +868,8 @@ where
         let content_height =
             collect_handler_content_row_height(handlers).or(metadata.content_row_height);
         if let Some(height) = content_height {
-            let row_u16 = u16::try_from(row_index)
-                .map_err(|_| ExcelError::Format("BIFF8 row overflow".to_owned()))?;
-            book.sheet_mut(sheet_name).set_row_height(row_u16, height);
+            book.sheet_mut(sheet_name)
+                .set_row_height_at(row_index, height)?;
         }
         let (original_cells, cells) =
             convert_row_at(&row, &options.converters, sheet_name, row_index, &columns)?;
@@ -934,17 +923,14 @@ where
                     sheet: book.sheet_mut(sheet_name),
                 };
                 let mut row = create_row(&mut row_creator, row_index)?;
-                let column = u16::try_from(*physical_index).map_err(|_| {
-                    ExcelError::Format("BIFF8 supports at most 256 columns".to_owned())
-                })?;
+                let column = Biff8Sheet::column_index(*physical_index)?;
                 create_cell(&mut row, column)?.set(cell)?;
             }
         }
         finish_row_lifecycle(handlers, &row_context)?;
         if let Some(height) = row_context.row().requested_height() {
-            let row = u16::try_from(row_index)
-                .map_err(|_| ExcelError::Format("BIFF8 row overflow".to_owned()))?;
-            book.sheet_mut(sheet_name).set_row_height(row, height);
+            book.sheet_mut(sheet_name)
+                .set_row_height_at(row_index, height)?;
         }
         row_index = row_index
             .checked_add(1)
@@ -1005,9 +991,8 @@ pub(crate) fn write_biff8_headers(
         }
         finish_row_lifecycle(handlers, &row_context)?;
         if let Some(height) = row_context.row().requested_height() {
-            let row = u16::try_from(row)
-                .map_err(|_| ExcelError::Format("BIFF8 row overflow".to_owned()))?;
-            book.sheet_mut(sheet_name).set_row_height(row, height);
+            book.sheet_mut(sheet_name)
+                .set_row_height_at(row, height)?;
         }
     }
     Ok(())
@@ -1059,8 +1044,7 @@ pub(crate) fn write_biff8_styled_text_cell(
             sheet: book.sheet_mut(sheet_name),
         };
         let mut row = create_row(&mut row_creator, row_index)?;
-        let column = u16::try_from(physical_index)
-            .map_err(|_| ExcelError::Format("BIFF8 supports at most 256 columns".to_owned()))?;
+        let column = Biff8Sheet::column_index(physical_index)?;
         create_cell(&mut row, column)?.set(cell)?;
     }
     Ok(())
@@ -1209,19 +1193,19 @@ where
     T: ExcelRow,
 {
     for (column, width) in &options.column_widths {
-        let col = u8::try_from(*column)
-            .map_err(|_| ExcelError::Format("BIFF8 supports at most 256 columns".to_owned()))?;
-        sheet.set_column_width(col, *width);
+        sheet.set_column_width_at(usize::from(*column), *width)?;
     }
     let type_width = T::write_metadata().column_width;
     for (physical_index, _, column) in selected_columns(T::schema(), options)? {
-        let col = u8::try_from(physical_index)
-            .map_err(|_| ExcelError::Format("BIFF8 supports at most 256 columns".to_owned()))?;
-        if sheet.column_widths.contains_key(&col) {
+        if options
+            .column_widths
+            .iter()
+            .any(|(explicit, _)| usize::from(*explicit) == physical_index)
+        {
             continue;
         }
         if let Some(width) = column.column_width.or(type_width) {
-            sheet.set_column_width(col, width);
+            sheet.set_column_width_at(physical_index, width)?;
         }
     }
     apply_biff8_handler_column_widths::<T>(sheet, options, handlers)
@@ -1236,8 +1220,6 @@ where
     T: ExcelRow,
 {
     for (physical_index, _, _) in selected_columns(T::schema(), options)? {
-        let col = u8::try_from(physical_index)
-            .map_err(|_| ExcelError::Format("BIFF8 supports at most 256 columns".to_owned()))?;
         if options
             .column_widths
             .iter()
@@ -1247,7 +1229,7 @@ where
         }
         for handler in handlers {
             if let Some(width) = handler.style_column_width(physical_index) {
-                sheet.set_column_width(col, width);
+                sheet.set_column_width_at(physical_index, width)?;
             }
         }
     }
@@ -1296,20 +1278,13 @@ pub(crate) fn add_biff8_merge_range(sheet: &mut Biff8Sheet, range: MergeRange) -
 }
 
 pub(crate) fn merge_range_to_biff8(range: MergeRange) -> Result<Biff8Merge> {
-    let first_row = u16::try_from(range.first_row)
-        .map_err(|_| ExcelError::Format("BIFF8 merge row exceeds 65536".to_owned()))?;
-    let last_row = u16::try_from(range.last_row)
-        .map_err(|_| ExcelError::Format("BIFF8 merge row exceeds 65536".to_owned()))?;
-    let first_col = u8::try_from(range.first_column)
-        .map_err(|_| ExcelError::Format("BIFF8 merge column exceeds 256".to_owned()))?;
-    let last_col = u8::try_from(range.last_column)
-        .map_err(|_| ExcelError::Format("BIFF8 merge column exceeds 256".to_owned()))?;
-    Ok(Biff8Merge {
-        first_row,
-        last_row,
-        first_col,
-        last_col,
-    })
+    Biff8Merge::try_from_bounds(
+        range.first_row,
+        range.last_row,
+        range.first_column,
+        range.last_column,
+    )
+    .map_err(ExcelError::from)
 }
 
 pub(crate) fn apply_biff8_loop_merges(
@@ -1797,9 +1772,7 @@ where
             let mut context = WriteCellContext::new(
                 &options.sheet_name,
                 row_index,
-                u16::try_from(*physical_index).map_err(|_| {
-                    ExcelError::Format("template column index exceeds XLSX limit".to_owned())
-                })?,
+                to_column(*physical_index)?,
                 value.clone(),
             )
             .with_relative_row_index(relative_row_index);
@@ -1926,9 +1899,7 @@ where
             let mut context = WriteCellContext::new(
                 &options.sheet_name,
                 start_row.saturating_add(u32::try_from(row_offset).unwrap_or(u32::MAX)),
-                u16::try_from(*physical_index).map_err(|_| {
-                    ExcelError::Format("template column index exceeds XLSX limit".to_owned())
-                })?,
+                to_column(*physical_index)?,
                 value.clone(),
             )
             .with_relative_row_index(relative_row_index);

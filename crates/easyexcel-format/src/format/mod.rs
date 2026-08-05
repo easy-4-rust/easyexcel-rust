@@ -20,7 +20,8 @@ pub use data_formatter::{
 pub use excel_locale::ExcelLocale;
 pub use excel_general_number_format::format_general;
 pub use number_utils::{
-    NonFiniteNumber, NumberFormatError, NumberRoundingMode, decimal_integer_requires_text,
+    EXCEL_MATH_CONTEXT_PRECISION, NonFiniteNumber, NumberFormatError, NumberRoundingMode,
+    decimal_integer_requires_text,
     decimal_to_big_int, decimal_to_java_i16, decimal_to_java_i32, decimal_to_java_i64,
     decimal_to_java_i8, excel_date_format_code, finite_decimal_f64, format_decimal,
     format_non_finite, java_f32_string, java_f64_string,
