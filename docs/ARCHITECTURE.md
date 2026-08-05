@@ -16,11 +16,11 @@ easyexcel-rust/                       (workspace root)
 │   ├── easyexcel-xlsx/              ← OOXML + event stream backend
 │   ├── easyexcel-csv/               ← CSV/TSV codec
 │   ├── easyexcel-tabular/           ← Markdown/HTML/JSON conversion
-│   └── easyexcel-derive/            ← internal `#[derive(ExcelRow)]` proc macro
-├── easyexcel/                       ← user-facing EasyExcel facade
-├── easyexcel-support/               ← web framework adapters
-├── easyexcel-demo/                  ← read/write/fill/web demos
-├── easyexcel-test/                  ← integration and parity tests
+│   ├── easyexcel-derive/            ← internal `#[derive(ExcelRow)]` proc macro
+│   ├── easyexcel/                    ← user-facing EasyExcel facade
+│   └── easyexcel-{axum,actix,...}/  ← web framework adapters
+├── examples/                         ← read/write/fill/web demos
+├── tests/easyexcel-test/             ← integration and parity tests
 ├── xtask/                           ← audit and maintenance commands
 ├── docs/
 ├── scripts/
@@ -42,12 +42,12 @@ flowchart LR
 
 ## Code Placement Boundary
 
-`easyexcel/src` 不是第二套格式引擎。它只允许保存 Java EasyExcel 工程体验所需的个性化层：builder、listener、converter、handler、上下文、注解元数据适配，以及把这些契约编排到基础引擎的 adapter。
+`crates/easyexcel/src` 不是第二套格式引擎。它只允许保存 Java EasyExcel 工程体验所需的个性化层：builder、listener、converter、handler、上下文、注解元数据适配，以及把这些契约编排到基础引擎的 adapter。
 
 ```mermaid
 flowchart LR
     User["use easyexcel::EasyExcel / easyexcel::{csv,io,model,xls,xlsx}"]
-    Facade["easyexcel/src\nJava API + orchestration + adapters"]
+    Facade["crates/easyexcel/src\nJava API + orchestration + adapters"]
     IO["easyexcel-io\nformat, stream contracts, limits"]
     Model["easyexcel-model\nWorkbook / Sheet / Cell"]
     CSV["easyexcel-csv\ncodec + charset + encoded writer"]
@@ -66,7 +66,7 @@ flowchart LR
     Facade --> Tabular
 ```
 
-| 代码类型 | 唯一归属 | `easyexcel/src` 中允许的形态 |
+| 代码类型 | 唯一归属 | `crates/easyexcel/src` 中允许的形态 |
 |---|---|---|
 | 格式识别、资源限制、RowSource/RowSink | `easyexcel-io` | `easyexcel::io` 显式重导出 |
 | Workbook/Sheet/Cell/Style 中立模型 | `easyexcel-model` | `easyexcel::model` 显式重导出 |
@@ -90,9 +90,9 @@ flowchart LR
 | `write/template_write.rs` 的行 XML、列宽、合并、dimension | `easyexcel-xlsx::xlsx::template_xml` | `CellValue`、`MergeRange` 到中立输入的转换 |
 | `write/template_write.rs` 的 styles.xml 组件合并 | `easyexcel-xlsx::xlsx::template_styles` | `rust_xlsxwriter` 样式编译结果的调用编排 |
 | `util/file_utils.rs`、`util/io_utils.rs` | `easyexcel-io::io::{file_utils,io_utils}` | Java 包路径和错误类型兼容代理 |
-| `write/gzip_spill.rs` 的临时文件/gzip/framing | `easyexcel-io::io::gzip_record` | EasyExcel `CellValue` 二进制 codec |
+| `write/gzip_spill.rs` 的临时文件/gzip/framing/单元格协议 | `easyexcel-io::io::{gzip_record,gzip_cell_record}` | EasyExcel `CellValue` 与中立 `GzipCellValue` 的映射 |
 
-`easyexcel/src/analysis/v03` 中保留的同名文件只做 EasyExcel 错误和事件回调适配，不再实现底层格式算法。`read/xlsx_rows.rs` 与 `write/template_write.rs` 仍然较大，是因为它们承载 listener/cache/handler 和 Java 模板语义；其 ZIP、OPC、BIFF、gzip 与 XML 修改原语已经由基础 crate 提供。
+`crates/easyexcel/src/analysis/v03` 中保留的同名文件只做 EasyExcel 错误和事件回调适配，不再实现底层格式算法。`read/xlsx_rows.rs` 与 `write/template_write.rs` 仍然较大，是因为它们承载 listener/cache/handler 和 Java 模板语义；其 ZIP、OPC、BIFF、gzip 与 XML 修改原语已经由基础 crate 提供。
 
 ## Data Flow
 

@@ -293,3 +293,43 @@ fn read_bytes(buf: &[u8], cursor: &mut usize) -> Result<Vec<u8>> {
     *cursor = end;
     Ok(slice.to_vec())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{GzipCellValue, decode_cell, decode_row, encode_row};
+
+    #[test]
+    fn row_protocol_round_trips_nested_values() {
+        let values = vec![
+            GzipCellValue::Empty,
+            GzipCellValue::Text("文本".to_owned()),
+            GzipCellValue::Comment {
+                value: Box::new(GzipCellValue::Int(7)),
+                text: "批注".to_owned(),
+            },
+            GzipCellValue::Images {
+                value: Box::new(GzipCellValue::Bool(true)),
+                images: vec![vec![1, 2, 3], vec![4, 5]],
+            },
+        ];
+        let encoded = encode_row(&values).expect("encode row");
+        assert_eq!(decode_row(&encoded).expect("decode row"), values);
+    }
+
+    #[test]
+    fn cell_protocol_rejects_unknown_truncated_and_invalid_utf8_payloads() {
+        let mut cursor = 0;
+        assert!(decode_cell(&[99], &mut cursor).is_err());
+
+        cursor = 0;
+        assert!(decode_cell(&[1, 10, 0, 0, 0], &mut cursor).is_err());
+
+        cursor = 0;
+        assert!(decode_cell(&[8, 1, 0, 0, 0, 0xff], &mut cursor).is_err());
+    }
+
+    #[test]
+    fn row_protocol_rejects_truncated_cell_count() {
+        assert!(decode_row(&[1, 0, 0]).is_err());
+    }
+}

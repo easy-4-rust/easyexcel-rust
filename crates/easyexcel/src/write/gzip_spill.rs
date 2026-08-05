@@ -297,36 +297,18 @@ mod tests {
     }
 
     #[test]
-    fn gzip_spill_decode_reports_corrupt_payloads() {
-        let mut cursor = 0usize;
-        // Decimal parse failure.
-        let decimal_err = decode_cell(&[5, 3, 0, 0, 0, b'a', b'b', b'c'], &mut cursor)
+    fn spill_value_adapter_reports_invalid_typed_text() {
+        let decimal_err = from_spill_value(GzipCellValue::Decimal("abc".to_owned()))
             .expect_err("invalid decimal must fail");
         assert!(matches!(decimal_err, ExcelError::Format(_)));
-        // Date parse failure.
-        cursor = 0;
-        let date_err = decode_cell(&[6, 3, 0, 0, 0, b'b', b'a', b'd'], &mut cursor)
+
+        let date_err = from_spill_value(GzipCellValue::Date("bad".to_owned()))
             .expect_err("invalid date must fail");
         assert!(matches!(date_err, ExcelError::Format(_)));
-        // DateTime parse failure (both fallback formats fail).
-        cursor = 0;
-        let datetime_err = decode_cell(&[7, 3, 0, 0, 0, b'b', b'a', b'd'], &mut cursor)
+
+        let datetime_err = from_spill_value(GzipCellValue::DateTime("bad".to_owned()))
             .expect_err("invalid datetime must fail");
         assert!(matches!(datetime_err, ExcelError::Format(_)));
-        // Unknown tag.
-        cursor = 0;
-        let unknown = decode_cell(&[99], &mut cursor).expect_err("unknown tag must fail");
-        assert!(matches!(unknown, ExcelError::Format(_)));
-        // String payload shorter than its declared length.
-        cursor = 0;
-        let truncated =
-            decode_cell(&[1, 10, 0, 0, 0], &mut cursor).expect_err("truncated payload must fail");
-        assert!(matches!(truncated, ExcelError::Format(_)));
-        // Non-UTF-8 string payload.
-        cursor = 0;
-        let invalid_utf8 =
-            decode_cell(&[8, 1, 0, 0, 0, 0xFF], &mut cursor).expect_err("invalid UTF-8 must fail");
-        assert!(matches!(invalid_utf8, ExcelError::Format(_)));
     }
 
     #[test]
@@ -336,7 +318,7 @@ mod tests {
         std::fs::write(&bad_path, b"not a gzip stream").expect("write");
         let mut reader = GzipSpillReader {
             sheet_name: "Sheet1".to_owned(),
-            reader: GzipRecordReader::open_path(bad_path).expect("open"),
+            reader: GzipCellRecordReader::open_path(bad_path).expect("open"),
         };
         let error = reader.next_row().expect_err("corrupt stream must fail");
         assert!(matches!(error, ExcelError::Io(_)));

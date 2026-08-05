@@ -237,3 +237,32 @@ fn selector_label(selector: TemplateSheetSelector<'_>) -> String {
         TemplateSheetSelector::Name(name) => name.to_owned(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{normalize_workbook_target, xml_elements};
+
+    #[test]
+    fn workbook_targets_are_resolved_from_the_xl_workbook_part() {
+        assert_eq!(
+            normalize_workbook_target("xl/worksheets/sheet1.xml").expect("absolute target"),
+            "xl/worksheets/sheet1.xml"
+        );
+        assert_eq!(
+            normalize_workbook_target("worksheets/sheet1.xml").expect("relative target"),
+            "xl/worksheets/sheet1.xml"
+        );
+        assert_eq!(
+            normalize_workbook_target("/xl/styles.xml").expect("root target"),
+            "xl/styles.xml"
+        );
+    }
+
+    #[test]
+    fn xml_element_scanner_matches_complete_tag_names_only() {
+        let xml = r#"<worksheet><row r="1"/><row r="2"/><rowBreaks/></worksheet>"#;
+        let rows = xml_elements(xml, "row").collect::<Vec<_>>();
+        assert_eq!(rows.len(), 2);
+        assert!(xml_elements(xml, "missing").next().is_none());
+    }
+}

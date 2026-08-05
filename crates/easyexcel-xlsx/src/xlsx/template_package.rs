@@ -453,3 +453,96 @@ fn extract_xml_element(xml: &str, tag: &str) -> Option<String> {
     }
     Some(rest[..=self_close + 1].to_owned())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        EMPTY_WORKSHEET_XML, OoxmlZipEntry, blank_worksheet_with_inherited_format,
+        extract_xml_element, insert_before_close_tag, next_relationship_id, next_sheet_id,
+        next_worksheet_part_name,
+    };
+    use zip::CompressionMethod;
+
+    fn worksheet_entry(bytes: Vec<u8>) -> OoxmlZipEntry {
+        OoxmlZipEntry {
+            name: "xl/worksheets/sheet1.xml".to_owned(),
+            is_dir: false,
+            compression: CompressionMethod::Stored,
+            unix_mode: None,
+            bytes,
+        }
+    }
+
+    #[test]
+    fn blank_worksheet_inherits_format_and_columns() {
+        let entries = vec![worksheet_entry(
+            br#"<worksheet><sheetFormatPr defaultRowHeight="20"/><cols><col min="1" max="1" width="30" customWidth="1"/></cols><sheetData/></worksheet>"#.to_vec(),
+        )];
+        let xml = String::from_utf8(blank_worksheet_with_inherited_format(&entries))
+            .expect("blank worksheet XML");
+        assert!(xml.contains("defaultRowHeight=\"20\""));
+        assert!(xml.contains("customWidth=\"1\""));
+        assert!(xml.contains("<sheetData>"));
+    }
+
+    #[test]
+    fn blank_worksheet_falls_back_for_missing_invalid_or_bare_sources() {
+        assert_eq!(
+            blank_worksheet_with_inherited_format(&[]),
+            EMPTY_WORKSHEET_XML.as_bytes()
+        );
+        assert_eq!(
+            blank_worksheet_with_inherited_format(&[worksheet_entry(vec![0xff, 0xfe, 0x00])]),
+            EMPTY_WORKSHEET_XML.as_bytes()
+        );
+        assert_eq!(
+            blank_worksheet_with_inherited_format(&[worksheet_entry(
+                br"<worksheet><sheetData/></worksheet>".to_vec(),
+            )]),
+            EMPTY_WORKSHEET_XML.as_bytes()
+        );
+    }
+
+    #[test]
+    fn package_xml_helpers_cover_success_and_error_paths() {
+        assert_eq!(
+            extract_xml_element(
+                "<worksheet><sheetData><row/></sheetData></worksheet>",
+                "sheetData",
+            ),
+            Some("<sheetData><row/></sheetData>".to_owned())
+        );
+        assert!(extract_xml_element("<sheetData><row/>", "sheetData").is_none());
+        assert!(extract_xml_element("<sheetData", "sheetData").is_none());
+
+        let error = insert_before_close_tag("<a/>", "</b>", "x").expect_err("missing tag");
+        assert!(error.to_string().contains("missing </b>"));
+        assert_eq!(
+            insert_before_close_tag("<a></a>", "</a>", "x").expect("insert"),
+            "<a>x</a>"
+        );
+    }
+
+    #[test]
+    fn package_identifiers_advance_above_existing_values() {
+        let entries = vec![
+            worksheet_entry(Vec::new()),
+            OoxmlZipEntry {
+                name: "xl/worksheets/sheet9.xml".to_owned(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: Vec::new(),
+            },
+        ];
+        assert_eq!(next_worksheet_part_name(&entries), "xl/worksheets/sheet10.xml");
+        assert_eq!(
+            next_relationship_id(r#"<Relationship Id="rId2"/><Relationship Id="rId8"/>"#),
+            "rId9"
+        );
+        assert_eq!(
+            next_sheet_id(r#"<sheets><sheet sheetId="2"/><sheet sheetId="7"/></sheets>"#),
+            8
+        );
+    }
+}

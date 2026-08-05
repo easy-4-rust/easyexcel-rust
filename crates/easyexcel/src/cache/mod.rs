@@ -5,7 +5,7 @@
 //! | Java | Rust | Notes |
 //! |------|------|-------|
 //! | `MapCache` | [`MapCache`] | In-memory `HashMap`-style backend |
-//! | `Ehcache` | [`Ehcache`] | Disk spill via `tempfile`; **not** JVM `PersistentCacheManager` |
+//! | `Ehcache` | [`Ehcache`] | Moka active tier + lossless tempfile backing; **not** JVM `PersistentCacheManager` |
 //! | `XlsCache` | [`XlsCache`] | Pre-built SST table for BIFF reads |
 //! | `SimpleReadCacheSelector` | [`SimpleReadCacheSelector`] | 5 MB (`5_000_000` byte) Auto boundary |
 //! | `EternalReadCacheSelector` | [`EternalReadCacheSelector`] | Pins Memory or Disk regardless of size |
