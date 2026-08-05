@@ -484,7 +484,7 @@ checksum = "4d6867f1565b3aad85681f1015055b087fcfd840d6aeee6eee7f2da317603695"
 dependencies = [
  "autocfg",
  "libm",
- "num-bigint",
+ "num-bigint 0.4.8",
  "num-integer",
  "num-traits",
 ]
@@ -1072,10 +1072,11 @@ dependencies = [
  "getrandom 0.4.3",
  "md-5 0.11.0",
  "ms-offcrypto-writer",
- "num-bigint",
+ "num-bigint 0.5.1",
  "office-crypto",
  "pure-rust-locales",
  "quick-xml 0.41.0",
+ "rand 0.10.2",
  "rand 0.9.5",
  "rust_xlsxwriter",
  "serde",
@@ -1249,7 +1250,7 @@ dependencies = [
  "chrono",
  "easyexcel",
  "easyexcel-macro",
- "num-bigint",
+ "num-bigint 0.5.1",
  "serde",
  "serde_json",
  "tempfile",
@@ -2372,6 +2373,16 @@ name = "num-bigint"
 version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c89e69e7e0f03bea5ef08013795c25018e101932225a656383bd384495ecc367"
+dependencies = [
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
+name = "num-bigint"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93e7820bc0a80a0238e650327316f929ba18d5be054b647490a3a6a339f3e7c0"
 dependencies = [
  "num-integer",
  "num-traits",
@@ -4646,7 +4657,7 @@ dependencies = [
 [[package]]
 name = "xls"
 version = "0.1.0"
-source = "git+https://github.com/easy-4-rust/xls.git?rev=d8ede4fbbe503e7b53f4d7e660df5f478995516c#d8ede4fbbe503e7b53f4d7e660df5f478995516c"
+source = "git+https://github.com/easy-4-rust/xls.git?rev=7e3570654d95b65763cee83316b3533b2645256a#7e3570654d95b65763cee83316b3533b2645256a"
 dependencies = [
  "aes",
  "anyhow",

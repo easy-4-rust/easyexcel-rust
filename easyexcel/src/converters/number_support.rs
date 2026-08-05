@@ -9,7 +9,8 @@ use bigdecimal::{BigDecimal, ToPrimitive};
 use num_bigint::{BigInt, Sign};
 
 use crate::util::number_utils::{
-    NonFiniteNumber, format_decimal, format_non_finite, parse_decimal,
+    NonFiniteNumber, bigint_from_bigdecimal, bigint_to_bigdecimal, format_decimal,
+    format_non_finite, parse_decimal,
 };
 use crate::util::work_book_util::fill_data_format;
 use crate::{CellValue, ExcelError, ReadConverterContext, WriteCellData, WriteConverterContext};
@@ -111,7 +112,7 @@ fn number_error(
 }
 
 fn decimal_to_big_int(value: &BigDecimal) -> BigInt {
-    value.with_scale(0).into_bigint_and_exponent().0
+    bigint_from_bigdecimal(&value.with_scale(0).into_bigint_and_exponent().0)
 }
 
 fn java_signed_low_bytes<const N: usize>(value: &BigInt) -> [u8; N] {
@@ -151,7 +152,7 @@ impl JavaNumber for BigInt {
     }
 
     fn to_decimal(&self) -> Result<BigDecimal, ExcelError> {
-        Ok(BigDecimal::from(self.clone()))
+        Ok(BigDecimal::from(bigint_to_bigdecimal(self)))
     }
 
     fn java_string(&self) -> String {
@@ -412,7 +413,7 @@ mod tests {
             .unwrap();
         assert_eq!(
             cell.value(),
-            &CellValue::Decimal(BigDecimal::from(big.clone()))
+            &CellValue::Decimal(BigDecimal::from(bigint_to_bigdecimal(&big)))
         );
     }
 

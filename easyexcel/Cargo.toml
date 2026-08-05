@@ -30,7 +30,9 @@ cfb.workspace = true
 # MIT OR Apache-2.0）。git 依赖 + rev pin：升级 = 改 rev + cargo update；
 # rev 锁死保证干净 CI checkout 可复现构建（不用仓库外 path，也不 vendor
 # 源码进仓库——fork 活跃演进，vendor 会让升级变成手动同步）。
-xls = { git = "https://github.com/easy-4-rust/xls.git", rev = "d8ede4fbbe503e7b53f4d7e660df5f478995516c", default-features = false }
+# rev 7e35706 = 增强分支 enh-biff8-arrays（动态数组 spill 缓存持久化 +
+# BIFF8 MULRK/MULBLANK/PANE 写入增强）；main=d8ede4f 保持 zemse 官方同步。
+xls = { git = "https://github.com/easy-4-rust/xls.git", rev = "7e3570654d95b65763cee83316b3533b2645256a", default-features = false }
 csv.workspace = true
 encoding_rs.workspace = true
 encoding_rs_io.workspace = true
@@ -46,6 +48,10 @@ getrandom.workspace = true
 md-5.workspace = true
 ms-offcrypto-writer.workspace = true
 rand.workspace = true
+# ms-offcrypto-writer 1.0.7 固定 rand 0.9（其 CryptoRng 来自 rand_core 0.9），
+# 而 workspace rand 0.10.2 的 rng 实现 rand_core 0.10 的 trait——加密路径
+# 只能用 0.9 别名桥接；上游支持 rand 0.10 后移除本依赖并切回 rand::rngs::SysRng。
+rand09 = { package = "rand", version = "0.9" }
 rust_xlsxwriter.workspace = true
 
 [dev-dependencies]

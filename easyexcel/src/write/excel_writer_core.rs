@@ -669,7 +669,9 @@ pub(crate) fn save_encrypted_workbook_to(
     password: &str,
     file: &mut dyn ReadWriteSeek,
 ) -> Result<()> {
-    let mut random = rand::rng();
+    // ms-offcrypto-writer 1.0.7 要求 rand 0.9 的 CryptoRng（rand_core 0.9 trait），
+    // workspace rand 0.10.2 无法满足——经 rand09 别名桥接（见 easyexcel/Cargo.toml）。
+    let mut random = rand09::rng();
     Ecma376AgileWriter::create(&mut random, password, file)
         .map_err(ExcelError::from)
         .and_then(|mut writer| {
@@ -2412,7 +2414,9 @@ pub(crate) fn save_encrypted_bytes_to(
     password: &str,
     file: &mut dyn ReadWriteSeek,
 ) -> Result<()> {
-    let mut random = rand::rng();
+    // ms-offcrypto-writer 1.0.7 要求 rand 0.9 的 CryptoRng（rand_core 0.9 trait），
+    // workspace rand 0.10.2 无法满足——经 rand09 别名桥接（见 easyexcel/Cargo.toml）。
+    let mut random = rand09::rng();
     Ecma376AgileWriter::create(&mut random, password, file)
         .map_err(ExcelError::from)
         .and_then(|mut writer| {
