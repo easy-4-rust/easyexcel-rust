@@ -9,6 +9,8 @@
 //!   is effectively offset from `1899-12-30`.
 //! * **1904 system** (legacy Mac): serial `0` == 1904-01-01.
 
+use std::borrow::Cow;
+
 use chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, NaiveTime, Timelike, Utc};
 
 use super::error::{Error, Result};
@@ -103,6 +105,47 @@ pub fn java_date_format_to_chrono(pattern: &str) -> String {
     output
 }
 
+/// 返回可直接交给 chrono 的日期格式。
+///
+/// 已包含 `%` 的 chrono 格式保持借用；否则按 Java `SimpleDateFormat`
+/// 规则转换，供 EasyExcel annotation/converter 与格式引擎共同使用。
+#[must_use]
+pub fn chrono_date_format(pattern: &str) -> Cow<'_, str> {
+    if pattern.contains('%') {
+        Cow::Borrowed(pattern)
+    } else {
+        Cow::Owned(java_date_format_to_chrono(pattern))
+    }
+}
+
+/// 将日期转换为 Excel 1900 或 1904 日期系统序列号。
+#[must_use]
+pub fn date_to_excel_serial(date: NaiveDate, use_1904_windowing: bool) -> f64 {
+    let system = if use_1904_windowing {
+        DateSystem::Date1904
+    } else {
+        DateSystem::Date1900
+    };
+    let days = system.date_to_serial(date);
+    f64::from(i32::try_from(days).unwrap_or_else(|_| {
+        if days.is_negative() {
+            i32::MIN
+        } else {
+            i32::MAX
+        }
+    }))
+}
+
+/// 将日期时间转换为 Excel 1900 或 1904 日期系统序列号。
+#[must_use]
+pub fn datetime_to_excel_serial(value: NaiveDateTime, use_1904_windowing: bool) -> f64 {
+    let date_part = date_to_excel_serial(value.date(), use_1904_windowing);
+    let time = value.time();
+    let seconds = f64::from(time.num_seconds_from_midnight())
+        + f64::from(time.nanosecond()) / 1_000_000_000.0;
+    date_part + seconds / 86_400.0
+}
+
 impl DateSystem {
     /// Convert a serial number to a `NaiveDateTime`. Returns `None` for serials
     /// that cannot be represented (e.g. negative, or the fictional 1900-02-29
@@ -138,9 +181,17 @@ impl DateSystem {
     pub fn datetime_to_serial(self, dt: NaiveDateTime) -> f64 {
         let date = dt.date();
         let time = dt.time();
-        let frac = (time.num_seconds_from_midnight() as f64) / 86400.0;
+        let seconds = f64::from(time.num_seconds_from_midnight())
+            + f64::from(time.nanosecond()) / 1_000_000_000.0;
+        let frac = seconds / 86_400.0;
         let day_serial = self.date_to_serial(date);
-        day_serial as f64 + frac
+        f64::from(i32::try_from(day_serial).unwrap_or_else(|_| {
+            if day_serial.is_negative() {
+                i32::MIN
+            } else {
+                i32::MAX
+            }
+        })) + frac
     }
 
     /// Convert just a date to its integer serial.

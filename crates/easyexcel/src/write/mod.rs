@@ -33,7 +33,6 @@ pub mod write_options;
 pub mod write_progress;
 pub mod write_sheet;
 pub mod write_xls;
-pub(crate) mod writer_helpers;
 pub mod xlsx_write;
 
 /// ExcelWriter 内部实现拆分模块（追加行写入）。

@@ -3,9 +3,7 @@
 //! 日期/时间与 Excel 数字序列号、字符串之间的转换辅助函数，
 //! 使用 Java 兼容的 `yyyy-MM-dd` / `yyyy-MM-dd HH:mm:ss` 默认格式。
 
-use std::borrow::Cow;
-
-use chrono::{NaiveDate, NaiveDateTime, Timelike};
+use chrono::{NaiveDate, NaiveDateTime};
 
 use crate::util::work_book_util::fill_data_format;
 use crate::{
@@ -25,7 +23,7 @@ pub(crate) fn read_date(context: &ReadConverterContext<'_>) -> Result<NaiveDate,
         return patterns
             .into_iter()
             .find_map(|pattern| {
-                let pattern = chrono_pattern(pattern);
+                let pattern = easyexcel_model::chrono_date_format(pattern);
                 NaiveDate::parse_from_str(value, &pattern).ok()
             })
             .ok_or_else(|| {
@@ -60,7 +58,7 @@ pub(crate) fn read_datetime(
         return patterns
             .into_iter()
             .find_map(|pattern| {
-                let pattern = chrono_pattern(pattern);
+                let pattern = easyexcel_model::chrono_date_format(pattern);
                 NaiveDateTime::parse_from_str(value, &pattern).ok()
             })
             .ok_or_else(|| {
@@ -106,7 +104,11 @@ pub(crate) fn write_date_string(
         .convert_context()
         .effective_date_time_format()
         .unwrap_or("%Y-%m-%d");
-    WriteCellData::from_string(value.format(&chrono_pattern(pattern)).to_string())
+    WriteCellData::from_string(
+        value
+            .format(&easyexcel_model::chrono_date_format(pattern))
+            .to_string(),
+    )
 }
 
 pub(crate) fn write_datetime_string<T>(
@@ -117,22 +119,10 @@ pub(crate) fn write_datetime_string<T>(
         .convert_context()
         .effective_date_time_format()
         .unwrap_or("%Y-%m-%d %H:%M:%S");
-    WriteCellData::from_string(value.format(&chrono_pattern(pattern)).to_string())
-}
-
-fn chrono_pattern(pattern: &str) -> Cow<'_, str> {
-    if pattern.contains('%') {
-        return Cow::Borrowed(pattern);
-    }
-    Cow::Owned(
-        pattern
-            .replace("yyyy", "%Y")
-            .replace("SSS", "%.3f")
-            .replace("MM", "%m")
-            .replace("dd", "%d")
-            .replace("HH", "%H")
-            .replace("mm", "%M")
-            .replace("ss", "%S"),
+    WriteCellData::from_string(
+        value
+            .format(&easyexcel_model::chrono_date_format(pattern))
+            .to_string(),
     )
 }
 
@@ -141,25 +131,17 @@ pub(crate) fn format_number_as_datetime_string(
     pattern: &str,
 ) -> Result<String, ExcelError> {
     let value = NaiveDateTime::from_excel_cell(context.cell(), context.convert_context())?;
-    Ok(value.format(&chrono_pattern(pattern)).to_string())
+    Ok(value
+        .format(&easyexcel_model::chrono_date_format(pattern))
+        .to_string())
 }
 
 pub(crate) fn date_to_excel_serial(value: NaiveDate, use_1904_windowing: bool) -> f64 {
-    let epoch = if use_1904_windowing {
-        NaiveDate::from_ymd_opt(1904, 1, 1).expect("valid Excel epoch")
-    } else if value < NaiveDate::from_ymd_opt(1900, 3, 1).expect("valid Excel boundary") {
-        NaiveDate::from_ymd_opt(1899, 12, 31).expect("valid Excel epoch")
-    } else {
-        NaiveDate::from_ymd_opt(1899, 12, 30).expect("valid Excel epoch")
-    };
-    // Excel 序列号（1899/1900/1904 纪元起的天数）范围远小于 i32 上限，i32→f64 无损
-    f64::from(i32::try_from((value - epoch).num_days()).expect("Excel 日期序列号必然在 i32 范围内"))
+    easyexcel_model::date_to_excel_serial(value, use_1904_windowing)
 }
 
 pub(crate) fn datetime_to_excel_serial(value: NaiveDateTime, use_1904_windowing: bool) -> f64 {
-    let seconds = f64::from(value.time().num_seconds_from_midnight())
-        + f64::from(value.time().nanosecond()) / 1_000_000_000.0;
-    date_to_excel_serial(value.date(), use_1904_windowing) + seconds / 86_400.0
+    easyexcel_model::datetime_to_excel_serial(value, use_1904_windowing)
 }
 
 #[cfg(test)]

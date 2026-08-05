@@ -67,7 +67,7 @@ pub use template_source::{
     xml_elements,
 };
 pub use writer::write;
-pub use xmlutil::{decode_ooxml_escape, local_tag_name};
+pub use xmlutil::{decode_ooxml_escape, local_tag_name, parse_attribute_pairs};
 
 /// Read an XLSX workbook from a path.
 pub fn read_path(path: &std::path::Path) -> Result<Workbook> {

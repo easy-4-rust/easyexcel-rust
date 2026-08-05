@@ -2,6 +2,20 @@
 
 #![allow(dead_code)]
 
+use std::borrow::Cow;
+
+/// 按配置裁剪字符串两端空白。
+///
+/// 未启用裁剪时返回借用，避免写入热路径产生不必要的字符串分配。
+#[must_use]
+pub fn maybe_trim(value: &str, enabled: bool) -> Cow<'_, str> {
+    if enabled {
+        Cow::Owned(value.trim().to_owned())
+    } else {
+        Cow::Borrowed(value)
+    }
+}
+
 /// Mirrors `org.apache.commons.lang3.StringUtils#isEmpty`.
 #[must_use]
 pub fn is_empty(cs: Option<&str>) -> bool {

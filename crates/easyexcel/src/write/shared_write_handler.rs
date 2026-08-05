@@ -59,7 +59,7 @@ impl SharedWriteHandler {
         }
     }
 
-    fn with_mut<R>(&self, action: impl FnOnce(&mut dyn WriteHandler) -> R) -> R {
+    pub(crate) fn with_mut<R>(&self, action: impl FnOnce(&mut dyn WriteHandler) -> R) -> R {
         let mut handler = self
             .inner
             .lock()
@@ -67,7 +67,7 @@ impl SharedWriteHandler {
         action(handler.as_mut())
     }
 
-    fn with_ref<R>(&self, action: impl FnOnce(&dyn WriteHandler) -> R) -> R {
+    pub(crate) fn with_ref<R>(&self, action: impl FnOnce(&dyn WriteHandler) -> R) -> R {
         let handler = self
             .inner
             .lock()

@@ -3,6 +3,10 @@
 //! Tests that use types from `easyexcel-writer` (`LoopMergeStrategy`, etc.)
 
 use super::*;
+use crate::write::handler_execution_scope::HandlerExecutionScope;
+use crate::write::shared_write_handler::{
+    StatefulSheetState, boxed_handlers, normalized_shared_handlers, share_handlers,
+};
 
 // ============================================================================
 // RepetitionDataTest (7 tests) — Repetition
@@ -205,13 +209,13 @@ fn fill_style_annotated_both() {
 }
 
 // ============================================================================
-// writer_helpers.rs tests
+// Canonical writer helper tests
 // ============================================================================
 
 #[test]
 fn writer_global_flags_default() {
     let options = WriteOptions::default();
-    let flags = crate::write::writer_helpers::WriteGlobalFlags::from(&options);
+    let flags = WriteGlobalFlags::from(&options);
     assert!(flags.auto_trim);
     assert!(!flags.use_1904_windowing);
     assert!(!flags.use_scientific_format);
@@ -225,7 +229,7 @@ fn writer_global_flags_with_options() {
         use_scientific_format: true,
         ..WriteOptions::default()
     };
-    let flags = crate::write::writer_helpers::WriteGlobalFlags::from(&options);
+    let flags = WriteGlobalFlags::from(&options);
     assert!(!flags.auto_trim);
     assert!(flags.use_1904_windowing);
     assert!(flags.use_scientific_format);
@@ -238,7 +242,7 @@ fn effective_sheet_name_no_trim() {
         auto_trim: false,
         ..WriteOptions::default()
     };
-    let name = crate::write::writer_helpers::effective_sheet_name(&options);
+    let name = effective_sheet_name(&options);
     assert_eq!(name, "Sheet1");
 }
 
@@ -249,73 +253,67 @@ fn effective_sheet_name_with_trim() {
         auto_trim: true,
         ..WriteOptions::default()
     };
-    let name = crate::write::writer_helpers::effective_sheet_name(&options);
+    let name = effective_sheet_name(&options);
     assert_eq!(name, "Sheet1");
 }
 
 #[test]
 fn maybe_trim_cell_string_no_trim() {
-    let result = crate::write::writer_helpers::maybe_trim_cell_string("  hello  ", false);
+    let result = easyexcel_utils::string_utils::maybe_trim("  hello  ", false);
     assert_eq!(result, "  hello  ");
 }
 
 #[test]
 fn maybe_trim_cell_string_with_trim() {
-    let result = crate::write::writer_helpers::maybe_trim_cell_string("  hello  ", true);
+    let result = easyexcel_utils::string_utils::maybe_trim("  hello  ", true);
     assert_eq!(result, "hello");
 }
 
 #[test]
 fn is_scientific_magnitude_large() {
-    assert!(crate::write::writer_helpers::is_scientific_magnitude(
-        1.5e15
-    ));
-    assert!(crate::write::writer_helpers::is_scientific_magnitude(
-        -1.5e15
-    ));
+    assert!(easyexcel_format::is_scientific_magnitude(1.5e15));
+    assert!(easyexcel_format::is_scientific_magnitude(-1.5e15));
 }
 
 #[test]
 fn is_scientific_magnitude_small() {
-    assert!(crate::write::writer_helpers::is_scientific_magnitude(1e-12));
+    assert!(easyexcel_format::is_scientific_magnitude(1e-12));
 }
 
 #[test]
 fn is_scientific_magnitude_normal() {
-    assert!(!crate::write::writer_helpers::is_scientific_magnitude(
-        100.0
-    ));
-    assert!(!crate::write::writer_helpers::is_scientific_magnitude(0.0));
-    assert!(!crate::write::writer_helpers::is_scientific_magnitude(1.0));
+    assert!(!easyexcel_format::is_scientific_magnitude(100.0));
+    assert!(!easyexcel_format::is_scientific_magnitude(0.0));
+    assert!(!easyexcel_format::is_scientific_magnitude(1.0));
 }
 
 #[test]
 fn share_handlers_empty() {
     let handlers: Vec<Box<dyn WriteHandler>> = vec![];
-    let shared = crate::write::writer_helpers::share_handlers(handlers);
+    let shared = share_handlers(handlers);
     assert!(shared.is_empty());
 }
 
 #[test]
 fn boxed_handlers_roundtrip() {
     let handlers = DefaultWriteHandlerLoader::load_default_handler();
-    let shared = crate::write::writer_helpers::share_handlers(handlers);
-    let boxed = crate::write::writer_helpers::boxed_handlers(&shared);
+    let shared = share_handlers(handlers);
+    let boxed = boxed_handlers(&shared);
     assert!(!boxed.is_empty());
 }
 
 #[test]
 fn handler_execution_scope_root() {
     let handlers = DefaultWriteHandlerLoader::load_default_handler();
-    let shared = crate::write::writer_helpers::share_handlers(handlers);
-    let scope = crate::write::writer_helpers::HandlerExecutionScope::root(&shared);
+    let shared = share_handlers(handlers);
+    let scope = HandlerExecutionScope::root(&shared);
     assert!(!scope.own.is_empty());
     assert!(!scope.effective.is_empty());
 }
 
 #[test]
 fn handler_execution_scope_default() {
-    let scope = crate::write::writer_helpers::HandlerExecutionScope::default();
+    let scope = HandlerExecutionScope::default();
     assert!(scope.own.is_empty());
     assert!(scope.effective.is_empty());
 }
@@ -323,32 +321,32 @@ fn handler_execution_scope_default() {
 #[test]
 fn handler_execution_scope_own_boxed() {
     let handlers = DefaultWriteHandlerLoader::load_default_handler();
-    let shared = crate::write::writer_helpers::share_handlers(handlers);
-    let scope = crate::write::writer_helpers::HandlerExecutionScope::root(&shared);
+    let shared = share_handlers(handlers);
+    let scope = HandlerExecutionScope::root(&shared);
     let boxed = scope.own_boxed();
     assert!(!boxed.is_empty());
 }
 
 #[test]
 fn captured_output_default() {
-    let output = crate::write::writer_helpers::CapturedOutput::default();
-    let bytes = crate::write::writer_helpers::take_captured_output_helper(&output);
+    let output = CapturedOutput::default();
+    let bytes = take_captured_output(&output).unwrap();
     assert_eq!(bytes.len(), 0);
 }
 
 #[test]
 fn captured_output_write_and_read() {
     use std::io::Write;
-    let output = crate::write::writer_helpers::CapturedOutput::default();
+    let output = CapturedOutput::default();
     let mut clone = output.clone();
     clone.write_all(b"hello").unwrap();
     clone.flush().unwrap();
-    let bytes = crate::write::writer_helpers::take_captured_output_helper(&output);
+    let bytes = take_captured_output(&output).unwrap();
     assert_eq!(bytes, b"hello");
 }
 
 // ============================================================================
-// Additional writer_helpers tests
+// Additional canonical writer helper tests
 // ============================================================================
 
 #[test]
@@ -372,12 +370,12 @@ fn normalized_shared_handlers_sorts_by_order_and_dedups() {
             3
         }
     }
-    let shared = crate::write::writer_helpers::share_handlers(vec![
+    let shared = share_handlers(vec![
         Box::new(HandlerA),
         Box::new(HandlerB),
         Box::new(HandlerC),
     ]);
-    let normalized = crate::write::writer_helpers::normalized_shared_handlers(shared);
+    let normalized = normalized_shared_handlers(shared);
     assert_eq!(normalized.len(), 3);
     assert_eq!(normalized[0].order(), 1);
     assert_eq!(normalized[1].order(), 2);
@@ -387,17 +385,17 @@ fn normalized_shared_handlers_sorts_by_order_and_dedups() {
 #[test]
 fn handler_execution_scope_child() {
     let handlers = DefaultWriteHandlerLoader::load_default_handler();
-    let shared = crate::write::writer_helpers::share_handlers(handlers);
-    let root = crate::write::writer_helpers::HandlerExecutionScope::root(&shared);
-    let child = crate::write::writer_helpers::HandlerExecutionScope::child(&shared, &root);
+    let shared = share_handlers(handlers);
+    let root = HandlerExecutionScope::root(&shared);
+    let child = HandlerExecutionScope::child(&shared, &root);
     assert_eq!(child.own.len(), shared.len());
 }
 
 #[test]
 fn handler_execution_scope_effective_boxed() {
     let handlers = DefaultWriteHandlerLoader::load_default_handler();
-    let shared = crate::write::writer_helpers::share_handlers(handlers);
-    let scope = crate::write::writer_helpers::HandlerExecutionScope::root(&shared);
+    let shared = share_handlers(handlers);
+    let scope = HandlerExecutionScope::root(&shared);
     let boxed = scope.effective_boxed();
     assert!(!boxed.is_empty());
 }
@@ -405,9 +403,9 @@ fn handler_execution_scope_effective_boxed() {
 #[test]
 fn handler_execution_scope_child_inherits_parent() {
     let handlers = DefaultWriteHandlerLoader::load_default_handler();
-    let shared = crate::write::writer_helpers::share_handlers(handlers);
-    let root = crate::write::writer_helpers::HandlerExecutionScope::root(&shared);
-    let child = crate::write::writer_helpers::HandlerExecutionScope::child(&[], &root);
+    let shared = share_handlers(handlers);
+    let root = HandlerExecutionScope::root(&shared);
+    let child = HandlerExecutionScope::child(&[], &root);
     assert_eq!(child.own.len(), 0);
     assert_eq!(child.effective.len(), root.effective.len());
 }
@@ -419,7 +417,7 @@ fn stateful_sheet_state_construction() {
     let _sheet = MirroredWriteSheet::new();
     let options = WriteOptions::default();
     let metadata = ExcelWriteMetadata::default();
-    let _state = crate::write::writer_helpers::StatefulSheetState {
+    let _state = StatefulSheetState {
         schema: &[],
         metadata,
         options,
@@ -429,7 +427,7 @@ fn stateful_sheet_state_construction() {
 }
 
 // ============================================================================
-// Additional writer_helpers SharedWriteHandler tests
+// Additional canonical SharedWriteHandler tests
 // ============================================================================
 
 #[test]
@@ -442,7 +440,7 @@ fn shared_write_handler_clone() {
         }
     }
     let handler: Box<dyn WriteHandler> = Box::new(HandlerA);
-    let shared = crate::write::writer_helpers::share_handlers(vec![handler]);
+    let shared = share_handlers(vec![handler]);
     let _cloned = shared.clone();
 }
 
@@ -464,7 +462,7 @@ fn shared_write_handler_with_mut() {
         }
     }
     let handler: Box<dyn WriteHandler> = Box::new(CountingHandler { count: 0 });
-    let shared = crate::write::writer_helpers::share_handlers(vec![handler]);
+    let shared = share_handlers(vec![handler]);
     let context = WriteWorkbookContext::new("/tmp/test.xlsx");
     shared[0].with_mut(|h| {
         h.before_workbook_create(&context).unwrap();
@@ -481,7 +479,7 @@ fn shared_write_handler_with_ref() {
         }
     }
     let handler: Box<dyn WriteHandler> = Box::new(HandlerA);
-    let shared = crate::write::writer_helpers::share_handlers(vec![handler]);
+    let shared = share_handlers(vec![handler]);
     let order = shared[0].with_ref(|h| h.order());
     assert_eq!(order, 0);
 }
@@ -496,14 +494,14 @@ fn shared_write_handler_not_repeat_executor() {
         }
     }
     let handler: Box<dyn WriteHandler> = Box::new(HandlerA);
-    let shared = crate::write::writer_helpers::share_handlers(vec![handler]);
+    let shared = share_handlers(vec![handler]);
     let _ = shared[0].as_not_repeat_executor();
 }
 
 #[test]
 fn stateful_sheet_state_struct_access() {
     use crate::core::ExcelWriteMetadata;
-    let _state = crate::write::writer_helpers::StatefulSheetState {
+    let _state = StatefulSheetState {
         schema: &[],
         metadata: ExcelWriteMetadata::default(),
         options: WriteOptions::default(),

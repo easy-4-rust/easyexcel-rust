@@ -2,6 +2,14 @@
 
 #![allow(dead_code)]
 
+/// 返回无符号 32 位整数的低 8 位。
+///
+/// 供 Java `short`/POI 调色板等兼容入口使用；位级截断语义集中在基础工具层。
+#[must_use]
+pub const fn low_u8(value: u32) -> u8 {
+    value.to_le_bytes()[0]
+}
+
 /// Mirrors `com.google.common.primitives.Ints#saturatedCast`.
 ///
 /// Clamps a wider integer (`i64`) into `i32` instead of panicking on

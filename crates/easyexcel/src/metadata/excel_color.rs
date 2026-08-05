@@ -20,7 +20,7 @@ impl ExcelColor {
     pub const fn java_or_rgb(value: u32) -> Self {
         if value <= 64 {
             // Java palette indexes fit into a single `u8`.
-            Self::Indexed(value.to_le_bytes()[0])
+            Self::Indexed(easyexcel_utils::int_utils::low_u8(value))
         } else {
             Self::Rgb(value)
         }

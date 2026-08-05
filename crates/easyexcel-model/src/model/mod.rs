@@ -9,7 +9,9 @@ pub mod value;
 mod workbook;
 
 pub use addr::{CellAddress, CellRange};
-pub use dates::DateSystem;
+pub use dates::{
+    DateSystem, chrono_date_format, date_to_excel_serial, datetime_to_excel_serial,
+};
 pub use error::{CellError, Error, Result};
 pub use value::CellValue;
 pub use workbook::{

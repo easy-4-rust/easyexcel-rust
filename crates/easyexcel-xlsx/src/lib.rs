@@ -7,7 +7,7 @@ pub use xlsx::{
     ResolvedImageAnchor, RichTextSegment, TemplateCollectionFill, TemplateFillData,
     TemplateFillDirection, TemplateSheetSelector, append_rows_to_sheet, append_rows_to_xml,
     decode_ooxml_escape, dimension_last_row, encrypt_package_to, has_template, load_template_bytes,
-    local_tag_name, looks_like_zip,
+    local_tag_name, looks_like_zip, parse_attribute_pairs,
     normalize_workbook_target, read, read_path, read_path_with_password, read_with_password,
     parse_a1_cell_range, parse_a1_cell_reference, parse_xlsx_index, parse_xlsx_row_number,
     render_typed_cell,

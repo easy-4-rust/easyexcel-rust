@@ -4,7 +4,6 @@
 //! 原文件：easyexcel-core/src/main/java/com/alibaba/excel/ExcelWriter.java
 
 use std::any::type_name;
-use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use std::path::Path;
@@ -153,23 +152,6 @@ pub(crate) fn effective_sheet_name(options: &WriteOptions) -> String {
     } else {
         options.sheet_name.clone()
     }
-}
-
-/// Trims string cell text when auto-trim is enabled.
-///
-/// 关闭 `auto_trim` 时返回借用（零拷贝）：XLSX 热路径每字符串单元格原本
-/// 固定产生一次 `String` 分配，此改动将其消除；仅开启 `auto_trim` 时才会分配。
-pub(crate) fn maybe_trim_cell_string(value: &str, auto_trim: bool) -> Cow<'_, str> {
-    if auto_trim {
-        Cow::Owned(value.trim().to_owned())
-    } else {
-        Cow::Borrowed(value)
-    }
-}
-
-/// 对应 Java：NumberUtils 的极值科学计数法阈值。
-pub(crate) fn is_scientific_magnitude(value: f64) -> bool {
-    easyexcel_format::is_scientific_magnitude(value)
 }
 
 pub(crate) fn validate_stateful_backend(is_csv: bool, password: Option<&str>) -> Result<()> {
@@ -1113,7 +1095,7 @@ pub(crate) fn cell_value_to_biff8(
         CellValue::Empty => Ok(Biff8Cell::general(Biff8Value::Blank)),
         CellValue::String(text) | CellValue::Error(text) | CellValue::Hyperlink { text, .. } => {
             Ok(Biff8Cell::general(Biff8Value::Text(
-                maybe_trim_cell_string(text, global.auto_trim).into_owned(),
+                easyexcel_utils::string_utils::maybe_trim(text, global.auto_trim).into_owned(),
             )))
         }
         CellValue::Formula(text) => Ok(Biff8Cell::general(Biff8Value::Formula(text.clone()))),
@@ -1151,7 +1133,8 @@ pub(crate) fn cell_value_to_biff8(
             cell_value_to_biff8(value, global)
         }
         CellValue::RichText(rich) => Ok(Biff8Cell::general(Biff8Value::Text(
-            maybe_trim_cell_string(rich.text_string(), global.auto_trim).into_owned(),
+            easyexcel_utils::string_utils::maybe_trim(rich.text_string(), global.auto_trim)
+                .into_owned(),
         ))),
         CellValue::Image(bytes) => {
             // Write base value, image bytes handled by caller
@@ -1529,10 +1512,6 @@ impl HandlerHolderScope {
     }
 }
 
-pub(crate) fn excel_column_width_pixels(width: u16) -> u32 {
-    generation::column_width_pixels(width)
-}
-
 /// Sets an OOXML column width that serializes as exact character units.
 ///
 /// Java / POI `Sheet.setColumnWidth(col, chars * 256)` becomes
@@ -1545,10 +1524,6 @@ pub(crate) fn set_xlsx_column_width_chars(
     chars: u16,
 ) -> Result<()> {
     generation::set_column_width_chars(worksheet, column, chars).map_err(format_error)
-}
-
-pub(crate) fn excel_row_height_pixels(height: Option<u16>) -> u32 {
-    generation::row_height_pixels(height)
 }
 
 pub(crate) fn write_sheet_to_workbook<T, I>(
@@ -3571,7 +3546,7 @@ fn write_cell(
     {
         match value {
             CellValue::String(text) | CellValue::Error(text) => {
-                let text = maybe_trim_cell_string(text, global.auto_trim);
+                let text = easyexcel_utils::string_utils::maybe_trim(text, global.auto_trim);
                 if text.is_empty() {
                     // 空字符串经带格式写入会落成空白单元格（store_string 语义），
                     // 无格式写入则整格跳过——为保持优化前输出，回退带格式路径。
@@ -3594,7 +3569,7 @@ fn write_cell(
             CellValue::Float(number) => {
                 if global.use_scientific_format
                     && metadata.effective_number_format().is_none()
-                    && is_scientific_magnitude(*number)
+                    && easyexcel_format::is_scientific_magnitude(*number)
                 {
                     // 科学计数法需要数字格式，落入下方带格式路径。
                 } else {
@@ -3615,7 +3590,7 @@ fn write_cell(
                 }
                 if global.use_scientific_format
                     && metadata.effective_number_format().is_none()
-                    && is_scientific_magnitude(numeric)
+                    && easyexcel_format::is_scientific_magnitude(numeric)
                 {
                     // 科学计数法需要数字格式，落入下方带格式路径。
                 } else {
@@ -3640,7 +3615,7 @@ fn write_cell(
                 .map_err(format_error)?;
         }
         CellValue::String(value) | CellValue::Error(value) => {
-            let text = maybe_trim_cell_string(value, global.auto_trim);
+            let text = easyexcel_utils::string_utils::maybe_trim(value, global.auto_trim);
             generation::write_string_with_format(
                 worksheet,
                 row_index,
@@ -3661,7 +3636,7 @@ fn write_cell(
             let mut cell_format = format.clone();
             if global.use_scientific_format
                 && metadata.effective_number_format().is_none()
-                && is_scientific_magnitude(*value)
+                && easyexcel_format::is_scientific_magnitude(*value)
             {
                 cell_format = generation::with_number_format(cell_format, "0.#####E0");
             }
@@ -3690,7 +3665,7 @@ fn write_cell(
             let mut cell_format = format.clone();
             if global.use_scientific_format
                 && metadata.effective_number_format().is_none()
-                && is_scientific_magnitude(numeric)
+                && easyexcel_format::is_scientific_magnitude(numeric)
             {
                 cell_format = generation::with_number_format(cell_format, "0.#####E0");
             }
@@ -3704,7 +3679,7 @@ fn write_cell(
             .map_err(format_error)?;
         }
         CellValue::Date(value) => {
-            let number_format = excel_date_format(
+            let number_format = easyexcel_format::excel_date_format_code(
                 metadata.effective_date_time_format(),
                 "yyyy-mm-dd",
             );
@@ -3721,7 +3696,7 @@ fn write_cell(
             }
         }
         CellValue::DateTime(value) => {
-            let number_format = excel_date_format(
+            let number_format = easyexcel_format::excel_date_format_code(
                 metadata.effective_date_time_format(),
                 "yyyy-mm-dd hh:mm:ss",
             );
@@ -4177,10 +4152,6 @@ pub(crate) fn finite_decimal_f64(value: &BigDecimal, format: &str) -> Result<f64
 
 pub(crate) fn decimal_integer_requires_text(value: &BigDecimal) -> Result<bool> {
     easyexcel_format::decimal_integer_requires_text(value).map_err(format_error)
-}
-
-fn excel_date_format(format: Option<&str>, default: &str) -> String {
-    easyexcel_format::excel_date_format_code(format, default)
 }
 
 pub(crate) fn to_column(index: usize) -> Result<u16> {

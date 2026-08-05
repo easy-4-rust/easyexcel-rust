@@ -66,12 +66,7 @@ impl XlsxTagHandler for CountTagHandler {
         if local != "dimension" {
             return;
         }
-        let mut map = HashMap::new();
-        for token in attrs.split_whitespace() {
-            if let Some((key, value)) = token.split_once('=') {
-                map.insert(key.to_owned(), value.to_owned());
-            }
-        }
+        let map = easyexcel_xlsx::parse_attribute_pairs(attrs);
         let _ = self.start_dimension(&map);
     }
 }

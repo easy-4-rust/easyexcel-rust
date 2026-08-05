@@ -11,7 +11,7 @@ use crate::write::excel_writer_core::{
     validate_csv_options, validate_excel_row_schema, write_csv_to,
 };
 use crate::write::write_options::WriteOptions;
-use crate::write::writer_helpers::CapturedOutput;
+use easyexcel_io::SharedByteBuffer as CapturedOutput;
 
 fn take_captured_output(output: &CapturedOutput) -> Result<Vec<u8>> {
     output.take().map_err(ExcelError::Io)

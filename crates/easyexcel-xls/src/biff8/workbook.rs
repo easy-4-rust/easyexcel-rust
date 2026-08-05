@@ -16,7 +16,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::io::{Cursor, Write};
 use std::path::Path;
 
-use chrono::{NaiveDate, NaiveDateTime, Timelike};
+use chrono::{NaiveDate, NaiveDateTime};
 use easyexcel_io::{Error as ExcelError, Result};
 
 use super::cached::Biff8Cached;
@@ -464,17 +464,7 @@ pub fn date_to_excel_serial(date: NaiveDate) -> f64 {
 /// Never in practice; the 1899/1900/1904 epoch constants are statically valid.
 #[must_use]
 pub fn date_to_excel_serial_with_windowing(date: NaiveDate, use_1904_windowing: bool) -> f64 {
-    let epoch = if use_1904_windowing {
-        // Excel 1904 system: day 0 is 1904-01-01.
-        NaiveDate::from_ymd_opt(1904, 1, 1).expect("valid epoch")
-    } else if date < NaiveDate::from_ymd_opt(1900, 3, 1).expect("valid Excel boundary") {
-        // Before March 1900 there is no fictitious leap day to compensate for.
-        NaiveDate::from_ymd_opt(1899, 12, 31).expect("valid epoch")
-    } else {
-        // From March 1900 onward, include Excel's fictitious 1900-02-29.
-        NaiveDate::from_ymd_opt(1899, 12, 30).expect("valid epoch")
-    };
-    f64::from(i32::try_from((date - epoch).num_days()).unwrap_or(i32::MAX))
+    easyexcel_model::date_to_excel_serial(date, use_1904_windowing)
 }
 
 /// Converts a naive date-time to an Excel serial (date + fraction of day).
@@ -489,11 +479,7 @@ pub fn datetime_to_excel_serial_with_windowing(
     value: NaiveDateTime,
     use_1904_windowing: bool,
 ) -> f64 {
-    let date_part = date_to_excel_serial_with_windowing(value.date(), use_1904_windowing);
-    let time = value.time();
-    let seconds = f64::from(time.num_seconds_from_midnight())
-        + f64::from(time.nanosecond()) / 1_000_000_000.0;
-    date_part + seconds / 86_400.0
+    easyexcel_model::datetime_to_excel_serial(value, use_1904_windowing)
 }
 
 /// Builds the BIFF8 `Workbook` stream (globals + worksheet substreams).

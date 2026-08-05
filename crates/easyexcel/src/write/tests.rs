@@ -4730,8 +4730,8 @@ fn image_anchor_layout_and_validation_cover_java_coordinate_boundaries() -> Resu
     assert_eq!(layout.column_width(2), 0);
     assert_eq!(layout.row_height(0), 24);
     assert_eq!(layout.row_height(1), 40);
-    assert_eq!(excel_column_width_pixels(0), 0);
-    assert_eq!(excel_row_height_pixels(None), 20);
+    assert_eq!(easyexcel_xlsx::xlsx::generation::column_width_pixels(0), 0);
+    assert_eq!(easyexcel_xlsx::xlsx::generation::row_height_pixels(None), 20);
     assert_eq!(resolve_anchor_coordinate(4, Some(3), Some(8), "row")?, 3);
     assert_eq!(resolve_anchor_coordinate(4, Some(0), Some(-2), "row")?, 2);
     assert_eq!(resolve_anchor_coordinate(4, None, None, "row")?, 4);
@@ -6722,47 +6722,47 @@ fn biff8_valign_returns_distributed() {
 
 #[test]
 fn is_scientific_magnitude_large_positive() {
-    assert!(is_scientific_magnitude(1e11));
+    assert!(easyexcel_format::is_scientific_magnitude(1e11));
 }
 
 #[test]
 fn is_scientific_magnitude_large_negative() {
-    assert!(is_scientific_magnitude(-1e12));
+    assert!(easyexcel_format::is_scientific_magnitude(-1e12));
 }
 
 #[test]
 fn is_scientific_magnitude_small_positive() {
-    assert!(is_scientific_magnitude(1e-11));
+    assert!(easyexcel_format::is_scientific_magnitude(1e-11));
 }
 
 #[test]
 fn is_scientific_magnitude_small_negative() {
-    assert!(is_scientific_magnitude(-1e-11));
+    assert!(easyexcel_format::is_scientific_magnitude(-1e-11));
 }
 
 #[test]
 fn is_scientific_magnitude_zero_is_false() {
-    assert!(!is_scientific_magnitude(0.0));
+    assert!(!easyexcel_format::is_scientific_magnitude(0.0));
 }
 
 #[test]
 fn is_scientific_magnitude_normal_positive() {
-    assert!(!is_scientific_magnitude(1.0));
+    assert!(!easyexcel_format::is_scientific_magnitude(1.0));
 }
 
 #[test]
 fn is_scientific_magnitude_normal_negative() {
-    assert!(!is_scientific_magnitude(-100.0));
+    assert!(!easyexcel_format::is_scientific_magnitude(-100.0));
 }
 
 #[test]
 fn is_scientific_magnitude_boundary_1e11() {
-    assert!(is_scientific_magnitude(1e11));
+    assert!(easyexcel_format::is_scientific_magnitude(1e11));
 }
 
 #[test]
 fn is_scientific_magnitude_boundary_1e_10() {
-    assert!(is_scientific_magnitude(1e-10));
+    assert!(easyexcel_format::is_scientific_magnitude(1e-10));
 }
 
 #[test]

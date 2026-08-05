@@ -7,8 +7,7 @@ use std::collections::HashMap;
 use crate::core::{ExcelColumn, ExcelWriteMetadata, Result, WriteHandler};
 
 use crate::write::excel_writer_core::{
-    collect_handler_content_row_height, collect_handler_head_row_height, excel_column_width_pixels,
-    excel_row_height_pixels, to_column,
+    collect_handler_content_row_height, collect_handler_head_row_height, to_column,
 };
 use crate::write::write_options::WriteOptions;
 
@@ -49,7 +48,10 @@ impl ImageLayout {
         let mut column_widths = HashMap::new();
         // Explicit WriteOptions widths win (same precedence as sheet write path).
         for (column, width) in &options.column_widths {
-            column_widths.insert(*column, excel_column_width_pixels(*width));
+            column_widths.insert(
+                *column,
+                easyexcel_xlsx::xlsx::generation::column_width_pixels(*width),
+            );
         }
         // Annotation `@ColumnWidth` / type-level column width.
         for (physical_index, _, column) in columns {
@@ -58,7 +60,10 @@ impl ImageLayout {
                 continue;
             }
             if let Some(width) = column.column_width.or(metadata.column_width) {
-                column_widths.insert(physical_index, excel_column_width_pixels(width));
+                column_widths.insert(
+                    physical_index,
+                    easyexcel_xlsx::xlsx::generation::column_width_pixels(width),
+                );
             }
         }
         // Registered handler strategies override annotation widths so image
@@ -75,17 +80,20 @@ impl ImageLayout {
             }
             for handler in handlers {
                 if let Some(width) = handler.style_column_width(usize::from(physical_index)) {
-                    column_widths.insert(physical_index, excel_column_width_pixels(width));
+                    column_widths.insert(
+                        physical_index,
+                        easyexcel_xlsx::xlsx::generation::column_width_pixels(width),
+                    );
                 }
             }
         }
         Ok(Self {
             column_widths,
             head_rows,
-            head_row_height: excel_row_height_pixels(
+            head_row_height: easyexcel_xlsx::xlsx::generation::row_height_pixels(
                 collect_handler_head_row_height(handlers).or(metadata.head_row_height),
             ),
-            content_row_height: excel_row_height_pixels(
+            content_row_height: easyexcel_xlsx::xlsx::generation::row_height_pixels(
                 collect_handler_content_row_height(handlers).or(metadata.content_row_height),
             ),
         })

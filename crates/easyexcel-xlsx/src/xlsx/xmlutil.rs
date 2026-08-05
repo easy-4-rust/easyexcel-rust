@@ -1,5 +1,7 @@
 //! Small helpers shared by the XLSX reader/writer for quick-xml.
 
+use std::collections::HashMap;
+
 use quick_xml::XmlVersion;
 use quick_xml::escape::resolve_predefined_entity;
 use quick_xml::events::{BytesEnd, BytesRef, BytesStart, BytesText};
@@ -9,6 +11,20 @@ use quick_xml::name::QName;
 #[must_use]
 pub fn local_tag_name(name: &str) -> &str {
     name.rsplit(':').next().unwrap_or(name)
+}
+
+/// 解析 EasyExcel SAX 兼容层使用的空白分隔 `key=value` 属性袋。
+///
+/// 真正的 OOXML 事件读取由 `quick-xml` 完成；该格式用于把已解码属性传给
+/// Java 风格 `XlsxTagHandler`，因此统一放在 XLSX 引擎层，避免各 handler
+/// 重复实现字符串切分。
+#[must_use]
+pub fn parse_attribute_pairs(attributes: &str) -> HashMap<String, String> {
+    attributes
+        .split_whitespace()
+        .filter_map(|token| token.split_once('='))
+        .map(|(key, value)| (key.to_owned(), value.to_owned()))
+        .collect()
 }
 
 /// 解码 OOXML 文本中的 `_xHHHH_` 转义序列。

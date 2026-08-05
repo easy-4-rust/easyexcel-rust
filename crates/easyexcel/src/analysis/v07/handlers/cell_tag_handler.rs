@@ -134,7 +134,7 @@ impl XlsxTagHandler for CellTagHandler {
         if local != "c" {
             return;
         }
-        let map = parse_attr_pairs(attrs);
+        let map = easyexcel_xlsx::parse_attribute_pairs(attrs);
         let _ = self.start_cell(&map, 0, self.column_index.unwrap_or(0));
     }
 
@@ -151,17 +151,6 @@ impl XlsxTagHandler for CellTagHandler {
     fn characters(&mut self, ch: &str) {
         self.append_characters(ch);
     }
-}
-
-/// Parses a space-separated `key=value` attribute bag used by [`XlsxTagHandler`].
-fn parse_attr_pairs(attrs: &str) -> HashMap<String, String> {
-    let mut map = HashMap::new();
-    for token in attrs.split_whitespace() {
-        if let Some((key, value)) = token.split_once('=') {
-            map.insert(key.to_owned(), value.to_owned());
-        }
-    }
-    map
 }
 
 #[cfg(test)]
