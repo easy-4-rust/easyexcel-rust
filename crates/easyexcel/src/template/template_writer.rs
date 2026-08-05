@@ -9,8 +9,7 @@ use crate::core::{CellValue, ExcelError, Result};
 use crate::write::ExcelOutputStream;
 
 use crate::template::fill_engine::{
-    append_rows_to_sheet, attribute_value, replace_collection_fills_in_sheet,
-    replace_scalar_cells_in_sheet,
+    append_rows_to_sheet, replace_collection_fills_in_sheet, replace_scalar_cells_in_sheet,
 };
 use crate::template::sheet_fill_state::{
     PendingCollectionFill, PendingSheetFill, ResolvedSheetFill,
@@ -437,8 +436,7 @@ pub fn fill_xlsx_template_list(
 /// `TemplateData` scalar values. 对应 Java：'s HSSFWorkbook-level fill
 /// for XLS workbooks.
 fn fill_xls_template_scalar(template: &Path, output: &Path, data: &TemplateData) -> Result<()> {
-    let bytes = std::fs::read(template)?;
-    let mut pkg = crate::write::biff8::Biff8TemplatePackage::from_bytes(&bytes)?;
+    let mut pkg = crate::write::biff8::Biff8TemplatePackage::from_path(template)?;
     let placeholders = pkg.scan_placeholders();
     for (sheet_name, row, col, text) in &placeholders {
         let key = text
@@ -460,8 +458,7 @@ fn fill_xls_template_list(
     data: &FillWrapper,
     _config: FillConfig,
 ) -> Result<()> {
-    let bytes = std::fs::read(template)?;
-    let mut pkg = crate::write::biff8::Biff8TemplatePackage::from_bytes(&bytes)?;
+    let mut pkg = crate::write::biff8::Biff8TemplatePackage::from_path(template)?;
     let placeholders = pkg.scan_placeholders();
     let prefix = data.name().map(|n| format!("{n}.")).unwrap_or_default();
     let is_dot = prefix.is_empty();
@@ -510,13 +507,11 @@ pub(crate) fn load_entries(path: &Path) -> Result<Vec<TemplateEntry>> {
             "legacy XLS template fill is not supported".to_owned(),
         ));
     }
-    Ok(easyexcel_xlsx::OoxmlPackage::from_bytes(&std::fs::read(path)?)?.into_entries())
+    Ok(easyexcel_xlsx::OoxmlPackage::from_path(path)?.into_entries())
 }
 
-fn load_entries_from_reader(mut reader: Box<dyn Read + '_>) -> Result<Vec<TemplateEntry>> {
-    let mut bytes = Vec::new();
-    reader.read_to_end(&mut bytes)?;
-    load_entries_from(Box::new(Cursor::new(bytes)))
+fn load_entries_from_reader(reader: Box<dyn Read + '_>) -> Result<Vec<TemplateEntry>> {
+    Ok(easyexcel_xlsx::OoxmlPackage::from_stream(reader)?.into_entries())
 }
 
 pub(crate) fn load_entries_from(reader: Box<dyn ReadSeek>) -> Result<Vec<TemplateEntry>> {
@@ -524,139 +519,25 @@ pub(crate) fn load_entries_from(reader: Box<dyn ReadSeek>) -> Result<Vec<Templat
 }
 
 pub(crate) fn worksheet_path(entries: &[TemplateEntry], sheet: &TemplateSheet) -> Result<String> {
-    let workbook = entries
-        .iter()
-        .find(|entry| entry.name.eq_ignore_ascii_case("xl/workbook.xml"));
-    let relationships = entries.iter().find(|entry| {
-        entry
-            .name
-            .eq_ignore_ascii_case("xl/_rels/workbook.xml.rels")
-    });
-    if let (Some(workbook), Some(relationships)) = (workbook, relationships) {
-        let workbook = std::str::from_utf8(&workbook.bytes)
-            .map_err(|error| ExcelError::Format(error.to_string()))?;
-        let relationships = std::str::from_utf8(&relationships.bytes)
-            .map_err(|error| ExcelError::Format(error.to_string()))?;
-        let sheets = workbook_sheets(workbook);
-        let selected = match sheet {
-            TemplateSheet::First => sheets.first(),
-            TemplateSheet::Index(index) => sheets.get(*index),
-            TemplateSheet::Name(name) => sheets.iter().find(|(sheet_name, _)| sheet_name == name),
-        }
-        .ok_or_else(|| ExcelError::SheetNotFound(template_sheet_label(sheet)))?;
-        let target = workbook_relationship_target(relationships, &selected.1).ok_or_else(|| {
-            ExcelError::Format(format!(
-                "workbook relationship {} for sheet {} is missing",
-                selected.1, selected.0
-            ))
-        })?;
-        let normalized = normalize_workbook_target(target)?;
-        return entries
-            .iter()
-            .find(|entry| entry.name.eq_ignore_ascii_case(&normalized))
-            .map(|entry| entry.name.clone())
-            .ok_or_else(|| {
-                ExcelError::Format(format!(
-                    "worksheet part {normalized} for sheet {} is missing",
-                    selected.0
-                ))
-            });
-    }
-
-    let worksheets = entries
-        .iter()
-        .filter(|entry| {
-            entry.name.starts_with("xl/worksheets/")
-                && Path::new(&entry.name)
-                    .extension()
-                    .is_some_and(|extension| extension.eq_ignore_ascii_case("xml"))
-        })
-        .collect::<Vec<_>>();
-    let index = match sheet {
-        TemplateSheet::First => 0,
-        TemplateSheet::Index(index) => *index,
-        TemplateSheet::Name(name) => {
-            return Err(ExcelError::SheetNotFound(name.clone()));
-        }
+    let selector = match sheet {
+        TemplateSheet::First => easyexcel_xlsx::TemplateSheetSelector::First,
+        TemplateSheet::Index(index) => easyexcel_xlsx::TemplateSheetSelector::Index(*index),
+        TemplateSheet::Name(name) => easyexcel_xlsx::TemplateSheetSelector::Name(name),
     };
-    worksheets
-        .get(index)
-        .map(|entry| entry.name.clone())
-        .ok_or_else(|| ExcelError::SheetNotFound(template_sheet_label(sheet)))
+    easyexcel_xlsx::worksheet_path(entries, selector).map_err(map_template_source_error)
 }
 
-pub(crate) fn workbook_sheets(xml: &str) -> Vec<(String, String)> {
-    xml_elements(xml, "sheet")
-        .filter_map(|element| {
-            Some((
-                attribute_value(element, "name")?.to_owned(),
-                attribute_value(element, "r:id")?.to_owned(),
-            ))
-        })
-        .collect()
-}
+pub(crate) use easyexcel_xlsx::{normalize_workbook_target, workbook_sheets};
+#[cfg(test)]
+pub(crate) use easyexcel_xlsx::xml_elements;
 
-fn workbook_relationship_target<'a>(xml: &'a str, relationship_id: &str) -> Option<&'a str> {
-    xml_elements(xml, "Relationship")
-        .find(|element| attribute_value(element, "Id") == Some(relationship_id))
-        .and_then(|element| attribute_value(element, "Target"))
-}
-
-pub(crate) fn xml_elements<'a>(xml: &'a str, name: &'a str) -> impl Iterator<Item = &'a str> {
-    let marker = format!("<{name}");
-    let mut offset = 0;
-    std::iter::from_fn(move || {
-        while let Some(relative_start) = xml[offset..].find(&marker) {
-            let start = offset + relative_start;
-            let after_name = start + marker.len();
-            if xml
-                .as_bytes()
-                .get(after_name)
-                .is_some_and(u8::is_ascii_alphanumeric)
-            {
-                offset = after_name;
-                continue;
-            }
-            let end = start + xml[start..].find('>')? + 1;
-            offset = end;
-            return Some(&xml[start..end]);
-        }
-        None
-    })
-}
-
-pub(crate) fn normalize_workbook_target(target: &str) -> Result<String> {
-    let candidate = target
-        .strip_prefix('/')
-        .map_or_else(|| format!("xl/{target}"), str::to_owned);
-    let mut components = Vec::new();
-    for component in candidate.split('/') {
-        match component {
-            "" | "." => {}
-            ".." => {
-                if components.pop().is_none() {
-                    return Err(ExcelError::Format(format!(
-                        "worksheet target escapes package root: {target}"
-                    )));
-                }
-            }
-            component => components.push(component),
-        }
+fn map_template_source_error(error: easyexcel_io::Error) -> ExcelError {
+    if let easyexcel_io::Error::Xlsx(message) = &error
+        && let Some(name) = message.strip_prefix("worksheet not found: ")
+    {
+        return ExcelError::SheetNotFound(name.to_owned());
     }
-    if components.is_empty() {
-        return Err(ExcelError::Format(format!(
-            "worksheet target is empty: {target}"
-        )));
-    }
-    Ok(components.join("/"))
-}
-
-fn template_sheet_label(sheet: &TemplateSheet) -> String {
-    match sheet {
-        TemplateSheet::First => "0".to_owned(),
-        TemplateSheet::Index(index) => index.to_string(),
-        TemplateSheet::Name(name) => name.clone(),
-    }
+    ExcelError::from(error)
 }
 
 pub(crate) fn write_entries(path: &Path, entries: &[TemplateEntry]) -> Result<()> {

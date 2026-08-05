@@ -22,8 +22,8 @@ impl Converter<String> for StringImageConverter {
         &self,
         context: &WriteConverterContext<'_, String>,
     ) -> Result<WriteCellData, ExcelError> {
-        std::fs::read(context.value())
+        easyexcel_io::io::file_utils::read_file(std::path::Path::new(context.value()))
             .map(WriteCellData::from_image)
-            .map_err(Into::into)
+            .map_err(ExcelError::from)
     }
 }

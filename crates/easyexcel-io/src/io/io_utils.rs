@@ -19,6 +19,20 @@ pub fn copy(reader: &mut dyn Read, writer: &mut dyn Write) -> Result<u64, ExcelE
     Ok(n)
 }
 
+/// 读取输入流剩余的全部字节。
+pub fn read_all(reader: &mut dyn Read) -> Result<Vec<u8>, ExcelError> {
+    let mut bytes = Vec::new();
+    reader.read_to_end(&mut bytes)?;
+    Ok(bytes)
+}
+
+/// 写入全部字节并刷新输出流。
+pub fn write_all_and_flush(writer: &mut dyn Write, bytes: &[u8]) -> Result<(), ExcelError> {
+    writer.write_all(bytes)?;
+    writer.flush()?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests_extra {
     use super::*;

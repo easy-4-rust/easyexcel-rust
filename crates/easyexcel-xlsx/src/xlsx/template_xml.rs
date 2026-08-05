@@ -21,6 +21,24 @@ pub enum TemplateCellValue {
     Date(String),
     /// 不含外层 `<f>` 的公式表达式。
     Formula(String),
+    /// Excel 错误文本。
+    Error(String),
+}
+
+impl TemplateCellValue {
+    /// 返回适合占位符字符串替换的显示文本。
+    #[must_use]
+    pub fn as_text(&self) -> String {
+        match self {
+            Self::Empty => String::new(),
+            Self::Text(value)
+            | Self::Number(value)
+            | Self::Date(value)
+            | Self::Formula(value)
+            | Self::Error(value) => value.clone(),
+            Self::Bool(value) => value.to_string(),
+        }
+    }
 }
 
 /// 工作表绝对合并区域。
@@ -215,6 +233,10 @@ pub fn render_cell(reference: &str, value: &TemplateCellValue, style: Option<u32
         TemplateCellValue::Formula(formula) => {
             format!("{start}<f>{}</f></c>", escape_xml(formula))
         }
+        TemplateCellValue::Error(error) => format!(
+            "<c r=\"{reference}\"{style_attribute} t=\"e\"><v>{}</v></c>",
+            escape_xml(error)
+        ),
     }
 }
 

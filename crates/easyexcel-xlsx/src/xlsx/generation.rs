@@ -786,6 +786,40 @@ pub fn save_encrypted_workbook_to(
     encrypt_package_to(&plaintext, password, output)
 }
 
+/// 将已序列化的 OOXML 包保存到路径，可选加密为 CFB 容器。
+pub fn save_package_bytes_to_path(
+    plaintext: &[u8],
+    path: &Path,
+    password: Option<&str>,
+) -> Result<()> {
+    if let Some(password) = password {
+        let mut file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(path)?;
+        encrypt_package_to(plaintext, password, &mut file)?;
+        file.flush()?;
+        return Ok(());
+    }
+    easyexcel_io::io::file_utils::write_to_file(path, plaintext)
+}
+
+/// 将已序列化的 OOXML 包写入输出流，可选加密为 CFB 容器。
+pub fn save_package_bytes_to_writer(
+    plaintext: &[u8],
+    output: &mut (dyn Write + Send),
+    password: Option<&str>,
+) -> Result<()> {
+    if let Some(password) = password {
+        let mut encrypted = std::io::Cursor::new(Vec::new());
+        encrypt_package_to(plaintext, password, &mut encrypted)?;
+        return easyexcel_io::io::io_utils::write_all_and_flush(output, encrypted.get_ref());
+    }
+    easyexcel_io::io::io_utils::write_all_and_flush(output, plaintext)
+}
+
 fn xlsxwriter_error(error: impl std::fmt::Display) -> Error {
     Error::Xlsx(error.to_string())
 }

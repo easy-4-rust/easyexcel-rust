@@ -9,8 +9,8 @@ impl crate::Converter<std::path::PathBuf> for FileImageConverter {
         &self,
         context: &crate::WriteConverterContext<'_, std::path::PathBuf>,
     ) -> Result<crate::WriteCellData, crate::ExcelError> {
-        std::fs::read(context.value())
+        easyexcel_io::io::file_utils::read_file(context.value())
             .map(crate::WriteCellData::from_image)
-            .map_err(Into::into)
+            .map_err(crate::ExcelError::from)
     }
 }

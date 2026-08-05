@@ -9,9 +9,10 @@
 use std::path::{Path, PathBuf};
 
 use crate::core::{CellValue, ExcelError, ImageData, Result, RichTextStringData};
+#[cfg(test)]
 use bigdecimal::BigDecimal;
 use chrono::{NaiveDate, NaiveDateTime};
-use easyexcel_io::io::gzip_record::{GzipRecordReader, GzipRecordWriter};
+use easyexcel_io::{GzipCellRecordReader, GzipCellRecordWriter, GzipCellValue};
 
 pub use easyexcel_io::io::gzip_record::{GZIP_MAGIC, file_has_gzip_magic};
 
@@ -33,7 +34,7 @@ pub struct GzipSpillSnapshot {
 /// Streaming gzip spill writer mirroring POI `GZIPSheetDataWriter`.
 pub struct GzipSheetDataWriter {
     sheet_name: String,
-    writer: GzipRecordWriter,
+    writer: GzipCellRecordWriter,
 }
 
 impl GzipSheetDataWriter {
@@ -46,7 +47,7 @@ impl GzipSheetDataWriter {
         let sheet_name = sheet_name.into();
         Ok(Self {
             sheet_name,
-            writer: GzipRecordWriter::create(dir, "easyexcel-sxssf-", ".xml.gz")
+            writer: GzipCellRecordWriter::create(dir, "easyexcel-sxssf-", ".xml.gz")
                 .map_err(ExcelError::from)?,
         })
     }
@@ -59,7 +60,7 @@ impl GzipSheetDataWriter {
     pub fn create_owned(sheet_name: impl Into<String>) -> Result<Self> {
         Ok(Self {
             sheet_name: sheet_name.into(),
-            writer: GzipRecordWriter::create_owned("easyexcel-sxssf-", ".xml.gz")
+            writer: GzipCellRecordWriter::create_owned("easyexcel-sxssf-", ".xml.gz")
                 .map_err(ExcelError::from)?,
         })
     }
@@ -70,8 +71,11 @@ impl GzipSheetDataWriter {
     ///
     /// Returns a format or I/O error when encoding or writing fails.
     pub fn write_row(&mut self, cells: &[CellValue]) -> Result<()> {
-        let payload = encode_row(cells)?;
-        self.writer.write_record(&payload).map_err(ExcelError::from)
+        let values = cells
+            .iter()
+            .map(to_spill_value)
+            .collect::<Result<Vec<_>>>()?;
+        self.writer.write_row(&values).map_err(ExcelError::from)
     }
 
     /// Flushes buffered gzip bytes so magic / size are observable on disk.
@@ -115,7 +119,7 @@ impl GzipSheetDataWriter {
 /// Read side of a finished gzip spill (stream decode, constant memory).
 pub struct GzipSpillReader {
     sheet_name: String,
-    reader: GzipRecordReader,
+    reader: GzipCellRecordReader,
 }
 
 impl GzipSpillReader {
@@ -139,234 +143,77 @@ impl GzipSpillReader {
     /// Returns a format or I/O error when the stream is corrupt.
     pub fn next_row(&mut self) -> Result<Option<Vec<CellValue>>> {
         self.reader
-            .next_record()
+            .next_row()
             .map_err(ExcelError::from)?
-            .map(|payload| decode_row(&payload))
+            .map(|row| row.into_iter().map(from_spill_value).collect())
             .transpose()
     }
 }
 
-fn encode_row(cells: &[CellValue]) -> Result<Vec<u8>> {
-    let mut body = Vec::with_capacity(cells.len() * 16);
-    write_u32(
-        &mut body,
-        u32::try_from(cells.len())
-            .map_err(|_| ExcelError::Format("row cell count exceeds u32".to_owned()))?,
-    );
-    for cell in cells {
-        encode_cell(&mut body, cell)?;
-    }
-    Ok(body)
-}
-
-fn decode_row(payload: &[u8]) -> Result<Vec<CellValue>> {
-    let mut cursor = 0usize;
-    let count = read_u32(payload, &mut cursor)? as usize;
-    let mut cells = Vec::with_capacity(count);
-    for _ in 0..count {
-        cells.push(decode_cell(payload, &mut cursor)?);
-    }
-    Ok(cells)
-}
-
-fn encode_cell(out: &mut Vec<u8>, value: &CellValue) -> Result<()> {
-    match value {
-        CellValue::Empty => out.push(0),
-        CellValue::String(text) => {
-            out.push(1);
-            write_str(out, text)?;
-        }
-        CellValue::Bool(flag) => {
-            out.push(2);
-            out.push(u8::from(*flag));
-        }
-        CellValue::Int(number) => {
-            out.push(3);
-            out.extend_from_slice(&number.to_le_bytes());
-        }
-        CellValue::Float(number) => {
-            out.push(4);
-            out.extend_from_slice(&number.to_le_bytes());
-        }
-        CellValue::Decimal(number) => {
-            out.push(5);
-            write_str(out, &number.to_string())?;
-        }
-        CellValue::Date(date) => {
-            out.push(6);
-            write_str(out, &date.format("%Y-%m-%d").to_string())?;
-        }
+fn to_spill_value(value: &CellValue) -> Result<GzipCellValue> {
+    Ok(match value {
+        CellValue::Empty => GzipCellValue::Empty,
+        CellValue::String(text) => GzipCellValue::Text(text.clone()),
+        CellValue::Bool(flag) => GzipCellValue::Bool(*flag),
+        CellValue::Int(number) => GzipCellValue::Int(*number),
+        CellValue::Float(number) => GzipCellValue::Float(*number),
+        CellValue::Decimal(number) => GzipCellValue::Decimal(number.to_string()),
+        CellValue::Date(date) => GzipCellValue::Date(date.format("%Y-%m-%d").to_string()),
         CellValue::DateTime(date_time) => {
-            out.push(7);
-            write_str(out, &date_time.format("%Y-%m-%d %H:%M:%S%.f").to_string())?;
+            GzipCellValue::DateTime(date_time.format("%Y-%m-%d %H:%M:%S%.f").to_string())
         }
-        CellValue::Error(text) => {
-            out.push(8);
-            write_str(out, text)?;
-        }
-        CellValue::Formula(text) => {
-            out.push(9);
-            write_str(out, text)?;
-        }
-        CellValue::Hyperlink { url, text } => {
-            out.push(10);
-            write_str(out, url)?;
-            write_str(out, text)?;
-        }
-        CellValue::Comment { value, text } => {
-            out.push(11);
-            write_str(out, text)?;
-            encode_cell(out, value)?;
-        }
-        CellValue::Image(bytes) => {
-            out.push(12);
-            write_bytes(out, bytes)?;
-        }
-        CellValue::RichText(rich) => {
-            // Fonts are not required for compress-temp spill round-trips.
-            out.push(13);
-            write_str(out, rich.text_string())?;
-        }
-        CellValue::Images { value, images } => {
-            out.push(14);
-            encode_cell(out, value)?;
-            write_u32(
-                out,
-                u32::try_from(images.len())
-                    .map_err(|_| ExcelError::Format("image list exceeds u32".to_owned()))?,
-            );
-            for image in images {
-                write_bytes(out, image.image())?;
-            }
-        }
-    }
-    Ok(())
-}
-
-fn decode_cell(buf: &[u8], cursor: &mut usize) -> Result<CellValue> {
-    let tag = read_u8(buf, cursor)?;
-    Ok(match tag {
-        0 => CellValue::Empty,
-        1 => CellValue::String(read_str(buf, cursor)?),
-        2 => CellValue::Bool(read_u8(buf, cursor)? != 0),
-        3 => {
-            let bytes = read_exact::<8>(buf, cursor)?;
-            CellValue::Int(i64::from_le_bytes(bytes))
-        }
-        4 => {
-            let bytes = read_exact::<8>(buf, cursor)?;
-            CellValue::Float(f64::from_le_bytes(bytes))
-        }
-        5 => {
-            let text = read_str(buf, cursor)?;
-            let number: BigDecimal = text
-                .parse()
-                .map_err(|error| ExcelError::Format(format!("invalid decimal spill: {error}")))?;
-            CellValue::Decimal(number)
-        }
-        6 => {
-            let text = read_str(buf, cursor)?;
-            let date = NaiveDate::parse_from_str(&text, "%Y-%m-%d")
-                .map_err(|error| ExcelError::Format(format!("invalid date spill: {error}")))?;
-            CellValue::Date(date)
-        }
-        7 => {
-            let text = read_str(buf, cursor)?;
-            let date_time = NaiveDateTime::parse_from_str(&text, "%Y-%m-%d %H:%M:%S%.f")
-                .or_else(|_| NaiveDateTime::parse_from_str(&text, "%Y-%m-%d %H:%M:%S"))
-                .map_err(|error| ExcelError::Format(format!("invalid datetime spill: {error}")))?;
-            CellValue::DateTime(date_time)
-        }
-        8 => CellValue::Error(read_str(buf, cursor)?),
-        9 => CellValue::Formula(read_str(buf, cursor)?),
-        10 => CellValue::Hyperlink {
-            url: read_str(buf, cursor)?,
-            text: read_str(buf, cursor)?,
+        CellValue::Error(text) => GzipCellValue::Error(text.clone()),
+        CellValue::Formula(text) => GzipCellValue::Formula(text.clone()),
+        CellValue::Hyperlink { url, text } => GzipCellValue::Hyperlink {
+            url: url.clone(),
+            text: text.clone(),
         },
-        11 => {
-            let text = read_str(buf, cursor)?;
-            let value = Box::new(decode_cell(buf, cursor)?);
-            CellValue::Comment { value, text }
-        }
-        12 => CellValue::Image(read_bytes(buf, cursor)?),
-        13 => CellValue::RichText(RichTextStringData::new(read_str(buf, cursor)?)),
-        14 => {
-            let value = Box::new(decode_cell(buf, cursor)?);
-            let count = read_u32(buf, cursor)? as usize;
-            let mut images = Vec::with_capacity(count);
-            for _ in 0..count {
-                images.push(ImageData::new(read_bytes(buf, cursor)?));
-            }
-            CellValue::Images { value, images }
-        }
-        other => {
-            return Err(ExcelError::Format(format!(
-                "unknown gzip spill cell tag: {other}"
-            )));
-        }
+        CellValue::Comment { value, text } => GzipCellValue::Comment {
+            value: Box::new(to_spill_value(value)?),
+            text: text.clone(),
+        },
+        CellValue::Image(bytes) => GzipCellValue::Image(bytes.clone()),
+        CellValue::RichText(rich) => GzipCellValue::RichText(rich.text_string().to_owned()),
+        CellValue::Images { value, images } => GzipCellValue::Images {
+            value: Box::new(to_spill_value(value)?),
+            images: images.iter().map(|image| image.image().to_vec()).collect(),
+        },
     })
 }
 
-fn write_u32(out: &mut Vec<u8>, value: u32) {
-    out.extend_from_slice(&value.to_le_bytes());
-}
-
-fn write_str(out: &mut Vec<u8>, value: &str) -> Result<()> {
-    write_bytes(out, value.as_bytes())
-}
-
-fn write_bytes(out: &mut Vec<u8>, value: &[u8]) -> Result<()> {
-    write_u32(
-        out,
-        u32::try_from(value.len())
-            .map_err(|_| ExcelError::Format("spill byte length exceeds u32".to_owned()))?,
-    );
-    out.extend_from_slice(value);
-    Ok(())
-}
-
-fn read_u8(buf: &[u8], cursor: &mut usize) -> Result<u8> {
-    let value = *buf
-        .get(*cursor)
-        .ok_or_else(|| ExcelError::Format("gzip spill truncated (u8)".to_owned()))?;
-    *cursor += 1;
-    Ok(value)
-}
-
-fn read_u32(buf: &[u8], cursor: &mut usize) -> Result<u32> {
-    let bytes = read_exact::<4>(buf, cursor)?;
-    Ok(u32::from_le_bytes(bytes))
-}
-
-fn read_exact<const N: usize>(buf: &[u8], cursor: &mut usize) -> Result<[u8; N]> {
-    let end = cursor
-        .checked_add(N)
-        .ok_or_else(|| ExcelError::Format("gzip spill cursor overflow".to_owned()))?;
-    let slice = buf
-        .get(*cursor..end)
-        .ok_or_else(|| ExcelError::Format("gzip spill truncated".to_owned()))?;
-    let mut out = [0u8; N];
-    out.copy_from_slice(slice);
-    *cursor = end;
-    Ok(out)
-}
-
-fn read_str(buf: &[u8], cursor: &mut usize) -> Result<String> {
-    let bytes = read_bytes(buf, cursor)?;
-    String::from_utf8(bytes)
-        .map_err(|error| ExcelError::Format(format!("gzip spill utf-8: {error}")))
-}
-
-fn read_bytes(buf: &[u8], cursor: &mut usize) -> Result<Vec<u8>> {
-    let len = read_u32(buf, cursor)? as usize;
-    let end = cursor
-        .checked_add(len)
-        .ok_or_else(|| ExcelError::Format("gzip spill cursor overflow".to_owned()))?;
-    let slice = buf
-        .get(*cursor..end)
-        .ok_or_else(|| ExcelError::Format("gzip spill truncated (bytes)".to_owned()))?;
-    *cursor = end;
-    Ok(slice.to_vec())
+fn from_spill_value(value: GzipCellValue) -> Result<CellValue> {
+    Ok(match value {
+        GzipCellValue::Empty => CellValue::Empty,
+        GzipCellValue::Text(text) => CellValue::String(text),
+        GzipCellValue::Bool(flag) => CellValue::Bool(flag),
+        GzipCellValue::Int(number) => CellValue::Int(number),
+        GzipCellValue::Float(number) => CellValue::Float(number),
+        GzipCellValue::Decimal(text) => CellValue::Decimal(text.parse().map_err(|error| {
+            ExcelError::Format(format!("invalid decimal spill: {error}"))
+        })?),
+        GzipCellValue::Date(text) => CellValue::Date(
+            NaiveDate::parse_from_str(&text, "%Y-%m-%d")
+                .map_err(|error| ExcelError::Format(format!("invalid date spill: {error}")))?,
+        ),
+        GzipCellValue::DateTime(text) => CellValue::DateTime(
+            NaiveDateTime::parse_from_str(&text, "%Y-%m-%d %H:%M:%S%.f")
+                .or_else(|_| NaiveDateTime::parse_from_str(&text, "%Y-%m-%d %H:%M:%S"))
+                .map_err(|error| ExcelError::Format(format!("invalid datetime spill: {error}")))?,
+        ),
+        GzipCellValue::Error(text) => CellValue::Error(text),
+        GzipCellValue::Formula(text) => CellValue::Formula(text),
+        GzipCellValue::Hyperlink { url, text } => CellValue::Hyperlink { url, text },
+        GzipCellValue::Comment { value, text } => CellValue::Comment {
+            value: Box::new(from_spill_value(*value)?),
+            text,
+        },
+        GzipCellValue::Image(bytes) => CellValue::Image(bytes),
+        GzipCellValue::RichText(text) => CellValue::RichText(RichTextStringData::new(text)),
+        GzipCellValue::Images { value, images } => CellValue::Images {
+            value: Box::new(from_spill_value(*value)?),
+            images: images.into_iter().map(ImageData::new).collect(),
+        },
+    })
 }
 
 #[cfg(test)]

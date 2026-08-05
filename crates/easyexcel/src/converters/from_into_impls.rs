@@ -390,9 +390,9 @@ impl FromExcelCell for std::path::PathBuf {
 
 impl IntoExcelCell for std::path::PathBuf {
     fn to_excel_cell(&self, _context: &ConvertContext) -> Result<CellValue, ExcelError> {
-        std::fs::read(self)
+        easyexcel_io::io::file_utils::read_file(self)
             .map(CellValue::Image)
-            .map_err(Into::into)
+            .map_err(ExcelError::from)
     }
 }
 

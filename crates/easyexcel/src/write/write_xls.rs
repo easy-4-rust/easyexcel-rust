@@ -9,8 +9,8 @@ use std::path::Path;
 use crate::core::{ExcelError, ExcelRow, Result, WriteHandler, WriteWorkbookContext};
 use crate::write::biff8::Biff8Book;
 use crate::write::excel_writer_core::{
-    HandlerHolderScope, after_workbook, after_workbook_create, before_workbook, save_xls_book,
-    sort_handlers, validate_excel_row_schema, validate_xls_options, with_default_write_converters,
+    HandlerHolderScope, after_workbook, after_workbook_create, before_workbook, sort_handlers,
+    validate_excel_row_schema, validate_xls_options, with_default_write_converters,
     write_sheet_to_biff8_book, write_xls_onto_template,
 };
 use crate::write::write_options::WriteOptions;
@@ -69,15 +69,8 @@ where
     #[rustfmt::skip]
     let holder_scope = HandlerHolderScope::new_resolved::<T>(path, i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX), None, options)?;
     write_sheet_to_biff8_book::<T, I>(&mut book, options, rows, handlers, Some(&holder_scope))?;
-    // Phase 5.3: BIFF8 RC4 encryption
-    if let Some(password) = &options.password {
-        let raw_bytes = book.to_cfb_bytes()?;
-        let (encrypted, _salt, _vh) =
-            crate::write::biff8::encrypt::encrypt_biff8_stream(&raw_bytes, password);
-        std::fs::write(path, &encrypted).map_err(ExcelError::from)?;
-    } else {
-        save_xls_book(&book, path)?;
-    }
+    book.save_to_path_with_password(path, options.password.as_deref())
+        .map_err(ExcelError::from)?;
     after_workbook(handlers, &workbook_context)?;
     Ok(())
 }

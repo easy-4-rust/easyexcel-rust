@@ -89,9 +89,7 @@ impl<R: Read> IntoExcelCell for ImageInputStream<R> {
 }
 
 fn read_image_bytes(reader: &mut dyn Read) -> Result<Vec<u8>, ExcelError> {
-    let mut bytes = Vec::new();
-    reader.read_to_end(&mut bytes)?;
-    Ok(bytes)
+    easyexcel_io::io::io_utils::read_all(reader).map_err(ExcelError::from)
 }
 
 #[cfg(test)]

@@ -4,6 +4,7 @@ mod error;
 pub mod file_utils;
 mod format;
 pub mod gzip_record;
+pub mod gzip_cell_record;
 pub mod http_fetch;
 pub mod io_utils;
 pub mod media_type;

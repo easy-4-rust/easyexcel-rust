@@ -21,6 +21,8 @@ mod stream;
 mod styles;
 mod tables;
 mod template_package;
+pub mod template_fill;
+mod template_source;
 pub mod template_styles;
 pub mod template_xml;
 mod writer;
@@ -43,6 +45,16 @@ pub use source::{
 };
 pub use stream::stream;
 pub use template_package::OoxmlTemplatePackage;
+pub use template_fill::{
+    TemplateCollectionFill, TemplateFillData, TemplateFillDirection, append_rows_to_sheet,
+    append_rows_to_xml, render_typed_cell, replace_collection_fills_in_sheet,
+    replace_scalar_cells, replace_scalar_cells_in_sheet, replace_scalar_cells_in_xml,
+};
+pub use template_source::{
+    TemplateSheetSelector, has_template, load_template_bytes, normalize_workbook_target,
+    resolve_sheet_target, validate_xlsx_template_source, workbook_sheets, worksheet_path,
+    xml_elements,
+};
 pub use writer::write;
 
 /// Read an XLSX workbook from a path.

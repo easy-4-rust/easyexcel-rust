@@ -115,6 +115,11 @@ pub fn open_output_stream(path: &Path) -> io::Result<std::fs::File> {
     fs::File::create(path)
 }
 
+/// 读取文件的全部字节。
+pub fn read_file(path: &Path) -> Result<Vec<u8>, ExcelError> {
+    Ok(fs::read(path)?)
+}
+
 /// Mirrors `com.alibaba.excel.util.FileUtils#writeToFile`.
 ///
 /// # Errors

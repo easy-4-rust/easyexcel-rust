@@ -33,9 +33,27 @@ pub struct OoxmlPackage {
 }
 
 impl OoxmlPackage {
+    /// 从文件路径载入 ZIP/OOXML 包。
+    pub fn from_path(path: &Path) -> Result<Self> {
+        Self::from_reader(std::fs::File::open(path)?)
+    }
+
     /// 从 ZIP/OOXML 字节载入全部条目。
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         Self::from_reader(Cursor::new(bytes))
+    }
+
+    /// 从仅实现 [`Read`] 的输入流载入 ZIP/OOXML 包。
+    ///
+    /// ZIP 中央目录要求可定位输入，因此该入口在引擎内部完成一次字节物化，
+    /// 避免调用方重复实现 `read_to_end` 与 `Cursor` 适配。
+    pub fn from_stream<R>(mut reader: R) -> Result<Self>
+    where
+        R: Read,
+    {
+        let mut bytes = Vec::new();
+        reader.read_to_end(&mut bytes)?;
+        Self::from_bytes(&bytes)
     }
 
     /// 从可定位输入流载入全部 ZIP/OOXML 条目。

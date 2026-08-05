@@ -429,6 +429,16 @@ impl Biff8Book {
         file.flush()?;
         Ok(())
     }
+
+    /// 将 BIFF8/OLE2 工作簿写入路径，并可选应用兼容层 RC4 加密。
+    pub fn save_to_path_with_password(&self, path: &Path, password: Option<&str>) -> Result<()> {
+        let Some(password) = password else {
+            return self.save_to_path(path);
+        };
+        let bytes = self.to_cfb_bytes()?;
+        let (encrypted, _, _) = super::encrypt::encrypt_biff8_stream(&bytes, password);
+        easyexcel_io::io::file_utils::write_to_file(path, &encrypted)
+    }
 }
 
 /// Converts a calendar date to an Excel 1900-date-system serial number.

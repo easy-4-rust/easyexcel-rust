@@ -279,7 +279,7 @@ impl TemplatePackage {
 /// being non-null.
 #[must_use]
 pub(crate) fn has_template(template_file: Option<&Path>, template_bytes: Option<&[u8]>) -> bool {
-    template_file.is_some() || template_bytes.is_some()
+    easyexcel_xlsx::has_template(template_file, template_bytes)
 }
 
 /// Loads template bytes from a file path or an in-memory copy.
@@ -292,15 +292,7 @@ pub(crate) fn load_template_bytes(
     template_file: Option<&Path>,
     template_bytes: Option<&[u8]>,
 ) -> Result<Vec<u8>> {
-    if let Some(bytes) = template_bytes {
-        return Ok(bytes.to_vec());
-    }
-    if let Some(path) = template_file {
-        return std::fs::read(path).map_err(ExcelError::from);
-    }
-    Err(ExcelError::Unsupported(
-        "with_template requires a template file or template bytes".to_owned(),
-    ))
+    easyexcel_xlsx::load_template_bytes(template_file, template_bytes).map_err(ExcelError::from)
 }
 
 /// Rejects template types that Java also rejects for the XLSX ZIP path.
@@ -314,33 +306,8 @@ pub(crate) fn validate_template_source(
     template_file: Option<&Path>,
     template_bytes: Option<&[u8]>,
 ) -> Result<()> {
-    if let Some(path) = template_file {
-        if is_csv_path(path) {
-            return Err(ExcelError::Unsupported(
-                "csv cannot use template.".to_owned(),
-            ));
-        }
-        if is_xls_path(path) {
-            return Err(ExcelError::Unsupported(
-                "legacy XLS template cannot seed an XLSX workbook; write to a .xls path instead"
-                    .to_owned(),
-            ));
-        }
-    }
-    if let Some(bytes) = template_bytes {
-        if looks_like_csv(bytes) {
-            return Err(ExcelError::Unsupported(
-                "csv cannot use template.".to_owned(),
-            ));
-        }
-        if looks_like_xls(bytes) {
-            return Err(ExcelError::Unsupported(
-                "legacy XLS template cannot seed an XLSX workbook; write to a .xls path instead"
-                    .to_owned(),
-            ));
-        }
-    }
-    Ok(())
+    easyexcel_xlsx::validate_xlsx_template_source(template_file, template_bytes)
+        .map_err(ExcelError::from)
 }
 
 /// Parses an XLSX template into ordered sheet snapshots.
@@ -363,20 +330,11 @@ pub(crate) fn resolve_template_target(
     sheet_index: Option<usize>,
     sheet_name: &str,
 ) -> (usize, String, bool) {
-    if let Some(index) = sheet_index {
-        if let Some(sheet) = sheets.get(index) {
-            return (index, sheet.name.clone(), false);
-        }
-        return (index, sheet_name.to_owned(), true);
-    }
-    if let Some((index, sheet)) = sheets
+    let names = sheets
         .iter()
-        .enumerate()
-        .find(|(_, sheet)| sheet.name == sheet_name)
-    {
-        return (index, sheet.name.clone(), false);
-    }
-    (sheets.len(), sheet_name.to_owned(), true)
+        .map(|sheet| sheet.name.clone())
+        .collect::<Vec<_>>();
+    easyexcel_xlsx::resolve_sheet_target(&names, sheet_index, sheet_name)
 }
 
 /// Resolves a template target against a ZIP package sheet list.
@@ -386,20 +344,7 @@ pub(crate) fn resolve_package_target(
     sheet_index: Option<usize>,
     sheet_name: &str,
 ) -> (usize, String, bool) {
-    if let Some(index) = sheet_index {
-        if let Some(name) = sheet_names.get(index) {
-            return (index, name.clone(), false);
-        }
-        return (index, sheet_name.to_owned(), true);
-    }
-    if let Some((index, name)) = sheet_names
-        .iter()
-        .enumerate()
-        .find(|(_, name)| *name == sheet_name)
-    {
-        return (index, name.clone(), false);
-    }
-    (sheet_names.len(), sheet_name.to_owned(), true)
+    easyexcel_xlsx::resolve_sheet_target(sheet_names, sheet_index, sheet_name)
 }
 
 /// Writes loaded template sheets into a fresh `rust_xlsxwriter` workbook.
@@ -939,35 +884,6 @@ fn insert_before_close_tag(xml: &str, close_tag: &str, fragment: &str) -> Result
         )));
     };
     Ok(format!("{}{}{}", &xml[..index], fragment, &xml[index..]))
-}
-
-fn is_csv_path(path: &Path) -> bool {
-    path.extension()
-        .is_some_and(|extension| extension.eq_ignore_ascii_case("csv"))
-}
-
-fn is_xls_path(path: &Path) -> bool {
-    path.extension()
-        .is_some_and(|extension| extension.eq_ignore_ascii_case("xls"))
-}
-
-fn looks_like_csv(bytes: &[u8]) -> bool {
-    // XLSX / OLE are binary; treat plain printable text without ZIP/OLE magic as CSV-like.
-    if looks_like_xlsx(bytes) || looks_like_xls(bytes) {
-        return false;
-    }
-    bytes
-        .iter()
-        .take(64)
-        .all(|byte| byte.is_ascii_whitespace() || byte.is_ascii_graphic() || *byte == b'\t')
-}
-
-fn looks_like_xlsx(bytes: &[u8]) -> bool {
-    bytes.starts_with(&[0x50, 0x4B]) // ZIP / OOXML
-}
-
-fn looks_like_xls(bytes: &[u8]) -> bool {
-    bytes.starts_with(&[0xD0, 0xCF, 0x11, 0xE0]) // OLE Compound File
 }
 
 #[cfg(test)]

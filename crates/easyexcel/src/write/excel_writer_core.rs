@@ -2263,32 +2263,13 @@ pub(crate) fn save_template_package(
     password: Option<&str>,
 ) -> Result<()> {
     let plaintext = package.to_bytes()?;
-    if let Some(password) = password {
-        let mut encrypted = std::io::Cursor::new(Vec::new());
-        save_encrypted_bytes_to(&plaintext, password, &mut encrypted)?;
-        if let Some(writer) = output {
-            writer.write_all(encrypted.get_ref())?;
-            writer.flush()?;
-        } else {
-            std::fs::write(path, encrypted.get_ref())?;
-        }
-        return Ok(());
-    }
     if let Some(writer) = output {
-        writer.write_all(&plaintext)?;
-        writer.flush()?;
-        Ok(())
+        generation::save_package_bytes_to_writer(&plaintext, writer, password)
+            .map_err(ExcelError::from)
     } else {
-        std::fs::write(path, plaintext).map_err(ExcelError::from)
+        generation::save_package_bytes_to_path(&plaintext, path, password)
+            .map_err(ExcelError::from)
     }
-}
-
-pub(crate) fn save_encrypted_bytes_to(
-    plaintext: &[u8],
-    password: &str,
-    file: &mut dyn easyexcel_xlsx::ReadWriteSeek,
-) -> Result<()> {
-    easyexcel_xlsx::encrypt_package_to(plaintext, password, file).map_err(ExcelError::from)
 }
 
 /// Seeds a workbook from `withTemplate` then appends typed rows to the target sheet.
