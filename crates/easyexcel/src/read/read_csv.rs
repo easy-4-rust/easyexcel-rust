@@ -3,9 +3,6 @@
 use std::fs::File;
 use std::path::Path;
 
-use encoding_rs::Encoding;
-use encoding_rs_io::DecodeReaderBytesBuilder;
-
 use crate::core::{CellValue, ExcelError, ExcelRow, ReadListener, Result};
 use crate::read::read_helpers::{analysis_context, format_error, reject_extra_read};
 use crate::read::read_options::ReadOptions;
@@ -29,22 +26,12 @@ where
 {
     reject_extra_read(options, "CSV")?;
     let sheet_name = csv_sheet_name(&options.sheet)?;
-    let encoding = csv_encoding(&options.charset)?;
-    let input = DecodeReaderBytesBuilder::new()
-        .encoding(Some(encoding))
-        .strip_bom(true)
-        .build(File::open(path)?);
+    let input = easyexcel_csv::decode_reader(File::open(path)?, &options.charset)?;
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(false)
         .flexible(true)
         .from_reader(input);
     read_csv_records::<T, L>(&mut reader.records(), 0, &sheet_name, options, listener)
-}
-
-fn csv_encoding(charset: &crate::core::CsvCharset) -> Result<&'static Encoding> {
-    Encoding::for_label(charset.name().as_bytes()).ok_or_else(|| {
-        ExcelError::Unsupported(format!("unsupported CSV charset: {}", charset.name()))
-    })
 }
 
 pub(crate) fn read_csv_records<T, L>(

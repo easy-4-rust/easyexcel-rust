@@ -1,15 +1,18 @@
 //! Core row-dispatch loop shared by the XLSX, XLS, and CSV read engines.
 
 use crate::core::{CellValue, ExcelError, ExcelRow, ReadListener, Result};
+#[cfg(test)]
 use crate::read::cell_conversion::from_data;
-use crate::read::read_helpers::{analysis_context, to_column_index};
+use crate::read::cell_conversion::from_model_cell;
+use crate::read::read_helpers::analysis_context;
+#[cfg(test)]
+use crate::read::read_helpers::to_column_index;
 use crate::read::read_options::ReadOptions;
 use crate::read::row_consumer::{ReadFlow, RowConsumer, SourceRowMetadata, TypedRowConsumer};
 use crate::read::sheet_selector::SheetSelector;
 use crate::read::xlsx_rows::XlsxDisplayCellReader;
-use calamine::{Data, Range};
 #[cfg(test)]
-use calamine::{Reader, Xlsx};
+use calamine::{Data, Range, Reader, Xlsx};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
@@ -49,6 +52,7 @@ pub(crate) fn selected_sheet_names<RS: std::io::Read + std::io::Seek>(
     select_sheet_names(workbook.sheet_names(), selector, auto_trim)
 }
 
+#[cfg(test)]
 pub(crate) fn select_xls_sheets(
     sheets: Vec<(String, Range<Data>)>,
     selector: &SheetSelector,
@@ -228,6 +232,7 @@ pub(crate) fn process_missing_rows(
     Ok(ReadFlow::Continue)
 }
 
+#[cfg(test)]
 pub(crate) fn read_range(
     range: &Range<Data>,
     sheet_no: usize,
@@ -284,6 +289,84 @@ pub(crate) fn read_range(
         row_index = row_index.saturating_add(1);
     }
     consumer.after(&analysis_context(sheet_name, sheet_no, final_row, options))?;
+    Ok(ReadFlow::Continue)
+}
+
+/// Dispatch one neutral engine worksheet through the EasyExcel listener lifecycle.
+///
+/// BIFF/CFB parsing belongs to `easyexcel-xls`; this adapter only preserves the
+/// facade's row metadata, formula and listener semantics.
+pub(crate) fn read_model_sheet(
+    sheet: &easyexcel_model::Sheet,
+    sheet_no: usize,
+    sheet_name: &str,
+    options: &ReadOptions,
+    sheet_displays: &HashMap<(u32, usize), String>,
+    consumer: &mut dyn RowConsumer,
+) -> Result<ReadFlow> {
+    let mut bounds = sheet.cells.keys().chain(sheet.styles.keys()).copied();
+    let Some((first_row, first_column)) = bounds.next() else {
+        consumer.after(&analysis_context(sheet_name, sheet_no, 0, options))?;
+        return Ok(ReadFlow::Continue);
+    };
+    let (mut min_row, mut min_column, mut max_row, mut max_column) =
+        (first_row, first_column, first_row, first_column);
+    for (row, column) in bounds {
+        min_row = min_row.min(row);
+        min_column = min_column.min(column);
+        max_row = max_row.max(row);
+        max_column = max_column.max(column);
+    }
+
+    let width = usize::try_from(max_column)
+        .map_err(|_| ExcelError::Format("XLS column index exceeds usize".to_owned()))?
+        .saturating_add(1);
+    let mut headers = Arc::new(HashMap::new());
+    for row_index in min_row..=max_row {
+        let mut cells = vec![CellValue::Empty; width];
+        let mut formulas = HashMap::new();
+        let mut present_columns = HashSet::new();
+        let mut display_values = HashMap::new();
+
+        for (&(_, column), cell) in sheet
+            .cells
+            .range((row_index, min_column)..=(row_index, max_column))
+        {
+            let column = usize::try_from(column)
+                .map_err(|_| ExcelError::Format("XLS column index exceeds usize".to_owned()))?;
+            let (value, formula) = from_model_cell(cell);
+            if !value.is_empty() {
+                present_columns.insert(column);
+            }
+            cells[column] = value;
+            if let Some(formula) = formula {
+                formulas.insert(column, formula);
+            }
+            if let Some(display) = sheet_displays.get(&(row_index, column)) {
+                display_values.insert(column, display.clone());
+            }
+        }
+
+        if dispatch_row(
+            consumer,
+            sheet_no,
+            sheet_name,
+            row_index,
+            cells,
+            SourceRowMetadata {
+                formulas,
+                display_values,
+                present_columns,
+                ..SourceRowMetadata::default()
+            },
+            options,
+            &mut headers,
+        )? == ReadFlow::Stop
+        {
+            return Ok(ReadFlow::Stop);
+        }
+    }
+    consumer.after(&analysis_context(sheet_name, sheet_no, max_row, options))?;
     Ok(ReadFlow::Continue)
 }
 

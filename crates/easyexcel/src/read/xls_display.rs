@@ -9,11 +9,11 @@
 use std::collections::HashMap;
 use std::path::Path;
 
-use crate::constant::builtin_format_code;
 use ssfmt::Locale;
+#[cfg(test)]
+use easyexcel_format::format_with_code;
 
 use crate::analysis::v03::biff_record_stream::read_workbook_stream;
-use crate::read::xlsx_rows::format_with_code;
 
 /// Per-sheet map of `(row, col) → formatted STRING display`.
 pub(crate) type SheetDisplays = HashMap<(u32, usize), String>;
@@ -52,11 +52,11 @@ fn parse_workbook_displays(wb: &[u8], date_1904: bool, locale: &Locale) -> Vec<S
                     let code = cell
                         .custom_format
                         .as_deref()
-                        .or_else(|| builtin_format_code(cell.format_index))?;
+                        .or_else(|| easyexcel_format::builtin_format_code(cell.format_index))?;
                     if code.eq_ignore_ascii_case("General") || code == "@" {
                         return None;
                     }
-                    format_with_code(cell.value, code, date_1904, locale)
+                    easyexcel_format::format_with_code(cell.value, code, date_1904, locale)
                         .map(|display| (position, display))
                 })
                 .collect()

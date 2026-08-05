@@ -1,34 +1,36 @@
-//! Legacy XLS (BIFF) sheet enumeration and typed row dispatch via calamine.
+//! Legacy XLS (BIFF) sheet enumeration and typed row dispatch.
 
 use std::path::Path;
 
-use calamine::{Reader, Xls, open_workbook};
-
 use crate::core::{ExcelRow, ReadListener, Result};
-use crate::read::read_helpers::{format_error, reject_extra_read};
+use crate::read::read_helpers::reject_extra_read;
 use crate::read::read_options::ReadOptions;
 use crate::read::row_consumer::{ReadFlow, TypedRowConsumer};
-use crate::read::row_processing::{read_range, select_xls_sheets};
+use crate::read::row_processing::{read_model_sheet, select_sheet_names};
 use crate::read::xls_display::load_xls_displays;
 
 /// Discovers worksheet names in workbook order.
 ///
 /// 对应 Java：`XlsSaxAnalyser.sheetList()` via `XlsListSheetListener` /
-/// calamine `Reader::sheet_names`.
+/// `easyexcel-xls` 工作簿模型中的工作表顺序。
 ///
 /// # Errors
 ///
 /// Returns an I/O or workbook-format error.
 pub fn list_xls_sheets(path: &Path, options: &ReadOptions) -> Result<Vec<(usize, String)>> {
     reject_extra_read(options, "XLS")?;
-    let workbook: Xls<_> = open_workbook(path).map_err(format_error)?;
-    Ok(workbook.sheet_names().into_iter().enumerate().collect())
+    let workbook = easyexcel_xls::read_path(path)?;
+    Ok(workbook
+        .sheets
+        .into_iter()
+        .map(|sheet| sheet.name)
+        .enumerate()
+        .collect())
 }
 
 /// Reads selected legacy XLS sheets through the typed listener lifecycle.
 ///
-/// Calamine materializes each XLS worksheet before row dispatch because the
-/// binary BIFF format does not expose the XLSX cell-stream API.
+/// `easyexcel-xls` 负责 BIFF/CFB 解析，本门面仅将中立工作表送入 listener 生命周期。
 ///
 /// # Errors
 ///
@@ -39,8 +41,16 @@ where
     L: ReadListener<T>,
 {
     reject_extra_read(options, "XLS")?;
-    let mut workbook: Xls<_> = open_workbook(path).map_err(format_error)?;
-    let sheets = select_xls_sheets(workbook.worksheets(), &options.sheet, options.auto_trim)?;
+    let workbook = easyexcel_xls::read_path(path)?;
+    let sheets = select_sheet_names(
+        workbook
+            .sheets
+            .iter()
+            .map(|sheet| sheet.name.clone())
+            .collect(),
+        &options.sheet,
+        options.auto_trim,
+    )?;
     // Overlay BIFF FORMAT/XF display strings so STRING mode matches Java
     // BuiltinFormats (e.g. short date id 22 → `yyyy-m-d h:mm`).
     let displays = load_xls_displays(
@@ -48,11 +58,11 @@ where
         options.use_1904_windowing,
         &options.locale.formatter(),
     );
-    for (sheet_no, sheet_name, range) in sheets {
+    for (sheet_no, sheet_name) in sheets {
         let mut consumer = TypedRowConsumer::<T> { listener };
         let sheet_displays = displays.get(sheet_no).cloned().unwrap_or_default();
-        if read_range(
-            &range,
+        if read_model_sheet(
+            &workbook.sheets[sheet_no],
             sheet_no,
             &sheet_name,
             options,

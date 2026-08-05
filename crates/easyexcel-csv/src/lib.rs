@@ -4,5 +4,6 @@ pub mod csv;
 
 pub use csv::{
     CsvCharset, CsvEncoding, CsvEncodingWriter, CsvReadOptions, CsvWriteOptions, csv_bom,
-    csv_encoding, decode_bytes, detect_delimiter, infer_cell, read_csv, write_csv,
+    csv_encoding, decode_bytes, decode_reader, detect_delimiter, infer_cell, read_csv,
+    resolve_encoding, write_csv,
 };

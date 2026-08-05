@@ -979,11 +979,8 @@ impl ExcelWriter {
                 )?;
                 if self.use_legacy_template_seed {
                     // Explicit legacy fallback: value replay without styles/merges.
-                    let sheets = crate::write::template_write::load_template_sheets(&bytes)?;
-                    crate::write::template_write::seed_workbook_from_template(
-                        &mut self.workbook,
-                        &sheets,
-                    )?;
+                    let sheets = easyexcel_xlsx::load_legacy_template_sheets(&bytes)?;
+                    easyexcel_xlsx::seed_legacy_template_workbook(&mut self.workbook, &sheets)?;
                     for (index, sheet) in sheets.into_iter().enumerate() {
                         self.sheet_indexes.insert(index, sheet.name.clone());
                         self.template_pending_rows

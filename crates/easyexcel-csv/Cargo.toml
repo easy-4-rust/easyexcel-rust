@@ -16,6 +16,7 @@ csv.workspace = true
 easyexcel-io.workspace = true
 easyexcel-model.workspace = true
 encoding_rs.workspace = true
+encoding_rs_io.workspace = true
 
 [lints]
 workspace = true

@@ -24,11 +24,10 @@ thiserror.workspace = true
 ureq.workspace = true
 url.workspace = true
 # 原 easyexcel-reader 依赖
-calamine.workspace = true
-cfb.workspace = true
 # 统一工作簿模型与公式引擎；不再依赖完整的 xls fork。
 easyexcel-csv.workspace = true
 easyexcel-cache.workspace = true
+easyexcel-format.workspace = true
 easyexcel-io.workspace = true
 easyexcel-model.workspace = true
 easyexcel-formula.workspace = true
@@ -36,22 +35,19 @@ easyexcel-xls.workspace = true
 easyexcel-xlsx.workspace = true
 easyexcel-tabular.workspace = true
 csv.workspace = true
-encoding_rs.workspace = true
-encoding_rs_io.workspace = true
-office-crypto.workspace = true
 pure-rust-locales.workspace = true
 quick-xml.workspace = true
 ssfmt.workspace = true
 sys-locale.workspace = true
-zip.workspace = true
 # 原 easyexcel-writer 依赖
-flate2.workspace = true
-getrandom.workspace = true
-md-5.workspace = true
 rust_xlsxwriter.workspace = true
 
 [dev-dependencies]
 base64.workspace = true
+calamine.workspace = true
+cfb.workspace = true
+flate2.workspace = true
+zip.workspace = true
 # 读取/写入管线的回调契约测试（MockReadListener 断言调用次数/顺序/参数）
 mockall = "0.15"
 

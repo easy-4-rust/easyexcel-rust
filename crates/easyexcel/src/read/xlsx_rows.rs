@@ -7,20 +7,15 @@
 use std::collections::{HashMap, HashSet};
 use std::io::{BufRead, BufReader, Read, Seek};
 
-use crate::constant::builtin_format_code;
 use crate::core::{CellValue, ExcelError, FormulaData, Result};
-use crate::metadata::format::{
-    java_compat_date_format_code, java_compat_display, java_compat_format_code,
-};
 use bigdecimal::BigDecimal;
-use calamine::{ExcelDateTime, ExcelDateTimeType};
 use quick_xml::escape::resolve_predefined_entity;
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Decoder, Reader as XmlReader, XmlVersion};
-use ssfmt::{DateSystem, FormatOptions, Locale, NumberFormat, format, format_code_from_id};
-use zip::ZipArchive;
+use ssfmt::{Locale, NumberFormat, format_code_from_id};
 
 use easyexcel_xlsx::xlsx::package::{RawRelationships, Relationships};
+use easyexcel_xlsx::xlsx::XlsxPackageReader;
 
 use crate::ReadOptions;
 use crate::analysis::v07::handlers::cell_formula_tag_handler::CellFormulaTagHandler;
@@ -47,7 +42,7 @@ use crate::read::read_cache::{
 // 截断与 Java `(short)` 强转语义一致，保留 `as` 转换。
 #[allow(clippy::cast_possible_truncation)]
 fn easyexcel_builtin_format_code(id: u32) -> Option<&'static str> {
-    builtin_format_code(id as u16)
+    easyexcel_format::builtin_format_code(id as u16)
 }
 
 const MAX_XLSX_ROW_NUMBER: u32 = 1_048_576;
@@ -58,8 +53,7 @@ trait ReadSeek: Read + Seek {}
 impl<T: Read + Seek> ReadSeek for T {}
 
 pub(crate) struct XlsxRowMetadata {
-    archive: ZipArchive<Box<dyn ReadSeek>>,
-    path_cache: HashMap<String, String>,
+    package: XlsxPackageReader<Box<dyn ReadSeek>>,
     sheet_paths: HashMap<String, String>,
     sheet_names: Vec<String>,
     cell_formats: Vec<XlsxNumberFormat>,
@@ -80,29 +74,21 @@ impl XlsxNumberFormat {
         use_scientific_format: bool,
         locale: &Locale,
     ) -> Option<String> {
-        if self.is_general() && is_scientific_magnitude(value) {
+        if self.is_general() && easyexcel_format::is_scientific_magnitude(value) {
             return Some(if use_scientific_format {
-                java_scientific_format(value, locale.decimal_separator)
+                easyexcel_format::java_scientific_format(value, locale.decimal_separator)
             } else {
-                java_plain_extreme_format(value)
+                easyexcel_format::java_plain_extreme_format(value)
             });
         }
-        let options = FormatOptions {
-            date_system: if date_1904 {
-                DateSystem::Date1904
-            } else {
-                DateSystem::Date1900
-            },
-            locale: locale.clone(),
-        };
         match self {
             Self::Builtin(id) => {
                 // Prefer EasyExcel BuiltinFormats (locale-aware CN/ALL tables) over ssfmt's
                 // ECMA builtin table so STRING display matches Java (e.g. id 22 → yyyy-m-d h:mm).
                 let code = easyexcel_builtin_format_code(*id).or_else(|| format_code_from_id(*id));
-                code.and_then(|code| format_with_resolved_code(value, code, &options))
+                code.and_then(|code| easyexcel_format::format_with_code(value, code, date_1904, locale))
             }
-            Self::Custom(code) => format_with_resolved_code(value, code, &options),
+            Self::Custom(code) => easyexcel_format::format_with_code(value, code, date_1904, locale),
         }
     }
 
@@ -167,9 +153,8 @@ impl XlsxRowMetadata {
     }
 
     fn new_boxed(input: Box<dyn ReadSeek>, options: &ReadOptions) -> Result<Self> {
-        let mut archive = ZipArchive::new(input).map_err(format_error)?;
-        let path_cache = path_cache(&archive);
-        let package_relationships = read_relationships(&mut archive, &path_cache, "_rels/.rels")?;
+        let mut package = XlsxPackageReader::new(input).map_err(ExcelError::from)?;
+        let package_relationships = package.relationships("_rels/.rels").map_err(ExcelError::from)?;
         let workbook_target = package_relationships
             .values()
             .find(|(_, relationship_type)| relationship_type.ends_with("/officeDocument"))
@@ -179,11 +164,11 @@ impl XlsxRowMetadata {
             })?;
         let workbook_path = resolve_target("", workbook_target)?;
         let workbook_relationships_path = relationship_part_name(&workbook_path);
-        let workbook_relationships =
-            read_relationships(&mut archive, &path_cache, &workbook_relationships_path)?;
+        let workbook_relationships = package
+            .relationships(&workbook_relationships_path)
+            .map_err(ExcelError::from)?;
         let (sheets, _) = read_workbook_metadata(
-            &mut archive,
-            &path_cache,
+            &mut package,
             &workbook_path,
             &workbook_relationships,
         )?;
@@ -194,7 +179,7 @@ impl XlsxRowMetadata {
             .find(|(_, relationship_type)| relationship_type.ends_with("/styles"))
             .map(|(target, _)| resolve_target(&workbook_path, target))
             .transpose()?
-            .map(|styles_path| read_cell_formats(&mut archive, &path_cache, &styles_path))
+            .map(|styles_path| read_cell_formats(&mut package, &styles_path))
             .transpose()?
             .unwrap_or_else(|| vec![XlsxNumberFormat::Builtin(0)]);
         let shared_strings_path = workbook_relationships
@@ -203,19 +188,18 @@ impl XlsxRowMetadata {
             .map(|(target, _)| resolve_target(&workbook_path, target))
             .transpose()?;
         let shared_strings = match shared_strings_path {
-            Some(path) => read_shared_strings(&mut archive, &path_cache, &path, options)?,
+            Some(path) => read_shared_strings(&mut package, &path, options)?,
             None => memory_cache(),
         };
         for path in sheet_paths.values() {
-            if !path_cache.contains_key(&path.to_ascii_lowercase()) {
+            if !package.contains(path) {
                 return Err(ExcelError::Format(format!(
                     "worksheet part not found: {path}"
                 )));
             }
         }
         Ok(Self {
-            archive,
-            path_cache,
+            package,
             sheet_paths,
             sheet_names,
             cell_formats,
@@ -239,8 +223,7 @@ impl XlsxRowMetadata {
             .get(sheet_name)
             .cloned()
             .ok_or_else(|| ExcelError::SheetNotFound(sheet_name.to_owned()))?;
-        let actual_path = cached_path(&self.path_cache, &path);
-        let file = self.archive.by_name(actual_path).map_err(format_error)?;
+        let file = self.package.open_part(&path).map_err(ExcelError::from)?;
         let reader = boxed_xml_reader(BufReader::new(file));
         XlsxDisplayCellReader::new(
             reader,
@@ -259,8 +242,7 @@ impl XlsxRowMetadata {
             .sheet_paths
             .get(sheet_name)
             .ok_or_else(|| ExcelError::SheetNotFound(sheet_name.to_owned()))?;
-        let actual_path = cached_path(&self.path_cache, path);
-        let file = self.archive.by_name(actual_path).map_err(format_error)?;
+        let file = self.package.open_part(path).map_err(ExcelError::from)?;
         scan_last_row(BufReader::new(file))
     }
 
@@ -275,17 +257,15 @@ impl XlsxRowMetadata {
             .cloned()
             .ok_or_else(|| ExcelError::SheetNotFound(sheet_name.to_owned()))?;
         let relationships_path = relationship_part_name(&sheet_path);
-        let relationships = if self
-            .path_cache
-            .contains_key(&relationships_path.to_ascii_lowercase())
-        {
-            read_raw_relationships(&mut self.archive, &self.path_cache, &relationships_path)?
+        let relationships = if self.package.contains(&relationships_path) {
+            self.package
+                .raw_relationships(&relationships_path)
+                .map_err(ExcelError::from)?
         } else {
             RawRelationships::new()
         };
         let mut extras = read_worksheet_extras(
-            &mut self.archive,
-            &self.path_cache,
+            &mut self.package,
             &sheet_path,
             &relationships,
             enabled,
@@ -297,8 +277,7 @@ impl XlsxRowMetadata {
         {
             let comments_path = resolve_target(&sheet_path, target)?;
             extras.extend(read_comments(
-                &mut self.archive,
-                &self.path_cache,
+                &mut self.package,
                 &comments_path,
             )?);
         }
@@ -523,7 +502,9 @@ impl<'a> XlsxDisplayCellReader<'a> {
         formula: Option<FormulaData>,
     ) -> Result<ParsedCell> {
         let number = if matches!(cell_type, Some("n") | None) && !raw_value.is_empty() {
-            let number = excel_display_number(raw_value.parse::<f64>().map_err(format_error)?);
+            let number = easyexcel_format::excel_display_number(
+                raw_value.parse::<f64>().map_err(format_error)?,
+            );
             if !number.is_finite() {
                 return Err(ExcelError::Format(
                     "non-finite XLSX numeric cell value".to_owned(),
@@ -590,105 +571,31 @@ impl<'a> XlsxDisplayCellReader<'a> {
             .get(style_index)
             .is_some_and(XlsxNumberFormat::is_date_format)
         {
-            let date = ExcelDateTime::new(number, ExcelDateTimeType::DateTime, self.date_1904);
-            return crate::read::cell_conversion::excel_datetime_cell(&date, self.date_1904);
+            return crate::read::cell_conversion::excel_serial_datetime_cell(
+                number,
+                self.date_1904,
+            );
         }
         CellValue::Float(number)
     }
 }
 
 /// Format a numeric cell with an Excel format code (`BuiltinFormats` / custom).
+#[cfg(test)]
 pub(crate) fn format_with_code(
     value: f64,
     code: &str,
     date_1904: bool,
     locale: &Locale,
 ) -> Option<String> {
-    let options = FormatOptions {
-        date_system: if date_1904 {
-            DateSystem::Date1904
-        } else {
-            DateSystem::Date1900
-        },
-        locale: locale.clone(),
-    };
-    format_with_resolved_code(value, code, &options)
-}
-
-/// Apply `EasyExcel` number-format cleaning then ssfmt + [`java_compat_display`].
-///
-/// Date codes go through [`java_compat_date_format_code`] (CN `上午/下午` → `AM/PM`,
-/// `mmmmm` → POI PUA wrap) while keeping escaped literals (`yyyy\-m\-dd`).
-/// Number codes go through [`java_compat_format_code`] so `_X` pads disappear and
-/// `\ ` trailing spaces remain.
-fn format_with_resolved_code(value: f64, code: &str, options: &FormatOptions) -> Option<String> {
-    let is_date = NumberFormat::parse(code)
-        .ok()
-        .is_some_and(|parsed| parsed.is_date_format());
-    let resolved = if is_date {
-        java_compat_date_format_code(code)
-    } else {
-        java_compat_format_code(code)
-    };
-    format(value, &resolved, options)
-        .ok()
-        .map(|formatted| java_compat_display(&formatted))
-}
-
-fn excel_display_number(value: f64) -> f64 {
-    if value == 0.0 || !value.is_finite() {
-        return value;
-    }
-    format!("{value:.14e}").parse().unwrap_or(value)
-}
-
-fn is_scientific_magnitude(value: f64) -> bool {
-    let absolute = value.abs();
-    absolute >= 1E11 || (absolute <= 1E-10 && absolute > 0.0)
-}
-
-fn java_plain_extreme_format(value: f64) -> String {
-    let rounded = value.round();
-    if rounded == 0.0 {
-        "0".to_owned()
-    } else {
-        format!("{rounded:.0}")
-    }
-}
-
-fn java_scientific_format(value: f64, decimal_separator: char) -> String {
-    let formatted = format!("{value:.5e}");
-    let (mantissa, exponent) = formatted
-        .split_once('e')
-        .expect("Rust scientific formatting always contains an exponent");
-    let mantissa = mantissa.trim_end_matches('0').trim_end_matches('.');
-    let exponent = exponent
-        .parse::<i32>()
-        .expect("Rust scientific formatting always emits a numeric exponent");
-    let mantissa = if decimal_separator == '.' {
-        mantissa.to_owned()
-    } else {
-        mantissa.replace('.', &decimal_separator.to_string())
-    };
-    format!("{mantissa}E{exponent}")
-}
-
-fn path_cache<R: Read + Seek>(archive: &ZipArchive<R>) -> HashMap<String, String> {
-    easyexcel_xlsx::xlsx::package::path_cache(archive)
-}
-
-fn cached_path<'a>(cache: &'a HashMap<String, String>, path: &'a str) -> &'a str {
-    easyexcel_xlsx::xlsx::package::cached_path(cache, path)
+    easyexcel_format::format_with_code(value, code, date_1904, locale)
 }
 
 fn xml_reader<'a, R: Read + Seek>(
-    archive: &'a mut ZipArchive<R>,
-    cache: &HashMap<String, String>,
+    package: &'a mut XlsxPackageReader<R>,
     path: &str,
-) -> Result<XmlReader<BufReader<zip::read::ZipFile<'a, R>>>> {
-    let file = archive
-        .by_name(cached_path(cache, path))
-        .map_err(format_error)?;
+) -> Result<XmlReader<BufReader<Box<dyn Read + 'a>>>> {
+    let file = package.open_part(path).map_err(ExcelError::from)?;
     let mut reader = XmlReader::from_reader(BufReader::new(file));
     let config = reader.config_mut();
     config.check_end_names = false;
@@ -706,34 +613,13 @@ fn boxed_xml_reader<'a>(input: impl BufRead + 'a) -> XmlReader<Box<dyn BufRead +
     reader
 }
 
-fn read_relationships<R: Read + Seek>(
-    archive: &mut ZipArchive<R>,
-    cache: &HashMap<String, String>,
-    path: &str,
-) -> Result<Relationships> {
-    easyexcel_xlsx::xlsx::package::read_relationships(archive, cache, path)
-        .map_err(ExcelError::from)
-}
-
-fn read_raw_relationships<R: Read + Seek>(
-    archive: &mut ZipArchive<R>,
-    cache: &HashMap<String, String>,
-    path: &str,
-) -> Result<RawRelationships> {
-    easyexcel_xlsx::xlsx::package::read_raw_relationships(archive, cache, path)
-        .map_err(ExcelError::from)
-}
-
 fn read_worksheet_extras<R: Read + Seek>(
-    archive: &mut ZipArchive<R>,
-    cache: &HashMap<String, String>,
+    package: &mut XlsxPackageReader<R>,
     sheet_path: &str,
     relationships: &RawRelationships,
     enabled: &HashSet<crate::core::CellExtraType>,
 ) -> Result<Vec<crate::core::CellExtra>> {
-    let file = archive
-        .by_name(cached_path(cache, sheet_path))
-        .map_err(format_error)?;
+    let file = package.open_part(sheet_path).map_err(ExcelError::from)?;
     let mut input = BufReader::new(file);
     parse_worksheet_extras(&mut input, sheet_path, relationships, enabled)
 }
@@ -797,13 +683,10 @@ fn parse_worksheet_extras(
 }
 
 fn read_comments<R: Read + Seek>(
-    archive: &mut ZipArchive<R>,
-    cache: &HashMap<String, String>,
+    package: &mut XlsxPackageReader<R>,
     comments_path: &str,
 ) -> Result<Vec<crate::core::CellExtra>> {
-    let file = archive
-        .by_name(cached_path(cache, comments_path))
-        .map_err(format_error)?;
+    let file = package.open_part(comments_path).map_err(ExcelError::from)?;
     let mut input = BufReader::new(file);
     parse_comments(&mut input, comments_path)
 }
@@ -943,11 +826,10 @@ fn parse_cell_reference(reference: &str) -> Result<(u32, usize)> {
 }
 
 fn read_cell_formats<R: Read + Seek>(
-    archive: &mut ZipArchive<R>,
-    cache: &HashMap<String, String>,
+    package: &mut XlsxPackageReader<R>,
     styles_path: &str,
 ) -> Result<Vec<XlsxNumberFormat>> {
-    let mut reader = xml_reader(archive, cache, styles_path)?;
+    let mut reader = xml_reader(package, styles_path)?;
     let mut custom_formats = HashMap::new();
     let mut cell_formats = Vec::new();
     let mut in_cell_formats = false;
@@ -995,8 +877,7 @@ fn read_cell_formats<R: Read + Seek>(
 }
 
 fn read_shared_strings<R: Read + Seek>(
-    archive: &mut ZipArchive<R>,
-    path_cache: &HashMap<String, String>,
+    package: &mut XlsxPackageReader<R>,
     path: &str,
     options: &ReadOptions,
 ) -> Result<Box<dyn SharedStringCacheReader>> {
@@ -1009,22 +890,20 @@ fn read_shared_strings<R: Read + Seek>(
         let effective = resolve_read_cache_mode(mode, selector, xml_size);
         Ok(create_cache(effective, xml_size)?)
     };
-    read_shared_strings_with_factory(archive, path_cache, path, &mut cache_factory)
+    read_shared_strings_with_factory(package, path, &mut cache_factory)
 }
 
 fn read_shared_strings_with_factory<R>(
-    archive: &mut ZipArchive<R>,
-    path_cache: &HashMap<String, String>,
+    package: &mut XlsxPackageReader<R>,
     path: &str,
     cache_factory: &mut dyn FnMut(u64) -> Result<Box<dyn SharedStringCache>>,
 ) -> Result<Box<dyn SharedStringCacheReader>>
 where
     R: Read + Seek,
 {
-    let actual_path = cached_path(path_cache, path);
-    let file = archive.by_name(actual_path).map_err(format_error)?;
-    let xml_size = file.size();
+    let xml_size = package.part_size(path).map_err(ExcelError::from)?;
     let mut cache = cache_factory(xml_size)?;
+    let file = package.open_part(path).map_err(ExcelError::from)?;
     let mut input = BufReader::new(file);
     parse_shared_strings(&mut input, cache.as_mut())?;
     // After writing is complete, convert to read-only reader for concurrent access
@@ -1075,12 +954,11 @@ fn parse_shared_strings(
 }
 
 fn read_workbook_metadata<R: Read + Seek>(
-    archive: &mut ZipArchive<R>,
-    cache: &HashMap<String, String>,
+    package: &mut XlsxPackageReader<R>,
     workbook_path: &str,
     relationships: &Relationships,
 ) -> Result<(Vec<(String, String)>, bool)> {
-    let mut reader = xml_reader(archive, cache, workbook_path)?;
+    let mut reader = xml_reader(package, workbook_path)?;
     let mut sheets = Vec::new();
     let mut date_1904 = false;
     let mut buffer = Vec::with_capacity(256);

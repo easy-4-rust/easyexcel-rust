@@ -16,6 +16,7 @@ pub mod enums;
 pub mod event;
 pub mod exception;
 pub mod formula;
+pub mod format;
 pub mod io;
 pub mod metadata;
 pub mod model;

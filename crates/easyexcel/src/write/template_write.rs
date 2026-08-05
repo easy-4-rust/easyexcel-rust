@@ -10,11 +10,15 @@
 //! only when callers explicitly set
 //! [`crate::WriteOptions::use_legacy_template_seed`].
 
-use std::io::{Cursor, Write};
+use std::io::Write;
+#[cfg(test)]
+use std::io::Cursor;
 use std::path::Path;
 
 use crate::core::{CellValue, ExcelError, Result};
+#[cfg(test)]
 use calamine::{Data, DataType, Reader, Xlsx, open_workbook_from_rs};
+#[cfg(test)]
 use rust_xlsxwriter::{Format, Workbook, Worksheet};
 #[cfg(test)]
 use zip::write::{SimpleFileOptions, ZipWriter};
@@ -23,18 +27,9 @@ use easyexcel_xlsx::xlsx::OoxmlTemplatePackage;
 use easyexcel_xlsx::xlsx::template_xml::{TemplateCellValue, TemplateMergeRange};
 
 use crate::MergeRange;
-use crate::write::format_error;
 
-/// One worksheet loaded from a template package (value snapshot for legacy seed).
-#[derive(Debug, Clone)]
-pub(crate) struct TemplateSheetData {
-    /// Worksheet name from the template workbook.
-    pub name: String,
-    /// Non-empty cells as `(row, column, value)` with zero-based coordinates.
-    pub cells: Vec<(u32, u16, Data)>,
-    /// Next zero-based row index available for append (Java `getNewRowIndexAndStartDoWrite`).
-    pub next_row: u32,
-}
+/// Legacy value-replay snapshot owned by the XLSX engine.
+pub(crate) use easyexcel_xlsx::LegacyTemplateSheet as TemplateSheetData;
 
 /// One ZIP entry retained from a template XLSX package.
 #[cfg(test)]
@@ -356,53 +351,6 @@ pub(crate) fn validate_template_source(
 /// # Errors
 ///
 /// Returns [`ExcelError::Format`] when the package is not a readable XLSX workbook.
-pub(crate) fn load_template_sheets(bytes: &[u8]) -> Result<Vec<TemplateSheetData>> {
-    let mut workbook: Xlsx<_> = open_workbook_from_rs(Cursor::new(bytes)).map_err(|error| {
-        ExcelError::Format(format!("failed to open withTemplate workbook: {error}"))
-    })?;
-    let names = workbook.sheet_names().clone();
-    if names.is_empty() {
-        return Err(ExcelError::Format(
-            "withTemplate workbook contains no worksheets".to_owned(),
-        ));
-    }
-    let mut sheets = Vec::with_capacity(names.len());
-    for name in names {
-        let range = workbook.worksheet_range(&name).map_err(|error| {
-            ExcelError::Format(format!(
-                "failed to read withTemplate sheet `{name}`: {error}"
-            ))
-        })?;
-        let mut cells = Vec::new();
-        let mut last_row: Option<u32> = None;
-        for (row, column, value) in range.used_cells() {
-            if value.is_empty() {
-                continue;
-            }
-            let row = u32::try_from(row).map_err(|_| {
-                ExcelError::Format(format!(
-                    "withTemplate sheet `{name}` row index {row} exceeds u32"
-                ))
-            })?;
-            let column = u16::try_from(column).map_err(|_| {
-                ExcelError::Format(format!(
-                    "withTemplate sheet `{name}` column index {column} exceeds u16"
-                ))
-            })?;
-            last_row = Some(last_row.map_or(row, |current| current.max(row)));
-            cells.push((row, column, value.clone()));
-        }
-        // Java WriteSheetHolder.TEMPLATE_EMPTY: lastRowNum + 1 when any row exists.
-        let next_row = last_row.map_or(0, |row| row.saturating_add(1));
-        sheets.push(TemplateSheetData {
-            name,
-            cells,
-            next_row,
-        });
-    }
-    Ok(sheets)
-}
-
 /// Resolves the target sheet for Java `sheet()` / `sheet(no)` / `sheet(name)`.
 ///
 /// Preference matches Java `WriteContextImpl.initSheet`:
@@ -462,74 +410,6 @@ pub(crate) fn resolve_package_target(
 /// # Errors
 ///
 /// Returns worksheet naming or cell-write errors from `rust_xlsxwriter`.
-pub(crate) fn seed_workbook_from_template(
-    workbook: &mut Workbook,
-    sheets: &[TemplateSheetData],
-) -> Result<()> {
-    for sheet in sheets {
-        let worksheet = workbook.add_worksheet();
-        worksheet.set_name(&sheet.name).map_err(format_error)?;
-        for (row, column, value) in &sheet.cells {
-            write_template_cell(worksheet, *row, *column, value)?;
-        }
-    }
-    Ok(())
-}
-
-/// Writes a single calamine cell into a worksheet.
-///
-/// # Errors
-///
-/// Returns XLSX write errors from `rust_xlsxwriter`.
-pub(crate) fn write_template_cell(
-    worksheet: &mut Worksheet,
-    row: u32,
-    column: u16,
-    value: &Data,
-) -> Result<()> {
-    match value {
-        Data::Empty => Ok(()),
-        Data::String(text) | Data::DateTimeIso(text) | Data::DurationIso(text) => worksheet
-            .write_string(row, column, text)
-            .map_err(format_error)
-            .map(|_| ()),
-        Data::Bool(flag) => worksheet
-            .write_boolean(row, column, *flag)
-            .map_err(format_error)
-            .map(|_| ()),
-        Data::Int(number) => {
-            #[allow(clippy::cast_precision_loss)]
-            let value = *number as f64;
-            worksheet
-                .write_number(row, column, value)
-                .map_err(format_error)
-                .map(|_| ())
-        }
-        Data::Float(number) => worksheet
-            .write_number(row, column, *number)
-            .map_err(format_error)
-            .map(|_| ()),
-        Data::DateTime(datetime) => {
-            if let Some(chrono_value) = datetime.as_datetime() {
-                let format = Format::new().set_num_format("yyyy-mm-dd hh:mm:ss");
-                worksheet
-                    .write_datetime_with_format(row, column, chrono_value, &format)
-                    .map_err(format_error)
-                    .map(|_| ())
-            } else {
-                worksheet
-                    .write_number(row, column, datetime.as_f64())
-                    .map_err(format_error)
-                    .map(|_| ())
-            }
-        }
-        Data::Error(error) => worksheet
-            .write_string(row, column, error.to_string())
-            .map_err(format_error)
-            .map(|_| ()),
-    }
-}
-
 #[cfg(test)]
 fn append_sparse_rows_to_xml(
     xml: &str,

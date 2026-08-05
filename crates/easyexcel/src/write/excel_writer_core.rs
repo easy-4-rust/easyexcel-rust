@@ -2368,14 +2368,14 @@ where
         options.template_file.as_deref(),
         options.template_bytes.as_deref(),
     )?;
-    let sheets = crate::write::template_write::load_template_sheets(&bytes)?;
+    let sheets = easyexcel_xlsx::load_legacy_template_sheets(&bytes)?;
     let (target_index, target_name, create_new) =
         crate::write::template_write::resolve_template_target(
             &sheets,
             options.sheet_index,
             &options.sheet_name,
         );
-    crate::write::template_write::seed_workbook_from_template(workbook, &sheets)?;
+    easyexcel_xlsx::seed_legacy_template_workbook(workbook, &sheets)?;
 
     let mut write_options = options.clone();
     write_options.sheet_name.clone_from(&target_name);

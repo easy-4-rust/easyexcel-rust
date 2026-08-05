@@ -111,6 +111,12 @@ impl From<easyexcel_io::Error> for ExcelError {
     }
 }
 
+impl From<easyexcel_format::NumberFormatError> for ExcelError {
+    fn from(error: easyexcel_format::NumberFormatError) -> Self {
+        Self::Format(error.to_string())
+    }
+}
+
 #[cfg(test)]
 mod tests_extra {
     use super::*;

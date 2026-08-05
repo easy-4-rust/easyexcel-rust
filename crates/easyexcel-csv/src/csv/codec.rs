@@ -5,9 +5,44 @@
 use std::io::{Read, Write};
 
 use chrono::NaiveDate;
+use encoding_rs::Encoding;
+use encoding_rs_io::{DecodeReaderBytes, DecodeReaderBytesBuilder};
 
 use easyexcel_io::{Error, Result};
 use easyexcel_model::{Cell, Sheet, Workbook};
+
+use super::CsvCharset;
+
+/// Resolve a Java/WHATWG charset label to the encoding used by the CSV engine.
+///
+/// # Errors
+///
+/// Returns [`Error::Unsupported`] when the configured charset label is unknown.
+pub fn resolve_encoding(charset: &CsvCharset) -> Result<&'static Encoding> {
+    Encoding::for_label(charset.name().as_bytes()).ok_or_else(|| {
+        Error::Unsupported(format!("unsupported CSV charset: {}", charset.name()))
+    })
+}
+
+/// Wrap a byte reader with streaming BOM removal and UTF-8 transcoding.
+///
+/// The returned reader does not buffer the entire CSV document. This keeps the
+/// facade's listener-based CSV path suitable for large inputs while locating
+/// all charset and BOM policy in the format engine.
+///
+/// # Errors
+///
+/// Returns an error when the configured charset label is unknown.
+pub fn decode_reader<R: Read>(
+    reader: R,
+    charset: &CsvCharset,
+) -> Result<DecodeReaderBytes<R, Vec<u8>>> {
+    let encoding = resolve_encoding(charset)?;
+    Ok(DecodeReaderBytesBuilder::new()
+        .encoding(Some(encoding))
+        .strip_bom(true)
+        .build(reader))
+}
 
 /// Options controlling CSV reading.
 #[derive(Debug, Clone)]
