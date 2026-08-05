@@ -69,7 +69,7 @@ where
 }
 
 pub(crate) fn csv_row_index(row_index: usize) -> Result<u32> {
-    u32::try_from(row_index).map_err(|_| ExcelError::Format("CSV row index exceeds u32".to_owned()))
+    easyexcel_csv::checked_row_index(row_index).map_err(ExcelError::from)
 }
 
 pub(crate) fn csv_sheet_name(selector: &SheetSelector) -> Result<String> {

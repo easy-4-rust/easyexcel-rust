@@ -82,6 +82,19 @@ impl Write for FaultyWrite {
     }
 }
 
+#[allow(dead_code)]
+struct PanicWrite;
+
+impl Write for PanicWrite {
+    fn write(&mut self, _buffer: &[u8]) -> io::Result<usize> {
+        panic!("poison output lock");
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
 #[derive(Default)]
 #[allow(dead_code)]
 struct StreamProbe {
@@ -2668,18 +2681,18 @@ fn output_stream_exposes_real_ownership_close_and_poison_failures() {
     assert!(failed_close.close().is_err());
     assert!(failed_close.is_closed());
 
-    let mut poisoned = ExcelOutputStream::new(Vec::new());
+    let mut poisoned = ExcelOutputStream::new(PanicWrite);
     let lock_holder = poisoned.clone();
     assert!(
         std::thread::spawn(move || {
-            let _guard = lock_holder.inner.lock().expect("lock before poison");
-            panic!("poison output lock");
+            let mut lock_holder = lock_holder;
+            let _ = lock_holder.write(b"poison");
         })
         .join()
         .is_err()
     );
     assert!(poisoned.is_closed());
-    assert!(poisoned.with_inner(Vec::len).is_none());
+    assert!(poisoned.with_inner(|_| ()).is_none());
     assert!(poisoned.write_all(b"rejected").is_err());
     assert!(poisoned.flush().is_err());
     assert!(poisoned.close().is_err());

@@ -170,8 +170,7 @@ pub fn read_csv<R: Read>(mut reader: R, opts: &CsvReadOptions) -> Result<Workboo
                 Cell::Text(field.to_string())
             };
             if !cell.is_empty() {
-                let column = u32::try_from(col_idx)
-                    .map_err(|_| Error::Csv("CSV column index exceeds u32".into()))?;
+                let column = super::checked_column_index(col_idx)?;
                 sheet.set(row_idx, column, cell);
             }
         }

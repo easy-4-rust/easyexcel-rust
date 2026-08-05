@@ -3,8 +3,10 @@
 //! 这里重导出 [`easyexcel_io`] 的格式识别、流式行协议、资源限制和统一错误类型。
 
 pub use easyexcel_io::{
-    Error, Format, ReadMode, ResourceLimits, Result, RowSink, RowSource, StreamCell, StreamInfo,
-    WriteMode, looks_like_cfb, looks_like_zip,
+    ByteOrderMark, CloseableOutputStream, Error, Format, GzipCellRecordReader,
+    GzipCellRecordWriter, GzipCellValue, ReadMode, ResourceLimits, Result, RowSink, RowSource,
+    SharedByteBuffer, StreamCell, StreamInfo, WriteMode, looks_like_cfb,
+    looks_like_delimited_text, looks_like_zip, path_has_extension, read_all, write_all_and_flush,
 };
 
-pub use easyexcel_io::io::{file_utils, gzip_record, io_utils};
+pub use easyexcel_io::io::{file_utils, gzip_record, http_fetch, io_utils, media_type};

@@ -10,6 +10,7 @@ mod csv_rich_text_string;
 mod csv_row;
 mod csv_sheet;
 mod csv_workbook;
+mod index;
 mod record_io;
 
 pub use codec::{
@@ -25,4 +26,5 @@ pub use csv_rich_text_string::CsvRichTextString;
 pub use csv_row::CsvRow;
 pub use csv_sheet::CsvSheet;
 pub use csv_workbook::CsvWorkbook;
+pub use index::{checked_column_index, checked_row_index};
 pub use record_io::{CsvRecordReader, CsvRecordWriter};

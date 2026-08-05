@@ -6,5 +6,6 @@ pub use csv::{
     CsvCell, CsvCellStyle, CsvCellValue, CsvCharset, CsvDataFormat, CsvEncoding,
     CsvEncodingWriter, CsvNumericCellType, CsvReadOptions, CsvRecordReader, CsvRecordWriter,
     CsvRichTextString, CsvRow, CsvSheet, CsvWorkbook, CsvWriteOptions, csv_bom, csv_encoding,
-    decode_bytes, decode_reader, detect_delimiter, infer_cell, read_csv, resolve_encoding, write_csv,
+    checked_column_index, checked_row_index, decode_bytes, decode_reader, detect_delimiter,
+    infer_cell, read_csv, resolve_encoding, write_csv,
 };

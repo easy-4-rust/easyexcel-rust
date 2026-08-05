@@ -4,7 +4,10 @@
 //! ```text
 //! cargo run -p xtask -- migration-audit
 //! cargo run -p xtask -- migration-audit-strict
+//! cargo run -p xtask -- facade-boundary-audit
 //! ```
+
+mod facade_boundary;
 
 use std::env;
 use std::fs::File;
@@ -16,16 +19,17 @@ const SOURCE_COMMIT: &str = "3afdea9d5da7f24a66eda6ec44a9dfce80b16802";
 const EXPECTED_JAVA_MAIN: usize = 325;
 const MAP_PATH: &str = "docs/migration/file-map.csv";
 
-type TaskResult<T = ()> = Result<T, Box<dyn std::error::Error>>;
+pub(crate) type TaskResult<T = ()> = Result<T, Box<dyn std::error::Error>>;
 
 fn main() -> ExitCode {
     let mut args = env::args().skip(1);
     let result = match args.next().as_deref() {
         Some("migration-audit") => audit(false),
         Some("migration-audit-strict" | "--strict") => audit(true),
+        Some("facade-boundary-audit") => facade_boundary::audit(),
         _ => {
             eprintln!(
-                "usage: cargo run -p xtask -- <migration-audit [--strict]|migration-audit-strict>"
+                "usage: cargo run -p xtask -- <migration-audit [--strict]|migration-audit-strict|facade-boundary-audit>"
             );
             return ExitCode::from(2);
         }

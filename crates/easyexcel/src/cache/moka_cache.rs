@@ -36,7 +36,9 @@ impl MokaCache {
         let active_batches = u64::try_from(batch_count).unwrap_or(1);
         Ok(Self {
             adapter: SharedStringCacheAdapter::new(
-                easyexcel_cache::create_moka_cache_for_batches(active_batches)?,
+                easyexcel_cache::SharedStringCachePolicy::new(0)
+                    .with_max_active_batches(Some(active_batches))
+                    .create_cache(0)?,
             ),
         })
     }
@@ -53,7 +55,9 @@ impl MokaCache {
         let active_megabytes = u64::try_from(megabytes).unwrap_or(1);
         Ok(Self {
             adapter: SharedStringCacheAdapter::new(
-                easyexcel_cache::create_weighted_moka_cache_mb(active_megabytes)?,
+                easyexcel_cache::SharedStringCachePolicy::new(0)
+                    .with_max_active_megabytes(Some(active_megabytes))
+                    .create_cache(0)?,
             ),
         })
     }
