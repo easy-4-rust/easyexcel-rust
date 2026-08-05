@@ -24,7 +24,7 @@ use super::package::{RawRelationships, Relationships, relationship_part_name, re
 use super::package_reader::XlsxPackageReader;
 use super::{
     decode_ooxml_escape, dimension_last_row as parse_dimension_last_row, parse_a1_cell_range,
-    parse_a1_cell_reference,
+    parse_a1_cell_reference, parse_xlsx_index, parse_xlsx_row_number as parse_row_number,
 };
 
 /// 可被 XLSX 事件读取器持有的输入流。
@@ -403,7 +403,7 @@ impl<'a> XlsxCellEventReader<'a> {
                     let style_index = values
                         .get("s")
                         .filter(|value| !value.is_empty())
-                        .map(|value| value.parse::<usize>().map_err(xlsx_error))
+                        .map(|value| parse_xlsx_index(value, "style"))
                         .transpose()?
                         .unwrap_or_default();
                     let cell_type = values.get("t").map(String::as_str);
@@ -532,7 +532,7 @@ impl<'a> XlsxCellEventReader<'a> {
                 if raw_value.is_empty() {
                     XlsxCellValue::Empty
                 } else {
-                    let index = raw_value.parse::<usize>().map_err(xlsx_error)?;
+                    let index = parse_xlsx_index(&raw_value, "shared string")?;
                     XlsxCellValue::String(self.shared_strings.get(index)?)
                 }
             }

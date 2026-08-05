@@ -3816,60 +3816,24 @@ fn write_rich_text(
 
 fn rich_text_runs(data: &RichTextStringData) -> Result<Vec<(Format, String)>> {
     let text = data.text_string();
-    let utf16_length = text.encode_utf16().count();
-    let mut boundaries = vec![0, utf16_length];
-    for interval in data.interval_fonts() {
-        let start = interval.start_index();
-        let end = interval.end_index();
-        if start >= end || end > utf16_length {
-            return Err(ExcelError::Format(format!(
-                "rich-text font range [{start}, {end}) is outside UTF-16 length {utf16_length}"
-            )));
-        }
-        if utf16_byte_index(text, start).is_none() || utf16_byte_index(text, end).is_none() {
-            return Err(ExcelError::Format(format!(
-                "rich-text font range [{start}, {end}) splits a UTF-16 surrogate pair"
-            )));
-        }
-        boundaries.push(start);
-        boundaries.push(end);
-    }
-    boundaries.sort_unstable();
-    boundaries.dedup();
-
-    boundaries
-        .windows(2)
-        .map(|window| {
-            let start = window[0];
-            let end = window[1];
-            let start_byte = utf16_byte_index(text, start).expect("validated UTF-16 boundary");
-            let end_byte = utf16_byte_index(text, end).expect("validated UTF-16 boundary");
-            let font = data
-                .interval_fonts()
-                .iter()
-                .rev()
-                .find(|interval| interval.start_index() <= start && interval.end_index() >= end)
-                .map_or(data.write_font(), |interval| Some(interval.write_font()));
+    let intervals = data
+        .interval_fonts()
+        .iter()
+        .map(|interval| (interval.start_index(), interval.end_index()))
+        .collect::<Vec<_>>();
+    easyexcel_xlsx::segment_utf16_text(text, &intervals)
+        .map_err(ExcelError::from)?
+        .into_iter()
+        .map(|segment| {
+            let font = segment.interval_index.map_or(data.write_font(), |index| {
+                Some(data.interval_fonts()[index].write_font())
+            });
             Ok((
                 font.map_or_else(generation::new_format, rich_text_format),
-                text[start_byte..end_byte].to_owned(),
+                segment.text,
             ))
         })
         .collect()
-}
-
-fn utf16_byte_index(text: &str, target: usize) -> Option<usize> {
-    let mut utf16_index = 0;
-    for (byte_index, character) in text.char_indices() {
-        if utf16_index == target {
-            return Some(byte_index);
-        }
-        utf16_index += character.len_utf16();
-        if utf16_index > target {
-            return None;
-        }
-    }
-    (utf16_index == target).then_some(text.len())
 }
 
 fn rich_text_format(font: &WriteFont) -> Format {
@@ -3898,73 +3862,35 @@ fn insert_image_data(
 ) -> Result<()> {
     let anchor = data.get_anchor();
     let coordinates = anchor.get_coordinates();
-    let first_row = resolve_anchor_coordinate(
-        current_row,
-        coordinates.get_first_row_index(),
-        coordinates.get_relative_first_row_index(),
-        "first row",
-    )?;
-    let first_column = resolve_anchor_coordinate(
-        u32::from(current_column),
-        coordinates.get_first_column_index().map(u32::from),
-        coordinates.get_relative_first_column_index(),
-        "first column",
-    )?;
-    let last_row = resolve_anchor_coordinate(
-        current_row,
-        coordinates.get_last_row_index(),
-        coordinates.get_relative_last_row_index(),
-        "last row",
-    )?;
-    let last_column = resolve_anchor_coordinate(
-        u32::from(current_column),
-        coordinates.get_last_column_index().map(u32::from),
-        coordinates.get_relative_last_column_index(),
-        "last column",
-    )?;
-    if first_row > last_row || first_column > last_column {
-        return Err(ExcelError::Format(
-            "image anchor start must not follow its end".to_owned(),
-        ));
-    }
-    let first_column = u16::try_from(first_column)
-        .map_err(|_| ExcelError::Format("image anchor column exceeds XLSX limit".to_owned()))?;
-    let last_column = u16::try_from(last_column)
-        .map_err(|_| ExcelError::Format("image anchor column exceeds XLSX limit".to_owned()))?;
-    if last_row >= 1_048_576 || last_column >= 16_384 {
-        return Err(ExcelError::Format(
-            "image anchor exceeds XLSX worksheet limits".to_owned(),
-        ));
-    }
-
-    let total_width = (first_column..=last_column).try_fold(0_u32, |width, column| {
-        width
-            .checked_add(layout.column_width(column))
-            .ok_or_else(|| ExcelError::Format("image anchor width overflow".to_owned()))
-    })?;
-    let total_height = (first_row..=last_row).try_fold(0_u32, |height, row| {
-        height
-            .checked_add(layout.row_height(row))
-            .ok_or_else(|| ExcelError::Format("image anchor height overflow".to_owned()))
-    })?;
-    let left = anchor.get_left().unwrap_or(0);
-    let right = anchor.get_right().unwrap_or(0);
-    let top = anchor.get_top().unwrap_or(0);
-    let bottom = anchor.get_bottom().unwrap_or(0);
-    let width = total_width
-        .checked_sub(left)
-        .and_then(|value| value.checked_sub(right))
-        .filter(|value| *value > 0)
-        .ok_or_else(|| {
-            ExcelError::Format("image horizontal margins consume its anchor".to_owned())
-        })?;
-    let height = total_height
-        .checked_sub(top)
-        .and_then(|value| value.checked_sub(bottom))
-        .filter(|value| *value > 0)
-        .ok_or_else(|| {
-            ExcelError::Format("image vertical margins consume its anchor".to_owned())
-        })?;
+    let resolved = easyexcel_xlsx::resolve_image_anchor(
+        easyexcel_xlsx::ImageAnchorSpec {
+            current_row,
+            current_column,
+            first_row: easyexcel_xlsx::AnchorCoordinate {
+                absolute: coordinates.get_first_row_index(),
+                relative: coordinates.get_relative_first_row_index(),
+            },
+            first_column: easyexcel_xlsx::AnchorCoordinate {
+                absolute: coordinates.get_first_column_index().map(u32::from),
+                relative: coordinates.get_relative_first_column_index(),
+            },
+            last_row: easyexcel_xlsx::AnchorCoordinate {
+                absolute: coordinates.get_last_row_index(),
+                relative: coordinates.get_relative_last_row_index(),
+            },
+            last_column: easyexcel_xlsx::AnchorCoordinate {
+                absolute: coordinates.get_last_column_index().map(u32::from),
+                relative: coordinates.get_relative_last_column_index(),
+            },
+            left: anchor.get_left().unwrap_or(0),
+            right: anchor.get_right().unwrap_or(0),
+            top: anchor.get_top().unwrap_or(0),
+            bottom: anchor.get_bottom().unwrap_or(0),
+        },
+        |column| layout.column_width(column),
+        |row| layout.row_height(row),
+    )
+    .map_err(ExcelError::from)?;
     let movement = match anchor
         .get_anchor_type()
         .unwrap_or(AnchorType::MoveAndResize)
@@ -3977,33 +3903,16 @@ fn insert_image_data(
     };
     generation::insert_scaled_image(
         worksheet,
-        first_row,
-        first_column,
+        resolved.first_row,
+        resolved.first_column,
         data.image(),
-        width,
-        height,
+        resolved.width,
+        resolved.height,
         movement,
-        left,
-        top,
+        resolved.left,
+        resolved.top,
     )
     .map_err(format_error)
-}
-
-fn resolve_anchor_coordinate(
-    current: u32,
-    absolute: Option<u32>,
-    relative: Option<i32>,
-    label: &str,
-) -> Result<u32> {
-    if let Some(absolute) = absolute.filter(|value| *value > 0) {
-        return Ok(absolute);
-    }
-    let Some(relative) = relative else {
-        return Ok(current);
-    };
-    current
-        .checked_add_signed(relative)
-        .ok_or_else(|| ExcelError::Format(format!("image anchor {label} is outside the worksheet")))
 }
 
 // 按值传入与调用点构造惯例一致，改引用会增加不必要的借用链

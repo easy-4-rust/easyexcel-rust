@@ -19,10 +19,11 @@ use crate::read::read_cache::SharedStringCache;
 /// Batch count used by Java `Ehcache.BATCH_COUNT`.
 // 内部缓存 API 脚手架，暂未在 crate 内直接使用。
 #[allow(dead_code)]
-pub const BATCH_COUNT: usize = 100;
+pub const BATCH_COUNT: usize = easyexcel_cache::SHARED_STRING_CACHE_BATCH_SIZE as usize;
 
 /// Default active batch count used by Java `SimpleReadCacheSelector`.
-pub const DEFAULT_MAX_EHCACHE_ACTIVATE_BATCH_COUNT: i32 = 20;
+pub const DEFAULT_MAX_EHCACHE_ACTIVATE_BATCH_COUNT: i32 =
+    easyexcel_cache::DEFAULT_MOKA_ACTIVE_BATCHES as i32;
 
 /// Disk-backed shared-string cache matching Java `Ehcache`.
 ///
@@ -50,12 +51,10 @@ impl Ehcache {
         let batch_count = max_cache_activate_batch_count
             .unwrap_or(DEFAULT_MAX_EHCACHE_ACTIVATE_BATCH_COUNT)
             .max(1);
-        let active_entries = u64::try_from(batch_count)
-            .unwrap_or(1)
-            .saturating_mul(BATCH_COUNT as u64);
-        Ok(Self::from_backend(easyexcel_cache::create_moka_cache(
-            active_entries,
-        )?))
+        let active_batches = u64::try_from(batch_count).unwrap_or(1);
+        Ok(Self::from_backend(
+            easyexcel_cache::create_moka_cache_for_batches(active_batches)?,
+        ))
     }
 
     /// Creates a cache with the deprecated Java `maxCacheActivateSize` MB knob.
@@ -69,11 +68,9 @@ impl Ehcache {
         max_cache_activate_size_mb: Option<i32>,
     ) -> Result<Self> {
         let megabytes = max_cache_activate_size_mb.unwrap_or(16).max(1);
-        let active_bytes = u64::try_from(megabytes)
-            .unwrap_or(1)
-            .saturating_mul(1024 * 1024);
+        let active_megabytes = u64::try_from(megabytes).unwrap_or(1);
         Ok(Self::from_backend(
-            easyexcel_cache::create_weighted_moka_cache(active_bytes)?,
+            easyexcel_cache::create_weighted_moka_cache_mb(active_megabytes)?,
         ))
     }
 

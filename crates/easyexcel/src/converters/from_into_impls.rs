@@ -107,11 +107,11 @@ impl FromExcelCell for BigInt {
             CellValue::Bool(value) => Ok(Self::from(u8::from(*value))),
             CellValue::Int(value) => Ok(Self::from(*value)),
             CellValue::Float(value) => BigDecimal::from_str(&value.to_string())
-                .map(|value| decimal_to_big_int(&value))
+                .map(|value| easyexcel_format::decimal_to_big_int(&value))
                 .map_err(|_| context.invalid(cell, "BigInt")),
-            CellValue::Decimal(value) => Ok(decimal_to_big_int(value)),
+            CellValue::Decimal(value) => Ok(easyexcel_format::decimal_to_big_int(value)),
             CellValue::String(value) => BigDecimal::from_str(value)
-                .map(|value| decimal_to_big_int(&value))
+                .map(|value| easyexcel_format::decimal_to_big_int(&value))
                 .map_err(|_| context.invalid(cell, "BigInt")),
             other => Err(context.invalid(other, "BigInt")),
         }
@@ -124,10 +124,6 @@ impl IntoExcelCell for BigInt {
             .to_i64()
             .map_or_else(|| CellValue::String(self.to_string()), CellValue::Int))
     }
-}
-
-fn decimal_to_big_int(value: &BigDecimal) -> BigInt {
-    value.with_scale(0).into_bigint_and_exponent().0
 }
 
 fn parse_integer<T>(

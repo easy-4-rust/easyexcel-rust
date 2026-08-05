@@ -21,7 +21,9 @@ pub use excel_locale::ExcelLocale;
 pub use excel_general_number_format::format_general;
 pub use number_utils::{
     NonFiniteNumber, NumberFormatError, NumberRoundingMode, decimal_integer_requires_text,
-    excel_date_format_code, finite_decimal_f64, format_decimal, format_non_finite,
+    decimal_to_big_int, decimal_to_java_i16, decimal_to_java_i32, decimal_to_java_i64,
+    decimal_to_java_i8, excel_date_format_code, finite_decimal_f64, format_decimal,
+    format_non_finite, java_f32_string, java_f64_string,
     parse_big_decimal, parse_big_int, parse_byte, parse_decimal, parse_double, parse_float,
     parse_integer, parse_long, parse_short,
 };

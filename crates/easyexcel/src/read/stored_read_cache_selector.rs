@@ -1,7 +1,7 @@
 //! Java-compatible stored cache selector wiring.
 
 use crate::cache::{EternalReadCacheSelector, ReadCacheSelector, SimpleReadCacheSelector};
-use crate::read::read_cache::ReadCacheMode;
+use crate::read::read_cache::{ReadCacheMode, SharedStringCache};
 
 /// Stored cache selector matching Java `ReadCacheSelector` wiring.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -17,6 +17,16 @@ impl ReadCacheSelector for StoredReadCacheSelector {
         match self {
             Self::Simple(selector) => selector.select_mode(shared_strings_xml_size),
             Self::Eternal(selector) => selector.select_mode(shared_strings_xml_size),
+        }
+    }
+
+    fn create_cache(
+        &self,
+        shared_strings_xml_size: u64,
+    ) -> easyexcel_io::Result<Box<dyn SharedStringCache>> {
+        match self {
+            Self::Simple(selector) => selector.create_cache(shared_strings_xml_size),
+            Self::Eternal(selector) => selector.create_cache(shared_strings_xml_size),
         }
     }
 }

@@ -92,9 +92,8 @@ impl CellTagHandler {
             None => (fallback_row, fallback_column),
         };
         let style_index = match attrs.get(ATTRIBUTE_S) {
-            Some(value) if !value.is_empty() => value
-                .parse::<usize>()
-                .map_err(|error| ExcelError::Format(error.to_string()))?,
+            Some(value) if !value.is_empty() => easyexcel_xlsx::parse_xlsx_index(value, "style")
+                .map_err(ExcelError::from)?,
             _ => DEFAULT_FORMAT_INDEX,
         };
         let cell_type = attrs.get(ATTRIBUTE_T).cloned();

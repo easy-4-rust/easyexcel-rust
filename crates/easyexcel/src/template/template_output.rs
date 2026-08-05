@@ -2,8 +2,11 @@
 //!
 //! 对应 Java：内部辅助类型（输出目标抽象）。
 
+#[cfg(test)]
 use std::any::Any;
-use std::io::{Read, Seek, Write};
+#[cfg(test)]
+use std::io::Seek;
+use std::io::Write;
 use std::path::PathBuf;
 
 use crate::write::ExcelOutputStream;
@@ -27,14 +30,14 @@ where
     }
 }
 
-pub(crate) trait ReadSeek: Read + Seek {}
+pub(crate) use easyexcel_xlsx::xlsx::ReadSeek;
 
-impl<T: Read + Seek> ReadSeek for T {}
-
+#[cfg(test)]
 pub(crate) trait WriteSeek: Write + Seek + Any {
     fn into_any(self: Box<Self>) -> Box<dyn Any>;
 }
 
+#[cfg(test)]
 impl<T: Write + Seek + Any> WriteSeek for T {
     fn into_any(self: Box<Self>) -> Box<dyn Any> {
         self

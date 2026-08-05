@@ -7,7 +7,9 @@
 //! [`Ehcache`](super::super::Ehcache) / disk.
 
 use super::read_cache_selector::ReadCacheSelector;
-use crate::read::read_cache::{DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES, ReadCacheMode};
+use crate::read::read_cache::{
+    DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES, ReadCacheMode, SharedStringCache,
+};
 
 /// Simple cache selector matching Java's 5 MB map-cache boundary.
 ///
@@ -100,6 +102,30 @@ impl ReadCacheSelector for SimpleReadCacheSelector {
         } else {
             ReadCacheMode::Disk
         }
+    }
+
+    fn create_cache(
+        &self,
+        shared_strings_xml_size: u64,
+    ) -> easyexcel_io::Result<Box<dyn SharedStringCache>> {
+        if self.select_mode(shared_strings_xml_size) == ReadCacheMode::Memory {
+            return easyexcel_cache::create_cache(ReadCacheMode::Memory, shared_strings_xml_size);
+        }
+
+        // Java 优先保留已废弃的 maxCacheActivateSize 配置；仅未设置时才
+        // 使用 maxCacheActivateBatchCount（默认 20 批，每批 100 条）。
+        if let Some(megabytes) = self.max_cache_activate_size {
+            return easyexcel_cache::create_weighted_moka_cache_mb(
+                u64::try_from(megabytes.max(1)).unwrap_or(1),
+            );
+        }
+        let batches = self
+            .max_cache_activate_batch_count
+            .unwrap_or(easyexcel_cache::DEFAULT_MOKA_ACTIVE_BATCHES as i32)
+            .max(1);
+        easyexcel_cache::create_moka_cache_for_batches(
+            u64::try_from(batches).unwrap_or(1),
+        )
     }
 }
 

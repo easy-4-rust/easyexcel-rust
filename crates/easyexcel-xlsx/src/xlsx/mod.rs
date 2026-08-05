@@ -10,12 +10,14 @@ mod crypto;
 mod cell_reference;
 mod encrypt;
 mod event_reader;
+mod image_anchor;
 pub mod generation;
 mod legacy_template;
 mod ooxml_package;
 pub mod package;
 mod package_reader;
 mod reader;
+mod rich_text_segment;
 mod shared_strings;
 mod source;
 mod stream;
@@ -32,11 +34,14 @@ mod xmlutil;
 pub use encrypt::{ReadWriteSeek, encrypt_package_to};
 pub use cell_reference::{
     MAX_XLSX_COLUMN_NUMBER, MAX_XLSX_ROW_NUMBER, dimension_last_row,
-    parse_a1_cell_range, parse_a1_cell_reference,
+    parse_a1_cell_range, parse_a1_cell_reference, parse_xlsx_index, parse_xlsx_row_number,
 };
 pub use event_reader::{
     ReadSeek, XlsxCellEvent, XlsxCellEventReader, XlsxCellValue, XlsxDisplayOptions,
     XlsxEventMetadata, XlsxExtra, XlsxExtraKind, XlsxNumberFormat,
+};
+pub use image_anchor::{
+    AnchorCoordinate, ImageAnchorSpec, ResolvedImageAnchor, resolve_image_anchor,
 };
 pub use crypto::{decrypt_file, is_encrypted_ooxml};
 pub use ooxml_package::{OoxmlPackage, OoxmlZipEntry};
@@ -45,6 +50,7 @@ pub use legacy_template::{
     LegacyTemplateSheet, load_legacy_template_sheets, seed_legacy_template_workbook,
 };
 pub use reader::{read, read_with_password};
+pub use rich_text_segment::{RichTextSegment, segment_utf16_text};
 pub use source::{
     XlsxInput, XlsxSource, excel_input_suffix, is_compound_document, materialize_excel_input,
 };

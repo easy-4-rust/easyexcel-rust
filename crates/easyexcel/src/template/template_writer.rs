@@ -2,7 +2,9 @@
 //!
 //! 对应 Java：`com.alibaba.excel.ExcelWriter`（fill 生命周期）
 
-use std::io::{Cursor, Read, Write};
+#[cfg(test)]
+use std::io::Cursor;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
 use crate::core::{CellValue, ExcelError, Result};
@@ -15,7 +17,9 @@ use crate::template::sheet_fill_state::{
     PendingCollectionFill, PendingSheetFill, ResolvedSheetFill,
 };
 use crate::template::template_entry::TemplateEntry;
-use crate::template::template_output::{ReadSeek, TemplateOutput, WriteSeek};
+use crate::template::template_output::{ReadSeek, TemplateOutput};
+#[cfg(test)]
+use crate::template::template_output::WriteSeek;
 use crate::{FillConfig, FillWrapper, TemplateData, TemplateSheet};
 
 /// Stateful OOXML template writer matching Java `ExcelWriter.fill` lifecycle.
@@ -576,6 +580,7 @@ pub(crate) fn encode_entries(entries: &[TemplateEntry]) -> Result<Vec<u8>> {
     Ok(easyexcel_xlsx::OoxmlPackage::from_entries(entries.to_vec()).to_bytes()?)
 }
 
+#[cfg(test)]
 pub(crate) fn archive_output_bytes(writer: Box<dyn WriteSeek>) -> Result<Vec<u8>> {
     writer
         .into_any()
@@ -584,11 +589,13 @@ pub(crate) fn archive_output_bytes(writer: Box<dyn WriteSeek>) -> Result<Vec<u8>
         .map_err(|_| ExcelError::Format("ZIP output buffer type changed".to_owned()))
 }
 
+#[cfg(test)]
 pub(crate) fn write_file_entries(writer: std::fs::File, entries: &[TemplateEntry]) -> Result<()> {
     let _writer = easyexcel_xlsx::OoxmlPackage::from_entries(entries.to_vec()).write_to(writer)?;
     Ok(())
 }
 
+#[cfg(test)]
 pub(crate) fn write_entries_to(
     writer: Box<dyn WriteSeek>,
     entries: &[TemplateEntry],
@@ -596,6 +603,7 @@ pub(crate) fn write_entries_to(
     Ok(easyexcel_xlsx::OoxmlPackage::from_entries(entries.to_vec()).write_to(writer)?)
 }
 
+#[cfg(test)]
 pub(crate) fn format_error(error: impl std::fmt::Display) -> ExcelError {
     ExcelError::Format(error.to_string())
 }

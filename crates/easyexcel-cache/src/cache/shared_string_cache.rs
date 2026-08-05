@@ -17,6 +17,12 @@ pub const DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES: u64 = 5_000_000;
 /// Moka 活跃层默认最多保留的共享字符串条目数。
 pub const DEFAULT_MOKA_ACTIVE_ENTRIES: u64 = 2_000;
 
+/// Java `Ehcache` 每个共享字符串批次包含的条目数。
+pub const SHARED_STRING_CACHE_BATCH_SIZE: u64 = 100;
+
+/// Java `SimpleReadCacheSelector` 默认保留的活跃批次数。
+pub const DEFAULT_MOKA_ACTIVE_BATCHES: u64 = 20;
+
 /// 共享字符串顺序写入阶段。
 pub trait SharedStringCacheWriter {
     /// 追加一条共享字符串。
@@ -102,6 +108,21 @@ pub fn create_moka_cache(max_active_entries: u64) -> Result<Box<dyn SharedString
     Ok(Box::new(MokaSharedStringCache::new(active)?))
 }
 
+/// 按 Java `Ehcache` 批次数创建 Moka 热缓存与临时文件后备。
+///
+/// # Errors
+///
+/// 临时后备文件创建失败时返回错误。
+pub fn create_moka_cache_for_batches(
+    max_active_batches: u64,
+) -> Result<Box<dyn SharedStringCache>> {
+    create_moka_cache(
+        max_active_batches
+            .max(1)
+            .saturating_mul(SHARED_STRING_CACHE_BATCH_SIZE),
+    )
+}
+
 /// 创建按 UTF-8 字节权重限制的 Moka 热缓存与临时文件后备。
 ///
 /// # Errors
@@ -115,6 +136,17 @@ pub fn create_weighted_moka_cache(max_active_bytes: u64) -> Result<Box<dyn Share
         })
         .build();
     Ok(Box::new(MokaSharedStringCache::new(active)?))
+}
+
+/// 按 Java 已废弃的 MB 容量参数创建加权 Moka 热缓存。
+///
+/// # Errors
+///
+/// 临时后备文件创建失败时返回错误。
+pub fn create_weighted_moka_cache_mb(
+    max_active_megabytes: u64,
+) -> Result<Box<dyn SharedStringCache>> {
+    create_weighted_moka_cache(max_active_megabytes.max(1).saturating_mul(1024 * 1024))
 }
 
 /// 兼容旧调用点；Moka 后端不持有线程局部文件句柄，因此无需显式清理。

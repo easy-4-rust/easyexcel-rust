@@ -39,17 +39,8 @@ impl RowTagHandler {
     /// 返回 [`ExcelError::Format`]。
     pub fn resolve_row_index(row_attr: Option<&str>, before: u32) -> Result<u32> {
         match row_attr {
-            Some(value) if !value.is_empty() => {
-                let one_based: u32 = value
-                    .parse()
-                    .map_err(|error| ExcelError::Format(format!("{error}")))?;
-                if !(1..=1_048_576).contains(&one_based) {
-                    return Err(ExcelError::Format(format!(
-                        "row index exceeds XLSX limits: {value}"
-                    )));
-                }
-                Ok(one_based - 1)
-            }
+            Some(value) if !value.is_empty() => easyexcel_xlsx::parse_xlsx_row_number(value)
+                .map_err(ExcelError::from),
             _ => Ok(before),
         }
     }

@@ -6,13 +6,16 @@
 use std::str::FromStr;
 
 use bigdecimal::{BigDecimal, ToPrimitive};
-use num_bigint::{BigInt, Sign};
+use num_bigint::BigInt;
 
 use crate::util::number_utils::{
     NonFiniteNumber, format_decimal, format_non_finite, parse_decimal,
 };
 use crate::util::work_book_util::fill_data_format;
 use crate::{CellValue, ExcelError, ReadConverterContext, WriteCellData, WriteConverterContext};
+
+#[cfg(test)]
+use easyexcel_format::{java_f32_string, java_f64_string};
 
 pub(crate) trait JavaNumber: Sized {
     fn from_decimal(value: &BigDecimal) -> Result<Self, ExcelError>;
@@ -116,23 +119,6 @@ fn number_error(
     }
 }
 
-fn decimal_to_big_int(value: &BigDecimal) -> BigInt {
-    value.with_scale(0).into_bigint_and_exponent().0
-}
-
-fn java_signed_low_bytes<const N: usize>(value: &BigInt) -> [u8; N] {
-    let sign_extension = if value.sign() == Sign::Minus {
-        u8::MAX
-    } else {
-        0
-    };
-    let mut output = [sign_extension; N];
-    let source = value.to_signed_bytes_le();
-    let count = source.len().min(N);
-    output[..count].copy_from_slice(&source[..count]);
-    output
-}
-
 impl JavaNumber for BigDecimal {
     fn from_decimal(value: &BigDecimal) -> Result<Self, ExcelError> {
         Ok(value.clone())
@@ -153,7 +139,7 @@ impl JavaNumber for BigDecimal {
 
 impl JavaNumber for BigInt {
     fn from_decimal(value: &BigDecimal) -> Result<Self, ExcelError> {
-        Ok(decimal_to_big_int(value))
+        Ok(easyexcel_format::decimal_to_big_int(value))
     }
 
     fn to_decimal(&self) -> Result<BigDecimal, ExcelError> {
@@ -170,13 +156,10 @@ impl JavaNumber for BigInt {
 }
 
 macro_rules! impl_java_integer {
-    ($target:ty, $bytes:expr) => {
+    ($target:ty, $convert:path) => {
         impl JavaNumber for $target {
             fn from_decimal(value: &BigDecimal) -> Result<Self, ExcelError> {
-                let integer = decimal_to_big_int(value);
-                Ok(<$target>::from_le_bytes(java_signed_low_bytes::<$bytes>(
-                    &integer,
-                )))
+                Ok($convert(value))
             }
 
             fn to_decimal(&self) -> Result<BigDecimal, ExcelError> {
@@ -194,10 +177,10 @@ macro_rules! impl_java_integer {
     };
 }
 
-impl_java_integer!(i8, 1);
-impl_java_integer!(i16, 2);
-impl_java_integer!(i32, 4);
-impl_java_integer!(i64, 8);
+impl_java_integer!(i8, easyexcel_format::decimal_to_java_i8);
+impl_java_integer!(i16, easyexcel_format::decimal_to_java_i16);
+impl_java_integer!(i32, easyexcel_format::decimal_to_java_i32);
+impl_java_integer!(i64, easyexcel_format::decimal_to_java_i64);
 
 impl JavaNumber for f32 {
     fn from_decimal(value: &BigDecimal) -> Result<Self, ExcelError> {
@@ -215,7 +198,7 @@ impl JavaNumber for f32 {
     }
 
     fn java_string(&self) -> String {
-        java_f32_string(*self)
+        easyexcel_format::java_f32_string(*self)
     }
 
     fn negative(&self) -> bool {
@@ -251,7 +234,7 @@ impl JavaNumber for f64 {
     }
 
     fn java_string(&self) -> String {
-        java_f64_string(*self)
+        easyexcel_format::java_f64_string(*self)
     }
 
     fn negative(&self) -> bool {
@@ -268,56 +251,6 @@ impl JavaNumber for f64 {
         } else {
             None
         }
-    }
-}
-
-fn java_f32_string(value: f32) -> String {
-    java_float_string(
-        f64::from(value),
-        value.to_string(),
-        &format!("{value:e}"),
-        value.is_sign_negative(),
-    )
-}
-
-fn java_f64_string(value: f64) -> String {
-    java_float_string(
-        value,
-        value.to_string(),
-        &format!("{value:e}"),
-        value.is_sign_negative(),
-    )
-}
-
-fn java_float_string(value: f64, plain: String, scientific: &str, negative: bool) -> String {
-    if value.is_nan() {
-        return "NaN".to_owned();
-    }
-    if value == f64::INFINITY {
-        return "Infinity".to_owned();
-    }
-    if value == f64::NEG_INFINITY {
-        return "-Infinity".to_owned();
-    }
-    if value == 0.0 {
-        return if negative { "-0.0" } else { "0.0" }.to_owned();
-    }
-    let absolute = value.abs();
-    if !(1.0e-3..1.0e7).contains(&absolute) {
-        let (mantissa, exponent) = scientific
-            .split_once(['e', 'E'])
-            .expect("Rust scientific formatting contains an exponent");
-        let mantissa = if mantissa.contains('.') {
-            mantissa.to_owned()
-        } else {
-            format!("{mantissa}.0")
-        };
-        return format!("{mantissa}E{}", exponent.trim_start_matches('+'));
-    }
-    if plain.contains('.') {
-        plain
-    } else {
-        format!("{plain}.0")
     }
 }
 

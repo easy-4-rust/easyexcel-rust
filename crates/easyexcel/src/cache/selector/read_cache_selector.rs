@@ -1,6 +1,6 @@
 //! 对应 Java：`com.alibaba.excel.cache.selector.ReadCacheSelector`.
 
-use crate::read::read_cache::ReadCacheMode;
+use crate::read::read_cache::{ReadCacheMode, SharedStringCache};
 
 /// Selects the shared-string cache backend for an XLSX workbook.
 ///
@@ -15,4 +15,22 @@ pub trait ReadCacheSelector: Send + Sync {
     ///
     /// 对应 Java：`readCache(PackagePart sharedStringsTablePackagePart)`.
     fn select_mode(&self, shared_strings_xml_size: u64) -> ReadCacheMode;
+
+    /// 按选择结果创建实际共享字符串缓存后端。
+    ///
+    /// 默认实现按 [`Self::select_mode`] 创建标准引擎缓存；需要保留容量参数的
+    /// selector 可覆盖该方法。对应 Java：`ReadCacheSelector#readCache`。
+    ///
+    /// # Errors
+    ///
+    /// Moka 磁盘后备所需临时文件无法创建时返回错误。
+    fn create_cache(
+        &self,
+        shared_strings_xml_size: u64,
+    ) -> easyexcel_io::Result<Box<dyn SharedStringCache>> {
+        easyexcel_cache::create_cache(
+            self.select_mode(shared_strings_xml_size),
+            shared_strings_xml_size,
+        )
+    }
 }

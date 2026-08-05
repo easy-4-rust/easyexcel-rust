@@ -14,7 +14,6 @@ use easyexcel_xlsx::xlsx::{
 };
 
 use crate::ReadOptions;
-use crate::cache::resolve_read_cache_mode;
 use crate::core::{CellExtra, CellExtraType, CellValue, ExcelError, FormulaData, Result};
 use crate::read::read_cache::create_cache;
 
@@ -56,8 +55,10 @@ impl XlsxRowMetadata {
         let inner = XlsxEventMetadata::new_with_cache_factory(
             Box::new(input) as Box<dyn ReadSeek>,
             |xml_size| {
-                let effective = resolve_read_cache_mode(mode, selector, xml_size);
-                create_cache(effective, xml_size)
+                selector.map_or_else(
+                    || create_cache(mode, xml_size),
+                    |selector| selector.create_cache(xml_size),
+                )
             },
         )
         .map_err(ExcelError::from)?;
