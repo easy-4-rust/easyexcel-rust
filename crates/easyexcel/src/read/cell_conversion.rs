@@ -20,11 +20,7 @@ pub(crate) fn excel_datetime_cell(value: &ExcelDateTime, use_1904_windowing: boo
 
 /// 将 Excel 日期序列转换为门面日期时间值，无法表示时保留原始数字。
 pub(crate) fn excel_serial_datetime_cell(value: f64, use_1904_windowing: bool) -> CellValue {
-    let system = if use_1904_windowing {
-        easyexcel_model::DateSystem::Date1904
-    } else {
-        easyexcel_model::DateSystem::Date1900
-    };
+    let system = easyexcel_model::DateSystem::from_1904_windowing(use_1904_windowing);
     system
         .serial_to_datetime(value)
         .map_or(CellValue::Float(value), CellValue::DateTime)

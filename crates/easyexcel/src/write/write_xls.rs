@@ -7,7 +7,7 @@ use std::io::Write;
 use std::path::Path;
 
 use crate::core::{ExcelError, ExcelRow, Result, WriteHandler, WriteWorkbookContext};
-use crate::write::biff8::Biff8Book;
+use crate::write::xls_adapter::Biff8Book;
 use crate::write::excel_writer_core::{
     HandlerHolderScope, after_workbook, after_workbook_create, before_workbook, sort_handlers,
     validate_excel_row_schema, validate_xls_options, with_default_write_converters,
@@ -31,7 +31,7 @@ where
 /// Writes typed rows to a BIFF8 file while invoking ordered write handlers.
 ///
 /// When [`WriteOptions`] carries a template, uses
-/// [`crate::write::biff8::Biff8TemplatePackage`] (Java `withTemplate` + `doWrite` on HSSF).
+/// the `easyexcel-xls` BIFF8 template engine (Java `withTemplate` + `doWrite` on HSSF).
 /// Password protection remains [`ExcelError::Unsupported`].
 ///
 /// # Errors
@@ -216,7 +216,7 @@ mod tests_extra {
     use super::*;
 
     use crate::core::{DynamicRow, DynamicValue};
-    use crate::write::biff8::Biff8Book;
+    use crate::write::xls_adapter::Biff8Book;
     use crate::write::write_options::WriteOptions;
     use std::collections::BTreeMap;
     use std::io::Cursor;

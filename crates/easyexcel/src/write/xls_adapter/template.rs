@@ -12,7 +12,7 @@ use super::{Biff8Cell, Biff8Merge, Biff8Value};
 
 /// 保留原 EasyExcel 路径的 BIFF8 模板包门面。
 #[derive(Debug, Clone)]
-pub struct Biff8TemplatePackage {
+pub(crate) struct Biff8TemplatePackage {
     inner: easyexcel_xls::biff8::Biff8TemplatePackage,
 }
 
@@ -125,12 +125,6 @@ impl Biff8TemplatePackage {
     pub fn save_to_writer(&self, output: &mut dyn Write) -> Result<()> {
         self.inner.save_to_writer(output).map_err(map_engine_error)
     }
-}
-
-/// 判断字节是否为 OLE `.xls` 容器。
-#[must_use]
-pub fn looks_like_xls(bytes: &[u8]) -> bool {
-    easyexcel_xls::biff8::looks_like_xls(bytes)
 }
 
 fn cell_value_to_template_cell(value: &CellValue) -> Result<Biff8Cell> {

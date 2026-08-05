@@ -15,7 +15,7 @@ use crate::util::work_book_util::create_sheet;
 use easyexcel_xlsx::xlsx::generation::{self, Workbook};
 
 use crate::write::append_rows::append_rows_to_worksheet_with_gzip_and_context;
-use crate::write::biff8::Biff8Book;
+use crate::write::xls_adapter::Biff8Book;
 use easyexcel_csv::CsvRecordWriter;
 use crate::write::excel_output_stream::ExcelOutputStream;
 use crate::write::excel_writer_core::{
@@ -88,8 +88,8 @@ pub struct ExcelWriter {
     /// OLE/BIFF8 package used when `with_template` targets a `.xls` workbook.
     ///
     /// Java mapping: `HSSFWorkbook(template)` + append cells; unmodified BIFF
-    /// records are copied verbatim ([`crate::write::biff8::Biff8TemplatePackage`]).
-    xls_template: Option<crate::write::biff8::Biff8TemplatePackage>,
+    /// records are copied verbatim by the `easyexcel-xls` template engine.
+    xls_template: Option<crate::write::xls_adapter::Biff8TemplatePackage>,
     /// Explicit legacy value-replay for `with_template` (styles/merges discarded).
     use_legacy_template_seed: bool,
     /// Active gzip spill writers keyed by sheet name (when `compress_temp_files`).
@@ -953,12 +953,12 @@ impl ExcelWriter {
                     self.template_file.as_deref(),
                     self.template_bytes.as_deref(),
                 )?;
-                if !crate::write::biff8::looks_like_xls(&bytes) {
+                if !crate::write::xls_adapter::looks_like_xls(&bytes) {
                     return Err(ExcelError::Format(
                         "xls with_template requires an OLE .xls workbook".to_owned(),
                     ));
                 }
-                let package = crate::write::biff8::Biff8TemplatePackage::from_bytes(&bytes)?;
+                let package = crate::write::xls_adapter::Biff8TemplatePackage::from_bytes(&bytes)?;
                 for (index, name) in package.sheet_names().into_iter().enumerate() {
                     let next_row = package.next_row_for_sheet(&name)?;
                     self.sheet_indexes.insert(index, name.clone());

@@ -136,14 +136,6 @@ pub(crate) fn format_number_as_datetime_string(
         .to_string())
 }
 
-pub(crate) fn date_to_excel_serial(value: NaiveDate, use_1904_windowing: bool) -> f64 {
-    easyexcel_model::date_to_excel_serial(value, use_1904_windowing)
-}
-
-pub(crate) fn datetime_to_excel_serial(value: NaiveDateTime, use_1904_windowing: bool) -> f64 {
-    easyexcel_model::datetime_to_excel_serial(value, use_1904_windowing)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -411,7 +403,7 @@ mod tests_extra {
     fn date_to_excel_serial_after_1900_boundary_uses_1899_12_30_epoch() {
         // 对应 Java：1900-03-01 之后使用 1899-12-30 纪元（含虚拟闰日）
         let date = NaiveDate::from_ymd_opt(2025, 1, 2).unwrap();
-        assert_eq!(date_to_excel_serial(date, false), 45659.0);
-        assert_eq!(date_to_excel_serial(date, true), 44197.0);
+        assert_eq!(easyexcel_model::date_to_excel_serial(date, false), 45659.0);
+        assert_eq!(easyexcel_model::date_to_excel_serial(date, true), 44197.0);
     }
 }

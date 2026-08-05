@@ -16,6 +16,25 @@ pub fn maybe_trim(value: &str, enabled: bool) -> Cow<'_, str> {
     }
 }
 
+/// 按 Java `String#trim` 语义移除两端不大于 U+0020 的字符。
+///
+/// Rust `str::trim` 会处理更多 Unicode 空白；Excel sheet 名、表头和兼容
+/// 配置需要保持 Java EasyExcel 的原始行为。
+#[must_use]
+pub fn java_trim(value: &str) -> &str {
+    value.trim_matches(|character| character <= '\u{20}')
+}
+
+/// 按配置应用 Java trim 后比较两个字符串。
+#[must_use]
+pub fn equals_with_optional_java_trim(left: &str, right: &str, enabled: bool) -> bool {
+    if enabled {
+        java_trim(left) == java_trim(right)
+    } else {
+        left == right
+    }
+}
+
 /// Mirrors `org.apache.commons.lang3.StringUtils#isEmpty`.
 #[must_use]
 pub fn is_empty(cs: Option<&str>) -> bool {

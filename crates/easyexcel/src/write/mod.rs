@@ -1,7 +1,5 @@
 //! XLSX writer backed by `rust_xlsxwriter`.
 
-/// BIFF8 (`.xls`) writer — Java `ExcelTypeEnum.XLS` / POI HSSF subset.
-pub mod biff8;
 pub mod builder;
 pub mod cell_style;
 pub mod csv_encoding_writer;
@@ -43,6 +41,8 @@ pub(crate) mod creators;
 pub(crate) mod handler_execution_scope;
 /// ExcelWriter 内部实现拆分模块（图片像素布局）。
 pub(crate) mod image_layout;
+/// EasyExcel metadata/CellValue 到 `easyexcel-xls` 的门面适配。
+pub(crate) mod xls_adapter;
 /// ExcelWriter 内部实现拆分模块（Handler 共享包装）。
 pub(crate) mod shared_write_handler;
 /// ExcelWriter 内部实现拆分模块（工作表样式上下文）。

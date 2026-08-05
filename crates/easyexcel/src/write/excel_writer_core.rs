@@ -32,8 +32,8 @@ use easyexcel_xlsx::xlsx::generation::{
 };
 
 use crate::write::append_rows::append_rows_to_worksheet_with_gzip_and_context;
-use crate::write::biff8::style::{apply_excel_cell_style, apply_excel_font_style};
-use crate::write::biff8::{
+use crate::write::xls_adapter::{
+    apply_excel_cell_style, apply_excel_font_style,
     Biff8Book, Biff8Cell, Biff8Merge, Biff8Sheet, Biff8StyleRequest, Biff8StyleTable, Biff8Value,
     date_to_excel_serial_with_windowing, datetime_to_excel_serial_with_windowing,
 };
@@ -705,12 +705,12 @@ where
         options.template_file.as_deref(),
         options.template_bytes.as_deref(),
     )?;
-    if !crate::write::biff8::looks_like_xls(&bytes) {
+    if !crate::write::xls_adapter::looks_like_xls(&bytes) {
         return Err(ExcelError::Format(
             "xls with_template requires an OLE .xls workbook".to_owned(),
         ));
     }
-    let mut package = crate::write::biff8::Biff8TemplatePackage::from_bytes(&bytes)?;
+    let mut package = crate::write::xls_adapter::Biff8TemplatePackage::from_bytes(&bytes)?;
     let sheet_names = package.sheet_names();
     let (target_index, target_name, create_new) =
         crate::write::template_write::resolve_package_target(
@@ -6550,7 +6550,7 @@ mod tests_extra {
                 ..WriteOptions::default()
             };
             if use_template {
-                let mut book = crate::write::biff8::Biff8Book::default();
+                let mut book = crate::write::xls_adapter::Biff8Book::default();
                 book.sheet_mut("Sheet1");
                 options.template_bytes = Some(book.to_cfb_bytes()?);
             }

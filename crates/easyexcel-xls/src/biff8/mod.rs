@@ -1,6 +1,7 @@
 //! 可复用的 BIFF8 底层 record、公式与加密原语。
 
 mod cached;
+mod continuation_chain;
 pub mod encode;
 pub mod encrypt;
 pub mod event_record;
@@ -17,6 +18,7 @@ pub use numeric::{
     Biff8NumericCell, Biff8NumericSheets, Biff8SheetDisplays, decode_rk,
     format_numeric_displays, load_numeric_displays, parse_format_record, scan_numeric_cells,
 };
+pub use continuation_chain::Biff8ContinuationChain;
 pub use style::{Biff8NumberFormat, Biff8StyleRequest, Biff8StyleTable};
 pub use template::{Biff8TemplatePackage, looks_like_xls};
 pub use workbook::{

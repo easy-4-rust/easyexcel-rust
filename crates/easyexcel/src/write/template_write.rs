@@ -301,7 +301,7 @@ pub(crate) fn load_template_bytes(
 ///
 /// - CSV templates → same as Java `ExcelGenerateException("csv cannot use template.")`
 /// - XLS templates → rejected here for **XLSX output**; `.xls` output uses
-///   [`crate::write::biff8::Biff8TemplatePackage`] instead (see writer `start` / `write_xls`).
+///   the `easyexcel-xls` template adapter instead (see writer `start` / `write_xls`).
 pub(crate) fn validate_template_source(
     template_file: Option<&Path>,
     template_bytes: Option<&[u8]>,

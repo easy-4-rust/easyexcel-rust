@@ -121,11 +121,7 @@ pub fn chrono_date_format(pattern: &str) -> Cow<'_, str> {
 /// 将日期转换为 Excel 1900 或 1904 日期系统序列号。
 #[must_use]
 pub fn date_to_excel_serial(date: NaiveDate, use_1904_windowing: bool) -> f64 {
-    let system = if use_1904_windowing {
-        DateSystem::Date1904
-    } else {
-        DateSystem::Date1900
-    };
+    let system = DateSystem::from_1904_windowing(use_1904_windowing);
     let days = system.date_to_serial(date);
     f64::from(i32::try_from(days).unwrap_or_else(|_| {
         if days.is_negative() {
@@ -147,34 +143,42 @@ pub fn datetime_to_excel_serial(value: NaiveDateTime, use_1904_windowing: bool) 
 }
 
 impl DateSystem {
+    /// 根据 EasyExcel/POI 的 `use1904windowing` 标志选择日期系统。
+    #[must_use]
+    pub const fn from_1904_windowing(use_1904_windowing: bool) -> Self {
+        if use_1904_windowing {
+            Self::Date1904
+        } else {
+            Self::Date1900
+        }
+    }
+
     /// Convert a serial number to a `NaiveDateTime`. Returns `None` for serials
-    /// that cannot be represented (e.g. negative, or the fictional 1900-02-29
-    /// which has no real date — callers needing parity should special-case 60).
+    /// that cannot be represented (for example negative or non-finite values).
+    ///
+    /// Excel's fictional `1900-02-29` cannot be represented by chrono. For
+    /// EasyExcel/POI compatibility serials `60` and `61` both resolve to
+    /// `1900-03-01`; serial `59` remains `1900-02-28`.
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     pub fn serial_to_datetime(self, serial: f64) -> Option<NaiveDateTime> {
         if !serial.is_finite() || serial < 0.0 {
             return None;
         }
-        let (base, mut days) = match self {
-            // Base 1899-12-30 accounts for the phantom leap day for serial >= 61.
-            DateSystem::Date1900 => (NaiveDate::from_ymd_opt(1899, 12, 30)?, serial),
-            DateSystem::Date1904 => (NaiveDate::from_ymd_opt(1904, 1, 1)?, serial),
-        };
-        if self == DateSystem::Date1900 {
-            // Serials 1..=59 are off by one because Excel includes 1900-02-29.
-            if serial < 60.0 {
-                days += 1.0;
+        let whole_days = serial.floor() as i64;
+        let base = match self {
+            // Before serial 61, POI uses 1899-12-31 so the unrepresentable
+            // fictional leap day (60) resolves to the same real date as 61.
+            DateSystem::Date1900 if whole_days < 61 => {
+                NaiveDate::from_ymd_opt(1899, 12, 31)?
             }
-        }
-        let whole = days.trunc() as i64;
-        let frac = days.fract();
-        let date = base.checked_add_signed(Duration::days(whole))?;
-        let secs = (frac * 86400.0).round() as i64;
-        let time = NaiveTime::from_num_seconds_from_midnight_opt((secs % 86400) as u32, 0)?;
-        let mut dt = NaiveDateTime::new(date, time);
-        if secs >= 86400 {
-            dt += Duration::days(1);
-        }
-        Some(dt)
+            // From serial 61 onward the phantom day is included in the epoch.
+            DateSystem::Date1900 => NaiveDate::from_ymd_opt(1899, 12, 30)?,
+            DateSystem::Date1904 => NaiveDate::from_ymd_opt(1904, 1, 1)?,
+        };
+        let milliseconds = ((serial - serial.floor()) * 86_400_000.0 + 0.5).floor() as i64;
+        base.and_hms_opt(0, 0, 0)?
+            .checked_add_signed(Duration::days(whole_days))?
+            .checked_add_signed(Duration::milliseconds(milliseconds))
     }
 
     /// Convert a `NaiveDateTime` to an Excel serial number.

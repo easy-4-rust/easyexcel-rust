@@ -562,10 +562,28 @@ fn helpers_preserve_diagnostics_and_xlsx_column_limits() {
         "excel format error: broken"
     );
     assert!(!is_compound_document(&mut FaultyBufRead));
-    assert_eq!(java_trim("\0\t value \r\n"), "value");
-    assert_eq!(java_trim("\u{a0}value\u{a0}"), "\u{a0}value\u{a0}");
-    assert!(sheet_name_matches(" Sheet ", "Sheet", true));
-    assert!(!sheet_name_matches(" Sheet ", "Sheet", false));
+    assert_eq!(
+        easyexcel_utils::string_utils::java_trim("\0\t value \r\n"),
+        "value"
+    );
+    assert_eq!(
+        easyexcel_utils::string_utils::java_trim("\u{a0}value\u{a0}"),
+        "\u{a0}value\u{a0}"
+    );
+    assert!(
+        easyexcel_utils::string_utils::equals_with_optional_java_trim(
+            " Sheet ",
+            "Sheet",
+            true
+        )
+    );
+    assert!(
+        !easyexcel_utils::string_utils::equals_with_optional_java_trim(
+            " Sheet ",
+            "Sheet",
+            false
+        )
+    );
 }
 
 #[test]

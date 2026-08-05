@@ -158,7 +158,7 @@ where
             let Some(sheet) = sheets.iter().find(|sheet| {
                 (sheet.has_sheet_no() && sheet.sheet_no() == actual_sheet_no)
                     || (!sheet.sheet_name().is_empty()
-                        && crate::read::sheet_name_matches(
+                        && easyexcel_utils::string_utils::equals_with_optional_java_trim(
                             &actual_sheet_name,
                             sheet.sheet_name(),
                             analyser.options().auto_trim,

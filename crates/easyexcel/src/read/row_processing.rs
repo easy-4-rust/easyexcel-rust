@@ -21,7 +21,6 @@ pub(crate) fn select_sheet_names(
     selector: &SheetSelector,
     auto_trim: bool,
 ) -> Result<Vec<(usize, String)>> {
-    use crate::read::read_helpers::sheet_name_matches;
     match selector {
         SheetSelector::First => names
             .first()
@@ -36,7 +35,13 @@ pub(crate) fn select_sheet_names(
         SheetSelector::Name(name) => names
             .iter()
             .enumerate()
-            .find(|(_, candidate)| sheet_name_matches(candidate, name, auto_trim))
+            .find(|(_, candidate)| {
+                easyexcel_utils::string_utils::equals_with_optional_java_trim(
+                    candidate,
+                    name,
+                    auto_trim,
+                )
+            })
             .map(|(index, candidate)| vec![(index, candidate.clone())])
             .ok_or_else(|| ExcelError::SheetNotFound(name.clone())),
         SheetSelector::All => Ok(names.into_iter().enumerate().collect()),
@@ -58,7 +63,6 @@ pub(crate) fn select_xls_sheets(
     selector: &SheetSelector,
     auto_trim: bool,
 ) -> Result<Vec<(usize, String, Range<Data>)>> {
-    use crate::read::read_helpers::sheet_name_matches;
     match selector {
         SheetSelector::First => sheets
             .into_iter()
@@ -73,7 +77,13 @@ pub(crate) fn select_xls_sheets(
         SheetSelector::Name(name) => sheets
             .into_iter()
             .enumerate()
-            .find(|(_, (candidate, _))| sheet_name_matches(candidate, name, auto_trim))
+            .find(|(_, (candidate, _))| {
+                easyexcel_utils::string_utils::equals_with_optional_java_trim(
+                    candidate,
+                    name,
+                    auto_trim,
+                )
+            })
             .map(|(index, (candidate, range))| vec![(index, candidate, range)])
             .ok_or_else(|| ExcelError::SheetNotFound(name.clone())),
         SheetSelector::All => Ok(sheets

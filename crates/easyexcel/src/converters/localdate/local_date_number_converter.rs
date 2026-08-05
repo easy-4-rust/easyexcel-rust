@@ -21,7 +21,7 @@ impl crate::Converter<chrono::NaiveDate> for LocalDateNumberConverter {
         context: &crate::WriteConverterContext<'_, chrono::NaiveDate>,
     ) -> Result<crate::WriteCellData, crate::ExcelError> {
         Ok(crate::WriteCellData::new(crate::CellValue::Float(
-            crate::converters::date_support::date_to_excel_serial(
+            easyexcel_model::date_to_excel_serial(
                 *context.value(),
                 context.convert_context().use_1904_windowing,
             ),

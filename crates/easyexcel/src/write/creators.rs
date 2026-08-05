@@ -6,7 +6,7 @@ use crate::core::{ExcelError, Result};
 use crate::util::work_book_util::{CellCreator, RowCreator, SheetCreator, WorkBookCreator};
 use easyexcel_xlsx::xlsx::generation::{self, Workbook, Worksheet};
 
-use crate::write::biff8::{Biff8Book, Biff8Cell, Biff8Sheet};
+use crate::write::xls_adapter::{Biff8Book, Biff8Cell, Biff8Sheet};
 use crate::write::excel_writer_core::format_error;
 
 pub(crate) struct XlsxWorkBookCreator;

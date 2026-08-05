@@ -14,7 +14,7 @@ use std::str::FromStr;
 
 use bigdecimal::BigDecimal;
 use bigdecimal::ToPrimitive;
-use chrono::{Duration, NaiveDate, NaiveDateTime};
+use chrono::{NaiveDate, NaiveDateTime};
 use num_bigint::BigInt;
 
 use crate::core::cell_value::CellValue;
@@ -239,11 +239,13 @@ impl FromExcelCell for NaiveDate {
             CellValue::Int(_) | CellValue::Float(_) | CellValue::Decimal(_) => {
                 excel_serial_to_datetime(value, context).map(|value| value.date())
             }
-            CellValue::String(inner) => NaiveDate::parse_from_str(
-                inner,
-                context.effective_date_time_format().unwrap_or("%Y-%m-%d"),
-            )
-            .map_err(|_| context.invalid(value, "NaiveDate")),
+            CellValue::String(inner) => {
+                let format = easyexcel_model::chrono_date_format(
+                    context.effective_date_time_format().unwrap_or("%Y-%m-%d"),
+                );
+                NaiveDate::parse_from_str(inner, format.as_ref())
+                    .map_err(|_| context.invalid(value, "NaiveDate"))
+            }
             other => Err(context.invalid(other, "NaiveDate")),
         }
     }
@@ -267,54 +269,36 @@ impl FromExcelCell for NaiveDateTime {
             CellValue::Int(_) | CellValue::Float(_) | CellValue::Decimal(_) => {
                 excel_serial_to_datetime(value, context)
             }
-            CellValue::String(inner) => NaiveDateTime::parse_from_str(
-                inner,
-                context
-                    .effective_date_time_format()
-                    .unwrap_or("%Y-%m-%d %H:%M:%S"),
-            )
-            .map_err(|_| context.invalid(value, "NaiveDateTime")),
+            CellValue::String(inner) => {
+                let format = easyexcel_model::chrono_date_format(
+                    context
+                        .effective_date_time_format()
+                        .unwrap_or("%Y-%m-%d %H:%M:%S"),
+                );
+                NaiveDateTime::parse_from_str(inner, format.as_ref())
+                    .map_err(|_| context.invalid(value, "NaiveDateTime"))
+            }
             other => Err(context.invalid(other, "NaiveDateTime")),
         }
     }
 }
 
-// 对应 Java/POI：Excel 序列号按 double 语义计算（i64→f64 与 f64→i64 的
-// 舍入/截断是有意为之）；有效序列号范围远小于 f64/i64 边界，
-// 越界值会在下方 checked_add 处统一转为转换错误
-#[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
 fn excel_serial_to_datetime(
     value: &CellValue,
     context: &ConvertContext,
 ) -> Result<NaiveDateTime, ExcelError> {
     let serial = match value {
-        CellValue::Int(value) => *value as f64,
+        CellValue::Int(inner) => inner
+            .to_f64()
+            .ok_or_else(|| context.invalid(value, "Excel date"))?,
         CellValue::Float(value) => *value,
         CellValue::Decimal(decimal) => decimal
             .to_f64()
             .ok_or_else(|| context.invalid(value, "Excel date"))?,
         other => return Err(context.invalid(other, "Excel date")),
     };
-    if !serial.is_finite() || serial < 0.0 {
-        return Err(context.invalid(value, "Excel date"));
-    }
-
-    let whole_days = serial.floor() as i64;
-    // POI preserves Excel's fictitious 1900-02-29 by mapping serials 60 and
-    // 61 to 1900-03-01. Before 61 the effective epoch is 1899-12-31; from
-    // 61 onward it is 1899-12-30.
-    let epoch = if context.use_1904_windowing {
-        NaiveDate::from_ymd_opt(1904, 1, 1).expect("valid Excel epoch")
-    } else if whole_days < 61 {
-        NaiveDate::from_ymd_opt(1899, 12, 31).expect("valid Excel epoch")
-    } else {
-        NaiveDate::from_ymd_opt(1899, 12, 30).expect("valid Excel epoch")
-    };
-    let milliseconds = ((serial - serial.floor()) * 86_400_000.0 + 0.5).floor() as i64;
-    epoch
-        .and_hms_opt(0, 0, 0)
-        .and_then(|value| value.checked_add_signed(Duration::days(whole_days)))
-        .and_then(|value| value.checked_add_signed(Duration::milliseconds(milliseconds)))
+    easyexcel_model::DateSystem::from_1904_windowing(context.use_1904_windowing)
+        .serial_to_datetime(serial)
         .ok_or_else(|| context.invalid(value, "Excel date"))
 }
 

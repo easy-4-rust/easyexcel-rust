@@ -440,7 +440,7 @@ pub fn fill_xlsx_template_list(
 /// `TemplateData` scalar values. 对应 Java：'s HSSFWorkbook-level fill
 /// for XLS workbooks.
 fn fill_xls_template_scalar(template: &Path, output: &Path, data: &TemplateData) -> Result<()> {
-    let mut pkg = crate::write::biff8::Biff8TemplatePackage::from_path(template)?;
+    let mut pkg = crate::write::xls_adapter::Biff8TemplatePackage::from_path(template)?;
     let placeholders = pkg.scan_placeholders();
     for (sheet_name, row, col, text) in &placeholders {
         let key = text
@@ -462,7 +462,7 @@ fn fill_xls_template_list(
     data: &FillWrapper,
     _config: FillConfig,
 ) -> Result<()> {
-    let mut pkg = crate::write::biff8::Biff8TemplatePackage::from_path(template)?;
+    let mut pkg = crate::write::xls_adapter::Biff8TemplatePackage::from_path(template)?;
     let placeholders = pkg.scan_placeholders();
     let prefix = data.name().map(|n| format!("{n}.")).unwrap_or_default();
     let is_dot = prefix.is_empty();
@@ -687,7 +687,7 @@ mod tests_extra {
 
     /// 对应 Java：`fillXlsTemplate` 列表填充（BIFF8 `.xls`）。
     ///
-    /// 用 `easyexcel-writer` 的 `Biff8Book` 生成带各类占位符的 `.xls` 模板：
+    /// 用 `easyexcel-xls` 的 `Biff8Book` 生成带各类占位符的 `.xls` 模板：
     /// `{.name}`（未命名 `is_dot` 分支）、`{plain}`（普通分支）、
     /// `x{name}`（else 分支）、`{}`（空 key）、`{.}`（点号空 key）、
     /// `{missing}`（未命中 key），以及命名 wrapper 的 `{users.name}`（prefix 分支）。
@@ -698,13 +698,13 @@ mod tests_extra {
         let unnamed_output = directory.path().join("list-unnamed-output.xls");
         let named_output = directory.path().join("list-named-output.xls");
 
-        let mut book = crate::write::biff8::Biff8Book::default();
+        let mut book = crate::write::xls_adapter::Biff8Book::default();
         {
             let sheet = book.sheet_mut("Sheet1");
             let text = |value: &str| {
-                crate::write::biff8::Biff8Cell::general(crate::write::biff8::Biff8Value::Text(
-                    value.to_owned(),
-                ))
+                crate::write::xls_adapter::Biff8Cell::general(
+                    crate::write::xls_adapter::Biff8Value::Text(value.to_owned()),
+                )
             };
             sheet.set(0, 0, text("{.name}"))?;
             sheet.set(0, 1, text("{plain}"))?;

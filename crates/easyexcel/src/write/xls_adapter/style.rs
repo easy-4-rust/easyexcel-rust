@@ -1,4 +1,4 @@
-//! EasyExcel 样式语义到 BIFF8 底层样式请求的适配层。
+//! EasyExcel 样式 metadata 到 BIFF8 样式请求的适配层。
 //!
 //! FONT、XF、FORMAT 与调色板分配算法位于 `easyexcel-xls`；本模块只负责
 //! 将 Java EasyExcel 对应的 `ExcelCellStyle` / `ExcelFontStyle` 元数据转换为

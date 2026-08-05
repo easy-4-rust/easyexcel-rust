@@ -1,10 +1,10 @@
 //! BIFF SID-to-handler dispatch matching Java `XlsSaxAnalyser.processRecord`.
 
 use crate::core::{CellExtraType, Result};
+use easyexcel_xls::biff8::Biff8ContinuationChain;
 
 use crate::{ReadOptions, SheetSelector};
 
-use super::biff_string::decode_sst_segments;
 use super::handlers::blank_record_handler::{BLANK_SID, BlankCell, BlankRecordHandler};
 use super::handlers::bof_record_handler::{BOF_SID, BofRecordHandler};
 use super::handlers::bool_err_record_handler::{BOOL_ERR_SID, BoolCell, BoolErrRecordHandler};
@@ -34,7 +34,7 @@ const HYPERLINK_SID: u16 = 0x01B8;
 const MERGE_CELLS_SID: u16 = 0x00E5;
 const NOTE_SID: u16 = 0x001C;
 const DUMMY_RECORD_SID: u16 = u16::MAX;
-const CONTINUE_SID: u16 = 0x003C;
+const CONTINUE_SID: u16 = easyexcel_xls::biff8::encode::CONTINUE;
 
 /// Observable result of running Java-compatible BIFF handler dispatch.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -189,8 +189,8 @@ pub struct XlsRecordDispatcher {
     next_sheet_index: usize,
     ignore_record: bool,
     auto_trim: bool,
-    pending_sst_segments: Option<Vec<Vec<u8>>>,
-    pending_formula_string_segments: Option<Vec<Vec<u8>>>,
+    pending_sst_segments: Option<Biff8ContinuationChain>,
+    pending_formula_string_segments: Option<Biff8ContinuationChain>,
 }
 
 impl XlsRecordDispatcher {
@@ -287,12 +287,12 @@ impl XlsRecordDispatcher {
         self.state.total_record_count += 1;
         if record_sid == CONTINUE_SID {
             if let Some(segments) = self.pending_sst_segments.as_mut() {
-                segments.push(data.to_vec());
+                segments.push(data);
                 self.try_finalize_sst(false)?;
                 return Ok(());
             }
             if let Some(segments) = self.pending_formula_string_segments.as_mut() {
-                segments.push(data.to_vec());
+                segments.push(data);
                 self.try_finalize_formula_string(false)?;
                 return Ok(());
             }
@@ -385,11 +385,11 @@ impl XlsRecordDispatcher {
             SST_SID => {
                 self.sst.process_record(record_sid, data);
                 self.state.unique_string_count = self.sst.unique_string_count;
-                self.pending_sst_segments = Some(vec![data.to_vec()]);
+                self.pending_sst_segments = Some(Biff8ContinuationChain::new(data));
                 self.try_finalize_sst(false)?;
             }
             STRING_SID => {
-                self.pending_formula_string_segments = Some(vec![data.to_vec()]);
+                self.pending_formula_string_segments = Some(Biff8ContinuationChain::new(data));
                 self.try_finalize_formula_string(false)?;
             }
             TEXT_OBJECT_SID => self.text_object.process_record(record_sid, data),
@@ -453,7 +453,7 @@ impl XlsRecordDispatcher {
         let Some(segments) = self.pending_sst_segments.as_ref() else {
             return Ok(());
         };
-        match decode_sst_segments(segments) {
+        match segments.decode_sst() {
             Ok(strings) => {
                 let unique = u32::try_from(strings.len()).map_err(|_| {
                     crate::core::ExcelError::Format(
@@ -467,7 +467,7 @@ impl XlsRecordDispatcher {
                 Ok(())
             }
             Err(_) if !require_complete => Ok(()),
-            Err(error) => Err(error),
+            Err(error) => Err(error.into()),
         }
     }
 
@@ -475,7 +475,7 @@ impl XlsRecordDispatcher {
         let Some(segments) = self.pending_formula_string_segments.as_ref() else {
             return Ok(());
         };
-        match StringRecordHandler::decode_segments(segments) {
+        match segments.decode_unicode_string() {
             Ok(value) => {
                 self.pending_formula_string_segments = None;
                 self.string.process_decoded(value.clone());
@@ -487,7 +487,7 @@ impl XlsRecordDispatcher {
                 Ok(())
             }
             Err(_) if !require_complete => Ok(()),
-            Err(error) => Err(error),
+            Err(error) => Err(error.into()),
         }
     }
 }

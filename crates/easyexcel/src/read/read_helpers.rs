@@ -27,22 +27,10 @@ pub(crate) fn reject_extra_read(options: &ReadOptions, format: &str) -> Result<(
     }
 }
 
-pub(crate) fn java_trim(value: &str) -> &str {
-    value.trim_matches(|character| character <= '\u{20}')
-}
-
-pub(crate) fn sheet_name_matches(candidate: &str, requested: &str, auto_trim: bool) -> bool {
-    if auto_trim {
-        java_trim(candidate) == java_trim(requested)
-    } else {
-        candidate == requested
-    }
-}
-
 pub(crate) fn trim_string_cells(cells: &mut [CellValue]) {
     for cell in cells {
         if let CellValue::String(value) = cell {
-            let trimmed = java_trim(value);
+            let trimmed = easyexcel_utils::string_utils::java_trim(value);
             if trimmed.len() != value.len() {
                 *value = trimmed.to_owned();
             }

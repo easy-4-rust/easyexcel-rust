@@ -284,7 +284,7 @@ where
     ///
     /// - CSV templates are rejected (`csv cannot use template.`), matching Java.
     /// - **XLS templates:** record-preserving BIFF8 overlay via
-    ///   `crate::write::biff8::Biff8TemplatePackage` (unmodified records kept;
+    ///   `easyexcel-xls::biff8::Biff8TemplatePackage` (unmodified records kept;
     ///   new cells appended as LABEL/NUMBER). Creating sheets absent from the
     ///   template remains unsupported.
     /// - **Default (XLSX):** styles and merges are preserved via ZIP/OOXML append
@@ -436,7 +436,7 @@ where
             )
         } else if is_xls_write(&self.path, &self.options) {
             // Java: EasyExcel.write(...).excelType(ExcelTypeEnum.XLS).sheet().doWrite(...)
-            // Minimal BIFF8; with_template uses value-preserving rewrite (see biff8::template).
+            // Minimal BIFF8; with_template uses the easyexcel-xls record-preserving engine.
             write_xls_with_handlers::<T, I>(
                 Path::new(&self.path),
                 &self.options,

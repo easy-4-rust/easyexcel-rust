@@ -4,7 +4,6 @@
 
 use super::super::xls_record_handler::XlsRecordHandler;
 use super::formula_record_handler::{FormulaCell, FormulaRecordHandler};
-use crate::analysis::v03::biff_string::decode_unicode_string_segments;
 
 /// 对应 Java：`StringRecordHandler`.
 #[derive(Debug, Default)]
@@ -36,15 +35,6 @@ impl StringRecordHandler {
             .map(|cell| (cell, text))
     }
 
-    /// Decodes one logical BIFF8 String record and its CONTINUE bodies.
-    ///
-    /// # Errors
-    ///
-    /// 当 BIFF 字符串编码非法（长度/标志位不一致）时返回 [`ExcelError`]。
-    pub fn decode_segments(segments: &[Vec<u8>]) -> crate::core::Result<String> {
-        decode_unicode_string_segments(segments)
-    }
-
     /// Stores an already decoded String record value.
     pub fn process_decoded(&mut self, value: String) {
         self.last_value = Some(value);
@@ -61,7 +51,9 @@ impl XlsRecordHandler for StringRecordHandler {
         if record_sid != STRING_SID {
             return;
         }
-        if let Ok(value) = Self::decode_segments(&[data.to_vec()]) {
+        if let Ok(value) =
+            easyexcel_xls::biff8::Biff8ContinuationChain::new(data).decode_unicode_string()
+        {
             self.process_decoded(value);
         }
     }

@@ -23,7 +23,7 @@ impl crate::Converter<crate::JavaDate> for DateNumberConverter {
         context: &crate::WriteConverterContext<'_, crate::JavaDate>,
     ) -> Result<crate::WriteCellData, crate::ExcelError> {
         Ok(crate::WriteCellData::new(crate::CellValue::Float(
-            crate::converters::date_support::datetime_to_excel_serial(
+            easyexcel_model::datetime_to_excel_serial(
                 context.value().naive_local(),
                 context.convert_context().use_1904_windowing,
             ),
