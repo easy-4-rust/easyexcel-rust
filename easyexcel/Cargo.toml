@@ -48,10 +48,6 @@ getrandom.workspace = true
 md-5.workspace = true
 ms-offcrypto-writer.workspace = true
 rand.workspace = true
-# ms-offcrypto-writer 1.0.7 固定 rand 0.9（其 CryptoRng 来自 rand_core 0.9），
-# 而 workspace rand 0.10.2 的 rng 实现 rand_core 0.10 的 trait——加密路径
-# 只能用 0.9 别名桥接；上游支持 rand 0.10 后移除本依赖并切回 rand::rngs::SysRng。
-rand09 = { package = "rand", version = "0.9" }
 rust_xlsxwriter.workspace = true
 
 [dev-dependencies]

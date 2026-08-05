@@ -56,14 +56,14 @@ salvo = "0.95.1"
 warp = "0.4.3"
 md-5 = "0.11.0"
 ms-offcrypto-writer = "1.0.7"
-num-bigint = "0.5.1"
+num-bigint = "0.4.8"  # bigdecimal 0.4.10 支持的最高 num-bigint 线
 office-crypto = "0.3.0"
 proc-macro-crate = "3.5.0"
 proc-macro2 = "1.0.107"
 pure-rust-locales = "0.8.2"
 quick-xml = "0.41.0"
 quote = "1.0.47"
-rand = "0.10.2"
+rand = "0.9.5"  # ms-offcrypto-writer 1.0.7 支持的最高 rand 线
 rust_xlsxwriter = { version = "0.97.0", features = ["chrono", "constant_memory", "zlib"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"

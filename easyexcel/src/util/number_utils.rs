@@ -11,17 +11,6 @@ use num_bigint::BigInt;
 use crate::NumberRoundingMode;
 use crate::core::excel_error::ExcelError;
 
-/// bigdecimal 0.4.x 内部 num-bigint(0.4) → workspace num-bigint(0.5.1)。
-/// 经 signed-bytes 桥接，避免字符串往返与精度损失。
-pub(crate) fn bigint_from_bigdecimal(value: &bigdecimal::num_bigint::BigInt) -> BigInt {
-    BigInt::from_signed_bytes_be(&value.to_signed_bytes_be())
-}
-
-/// workspace num-bigint(0.5.1) → bigdecimal 0.4.x 内部 num-bigint(0.4)。
-pub(crate) fn bigint_to_bigdecimal(value: &BigInt) -> bigdecimal::num_bigint::BigInt {
-    bigdecimal::num_bigint::BigInt::from_signed_bytes_be(&value.to_signed_bytes_be())
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum NonFiniteNumber {
     Nan,
@@ -311,7 +300,7 @@ impl DecimalSubpattern {
     ) -> Result<String, ExcelError> {
         let exponent_digits = self.exponent_digits.expect("scientific pattern");
         let (coefficient, scale) = value.as_bigint_and_exponent();
-        let mut exponent = if coefficient == bigdecimal::num_bigint::BigInt::from(0) {
+        let mut exponent = if coefficient == BigInt::from(0) {
             0
         } else {
             // 系数位数与指数整数位数均远小于 i64 上限，try_from 恒成功
@@ -588,7 +577,7 @@ pub fn parse_big_int(value: &str) -> Result<BigInt, ExcelError> {
 }
 
 fn decimal_to_big_int(value: &BigDecimal) -> BigInt {
-    bigint_from_bigdecimal(&value.with_scale(0).into_bigint_and_exponent().0)
+    value.with_scale(0).into_bigint_and_exponent().0
 }
 
 fn java_signed_low_bytes<const N: usize>(value: &BigInt) -> [u8; N] {

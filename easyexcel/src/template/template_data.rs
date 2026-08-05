@@ -5,7 +5,6 @@
 use std::collections::BTreeMap;
 
 use crate::core::CellValue;
-use crate::util::number_utils::bigint_to_bigdecimal;
 use bigdecimal::BigDecimal;
 use chrono::{NaiveDate, NaiveDateTime};
 use num_bigint::BigInt;
@@ -90,7 +89,7 @@ impl IntoTemplateValue for usize {
 
 impl IntoTemplateValue for BigInt {
     fn into_template_value(self) -> CellValue {
-        CellValue::Decimal(BigDecimal::from(bigint_to_bigdecimal(&self)))
+        CellValue::Decimal(BigDecimal::from(self))
     }
 }
 

@@ -25,7 +25,6 @@ use crate::core::excel_row::ExcelRow;
 use crate::core::from_excel_cell::FromExcelCell;
 use crate::core::into_excel_cell::IntoExcelCell;
 use crate::core::row_data::RowData;
-use crate::util::number_utils::bigint_from_bigdecimal;
 
 impl FromExcelCell for String {
     fn from_excel_cell(
@@ -128,7 +127,7 @@ impl IntoExcelCell for BigInt {
 }
 
 fn decimal_to_big_int(value: &BigDecimal) -> BigInt {
-    bigint_from_bigdecimal(&value.with_scale(0).into_bigint_and_exponent().0)
+    value.with_scale(0).into_bigint_and_exponent().0
 }
 
 fn parse_integer<T>(
