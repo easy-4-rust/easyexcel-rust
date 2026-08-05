@@ -22,14 +22,14 @@ impl Biff8TemplatePackage {
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         easyexcel_xls::biff8::Biff8TemplatePackage::from_bytes(bytes)
             .map(|inner| Self { inner })
-            .map_err(map_engine_error)
+            .map_err(ExcelError::from)
     }
 
     /// 从文件加载模板。
     pub fn from_path(path: &Path) -> Result<Self> {
         easyexcel_xls::biff8::Biff8TemplatePackage::from_path(path)
             .map(|inner| Self { inner })
-            .map_err(map_engine_error)
+            .map_err(ExcelError::from)
     }
 
     /// 返回工作表名称。
@@ -42,7 +42,7 @@ impl Biff8TemplatePackage {
     pub fn next_row_for_sheet(&self, sheet_name: &str) -> Result<u32> {
         self.inner
             .next_row_for_sheet(sheet_name)
-            .map_err(map_engine_error)
+            .map_err(ExcelError::from)
     }
 
     /// 从当前最后一行后追加稀疏行。
@@ -63,19 +63,19 @@ impl Biff8TemplatePackage {
             .collect::<Result<Vec<_>>>()?;
         self.inner
             .append_rows(sheet_name, &rows)
-            .map_err(map_engine_error)
+            .map_err(ExcelError::from)
     }
 
     /// 添加合并区域。
     pub fn add_merge_range(&mut self, sheet_name: &str, range: Biff8Merge) -> Result<()> {
         self.inner
             .add_merge_range(sheet_name, range)
-            .map_err(map_engine_error)
+            .map_err(ExcelError::from)
     }
 
     /// 序列化为 OLE/CFB 字节。
     pub fn to_bytes(&self) -> Result<Vec<u8>> {
-        self.inner.to_bytes().map_err(map_engine_error)
+        self.inner.to_bytes().map_err(ExcelError::from)
     }
 
     /// 使用中立文本数据替换 BIFF8 标量占位符。
@@ -85,7 +85,7 @@ impl Biff8TemplatePackage {
     ) -> Result<usize> {
         self.inner
             .replace_scalar_placeholders(values)
-            .map_err(map_engine_error)
+            .map_err(ExcelError::from)
     }
 
     /// 使用中立文本行替换 BIFF8 集合占位符。
@@ -96,17 +96,17 @@ impl Biff8TemplatePackage {
     ) -> Result<usize> {
         self.inner
             .replace_collection_placeholders(collection_name, rows)
-            .map_err(map_engine_error)
+            .map_err(ExcelError::from)
     }
 
     /// 保存到文件。
     pub fn save_to_path(&self, path: &Path) -> Result<()> {
-        self.inner.save_to_path(path).map_err(map_engine_error)
+        self.inner.save_to_path(path).map_err(ExcelError::from)
     }
 
     /// 保存到输出流。
     pub fn save_to_writer(&self, output: &mut dyn Write) -> Result<()> {
-        self.inner.save_to_writer(output).map_err(map_engine_error)
+        self.inner.save_to_writer(output).map_err(ExcelError::from)
     }
 }
 
@@ -152,8 +152,4 @@ fn cell_value_to_template_cell(value: &CellValue) -> Result<Biff8Cell> {
         }
     };
     Ok(Biff8Cell::general(mapped))
-}
-
-fn map_engine_error(error: easyexcel_io::Error) -> ExcelError {
-    ExcelError::from(error)
 }

@@ -150,7 +150,7 @@ impl From<&WriteOptions> for WriteGlobalFlags {
 /// Returns the worksheet name after applying [`WriteOptions::auto_trim`].
 pub(crate) fn effective_sheet_name(options: &WriteOptions) -> String {
     if options.auto_trim {
-        options.sheet_name.trim().to_owned()
+        easyexcel_utils::string_utils::java_trim(&options.sheet_name).to_owned()
     } else {
         options.sheet_name.clone()
     }
@@ -525,13 +525,6 @@ pub(crate) fn validate_csv_options(options: &WriteOptions) -> Result<()> {
     Ok(())
 }
 
-// 保留 Result 签名以统一调用点 `?` 传播；当前恒返回 Ok(())
-#[allow(clippy::unnecessary_wraps)]
-pub(crate) fn validate_xls_options(_options: &WriteOptions) -> Result<()> {
-    // XLS password is now supported via BIFF8 RC4 (Phase 5.3)
-    Ok(())
-}
-
 /// Saves a workbook to `path` (optionally password-protected).
 ///
 /// `pub(crate)` so executor integration tests can persist worksheets built via
@@ -679,7 +672,6 @@ where
     T: ExcelRow,
     I: IntoIterator<Item = T>,
 {
-    validate_xls_options(options)?;
     let bytes = crate::write::template_write::load_template_bytes(
         options.template_file.as_deref(),
         options.template_bytes.as_deref(),

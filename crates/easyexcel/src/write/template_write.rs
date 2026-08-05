@@ -68,9 +68,6 @@ impl TemplatePackage {
     ///
     /// Returns [`ExcelError::SheetNotFound`] when the sheet is absent.
     pub(crate) fn next_row_for_sheet(&self, sheet_name: &str) -> Result<u32> {
-        if !self.sheet_names()?.iter().any(|name| name == sheet_name) {
-            return Err(ExcelError::SheetNotFound(sheet_name.to_owned()));
-        }
         self.entries
             .next_row_for_sheet(sheet_name)
             .map_err(ExcelError::from)
@@ -82,9 +79,6 @@ impl TemplatePackage {
     ///
     /// Returns [`ExcelError::SheetNotFound`] when the sheet is absent.
     pub(crate) fn worksheet_path_by_name(&self, sheet_name: &str) -> Result<String> {
-        if !self.sheet_names()?.iter().any(|name| name == sheet_name) {
-            return Err(ExcelError::SheetNotFound(sheet_name.to_owned()));
-        }
         self.entries
             .worksheet_path_by_name(sheet_name)
             .map_err(ExcelError::from)
@@ -96,9 +90,6 @@ impl TemplatePackage {
     ///
     /// Returns [`ExcelError::SheetNotFound`] when the index is out of range.
     pub(crate) fn worksheet_path_by_index(&self, index: usize) -> Result<(String, String)> {
-        if index >= self.sheet_names()?.len() {
-            return Err(ExcelError::SheetNotFound(format!("sheet index {index}")));
-        }
         self.entries
             .worksheet_path_by_index(index)
             .map_err(ExcelError::from)

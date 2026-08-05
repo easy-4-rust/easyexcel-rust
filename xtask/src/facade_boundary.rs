@@ -18,6 +18,11 @@ const STYLE_UTIL_ADAPTER: &str = "crates/easyexcel/src/util/style_util.rs";
 const FACADE_ERROR: &str = "crates/easyexcel/src/support/excel_error.rs";
 const XLS_TEMPLATE_ADAPTER: &str = "crates/easyexcel/src/write/xls_adapter/template.rs";
 const XLSX_TEMPLATE_ADAPTER: &str = "crates/easyexcel/src/template/template_writer.rs";
+const ROW_PROCESSING_ADAPTER: &str = "crates/easyexcel/src/read/row_processing.rs";
+const TEMPLATE_WRITE_ADAPTER: &str = "crates/easyexcel/src/write/template_write.rs";
+const READ_HELPERS_ADAPTER: &str = "crates/easyexcel/src/read/read_helpers.rs";
+const EXCEL_WRITER_CORE: &str = "crates/easyexcel/src/write/excel_writer_core.rs";
+const STRING_UTILS_ENGINE: &str = "crates/easyexcel-utils/src/utils/string_utils.rs";
 
 const REQUIRED_ENGINE_DEPENDENCIES: &[&str] = &[
     "easyexcel-cache",
@@ -65,6 +70,14 @@ const FOUNDATION_ADAPTERS: &[&str] = &[
     "crates/easyexcel/src/util/list_utils.rs",
     "crates/easyexcel/src/util/sheet_utils.rs",
     "crates/easyexcel/src/util/mod.rs",
+];
+
+const JAVA_TRIM_ADAPTERS: &[&str] = &[
+    "crates/easyexcel/src/write/excel_builder_impl.rs",
+    "crates/easyexcel/src/analysis/v03/handlers/label_record_handler.rs",
+    "crates/easyexcel/src/analysis/v03/handlers/label_sst_record_handler.rs",
+    "crates/easyexcel/src/analysis/v03/handlers/string_record_handler.rs",
+    "crates/easyexcel/src/util/cell_editor.rs",
 ];
 
 /// 校验门面只依赖基础引擎，不直接依赖格式、压缩、加密或缓存实现库。
@@ -119,6 +132,16 @@ pub(crate) fn audit() -> TaskResult {
     for path in FOUNDATION_ADAPTERS {
         let source = read(path)?;
         require_absent(path, &source, "::*", "wildcard foundation adapter re-export")?;
+    }
+    for path in JAVA_TRIM_ADAPTERS {
+        let source = read(path)?;
+        require_contains(
+            path,
+            &source,
+            "easyexcel_utils::string_utils::java_trim",
+            "shared Java-compatible trimming",
+        )?;
+        require_absent(path, &source, ".trim()", "Rust Unicode trim in Java adapter")?;
     }
 
     let ehcache = read(EHCACHE_COMPAT)?;
@@ -228,6 +251,70 @@ pub(crate) fn audit() -> TaskResult {
             "string-parsed sheet-not-found error",
         )?;
     }
+
+    let row_processing_adapter = read(ROW_PROCESSING_ADAPTER)?;
+    require_contains(
+        ROW_PROCESSING_ADAPTER,
+        &row_processing_adapter,
+        "easyexcel_io::select_sheet_names(names, selection, auto_trim)",
+        "I/O-owned sheet selection",
+    )?;
+    require_absent(
+        ROW_PROCESSING_ADAPTER,
+        &row_processing_adapter,
+        "names.first()",
+        "facade-owned first-sheet selection",
+    )?;
+
+    let template_write_adapter = read(TEMPLATE_WRITE_ADAPTER)?;
+    require_absent(
+        TEMPLATE_WRITE_ADAPTER,
+        &template_write_adapter,
+        "if !self.sheet_names()?.iter().any",
+        "duplicated facade sheet-existence scan",
+    )?;
+    require_absent(
+        TEMPLATE_WRITE_ADAPTER,
+        &template_write_adapter,
+        "if index >= self.sheet_names()?.len()",
+        "duplicated facade sheet-index bounds check",
+    )?;
+
+    let read_helpers_adapter = read(READ_HELPERS_ADAPTER)?;
+    require_contains(
+        READ_HELPERS_ADAPTER,
+        &read_helpers_adapter,
+        "easyexcel_io::validate_row_range(options.start_row, options.end_row)",
+        "I/O-owned row-range validation",
+    )?;
+    require_absent(
+        READ_HELPERS_ADAPTER,
+        &read_helpers_adapter,
+        "start > end",
+        "facade-owned row-range validation",
+    )?;
+
+    let excel_writer_core = read(EXCEL_WRITER_CORE)?;
+    require_absent(
+        EXCEL_WRITER_CORE,
+        &excel_writer_core,
+        "fn validate_xls_options",
+        "no-op XLS validation stub",
+    )?;
+    require_contains(
+        EXCEL_WRITER_CORE,
+        &excel_writer_core,
+        "easyexcel_utils::string_utils::java_trim(&options.sheet_name)",
+        "shared Java-compatible sheet-name trimming",
+    )?;
+
+    let string_utils_engine = read(STRING_UTILS_ENGINE)?;
+    require_contains(
+        STRING_UTILS_ENGINE,
+        &string_utils_engine,
+        "Cow::Borrowed(java_trim(value))",
+        "allocation-free Java-compatible optional trimming",
+    )?;
 
     println!(
         "facade-boundary-audit ok: {} engine dependencies, no low-level direct dependencies",

@@ -33,7 +33,9 @@ pub struct TrimEditor;
 impl CellEditor for TrimEditor {
     fn edit(&self, original: &CellValue, _sheet_name: &str, _row: u32, _col: u32) -> CellValue {
         match original {
-            CellValue::String(s) => CellValue::String(s.trim().to_owned()),
+            CellValue::String(s) => CellValue::String(
+                easyexcel_utils::string_utils::java_trim(s).to_owned(),
+            ),
             other => other.clone(),
         }
     }
@@ -62,7 +64,7 @@ impl CellEditor for NumericToIntEditor {
             }
             CellValue::Bool(b) => CellValue::Int(i64::from(*b)),
             CellValue::String(s) => {
-                if let Ok(n) = s.trim().parse::<i64>() {
+                if let Ok(n) = easyexcel_utils::string_utils::java_trim(s).parse::<i64>() {
                     CellValue::Int(n)
                 } else {
                     original.clone()

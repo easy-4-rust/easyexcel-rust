@@ -21,31 +21,13 @@ pub(crate) fn select_sheet_names(
     selector: &SheetSelector,
     auto_trim: bool,
 ) -> Result<Vec<(usize, String)>> {
-    match selector {
-        SheetSelector::First => names
-            .first()
-            .cloned()
-            .map(|name| vec![(0, name)])
-            .ok_or_else(|| ExcelError::SheetNotFound("0".to_owned())),
-        SheetSelector::Index(index) => names
-            .get(*index)
-            .cloned()
-            .map(|name| vec![(*index, name)])
-            .ok_or_else(|| ExcelError::SheetNotFound(index.to_string())),
-        SheetSelector::Name(name) => names
-            .iter()
-            .enumerate()
-            .find(|(_, candidate)| {
-                easyexcel_utils::string_utils::equals_with_optional_java_trim(
-                    candidate,
-                    name,
-                    auto_trim,
-                )
-            })
-            .map(|(index, candidate)| vec![(index, candidate.clone())])
-            .ok_or_else(|| ExcelError::SheetNotFound(name.clone())),
-        SheetSelector::All => Ok(names.into_iter().enumerate().collect()),
-    }
+    let selection = match selector {
+        SheetSelector::First => easyexcel_io::SheetSelection::First,
+        SheetSelector::Index(index) => easyexcel_io::SheetSelection::Index(*index),
+        SheetSelector::Name(name) => easyexcel_io::SheetSelection::Name(name),
+        SheetSelector::All => easyexcel_io::SheetSelection::All,
+    };
+    easyexcel_io::select_sheet_names(names, selection, auto_trim).map_err(ExcelError::from)
 }
 
 #[cfg(test)]

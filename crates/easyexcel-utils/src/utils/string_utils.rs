@@ -13,13 +13,13 @@ pub fn utf8_byte_len_u16(value: &str) -> Option<u16> {
     u16::try_from(value.len()).ok()
 }
 
-/// 按配置裁剪字符串两端空白。
+/// 按配置使用 Java `String#trim` 语义裁剪字符串两端字符。
 ///
-/// 未启用裁剪时返回借用，避免写入热路径产生不必要的字符串分配。
+/// 无论是否启用均返回原字符串的借用切片，避免写入热路径产生分配。
 #[must_use]
 pub fn maybe_trim(value: &str, enabled: bool) -> Cow<'_, str> {
     if enabled {
-        Cow::Owned(value.trim().to_owned())
+        Cow::Borrowed(java_trim(value))
     } else {
         Cow::Borrowed(value)
     }

@@ -28,7 +28,7 @@ impl LabelRecordHandler {
     #[must_use]
     pub fn process_label(row: u32, column: usize, value: &str, auto_trim: bool) -> LabelCell {
         let value = if auto_trim {
-            value.trim().to_owned()
+            easyexcel_utils::string_utils::java_trim(value).to_owned()
         } else {
             value.to_owned()
         };

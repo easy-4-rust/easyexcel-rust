@@ -6,14 +6,7 @@ use crate::read::row_consumer::ReadFlow;
 use std::collections::HashMap;
 
 pub(crate) fn validate_read_options(options: &ReadOptions) -> Result<()> {
-    if let (Some(start), Some(end)) = (options.start_row, options.end_row)
-        && start > end
-    {
-        return Err(ExcelError::Format(format!(
-            "read row range start {start} exceeds end {end}"
-        )));
-    }
-    Ok(())
+    easyexcel_io::validate_row_range(options.start_row, options.end_row).map_err(ExcelError::from)
 }
 
 pub(crate) fn reject_extra_read(options: &ReadOptions, format: &str) -> Result<()> {

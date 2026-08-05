@@ -10,8 +10,8 @@ use crate::core::{ExcelError, ExcelRow, Result, WriteHandler, WriteWorkbookConte
 use crate::write::xls_adapter::Biff8Book;
 use crate::write::excel_writer_core::{
     HandlerHolderScope, after_workbook, after_workbook_create, before_workbook, sort_handlers,
-    validate_excel_row_schema, validate_xls_options, with_default_write_converters,
-    write_sheet_to_biff8_book, write_xls_onto_template,
+    validate_excel_row_schema, with_default_write_converters, write_sheet_to_biff8_book,
+    write_xls_onto_template,
 };
 use crate::write::write_options::WriteOptions;
 
@@ -50,7 +50,6 @@ where
     let effective_options = with_default_write_converters(options);
     let options = &effective_options;
     validate_excel_row_schema::<T>()?;
-    validate_xls_options(options)?;
     sort_handlers(handlers);
     let workbook_context = WriteWorkbookContext::new(path);
     before_workbook(handlers, &workbook_context)?;
@@ -95,7 +94,6 @@ where
     let effective_options = with_default_write_converters(options);
     let options = &effective_options;
     validate_excel_row_schema::<T>()?;
-    validate_xls_options(options)?;
     sort_handlers(handlers);
     let workbook_context = WriteWorkbookContext::new(logical_path);
     before_workbook(handlers, &workbook_context)?;

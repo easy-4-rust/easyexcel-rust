@@ -26,7 +26,7 @@ impl StringRecordHandler {
         auto_trim: bool,
     ) -> Option<(FormulaCell, String)> {
         let text = if auto_trim {
-            value.trim().to_owned()
+            easyexcel_utils::string_utils::java_trim(&value).to_owned()
         } else {
             value
         };

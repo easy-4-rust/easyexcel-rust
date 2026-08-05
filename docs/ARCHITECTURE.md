@@ -105,6 +105,9 @@ flowchart LR
 | 未选中工作表可跳过的 BIFF 事件记录分类 | `easyexcel-xls::biff8::record_sid::is_skippable_event_record` | 根据 `SheetSelector` 维护 Java handler 的启停状态与统计信息 |
 | 数据格式元数据有效值选择与 `General` 回退 | `easyexcel-model::DataFormatData::{resolve,general}` | 保留 Java `StyleUtil#buildDataFormat` 方法名与参数契约 |
 | XLS/XLSX 工作表不存在的强类型错误 | `easyexcel-io::Error::SheetNotFound` | 映射为 Java 风格 `ExcelError::SheetNotFound`，不再解析引擎错误字符串 |
+| 按首张、下标、名称或全部选择工作表 | `easyexcel-io::{SheetSelection,select_sheet_names}` | 把 Java 风格 `SheetSelector` 映射为中立选择请求，并进入 listener 生命周期 |
+| 零基闭区间读取行范围校验 | `easyexcel-io::validate_row_range` | 从 `ReadOptions` 取值并映射为 EasyExcel 公共错误 |
+| Java `String#trim` 兼容算法 | `easyexcel-utils::string_utils::java_trim` | 门面决定何时启用 `auto_trim`，基础函数执行字符边界规则 |
 
 `crates/easyexcel/src/analysis/v03` 中保留的同名文件只做 EasyExcel 错误和事件回调适配，不再实现底层格式算法。`read/xlsx_rows.rs` 与 `write/template_write.rs` 仍然较大，是因为它们承载 listener/cache/handler 和 Java 模板语义；其 ZIP、OPC、BIFF、gzip 与 XML 修改原语已经由基础 crate 提供。
 

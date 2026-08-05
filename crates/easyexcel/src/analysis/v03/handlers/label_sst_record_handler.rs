@@ -65,7 +65,7 @@ impl LabelSstRecordHandler {
             None => LabelSstCell::Empty { row, column },
             Some(mut data) => {
                 if auto_trim {
-                    data = data.trim().to_owned();
+                    data = easyexcel_utils::string_utils::java_trim(&data).to_owned();
                 }
                 LabelSstCell::String {
                     row,

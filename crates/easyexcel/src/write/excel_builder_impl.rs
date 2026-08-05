@@ -123,7 +123,7 @@ impl ExcelBuilderImpl {
         };
         options.merge_ranges.append(&mut self.pending_merges);
         let sheet_name = if options.auto_trim {
-            options.sheet_name.trim().to_owned()
+            easyexcel_utils::string_utils::java_trim(&options.sheet_name).to_owned()
         } else {
             options.sheet_name.clone()
         };
@@ -219,7 +219,7 @@ impl ExcelBuilder for ExcelBuilderImpl {
         }
         let mut holder_options = write_sheet.options().clone();
         holder_options.sheet_name = if holder_options.auto_trim {
-            holder_options.sheet_name.trim().to_owned()
+            easyexcel_utils::string_utils::java_trim(&holder_options.sheet_name).to_owned()
         } else {
             holder_options.sheet_name.clone()
         };

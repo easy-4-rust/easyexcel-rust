@@ -12,6 +12,8 @@ pub mod io_utils;
 pub mod media_type;
 mod read_mode;
 mod resource_limits;
+mod row_range;
+mod sheet_selection;
 mod row_sink;
 mod row_source;
 mod stream_cell;
@@ -27,6 +29,8 @@ pub use format::{
 };
 pub use read_mode::ReadMode;
 pub use resource_limits::ResourceLimits;
+pub use row_range::validate_row_range;
+pub use sheet_selection::{SheetSelection, select_sheet_names};
 pub use row_sink::RowSink;
 pub use row_source::RowSource;
 pub use stream_cell::StreamCell;

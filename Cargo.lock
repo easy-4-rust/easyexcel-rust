@@ -1278,6 +1278,7 @@ version = "0.1.0-alpha.1"
 dependencies = [
  "csv",
  "easyexcel-model",
+ "easyexcel-utils",
  "flate2",
  "quick-xml 0.37.5",
  "quick-xml 0.41.0",
