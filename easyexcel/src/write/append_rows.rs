@@ -9,7 +9,7 @@ use crate::write::excel_writer_core::{
     HandlerHolderScope, WriteGlobalFlags, apply_loop_merges, collect_handler_content_row_height,
     collect_handler_head_row_height, convert_row_at, dynamic_columns_for_row,
     effective_loop_merges, format_error, head_rows_for_schema, selected_columns,
-    write_data_row_with_handlers, write_dynamic_headers_with_handlers, write_headers_with_handlers,
+    write_data_row_with_handlers, write_dynamic_headers_with_handlers,
 };
 use crate::write::image_layout::ImageLayout;
 use crate::write::sheet_style_context::SheetStyleContext;
@@ -99,31 +99,28 @@ where
     let head_rows = head_rows_for_schema(T::schema(), options)?;
     let image_layout = ImageLayout::new(&columns, options, metadata, head_rows, handlers)?;
     if write_head && head_rows > 0 {
-        if let Some(head) = &options.dynamic_head {
-            write_dynamic_headers_with_handlers(
-                worksheet,
-                &columns,
-                head,
-                &options.sheet_name,
-                SheetStyleContext::head(&options.head_style, metadata, global),
-                handlers,
-                &image_layout,
-                row_index,
-                options.automatic_merge_head,
-                holder_scope,
-            )?;
+        let schema_head;
+        let head = if let Some(head) = options.dynamic_head.as_deref() {
+            head
         } else {
-            write_headers_with_handlers(
-                worksheet,
-                &columns,
-                &options.sheet_name,
-                SheetStyleContext::head(&options.head_style, metadata, global),
-                handlers,
-                &image_layout,
-                row_index,
-                holder_scope,
-            )?;
-        }
+            schema_head = T::schema()
+                .iter()
+                .map(crate::metadata::ExcelColumn::head_path)
+                .collect::<Vec<_>>();
+            &schema_head
+        };
+        write_dynamic_headers_with_handlers(
+            worksheet,
+            &columns,
+            head,
+            &options.sheet_name,
+            SheetStyleContext::head(&options.head_style, metadata, global),
+            handlers,
+            &image_layout,
+            row_index,
+            options.automatic_merge_head,
+            holder_scope,
+        )?;
         // Annotation `@HeadRowHeight` or registered `SimpleRowHeightStyleStrategy`
         let head_height = collect_handler_head_row_height(handlers).or(metadata.head_row_height);
         if let Some(height) = head_height {

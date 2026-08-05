@@ -44,6 +44,8 @@ mod tests_extra {
             column_index: Some(0),
             field: "image",
             format: None,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         };
         // 空输入流读取为空图片向量，命中 Image 分支（from_image 包装为 Empty + image 列表）

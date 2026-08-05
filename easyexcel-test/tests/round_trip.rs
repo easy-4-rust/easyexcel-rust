@@ -528,6 +528,8 @@ fn derive_uses_java_style_input_stream_and_url_image_converters() -> Result<()> 
         column_index: Some(1),
         field: "url",
         format: None,
+        date_time_format: None,
+        number_format: None,
         use_1904_windowing: false,
     };
     let (url, server) = serve_image_once("404 Not Found", Vec::new(), 0)?;

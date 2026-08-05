@@ -6,20 +6,14 @@
 //! written; [`ExcelWriter`] materializes into a constant-memory worksheet only
 //! at `finish` (stream decode → write → ZIP), keeping peak RAM bounded.
 
-use std::fs::{File, OpenOptions};
-use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
 use crate::core::{CellValue, ExcelError, ImageData, Result, RichTextStringData};
 use bigdecimal::BigDecimal;
 use chrono::{NaiveDate, NaiveDateTime};
-use flate2::Compression;
-use flate2::read::GzDecoder;
-use flate2::write::GzEncoder;
-use tempfile::{Builder, TempDir};
+use easyexcel_io::io::gzip_record::{GzipRecordReader, GzipRecordWriter};
 
-/// Gzip magic number (`1f 8b`) — used by tests to observe true compression.
-pub const GZIP_MAGIC: [u8; 2] = [0x1f, 0x8b];
+pub use easyexcel_io::io::gzip_record::{GZIP_MAGIC, file_has_gzip_magic};
 
 /// Observable snapshot of an active or finished gzip spill file.
 #[derive(Debug, Clone)]
@@ -39,11 +33,7 @@ pub struct GzipSpillSnapshot {
 /// Streaming gzip spill writer mirroring POI `GZIPSheetDataWriter`.
 pub struct GzipSheetDataWriter {
     sheet_name: String,
-    path: PathBuf,
-    encoder: GzEncoder<File>,
-    uncompressed_len: u64,
-    /// Keeps the parent temp directory alive for the spill lifetime.
-    dir: Option<TempDir>,
+    writer: GzipRecordWriter,
 }
 
 impl GzipSheetDataWriter {
@@ -54,20 +44,10 @@ impl GzipSheetDataWriter {
     /// Returns an I/O error when the tempfile cannot be created.
     pub fn create(dir: &Path, sheet_name: impl Into<String>) -> Result<Self> {
         let sheet_name = sheet_name.into();
-        let tmp = Builder::new()
-            .prefix("easyexcel-sxssf-")
-            .suffix(".xml.gz")
-            .tempfile_in(dir)
-            .map_err(ExcelError::Io)?;
-        // tempfile 3.x: `NamedTempFile::keep` → `(File, PathBuf)`.
-        let (file, path) = tmp.keep().map_err(|error| ExcelError::Io(error.error))?;
-        let encoder = GzEncoder::new(file, Compression::default());
         Ok(Self {
             sheet_name,
-            path,
-            encoder,
-            uncompressed_len: 0,
-            dir: None,
+            writer: GzipRecordWriter::create(dir, "easyexcel-sxssf-", ".xml.gz")
+                .map_err(ExcelError::from)?,
         })
     }
 
@@ -77,10 +57,11 @@ impl GzipSheetDataWriter {
     ///
     /// Returns an I/O error when the temp directory or file cannot be created.
     pub fn create_owned(sheet_name: impl Into<String>) -> Result<Self> {
-        let dir = TempDir::new().map_err(ExcelError::Io)?;
-        let mut writer = Self::create(dir.path(), sheet_name)?;
-        writer.dir = Some(dir);
-        Ok(writer)
+        Ok(Self {
+            sheet_name: sheet_name.into(),
+            writer: GzipRecordWriter::create_owned("easyexcel-sxssf-", ".xml.gz")
+                .map_err(ExcelError::from)?,
+        })
     }
 
     /// Appends one data row (cell values) to the gzip spill.
@@ -89,13 +70,8 @@ impl GzipSheetDataWriter {
     ///
     /// Returns a format or I/O error when encoding or writing fails.
     pub fn write_row(&mut self, cells: &[CellValue]) -> Result<()> {
-        let mut buf = Vec::with_capacity(64 + cells.len() * 16);
-        encode_row(&mut buf, cells)?;
-        self.encoder.write_all(&buf).map_err(ExcelError::Io)?;
-        self.uncompressed_len = self
-            .uncompressed_len
-            .saturating_add(u64::try_from(buf.len()).unwrap_or(u64::MAX));
-        Ok(())
+        let payload = encode_row(cells)?;
+        self.writer.write_record(&payload).map_err(ExcelError::from)
     }
 
     /// Flushes buffered gzip bytes so magic / size are observable on disk.
@@ -104,7 +80,7 @@ impl GzipSheetDataWriter {
     ///
     /// Returns an I/O error on flush failure.
     pub fn flush(&mut self) -> Result<()> {
-        self.encoder.flush().map_err(ExcelError::Io)
+        self.writer.flush().map_err(ExcelError::from)
     }
 
     /// Returns a snapshot suitable for tests (gzip magic + sizes).
@@ -113,15 +89,13 @@ impl GzipSheetDataWriter {
     ///
     /// Returns an I/O error when flushing or stating the file fails.
     pub fn snapshot(&mut self) -> Result<GzipSpillSnapshot> {
-        self.flush()?;
-        let compressed_len = std::fs::metadata(&self.path).map_or(0, |meta| meta.len());
-        let is_gzip = file_has_gzip_magic(&self.path);
+        let snapshot = self.writer.snapshot().map_err(ExcelError::from)?;
         Ok(GzipSpillSnapshot {
             sheet_name: self.sheet_name.clone(),
-            path: self.path.clone(),
-            is_gzip,
-            compressed_len,
-            uncompressed_len: self.uncompressed_len,
+            path: snapshot.path,
+            is_gzip: snapshot.is_gzip,
+            compressed_len: snapshot.compressed_len,
+            uncompressed_len: snapshot.uncompressed_len,
         })
     }
 
@@ -131,23 +105,9 @@ impl GzipSheetDataWriter {
     ///
     /// Returns an I/O error when finishing gzip or reopening the file fails.
     pub fn finish(self) -> Result<GzipSpillReader> {
-        let path = self.path;
-        let uncompressed_len = self.uncompressed_len;
-        let sheet_name = self.sheet_name;
-        let dir = self.dir;
-        self.encoder.finish().map_err(ExcelError::Io)?;
-        let compressed_len = std::fs::metadata(&path).map_or(0, |meta| meta.len());
-        let file = OpenOptions::new()
-            .read(true)
-            .open(&path)
-            .map_err(ExcelError::Io)?;
         Ok(GzipSpillReader {
-            sheet_name,
-            path,
-            decoder: GzDecoder::new(file),
-            uncompressed_len,
-            compressed_len,
-            dir,
+            sheet_name: self.sheet_name,
+            reader: self.writer.finish().map_err(ExcelError::from)?,
         })
     }
 }
@@ -155,26 +115,20 @@ impl GzipSheetDataWriter {
 /// Read side of a finished gzip spill (stream decode, constant memory).
 pub struct GzipSpillReader {
     sheet_name: String,
-    path: PathBuf,
-    decoder: GzDecoder<File>,
-    uncompressed_len: u64,
-    compressed_len: u64,
-    // dir 字段用于在读取期间保持 TempDir 存活（防临时目录被提前回收），
-    // 不参与业务读取，属刻意保留字段。
-    #[allow(dead_code)]
-    dir: Option<TempDir>,
+    reader: GzipRecordReader,
 }
 
 impl GzipSpillReader {
     /// Returns spill metadata after finish.
     #[must_use]
     pub fn snapshot(&self) -> GzipSpillSnapshot {
+        let snapshot = self.reader.snapshot();
         GzipSpillSnapshot {
             sheet_name: self.sheet_name.clone(),
-            path: self.path.clone(),
-            is_gzip: file_has_gzip_magic(&self.path),
-            compressed_len: self.compressed_len,
-            uncompressed_len: self.uncompressed_len,
+            path: snapshot.path,
+            is_gzip: snapshot.is_gzip,
+            compressed_len: snapshot.compressed_len,
+            uncompressed_len: snapshot.uncompressed_len,
         }
     }
 
@@ -184,33 +138,15 @@ impl GzipSpillReader {
     ///
     /// Returns a format or I/O error when the stream is corrupt.
     pub fn next_row(&mut self) -> Result<Option<Vec<CellValue>>> {
-        let mut len_buf = [0u8; 4];
-        match self.decoder.read_exact(&mut len_buf) {
-            Ok(()) => {}
-            Err(error) if error.kind() == std::io::ErrorKind::UnexpectedEof => return Ok(None),
-            Err(error) => return Err(ExcelError::Io(error)),
-        }
-        let len = u32::from_le_bytes(len_buf) as usize;
-        let mut payload = vec![0u8; len];
-        self.decoder
-            .read_exact(&mut payload)
-            .map_err(ExcelError::Io)?;
-        let cells = decode_row(&payload)?;
-        Ok(Some(cells))
+        self.reader
+            .next_record()
+            .map_err(ExcelError::from)?
+            .map(|payload| decode_row(&payload))
+            .transpose()
     }
 }
 
-/// Returns whether `path` starts with gzip magic bytes.
-#[must_use]
-pub fn file_has_gzip_magic(path: &Path) -> bool {
-    let Ok(mut file) = File::open(path) else {
-        return false;
-    };
-    let mut magic = [0u8; 2];
-    matches!(file.read_exact(&mut magic), Ok(())) && magic == GZIP_MAGIC
-}
-
-fn encode_row(out: &mut Vec<u8>, cells: &[CellValue]) -> Result<()> {
+fn encode_row(cells: &[CellValue]) -> Result<Vec<u8>> {
     let mut body = Vec::with_capacity(cells.len() * 16);
     write_u32(
         &mut body,
@@ -220,13 +156,7 @@ fn encode_row(out: &mut Vec<u8>, cells: &[CellValue]) -> Result<()> {
     for cell in cells {
         encode_cell(&mut body, cell)?;
     }
-    write_u32(
-        out,
-        u32::try_from(body.len())
-            .map_err(|_| ExcelError::Format("spill row exceeds u32 length".to_owned()))?,
-    );
-    out.extend_from_slice(&body);
-    Ok(())
+    Ok(body)
 }
 
 fn decode_row(payload: &[u8]) -> Result<Vec<CellValue>> {
@@ -557,14 +487,9 @@ mod tests {
         let directory = tempfile::tempdir().expect("tempdir");
         let bad_path = directory.path().join("bad.gz");
         std::fs::write(&bad_path, b"not a gzip stream").expect("write");
-        let file = OpenOptions::new().read(true).open(&bad_path).expect("open");
         let mut reader = GzipSpillReader {
             sheet_name: "Sheet1".to_owned(),
-            path: bad_path,
-            decoder: GzDecoder::new(file),
-            uncompressed_len: 0,
-            compressed_len: 0,
-            dir: None,
+            reader: GzipRecordReader::open_path(bad_path).expect("open"),
         };
         let error = reader.next_row().expect_err("corrupt stream must fail");
         assert!(matches!(error, ExcelError::Io(_)));

@@ -35,7 +35,7 @@ This document is the release gate, not a marketing checklist. A row is marked
 | `extraRead(CellExtraTypeEnum)` / `ReadListener.extra` | `extra_read(CellExtraType)` / `ReadListener::extra` | implemented for XLSX comments, hyperlinks, and merged ranges; XLS/CSV return a typed unsupported error when requested |
 | `PageReadListener` | `PageReadListener<T>` | implemented |
 | `AnalysisContext` | `AnalysisContext` | implemented |
-| `@ExcelProperty` | `#[excel(name, index, order, format)]` | implemented |
+| `@ExcelProperty` | `#[excel(value/head, name, index, order, converter)]` | implemented: `value` arrays generate and automatically merge multi-level heads; reads resolve the final head name; priority remains `index > order > declaration order` |
 | `@ExcelIgnore` | `#[excel(ignore)]` | implemented |
 | `@ExcelIgnoreUnannotated` | `#[excel(ignore_unannotated)]` | implemented |
 | built-in scalar converters | `FromExcelCell` / `IntoExcelCell` | implemented: strings, booleans, signed/unsigned integers, Java-compatible `BigInteger` (`BigInt`), floats, `BigDecimal`, `Option<T>`, `NaiveDate`, and `NaiveDateTime` cover Java's registered scalar and temporal converter inventory |

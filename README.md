@@ -9,7 +9,12 @@ It delivers the Java EasyExcel programming model in idiomatic Rust: builders,
 typed row mapping, event listeners, converters, streaming reads,
 constant-memory writes, template filling, and write handlers.
 
-> 📖 [中文 README](README_CN.md) | [Architecture](docs/ARCHITECTURE.md) | [Usage Guide](docs/GUIDE.md)
+The workspace also exposes reusable format-neutral foundations (`easyexcel-model`,
+`easyexcel-formula`, `easyexcel-io`, XLS/XLSX/CSV backends and tabular conversion).
+The independent `xls-cli` product owns its library-first command application layer;
+this facade no longer depends on the full `xls` fork.
+
+> 📖 [中文 README](README_CN.md) | [Architecture](docs/ARCHITECTURE.md) | [Usage Guide](docs/GUIDE.md) | [xls-cli integration](docs/xls-cli-integration-plan.md) | [Capability matrix](docs/xls-cli-capability-matrix.md)
 
 ---
 
@@ -100,15 +105,29 @@ let list = FillWrapper::new([
 EasyExcel::fill_template_list("template.xlsx", "output.xlsx", &list, FillConfig::default())?;
 ```
 
+### Foundation Component Facade
+
+Downstream projects only need the `easyexcel` dependency to access CSV, I/O,
+and workbook model APIs through stable namespaces:
+
+```rust
+use easyexcel::csv::{CsvReadOptions, CsvWriteOptions};
+use easyexcel::io::{Format, ResourceLimits};
+use easyexcel::model::{Cell, Workbook};
+```
+
+These are direct re-exports of the foundation crate types, with no wrapper or
+conversion overhead.
+
 ## Annotation Mapping (Java → Rust)
 
 | Java Annotation | Rust Attribute | Purpose |
 |-----------------|---------------|---------|
-| `@ExcelProperty` | `#[excel(name, index, order, converter)]` | Column mapping |
+| `@ExcelProperty` | `#[excel(value/head, name, index, order, converter)]` | Column mapping and multi-level heads |
 | `@ExcelIgnore` | `#[excel(ignore)]` | Skip field |
 | `@ExcelIgnoreUnannotated` | `#[excel(ignore_unannotated)]` | Skip unannotated |
-| `@DateTimeFormat` | `#[excel(format = "...")]` | Date format |
-| `@NumberFormat` | `#[excel(format = "...")]` | Numeric format |
+| `@DateTimeFormat` | `#[excel(date_time_format = "...", use_1904_windowing = true)]` | Date format |
+| `@NumberFormat` | `#[excel(number_format = "...", rounding_mode = "HALF_UP")]` | Numeric format |
 | `@ColumnWidth` | `#[excel(column_width = N)]` | Column width |
 | `@HeadRowHeight` | `#[excel(head_row_height = N)]` | Header row height |
 | `@ContentRowHeight` | `#[excel(content_row_height = N)]` | Content row height |
@@ -146,11 +165,26 @@ EasyExcel::write::<User>("output.xlsx")
 | Crate | Purpose | Java Mirror |
 |-------|---------|-------------|
 | `easyexcel` | User-facing facade | `EasyExcel` / `EasyExcelFactory` |
-| `easyexcel-core` | Traits, data models, errors | `com.alibaba.excel.*` |
 | `easyexcel-derive` | `#[derive(ExcelRow)]` proc-macro | Annotation processing |
-| `easyexcel-reader` | XLSX/XLS/CSV read engine | `analysis/` + `read/` |
-| `easyexcel-writer` | XLSX/XLS/CSV write engine | `write/` |
-| `easyexcel-template` | Template fill engine | `write/metadata/fill/` |
+| `easyexcel-model` | Format-neutral workbook and cell model | Core data model |
+| `easyexcel-io` | Format detection, I/O contracts and resource limits | Read/write infrastructure |
+| `easyexcel-csv` | CSV codec, charset and streaming writer | CSV backend |
+| `easyexcel-xls` | BIFF8 parsing, encoding, encryption and formula tokens | XLS backend |
+| `easyexcel-xlsx` | OOXML streaming, package handling and encryption | XLSX backend |
+| `easyexcel-formula` | Formula AST, parser and evaluator | Formula engine |
+| `easyexcel-tabular` | Markdown, HTML and JSON table conversion | Tabular interchange |
+
+基础 crates 是内部引擎层，普通 Rust 用户仍只依赖 `easyexcel`：
+
+```rust
+use easyexcel::csv::{CsvCharset, CsvReadOptions, CsvWriteOptions};
+use easyexcel::io::{Format, ResourceLimits};
+use easyexcel::model::{Cell, Workbook};
+use easyexcel::xls;
+use easyexcel::xlsx;
+```
+
+`easyexcel::{csv, io, model, formula, tabular, xls, xlsx}` 均直接重导出对应基础 crate 的公共类型，不创建第二套模型。`EasyExcel`、builder、listener、converter、handler 与 `#[derive(ExcelRow)]` 继续由门面提供。
 
 ## Java Compatibility
 

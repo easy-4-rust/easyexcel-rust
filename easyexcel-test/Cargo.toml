@@ -10,7 +10,6 @@ publish = false
 
 [dev-dependencies]
 easyexcel = { path = "../easyexcel" }
-easyexcel-macro = { path = "../easyexcel-macro" }
 bigdecimal.workspace = true
 calamine.workspace = true
 chrono.workspace = true

@@ -20,6 +20,8 @@ use quick_xml::{Decoder, Reader as XmlReader, XmlVersion};
 use ssfmt::{DateSystem, FormatOptions, Locale, NumberFormat, format, format_code_from_id};
 use zip::ZipArchive;
 
+use easyexcel_xlsx::xlsx::package::{RawRelationships, Relationships};
+
 use crate::ReadOptions;
 use crate::analysis::v07::handlers::cell_formula_tag_handler::CellFormulaTagHandler;
 use crate::analysis::v07::handlers::cell_inline_string_value_tag_handler::CellInlineStringValueTagHandler;
@@ -50,9 +52,6 @@ fn easyexcel_builtin_format_code(id: u32) -> Option<&'static str> {
 
 const MAX_XLSX_ROW_NUMBER: u32 = 1_048_576;
 const MAX_XLSX_COLUMN_NUMBER: usize = 16_384;
-
-type Relationships = HashMap<String, (String, String)>;
-type RawRelationships = HashMap<String, (String, String, bool)>;
 
 trait ReadSeek: Read + Seek {}
 
@@ -675,17 +674,11 @@ fn java_scientific_format(value: f64, decimal_separator: char) -> String {
 }
 
 fn path_cache<R: Read + Seek>(archive: &ZipArchive<R>) -> HashMap<String, String> {
-    let mut paths = HashMap::with_capacity(archive.len());
-    for name in archive.file_names() {
-        paths.insert(name.to_ascii_lowercase(), name.to_owned());
-    }
-    paths
+    easyexcel_xlsx::xlsx::package::path_cache(archive)
 }
 
 fn cached_path<'a>(cache: &'a HashMap<String, String>, path: &'a str) -> &'a str {
-    cache
-        .get(&path.to_ascii_lowercase())
-        .map_or(path, String::as_str)
+    easyexcel_xlsx::xlsx::package::cached_path(cache, path)
 }
 
 fn xml_reader<'a, R: Read + Seek>(
@@ -718,12 +711,8 @@ fn read_relationships<R: Read + Seek>(
     cache: &HashMap<String, String>,
     path: &str,
 ) -> Result<Relationships> {
-    Ok(read_raw_relationships(archive, cache, path)?
-        .into_iter()
-        .filter_map(|(id, (target, relationship_type, external))| {
-            (!external).then_some((id, (target, relationship_type)))
-        })
-        .collect())
+    easyexcel_xlsx::xlsx::package::read_relationships(archive, cache, path)
+        .map_err(ExcelError::from)
 }
 
 fn read_raw_relationships<R: Read + Seek>(
@@ -731,34 +720,8 @@ fn read_raw_relationships<R: Read + Seek>(
     cache: &HashMap<String, String>,
     path: &str,
 ) -> Result<RawRelationships> {
-    let mut reader = xml_reader(archive, cache, path)?;
-    let mut relationships = HashMap::new();
-    let mut buffer = Vec::with_capacity(256);
-    loop {
-        buffer.clear();
-        match reader.read_event_into(&mut buffer).map_err(format_error)? {
-            Event::Start(element) if element.local_name().as_ref() == b"Relationship" => {
-                let attributes = attributes(&element, reader.decoder())?;
-                let Some(id) = attributes.get("Id") else {
-                    continue;
-                };
-                let target = attributes.get("Target").cloned().unwrap_or_default();
-                let relationship_type = attributes.get("Type").cloned().unwrap_or_default();
-                let external = attributes
-                    .get("TargetMode")
-                    .is_some_and(|mode| mode == "External");
-                relationships.insert(id.clone(), (target, relationship_type, external));
-            }
-            Event::End(element) if element.local_name().as_ref() == b"Relationships" => break,
-            Event::Eof => {
-                return Err(ExcelError::Format(format!(
-                    "unexpected end of XML in {path}"
-                )));
-            }
-            _ => {}
-        }
-    }
-    Ok(relationships)
+    easyexcel_xlsx::xlsx::package::read_raw_relationships(archive, cache, path)
+        .map_err(ExcelError::from)
 }
 
 fn read_worksheet_extras<R: Read + Seek>(
@@ -1242,44 +1205,11 @@ fn parse_row_number(value: &str) -> Result<u32> {
 }
 
 fn relationship_part_name(path: &str) -> String {
-    path.rsplit_once('/').map_or_else(
-        || format!("_rels/{path}.rels"),
-        |(directory, file)| format!("{directory}/_rels/{file}.rels"),
-    )
+    easyexcel_xlsx::xlsx::package::relationship_part_name(path)
 }
 
 fn resolve_target(base_part: &str, target: &str) -> Result<String> {
-    let candidate = if let Some(absolute) = target.strip_prefix('/') {
-        absolute.to_owned()
-    } else if let Some((directory, _)) = base_part.rsplit_once('/') {
-        format!("{directory}/{target}")
-    } else {
-        target.to_owned()
-    };
-    normalize_path(&candidate)
-}
-
-fn normalize_path(path: &str) -> Result<String> {
-    let mut components = Vec::new();
-    for component in path.split('/') {
-        match component {
-            "" | "." => {}
-            ".." => {
-                if components.pop().is_none() {
-                    return Err(ExcelError::Format(format!(
-                        "OOXML relationship escapes package root: {path}"
-                    )));
-                }
-            }
-            value => components.push(value),
-        }
-    }
-    if components.is_empty() {
-        return Err(ExcelError::Format(
-            "empty OOXML relationship target".to_owned(),
-        ));
-    }
-    Ok(components.join("/"))
+    easyexcel_xlsx::xlsx::package::resolve_target(base_part, target).map_err(ExcelError::from)
 }
 
 fn format_error(error: impl std::fmt::Display) -> ExcelError {

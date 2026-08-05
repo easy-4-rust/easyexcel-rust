@@ -173,6 +173,8 @@ mod poi_handle_test {
             column_index: None,
             field: "",
             format: None,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         };
         let cv = IntoExcelCell::to_excel_cell(&data, &ctx).unwrap();

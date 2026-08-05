@@ -117,6 +117,8 @@ mod tests_extra {
                 column_index: Some(0),
                 field: "image",
                 format: None,
+                date_time_format: None,
+                number_format: None,
                 use_1904_windowing: false,
             },
         )
@@ -134,6 +136,8 @@ mod tests_extra {
             column_index: Some(0),
             field: "image",
             format: None,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         };
         assert_eq!(

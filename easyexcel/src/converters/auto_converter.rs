@@ -27,6 +27,8 @@ mod tests {
             column_index: Some(0),
             field: "value",
             format: None,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         };
         let error = <AutoConverter as Converter<String>>::convert_to_rust_data(

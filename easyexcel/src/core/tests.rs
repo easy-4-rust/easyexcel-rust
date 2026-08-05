@@ -57,6 +57,8 @@ fn context(format: Option<&'static str>) -> ConvertContext {
         column_index: Some(1),
         field: "value",
         format,
+        date_time_format: None,
+        number_format: None,
         use_1904_windowing: false,
     }
 }
@@ -950,6 +952,8 @@ fn converter_registry_register_and_read() {
         column_index: Some(0),
         field: "f",
         format: None,
+        date_time_format: None,
+        number_format: None,
         use_1904_windowing: false,
     };
     let cell = CellValue::String("abc".to_owned());
@@ -972,6 +976,8 @@ fn converter_registry_write() {
         column_index: Some(0),
         field: "f",
         format: None,
+        date_time_format: None,
+        number_format: None,
         use_1904_windowing: false,
     };
     let col = ExcelColumn::new("f", "F", Some(0), 0, None);
@@ -1024,6 +1030,8 @@ fn converter_registry_merged_with_takes_priority() {
         column_index: Some(0),
         field: "f",
         format: None,
+        date_time_format: None,
+        number_format: None,
         use_1904_windowing: false,
     };
     let col = ExcelColumn::new("f", "F", Some(0), 0, None);
@@ -1049,6 +1057,8 @@ fn string_image_converter_read_error() {
         column_index: Some(0),
         field: "img",
         format: None,
+        date_time_format: None,
+        number_format: None,
         use_1904_windowing: false,
     };
     let cell = CellValue::String("nonexistent.png".to_owned());

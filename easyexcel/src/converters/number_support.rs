@@ -52,8 +52,8 @@ where
     let mut cell = WriteCellData::new(CellValue::Decimal(context.value().to_decimal()?));
     if let Some(format) = context
         .column()
-        .format
-        .or(context.convert_context().format)
+        .effective_number_format()
+        .or(context.convert_context().effective_number_format())
         .filter(|format| !format.trim().is_empty())
     {
         fill_data_format(&mut cell, Some(format), "");
@@ -71,7 +71,10 @@ where
     };
     let decimal = parse_decimal(
         value,
-        context.column().format.or(context.convert_context().format),
+        context
+            .column()
+            .effective_number_format()
+            .or(context.convert_context().effective_number_format()),
     )
     .map_err(|_| context.convert_context().invalid(cell, "numeric string"))?;
     T::from_decimal(&decimal).map_err(|error| number_error(context, cell, error))
@@ -83,7 +86,10 @@ pub(crate) fn write_number_string<T>(
 where
     T: JavaNumber,
 {
-    let pattern = context.column().format.or(context.convert_context().format);
+    let pattern = context
+        .column()
+        .effective_number_format()
+        .or(context.convert_context().effective_number_format());
     let text = if let Some(non_finite) = context.value().non_finite() {
         format_non_finite(non_finite, pattern)?
     } else if pattern.is_none_or(str::is_empty) {
@@ -347,6 +353,8 @@ mod tests {
             column_index: Some(1),
             field: "value",
             format: None,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         }
     }
@@ -597,6 +605,8 @@ mod tests_extra {
             column_index: Some(0),
             field: "value",
             format: None,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         }
     }

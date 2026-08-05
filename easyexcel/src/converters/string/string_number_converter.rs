@@ -32,8 +32,8 @@ impl crate::Converter<String> for StringNumberConverter {
 
         if let Some(pattern) = context
             .column()
-            .format
-            .or(context.convert_context().format)
+            .effective_number_format()
+            .or(context.convert_context().effective_number_format())
             .filter(|pattern| !pattern.is_empty())
         {
             if crate::util::date_utils::is_internal_date_format(pattern) {
@@ -89,6 +89,8 @@ mod tests {
             column_index: Some(0),
             field: "value",
             format,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         }
     }
@@ -170,6 +172,8 @@ mod tests_extra {
             column_index: Some(0),
             field: "value",
             format,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         }
     }

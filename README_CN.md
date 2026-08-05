@@ -6,6 +6,12 @@
 **easyexcel-rust** 是阿里巴巴 [EasyExcel](https://github.com/alibaba/easyexcel) 的 Rust 原生移植版本。
 以惯用 Rust 方式提供 Java EasyExcel 编程模型：Builder 模式、类型化行映射、事件监听器、类型转换器、流式读取、常量内存写入、模板填充和写入处理器。
 
+Workspace 同时提供 `easyexcel-model`、`easyexcel-formula`、`easyexcel-io`、
+XLS/XLSX/CSV 后端和表格转换。library-first 命令应用层由独立 `xls-cli`
+产品仓库自行维护；`easyexcel` 门面已不再依赖完整 `xls` fork。
+
+> [架构](docs/ARCHITECTURE.md) · [xls-cli 整合计划](docs/xls-cli-integration-plan.md) · [能力矩阵](docs/xls-cli-capability-matrix.md)
+
 ---
 
 ## 快速开始
@@ -94,6 +100,18 @@ let list = FillWrapper::new([
 ]);
 EasyExcel::fill_template_list("template.xlsx", "output.xlsx", &list, FillConfig::default())?;
 ```
+
+### 基础组件门面
+
+外部项目只需依赖 `easyexcel`，即可通过统一命名空间使用 CSV、I/O 和工作簿模型：
+
+```rust
+use easyexcel::csv::{CsvReadOptions, CsvWriteOptions};
+use easyexcel::io::{Format, ResourceLimits};
+use easyexcel::model::{Cell, Workbook};
+```
+
+这些类型是对应基础 crates 的直接重导出，不是包装类型，也没有额外转换成本。
 
 ---
 

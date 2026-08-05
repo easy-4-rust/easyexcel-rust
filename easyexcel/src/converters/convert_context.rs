@@ -19,14 +19,36 @@ pub struct ConvertContext {
     pub column_index: Option<usize>,
     /// Rust field name. (Java `ExcelContentProperty.getField().getName()`)
     pub field: &'static str,
-    /// Optional format string. (Java `ExcelContentProperty.getDateTimeFormatProperty()` etc.)
+    /// 已废弃的 `ExcelProperty.format` 兼容值。
     pub format: Option<&'static str>,
+    /// Java `DateTimeFormatProperty.format`。
+    pub date_time_format: Option<&'static str>,
+    /// Java `NumberFormatProperty.format`。
+    pub number_format: Option<&'static str>,
     /// Whether numeric dates use Excel's 1904 date system.
     /// (Java `GlobalConfiguration.getUse1904windowing()`)
     pub use_1904_windowing: bool,
 }
 
 impl ConvertContext {
+    /// 返回日期转换应使用的格式。
+    #[must_use]
+    pub const fn effective_date_time_format(&self) -> Option<&'static str> {
+        match self.date_time_format {
+            Some(format) => Some(format),
+            None => self.format,
+        }
+    }
+
+    /// 返回数字转换应使用的格式。
+    #[must_use]
+    pub const fn effective_number_format(&self) -> Option<&'static str> {
+        match self.number_format {
+            Some(format) => Some(format),
+            None => self.format,
+        }
+    }
+
     /// Builds a typed conversion error matching Java `ExcelDataConvertException`.
     pub(crate) fn invalid(
         &self,
@@ -79,6 +101,8 @@ mod tests_extra {
             column_index: Some(1),
             field: "value",
             format: None,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         }
     }

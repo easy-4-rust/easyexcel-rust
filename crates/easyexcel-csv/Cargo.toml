@@ -1,0 +1,21 @@
+[package]
+name = "easyexcel-csv"
+description = "CSV and TSV reader, writer, inference, and encoding support for easyexcel-rust"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+chrono.workspace = true
+csv.workspace = true
+easyexcel-io.workspace = true
+easyexcel-model.workspace = true
+encoding_rs.workspace = true
+
+[lints]
+workspace = true

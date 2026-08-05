@@ -1,0 +1,20 @@
+[package]
+name = "easyexcel-tabular"
+description = "Safe Markdown, HTML and JSON table conversion for easyexcel-rust"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+easyexcel-io.workspace = true
+easyexcel-model.workspace = true
+scraper.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

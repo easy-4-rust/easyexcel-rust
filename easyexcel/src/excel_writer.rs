@@ -825,7 +825,9 @@ impl ExcelWriter {
                     package.save_to_path(&self.path)
                 }
             } else if let Some(output) = self.output_stream.as_mut() {
-                self.xls_book.write_to(output.as_mut())
+                self.xls_book
+                    .write_to(output.as_mut())
+                    .map_err(ExcelError::from)
             } else {
                 save_xls_book(&self.xls_book, &self.path)
             };

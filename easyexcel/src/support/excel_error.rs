@@ -101,6 +101,16 @@ impl PartialEq for ExcelError {
 
 impl Eq for ExcelError {}
 
+impl From<easyexcel_io::Error> for ExcelError {
+    fn from(error: easyexcel_io::Error) -> Self {
+        match error {
+            easyexcel_io::Error::Io(error) => Self::Io(error),
+            easyexcel_io::Error::Unsupported(message) => Self::Unsupported(message),
+            other => Self::Format(other.to_string()),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests_extra {
     use super::*;

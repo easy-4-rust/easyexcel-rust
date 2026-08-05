@@ -74,6 +74,8 @@ mod tests_extra {
             column_index: Some(0),
             field: "value",
             format: None,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         }
     }

@@ -1,0 +1,24 @@
+//! 格式识别、流式协议、执行模式、资源限制与统一错误。
+
+mod error;
+pub mod file_utils;
+mod format;
+pub mod gzip_record;
+pub mod io_utils;
+mod read_mode;
+mod resource_limits;
+mod row_sink;
+mod row_source;
+mod stream_cell;
+mod stream_info;
+mod write_mode;
+
+pub use error::{Error, Result};
+pub use format::{Format, looks_like_cfb, looks_like_zip};
+pub use read_mode::ReadMode;
+pub use resource_limits::ResourceLimits;
+pub use row_sink::RowSink;
+pub use row_source::RowSource;
+pub use stream_cell::StreamCell;
+pub use stream_info::StreamInfo;
+pub use write_mode::WriteMode;

@@ -7,7 +7,7 @@ use std::any::type_name;
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::fs::{File, OpenOptions};
-use std::io::{Read, Seek, Write};
+use std::io::Write;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
@@ -28,13 +28,13 @@ pub use crate::util::work_book_util::{
     create_work_book,
 };
 use bigdecimal::{BigDecimal, ToPrimitive};
-use ms_offcrypto_writer::Ecma376AgileWriter;
 use rust_xlsxwriter::{
     Color, Format, FormatAlign, FormatBorder, FormatPattern, FormatScript, FormatUnderline, Image,
     Note, ObjectMovement, Workbook, Worksheet,
 };
 
 use crate::write::append_rows::append_rows_to_worksheet_with_gzip_and_context;
+use crate::write::biff8::style::{apply_excel_cell_style, apply_excel_font_style};
 use crate::write::biff8::{
     Biff8Book, Biff8Cell, Biff8Merge, Biff8Sheet, Biff8StyleRequest, Biff8StyleTable, Biff8Value,
     date_to_excel_serial_with_windowing, datetime_to_excel_serial_with_windowing,
@@ -357,7 +357,7 @@ where
     I: IntoIterator<Item = T>,
 {
     let columns = selected_columns(T::schema(), options)?;
-    let first_data_row = head_rows_for_schema_state(T::schema().is_empty(), options)?;
+    let first_data_row = head_rows_for_schema(T::schema(), options)?;
     let csv_converters =
         crate::converters::default_converter_loader::load_default_write_converter()
             .merged_with(&options.converters)
@@ -449,33 +449,15 @@ pub(crate) fn append_csv_records(
     );
     let csv_sheet = create_sheet(&mut csv_workbook, &options.sheet_name)?;
     csv_sheet.set_next_row_index(row_index);
-    let head_rows = head_rows_for_schema_state(schema_is_empty, options)?;
+    let head_rows = head_rows_for_columns(columns, schema_is_empty, options)?;
     if write_head && head_rows > 0 {
-        if let Some(head) = &options.dynamic_head {
-            let head = selected_dynamic_head_paths(columns, head)?;
-            for level in 0..head_rows {
-                #[allow(clippy::cast_possible_truncation)]
-                let level = level as usize;
-                let labels = head
-                    .iter()
-                    .map(|path| normalized_head_label(path, level).to_owned())
-                    .collect::<Vec<_>>();
-                let record = csv_header_record(
-                    csv_sheet,
-                    row_index,
-                    columns,
-                    &labels,
-                    &options.sheet_name,
-                    handlers,
-                    holder_scope,
-                )?;
-                writer.write_record(record).map_err(format_error)?;
-                row_index += 1;
-            }
-        } else {
-            let labels = columns
+        let head = selected_head_paths(columns, options)?;
+        for level in 0..head_rows {
+            #[allow(clippy::cast_possible_truncation)]
+            let level = level as usize;
+            let labels = head
                 .iter()
-                .map(|(_, _, column)| column.name.to_owned())
+                .map(|path| normalized_head_label(path, level).to_owned())
                 .collect::<Vec<_>>();
             let record = csv_header_record(
                 csv_sheet,
@@ -487,7 +469,7 @@ pub(crate) fn append_csv_records(
                 holder_scope,
             )?;
             writer.write_record(record).map_err(format_error)?;
-            row_index = 1;
+            row_index = row_index.saturating_add(1);
         }
     }
     for prepared in rows {
@@ -543,7 +525,7 @@ where
 {
     let columns = selected_columns(T::schema(), options)?;
     let head_rows = if write_head {
-        head_rows_for_schema_state(T::schema().is_empty(), options)?
+        head_rows_for_schema(T::schema(), options)?
     } else {
         0
     };
@@ -660,29 +642,13 @@ pub(crate) fn save_workbook_to_writer(
     Ok(())
 }
 
-pub(crate) trait ReadWriteSeek: Read + Write + Seek {}
-
-impl<T> ReadWriteSeek for T where T: Read + Write + Seek {}
-
 pub(crate) fn save_encrypted_workbook_to(
     workbook: &mut Workbook,
     password: &str,
-    file: &mut dyn ReadWriteSeek,
+    file: &mut dyn easyexcel_xlsx::ReadWriteSeek,
 ) -> Result<()> {
-    let mut random = rand::rng();
-    Ecma376AgileWriter::create(&mut random, password, file)
-        .map_err(ExcelError::from)
-        .and_then(|mut writer| {
-            workbook
-                .save_to_buffer()
-                .map_err(format_error)
-                .and_then(|plaintext| {
-                    // The encryption crate writes plaintext only to its in-memory cursor; its
-                    // `Write` implementation cannot reach the fallible output at this stage.
-                    let _ = writer.write_all(&plaintext);
-                    writer.finalize().map_err(ExcelError::from)
-                })
-        })
+    let plaintext = workbook.save_to_buffer().map_err(format_error)?;
+    easyexcel_xlsx::encrypt_package_to(&plaintext, password, file).map_err(ExcelError::from)
 }
 
 pub(crate) fn csv_header_record(
@@ -982,10 +948,8 @@ where
                 sheet.set_row_height(row, height);
             }
         }
-        if options.automatic_merge_head
-            && let Some(head) = &options.dynamic_head
-        {
-            let head = selected_dynamic_head_paths(&columns, head)?;
+        if options.automatic_merge_head {
+            let head = selected_head_paths(&columns, options)?;
             merge_biff8_dynamic_head_groups(
                 book.sheet_mut(sheet_name),
                 &columns,
@@ -1108,56 +1072,27 @@ pub(crate) fn write_biff8_headers(
 ) -> Result<()> {
     let global = WriteGlobalFlags::from(options);
     let style_ctx = SheetStyleContext::head(&options.head_style, metadata, global);
-    if let Some(head) = &options.dynamic_head {
-        let head = selected_dynamic_head_paths(columns, head)?;
-        let levels = head.iter().map(Vec::len).max().unwrap_or(0);
-        for level in 0..levels {
-            let row = start_row
-                .checked_add(
-                    u32::try_from(level)
-                        .map_err(|_| ExcelError::Format("dynamic head is too deep".to_owned()))?,
-                )
-                .ok_or_else(|| ExcelError::Format("BIFF8 row overflow".to_owned()))?;
-            let row_context = WriteRowContext::new(sheet_name, row, Some(level), true);
-            let row_context =
-                holder_scope.map_or(row_context.clone(), |scope| scope.row(row_context));
-            begin_row_lifecycle(handlers, &row_context)?;
-            for ((physical, _, column), path) in columns.iter().zip(&head) {
-                let label = normalized_head_label(path, level).to_owned();
-                write_biff8_styled_text_cell(
-                    book,
-                    sheet_name,
-                    row,
-                    *physical,
-                    label,
-                    column,
-                    Some(level),
-                    style_ctx.column(column),
-                    handlers,
-                    true,
-                    holder_scope,
-                )?;
-            }
-            finish_row_lifecycle(handlers, &row_context)?;
-            if let Some(height) = row_context.row().requested_height() {
-                let row = u16::try_from(row)
-                    .map_err(|_| ExcelError::Format("BIFF8 row overflow".to_owned()))?;
-                book.sheet_mut(sheet_name).set_row_height(row, height);
-            }
-        }
-    } else {
-        let row_context = WriteRowContext::new(sheet_name, start_row, Some(0), true);
+    let head = selected_head_paths(columns, options)?;
+    let levels = head.iter().map(Vec::len).max().unwrap_or(0);
+    for level in 0..levels {
+        let row = start_row
+            .checked_add(
+                u32::try_from(level)
+                    .map_err(|_| ExcelError::Format("head is too deep".to_owned()))?,
+            )
+            .ok_or_else(|| ExcelError::Format("BIFF8 row overflow".to_owned()))?;
+        let row_context = WriteRowContext::new(sheet_name, row, Some(level), true);
         let row_context = holder_scope.map_or(row_context.clone(), |scope| scope.row(row_context));
         begin_row_lifecycle(handlers, &row_context)?;
-        for (physical_index, _, column) in columns {
+        for ((physical_index, _, column), path) in columns.iter().zip(&head) {
             write_biff8_styled_text_cell(
                 book,
                 sheet_name,
-                start_row,
+                row,
                 *physical_index,
-                column.name.to_owned(),
+                normalized_head_label(path, level).to_owned(),
                 column,
-                Some(0),
+                Some(level),
                 style_ctx.column(column),
                 handlers,
                 true,
@@ -1166,7 +1101,7 @@ pub(crate) fn write_biff8_headers(
         }
         finish_row_lifecycle(handlers, &row_context)?;
         if let Some(height) = row_context.row().requested_height() {
-            let row = u16::try_from(start_row)
+            let row = u16::try_from(row)
                 .map_err(|_| ExcelError::Format("BIFF8 row overflow".to_owned()))?;
             book.sheet_mut(sheet_name).set_row_height(row, height);
         }
@@ -1336,7 +1271,7 @@ pub(crate) fn biff8_style_request(
                 u8::try_from(styles.alloc_rgb_icv(rgb)).unwrap_or(8),
             ));
         }
-        request.apply_excel_cell_style(style);
+        apply_excel_cell_style(&mut request, style);
     }
     if let Some(font) = font {
         let mut font = font;
@@ -1345,7 +1280,7 @@ pub(crate) fn biff8_style_request(
                 u8::try_from(styles.alloc_rgb_icv(rgb)).unwrap_or(8),
             ));
         }
-        request.apply_excel_font_style(font);
+        apply_excel_font_style(&mut request, font);
     }
     if let Some(style) = context.explicit {
         apply_writer_cell_style_to_request(&mut request, styles, style);
@@ -1496,7 +1431,8 @@ pub(crate) const fn biff8_valign(align: VerticalAlignment) -> u8 {
 }
 
 pub(crate) fn add_biff8_merge_range(sheet: &mut Biff8Sheet, range: MergeRange) -> Result<()> {
-    sheet.add_merge(merge_range_to_biff8(range)?)
+    sheet.add_merge(merge_range_to_biff8(range)?)?;
+    Ok(())
 }
 
 pub(crate) fn merge_range_to_biff8(range: MergeRange) -> Result<Biff8Merge> {
@@ -2310,23 +2246,12 @@ where
         }
     }
     if write_head && head_rows > 0 {
-        if let Some(head) = &options.dynamic_head {
-            let head = selected_dynamic_head_paths(&columns, head)?;
-            for level in 0..usize::try_from(head_rows).unwrap_or(0) {
-                let mut row = Vec::with_capacity(columns.len());
-                for ((physical_index, _, _), path) in columns.iter().zip(&head) {
-                    let label = normalized_head_label(path, level).to_owned();
-                    row.push((*physical_index, CellValue::String(label)));
-                }
-                output.push(row);
-                original_output.push(Vec::new());
-                converted_output.push(Vec::new());
-                absent_rows.push(false);
-            }
-        } else {
+        let head = selected_head_paths(&columns, options)?;
+        for level in 0..usize::try_from(head_rows).unwrap_or(0) {
             let mut row = Vec::with_capacity(columns.len());
-            for (physical_index, _, column) in &columns {
-                row.push((*physical_index, CellValue::String(column.name.to_owned())));
+            for ((physical_index, _, _), path) in columns.iter().zip(&head) {
+                let label = normalized_head_label(path, level).to_owned();
+                row.push((*physical_index, CellValue::String(label)));
             }
             output.push(row);
             original_output.push(Vec::new());
@@ -2410,15 +2335,9 @@ pub(crate) fn save_template_package(
 pub(crate) fn save_encrypted_bytes_to(
     plaintext: &[u8],
     password: &str,
-    file: &mut dyn ReadWriteSeek,
+    file: &mut dyn easyexcel_xlsx::ReadWriteSeek,
 ) -> Result<()> {
-    let mut random = rand::rng();
-    Ecma376AgileWriter::create(&mut random, password, file)
-        .map_err(ExcelError::from)
-        .and_then(|mut writer| {
-            let _ = writer.write_all(plaintext);
-            writer.finalize().map_err(ExcelError::from)
-        })
+    easyexcel_xlsx::encrypt_package_to(plaintext, password, file).map_err(ExcelError::from)
 }
 
 /// Seeds a workbook from `withTemplate` then appends typed rows to the target sheet.
@@ -3182,7 +3101,37 @@ pub(crate) fn dynamic_columns_for_row(
 }
 
 pub(crate) fn head_rows_for_schema(schema: &[ExcelColumn], options: &WriteOptions) -> Result<u32> {
-    head_rows_for_schema_state(schema.is_empty(), options)
+    if schema.is_empty() || options.dynamic_head.is_some() {
+        return head_rows_for_schema_state(schema.is_empty(), options);
+    }
+    if !options.need_head {
+        return Ok(0);
+    }
+    let levels = schema
+        .iter()
+        .map(|column| column.head_names.map_or(1, <[_]>::len))
+        .max()
+        .unwrap_or(0);
+    head_level_to_row(levels)
+}
+
+fn head_rows_for_columns(
+    columns: &[(usize, usize, &'static ExcelColumn)],
+    schema_is_empty: bool,
+    options: &WriteOptions,
+) -> Result<u32> {
+    if schema_is_empty || options.dynamic_head.is_some() {
+        return head_rows_for_schema_state(schema_is_empty, options);
+    }
+    if !options.need_head {
+        return Ok(0);
+    }
+    let levels = columns
+        .iter()
+        .map(|(_, _, column)| column.head_names.map_or(1, <[_]>::len))
+        .max()
+        .unwrap_or(0);
+    head_level_to_row(levels)
 }
 
 fn head_rows_for_schema_state(schema_is_empty: bool, options: &WriteOptions) -> Result<u32> {
@@ -3222,6 +3171,22 @@ pub(crate) fn selected_dynamic_head_paths(
             })
         })
         .collect()
+}
+
+/// 返回最终写入表头：动态表头优先，否则使用派生宏生成的 `ExcelProperty.value()`。
+pub(crate) fn selected_head_paths(
+    columns: &[(usize, usize, &'static ExcelColumn)],
+    options: &WriteOptions,
+) -> Result<Vec<Vec<String>>> {
+    options.dynamic_head.as_deref().map_or_else(
+        || {
+            Ok(columns
+                .iter()
+                .map(|(_, _, column)| column.head_path())
+                .collect())
+        },
+        |head| selected_dynamic_head_paths(columns, head),
+    )
 }
 
 pub(crate) fn resolved_write_context_holder_state<T>(
@@ -3342,11 +3307,8 @@ where
     if !write_head || !options.need_head || !options.automatic_merge_head {
         return Ok(Vec::new());
     }
-    let Some(head) = &options.dynamic_head else {
-        return Ok(Vec::new());
-    };
     let columns = selected_columns(T::schema(), options)?;
-    let head = selected_dynamic_head_paths(&columns, head)?;
+    let head = selected_head_paths(&columns, options)?;
     dynamic_head_merge_ranges(
         &columns,
         &head,
@@ -3388,6 +3350,7 @@ fn write_headers(
 
 // 参数与 Java 对应写入路径参数一一对应，拆分结构体会破坏 1:1 可追溯性
 #[allow(clippy::too_many_arguments)]
+#[cfg(test)]
 pub(crate) fn write_headers_with_handlers(
     worksheet: &mut Worksheet,
     columns: &[(usize, usize, &'static ExcelColumn)],
@@ -3721,7 +3684,7 @@ fn write_cell(
             }
             CellValue::Float(number) => {
                 if global.use_scientific_format
-                    && metadata.format.is_none()
+                    && metadata.effective_number_format().is_none()
                     && is_scientific_magnitude(*number)
                 {
                     // 科学计数法需要数字格式，落入下方带格式路径。
@@ -3741,7 +3704,7 @@ fn write_cell(
                         .map_err(format_error);
                 }
                 if global.use_scientific_format
-                    && metadata.format.is_none()
+                    && metadata.effective_number_format().is_none()
                     && is_scientific_magnitude(numeric)
                 {
                     // 科学计数法需要数字格式，落入下方带格式路径。
@@ -3788,7 +3751,7 @@ fn write_cell(
         CellValue::Float(value) => {
             let mut cell_format = format.clone();
             if global.use_scientific_format
-                && metadata.format.is_none()
+                && metadata.effective_number_format().is_none()
                 && is_scientific_magnitude(*value)
             {
                 cell_format = cell_format.set_num_format("0.#####E0");
@@ -3807,7 +3770,7 @@ fn write_cell(
             }
             let mut cell_format = format.clone();
             if global.use_scientific_format
-                && metadata.format.is_none()
+                && metadata.effective_number_format().is_none()
                 && is_scientific_magnitude(numeric)
             {
                 cell_format = cell_format.set_num_format("0.#####E0");
@@ -3817,9 +3780,10 @@ fn write_cell(
                 .map_err(format_error)?;
         }
         CellValue::Date(value) => {
-            let format = format
-                .clone()
-                .set_num_format(excel_date_format(metadata.format, "yyyy-mm-dd"));
+            let format = format.clone().set_num_format(excel_date_format(
+                metadata.effective_date_time_format(),
+                "yyyy-mm-dd",
+            ));
             if global.use_1904_windowing {
                 let serial = date_to_excel_serial_with_windowing(*value, true);
                 worksheet
@@ -3832,9 +3796,10 @@ fn write_cell(
             }
         }
         CellValue::DateTime(value) => {
-            let format = format
-                .clone()
-                .set_num_format(excel_date_format(metadata.format, "yyyy-mm-dd hh:mm:ss"));
+            let format = format.clone().set_num_format(excel_date_format(
+                metadata.effective_date_time_format(),
+                "yyyy-mm-dd hh:mm:ss",
+            ));
             if global.use_1904_windowing {
                 let serial = datetime_to_excel_serial_with_windowing(*value, true);
                 worksheet

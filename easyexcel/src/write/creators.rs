@@ -169,6 +169,7 @@ impl CellCreator for Biff8Row<'_> {
 impl Biff8CellHandle<'_> {
     pub(crate) fn set(self, cell: Biff8Cell) -> Result<()> {
         self.sheet
-            .set(self.row_index, usize::from(self.column_index), cell)
+            .set(self.row_index, usize::from(self.column_index), cell)?;
+        Ok(())
     }
 }

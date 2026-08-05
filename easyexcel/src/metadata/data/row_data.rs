@@ -119,7 +119,7 @@ impl RowData {
     pub fn cell(&self, column: &ExcelColumn) -> Option<&CellValue> {
         let index = column
             .index
-            .or_else(|| self.headers.get(column.name).copied())?;
+            .or_else(|| self.headers.get(column.leaf_name()).copied())?;
         self.cells.get(index)
     }
 
@@ -128,7 +128,7 @@ impl RowData {
     pub fn formula(&self, column: &ExcelColumn) -> Option<&FormulaData> {
         let index = column
             .index
-            .or_else(|| self.headers.get(column.name).copied())?;
+            .or_else(|| self.headers.get(column.leaf_name()).copied())?;
         self.formulas.get(&index)
     }
 
@@ -137,7 +137,7 @@ impl RowData {
     pub fn display_value(&self, column: &ExcelColumn) -> Option<&str> {
         let index = column
             .index
-            .or_else(|| self.headers.get(column.name).copied())?;
+            .or_else(|| self.headers.get(column.leaf_name()).copied())?;
         self.display_values.get(&index).map(String::as_str)
     }
 
@@ -146,7 +146,7 @@ impl RowData {
     pub fn decimal_value(&self, column: &ExcelColumn) -> Option<&BigDecimal> {
         let index = column
             .index
-            .or_else(|| self.headers.get(column.name).copied())?;
+            .or_else(|| self.headers.get(column.leaf_name()).copied())?;
         self.decimal_values.get(&index)
     }
 
@@ -206,13 +206,15 @@ impl RowData {
     pub fn convert_context(&self, column: &ExcelColumn) -> ConvertContext {
         let column_index = column
             .index
-            .or_else(|| self.headers.get(column.name).copied());
+            .or_else(|| self.headers.get(column.leaf_name()).copied());
         ConvertContext {
             sheet_name: self.sheet_name.clone(),
             row_index: self.row_index,
             column_index,
             field: column.field,
             format: column.format,
+            date_time_format: column.date_time_format,
+            number_format: column.number_format,
             use_1904_windowing: column.use_1904_windowing.unwrap_or(self.use_1904_windowing),
         }
     }

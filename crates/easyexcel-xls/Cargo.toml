@@ -1,0 +1,26 @@
+[package]
+name = "easyexcel-xls"
+description = "BIFF8 XLS reader and writer for easyexcel-rust"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+cfb.workspace = true
+chrono.workspace = true
+easyexcel-formula.workspace = true
+easyexcel-io.workspace = true
+easyexcel-model.workspace = true
+getrandom.workspace = true
+md-5.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

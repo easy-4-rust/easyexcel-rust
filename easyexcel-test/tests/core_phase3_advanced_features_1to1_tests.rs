@@ -13,8 +13,8 @@
 //! Naming: `mod <java_class_snake>` + `fn <java_method_snake>`.
 
 use easyexcel::CellValue;
+use easyexcel::ExcelRow as DeriveExcelRow;
 use easyexcel::core::{CellExtra, CellExtraType, WriteCellData};
-use easyexcel_macro::ExcelRow as DeriveExcelRow;
 
 // ---------------------------------------------------------------------------
 // FormulaCellValue — Java `CellDataDataTest#t01ReadFormula07` / write-back
@@ -63,6 +63,8 @@ mod formula_cell_test {
             column_index: None,
             field: "",
             format: None,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         };
         let cv = easyexcel::core::IntoExcelCell::to_excel_cell(&decorated, &ctx).unwrap();
@@ -120,6 +122,8 @@ mod hyperlink_cell_test {
             column_index: None,
             field: "",
             format: None,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         };
         let cv = easyexcel::core::IntoExcelCell::to_excel_cell(&decorated, &ctx).unwrap();
@@ -177,6 +181,8 @@ mod comment_cell_test {
             column_index: None,
             field: "",
             format: None,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         };
         let cv = easyexcel::core::IntoExcelCell::to_excel_cell(&decorated, &ctx).unwrap();

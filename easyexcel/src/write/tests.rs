@@ -498,6 +498,8 @@ impl WriteHandler for ConverterMapProbe {
             column_index: Some(usize::from(context.column_index)),
             field: "value",
             format: None,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         };
         let string_value = registry
@@ -550,6 +552,8 @@ impl ExcelRow for ConverterContextRow {
                     column_index: Some(0),
                     field: "value",
                     format: None,
+                    date_time_format: None,
+                    number_format: None,
                     use_1904_windowing: false,
                 },
             )?
@@ -590,6 +594,8 @@ impl ExcelRow for NumericConverterContextRow {
                     column_index: Some(0),
                     field: "value",
                     format: None,
+                    date_time_format: None,
+                    number_format: None,
                     use_1904_windowing: false,
                 },
             )?
@@ -964,6 +970,8 @@ impl ExcelRow for AnchoredImageRow {
                 column_index: Some(0),
                 field: "cell",
                 format: None,
+                date_time_format: None,
+                number_format: None,
                 use_1904_windowing: false,
             },
         )?])

@@ -6,21 +6,27 @@
 //! 拆分到独立文件（每个类型一个 `.rs`，命名 1:1 对应 Java 类）。
 
 pub mod analysis;
-pub mod annotation;
 pub mod cache;
 pub mod constant;
 pub mod context;
 pub mod converters;
 pub mod core;
+pub mod csv;
 pub mod enums;
 pub mod event;
 pub mod exception;
+pub mod formula;
+pub mod io;
 pub mod metadata;
+pub mod model;
 pub mod read;
 pub mod support;
+pub mod tabular;
 pub mod template;
 pub mod util;
 pub mod write;
+pub mod xls;
+pub mod xlsx;
 
 mod collect_listener;
 mod easy_excel;
@@ -57,7 +63,7 @@ pub use crate::write::{
     WriteSheet, write_csv_to_buffer, write_csv_to_writer, write_xls, write_xls_to_writer,
     write_xlsx_to_writer,
 };
-pub use easyexcel_macro::ExcelRow;
+pub use easyexcel_derive::ExcelRow;
 pub use excel_builder::{
     builder_from_writer, do_fill_template, do_fill_template_with_config, fill_builder_from_writer,
     wire_template_fill,

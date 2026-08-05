@@ -6,8 +6,8 @@
 //! Naming: `mod <java_class_snake>` + `fn <java_method_snake>`.
 
 use easyexcel::EasyExcel;
+use easyexcel::ExcelRow;
 use easyexcel::core::CellExtraType;
-use easyexcel_macro::ExcelRow;
 
 // ---------------------------------------------------------------------------
 // XLS encryption — Java EncryptDataTest#t02..t04
@@ -51,8 +51,8 @@ mod encrypt_data_test_xls {
 
 mod converter_data_test_xls_image {
     use super::*;
+    use easyexcel::ExcelRow;
     use easyexcel::write::ExcelWriter;
-    use easyexcel_macro::ExcelRow;
 
     #[derive(Debug, Clone, ExcelRow)]
     struct ImageRow {

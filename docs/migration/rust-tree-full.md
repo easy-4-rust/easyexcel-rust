@@ -210,30 +210,28 @@ easyexcel-core/src/
 
 ---
 
-## 2. easyexcel-derive/src/
+## 2. crates/easyexcel-derive/src/
 
 ```
-easyexcel-derive/src/
-├── lib.rs                                [proc-macro entry]
-├── implementation.rs                     [parse_struct_options / parse_field_options / expand_excel_row]
-│   ├── easyexcel_path()
-│   ├── resolve_easyexcel_path()
-│   ├── found_crate_path()
-│   ├── expand_excel_row()
-│   ├── expand_excel_row_tokens()
-│   ├── derive_excel_row()
-│   ├── parse_struct_options()
-│   ├── parse_field_options()
-│   ├── parse_once_absolute_merge()
-│   ├── write_metadata_tokens()
-│   ├── named_fields()
-│   ├── decorate_column()
-│   ├── field_registered_read_conversion()
-│   ├── field_registered_write_conversion()
-│   ├── field_write_conversion()
-│   └── StructOptions, FieldOptions, ColumnProperty types
-└── tests.rs                              [derive macro unit tests]
+crates/easyexcel-derive/src/
+├── lib.rs                                [derive-only proc-macro entry]
+├── crate_path.rs                         [renamed dependency path resolution]
+├── annotation/                           [compile-time #[excel(...)] parsing]
+│   ├── field_options.rs                  [Java field annotation model]
+│   ├── struct_options.rs                 [Java type annotation model]
+│   ├── extension_options.rs              [Rust-only product extensions]
+│   ├── integer.rs                        [signed Java int parser]
+│   ├── excel_property.rs
+│   ├── format/                           [DateTimeFormat / NumberFormat]
+│   ├── style_parser/                     [shared style value parsers]
+│   └── write/style/                      [Java write.style annotations]
+└── expand/                               [ExcelRow implementation generation]
+    ├── excel_row/                         [schema / metadata / trait impl]
+    └── conversion/                        [read/write conversion tokens]
 ```
+
+过程宏测试位于 `crates/easyexcel-derive/tests/`：普通集成测试覆盖门面和元数据，
+`tests/ui/` 使用 `trybuild` 固化有效/无效注解的编译期诊断。
 
 ---
 

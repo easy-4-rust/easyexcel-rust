@@ -127,14 +127,20 @@ where
     ) -> crate::Result<WriteCellData> {
         let value = context.value().to_excel_cell(context.convert_context())?;
         let text = match &value {
-            crate::CellValue::Date(value) => context.convert_context().format.map_or_else(
-                || value.format("%Y-%m-%d").to_string(),
-                |format| value.format(format).to_string(),
-            ),
-            crate::CellValue::DateTime(value) => context.convert_context().format.map_or_else(
-                || value.format("%Y-%m-%d %H:%M:%S").to_string(),
-                |format| value.format(format).to_string(),
-            ),
+            crate::CellValue::Date(value) => context
+                .convert_context()
+                .effective_date_time_format()
+                .map_or_else(
+                    || value.format("%Y-%m-%d").to_string(),
+                    |format| value.format(format).to_string(),
+                ),
+            crate::CellValue::DateTime(value) => context
+                .convert_context()
+                .effective_date_time_format()
+                .map_or_else(
+                    || value.format("%Y-%m-%d %H:%M:%S").to_string(),
+                    |format| value.format(format).to_string(),
+                ),
             _ => value.as_text(),
         };
         Ok(WriteCellData::new(crate::CellValue::String(text)))
@@ -326,6 +332,8 @@ mod tests {
             column_index: Some(0),
             field: "value",
             format: None,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         }
     }
@@ -582,6 +590,8 @@ mod tests_extra {
             column_index: Some(0),
             field: "value",
             format,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         }
     }
@@ -640,6 +650,8 @@ mod tests_extra2 {
             column_index: Some(0),
             field: "value",
             format,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         }
     }

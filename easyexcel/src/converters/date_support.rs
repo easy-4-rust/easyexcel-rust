@@ -20,7 +20,7 @@ pub(crate) fn read_date(context: &ReadConverterContext<'_>) -> Result<NaiveDate,
     if let Some(CellValue::String(value)) = context.cell() {
         let patterns = context
             .convert_context()
-            .format
+            .effective_date_time_format()
             .map_or_else(|| vec!["%Y-%m-%d", "%Y/%m/%d"], |pattern| vec![pattern]);
         return patterns
             .into_iter()
@@ -41,19 +41,22 @@ pub(crate) fn read_datetime(
     context: &ReadConverterContext<'_>,
 ) -> Result<NaiveDateTime, ExcelError> {
     if let Some(CellValue::String(value)) = context.cell() {
-        let patterns = context.convert_context().format.map_or_else(
-            || {
-                vec![
-                    "%Y%m%d%H%M%S",
-                    "%Y-%m-%d %H:%M",
-                    "%Y/%m/%d %H:%M",
-                    "%Y%m%d %H:%M:%S",
-                    "%Y-%m-%d %H:%M:%S",
-                    "%Y/%m/%d %H:%M:%S",
-                ]
-            },
-            |pattern| vec![pattern],
-        );
+        let patterns = context
+            .convert_context()
+            .effective_date_time_format()
+            .map_or_else(
+                || {
+                    vec![
+                        "%Y%m%d%H%M%S",
+                        "%Y-%m-%d %H:%M",
+                        "%Y/%m/%d %H:%M",
+                        "%Y%m%d %H:%M:%S",
+                        "%Y-%m-%d %H:%M:%S",
+                        "%Y/%m/%d %H:%M:%S",
+                    ]
+                },
+                |pattern| vec![pattern],
+            );
         return patterns
             .into_iter()
             .find_map(|pattern| {
@@ -76,7 +79,7 @@ pub(crate) fn write_date_value(
     let mut cell = WriteCellData::new(CellValue::Date(value));
     fill_data_format(
         &mut cell,
-        context.convert_context().format,
+        context.convert_context().effective_date_time_format(),
         DEFAULT_DATE_FORMAT,
     );
     cell
@@ -89,7 +92,7 @@ pub(crate) fn write_datetime_value<T>(
     let mut cell = WriteCellData::new(CellValue::DateTime(value));
     fill_data_format(
         &mut cell,
-        context.convert_context().format,
+        context.convert_context().effective_date_time_format(),
         DEFAULT_DATETIME_FORMAT,
     );
     cell
@@ -99,7 +102,10 @@ pub(crate) fn write_date_string(
     value: NaiveDate,
     context: &WriteConverterContext<'_, NaiveDate>,
 ) -> WriteCellData {
-    let pattern = context.convert_context().format.unwrap_or("%Y-%m-%d");
+    let pattern = context
+        .convert_context()
+        .effective_date_time_format()
+        .unwrap_or("%Y-%m-%d");
     WriteCellData::from_string(value.format(&chrono_pattern(pattern)).to_string())
 }
 
@@ -109,7 +115,7 @@ pub(crate) fn write_datetime_string<T>(
 ) -> WriteCellData {
     let pattern = context
         .convert_context()
-        .format
+        .effective_date_time_format()
         .unwrap_or("%Y-%m-%d %H:%M:%S");
     WriteCellData::from_string(value.format(&chrono_pattern(pattern)).to_string())
 }
@@ -179,6 +185,8 @@ mod tests {
             column_index: Some(0),
             field: "value",
             format,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing,
         }
     }
@@ -377,6 +385,8 @@ mod tests_extra {
             column_index: Some(0),
             field: "value",
             format,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         }
     }

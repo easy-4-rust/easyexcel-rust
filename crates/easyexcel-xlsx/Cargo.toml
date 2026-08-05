@@ -1,0 +1,29 @@
+[package]
+name = "easyexcel-xlsx"
+description = "OOXML XLSX reader, writer, streaming reader, and round-trip support"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+aes.workspace = true
+cfb.workspace = true
+easyexcel-io.workspace = true
+easyexcel-model.workspace = true
+ms-offcrypto-writer.workspace = true
+quick-xml = "0.41.0"
+rand.workspace = true
+sha1.workspace = true
+sha2.workspace = true
+zip.workspace = true
+
+[dev-dependencies]
+easyexcel-formula.workspace = true
+
+[lints]
+workspace = true

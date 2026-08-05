@@ -1,8 +1,15 @@
 [workspace]
 members = [
+    "crates/easyexcel-model",
+    "crates/easyexcel-formula",
+    "crates/easyexcel-io",
+    "crates/easyexcel-xls",
+    "crates/easyexcel-xlsx",
+    "crates/easyexcel-csv",
+    "crates/easyexcel-tabular",
+    "crates/easyexcel-derive",
     "xtask",
     "easyexcel",
-    "easyexcel-macro",
     "easyexcel-support/easyexcel-axum",
     "easyexcel-support/easyexcel-actix",
     "easyexcel-support/easyexcel-hyper",
@@ -32,8 +39,18 @@ categories = ["parser-implementations", "encoding"]
 
 [workspace.dependencies]
 easyexcel = { path = "easyexcel", version = "0.1.0-alpha.1" }
+easyexcel-model = { path = "crates/easyexcel-model", version = "0.1.0-alpha.1" }
+easyexcel-formula = { path = "crates/easyexcel-formula", version = "0.1.0-alpha.1" }
+easyexcel-io = { path = "crates/easyexcel-io", version = "0.1.0-alpha.1" }
+easyexcel-xls = { path = "crates/easyexcel-xls", version = "0.1.0-alpha.1" }
+easyexcel-xlsx = { path = "crates/easyexcel-xlsx", version = "0.1.0-alpha.1" }
+easyexcel-csv = { path = "crates/easyexcel-csv", version = "0.1.0-alpha.1" }
+easyexcel-tabular = { path = "crates/easyexcel-tabular", version = "0.1.0-alpha.1" }
+easyexcel-derive = { path = "crates/easyexcel-derive", version = "0.1.0-alpha.1" }
+anyhow = "1.0.102"
 actix-multipart = "0.8.0"
 actix-web = "4.11.0"
+aes = "0.8.4"
 axum = "0.8.9"
 base64 = "0.23.0"
 bigdecimal = "0.4.10"
@@ -64,9 +81,13 @@ pure-rust-locales = "0.8.2"
 quick-xml = "0.41.0"
 quote = "1.0.47"
 rand = "0.9.5"  # ms-offcrypto-writer 1.0.7 支持的最高 rand 线
+regex = { version = "1.11.1", default-features = false, features = ["std", "unicode"] }
 rust_xlsxwriter = { version = "0.97.0", features = ["chrono", "constant_memory", "zlib"] }
+scraper = "0.27.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
+sha1 = "0.10.6"
+sha2 = "0.10.9"
 ssfmt = { version = "0.1.2", default-features = false }
 sys-locale = "0.3.2"
 syn = { version = "3.0.3", features = ["full"] }

@@ -20,8 +20,8 @@
 
 mod annotation_phase1_image_test {
     //! Mirrors: AnnotationDataTest#t07ExcelImage07
+    use easyexcel::ExcelRow;
     use easyexcel::core::ExcelRow as ExcelRowTrait;
-    use easyexcel_macro::ExcelRow;
 
     #[derive(Debug, PartialEq, ExcelRow)]
     struct ImageData {
@@ -43,8 +43,8 @@ mod annotation_phase1_image_test {
 
 mod annotation_phase1_comment_test {
     //! Mirrors: AnnotationDataTest#t08ExcelComment07
+    use easyexcel::ExcelRow;
     use easyexcel::core::ExcelRow as ExcelRowTrait;
-    use easyexcel_macro::ExcelRow;
 
     #[derive(Debug, PartialEq, ExcelRow)]
     struct CommentRow {
@@ -64,9 +64,9 @@ mod annotation_phase1_comment_test {
 
 mod annotation_phase1_hyperlink_test {
     //! Mirrors: AnnotationDataTest#t09ExcelHyperlink07
+    use easyexcel::ExcelRow;
     use easyexcel::core::ExcelRow as ExcelRowTrait;
     use easyexcel::{CellValue, WriteCellData};
-    use easyexcel_macro::ExcelRow;
 
     #[derive(Debug, ExcelRow)]
     struct HyperlinkRow {
@@ -101,9 +101,9 @@ mod annotation_phase1_hyperlink_test {
 
 mod annotation_phase1_formula_test {
     //! Mirrors: AnnotationDataTest#t10ExcelFormula07
+    use easyexcel::ExcelRow;
     use easyexcel::core::ExcelRow as ExcelRowTrait;
     use easyexcel::{CellValue, WriteCellData};
-    use easyexcel_macro::ExcelRow;
 
     #[derive(Debug, ExcelRow)]
     struct FormulaRow {
@@ -135,8 +135,8 @@ mod annotation_phase1_formula_test {
 
 mod annotation_phase1_data_validation_test {
     //! Mirrors: AnnotationDataTest#t11ExcelDataValidation07
+    use easyexcel::ExcelRow;
     use easyexcel::core::ExcelRow as ExcelRowTrait;
-    use easyexcel_macro::ExcelRow;
 
     #[derive(Debug, ExcelRow)]
     struct ValidationRow {
@@ -161,8 +161,8 @@ mod annotation_phase1_data_validation_test {
 
 mod annotation_phase1_conditional_test {
     //! Mirrors: AnnotationDataTest#t12ExcelConditional07
+    use easyexcel::ExcelRow;
     use easyexcel::core::ExcelRow as ExcelRowTrait;
-    use easyexcel_macro::ExcelRow;
 
     #[derive(Debug, ExcelRow)]
     struct ConditionalRow {
@@ -189,8 +189,8 @@ mod annotation_phase1_conditional_test {
 
 mod annotation_phase1_filter_test {
     //! Mirrors: AnnotationDataTest#t13ExcelFilter07
+    use easyexcel::ExcelRow;
     use easyexcel::core::ExcelRow as ExcelRowTrait;
-    use easyexcel_macro::ExcelRow;
 
     #[derive(Debug, ExcelRow)]
     struct FilterRow {
@@ -211,8 +211,8 @@ mod annotation_phase1_filter_test {
 mod annotation_phase1_combined_test {
     //! Mirrors: AnnotationDataTest#t14ExcelCombined07
     //! Verifies multiple annotations can stack on the same column.
+    use easyexcel::ExcelRow;
     use easyexcel::core::ExcelRow as ExcelRowTrait;
-    use easyexcel_macro::ExcelRow;
 
     #[derive(Debug, ExcelRow)]
     struct CombinedRow {
@@ -236,6 +236,7 @@ mod annotation_phase1_combined_test {
         assert_eq!(c.name, "Full Name");
         assert_eq!(c.index, Some(0));
         assert_eq!(c.format, Some("yyyy-MM-dd"));
+        assert_eq!(c.date_time_format, None);
         assert_eq!(c.column_width, Some(30));
         assert_eq!(c.comment, Some("primary key"));
         assert_eq!(c.hyperlink, Some("https://docs.example.com"));
@@ -245,8 +246,8 @@ mod annotation_phase1_combined_test {
 
 mod annotation_phase1_metadata_test {
     //! Verifies `ExcelColumn` round-trips through `ExcelWriteMetadata`.
+    use easyexcel::ExcelRow;
     use easyexcel::core::ExcelRow as ExcelRowTrait;
-    use easyexcel_macro::ExcelRow;
 
     #[derive(Debug, ExcelRow)]
     struct MetadataRow {

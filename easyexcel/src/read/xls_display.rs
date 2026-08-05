@@ -39,210 +39,43 @@ fn load_xls_displays_inner(
     Ok(parse_workbook_displays(&wb, date_1904, locale))
 }
 
-// 对应 Java：`XlsSaxAnalyser` 对 Workbook 流 FORMAT/XF/NUMBER/RK/MulRk 的
-// 顺序解析与 Java 记录遍历一一对应，拆分会改变记录推进顺序，保持原样。
-#[allow(clippy::too_many_lines)]
 fn parse_workbook_displays(wb: &[u8], date_1904: bool, locale: &Locale) -> Vec<SheetDisplays> {
-    let mut custom_formats: HashMap<u16, String> = HashMap::new();
-    let mut xfs: Vec<u16> = Vec::new();
-    let mut sheets: Vec<SheetDisplays> = Vec::new();
-    let mut sheet_idx: isize = -1;
-    let mut in_sheet = false;
-    let mut i = 0usize;
-
-    while i + 4 <= wb.len() {
-        let typ = u16::from_le_bytes([wb[i], wb[i + 1]]);
-        let length = u16::from_le_bytes([wb[i + 2], wb[i + 3]]) as usize;
-        i += 4;
-        if i + length > wb.len() {
-            break;
-        }
-        let payload = &wb[i..i + length];
-        i += length;
-
-        match typ {
-            0x0809 if payload.len() >= 4 => {
-                let dt = u16::from_le_bytes([payload[2], payload[3]]);
-                if dt == 0x0010 {
-                    sheet_idx += 1;
-                    // 对应 Java：sheet_idx 从 -1 起计，`sheets.len() as isize` 比较
-                    // 仅在工作表数超 isize 上限时才会环绕（实际不可能），保持 as 转换。
-                    #[allow(clippy::cast_possible_wrap)]
-                    while sheets.len() as isize <= sheet_idx {
-                        sheets.push(HashMap::new());
+    easyexcel_xls::biff8::scan_numeric_cells(wb)
+        .into_iter()
+        .map(|cells| {
+            cells
+                .into_iter()
+                .filter_map(|(position, cell)| {
+                    if !cell.value.is_finite() {
+                        return None;
                     }
-                    in_sheet = true;
-                } else {
-                    in_sheet = false;
-                }
-            }
-            0x041E => {
-                if let Some((ifmt, code)) = parse_format_record(payload) {
-                    custom_formats.insert(ifmt, code);
-                }
-            }
-            0x00E0 if payload.len() >= 4 => {
-                let ifmt = u16::from_le_bytes([payload[2], payload[3]]);
-                xfs.push(ifmt);
-            }
-            0x0203 if in_sheet && payload.len() >= 14 => {
-                let row = u32::from(u16::from_le_bytes([payload[0], payload[1]]));
-                let col = u16::from_le_bytes([payload[2], payload[3]]) as usize;
-                let xf = u16::from_le_bytes([payload[4], payload[5]]) as usize;
-                let value = f64::from_le_bytes(payload[6..14].try_into().unwrap_or([0; 8]));
-                push_display(
-                    &mut sheets,
-                    sheet_idx,
-                    row,
-                    col,
-                    xf,
-                    value,
-                    &xfs,
-                    &custom_formats,
-                    date_1904,
-                    locale,
-                );
-            }
-            0x027E if in_sheet && payload.len() >= 10 => {
-                let row = u32::from(u16::from_le_bytes([payload[0], payload[1]]));
-                let col = u16::from_le_bytes([payload[2], payload[3]]) as usize;
-                let xf = u16::from_le_bytes([payload[4], payload[5]]) as usize;
-                let value = decode_rk(&payload[6..10]);
-                push_display(
-                    &mut sheets,
-                    sheet_idx,
-                    row,
-                    col,
-                    xf,
-                    value,
-                    &xfs,
-                    &custom_formats,
-                    date_1904,
-                    locale,
-                );
-            }
-            0x00BD if in_sheet && payload.len() >= 6 => {
-                // MulRk: row, firstCol, then repeating (xf, rk) until lastCol
-                let row = u32::from(u16::from_le_bytes([payload[0], payload[1]]));
-                let first_col = u16::from_le_bytes([payload[2], payload[3]]) as usize;
-                let last_col =
-                    u16::from_le_bytes([payload[payload.len() - 2], payload[payload.len() - 1]])
-                        as usize;
-                let mut offset = 4usize;
-                let mut col = first_col;
-                while col <= last_col && offset + 6 <= payload.len().saturating_sub(2) {
-                    let xf = u16::from_le_bytes([payload[offset], payload[offset + 1]]) as usize;
-                    let value = decode_rk(&payload[offset + 2..offset + 6]);
-                    push_display(
-                        &mut sheets,
-                        sheet_idx,
-                        row,
-                        col,
-                        xf,
-                        value,
-                        &xfs,
-                        &custom_formats,
-                        date_1904,
-                        locale,
-                    );
-                    offset += 6;
-                    col += 1;
-                }
-            }
-            _ => {}
-        }
-    }
-    sheets
+                    let code = cell
+                        .custom_format
+                        .as_deref()
+                        .or_else(|| builtin_format_code(cell.format_index))?;
+                    if code.eq_ignore_ascii_case("General") || code == "@" {
+                        return None;
+                    }
+                    format_with_code(cell.value, code, date_1904, locale)
+                        .map(|display| (position, display))
+                })
+                .collect()
+        })
+        .collect()
 }
 
-// 对应 Java：`pushDisplay(sheetIdx, row, col, xf, value, ...)` 参数与 Java
-// 记录分派一一对应，为保持 Java 签名语义不做参数聚合。
-#[allow(clippy::too_many_arguments)]
-fn push_display(
-    sheets: &mut [SheetDisplays],
-    sheet_idx: isize,
-    row: u32,
-    col: usize,
-    xf: usize,
-    value: f64,
-    xfs: &[u16],
-    custom_formats: &HashMap<u16, String>,
-    date_1904: bool,
-    locale: &Locale,
-) {
-    if sheet_idx < 0 || !value.is_finite() {
-        return;
-    }
-    let Some(ifmt) = xfs.get(xf).copied() else {
-        return;
-    };
-    let code = custom_formats
-        .get(&ifmt)
-        .map(String::as_str)
-        .or_else(|| builtin_format_code(ifmt));
-    let Some(code) = code else {
-        return;
-    };
-    // General / @ — leave to calamine textualization.
-    if code.eq_ignore_ascii_case("General") || code == "@" {
-        return;
-    }
-    let Some(display) = format_with_code(value, code, date_1904, locale) else {
-        return;
-    };
-    // 对应 Java：sheetIdx 已由上方 `sheet_idx < 0` 分支排除负值，
-    // `as usize` 不会丢失符号。
-    #[allow(clippy::cast_sign_loss)]
-    if let Some(sheet) = sheets.get_mut(sheet_idx as usize) {
-        sheet.insert((row, col), display);
-    }
-}
-
+#[cfg(test)]
 fn parse_format_record(payload: &[u8]) -> Option<(u16, String)> {
-    if payload.len() < 5 {
-        return None;
-    }
-    let ifmt = u16::from_le_bytes([payload[0], payload[1]]);
-    let cch = u16::from_le_bytes([payload[2], payload[3]]) as usize;
-    let flags = payload[4];
-    let raw = &payload[5..];
-    let code = if flags & 1 != 0 {
-        let bytes = cch.saturating_mul(2).min(raw.len());
-        if bytes < 2 {
-            return None;
-        }
-        let units: Vec<u16> = raw[..bytes]
-            .chunks_exact(2)
-            .map(|c| u16::from_le_bytes([c[0], c[1]]))
-            .collect();
-        String::from_utf16_lossy(&units)
-    } else {
-        // BIFF8 compressed Unicode is Latin-1 code units (one byte per char),
-        // not UTF-8. Byte `0xA5` must stay `¥` (U+00A5); UTF-8 lossy decode
-        // would turn it into U+FFFD and break STRING currency cells.
-        let bytes = cch.min(raw.len());
-        raw[..bytes].iter().map(|&b| b as char).collect()
-    };
-    Some((ifmt, code))
+    easyexcel_xls::biff8::parse_format_record(payload)
 }
 
 /// Decode an RK number (see MS-XLS 2.5.209).
 // 对应 Java：`RKRecord` 解码中 `(int)(rk >> 2)` 的位运算，u32→i32 环绕与
 // Java 强转语义一致，保留 `as` 转换。
 #[allow(clippy::cast_possible_wrap)]
+#[cfg(test)]
 fn decode_rk(bytes: &[u8]) -> f64 {
-    if bytes.len() < 4 {
-        return 0.0;
-    }
-    let rk = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
-    let d100 = rk & 0x01 != 0;
-    let is_int = rk & 0x02 != 0;
-    let value = if is_int {
-        f64::from((rk as i32) >> 2)
-    } else {
-        f64::from_bits((u64::from(rk & !0x03)) << 32)
-    };
-    if d100 { value / 100.0 } else { value }
+    easyexcel_xls::biff8::decode_rk(bytes)
 }
 
 #[cfg(test)]

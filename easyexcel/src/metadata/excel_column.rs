@@ -28,12 +28,23 @@ pub struct ExcelColumn {
     pub field_type: Option<&'static str>,
     /// Excel header name. (Java `Head.headNameList[0]`)
     pub name: &'static str,
+    /// 显式多级表头路径。未设置时使用单级 [`Self::name`]。
+    ///
+    /// 对应 Java `@ExcelProperty.value()` / `Head.headNameList`；读取按最后
+    /// 一级名称匹配，写入保留完整路径并参与自动合并。
+    pub head_names: Option<&'static [&'static str]>,
     /// Explicit zero-based column index. (Java `Head.forceIndex` + `index`)
     pub index: Option<usize>,
     /// Relative ordering when no explicit index is configured. (Java `@ExcelProperty.order`)
     pub order: i32,
-    /// Optional date or number format. (Java `@ExcelProperty.format`)
+    /// 已废弃的 `ExcelProperty.format` 兼容值。
+    ///
+    /// 新代码应优先读取 [`Self::date_time_format`] 或 [`Self::number_format`]。
     pub format: Option<&'static str>,
+    /// Java `@DateTimeFormat.value`，与数字格式独立保存。
+    pub date_time_format: Option<&'static str>,
+    /// Java `@NumberFormat.value`，与日期格式独立保存。
+    pub number_format: Option<&'static str>,
     /// Java `@NumberFormat.roundingMode`; defaults to `HALF_UP`.
     pub number_rounding_mode: Option<NumberRoundingMode>,
     /// Field-level override for Excel's 1904 date system.
@@ -87,9 +98,12 @@ impl ExcelColumn {
             field,
             field_type: None,
             name,
+            head_names: None,
             index,
             order,
             format,
+            date_time_format: None,
+            number_format: None,
             number_rounding_mode: None,
             use_1904_windowing: None,
             column_width: None,
@@ -108,11 +122,74 @@ impl ExcelColumn {
         }
     }
 
+    /// 设置 Java `@ExcelProperty.value()` 对应的完整多级表头路径。
+    #[must_use]
+    pub const fn with_head_names(mut self, head_names: &'static [&'static str]) -> Self {
+        self.head_names = Some(head_names);
+        self
+    }
+
+    /// 返回读取时使用的末级表头名称。
+    #[must_use]
+    pub fn leaf_name(&self) -> &'static str {
+        self.head_names
+            .and_then(|head_names| head_names.last().copied())
+            .unwrap_or(self.name)
+    }
+
+    /// 返回用于写入的拥有所有权的表头路径。
+    #[must_use]
+    pub fn head_path(&self) -> Vec<String> {
+        self.head_names.map_or_else(
+            || vec![self.name.to_owned()],
+            |head_names| head_names.iter().map(|name| (*name).to_owned()).collect(),
+        )
+    }
+
     /// Adds Java-compatible number rounding metadata.
     #[must_use]
     pub const fn with_number_rounding_mode(mut self, mode: NumberRoundingMode) -> Self {
         self.number_rounding_mode = Some(mode);
         self
+    }
+
+    /// 设置 Java `@DateTimeFormat.value` 元数据。
+    #[must_use]
+    pub const fn with_date_time_format(mut self, format: &'static str) -> Self {
+        self.date_time_format = Some(format);
+        self
+    }
+
+    /// 设置 Java `@NumberFormat.value` 元数据。
+    #[must_use]
+    pub const fn with_number_format(mut self, format: &'static str) -> Self {
+        self.number_format = Some(format);
+        self
+    }
+
+    /// 设置已废弃的 Java `ExcelProperty.format` 兼容值。
+    #[must_use]
+    pub const fn with_legacy_format(mut self, format: &'static str) -> Self {
+        self.format = Some(format);
+        self
+    }
+
+    /// 返回日期转换应使用的格式，兼容旧 `ExcelProperty.format`。
+    #[must_use]
+    pub const fn effective_date_time_format(&self) -> Option<&'static str> {
+        match self.date_time_format {
+            Some(format) => Some(format),
+            None => self.format,
+        }
+    }
+
+    /// 返回数字转换应使用的格式，兼容历史通用格式字段。
+    #[must_use]
+    pub const fn effective_number_format(&self) -> Option<&'static str> {
+        match self.number_format {
+            Some(format) => Some(format),
+            None => self.format,
+        }
     }
 
     /// Adds the declared Rust field type.

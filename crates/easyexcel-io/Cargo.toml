@@ -1,0 +1,24 @@
+[package]
+name = "easyexcel-io"
+description = "Spreadsheet format detection, streaming contracts, modes, limits, and I/O errors"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+csv.workspace = true
+easyexcel-model.workspace = true
+flate2.workspace = true
+quick-xml.workspace = true
+quick-xml-legacy = { package = "quick-xml", version = "0.37.5" }
+thiserror.workspace = true
+tempfile.workspace = true
+zip.workspace = true
+
+[lints]
+workspace = true

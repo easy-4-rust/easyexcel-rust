@@ -11,8 +11,8 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-# 内部 proc-macro（保持独立 crate）
-easyexcel-macro = { path = "../easyexcel-macro", version = "0.1.0-alpha.1" }
+# 内部 derive-only 过程宏；用户统一通过 easyexcel 门面使用。
+easyexcel-derive.workspace = true
 # 原 easyexcel-core 依赖
 bigdecimal.workspace = true
 chrono.workspace = true
@@ -26,13 +26,14 @@ url.workspace = true
 # 原 easyexcel-reader 依赖
 calamine.workspace = true
 cfb.workspace = true
-# 公式缓存值求值引擎：fork of zemse/xls（https://github.com/easy-4-rust/xls，
-# MIT OR Apache-2.0）。git 依赖 + rev pin：升级 = 改 rev + cargo update；
-# rev 锁死保证干净 CI checkout 可复现构建（不用仓库外 path，也不 vendor
-# 源码进仓库——fork 活跃演进，vendor 会让升级变成手动同步）。
-# rev 7e35706 = 增强分支 enh-biff8-arrays（动态数组 spill 缓存持久化 +
-# BIFF8 MULRK/MULBLANK/PANE 写入增强）；main=d8ede4f 保持 zemse 官方同步。
-xls = { git = "https://github.com/easy-4-rust/xls.git", rev = "7e3570654d95b65763cee83316b3533b2645256a", default-features = false }
+# 统一工作簿模型与公式引擎；不再依赖完整的 xls fork。
+easyexcel-csv.workspace = true
+easyexcel-io.workspace = true
+easyexcel-model.workspace = true
+easyexcel-formula.workspace = true
+easyexcel-xls.workspace = true
+easyexcel-xlsx.workspace = true
+easyexcel-tabular.workspace = true
 csv.workspace = true
 encoding_rs.workspace = true
 encoding_rs_io.workspace = true
@@ -46,12 +47,9 @@ zip.workspace = true
 flate2.workspace = true
 getrandom.workspace = true
 md-5.workspace = true
-ms-offcrypto-writer.workspace = true
-rand.workspace = true
 rust_xlsxwriter.workspace = true
 
 [dev-dependencies]
-easyexcel-macro = { path = "../easyexcel-macro", version = "0.1.0-alpha.1" }
 base64.workspace = true
 # 读取/写入管线的回调契约测试（MockReadListener 断言调用次数/顺序/参数）
 mockall = "0.15"

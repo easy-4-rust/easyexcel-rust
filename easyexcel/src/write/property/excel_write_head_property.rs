@@ -94,7 +94,7 @@ impl ExcelWriteHeadProperty {
             let explicit_names = head.and_then(|head| head.get(position));
             let head_names = explicit_names
                 .cloned()
-                .unwrap_or_else(|| vec![column.name.to_owned()]);
+                .unwrap_or_else(|| column.head_path());
             let mut head_data = Head::new(
                 column_index,
                 (!column.field.is_empty()).then(|| column.field.to_owned()),

@@ -243,10 +243,11 @@ impl FromExcelCell for NaiveDate {
             CellValue::Int(_) | CellValue::Float(_) | CellValue::Decimal(_) => {
                 excel_serial_to_datetime(value, context).map(|value| value.date())
             }
-            CellValue::String(inner) => {
-                NaiveDate::parse_from_str(inner, context.format.unwrap_or("%Y-%m-%d"))
-                    .map_err(|_| context.invalid(value, "NaiveDate"))
-            }
+            CellValue::String(inner) => NaiveDate::parse_from_str(
+                inner,
+                context.effective_date_time_format().unwrap_or("%Y-%m-%d"),
+            )
+            .map_err(|_| context.invalid(value, "NaiveDate")),
             other => Err(context.invalid(other, "NaiveDate")),
         }
     }
@@ -270,10 +271,13 @@ impl FromExcelCell for NaiveDateTime {
             CellValue::Int(_) | CellValue::Float(_) | CellValue::Decimal(_) => {
                 excel_serial_to_datetime(value, context)
             }
-            CellValue::String(inner) => {
-                NaiveDateTime::parse_from_str(inner, context.format.unwrap_or("%Y-%m-%d %H:%M:%S"))
-                    .map_err(|_| context.invalid(value, "NaiveDateTime"))
-            }
+            CellValue::String(inner) => NaiveDateTime::parse_from_str(
+                inner,
+                context
+                    .effective_date_time_format()
+                    .unwrap_or("%Y-%m-%d %H:%M:%S"),
+            )
+            .map_err(|_| context.invalid(value, "NaiveDateTime")),
             other => Err(context.invalid(other, "NaiveDateTime")),
         }
     }
@@ -465,6 +469,8 @@ mod tests_extra {
             column_index: Some(0),
             field: "value",
             format: None,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         }
     }
@@ -783,6 +789,8 @@ mod tests_extra2 {
             column_index: Some(0),
             field: "value",
             format: None,
+            date_time_format: None,
+            number_format: None,
             use_1904_windowing: false,
         }
     }

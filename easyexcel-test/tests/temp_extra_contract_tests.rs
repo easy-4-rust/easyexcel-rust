@@ -182,7 +182,7 @@ fn temp_issue2443_date_fixtures() {
 /// verify that writing and reading an XLSX file in sequence works correctly.
 #[test]
 fn temp_lock_stress_intentionally_skipped() {
-    use easyexcel_macro::ExcelRow;
+    use easyexcel::ExcelRow;
     #[derive(Debug, Clone, ExcelRow)]
     struct LockRow {
         #[excel(name = "v")]
