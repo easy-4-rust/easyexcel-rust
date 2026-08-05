@@ -2,6 +2,7 @@
 members = [
     "crates/easyexcel-cache",
     "crates/easyexcel-format",
+    "crates/easyexcel-utils",
     "crates/easyexcel-model",
     "crates/easyexcel-formula",
     "crates/easyexcel-io",
@@ -43,6 +44,7 @@ categories = ["parser-implementations", "encoding"]
 easyexcel = { path = "crates/easyexcel", version = "0.1.0-alpha.1" }
 easyexcel-cache = { path = "crates/easyexcel-cache", version = "0.1.0-alpha.1" }
 easyexcel-format = { path = "crates/easyexcel-format", version = "0.1.0-alpha.1" }
+easyexcel-utils = { path = "crates/easyexcel-utils", version = "0.1.0-alpha.1" }
 easyexcel-model = { path = "crates/easyexcel-model", version = "0.1.0-alpha.1" }
 easyexcel-formula = { path = "crates/easyexcel-formula", version = "0.1.0-alpha.1" }
 easyexcel-io = { path = "crates/easyexcel-io", version = "0.1.0-alpha.1" }

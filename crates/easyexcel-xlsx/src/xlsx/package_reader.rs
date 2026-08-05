@@ -44,8 +44,9 @@ impl<R: Read + Seek> XlsxPackageReader<R> {
         let actual = self
             .path_cache
             .get(&path.to_ascii_lowercase())
-            .map_or(path, String::as_str);
-        let file = self.archive.by_name(actual).map_err(Error::from)?;
+            .cloned()
+            .unwrap_or_else(|| path.to_owned());
+        let file = self.archive.by_name(&actual).map_err(Error::from)?;
         Ok(Box::new(file))
     }
 
@@ -54,8 +55,9 @@ impl<R: Read + Seek> XlsxPackageReader<R> {
         let actual = self
             .path_cache
             .get(&path.to_ascii_lowercase())
-            .map_or(path, String::as_str);
-        let file = self.archive.by_name(actual).map_err(Error::from)?;
+            .cloned()
+            .unwrap_or_else(|| path.to_owned());
+        let file = self.archive.by_name(&actual).map_err(Error::from)?;
         Ok(file.size())
     }
 

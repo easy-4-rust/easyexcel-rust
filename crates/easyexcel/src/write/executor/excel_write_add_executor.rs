@@ -22,7 +22,7 @@ use crate::core::{
     CellValue, DynamicRow, DynamicValue, ExcelRow, ExcelWriteMetadata, Result, WriteContext,
     WriteHandler,
 };
-use rust_xlsxwriter::Worksheet;
+use easyexcel_xlsx::xlsx::generation::Worksheet;
 
 use crate::WriteOptions;
 use crate::write::append_rows::append_rows_to_worksheet;

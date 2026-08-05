@@ -8,12 +8,15 @@ use easyexcel_model::model::Workbook;
 
 mod crypto;
 mod encrypt;
+mod event_reader;
+pub mod generation;
 mod legacy_template;
 mod ooxml_package;
 pub mod package;
 mod package_reader;
 mod reader;
 mod shared_strings;
+mod source;
 mod stream;
 mod styles;
 mod tables;
@@ -24,6 +27,10 @@ mod writer;
 mod xmlutil;
 
 pub use encrypt::{ReadWriteSeek, encrypt_package_to};
+pub use event_reader::{
+    ReadSeek, XlsxCellEvent, XlsxCellEventReader, XlsxCellValue, XlsxDisplayOptions,
+    XlsxEventMetadata, XlsxExtra, XlsxExtraKind, XlsxNumberFormat,
+};
 pub use crypto::{decrypt_file, is_encrypted_ooxml};
 pub use ooxml_package::{OoxmlPackage, OoxmlZipEntry};
 pub use package_reader::XlsxPackageReader;
@@ -31,6 +38,7 @@ pub use legacy_template::{
     LegacyTemplateSheet, load_legacy_template_sheets, seed_legacy_template_workbook,
 };
 pub use reader::{read, read_with_password};
+pub use source::{XlsxInput, XlsxSource, is_compound_document};
 pub use stream::stream;
 pub use template_package::OoxmlTemplatePackage;
 pub use writer::write;

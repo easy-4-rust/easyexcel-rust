@@ -12,7 +12,7 @@ use crate::core::{
     WriteSheetContext, WriteWorkbookContext,
 };
 use crate::util::work_book_util::create_sheet;
-use rust_xlsxwriter::Workbook;
+use easyexcel_xlsx::xlsx::generation::Workbook;
 
 use crate::write::append_rows::append_rows_to_worksheet_with_gzip_and_context;
 use crate::write::biff8::Biff8Book;
@@ -151,7 +151,7 @@ impl ExcelWriter {
             excel_type: options.excel_type,
             output_stream: None,
             close_stream: None,
-            workbook: Workbook::new(),
+            workbook: easyexcel_xlsx::xlsx::generation::new_workbook(),
             xls_book: Biff8Book::default(),
             workbook_handlers: workbook_handlers.clone(),
             sheet_annotation_handlers: HashMap::new(),
@@ -214,7 +214,7 @@ impl ExcelWriter {
             excel_type: options.excel_type,
             output_stream: Some(Box::new(write_output)),
             close_stream: Some(close_stream),
-            workbook: Workbook::new(),
+            workbook: easyexcel_xlsx::xlsx::generation::new_workbook(),
             xls_book: Biff8Book::default(),
             workbook_handlers: workbook_handlers.clone(),
             sheet_annotation_handlers: HashMap::new(),

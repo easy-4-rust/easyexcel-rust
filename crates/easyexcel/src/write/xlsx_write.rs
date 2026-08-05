@@ -13,7 +13,7 @@ use crate::write::excel_writer_core::{
     with_default_write_converters, write_sheet_to_workbook, write_xlsx_onto_template_package,
 };
 use crate::write::write_options::WriteOptions;
-use rust_xlsxwriter::Workbook;
+use easyexcel_xlsx::xlsx::generation::Workbook;
 
 /// 将类型化行写入 XLSX 文件。
 ///
@@ -57,7 +57,7 @@ where
     ) {
         write_xlsx_onto_template_package::<T, I>(path, None, options, rows, handlers)?;
     } else {
-        let mut workbook = Workbook::new();
+        let mut workbook = easyexcel_xlsx::xlsx::generation::new_workbook();
         let holder_scope = HandlerHolderScope::new_resolved::<T>(
             path,
             i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX),
@@ -114,7 +114,7 @@ where
         #[rustfmt::skip]
         write_xlsx_onto_template_package::<T, I>(logical_path, Some(&mut output), options, rows, handlers)?;
     } else {
-        let mut workbook = Workbook::new();
+        let mut workbook = easyexcel_xlsx::xlsx::generation::new_workbook();
         let holder_scope = HandlerHolderScope::new_resolved::<T>(
             logical_path,
             i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX),

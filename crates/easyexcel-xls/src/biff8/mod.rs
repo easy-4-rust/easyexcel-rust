@@ -13,7 +13,8 @@ mod template;
 mod workbook;
 
 pub use numeric::{
-    Biff8NumericCell, Biff8NumericSheets, decode_rk, parse_format_record, scan_numeric_cells,
+    Biff8NumericCell, Biff8NumericSheets, Biff8SheetDisplays, decode_rk,
+    format_numeric_displays, load_numeric_displays, parse_format_record, scan_numeric_cells,
 };
 pub use style::{Biff8NumberFormat, Biff8StyleRequest, Biff8StyleTable};
 pub use template::{Biff8TemplatePackage, looks_like_xls};

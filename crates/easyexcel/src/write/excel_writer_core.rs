@@ -6,7 +6,7 @@
 use std::any::type_name;
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
-use std::fs::{File, OpenOptions};
+use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -28,7 +28,7 @@ pub use crate::util::work_book_util::{
     create_work_book,
 };
 use bigdecimal::{BigDecimal, ToPrimitive};
-use rust_xlsxwriter::{
+use easyexcel_xlsx::xlsx::generation::{
     Color, Format, FormatAlign, FormatBorder, FormatPattern, FormatScript, FormatUnderline, Image,
     Note, ObjectMovement, Workbook, Worksheet,
 };
@@ -612,16 +612,8 @@ pub(crate) fn save_workbook(
     path: &Path,
     password: Option<&str>,
 ) -> Result<()> {
-    let Some(password) = password else {
-        return workbook.save(path).map_err(format_error);
-    };
-    let mut file = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .open(path)?;
-    save_encrypted_workbook_to(workbook, password, &mut file)
+    easyexcel_xlsx::xlsx::generation::save_workbook(workbook, path, password)
+        .map_err(ExcelError::from)
 }
 
 pub(crate) fn save_workbook_to_writer(
@@ -629,17 +621,8 @@ pub(crate) fn save_workbook_to_writer(
     output: &mut (dyn Write + Send),
     password: Option<&str>,
 ) -> Result<()> {
-    if let Some(password) = password {
-        let mut encrypted = std::io::Cursor::new(Vec::new());
-        save_encrypted_workbook_to(workbook, password, &mut encrypted)?;
-        output.write_all(encrypted.get_ref())?;
-    } else {
-        workbook
-            .save_to_writer(&mut *output)
-            .map_err(format_error)?;
-    }
-    output.flush()?;
-    Ok(())
+    easyexcel_xlsx::xlsx::generation::save_workbook_to_writer(workbook, output, password)
+        .map_err(ExcelError::from)
 }
 
 pub(crate) fn save_encrypted_workbook_to(
@@ -647,8 +630,8 @@ pub(crate) fn save_encrypted_workbook_to(
     password: &str,
     file: &mut dyn easyexcel_xlsx::ReadWriteSeek,
 ) -> Result<()> {
-    let plaintext = workbook.save_to_buffer().map_err(format_error)?;
-    easyexcel_xlsx::encrypt_package_to(&plaintext, password, file).map_err(ExcelError::from)
+    easyexcel_xlsx::xlsx::generation::save_encrypted_workbook_to(workbook, password, file)
+        .map_err(ExcelError::from)
 }
 
 pub(crate) fn csv_header_record(
@@ -1756,7 +1739,7 @@ where
         options.template_bytes.as_deref(),
     )?;
     if options.use_legacy_template_seed {
-        let mut workbook = Workbook::new();
+        let mut workbook = easyexcel_xlsx::xlsx::generation::new_workbook();
         write_sheet_onto_template::<T, I>(&mut workbook, options, rows, handlers)?;
         return match output {
             Some(writer) => {

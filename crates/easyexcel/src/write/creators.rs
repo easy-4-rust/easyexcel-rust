@@ -4,7 +4,7 @@
 
 use crate::core::{ExcelError, Result};
 use crate::util::work_book_util::{CellCreator, RowCreator, SheetCreator, WorkBookCreator};
-use rust_xlsxwriter::{Workbook, Worksheet};
+use easyexcel_xlsx::xlsx::generation::{Workbook, Worksheet};
 
 use crate::write::biff8::{Biff8Book, Biff8Cell, Biff8Sheet};
 use crate::write::excel_writer_core::format_error;
@@ -15,7 +15,7 @@ impl WorkBookCreator for XlsxWorkBookCreator {
     type WorkBook = Workbook;
 
     fn create_work_book(self) -> Result<Self::WorkBook> {
-        Ok(Workbook::new())
+        Ok(easyexcel_xlsx::xlsx::generation::new_workbook())
     }
 }
 

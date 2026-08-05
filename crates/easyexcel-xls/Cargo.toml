@@ -14,6 +14,7 @@ categories.workspace = true
 cfb.workspace = true
 chrono.workspace = true
 easyexcel-formula.workspace = true
+easyexcel-format.workspace = true
 easyexcel-io.workspace = true
 easyexcel-model.workspace = true
 getrandom.workspace = true

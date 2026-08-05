@@ -3,6 +3,10 @@
 //! 该层只解析原始 BIFF 记录，不执行 EasyExcel/POI 的本地化显示格式化。
 
 use std::collections::HashMap;
+use std::path::Path;
+
+use easyexcel_format::{SpreadsheetLocale, builtin_format_code, format_with_code};
+use easyexcel_io::Result;
 
 /// 一个数字单元格及其 BIFF8 数字格式元数据。
 #[derive(Debug, Clone, PartialEq)]
@@ -17,6 +21,54 @@ pub struct Biff8NumericCell {
 
 /// 每个工作表的 `(row, col) -> numeric cell` 映射。
 pub type Biff8NumericSheets = Vec<HashMap<(u32, usize), Biff8NumericCell>>;
+
+/// 每个工作表的 `(row, col) -> Excel 格式化显示文本` 映射。
+pub type Biff8SheetDisplays = Vec<HashMap<(u32, usize), String>>;
+
+/// 从 `.xls` 文件加载所有数字单元格的 Excel 显示文本。
+///
+/// # Errors
+///
+/// OLE/CFB 或 Workbook 流读取失败时返回错误。
+pub fn load_numeric_displays(
+    path: &Path,
+    date_1904: bool,
+    locale: &SpreadsheetLocale,
+) -> Result<Biff8SheetDisplays> {
+    let workbook = super::record_stream::read_workbook_stream(path)?;
+    Ok(format_numeric_displays(&workbook, date_1904, locale))
+}
+
+/// 从原始 BIFF8 Workbook 流生成数字显示文本。
+#[must_use]
+pub fn format_numeric_displays(
+    workbook: &[u8],
+    date_1904: bool,
+    locale: &SpreadsheetLocale,
+) -> Biff8SheetDisplays {
+    scan_numeric_cells(workbook)
+        .into_iter()
+        .map(|cells| {
+            cells
+                .into_iter()
+                .filter_map(|(position, cell)| {
+                    if !cell.value.is_finite() {
+                        return None;
+                    }
+                    let code = cell
+                        .custom_format
+                        .as_deref()
+                        .or_else(|| builtin_format_code(cell.format_index))?;
+                    if code.eq_ignore_ascii_case("General") || code == "@" {
+                        return None;
+                    }
+                    format_with_code(cell.value, code, date_1904, locale)
+                        .map(|display| (position, display))
+                })
+                .collect()
+        })
+        .collect()
+}
 
 /// 顺序扫描 Workbook 流中的 FORMAT、XF、NUMBER、RK 与 MULRK 记录。
 #[must_use]

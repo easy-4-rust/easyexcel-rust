@@ -8,6 +8,28 @@
 
 use ssfmt::{DateSystem, FormatOptions, Locale, NumberFormat, format};
 
+/// `ssfmt` 使用的区域设置类型。
+pub use ssfmt::Locale as SpreadsheetLocale;
+
+/// 按 EasyExcel 优先级解析内建数字格式代码。
+///
+/// 先使用 EasyExcel/POI 兼容表，再回退到 ECMA-376 内建表。
+#[must_use]
+pub fn resolve_builtin_format_code(id: u32) -> Option<&'static str> {
+    u16::try_from(id)
+        .ok()
+        .and_then(super::builtin_format_code)
+        .or_else(|| ssfmt::format_code_from_id(id))
+}
+
+/// 判断 Excel 数字格式代码是否表示日期或日期时间。
+#[must_use]
+pub fn is_date_format_code(code: &str) -> bool {
+    NumberFormat::parse(code)
+        .ok()
+        .is_some_and(|format| format.is_date_format())
+}
+
 /// Strip orphan decimal points left by optional `#` fraction digits.
 ///
 /// ssfmt/SSF keeps a trailing `.` for `#.##` / `#.##%` when the fractional

@@ -12,7 +12,10 @@ categories.workspace = true
 
 [dependencies]
 aes.workspace = true
+bigdecimal.workspace = true
 cfb.workspace = true
+easyexcel-cache.workspace = true
+easyexcel-format.workspace = true
 easyexcel-io.workspace = true
 easyexcel-model.workspace = true
 ms-offcrypto-writer.workspace = true

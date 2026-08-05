@@ -5,7 +5,7 @@
 use std::str::FromStr;
 
 use pure_rust_locales::Locale as SystemLocale;
-use ssfmt::Locale as FormatLocale;
+use easyexcel_format::SpreadsheetLocale as FormatLocale;
 
 use crate::read::locale_generated::formatter_locale;
 

@@ -5,7 +5,7 @@
 //! dispatch adapter is excluded from first-party region coverage accounting.
 
 use pure_rust_locales::{Locale as SystemLocale, locale_match};
-use ssfmt::Locale as FormatLocale;
+use easyexcel_format::SpreadsheetLocale as FormatLocale;
 
 pub(crate) fn formatter_locale(locale: SystemLocale) -> FormatLocale {
     let decimal_separator = locale_match!(locale => LC_NUMERIC::DECIMAL_POINT)

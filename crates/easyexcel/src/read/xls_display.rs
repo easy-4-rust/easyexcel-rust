@@ -9,11 +9,9 @@
 use std::collections::HashMap;
 use std::path::Path;
 
-use ssfmt::Locale;
+use easyexcel_format::SpreadsheetLocale as Locale;
 #[cfg(test)]
 use easyexcel_format::format_with_code;
-
-use crate::analysis::v03::biff_record_stream::read_workbook_stream;
 
 /// Per-sheet map of `(row, col) → formatted STRING display`.
 pub(crate) type SheetDisplays = HashMap<(u32, usize), String>;
@@ -27,41 +25,12 @@ pub(crate) fn load_xls_displays(
     date_1904: bool,
     locale: &Locale,
 ) -> Vec<SheetDisplays> {
-    load_xls_displays_inner(path, date_1904, locale).unwrap_or_default()
+    easyexcel_xls::biff8::load_numeric_displays(path, date_1904, locale).unwrap_or_default()
 }
 
-fn load_xls_displays_inner(
-    path: &Path,
-    date_1904: bool,
-    locale: &Locale,
-) -> Result<Vec<SheetDisplays>, String> {
-    let wb = read_workbook_stream(path).map_err(|error| error.to_string())?;
-    Ok(parse_workbook_displays(&wb, date_1904, locale))
-}
-
+#[cfg(test)]
 fn parse_workbook_displays(wb: &[u8], date_1904: bool, locale: &Locale) -> Vec<SheetDisplays> {
-    easyexcel_xls::biff8::scan_numeric_cells(wb)
-        .into_iter()
-        .map(|cells| {
-            cells
-                .into_iter()
-                .filter_map(|(position, cell)| {
-                    if !cell.value.is_finite() {
-                        return None;
-                    }
-                    let code = cell
-                        .custom_format
-                        .as_deref()
-                        .or_else(|| easyexcel_format::builtin_format_code(cell.format_index))?;
-                    if code.eq_ignore_ascii_case("General") || code == "@" {
-                        return None;
-                    }
-                    easyexcel_format::format_with_code(cell.value, code, date_1904, locale)
-                        .map(|display| (position, display))
-                })
-                .collect()
-        })
-        .collect()
+    easyexcel_xls::biff8::format_numeric_displays(wb, date_1904, locale)
 }
 
 #[cfg(test)]

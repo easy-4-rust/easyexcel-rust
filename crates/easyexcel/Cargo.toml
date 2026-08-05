@@ -28,6 +28,7 @@ url.workspace = true
 easyexcel-csv.workspace = true
 easyexcel-cache.workspace = true
 easyexcel-format.workspace = true
+easyexcel-utils.workspace = true
 easyexcel-io.workspace = true
 easyexcel-model.workspace = true
 easyexcel-formula.workspace = true
@@ -36,17 +37,15 @@ easyexcel-xlsx.workspace = true
 easyexcel-tabular.workspace = true
 csv.workspace = true
 pure-rust-locales.workspace = true
-quick-xml.workspace = true
-ssfmt.workspace = true
 sys-locale.workspace = true
-# 原 easyexcel-writer 依赖
-rust_xlsxwriter.workspace = true
 
 [dev-dependencies]
 base64.workspace = true
 calamine.workspace = true
 cfb.workspace = true
 flate2.workspace = true
+rust_xlsxwriter.workspace = true
+ssfmt.workspace = true
 zip.workspace = true
 # 读取/写入管线的回调契约测试（MockReadListener 断言调用次数/顺序/参数）
 mockall = "0.15"

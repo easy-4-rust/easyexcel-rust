@@ -11,8 +11,9 @@ pub use builtin_formats::{
 };
 pub use data_formatter::{
     excel_display_number, format_raw_cell_contents, format_with_code, is_scientific_magnitude,
-    java_compat_date_format_code, java_compat_display, java_compat_format_code,
-    java_plain_extreme_format, java_scientific_format,
+    is_date_format_code, java_compat_date_format_code, java_compat_display,
+    java_compat_format_code, java_plain_extreme_format, java_scientific_format,
+    resolve_builtin_format_code, SpreadsheetLocale,
 };
 pub use excel_general_number_format::format_general;
 pub use number_utils::{

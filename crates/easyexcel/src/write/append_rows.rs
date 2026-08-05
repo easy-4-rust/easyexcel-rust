@@ -3,7 +3,7 @@
 //! 对应 Java：`com.alibaba.excel.write.executor.ExcelWriteAddExecutor`（追加写入口）。
 
 use crate::core::{ExcelError, ExcelRow, ExcelWriteMetadata, Result, WriteCellData, WriteHandler};
-use rust_xlsxwriter::Worksheet;
+use easyexcel_xlsx::xlsx::generation::Worksheet;
 
 use crate::write::excel_writer_core::{
     HandlerHolderScope, WriteGlobalFlags, apply_loop_merges, collect_handler_content_row_height,
