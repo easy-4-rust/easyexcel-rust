@@ -102,6 +102,9 @@ flowchart LR
 | CSV 物理行列索引的有界转换 | `easyexcel-csv::csv::index` | `ExcelError` 映射与 listener 行调度 |
 | 可克隆输出流的共享所有权、关闭与刷新 | `easyexcel-io::CloseableOutputStream` | `ExcelOutputStream` Java 兼容类型别名 |
 | 中立工作表持久化单元格/样式的稀疏边界扫描 | `easyexcel-model::Sheet::stored_range` | 按行映射为 EasyExcel `CellValue`、公式元数据并触发 listener |
+| 未选中工作表可跳过的 BIFF 事件记录分类 | `easyexcel-xls::biff8::record_sid::is_skippable_event_record` | 根据 `SheetSelector` 维护 Java handler 的启停状态与统计信息 |
+| 数据格式元数据有效值选择与 `General` 回退 | `easyexcel-model::DataFormatData::{resolve,general}` | 保留 Java `StyleUtil#buildDataFormat` 方法名与参数契约 |
+| XLS/XLSX 工作表不存在的强类型错误 | `easyexcel-io::Error::SheetNotFound` | 映射为 Java 风格 `ExcelError::SheetNotFound`，不再解析引擎错误字符串 |
 
 `crates/easyexcel/src/analysis/v03` 中保留的同名文件只做 EasyExcel 错误和事件回调适配，不再实现底层格式算法。`read/xlsx_rows.rs` 与 `write/template_write.rs` 仍然较大，是因为它们承载 listener/cache/handler 和 Java 模板语义；其 ZIP、OPC、BIFF、gzip 与 XML 修改原语已经由基础 crate 提供。
 

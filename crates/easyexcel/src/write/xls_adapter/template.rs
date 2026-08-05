@@ -155,13 +155,5 @@ fn cell_value_to_template_cell(value: &CellValue) -> Result<Biff8Cell> {
 }
 
 fn map_engine_error(error: easyexcel_io::Error) -> ExcelError {
-    match error {
-        easyexcel_io::Error::Xls(message) => {
-            message.strip_prefix("worksheet not found: ").map_or_else(
-                || ExcelError::Format(message.clone()),
-                |name| ExcelError::SheetNotFound(name.to_owned()),
-            )
-        }
-        other => ExcelError::from(other),
-    }
+    ExcelError::from(error)
 }

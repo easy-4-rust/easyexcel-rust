@@ -294,7 +294,10 @@ impl XlsRecordDispatcher {
             return Ok(());
         }
         self.finish_pending_records()?;
-        if self.ignore_record && is_ignorable_sid(record_sid) {
+        if self.ignore_record
+            && (record_sid == DUMMY_RECORD_SID
+                || easyexcel_xls::biff8::record_sid::is_skippable_event_record(record_sid))
+        {
             self.state.skipped_record_count += 1;
             return Ok(());
         }
@@ -470,29 +473,6 @@ impl XlsRecordDispatcher {
         }
         Ok(())
     }
-}
-
-fn is_ignorable_sid(record_sid: u16) -> bool {
-    matches!(
-        record_sid,
-        BLANK_SID
-            | BOOL_ERR_SID
-            | BOUND_SHEET_SID
-            | DUMMY_RECORD_SID
-            | FORMULA_SID
-            | HYPERLINK_SID
-            | INDEX_SID
-            | LABEL_SID
-            | LABEL_SST_SID
-            | MERGE_CELLS_SID
-            | NOTE_SID
-            | NUMBER_SID
-            | OBJ_SID
-            | RK_SID
-            | SST_SID
-            | STRING_SID
-            | TEXT_OBJECT_SID
-    )
 }
 
 impl Default for XlsRecordDispatcher {

@@ -25,6 +25,9 @@ pub enum Error {
     /// XML 解析错误。
     #[error("XML error: {0}")]
     Xml(String),
+    /// 请求的工作表不存在。
+    #[error("worksheet not found: {0}")]
+    SheetNotFound(String),
     /// 文件已加密但未提供密码。
     #[error("file is password-protected ({0}); supply a password to decrypt")]
     PasswordProtected(String),

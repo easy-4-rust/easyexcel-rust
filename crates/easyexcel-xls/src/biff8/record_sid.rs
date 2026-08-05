@@ -87,3 +87,31 @@ pub const STYLE_SID: u16 = 0x0293;
 pub const FORMAT_SID: u16 = 0x041E;
 /// BOF 记录 SID。
 pub const BOF_SID: u16 = 0x0809;
+
+/// 判断记录是否属于可在未选中工作表中直接跳过的事件记录。
+///
+/// 这些记录的主体只会被单元格、公式、批注、合并区域或共享字符串事件
+/// 消费；当上层读取器已经判定当前工作表不需要读取时，无需再进入对应
+/// handler。`BOF`、`EOF` 与 `CONTINUE` 仍必须由状态机处理，因此不在此列。
+#[must_use]
+pub const fn is_skippable_event_record(record_sid: u16) -> bool {
+    matches!(
+        record_sid,
+        BLANK_SID
+            | BOOL_ERR_SID
+            | BOUND_SHEET_SID
+            | FORMULA_SID
+            | HYPERLINK_SID
+            | INDEX_SID
+            | LABEL_SID
+            | LABEL_SST_SID
+            | MERGE_CELLS_SID
+            | NOTE_SID
+            | NUMBER_SID
+            | OBJ_SID
+            | RK_SID
+            | SST_SID
+            | STRING_SID
+            | TEXT_OBJECT_SID
+    )
+}

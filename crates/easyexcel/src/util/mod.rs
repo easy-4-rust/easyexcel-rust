@@ -39,4 +39,4 @@ pub mod cell_editor;
 pub mod excel_utils;
 
 pub mod java_date;
-pub use java_date::*;
+pub use java_date::JavaDate;

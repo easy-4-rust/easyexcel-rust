@@ -120,7 +120,7 @@ pub fn worksheet_path(
                 sheets.iter().find(|(sheet_name, _)| sheet_name == name)
             }
         }
-        .ok_or_else(|| Error::Xlsx(format!("worksheet not found: {}", selector_label(selector))))?;
+        .ok_or_else(|| Error::SheetNotFound(selector_label(selector)))?;
         let target = workbook_relationship_target(relationships, &selected.1).ok_or_else(|| {
             Error::Xlsx(format!(
                 "workbook relationship {} for sheet {} is missing",
@@ -151,13 +151,13 @@ pub fn worksheet_path(
         TemplateSheetSelector::First => 0,
         TemplateSheetSelector::Index(index) => index,
         TemplateSheetSelector::Name(name) => {
-            return Err(Error::Xlsx(format!("worksheet not found: {name}")));
+            return Err(Error::SheetNotFound(name.to_owned()));
         }
     };
     worksheets
         .get(index)
         .map(|entry| entry.name.clone())
-        .ok_or_else(|| Error::Xlsx(format!("worksheet not found: {}", selector_label(selector))))
+        .ok_or_else(|| Error::SheetNotFound(selector_label(selector)))
 }
 
 /// 提取工作簿中按顺序声明的 `(名称, relationship id)`。

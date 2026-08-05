@@ -31,23 +31,7 @@ pub fn build_cell_style(
 /// 分配由 XLS/XLSX/CSV 引擎各自的格式表完成。
 #[must_use]
 pub fn build_data_format(data_format_data: Option<&DataFormatData>) -> DataFormatData {
-    let Some(data_format_data) = data_format_data else {
-        return general_data_format();
-    };
-    if data_format_data.index.is_some_and(|index| index >= 0) {
-        return data_format_data.clone();
-    }
-    if data_format_data
-        .format
-        .as_deref()
-        .is_some_and(|format| !format.trim().is_empty())
-    {
-        return DataFormatData {
-            index: None,
-            format: data_format_data.format.clone(),
-        };
-    }
-    general_data_format()
+    DataFormatData::resolve(data_format_data)
 }
 
 /// 合并来源字体与新写入字体。
@@ -102,13 +86,6 @@ pub fn get_cell_coordinate(
         absolute_coordinate,
         relative_coordinate,
     )
-}
-
-fn general_data_format() -> DataFormatData {
-    DataFormatData {
-        index: Some(0),
-        format: None,
-    }
 }
 
 #[cfg(test)]

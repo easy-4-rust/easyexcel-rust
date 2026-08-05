@@ -127,7 +127,7 @@ impl Biff8TemplatePackage {
     ///
     /// # Errors
     ///
-    /// Returns [`ExcelError::Xls`] when the sheet is absent.
+    /// Returns [`ExcelError::SheetNotFound`] when the sheet is absent.
     pub fn next_row_for_sheet(&self, sheet_name: &str) -> Result<u32> {
         let sheet = self.sheet(sheet_name)?;
         Ok(sheet_max_row(&self.records, sheet).map_or(0, |row| u32::from(row).saturating_add(1)))
@@ -420,14 +420,14 @@ impl Biff8TemplatePackage {
         self.sheets
             .iter()
             .find(|sheet| sheet.name == name)
-            .ok_or_else(|| ExcelError::Xls(format!("worksheet not found: {name}")))
+            .ok_or_else(|| ExcelError::SheetNotFound(name.to_owned()))
     }
 
     fn sheet_index(&self, name: &str) -> Result<usize> {
         self.sheets
             .iter()
             .position(|sheet| sheet.name == name)
-            .ok_or_else(|| ExcelError::Xls(format!("worksheet not found: {name}")))
+            .ok_or_else(|| ExcelError::SheetNotFound(name.to_owned()))
     }
 
     /// After inserting a record at `insert_at`, shift later sheet indices.

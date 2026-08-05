@@ -83,7 +83,7 @@ impl OoxmlTemplatePackage {
         let selected = sheets
             .iter()
             .find(|(name, _)| name == sheet_name)
-            .ok_or_else(|| Error::Xlsx(format!("worksheet not found: {sheet_name}")))?;
+            .ok_or_else(|| Error::SheetNotFound(sheet_name.to_owned()))?;
         self.worksheet_part_for_relationship(&selected.1, &selected.0)
     }
 
@@ -92,7 +92,7 @@ impl OoxmlTemplatePackage {
         let sheets = self.workbook_sheets()?;
         let selected = sheets
             .get(index)
-            .ok_or_else(|| Error::Xlsx(format!("worksheet index out of bounds: {index}")))?;
+            .ok_or_else(|| Error::SheetNotFound(index.to_string()))?;
         let path = self.worksheet_part_for_relationship(&selected.1, &selected.0)?;
         Ok((selected.0.clone(), path))
     }

@@ -13,6 +13,11 @@ const MOKA_ADAPTER: &str = "crates/easyexcel/src/cache/moka_cache.rs";
 const OUTPUT_STREAM_COMPAT: &str = "crates/easyexcel/src/write/excel_output_stream.rs";
 const MODEL_ROW_ADAPTER: &str = "crates/easyexcel/src/read/row_processing.rs";
 const XLSX_FACADE: &str = "crates/easyexcel/src/xlsx.rs";
+const XLS_RECORD_DISPATCHER: &str = "crates/easyexcel/src/analysis/v03/xls_record_dispatcher.rs";
+const STYLE_UTIL_ADAPTER: &str = "crates/easyexcel/src/util/style_util.rs";
+const FACADE_ERROR: &str = "crates/easyexcel/src/support/excel_error.rs";
+const XLS_TEMPLATE_ADAPTER: &str = "crates/easyexcel/src/write/xls_adapter/template.rs";
+const XLSX_TEMPLATE_ADAPTER: &str = "crates/easyexcel/src/template/template_writer.rs";
 
 const REQUIRED_ENGINE_DEPENDENCIES: &[&str] = &[
     "easyexcel-cache",
@@ -55,6 +60,11 @@ const FOUNDATION_ADAPTERS: &[&str] = &[
     "crates/easyexcel/src/metadata/format/mod.rs",
     "crates/easyexcel/src/util/map_utils.rs",
     "crates/easyexcel/src/util/string_utils.rs",
+    "crates/easyexcel/src/util/boolean_utils.rs",
+    "crates/easyexcel/src/util/int_utils.rs",
+    "crates/easyexcel/src/util/list_utils.rs",
+    "crates/easyexcel/src/util/sheet_utils.rs",
+    "crates/easyexcel/src/util/mod.rs",
 ];
 
 /// 校验门面只依赖基础引擎，不直接依赖格式、压缩、加密或缓存实现库。
@@ -171,6 +181,51 @@ pub(crate) fn audit() -> TaskResult {
             &xlsx_facade,
             symbol,
             "XLSX engine API facade export",
+        )?;
+    }
+
+    let xls_record_dispatcher = read(XLS_RECORD_DISPATCHER)?;
+    require_contains(
+        XLS_RECORD_DISPATCHER,
+        &xls_record_dispatcher,
+        "record_sid::is_skippable_event_record(record_sid)",
+        "engine-owned BIFF event-record classification",
+    )?;
+    require_absent(
+        XLS_RECORD_DISPATCHER,
+        &xls_record_dispatcher,
+        "fn is_ignorable_sid",
+        "facade-owned BIFF SID classification",
+    )?;
+
+    let style_util_adapter = read(STYLE_UTIL_ADAPTER)?;
+    require_contains(
+        STYLE_UTIL_ADAPTER,
+        &style_util_adapter,
+        "DataFormatData::resolve(data_format_data)",
+        "model-owned data-format normalization",
+    )?;
+    require_absent(
+        STYLE_UTIL_ADAPTER,
+        &style_util_adapter,
+        "fn general_data_format",
+        "facade-owned General data-format construction",
+    )?;
+
+    let facade_error = read(FACADE_ERROR)?;
+    require_contains(
+        FACADE_ERROR,
+        &facade_error,
+        "easyexcel_io::Error::SheetNotFound(sheet) => Self::SheetNotFound(sheet)",
+        "typed engine sheet-not-found mapping",
+    )?;
+    for path in [XLS_TEMPLATE_ADAPTER, XLSX_TEMPLATE_ADAPTER] {
+        let source = read(path)?;
+        require_absent(
+            path,
+            &source,
+            "strip_prefix(\"worksheet not found: \")",
+            "string-parsed sheet-not-found error",
         )?;
     }
 

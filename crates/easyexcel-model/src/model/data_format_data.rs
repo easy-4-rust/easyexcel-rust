@@ -70,6 +70,40 @@ impl DataFormatData {
             None => Cow::Borrowed(""),
         }
     }
+
+    /// 解析有效的数据格式；缺失或无效值回退为内建 `General`（索引 0）。
+    ///
+    /// 非负格式索引优先于自定义格式文本；没有有效索引时保留非空自定义
+    /// 格式。该规则与具体 XLS/XLSX 后端无关，可由门面和格式引擎共同复用。
+    #[must_use]
+    pub fn resolve(source: Option<&Self>) -> Self {
+        let Some(source) = source else {
+            return Self::general();
+        };
+        if source.index.is_some_and(|index| index >= 0) {
+            return source.clone();
+        }
+        if source
+            .format
+            .as_deref()
+            .is_some_and(|format| !format.trim().is_empty())
+        {
+            return Self {
+                index: None,
+                format: source.format.clone(),
+            };
+        }
+        Self::general()
+    }
+
+    /// 返回内建 `General` 数据格式。
+    #[must_use]
+    pub const fn general() -> Self {
+        Self {
+            index: Some(0),
+            format: None,
+        }
+    }
 }
 
 #[cfg(test)]

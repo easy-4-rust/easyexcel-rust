@@ -489,21 +489,12 @@ pub(crate) fn worksheet_path(entries: &[TemplateEntry], sheet: &TemplateSheet) -
         TemplateSheet::Index(index) => easyexcel_xlsx::TemplateSheetSelector::Index(*index),
         TemplateSheet::Name(name) => easyexcel_xlsx::TemplateSheetSelector::Name(name),
     };
-    easyexcel_xlsx::worksheet_path(entries, selector).map_err(map_template_source_error)
+    easyexcel_xlsx::worksheet_path(entries, selector).map_err(ExcelError::from)
 }
 
 pub(crate) use easyexcel_xlsx::{normalize_workbook_target, workbook_sheets};
 #[cfg(test)]
 pub(crate) use easyexcel_xlsx::xml_elements;
-
-fn map_template_source_error(error: easyexcel_io::Error) -> ExcelError {
-    if let easyexcel_io::Error::Xlsx(message) = &error
-        && let Some(name) = message.strip_prefix("worksheet not found: ")
-    {
-        return ExcelError::SheetNotFound(name.to_owned());
-    }
-    ExcelError::from(error)
-}
 
 pub(crate) fn write_entries(path: &Path, entries: &[TemplateEntry]) -> Result<()> {
     Ok(easyexcel_xlsx::OoxmlPackage::from_entries(entries.to_vec()).save_to_path(path)?)
