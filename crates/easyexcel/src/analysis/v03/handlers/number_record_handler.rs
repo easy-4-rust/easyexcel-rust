@@ -1,6 +1,6 @@
 //! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.NumberRecordHandler`.
 //!
-//! XLS BIFF decoding is owned by `calamine::Xls` today; these helpers encode
+//! XLS BIFF decoding is owned by `easyexcel-xls`; these handlers preserve
 //! the Java `processRecord` numeric-cell semantics for a future SAX path.
 
 use super::super::xls_record_handler::XlsRecordHandler;

@@ -4,7 +4,8 @@
 //! [`DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES`] (`5_000_000`) boundary as Java
 //! `EasyExcel`'s built-in selector: smaller `sharedStrings.xml` parts stay in
 //! [`MapCache`](super::super::MapCache), larger parts spill to
-//! [`Ehcache`](super::super::Ehcache) / disk.
+//! [`MokaCache`](super::super::MokaCache) / disk. The Java-compatible
+//! [`Ehcache`](super::super::Ehcache) name is an alias of that adapter.
 
 use super::read_cache_selector::ReadCacheSelector;
 use crate::read::read_cache::{

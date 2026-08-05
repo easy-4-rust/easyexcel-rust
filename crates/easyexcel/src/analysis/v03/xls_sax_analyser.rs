@@ -14,7 +14,7 @@ use crate::{ReadOptions, read_xls};
 ///
 /// Java registers 19 BIFF record handlers and drives POI `HSSFEventFactory`.
 /// Rust runs the same SID dispatch over the real OLE Workbook stream, then uses
-/// [`read_xls`] (calamine) for typed row materialisation.
+/// [`read_xls`] backed by `easyexcel-xls` for typed row materialisation.
 pub struct XlsSaxAnalyser {
     /// Workbook path. (Java `ReadWorkbookHolder.file`)
     path: PathBuf,
@@ -33,7 +33,7 @@ pub struct XlsSaxAnalyser {
 impl XlsSaxAnalyser {
     /// 对应 Java：`XlsSaxAnalyser(XlsReadContext)`.
     ///
-    /// Sheet discovery uses calamine metadata, equivalent to Java
+    /// Sheet discovery uses `easyexcel-xls` workbook metadata, equivalent to Java
     /// `XlsListSheetListener.execute()` pre-scan.
     ///
     /// # Errors
@@ -446,7 +446,7 @@ mod tests_extra2 {
     use super::*;
 
     /// 构造一个 BIFF 流中只有 BOF/EOF、没有任何 `BoundSheet` 的 OLE2 文档。
-    /// calamine 能打开但 sheet 列表为空，从而触发“Can not find any sheet”。
+    /// `easyexcel-xls` 能打开但 sheet 列表为空，从而触发“Can not find any sheet”。
     // 对应 Java：BIFF 记录长度字段为 u16，测试 payload 固定（≤4 字节），
     // `as u16` 不可能截断。
     #[allow(clippy::cast_possible_truncation)]

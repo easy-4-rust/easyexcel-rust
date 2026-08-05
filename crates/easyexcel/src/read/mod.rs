@@ -33,7 +33,7 @@ mod global_configuration;
 pub use crate::analysis::v03::XlsSaxAnalyser;
 pub use crate::analysis::v07::XlsxSaxAnalyser;
 pub use crate::cache::{
-    Ehcache, EternalReadCacheSelector, MapCache, ReadCache, ReadCacheSelector,
+    Ehcache, EternalReadCacheSelector, MapCache, MokaCache, ReadCache, ReadCacheSelector,
     SimpleReadCacheSelector, XlsCache,
 };
 pub use builder::excel_reader_builder::ExcelReaderBuilder as CompatibleExcelReaderBuilder;

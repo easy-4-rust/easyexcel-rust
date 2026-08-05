@@ -12,7 +12,7 @@ use crate::read::list_xls_sheets;
 ///
 /// Java's listener pre-scans BIFF records to enumerate sheet names
 /// before the main read. Rust performs the same metadata-only pass through
-/// calamine and stores the result in `actual_sheet_data_list`.
+/// `easyexcel-xls` and stores the result in `actual_sheet_data_list`.
 pub struct XlsListSheetListener<'a> {
     xls_read_context: &'a mut DefaultXlsReadContext,
     path: PathBuf,

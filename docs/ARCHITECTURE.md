@@ -96,8 +96,9 @@ flowchart LR
 | XLSX 行列坐标上限 | `easyexcel-xlsx::xlsx::generation::{validate_row_index,validate_column_index}` | Java `WorkBookUtil` creator 生命周期适配 |
 | Excel 15 位有效数字数学上下文常量 | `easyexcel-format::EXCEL_MATH_CONTEXT_PRECISION` | Java `EasyExcelConstants` 路径重导出 |
 | `util/file_utils.rs`、`util/io_utils.rs` | `easyexcel-io::io::{file_utils,io_utils}` | Java 包路径和错误类型兼容代理 |
+| `util` 中与门面类型无关的集合、字符串、坐标和条件校验算法 | `easyexcel-utils::utils` | Java 工具类方法名和 `ExcelError` 映射 |
 | `write/gzip_spill.rs` 的临时文件/gzip/framing/单元格协议 | `easyexcel-io::io::{gzip_record,gzip_cell_record}` | EasyExcel `CellValue` 与中立 `GzipCellValue` 的映射 |
-| Java `Ehcache` 的活跃条目淘汰和持久后备 | `easyexcel-cache::cache::shared_string_cache`（Moka + 临时文件） | `Ehcache` 构造参数、`ReadCache` 生命周期和错误映射 |
+| Java `Ehcache` 的活跃条目淘汰、写入/只读阶段切换和持久后备 | `easyexcel-cache::cache::{SharedStringCacheHandle,shared_string_cache}`（Moka + 临时文件） | `MokaCache` 的 `ReadCache` 适配；`Ehcache` 仅为 Java 兼容别名 |
 
 `crates/easyexcel/src/analysis/v03` 中保留的同名文件只做 EasyExcel 错误和事件回调适配，不再实现底层格式算法。`read/xlsx_rows.rs` 与 `write/template_write.rs` 仍然较大，是因为它们承载 listener/cache/handler 和 Java 模板语义；其 ZIP、OPC、BIFF、gzip 与 XML 修改原语已经由基础 crate 提供。
 

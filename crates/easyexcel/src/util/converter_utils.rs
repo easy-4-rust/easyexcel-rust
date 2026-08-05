@@ -33,10 +33,7 @@ where
     V: ToString + 'a,
     I: IntoIterator<Item = (&'a K, &'a V)>,
 {
-    entries
-        .into_iter()
-        .map(|(k, v)| (k.as_ref().to_owned(), v.to_string()))
-        .collect()
+    easyexcel_utils::map_utils::to_string_map(entries)
 }
 
 /// Mirrors `com.alibaba.excel.util.ConverterUtils#defaultClassGeneric`.

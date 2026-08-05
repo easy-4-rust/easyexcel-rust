@@ -19,7 +19,7 @@ pub trait ReadCache: Send {
     /// override to allocate resources.
     fn init(&mut self) {
         // Default: no resources to allocate (in-memory caches are lazy).
-        // Concrete impls override for disk/Ehcache/etc.
+        // Concrete impls override for Moka/disk-backed adapters when needed.
     }
 
     /// Stores the next shared string. (Java `put(String)`)
@@ -45,7 +45,7 @@ pub trait ReadCache: Send {
 
     /// Releases cache resources. (Java `destroy()`)
     ///
-    /// Default implementation is a no-op; concrete disk/Ehcache
+    /// Default implementation is a no-op; concrete Moka/disk-backed
     /// implementations override to close files and free handles.
     fn destroy(&mut self) {
         // Default: nothing to release for in-memory caches.
@@ -64,7 +64,8 @@ pub fn new_map_cache() -> Box<dyn SharedStringCache> {
     create_cache(ReadCacheMode::Memory, 0).expect("memory cache always succeeds")
 }
 
-/// Creates a disk-backed cache backend. (Java `new Ehcache(...)`)
+/// Creates a Moka active cache with a disk-backed lossless tier.
+/// (Java `new Ehcache(...)`)
 ///
 /// # Errors
 ///
@@ -92,8 +93,7 @@ pub fn resolve_read_cache_mode(
 
 /// Adapts the internal SAX cache writer to the Java `ReadCache` surface.
 pub(crate) struct SharedStringCacheAdapter {
-    inner: Box<dyn SharedStringCache>,
-    reader: Option<Box<dyn SharedStringCacheReader>>,
+    inner: easyexcel_cache::SharedStringCacheHandle,
 }
 
 impl SharedStringCacheAdapter {
@@ -101,23 +101,20 @@ impl SharedStringCacheAdapter {
     #[must_use]
     pub fn new(inner: Box<dyn SharedStringCache>) -> Self {
         Self {
-            inner,
-            reader: None,
+            inner: easyexcel_cache::SharedStringCacheHandle::new(inner),
         }
     }
 
     /// 返回写入侧或已完成读取侧的字符串数量。
     #[must_use]
     pub fn len(&self) -> usize {
-        self.reader
-            .as_ref()
-            .map_or_else(|| self.inner.len(), |reader| reader.len())
+        self.inner.len()
     }
 
     /// 返回缓存是否为空。
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.len() == 0
+        self.inner.is_empty()
     }
 
     /// Returns the read-only cache produced by [`ReadCache::put_finished`].
@@ -129,7 +126,8 @@ impl SharedStringCacheAdapter {
     #[must_use]
     #[allow(dead_code)]
     pub fn into_reader(self) -> Box<dyn SharedStringCacheReader> {
-        self.reader
+        self.inner
+            .into_reader()
             .expect("ReadCache.put_finished must run before into_reader")
     }
 }
@@ -144,18 +142,11 @@ impl ReadCache for SharedStringCacheAdapter {
         let Some(index) = key else {
             return Ok(None);
         };
-        if let Some(reader) = &self.reader {
-            return Ok(Some(reader.get(index)?));
-        }
         Ok(Some(self.inner.get(index)?))
     }
 
     fn put_finished(&mut self) -> Result<()> {
-        if self.reader.is_some() {
-            return Ok(());
-        }
-        let writer = std::mem::replace(&mut self.inner, create_cache(ReadCacheMode::Memory, 0)?);
-        self.reader = Some(writer.finish()?);
+        self.inner.finish()?;
         Ok(())
     }
 }

@@ -4,6 +4,23 @@
 
 use std::collections::{BTreeMap, HashMap};
 
+/// 将键值引用转换为拥有所有权的字符串映射。
+///
+/// 该算法对应 Java `ConverterUtils#convertToStringMap` 使用的通用映射步骤，
+/// 不依赖 EasyExcel 单元格、注解或转换器类型，因此由基础工具 crate 统一维护。
+#[must_use]
+pub fn to_string_map<'a, K, V, I>(entries: I) -> HashMap<String, String>
+where
+    K: AsRef<str> + 'a,
+    V: ToString + 'a,
+    I: IntoIterator<Item = (&'a K, &'a V)>,
+{
+    entries
+        .into_iter()
+        .map(|(key, value)| (key.as_ref().to_owned(), value.to_string()))
+        .collect()
+}
+
 /// Stand-in for Java's `LinkedHashMap`.
 ///
 /// `std::collections` has no exact `LinkedHashMap` (it was removed from
@@ -107,5 +124,13 @@ mod tests_extra {
 
         let sized_linked = new_linked_hash_map_with_expected_size::<i32, String>(4);
         assert!(sized_linked.inner.is_empty());
+    }
+
+    #[test]
+    fn to_string_map_owns_keys_and_values() {
+        let entries = [("name".to_owned(), 1_u32), ("age".to_owned(), 2_u32)];
+        let mapped = to_string_map(entries.iter().map(|(key, value)| (key, value)));
+        assert_eq!(mapped.get("name").map(String::as_str), Some("1"));
+        assert_eq!(mapped.get("age").map(String::as_str), Some("2"));
     }
 }

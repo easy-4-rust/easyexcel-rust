@@ -1,6 +1,6 @@
 //! 对应 Java：`com.alibaba.excel.analysis.v03.handlers.BlankRecordHandler`.
 //!
-//! XLS BIFF decoding is owned by `calamine::Xls` today; these helpers encode
+//! XLS BIFF decoding is owned by `easyexcel-xls`; these handlers preserve
 //! the Java `processRecord` semantics so a future `XlsSaxAnalyser` can call
 //! them without re-deriving the rules.
 
