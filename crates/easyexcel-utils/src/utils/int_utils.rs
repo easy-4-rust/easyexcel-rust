@@ -10,6 +10,12 @@ pub const fn low_u8(value: u32) -> u8 {
     value.to_le_bytes()[0]
 }
 
+/// 将 `u32` 安全收窄为 `u16`，超出范围时返回 `None`。
+#[must_use]
+pub fn checked_u16(value: u32) -> Option<u16> {
+    u16::try_from(value).ok()
+}
+
 /// Mirrors `com.google.common.primitives.Ints#saturatedCast`.
 ///
 /// Clamps a wider integer (`i64`) into `i32` instead of panicking on

@@ -54,14 +54,9 @@ pub trait ReadCache: Send {
 }
 
 /// Creates an in-memory cache backend. (Java `new MapCache()`)
-///
-/// # Panics
-///
-/// Panics only when the internal memory cache factory fails, which should
-/// never happen for in-memory backends.
 #[must_use]
 pub fn new_map_cache() -> Box<dyn SharedStringCache> {
-    create_cache(ReadCacheMode::Memory, 0).expect("memory cache always succeeds")
+    easyexcel_cache::create_memory_cache()
 }
 
 /// Creates a Moka active cache with a disk-backed lossless tier.

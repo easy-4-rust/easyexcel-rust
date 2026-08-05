@@ -97,7 +97,7 @@ pub(crate) fn format_error(error: impl std::fmt::Display) -> ExcelError {
 }
 
 pub(crate) fn to_column_index(column: u32) -> Result<usize> {
-    u16::try_from(column)
+    easyexcel_utils::int_utils::checked_u16(column)
         .map(usize::from)
-        .map_err(|_| ExcelError::Format("column index exceeds spreadsheet limit".to_owned()))
+        .ok_or_else(|| ExcelError::Format("column index exceeds spreadsheet limit".to_owned()))
 }

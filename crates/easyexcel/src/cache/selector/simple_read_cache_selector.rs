@@ -51,7 +51,10 @@ impl SimpleReadCacheSelector {
     #[must_use]
     pub fn with_max_use_map_cache_size_mb(max_use_map_cache_size_mb: u64) -> Self {
         Self {
-            max_use_map_cache_size_bytes: max_use_map_cache_size_mb.saturating_mul(1_000_000),
+            max_use_map_cache_size_bytes:
+                easyexcel_cache::SharedStringCachePolicy::memory_megabytes_to_bytes(
+                    max_use_map_cache_size_mb,
+                ),
             ..Self::default()
         }
     }
@@ -59,7 +62,8 @@ impl SimpleReadCacheSelector {
     /// Sets the map-cache threshold in megabytes. (Java `setMaxUseMapCacheSize`)
     #[must_use]
     pub fn max_use_map_cache_size_mb(mut self, megabytes: u64) -> Self {
-        self.max_use_map_cache_size_bytes = megabytes.saturating_mul(1_000_000);
+        self.max_use_map_cache_size_bytes =
+            easyexcel_cache::SharedStringCachePolicy::memory_megabytes_to_bytes(megabytes);
         self
     }
 
@@ -98,35 +102,29 @@ impl SimpleReadCacheSelector {
 
 impl ReadCacheSelector for SimpleReadCacheSelector {
     fn select_mode(&self, shared_strings_xml_size: u64) -> ReadCacheMode {
-        if shared_strings_xml_size < self.max_use_map_cache_size_bytes {
-            ReadCacheMode::Memory
-        } else {
-            ReadCacheMode::Disk
-        }
+        self.engine_policy().select_mode(shared_strings_xml_size)
     }
 
     fn create_cache(
         &self,
         shared_strings_xml_size: u64,
     ) -> easyexcel_io::Result<Box<dyn SharedStringCache>> {
-        if self.select_mode(shared_strings_xml_size) == ReadCacheMode::Memory {
-            return easyexcel_cache::create_cache(ReadCacheMode::Memory, shared_strings_xml_size);
-        }
+        self.engine_policy().create_cache(shared_strings_xml_size)
+    }
+}
 
-        // Java 优先保留已废弃的 maxCacheActivateSize 配置；仅未设置时才
-        // 使用 maxCacheActivateBatchCount（默认 20 批，每批 100 条）。
-        if let Some(megabytes) = self.max_cache_activate_size {
-            return easyexcel_cache::create_weighted_moka_cache_mb(
-                u64::try_from(megabytes.max(1)).unwrap_or(1),
-            );
-        }
-        let batches = self
-            .max_cache_activate_batch_count
-            .unwrap_or(easyexcel_cache::DEFAULT_MOKA_ACTIVE_BATCHES as i32)
-            .max(1);
-        easyexcel_cache::create_moka_cache_for_batches(
-            u64::try_from(batches).unwrap_or(1),
-        )
+impl SimpleReadCacheSelector {
+    /// 将 Java selector 参数映射为格式无关的缓存引擎策略。
+    fn engine_policy(&self) -> easyexcel_cache::SharedStringCachePolicy {
+        easyexcel_cache::SharedStringCachePolicy::new(self.max_use_map_cache_size_bytes)
+            .with_max_active_megabytes(
+                self.max_cache_activate_size
+                    .map(|value| u64::try_from(value.max(1)).unwrap_or(1)),
+            )
+            .with_max_active_batches(
+                self.max_cache_activate_batch_count
+                    .map(|value| u64::try_from(value.max(1)).unwrap_or(1)),
+            )
     }
 }
 

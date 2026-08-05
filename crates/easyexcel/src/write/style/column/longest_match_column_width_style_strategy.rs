@@ -7,9 +7,6 @@ use crate::core::{CellDataType, CellValue, Result, WriteCellContext, WriteHandle
 
 use crate::write::style::column::abstract_head_column_width_style_strategy::AbstractHeadColumnWidthStyleStrategy;
 
-/// Maximum Excel column width in character units. (Java `MAX_COLUMN_WIDTH = 255`)
-const MAX_COLUMN_WIDTH: u16 = 255;
-
 /// 对应 Java：`LongestMatchColumnWidthStyleStrategy`.
 ///
 /// Java walks rendered cell content after each cell write, measures
@@ -57,7 +54,7 @@ impl LongestMatchColumnWidthStyleStrategy {
         let Some(column_width) = data_length(context) else {
             return;
         };
-        let column_width = column_width.min(MAX_COLUMN_WIDTH);
+        let column_width = column_width.min(easyexcel_utils::sheet_utils::MAX_COLUMN_WIDTH_CHARS);
         let column_index = usize::from(context.column_index);
         let Ok(mut cache) = self.cache.lock() else {
             return;
@@ -113,7 +110,7 @@ impl AbstractHeadColumnWidthStyleStrategy for LongestMatchColumnWidthStyleStrate
 /// `None` (Java `-1`).
 fn data_length(context: &WriteCellContext) -> Option<u16> {
     if context.is_head {
-        return byte_len(&context.value.as_text());
+        return easyexcel_utils::string_utils::utf8_byte_len_u16(&context.value.as_text());
     }
     // Java unwraps WriteCellData list; Images/Comment wrap a scalar value.
     let value = match &context.value {
@@ -122,15 +119,10 @@ fn data_length(context: &WriteCellContext) -> Option<u16> {
     };
     match value.data_type() {
         CellDataType::String | CellDataType::Boolean | CellDataType::Number => {
-            byte_len(&value.as_text())
+            easyexcel_utils::string_utils::utf8_byte_len_u16(&value.as_text())
         }
         _ => None,
     }
-}
-
-/// UTF-8 byte length capped to `u16`, approximating Java `String.getBytes().length`.
-fn byte_len(text: &str) -> Option<u16> {
-    u16::try_from(text.len()).ok()
 }
 
 #[cfg(test)]

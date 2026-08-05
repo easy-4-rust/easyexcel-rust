@@ -79,6 +79,12 @@ pub fn memory_cache() -> Box<dyn SharedStringCacheReader> {
     Box::new(MemorySharedStringReader::default())
 }
 
+/// 创建处于顺序写入阶段的纯内存共享字符串缓存。
+#[must_use]
+pub fn create_memory_cache() -> Box<dyn SharedStringCache> {
+    Box::new(MemorySharedStringCache::default())
+}
+
 /// 从已经解码的 BIFF SST 创建不可变共享字符串缓存。
 ///
 /// 该后端对应 Java `XlsCache(SSTRecord)`：写入是空操作，所有字符串在
@@ -96,12 +102,12 @@ pub fn prebuilt_cache(values: Vec<String>) -> Box<dyn SharedStringCache> {
 pub fn create_cache(mode: ReadCacheMode, xml_size: u64) -> Result<Box<dyn SharedStringCache>> {
     match mode {
         ReadCacheMode::Auto if xml_size < DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES => {
-            Ok(Box::new(MemorySharedStringCache::default()))
+            Ok(create_memory_cache())
         }
         ReadCacheMode::Auto | ReadCacheMode::Disk => {
             create_moka_cache(DEFAULT_MOKA_ACTIVE_ENTRIES)
         }
-        ReadCacheMode::Memory => Ok(Box::new(MemorySharedStringCache::default())),
+        ReadCacheMode::Memory => Ok(create_memory_cache()),
     }
 }
 

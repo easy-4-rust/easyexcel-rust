@@ -4,6 +4,15 @@
 
 use std::borrow::Cow;
 
+/// 返回字符串的 UTF-8 字节长度；超过 `u16` 可表示范围时返回 `None`。
+///
+/// Java EasyExcel 的最长列宽策略使用 `String#getBytes().length`，门面可用
+/// 该基础原语实现相同的有界长度计算而不自行处理整数收窄。
+#[must_use]
+pub fn utf8_byte_len_u16(value: &str) -> Option<u16> {
+    u16::try_from(value.len()).ok()
+}
+
 /// 按配置裁剪字符串两端空白。
 ///
 /// 未启用裁剪时返回借用，避免写入热路径产生不必要的字符串分配。
