@@ -15,15 +15,18 @@ mod shared_strings;
 mod stream;
 mod styles;
 mod tables;
+mod template_package;
 pub mod template_styles;
 pub mod template_xml;
 mod writer;
 mod xmlutil;
 
 pub use encrypt::{ReadWriteSeek, encrypt_package_to};
+pub use crypto::{decrypt_file, is_encrypted_ooxml};
 pub use ooxml_package::{OoxmlPackage, OoxmlZipEntry};
 pub use reader::{read, read_with_password};
 pub use stream::stream;
+pub use template_package::OoxmlTemplatePackage;
 pub use writer::write;
 
 /// Read an XLSX workbook from a path.

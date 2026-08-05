@@ -22,6 +22,7 @@ use easyexcel_model::value::CellValue;
 
 use super::biff;
 use super::sst;
+use crate::biff8::format::builtin_format_id;
 
 /// Write a workbook as XLS (BIFF8) to any seekable writer.
 pub fn write<W: Write + Seek>(wb: &Workbook, mut writer: W) -> Result<()> {
@@ -86,33 +87,6 @@ fn plan_formats(wb: &Workbook) -> FormatPlan {
         }
     }
     FormatPlan { fmt_id, customs }
-}
-
-/// Reverse of the reader's builtin map: known format code -> built-in id, so we
-/// can reuse a built-in instead of emitting a redundant FORMAT record.
-fn builtin_format_id(code: &str) -> Option<u16> {
-    Some(match code {
-        "0" => 1,
-        "0.00" => 2,
-        "#,##0" => 3,
-        "#,##0.00" => 4,
-        "0%" => 9,
-        "0.00%" => 10,
-        "0.00E+00" => 11,
-        "m/d/yy" => 14,
-        "d-mmm-yy" => 15,
-        "d-mmm" => 16,
-        "mmm-yy" => 17,
-        "h:mm AM/PM" => 18,
-        "h:mm:ss AM/PM" => 19,
-        "h:mm" => 20,
-        "h:mm:ss" => 21,
-        "m/d/yy h:mm" => 22,
-        "mm:ss" => 45,
-        "[h]:mm:ss" => 46,
-        "@" => 49,
-        _ => return None,
-    })
 }
 
 /// Build the entire Workbook stream bytes.

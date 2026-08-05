@@ -24,6 +24,23 @@ const BLOCK_VERIFIER_INPUT: [u8; 8] = [0xfe, 0xa7, 0xd2, 0x76, 0x3b, 0x4b, 0x9e,
 const BLOCK_VERIFIER_VALUE: [u8; 8] = [0xd7, 0xaa, 0x0f, 0x6d, 0x30, 0x61, 0x34, 0x4e];
 const BLOCK_KEY_VALUE: [u8; 8] = [0x14, 0x6e, 0x0b, 0xe7, 0xab, 0xac, 0xd0, 0xd6];
 
+/// 判断 CFB 容器是否包含加密 OOXML 所需的两个数据流。
+#[must_use]
+pub fn is_encrypted_ooxml(bytes: &[u8]) -> bool {
+    cfb::CompoundFile::open(Cursor::new(bytes)).is_ok_and(|compound| {
+        compound.is_stream("/EncryptedPackage") && compound.is_stream("/EncryptionInfo")
+    })
+}
+
+/// 从文件读取并解密 OOXML 包。
+///
+/// # Errors
+///
+/// 文件读取失败、容器无效、密码错误或加密方案不受支持时返回错误。
+pub fn decrypt_file(path: &std::path::Path, password: &str) -> Result<Vec<u8>> {
+    decrypt(std::fs::read(path)?, password)
+}
+
 /// Read a CFB stream by path (e.g. `/EncryptionInfo`) into a byte vector.
 fn read_stream(comp: &mut cfb::CompoundFile<Cursor<&[u8]>>, path: &str) -> Result<Vec<u8>> {
     let mut stream = comp

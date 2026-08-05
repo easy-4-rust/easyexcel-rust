@@ -57,3 +57,17 @@ pub fn looks_like_zip(magic: &[u8]) -> bool {
         || magic.starts_with(b"PK\x05\x06")
         || magic.starts_with(b"PK\x07\x08")
 }
+
+/// 判断字节是否可能是 CSV、TSV 或其他纯文本分隔数据。
+///
+/// 该探测只用于选择文本解析器，不承诺验证完整 CSV 语法。
+#[must_use]
+pub fn looks_like_delimited_text(bytes: &[u8]) -> bool {
+    if bytes.is_empty() {
+        return false;
+    }
+    if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
+        return true;
+    }
+    bytes[0].is_ascii_graphic() || bytes[0].is_ascii_whitespace()
+}

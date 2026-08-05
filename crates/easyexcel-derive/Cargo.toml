@@ -17,7 +17,7 @@ quote.workspace = true
 syn.workspace = true
 
 [dev-dependencies]
-easyexcel = { path = "../../easyexcel" }
+easyexcel.workspace = true
 trybuild = "1"
 
 [lints]

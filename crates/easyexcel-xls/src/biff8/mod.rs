@@ -3,6 +3,7 @@
 mod cached;
 pub mod encode;
 pub mod encrypt;
+mod format;
 mod numeric;
 pub mod ptg;
 pub mod record_stream;

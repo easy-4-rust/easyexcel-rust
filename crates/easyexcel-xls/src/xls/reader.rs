@@ -16,6 +16,7 @@ use easyexcel_model::value::CellValue;
 
 use super::biff::{self, RawRecord, Records};
 use super::sst;
+use crate::biff8::format::builtin_format_code;
 
 /// Read an XLS workbook from any seekable reader.
 pub fn read<R: Read + Seek>(reader: R) -> Result<Workbook> {
@@ -266,47 +267,6 @@ fn parse_boundsheet(rec: &RawRecord, g: &mut Globals) {
     });
 }
 
-/// Standard BIFF built-in number format codes (subset that matters for date
-/// detection and display). IDs not listed fall back to "General" or a custom
-/// FORMAT record if present.
-fn builtin_format(ifmt: u16) -> Option<&'static str> {
-    Some(match ifmt {
-        0 => "General",
-        1 => "0",
-        2 => "0.00",
-        3 => "#,##0",
-        4 => "#,##0.00",
-        5 => "$#,##0_);($#,##0)",
-        6 => "$#,##0_);[Red]($#,##0)",
-        7 => "$#,##0.00_);($#,##0.00)",
-        8 => "$#,##0.00_);[Red]($#,##0.00)",
-        9 => "0%",
-        10 => "0.00%",
-        11 => "0.00E+00",
-        12 => "# ?/?",
-        13 => "# ??/??",
-        14 => "m/d/yy",
-        15 => "d-mmm-yy",
-        16 => "d-mmm",
-        17 => "mmm-yy",
-        18 => "h:mm AM/PM",
-        19 => "h:mm:ss AM/PM",
-        20 => "h:mm",
-        21 => "h:mm:ss",
-        22 => "m/d/yy h:mm",
-        37 => "#,##0_);(#,##0)",
-        38 => "#,##0_);[Red](#,##0)",
-        39 => "#,##0.00_);(#,##0.00)",
-        40 => "#,##0.00_);[Red](#,##0.00)",
-        45 => "mm:ss",
-        46 => "[h]:mm:ss",
-        47 => "mm:ss.0",
-        48 => "##0.0E+0",
-        49 => "@",
-        _ => return None,
-    })
-}
-
 /// Build interned styles from the XF list, returning xf-index -> style-index.
 fn build_styles(g: &Globals, wb: &mut Workbook) -> Vec<u32> {
     let mut map = Vec::with_capacity(g.xfs.len());
@@ -316,7 +276,7 @@ fn build_styles(g: &Globals, wb: &mut Workbook) -> Vec<u32> {
             .formats
             .get(&xf.ifmt)
             .cloned()
-            .or_else(|| builtin_format(xf.ifmt).map(|s| s.to_string()))
+            .or_else(|| builtin_format_code(xf.ifmt).map(str::to_owned))
             .unwrap_or_default();
         if !fmt.eq_ignore_ascii_case("general") {
             style.number_format = fmt;

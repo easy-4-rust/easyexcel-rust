@@ -311,6 +311,27 @@ pub fn col_index_to_letters(mut index: u32) -> String {
     String::from_utf8(buf).unwrap()
 }
 
+/// 从 A1 单元格引用读取零基行号；无效输入返回 `0`。
+#[must_use]
+pub fn row_from_a1(reference: &str) -> u32 {
+    reference
+        .chars()
+        .skip_while(char::is_ascii_alphabetic)
+        .collect::<String>()
+        .parse::<u32>()
+        .map_or(0, |row| row.saturating_sub(1))
+}
+
+/// 从 A1 单元格引用读取零基列号；无效输入返回 `0`。
+#[must_use]
+pub fn column_from_a1(reference: &str) -> u32 {
+    let letters = reference
+        .chars()
+        .take_while(char::is_ascii_alphabetic)
+        .collect::<String>();
+    col_letters_to_index(&letters).unwrap_or(0)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

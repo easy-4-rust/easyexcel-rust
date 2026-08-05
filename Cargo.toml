@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/easyexcel-cache",
     "crates/easyexcel-model",
     "crates/easyexcel-formula",
     "crates/easyexcel-io",
@@ -9,20 +10,20 @@ members = [
     "crates/easyexcel-tabular",
     "crates/easyexcel-derive",
     "xtask",
-    "easyexcel",
-    "easyexcel-support/easyexcel-axum",
-    "easyexcel-support/easyexcel-actix",
-    "easyexcel-support/easyexcel-hyper",
-    "easyexcel-support/easyexcel-poem",
-    "easyexcel-support/easyexcel-rocket",
-    "easyexcel-support/easyexcel-salvo",
-    "easyexcel-support/easyexcel-warp",
-    "easyexcel-test",
-    "easyexcel-demo/easyexcel-demo-axum",
-    "easyexcel-demo/easyexcel-demo-actix",
-    "easyexcel-demo/easyexcel-demo-read",
-    "easyexcel-demo/easyexcel-demo-write",
-    "easyexcel-demo/easyexcel-demo-fill",
+    "crates/easyexcel",
+    "crates/easyexcel-axum",
+    "crates/easyexcel-actix",
+    "crates/easyexcel-hyper",
+    "crates/easyexcel-poem",
+    "crates/easyexcel-rocket",
+    "crates/easyexcel-salvo",
+    "crates/easyexcel-warp",
+    "tests/easyexcel-test",
+    "examples/axum",
+    "examples/actix",
+    "examples/read",
+    "examples/write",
+    "examples/fill",
 ]
 resolver = "3"
 
@@ -38,7 +39,8 @@ keywords = ["excel", "xlsx", "easyexcel", "spreadsheet", "csv"]
 categories = ["parser-implementations", "encoding"]
 
 [workspace.dependencies]
-easyexcel = { path = "easyexcel", version = "0.1.0-alpha.1" }
+easyexcel = { path = "crates/easyexcel", version = "0.1.0-alpha.1" }
+easyexcel-cache = { path = "crates/easyexcel-cache", version = "0.1.0-alpha.1" }
 easyexcel-model = { path = "crates/easyexcel-model", version = "0.1.0-alpha.1" }
 easyexcel-formula = { path = "crates/easyexcel-formula", version = "0.1.0-alpha.1" }
 easyexcel-io = { path = "crates/easyexcel-io", version = "0.1.0-alpha.1" }
@@ -72,6 +74,7 @@ rocket = "0.5.1"
 salvo = "0.95.1"
 warp = "0.4.3"
 md-5 = "0.11.0"
+moka = { version = "0.12.15", features = ["sync"] }
 ms-offcrypto-writer = "1.0.7"
 num-bigint = "0.4.8"  # bigdecimal 0.4.10 支持的最高 num-bigint 线
 office-crypto = "0.3.0"

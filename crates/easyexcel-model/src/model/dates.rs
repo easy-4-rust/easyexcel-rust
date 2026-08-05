@@ -9,7 +9,9 @@
 //!   is effectively offset from `1899-12-30`.
 //! * **1904 system** (legacy Mac): serial `0` == 1904-01-01.
 
-use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
+use chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, NaiveTime, Timelike, Utc};
+
+use super::error::{Error, Result};
 
 /// Which date epoch a workbook uses.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -23,6 +25,83 @@ pub enum DateSystem {
 
 /// Days between the 1900 and 1904 epochs.
 const EPOCH_DIFF_1904: f64 = 1462.0;
+
+/// 按多个 Java `SimpleDateFormat` 模式依次解析日期时间。
+pub fn parse_java_date<'a>(
+    value: &str,
+    patterns: impl IntoIterator<Item = &'a str>,
+) -> Result<NaiveDateTime> {
+    for pattern in patterns {
+        let format = java_date_format_to_chrono(pattern);
+        if let Ok(datetime) = NaiveDateTime::parse_from_str(value, &format) {
+            return Ok(datetime);
+        }
+        if let Ok(date) = NaiveDate::parse_from_str(value, &format) {
+            return Ok(date.and_hms_opt(0, 0, 0).unwrap_or_default());
+        }
+    }
+    Err(Error::Other(format!("date parse failed for {value:?}")))
+}
+
+/// 使用 Java `SimpleDateFormat` 模式格式化日期时间。
+#[must_use]
+pub fn format_java_date(value: NaiveDateTime, pattern: &str) -> String {
+    value.format(&java_date_format_to_chrono(pattern)).to_string()
+}
+
+/// 将 Excel 1900 日期系统的整数天数转换为 UTC 时间。
+#[must_use]
+pub fn excel_days_to_utc(days: i64) -> DateTime<Utc> {
+    let base = NaiveDate::from_ymd_opt(1899, 12, 30)
+        .unwrap_or_default()
+        .and_hms_opt(0, 0, 0)
+        .unwrap_or_default();
+    DateTime::<Utc>::from_naive_utc_and_offset(base + Duration::days(days), Utc)
+}
+
+/// 判断代码中是否包含 Excel 日期或时间格式标记。
+#[must_use]
+pub fn is_internal_date_format(format: &str) -> bool {
+    super::numfmt::is_date_format(format)
+}
+
+/// 将 Java `SimpleDateFormat` 的常用字母转换为 chrono 格式。
+#[must_use]
+pub fn java_date_format_to_chrono(pattern: &str) -> String {
+    let mut output = String::with_capacity(pattern.len() * 2);
+    let characters = pattern.chars().collect::<Vec<_>>();
+    let mut index = 0;
+    while index < characters.len() {
+        let current = characters[index];
+        match current {
+            '\'' => {
+                index += 1;
+                while index < characters.len() && characters[index] != '\'' {
+                    output.push(characters[index]);
+                    index += 1;
+                }
+            }
+            'y' | 'M' | 'd' | 'H' | 'm' | 's' | 'S' => {
+                while index < characters.len() && characters[index] == current {
+                    index += 1;
+                }
+                output.push_str(match current {
+                    'y' => "%Y",
+                    'M' => "%m",
+                    'd' => "%d",
+                    'H' => "%H",
+                    'm' => "%M",
+                    's' => "%S",
+                    _ => "%3f",
+                });
+                continue;
+            }
+            value => output.push(value),
+        }
+        index += 1;
+    }
+    output
+}
 
 impl DateSystem {
     /// Convert a serial number to a `NaiveDateTime`. Returns `None` for serials

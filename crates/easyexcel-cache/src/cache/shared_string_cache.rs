@@ -1,0 +1,297 @@
+//! 共享字符串缓存的内存、临时文件和 Moka 分层实现。
+
+use std::fs::File;
+use std::io::{Read, Seek, SeekFrom, Write};
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+
+use easyexcel_io::{Error, Result};
+use moka::sync::Cache;
+use tempfile::NamedTempFile;
+
+use super::ReadCacheMode;
+
+/// Java `SimpleReadCacheSelector` 使用的默认内存阈值。
+pub const DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES: u64 = 5_000_000;
+
+/// Moka 活跃层默认最多保留的共享字符串条目数。
+pub const DEFAULT_MOKA_ACTIVE_ENTRIES: u64 = 2_000;
+
+/// 共享字符串顺序写入阶段。
+pub trait SharedStringCacheWriter {
+    /// 追加一条共享字符串。
+    ///
+    /// # Errors
+    ///
+    /// 后备存储写入失败时返回错误。
+    fn put(&mut self, value: String) -> Result<()>;
+
+    /// 结束写入并返回线程安全的只读视图。
+    ///
+    /// # Errors
+    ///
+    /// 后备存储无法完成落盘时返回错误。
+    fn finish(self: Box<Self>) -> Result<Box<dyn SharedStringCacheReader>>;
+}
+
+/// 共享字符串并发读取阶段。
+pub trait SharedStringCacheReader: Send + Sync {
+    /// 按零基下标读取共享字符串。
+    ///
+    /// # Errors
+    ///
+    /// 下标越界或后备存储读取失败时返回错误。
+    fn get(&self, index: usize) -> Result<String>;
+
+    /// 返回缓存中的共享字符串数量。
+    fn len(&self) -> usize;
+
+    /// 返回缓存是否为空。
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}
+
+/// 同时支持写入阶段和读取阶段的共享字符串缓存。
+pub trait SharedStringCache: SharedStringCacheWriter + SharedStringCacheReader {
+    /// 结束当前缓存的写入阶段。
+    ///
+    /// # Errors
+    ///
+    /// 后备存储无法完成落盘时返回错误。
+    fn put_and_finish(self: Box<Self>) -> Result<Box<dyn SharedStringCacheReader>>
+    where
+        Self: Sized,
+    {
+        self.finish()
+    }
+}
+
+/// 创建空的只读内存缓存。
+#[must_use]
+pub fn memory_cache() -> Box<dyn SharedStringCacheReader> {
+    Box::new(MemorySharedStringReader::default())
+}
+
+/// 按模式和 XML 大小创建共享字符串缓存。
+///
+/// # Errors
+///
+/// 需要临时文件而文件创建失败时返回错误。
+pub fn create_cache(mode: ReadCacheMode, xml_size: u64) -> Result<Box<dyn SharedStringCache>> {
+    match mode {
+        ReadCacheMode::Auto if xml_size < DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES => {
+            Ok(Box::new(MemorySharedStringCache::default()))
+        }
+        ReadCacheMode::Auto | ReadCacheMode::Disk => {
+            create_moka_cache(DEFAULT_MOKA_ACTIVE_ENTRIES)
+        }
+        ReadCacheMode::Memory => Ok(Box::new(MemorySharedStringCache::default())),
+    }
+}
+
+/// 创建按条目数量限制的 Moka 热缓存与临时文件后备。
+///
+/// # Errors
+///
+/// 临时后备文件创建失败时返回错误。
+pub fn create_moka_cache(max_active_entries: u64) -> Result<Box<dyn SharedStringCache>> {
+    let active = Cache::builder()
+        .max_capacity(max_active_entries.max(1))
+        .build();
+    Ok(Box::new(MokaSharedStringCache::new(active)?))
+}
+
+/// 创建按 UTF-8 字节权重限制的 Moka 热缓存与临时文件后备。
+///
+/// # Errors
+///
+/// 临时后备文件创建失败时返回错误。
+pub fn create_weighted_moka_cache(max_active_bytes: u64) -> Result<Box<dyn SharedStringCache>> {
+    let active = Cache::builder()
+        .max_capacity(max_active_bytes.max(1))
+        .weigher(|_key: &usize, value: &Arc<str>| {
+            u32::try_from(value.len()).unwrap_or(u32::MAX)
+        })
+        .build();
+    Ok(Box::new(MokaSharedStringCache::new(active)?))
+}
+
+/// 兼容旧调用点；Moka 后端不持有线程局部文件句柄，因此无需显式清理。
+pub const fn remove_thread_local_cache() {}
+
+#[derive(Default)]
+struct MemorySharedStringCache {
+    values: Vec<String>,
+}
+
+impl SharedStringCacheWriter for MemorySharedStringCache {
+    fn put(&mut self, value: String) -> Result<()> {
+        self.values.push(value);
+        Ok(())
+    }
+
+    fn finish(self: Box<Self>) -> Result<Box<dyn SharedStringCacheReader>> {
+        Ok(Box::new(MemorySharedStringReader {
+            values: self.values,
+        }))
+    }
+}
+
+impl SharedStringCacheReader for MemorySharedStringCache {
+    fn get(&self, index: usize) -> Result<String> {
+        value_at(&self.values, index)
+    }
+
+    fn len(&self) -> usize {
+        self.values.len()
+    }
+}
+
+impl SharedStringCache for MemorySharedStringCache {}
+
+#[derive(Default)]
+struct MemorySharedStringReader {
+    values: Vec<String>,
+}
+
+impl SharedStringCacheReader for MemorySharedStringReader {
+    fn get(&self, index: usize) -> Result<String> {
+        value_at(&self.values, index)
+    }
+
+    fn len(&self) -> usize {
+        self.values.len()
+    }
+}
+
+fn value_at(values: &[String], index: usize) -> Result<String> {
+    values
+        .get(index)
+        .cloned()
+        .ok_or_else(|| out_of_bounds(index))
+}
+
+struct MokaSharedStringCache {
+    active: Cache<usize, Arc<str>>,
+    backing: DiskSharedStringCache,
+}
+
+impl MokaSharedStringCache {
+    fn new(active: Cache<usize, Arc<str>>) -> Result<Self> {
+        Ok(Self {
+            active,
+            backing: DiskSharedStringCache::new()?,
+        })
+    }
+}
+
+impl SharedStringCacheWriter for MokaSharedStringCache {
+    fn put(&mut self, value: String) -> Result<()> {
+        let index = self.backing.len();
+        self.backing.put(value.clone())?;
+        self.active.insert(index, Arc::<str>::from(value));
+        Ok(())
+    }
+
+    fn finish(self: Box<Self>) -> Result<Box<dyn SharedStringCacheReader>> {
+        let Self { active, backing } = *self;
+        Ok(Box::new(MokaSharedStringReader {
+            active,
+            backing: backing.into_reader()?,
+        }))
+    }
+}
+
+impl SharedStringCacheReader for MokaSharedStringCache {
+    fn get(&self, index: usize) -> Result<String> {
+        if let Some(value) = self.active.get(&index) {
+            return Ok(value.to_string());
+        }
+        let value = self.backing.get(index)?;
+        self.active.insert(index, Arc::<str>::from(value.as_str()));
+        Ok(value)
+    }
+
+    fn len(&self) -> usize {
+        self.backing.len()
+    }
+}
+
+impl SharedStringCache for MokaSharedStringCache {}
+
+struct DiskSharedStringCache {
+    temporary_file: NamedTempFile,
+    writer: File,
+    path: PathBuf,
+    entries: Vec<(u64, usize)>,
+}
+
+impl DiskSharedStringCache {
+    fn new() -> Result<Self> {
+        let temporary_file = NamedTempFile::new()?;
+        let path = temporary_file.path().to_path_buf();
+        let writer = temporary_file.reopen()?;
+        Ok(Self {
+            temporary_file,
+            writer,
+            path,
+            entries: Vec::new(),
+        })
+    }
+
+    fn put(&mut self, value: String) -> Result<()> {
+        let offset = self.writer.seek(SeekFrom::End(0))?;
+        let bytes = value.as_bytes();
+        self.writer.write_all(bytes)?;
+        self.entries.push((offset, bytes.len()));
+        Ok(())
+    }
+
+    fn get(&self, index: usize) -> Result<String> {
+        read_entry(&self.path, &self.entries, index)
+    }
+
+    fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    fn into_reader(mut self) -> Result<DiskSharedStringReader> {
+        self.writer.flush()?;
+        Ok(DiskSharedStringReader {
+            temporary_file: self.temporary_file,
+            path: self.path,
+            entries: self.entries,
+        })
+    }
+}
+
+struct DiskSharedStringReader {
+    temporary_file: NamedTempFile,
+    path: PathBuf,
+    entries: Vec<(u64, usize)>,
+}
+
+impl DiskSharedStringReader {
+    fn get(&self, index: usize) -> Result<String> {
+        let _lifetime_guard = &self.temporary_file;
+        read_entry(&self.path, &self.entries, index)
+    }
+
+    fn len(&self) -> usize {
+        self.entries.len()
+    }
+}
+
+fn read_entry(path: &Path, entries: &[(u64, usize)], index: usize) -> Result<String> {
+    let (offset, length) = entries.get(index).copied().ok_or_else(|| out_of_bounds(index))?;
+    let mut file = File::open(path)?;
+    file.seek(SeekFrom::Start(offset))?;
+    let mut bytes = vec![0; length];
+    file.read_exact(&mut bytes)?;
+    String::from_utf8(bytes).map_err(|error| Error::Other(error.to_string()))
+}
+
+fn out_of_bounds(index: usize) -> Error {
+    Error::Other(format!("shared string index is out of bounds: {index}"))
+}

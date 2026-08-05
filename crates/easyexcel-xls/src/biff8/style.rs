@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use super::encode::{
     ICV_AUTO, ICV_PATTERN_BG_DEFAULT, XF_CUSTOM_BASE, XF_DATE, XF_DATETIME, pack_cell_xf, pack_font,
 };
+use super::format::builtin_format_id;
 
 /// Resolved write-style inputs used when allocating an XF index.
 // 语义敏感：bold/italic/strikeout/wrap 与 Java `WriteCellStyle`/`WriteFont`
@@ -100,47 +101,6 @@ struct XfKey {
 /// Java mapping: POI `HSSFWorkbook` font/style tables. Built-in XF 0..15 are
 /// style XFs; 16/17 are date/datetime helpers; custom cell XFs start at
 /// [`XF_CUSTOM_BASE`] (18).
-/// 内建数字格式码表（POI `BuiltinFormats`，code → BIFF8 ifmt）。
-fn builtin_format_id(code: &str) -> Option<u16> {
-    Some(match code {
-        "General" => 0,
-        "0" => 1,
-        "0.00" => 2,
-        "#,##0" => 3,
-        "#,##0.00" => 4,
-        "$#,##0_);($#,##0)" => 5,
-        "$#,##0_);[Red]($#,##0)" => 6,
-        "$#,##0.00_);($#,##0.00)" => 7,
-        "$#,##0.00_);[Red]($#,##0.00)" => 8,
-        "0%" => 9,
-        "0.00%" => 10,
-        "0.00E+00" => 11,
-        "# ?/?" => 12,
-        "# ??/??" => 13,
-        "m/d/yy" => 14,
-        "d-mmm-yy" => 15,
-        "d-mmm" => 16,
-        "mmm-yy" => 17,
-        "h:mm AM/PM" => 18,
-        "h:mm:ss AM/PM" => 19,
-        "h:mm" => 20,
-        "h:mm:ss" => 21,
-        "m/d/yy h:mm" => 22,
-        "#,##0_);(#,##0)" => 37,
-        "#,##0_);[Red](#,##0)" => 38,
-        "#,##0.00_);(#,##0.00)" => 39,
-        "#,##0.00_);[Red](#,##0.00)" => 40,
-        "_(* #,##0_);_(* (#,##0);_(* \"-\"_);_(@_)" => 41,
-        "_(* #,##0.00_);_(* (#,##0.00);_(* \"-\"??_);_(@_)" => 43,
-        "mm:ss" => 45,
-        "[h]:mm:ss" => 46,
-        "mm:ss.0" => 47,
-        "##0.0E+0" => 48,
-        "@" => 49,
-        _ => return None,
-    })
-}
-
 /// 自定义数字格式起始索引（BIFF8：ifmt ≥ 164 为自定义格式）。
 const FORMAT_CUSTOM_BASE: u16 = 164;
 

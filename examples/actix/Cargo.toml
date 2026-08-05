@@ -1,0 +1,30 @@
+[package]
+name = "easyexcel-demo-actix"
+publish = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Actix-web demo mirroring Java WebTest"
+repository.workspace = true
+
+[[bin]]
+name = "easyexcel-demo-actix"
+path = "src/main.rs"
+
+[dependencies]
+easyexcel = { workspace = true }
+easyexcel-actix = { path = "../../crates/easyexcel-actix" }
+actix-web = { workspace = true }
+actix-multipart = { workspace = true }
+chrono = { workspace = true, default-features = false, features = ["std", "clock"] }
+futures-util = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+urlencoding = { workspace = true }
+
+[dev-dependencies]
+libc = "0.2"
+
+[lints]
+workspace = true

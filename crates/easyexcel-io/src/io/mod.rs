@@ -5,6 +5,7 @@ pub mod file_utils;
 mod format;
 pub mod gzip_record;
 pub mod io_utils;
+pub mod media_type;
 mod read_mode;
 mod resource_limits;
 mod row_sink;
@@ -14,7 +15,7 @@ mod stream_info;
 mod write_mode;
 
 pub use error::{Error, Result};
-pub use format::{Format, looks_like_cfb, looks_like_zip};
+pub use format::{Format, looks_like_cfb, looks_like_delimited_text, looks_like_zip};
 pub use read_mode::ReadMode;
 pub use resource_limits::ResourceLimits;
 pub use row_sink::RowSink;

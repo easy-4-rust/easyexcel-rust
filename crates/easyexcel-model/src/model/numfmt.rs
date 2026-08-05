@@ -83,6 +83,16 @@ pub fn is_date_format_id(id: u16, custom_code: Option<&str>) -> bool {
     }
 }
 
+/// 按格式代码中小数点后的连续 `0` 数量进行定点格式化。
+#[must_use]
+pub fn format_fixed_decimal(value: f64, pattern: &str) -> String {
+    let scale = pattern
+        .split('.')
+        .nth(1)
+        .map_or(0, |fraction| fraction.chars().take_while(|value| *value == '0').count());
+    format!("{value:.scale$}")
+}
+
 /// Apply a number-format code to a numeric value, producing display text.
 ///
 /// Supports General, the common date/time tokens, percent, thousands grouping,

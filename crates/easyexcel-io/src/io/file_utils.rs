@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{OnceLock, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use tempfile::{Builder, NamedTempFile};
+use tempfile::{Builder, NamedTempFile, TempDir};
 
 use crate::Error as ExcelError;
 
@@ -85,6 +85,18 @@ pub fn create_cache_tmp_file() -> io::Result<NamedTempFile> {
     Builder::new()
         .prefix("easyexcel-cache-")
         .tempfile_in(cache_path)
+}
+
+/// 创建由 RAII 管理的通用临时文件。
+pub fn create_temp_file() -> io::Result<NamedTempFile> {
+    NamedTempFile::new()
+}
+
+/// 创建由 RAII 管理的通用临时目录，并返回其路径副本。
+pub fn create_temp_directory() -> io::Result<(TempDir, PathBuf)> {
+    let directory = TempDir::new()?;
+    let path = directory.path().to_path_buf();
+    Ok((directory, path))
 }
 
 /// Mirrors `com.alibaba.excel.util.FileUtils#createPoiFilesDirectory`.

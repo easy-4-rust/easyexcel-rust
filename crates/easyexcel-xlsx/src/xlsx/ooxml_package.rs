@@ -2,7 +2,7 @@
 //!
 //! 负责复制 ZIP 条目元数据、读取和重新打包，不解释工作簿、工作表或单元格语义。
 
-use std::io::{Cursor, Read, Write};
+use std::io::{Cursor, Read, Seek, Write};
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
 
@@ -35,7 +35,15 @@ pub struct OoxmlPackage {
 impl OoxmlPackage {
     /// 从 ZIP/OOXML 字节载入全部条目。
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
-        let mut archive = ZipArchive::new(Cursor::new(bytes.to_vec()))?;
+        Self::from_reader(Cursor::new(bytes))
+    }
+
+    /// 从可定位输入流载入全部 ZIP/OOXML 条目。
+    pub fn from_reader<R>(reader: R) -> Result<Self>
+    where
+        R: Read + Seek,
+    {
+        let mut archive = ZipArchive::new(reader)?;
         let mut entries = Vec::with_capacity(archive.len());
         for index in 0..archive.len() {
             let mut entry = archive.by_index(index)?;
@@ -60,10 +68,23 @@ impl OoxmlPackage {
         Self { entries }
     }
 
+    /// 取出保持原顺序的全部 ZIP 条目。
+    #[must_use]
+    pub fn into_entries(self) -> Vec<OoxmlZipEntry> {
+        self.entries
+    }
+
     /// 重新打包为 XLSX ZIP 字节。
     pub fn to_bytes(&self) -> Result<Vec<u8>> {
-        let cursor = Cursor::new(Vec::new());
-        let mut zip = ZipWriter::new(cursor);
+        Ok(self.write_to(Cursor::new(Vec::new()))?.into_inner())
+    }
+
+    /// 将 OOXML 包写入可定位输出流，并返回完成后的原输出流。
+    pub fn write_to<W>(&self, writer: W) -> Result<W>
+    where
+        W: Write + Seek,
+    {
+        let mut zip = ZipWriter::new(writer);
         for entry in &self.entries {
             let mut options = SimpleFileOptions::default().compression_method(entry.compression);
             if let Some(mode) = entry.unix_mode {
@@ -76,7 +97,7 @@ impl OoxmlPackage {
                 zip.write_all(&entry.bytes)?;
             }
         }
-        Ok(zip.finish()?.into_inner())
+        Ok(zip.finish()?)
     }
 
     /// 保存 ZIP 包到文件。
