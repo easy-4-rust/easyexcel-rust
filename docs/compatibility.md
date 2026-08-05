@@ -275,7 +275,7 @@ parseable by LibreOffice (2026-08-04 fix, verified by
 | One-shot `do_write` and stateful `ExcelWriter::write` on `.xls` | supported |
 | `to_writer` / owned stream BIFF8 emission | supported |
 | Password / RC4 / XOR encryption | unsupported (typed `Unsupported`: `"password protection is not supported for legacy XLS"`) — not covered by OOXML Agile crypto |
-| Images (`CellValue::Image` / non-empty `Images`) | unsupported (typed `Unsupported`: `"legacy XLS writing does not support images"`) — no MSODrawing/OBJ/Escher; never silently drops bytes or rewrites as XLSX |
+| Images (`CellValue::Image` / non-empty `Images`) | supported (2026-08-05 文档修正)：`Biff8Sheet::write_image` 编码 OBJ + MSODrawing（Escher BSE 容器，PNG/JPEG），`write_image_encodes_obj_and_msodrawing_records` 测试验证；模板路径图片仍为 typed `Unsupported` |
 | `.xls` `with_template` + `doWrite` | supported (MVP): OLE `Workbook` record overlay — unmodified BIFF records kept; new cells as LABEL/NUMBER; BoundSheet offsets repaired. Creating sheets absent from the template remains unsupported |
 | `.xls` placeholder `fill` | unsupported (typed `Unsupported`) — Java `ExcelWriter.fill` on HSSF; Rust fill stays OOXML-only |
 | Column width / row height (`COLINFO` / `ROW`) | supported |

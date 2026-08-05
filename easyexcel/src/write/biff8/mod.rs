@@ -23,8 +23,9 @@
 //!
 //! **Still unsupported (explicit `Unsupported` or degraded):**
 //! - **Password / RC4 / XOR encryption** — typed `Unsupported` (not OOXML Agile).
-//! - **Images** — typed `Unsupported` for `CellValue::Image` / non-empty `Images`
-//!   (no MSODrawing/OBJ/Escher; never silently drop image bytes).
+//! - **Images** — supported on the main write path (`write_image`: OBJ +
+//!   MSODrawing/Escher BSE, PNG/JPEG); template (`with_template`) images stay
+//!   typed `Unsupported`.
 //! - in-place OLE style/merge preservation beyond template MVP, collection/horizontal
 //!   `.xls` fill, cross-sheet formula references, hyperlink/comment records,
 //!   rich-text runs, borders, arbitrary custom number formats, charts, macros.
