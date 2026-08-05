@@ -772,6 +772,18 @@ pub fn save_workbook_to_writer(
     Ok(())
 }
 
+/// 将内存工作簿序列化为未加密的 OOXML ZIP 字节。
+///
+/// 该入口封装 `rust_xlsxwriter` 的具体序列化 API，供模板样式编译、
+/// RoundTrip 包合并等基础能力复用，避免上层门面直接操作格式后端。
+///
+/// # Errors
+///
+/// 工作簿无法编码为合法 XLSX 包时返回错误。
+pub fn serialize_workbook(workbook: &mut Workbook) -> Result<Vec<u8>> {
+    workbook.save_to_buffer().map_err(xlsxwriter_error)
+}
+
 /// 序列化并加密工作簿到可读写 seek 流。
 ///
 /// # Errors
@@ -782,7 +794,7 @@ pub fn save_encrypted_workbook_to(
     password: &str,
     output: &mut dyn ReadWriteSeek,
 ) -> Result<()> {
-    let plaintext = workbook.save_to_buffer().map_err(xlsxwriter_error)?;
+    let plaintext = serialize_workbook(workbook)?;
     encrypt_package_to(&plaintext, password, output)
 }
 

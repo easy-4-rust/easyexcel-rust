@@ -62,7 +62,7 @@ impl BofRecordHandler {
 }
 
 /// BIFF `BOF` record sid. (POI `BOFRecord.sid`)
-pub const BOF_SID: u16 = 0x0809;
+pub use easyexcel_xls::biff8::record_sid::BOF_SID;
 
 impl XlsRecordHandler for BofRecordHandler {
     /// Java `BofRecordHandler.processRecord` — parses type code; use [`Self::decide`].
@@ -70,13 +70,13 @@ impl XlsRecordHandler for BofRecordHandler {
         if record_sid != BOF_SID || data.len() < 4 {
             return;
         }
-        let Some(type_code) = easyexcel_xls::biff8::event_record::decode_bof_type_code(data) else {
+        let Some(bof_type) = easyexcel_xls::biff8::event_record::decode_bof_type(data) else {
             return;
         };
-        let bof_type = match type_code {
-            0x0005 => BofType::Workbook,
-            0x0010 => BofType::Worksheet,
-            _ => BofType::Other,
+        let bof_type = match bof_type {
+            easyexcel_xls::biff8::event_record::Biff8BofType::Workbook => BofType::Workbook,
+            easyexcel_xls::biff8::event_record::Biff8BofType::Worksheet => BofType::Worksheet,
+            easyexcel_xls::biff8::event_record::Biff8BofType::Other(_) => BofType::Other,
         };
         let _ = Self::decide(bof_type, None, false);
     }

@@ -37,7 +37,7 @@ impl BlankRecordHandler {
 }
 
 /// BIFF `Blank` record sid. (POI `BlankRecord.sid`)
-pub const BLANK_SID: u16 = 0x0201;
+pub use easyexcel_xls::biff8::record_sid::BLANK_SID;
 
 impl XlsRecordHandler for BlankRecordHandler {
     /// Java `BlankRecordHandler.processRecord` — parses `row|col|xf`.

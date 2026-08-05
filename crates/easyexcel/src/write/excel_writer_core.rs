@@ -2041,7 +2041,7 @@ where
             .map_err(|_| ExcelError::Format("too many template styles".to_owned()))?;
         generation::write_blank(worksheet, row, 0, format).map_err(format_error)?;
     }
-    let bytes = compiler.save_to_buffer().map_err(format_error)?;
+    let bytes = generation::serialize_workbook(&mut compiler).map_err(ExcelError::from)?;
     let mapped = package.import_compiled_styles(&bytes, formats.len())?;
     Ok(local_styles
         .into_iter()

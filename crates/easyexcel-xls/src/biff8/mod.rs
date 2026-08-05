@@ -8,6 +8,7 @@ pub mod event_record;
 mod format;
 mod numeric;
 pub mod ptg;
+pub mod record_sid;
 pub mod record_stream;
 pub mod string;
 mod style;

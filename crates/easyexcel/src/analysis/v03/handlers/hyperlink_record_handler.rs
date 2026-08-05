@@ -54,7 +54,7 @@ impl XlsRecordHandler for HyperlinkRecordHandler {
     /// Java `HyperlinkRecordHandler.processRecord` — sid/range gate; address via helper.
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
         /// BIFF `Hyperlink` sid (POI `HyperlinkRecord.sid`)
-        const HYPERLINK_SID: u16 = 0x01B8;
+        const HYPERLINK_SID: u16 = easyexcel_xls::biff8::record_sid::HYPERLINK_SID;
         if !self.enabled || record_sid != HYPERLINK_SID || data.len() < 8 {
             return;
         }

@@ -137,7 +137,7 @@ impl FormulaRecordHandler {
 }
 
 /// BIFF `Formula` record sid. (POI `FormulaRecord.sid`)
-pub const FORMULA_SID: u16 = 0x0006;
+pub use easyexcel_xls::biff8::record_sid::FORMULA_SID;
 
 impl XlsRecordHandler for FormulaRecordHandler {
     /// Java `FormulaRecordHandler.processRecord` — parses coordinates, XF and

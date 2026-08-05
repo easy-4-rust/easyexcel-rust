@@ -37,7 +37,7 @@ impl LabelRecordHandler {
 }
 
 /// BIFF `Label` record sid. (POI `LabelRecord.sid`)
-pub const LABEL_SID: u16 = 0x0204;
+pub use easyexcel_xls::biff8::record_sid::LABEL_SID;
 
 impl XlsRecordHandler for LabelRecordHandler {
     /// Java `LabelRecordHandler.processRecord` — parses coordinates; string body

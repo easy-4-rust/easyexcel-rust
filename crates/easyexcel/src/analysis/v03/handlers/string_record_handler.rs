@@ -42,7 +42,7 @@ impl StringRecordHandler {
 }
 
 /// BIFF `String` record sid (formula result). (POI `StringRecord.sid`)
-pub const STRING_SID: u16 = 0x0207;
+pub use easyexcel_xls::biff8::record_sid::STRING_SID;
 
 impl XlsRecordHandler for StringRecordHandler {
     /// Java `StringRecordHandler.processRecord` — sid gate; pair with

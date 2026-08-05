@@ -33,7 +33,7 @@ impl TextObjectRecordHandler {
 }
 
 /// BIFF `TextObject` record sid. (POI `TextObjectRecord.sid`)
-pub const TEXT_OBJECT_SID: u16 = 0x01B6;
+pub use easyexcel_xls::biff8::record_sid::TEXT_OBJECT_SID;
 
 impl XlsRecordHandler for TextObjectRecordHandler {
     /// Java `TextObjectRecordHandler.processRecord` — parses `TxO` (0x01B6)
@@ -77,7 +77,7 @@ impl XlsRecordHandler for TextObjectRecordHandler {
 }
 
 /// BIFF `Continue` record sid.
-const CONTINUE_SID: u16 = 0x003C;
+const CONTINUE_SID: u16 = easyexcel_xls::biff8::record_sid::CONTINUE_SID;
 
 #[cfg(test)]
 mod tests_extra {

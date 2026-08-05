@@ -1,5 +1,6 @@
 //! 格式识别、流式协议、执行模式、资源限制与统一错误。
 
+mod byte_order_mark;
 mod error;
 pub mod file_utils;
 mod format;
@@ -17,6 +18,7 @@ mod stream_info;
 mod shared_byte_buffer;
 mod write_mode;
 
+pub use byte_order_mark::ByteOrderMark;
 pub use error::{Error, Result};
 pub use format::{
     Format, looks_like_cfb, looks_like_delimited_text, looks_like_zip, path_has_extension,

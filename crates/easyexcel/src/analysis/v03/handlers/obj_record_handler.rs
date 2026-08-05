@@ -25,7 +25,7 @@ impl ObjRecordHandler {
 }
 
 /// BIFF `Obj` record sid. (POI `ObjRecord.sid`)
-pub const OBJ_SID: u16 = 0x005D;
+pub use easyexcel_xls::biff8::record_sid::OBJ_SID;
 
 impl XlsRecordHandler for ObjRecordHandler {
     /// Java `ObjRecordHandler.processRecord` — sid gate; object id via [`Self::process_obj`].

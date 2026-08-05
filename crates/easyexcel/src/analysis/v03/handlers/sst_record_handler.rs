@@ -40,7 +40,7 @@ impl SstRecordHandler {
 }
 
 /// BIFF `SST` record sid. (POI `SSTRecord.sid`)
-pub const SST_SID: u16 = 0x00FC;
+pub use easyexcel_xls::biff8::record_sid::SST_SID;
 
 impl XlsRecordHandler for SstRecordHandler {
     /// Java `SstRecordHandler.processRecord` — reads `cstTotal`/`cstUnique` header.

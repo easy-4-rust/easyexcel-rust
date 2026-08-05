@@ -45,7 +45,7 @@ impl NumberRecordHandler {
 }
 
 /// BIFF `Number` record sid. (POI `NumberRecord.sid`)
-pub const NUMBER_SID: u16 = 0x0203;
+pub use easyexcel_xls::biff8::record_sid::NUMBER_SID;
 
 impl XlsRecordHandler for NumberRecordHandler {
     /// Java `NumberRecordHandler.processRecord` — parses BIFF Number body

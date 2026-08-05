@@ -1,7 +1,8 @@
 //! 对应 Java：`com.alibaba.excel.enums.ByteOrderMarkEnum`.
 //!
 //! Maps CSV charset names to their leading BOM. Java uses
-//! `org.apache.commons.io.ByteOrderMarkEnum`; Rust uses byte literal arrays.
+//! `org.apache.commons.io.ByteOrderMarkEnum`; the protocol table is provided
+//! by `easyexcel-io` and this module retains only the Java-compatible enum.
 
 use crate::ExcelError;
 
@@ -27,44 +28,45 @@ impl ByteOrderMarkEnum {
     /// Returns the BOM bytes as a slice.
     #[must_use]
     pub const fn bytes(self) -> &'static [u8] {
-        match self {
-            Self::Utf8 => &[0xEF, 0xBB, 0xBF],
-            Self::Utf16Be => &[0xFE, 0xFF],
-            Self::Utf16Le => &[0xFF, 0xFE],
-            Self::Utf32Be => &[0x00, 0x00, 0xFE, 0xFF],
-            Self::Utf32Le => &[0xFF, 0xFE, 0x00, 0x00],
-        }
+        self.engine_value().bytes()
     }
 
     /// Canonical charset name matched against the BOM.
     #[must_use]
     pub const fn charset_name(self) -> &'static str {
-        match self {
-            Self::Utf8 => "UTF-8",
-            Self::Utf16Be => "UTF-16BE",
-            Self::Utf16Le => "UTF-16LE",
-            Self::Utf32Be => "UTF-32BE",
-            Self::Utf32Le => "UTF-32LE",
-        }
+        self.engine_value().charset_name()
     }
 
     /// Resolves a Java-style charset label to its BOM, if any.
     #[must_use]
     pub fn value_of_by_charset_name(name: &str) -> Option<Self> {
-        match name.to_ascii_uppercase().as_str() {
-            "UTF-8" | "UTF8" => Some(Self::Utf8),
-            "UTF-16BE" => Some(Self::Utf16Be),
-            "UTF-16LE" => Some(Self::Utf16Le),
-            "UTF-32BE" => Some(Self::Utf32Be),
-            "UTF-32LE" => Some(Self::Utf32Le),
-            _ => None,
-        }
+        easyexcel_io::ByteOrderMark::from_charset_name(name).map(Self::from_engine_value)
     }
 
     /// Returns an error explaining the BOM lookup failure (for `Result`-style callers).
     #[must_use]
     pub fn error_for_missing_bom(name: &str) -> ExcelError {
         ExcelError::Unsupported(format!("unsupported CSV charset: {name}"))
+    }
+
+    const fn engine_value(self) -> easyexcel_io::ByteOrderMark {
+        match self {
+            Self::Utf8 => easyexcel_io::ByteOrderMark::Utf8,
+            Self::Utf16Be => easyexcel_io::ByteOrderMark::Utf16Be,
+            Self::Utf16Le => easyexcel_io::ByteOrderMark::Utf16Le,
+            Self::Utf32Be => easyexcel_io::ByteOrderMark::Utf32Be,
+            Self::Utf32Le => easyexcel_io::ByteOrderMark::Utf32Le,
+        }
+    }
+
+    const fn from_engine_value(value: easyexcel_io::ByteOrderMark) -> Self {
+        match value {
+            easyexcel_io::ByteOrderMark::Utf8 => Self::Utf8,
+            easyexcel_io::ByteOrderMark::Utf16Be => Self::Utf16Be,
+            easyexcel_io::ByteOrderMark::Utf16Le => Self::Utf16Le,
+            easyexcel_io::ByteOrderMark::Utf32Be => Self::Utf32Be,
+            easyexcel_io::ByteOrderMark::Utf32Le => Self::Utf32Le,
+        }
     }
 }
 

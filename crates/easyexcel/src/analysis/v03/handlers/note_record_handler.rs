@@ -49,7 +49,7 @@ impl XlsRecordHandler for NoteRecordHandler {
     /// Java `NoteRecordHandler.processRecord` — parses row/col; text via cache.
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
         /// BIFF `Note` sid (POI `NoteRecord.sid`)
-        const NOTE_SID: u16 = 0x001C;
+        const NOTE_SID: u16 = easyexcel_xls::biff8::record_sid::NOTE_SID;
         if !self.enabled || record_sid != NOTE_SID || data.len() < 6 {
             return;
         }

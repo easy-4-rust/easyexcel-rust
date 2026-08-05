@@ -56,7 +56,7 @@ impl EofRecordHandler {
 }
 
 /// BIFF `EOF` record sid. (POI `EOFRecord.sid`)
-pub const EOF_SID: u16 = 0x000A;
+pub use easyexcel_xls::biff8::record_sid::EOF_SID;
 
 impl XlsRecordHandler for EofRecordHandler {
     /// Java `EofRecordHandler.processRecord` — sid gate; use [`Self::decide`] for actions.

@@ -38,7 +38,7 @@ impl BoolErrRecordHandler {
 }
 
 /// BIFF `BoolErr` record sid. (POI `BoolErrRecord.sid`)
-pub const BOOL_ERR_SID: u16 = 0x0205;
+pub use easyexcel_xls::biff8::record_sid::BOOL_ERR_SID;
 
 impl XlsRecordHandler for BoolErrRecordHandler {
     /// Java `BoolErrRecordHandler.processRecord` — boolean branch only.

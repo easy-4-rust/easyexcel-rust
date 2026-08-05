@@ -40,7 +40,7 @@ impl BoundSheetRecordHandler {
 }
 
 /// BIFF `BoundSheet` record sid. (POI `BoundSheetRecord.sid`)
-pub const BOUND_SHEET_SID: u16 = 0x0085;
+pub use easyexcel_xls::biff8::record_sid::BOUND_SHEET_SID;
 
 impl XlsRecordHandler for BoundSheetRecordHandler {
     /// Java `BoundSheetRecordHandler.processRecord` — reads BOF position and

@@ -44,6 +44,17 @@ pub enum Biff8FormulaCachedValue {
     Empty,
 }
 
+/// BIFF8 BOF 记录声明的子流类型。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Biff8BofType {
+    /// 工作簿全局子流。
+    Workbook,
+    /// 工作表子流。
+    Worksheet,
+    /// 其他 BIFF 子流类型。
+    Other(u16),
+}
+
 /// BIFF8 FORMULA 记录。
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Biff8FormulaRecord {
@@ -170,12 +181,18 @@ pub fn decode_formula_record(data: &[u8]) -> Option<Biff8FormulaRecord> {
     })
 }
 
-/// 解码 BOF 记录的类型码。
+/// 解码 BOF 记录的语义化子流类型。
 #[must_use]
-pub fn decode_bof_type_code(data: &[u8]) -> Option<u16> {
-    data.get(2..4)
+pub fn decode_bof_type(data: &[u8]) -> Option<Biff8BofType> {
+    let code = data
+        .get(2..4)
         .and_then(|bytes| bytes.try_into().ok())
-        .map(u16::from_le_bytes)
+        .map(u16::from_le_bytes)?;
+    Some(match code {
+        0x0005 => Biff8BofType::Workbook,
+        0x0010 => Biff8BofType::Worksheet,
+        other => Biff8BofType::Other(other),
+    })
 }
 
 /// 解码 BOUNDSHEET 记录。

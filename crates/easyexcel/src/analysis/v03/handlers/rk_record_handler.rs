@@ -28,7 +28,7 @@ impl RkRecordHandler {
 }
 
 /// BIFF `RK` record sid. (POI `RKRecord.sid`)
-pub const RK_SID: u16 = 0x027E;
+pub use easyexcel_xls::biff8::record_sid::RK_SID;
 
 impl XlsRecordHandler for RkRecordHandler {
     /// Java `RkRecordHandler.processRecord` — yields empty cell (`EasyExcel` quirk).

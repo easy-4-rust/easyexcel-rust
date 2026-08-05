@@ -78,7 +78,7 @@ impl LabelSstRecordHandler {
 }
 
 /// BIFF `LabelSST` record sid. (POI `LabelSSTRecord.sid`)
-pub const LABEL_SST_SID: u16 = 0x00FD;
+pub use easyexcel_xls::biff8::record_sid::LABEL_SST_SID;
 
 impl XlsRecordHandler for LabelSstRecordHandler {
     /// Java `LabelSstRecordHandler.processRecord` — accepts `LabelSST` sid and

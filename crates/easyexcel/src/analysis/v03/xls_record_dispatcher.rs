@@ -30,9 +30,9 @@ use super::handlers::string_record_handler::{STRING_SID, StringRecordHandler};
 use super::handlers::text_object_record_handler::{TEXT_OBJECT_SID, TextObjectRecordHandler};
 use super::xls_record_handler::XlsRecordHandler;
 
-const HYPERLINK_SID: u16 = 0x01B8;
-const MERGE_CELLS_SID: u16 = 0x00E5;
-const NOTE_SID: u16 = 0x001C;
+const HYPERLINK_SID: u16 = easyexcel_xls::biff8::record_sid::HYPERLINK_SID;
+const MERGE_CELLS_SID: u16 = easyexcel_xls::biff8::record_sid::MERGE_CELLS_SID;
+const NOTE_SID: u16 = easyexcel_xls::biff8::record_sid::NOTE_SID;
 const DUMMY_RECORD_SID: u16 = u16::MAX;
 const CONTINUE_SID: u16 = easyexcel_xls::biff8::encode::CONTINUE;
 
@@ -307,21 +307,19 @@ impl XlsRecordDispatcher {
         match record_sid {
             BLANK_SID => self.dispatch_blank(record_sid, data),
             BOF_SID => {
-                if let Some(type_code) =
-                    easyexcel_xls::biff8::event_record::decode_bof_type_code(data)
-                {
-                    match type_code {
-                        0x0005 => {
+                if let Some(bof_type) = easyexcel_xls::biff8::event_record::decode_bof_type(data) {
+                    match bof_type {
+                        easyexcel_xls::biff8::event_record::Biff8BofType::Workbook => {
                             self.state.workbook_bof_count += 1;
                             self.next_sheet_index = 0;
                             self.ignore_record = false;
                         }
-                        0x0010 => {
+                        easyexcel_xls::biff8::event_record::Biff8BofType::Worksheet => {
                             self.state.worksheet_bof_count += 1;
                             self.ignore_record = !self.should_read_sheet(self.next_sheet_index);
                             self.next_sheet_index = self.next_sheet_index.saturating_add(1);
                         }
-                        _ => {}
+                        easyexcel_xls::biff8::event_record::Biff8BofType::Other(_) => {}
                     }
                 }
                 self.bof.process_record(record_sid, data);

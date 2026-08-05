@@ -23,7 +23,7 @@ impl IndexRecordHandler {
 }
 
 /// BIFF `Index` record sid. (POI `IndexRecord.sid`)
-pub const INDEX_SID: u16 = 0x020B;
+pub use easyexcel_xls::biff8::record_sid::INDEX_SID;
 
 impl XlsRecordHandler for IndexRecordHandler {
     /// Java `IndexRecordHandler.processRecord` — reads `lastRowAdd1` when present.
