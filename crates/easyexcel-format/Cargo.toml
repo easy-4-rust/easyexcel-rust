@@ -13,7 +13,9 @@ categories.workspace = true
 [dependencies]
 bigdecimal.workspace = true
 num-bigint.workspace = true
+pure-rust-locales.workspace = true
 ssfmt.workspace = true
+sys-locale.workspace = true
 thiserror.workspace = true
 
 [lints]

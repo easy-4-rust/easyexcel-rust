@@ -44,6 +44,13 @@ impl Format {
     }
 }
 
+/// 判断路径扩展名是否与给定 ASCII 名称一致（忽略大小写）。
+#[must_use]
+pub fn path_has_extension(path: &Path, extension: &str) -> bool {
+    path.extension()
+        .is_some_and(|value| value.eq_ignore_ascii_case(extension))
+}
+
 /// 判断文件头是否为 OLE2/CFB。
 #[must_use]
 pub fn looks_like_cfb(magic: &[u8]) -> bool {

@@ -3,12 +3,14 @@
 #![allow(dead_code)]
 
 use std::fs;
-use std::io::{self, Write};
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{OnceLock, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use tempfile::{Builder, NamedTempFile, TempDir};
+use tempfile::Builder;
+
+pub use tempfile::{NamedTempFile, TempDir, TempPath};
 
 use crate::Error as ExcelError;
 
@@ -16,6 +18,49 @@ static DEFAULT_TEMP_FILE_PREFIX: OnceLock<PathBuf> = OnceLock::new();
 static TEMP_FILE_PREFIX: OnceLock<RwLock<PathBuf>> = OnceLock::new();
 static POI_FILES_PATH: OnceLock<RwLock<PathBuf>> = OnceLock::new();
 static CACHE_PATH: OnceLock<RwLock<PathBuf>> = OnceLock::new();
+
+/// 将非随机访问输入流物化为自动删除文件的所有权守卫。
+#[derive(Debug)]
+pub struct TemporaryInput {
+    path: TempPath,
+}
+
+impl TemporaryInput {
+    /// 读取完整输入流并使用指定后缀创建临时文件。
+    ///
+    /// # Errors
+    ///
+    /// 输入读取、临时文件创建或写入失败时返回 I/O 错误。
+    pub fn from_reader<R>(mut input: R, suffix: &str) -> io::Result<Self>
+    where
+        R: Read,
+    {
+        let mut file = Builder::new()
+            .prefix("easyexcel-input-")
+            .suffix(suffix)
+            .tempfile()?;
+        io::copy(&mut input, &mut file)?;
+        file.flush()?;
+        Ok(Self {
+            path: file.into_temp_path(),
+        })
+    }
+
+    /// 将完整字节内容写入指定后缀的自动删除文件。
+    ///
+    /// # Errors
+    ///
+    /// 临时文件创建或写入失败时返回 I/O 错误。
+    pub fn from_bytes(bytes: &[u8], suffix: &str) -> io::Result<Self> {
+        Self::from_reader(bytes, suffix)
+    }
+
+    /// 返回物化文件路径。
+    #[must_use]
+    pub fn path(&self) -> &Path {
+        self.path.as_ref()
+    }
+}
 
 fn default_temp_file_prefix() -> PathBuf {
     DEFAULT_TEMP_FILE_PREFIX
@@ -59,6 +104,15 @@ fn replace_configured_path(lock: &RwLock<PathBuf>, path: PathBuf) {
 /// 当 `path` 不存在或不可读时返回对应的 IO 错误。
 pub fn open_input_stream(path: &Path) -> io::Result<std::fs::File> {
     fs::File::open(path)
+}
+
+/// 创建并截断输出文件。
+///
+/// # Errors
+///
+/// 文件无法创建或截断时返回 I/O 错误。
+pub fn open_output_stream(path: &Path) -> io::Result<std::fs::File> {
+    fs::File::create(path)
 }
 
 /// Mirrors `com.alibaba.excel.util.FileUtils#writeToFile`.

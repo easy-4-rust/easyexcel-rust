@@ -1,10 +1,12 @@
 //! 对应 Java：`com.alibaba.excel.read.builder.ExcelReaderBuilder`.
 
 use std::cell::RefCell;
-use std::io::{Read, Write};
+use std::io::Read;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
+
+use easyexcel_io::io::file_utils::TemporaryInput;
 
 use crate::core::{
     AnalysisContext, CellExtraType, CsvCharset, CustomReadObject, ExcelRow, ReadDefaultReturn,
@@ -22,7 +24,7 @@ pub struct ExcelReaderBuilder {
     /// Mirrors `ReadWorkbook.file`.
     pub file: Option<PathBuf>,
     /// Guard for a caller-supplied Java-style `InputStream`.
-    temporary_input: Option<Arc<tempfile::TempPath>>,
+    temporary_input: Option<Arc<TemporaryInput>>,
     /// Collapsed read options from Java `ReadWorkbook` + parameter builders.
     pub options: ReadOptions,
 }
@@ -52,21 +54,12 @@ impl ExcelReaderBuilder {
     /// # Errors
     ///
     /// 当输入流读取失败或临时文件创建/写入失败时返回 [`ExcelError`]。
-    pub fn input_stream<R>(mut self, mut input: R) -> Result<Self>
+    pub fn input_stream<R>(mut self, input: R) -> Result<Self>
     where
         R: Read,
     {
-        let mut bytes = Vec::new();
-        input.read_to_end(&mut bytes)?;
-        let suffix = input_suffix(&bytes);
-        let mut file = tempfile::Builder::new()
-            .prefix("easyexcel-input-")
-            .suffix(suffix)
-            .tempfile()?;
-        file.write_all(&bytes)?;
-        file.flush()?;
-        let temporary_input = Arc::new(file.into_temp_path());
-        self.file = Some(temporary_input.to_path_buf());
+        let temporary_input = Arc::new(easyexcel_xlsx::materialize_excel_input(input)?);
+        self.file = Some(temporary_input.path().to_path_buf());
         self.temporary_input = Some(temporary_input);
         Ok(self)
     }
@@ -251,14 +244,9 @@ impl ExcelReaderBuilder {
     }
 }
 
+#[cfg(test)]
 fn input_suffix(bytes: &[u8]) -> &'static str {
-    match easyexcel_io::Format::from_magic(bytes) {
-        easyexcel_io::Format::Xlsx => ".xlsx",
-        easyexcel_io::Format::Xls if easyexcel_xlsx::is_encrypted_ooxml(bytes) => ".xlsx",
-        easyexcel_io::Format::Xls => ".xls",
-        easyexcel_io::Format::Csv => ".csv",
-        _ => ".csv",
-    }
+    easyexcel_xlsx::excel_input_suffix(bytes)
 }
 
 /// An [`ExcelReaderBuilder`] carrying its registered listener.

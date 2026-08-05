@@ -5,7 +5,7 @@
 
 use std::str::FromStr;
 
-use bigdecimal::{BigDecimal, RoundingMode};
+use bigdecimal::{BigDecimal, RoundingMode, ToPrimitive};
 use num_bigint::BigInt;
 
 /// 数字格式解析和渲染错误。
@@ -29,6 +29,49 @@ impl NumberFormatError {
     pub fn message(&self) -> &str {
         &self.message
     }
+}
+
+/// 将任意精度十进制数转换为有限 `f64`。
+///
+/// # Errors
+///
+/// 超出目标电子表格数值范围时返回格式错误。
+pub fn finite_decimal_f64(
+    value: &BigDecimal,
+    format: &str,
+) -> Result<f64, NumberFormatError> {
+    value.to_f64().filter(|value| value.is_finite()).ok_or_else(|| {
+        NumberFormatError::new(format!("decimal value exceeds {format} numeric range"))
+    })
+}
+
+/// 判断整数十进制数是否超出 Excel 可精确表示的 53 位范围。
+///
+/// # Errors
+///
+/// 数值无法转换为有限 Excel 数字时返回格式错误。
+pub fn decimal_integer_requires_text(value: &BigDecimal) -> Result<bool, NumberFormatError> {
+    const MAX_EXACT_EXCEL_INTEGER: i64 = 9_007_199_254_740_991;
+    let _ = finite_decimal_f64(value, "Excel")?;
+    if value != &value.with_scale(0) {
+        return Ok(false);
+    }
+    let maximum = BigDecimal::from(MAX_EXACT_EXCEL_INTEGER);
+    let minimum = -maximum.clone();
+    Ok(value > &maximum || value < &minimum)
+}
+
+/// 将 chrono/strftime 日期格式占位符转换为 Excel 数字格式代码。
+#[must_use]
+pub fn excel_date_format_code(format: Option<&str>, default: &str) -> String {
+    format
+        .unwrap_or(default)
+        .replace("%Y", "yyyy")
+        .replace("%m", "mm")
+        .replace("%d", "dd")
+        .replace("%H", "hh")
+        .replace("%M", "mm")
+        .replace("%S", "ss")
 }
 
 /// Java `java.math.RoundingMode` 对应的中立舍入模式。

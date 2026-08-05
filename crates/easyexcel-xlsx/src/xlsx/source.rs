@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use easyexcel_io::{Error, Result};
+use easyexcel_io::io::file_utils::TemporaryInput;
 
 /// 可 seek 的 XLSX 输入流。
 pub enum XlsxInput {
@@ -76,4 +77,31 @@ impl XlsxSource {
 #[must_use]
 pub fn is_compound_document(reader: &mut dyn BufRead) -> bool {
     reader.fill_buf().is_ok_and(easyexcel_io::looks_like_cfb)
+}
+
+/// 根据输入魔数选择物化文件后缀。
+#[must_use]
+pub fn excel_input_suffix(bytes: &[u8]) -> &'static str {
+    match easyexcel_io::Format::from_magic(bytes) {
+        easyexcel_io::Format::Xlsx => ".xlsx",
+        easyexcel_io::Format::Xls if super::crypto::is_encrypted_ooxml(bytes) => ".xlsx",
+        easyexcel_io::Format::Xls => ".xls",
+        easyexcel_io::Format::Csv => ".csv",
+        _ => ".csv",
+    }
+}
+
+/// 将 Java 风格非随机访问输入流物化为自动删除的 Excel 输入文件。
+///
+/// # Errors
+///
+/// 输入读取、格式探测或临时文件写入失败时返回错误。
+pub fn materialize_excel_input<R>(mut input: R) -> Result<TemporaryInput>
+where
+    R: Read,
+{
+    let mut bytes = Vec::new();
+    input.read_to_end(&mut bytes)?;
+    let suffix = excel_input_suffix(&bytes);
+    TemporaryInput::from_bytes(&bytes, suffix).map_err(Error::from)
 }

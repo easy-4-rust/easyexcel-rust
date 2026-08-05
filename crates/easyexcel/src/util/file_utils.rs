@@ -7,7 +7,7 @@
 use std::io;
 use std::path::{Path, PathBuf};
 
-use tempfile::NamedTempFile;
+use easyexcel_io::io::file_utils::NamedTempFile;
 
 use crate::core::excel_error::ExcelError;
 

@@ -3,7 +3,7 @@
 //! 对应 Java：`com.alibaba.excel.write.executor.ExcelWriteAddExecutor`（追加写入口）。
 
 use crate::core::{ExcelError, ExcelRow, ExcelWriteMetadata, Result, WriteCellData, WriteHandler};
-use easyexcel_xlsx::xlsx::generation::Worksheet;
+use easyexcel_xlsx::xlsx::generation::{self, Worksheet};
 
 use crate::write::excel_writer_core::{
     HandlerHolderScope, WriteGlobalFlags, apply_loop_merges, collect_handler_content_row_height,
@@ -125,9 +125,7 @@ where
         let head_height = collect_handler_head_row_height(handlers).or(metadata.head_row_height);
         if let Some(height) = head_height {
             for head_row in row_index..row_index + head_rows {
-                worksheet
-                    .set_row_height(head_row, height)
-                    .map_err(format_error)?;
+                generation::set_row_height(worksheet, head_row, height).map_err(format_error)?;
             }
         }
         row_index += head_rows;
@@ -144,9 +142,7 @@ where
         let content_height =
             collect_handler_content_row_height(handlers).or(metadata.content_row_height);
         if let Some(height) = content_height {
-            worksheet
-                .set_row_height(row_index, height)
-                .map_err(format_error)?;
+            generation::set_row_height(worksheet, row_index, height).map_err(format_error)?;
         }
         let (original_cells, cells) = convert_row_at(
             &row,

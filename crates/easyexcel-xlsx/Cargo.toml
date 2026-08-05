@@ -14,6 +14,7 @@ categories.workspace = true
 aes.workspace = true
 bigdecimal.workspace = true
 cfb.workspace = true
+chrono.workspace = true
 easyexcel-cache.workspace = true
 easyexcel-format.workspace = true
 easyexcel-io.workspace = true

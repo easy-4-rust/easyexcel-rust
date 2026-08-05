@@ -38,7 +38,9 @@ pub use legacy_template::{
     LegacyTemplateSheet, load_legacy_template_sheets, seed_legacy_template_workbook,
 };
 pub use reader::{read, read_with_password};
-pub use source::{XlsxInput, XlsxSource, is_compound_document};
+pub use source::{
+    XlsxInput, XlsxSource, excel_input_suffix, is_compound_document, materialize_excel_input,
+};
 pub use stream::stream;
 pub use template_package::OoxmlTemplatePackage;
 pub use writer::write;

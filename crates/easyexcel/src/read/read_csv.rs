@@ -1,10 +1,9 @@
 //! CSV sheet read with the same typed listener lifecycle as XLSX.
 
-use std::fs::File;
 use std::path::Path;
 
 use crate::core::{CellValue, ExcelError, ExcelRow, ReadListener, Result};
-use crate::read::read_helpers::{analysis_context, format_error, reject_extra_read};
+use crate::read::read_helpers::{analysis_context, reject_extra_read};
 use crate::read::read_options::ReadOptions;
 use crate::read::row_consumer::ReadFlow;
 use crate::read::row_processing::process_row;
@@ -26,16 +25,13 @@ where
 {
     reject_extra_read(options, "CSV")?;
     let sheet_name = csv_sheet_name(&options.sheet)?;
-    let input = easyexcel_csv::decode_reader(File::open(path)?, &options.charset)?;
-    let mut reader = csv::ReaderBuilder::new()
-        .has_headers(false)
-        .flexible(true)
-        .from_reader(input);
+    let mut reader = easyexcel_csv::CsvRecordReader::from_path(path, &options.charset)
+        .map_err(ExcelError::from)?;
     read_csv_records::<T, L>(&mut reader.records(), 0, &sheet_name, options, listener)
 }
 
 pub(crate) fn read_csv_records<T, L>(
-    records: &mut dyn Iterator<Item = csv::Result<csv::StringRecord>>,
+    records: &mut dyn Iterator<Item = easyexcel_io::Result<Vec<String>>>,
     start_row: usize,
     sheet_name: &str,
     options: &ReadOptions,
@@ -52,9 +48,9 @@ where
         let row_index = csv_row_index(row_index)?;
         final_row = row_index;
         let cells = record
-            .map_err(format_error)?
-            .iter()
-            .map(|value| CellValue::String(value.to_owned()))
+            .map_err(ExcelError::from)?
+            .into_iter()
+            .map(CellValue::String)
             .collect();
         if process_row::<T>(
             0,

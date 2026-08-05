@@ -7,7 +7,7 @@
 use pure_rust_locales::{Locale as SystemLocale, locale_match};
 use easyexcel_format::SpreadsheetLocale as FormatLocale;
 
-pub(crate) fn formatter_locale(locale: SystemLocale) -> FormatLocale {
+pub(super) fn formatter_locale(locale: SystemLocale) -> FormatLocale {
     let decimal_separator = locale_match!(locale => LC_NUMERIC::DECIMAL_POINT)
         .chars()
         .next()

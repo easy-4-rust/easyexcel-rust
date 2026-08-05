@@ -19,9 +19,7 @@ chrono.workspace = true
 num-bigint.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
-tempfile.workspace = true
 thiserror.workspace = true
-ureq.workspace = true
 url.workspace = true
 # 原 easyexcel-reader 依赖
 # 统一工作簿模型与公式引擎；不再依赖完整的 xls fork。
@@ -35,17 +33,16 @@ easyexcel-formula.workspace = true
 easyexcel-xls.workspace = true
 easyexcel-xlsx.workspace = true
 easyexcel-tabular.workspace = true
-csv.workspace = true
-pure-rust-locales.workspace = true
-sys-locale.workspace = true
 
 [dev-dependencies]
 base64.workspace = true
 calamine.workspace = true
 cfb.workspace = true
+csv.workspace = true
 flate2.workspace = true
 rust_xlsxwriter.workspace = true
 ssfmt.workspace = true
+tempfile.workspace = true
 zip.workspace = true
 # 读取/写入管线的回调契约测试（MockReadListener 断言调用次数/顺序/参数）
 mockall = "0.15"

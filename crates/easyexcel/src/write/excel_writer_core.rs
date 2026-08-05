@@ -6,7 +6,6 @@
 use std::any::type_name;
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
-use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -27,10 +26,11 @@ pub use crate::util::work_book_util::{
     CellCreator, RowCreator, SheetCreator, WorkBookCreator, create_cell, create_row, create_sheet,
     create_work_book,
 };
-use bigdecimal::{BigDecimal, ToPrimitive};
+use bigdecimal::BigDecimal;
+use easyexcel_csv::CsvRecordWriter;
 use easyexcel_xlsx::xlsx::generation::{
-    Color, Format, FormatAlign, FormatBorder, FormatPattern, FormatScript, FormatUnderline, Image,
-    Note, ObjectMovement, Workbook, Worksheet,
+    self, Color, FontFormatSpec, Format, FormatAlign, FormatBorder, FormatPattern, FormatScript,
+    FormatSpec, FormatUnderline, NumberFormatSpec, ObjectMovement, Workbook, Worksheet,
 };
 
 use crate::write::append_rows::append_rows_to_worksheet_with_gzip_and_context;
@@ -170,8 +170,7 @@ pub(crate) fn maybe_trim_cell_string(value: &str, auto_trim: bool) -> Cow<'_, st
 
 /// 对应 Java：NumberUtils 的极值科学计数法阈值。
 pub(crate) fn is_scientific_magnitude(value: f64) -> bool {
-    let absolute = value.abs();
-    absolute >= 1E11 || (absolute <= 1E-10 && absolute > 0.0)
+    easyexcel_format::is_scientific_magnitude(value)
 }
 
 pub(crate) fn validate_stateful_backend(is_csv: bool, password: Option<&str>) -> Result<()> {
@@ -185,13 +184,11 @@ pub(crate) fn validate_stateful_backend(is_csv: bool, password: Option<&str>) ->
 }
 
 pub(crate) fn is_csv_path(path: &Path) -> bool {
-    path.extension()
-        .is_some_and(|extension| extension.eq_ignore_ascii_case("csv"))
+    easyexcel_io::path_has_extension(path, "csv")
 }
 
 pub(crate) fn is_xls_path(path: &Path) -> bool {
-    path.extension()
-        .is_some_and(|extension| extension.eq_ignore_ascii_case("xls"))
+    easyexcel_io::path_has_extension(path, "xls")
 }
 
 pub(crate) fn resolve_excel_type(
@@ -429,7 +426,7 @@ where
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn append_csv_records(
-    writer: &mut csv::Writer<CsvEncodingWriter>,
+    writer: &mut CsvRecordWriter,
     options: &WriteOptions,
     columns: &[(usize, usize, &'static ExcelColumn)],
     schema_is_empty: bool,
@@ -468,7 +465,7 @@ pub(crate) fn append_csv_records(
                 handlers,
                 holder_scope,
             )?;
-            writer.write_record(record).map_err(format_error)?;
+            writer.write_record(record).map_err(ExcelError::from)?;
             row_index = row_index.saturating_add(1);
         }
     }
@@ -497,7 +494,7 @@ pub(crate) fn append_csv_records(
             handlers,
             holder_scope,
         )?;
-        writer.write_record(record).map_err(format_error)?;
+        writer.write_record(record).map_err(ExcelError::from)?;
         row_index += 1;
         data_index += 1;
     }
@@ -510,7 +507,7 @@ pub(crate) fn append_csv_records(
 // 参数与 Java 对应写入路径参数一一对应，拆分结构体会破坏 1:1 可追溯性
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn append_csv_rows<T, I>(
-    writer: &mut csv::Writer<CsvEncodingWriter>,
+    writer: &mut CsvRecordWriter,
     options: &WriteOptions,
     rows: I,
     handlers: &mut [Box<dyn WriteHandler>],
@@ -558,32 +555,23 @@ where
 }
 
 pub(crate) fn create_csv_record_writer(
-    mut output: Box<dyn Write + Send>,
+    output: Box<dyn Write + Send>,
     charset: &CsvCharset,
     with_bom: bool,
-) -> Result<csv::Writer<CsvEncodingWriter>> {
-    let encoding = csv_encoding(charset)?;
-    if with_bom {
-        output.write_all(csv_bom(encoding))?;
-    }
-    Ok(csv::WriterBuilder::new()
-        .flexible(true)
-        .from_writer(CsvEncodingWriter::new(output, encoding)))
+) -> Result<CsvRecordWriter> {
+    CsvRecordWriter::new(output, charset, with_bom).map_err(ExcelError::from)
 }
 
 pub(crate) fn create_stateful_csv_writer(
     path: &Path,
     charset: &CsvCharset,
     with_bom: bool,
-) -> Result<csv::Writer<CsvEncodingWriter>> {
-    create_csv_record_writer(Box::new(File::create(path)?), charset, with_bom)
+) -> Result<CsvRecordWriter> {
+    CsvRecordWriter::from_path(path, charset, with_bom).map_err(ExcelError::from)
 }
 
-pub(crate) fn finish_csv_record_writer(mut writer: csv::Writer<CsvEncodingWriter>) -> Result<()> {
-    writer.flush()?;
-    let mut output = writer.into_inner().map_err(format_error)?;
-    output.finish()?;
-    Ok(())
+pub(crate) fn finish_csv_record_writer(writer: CsvRecordWriter) -> Result<()> {
+    writer.finish().map_err(ExcelError::from)
 }
 
 pub(crate) fn validate_csv_options(options: &WriteOptions) -> Result<()> {
@@ -810,15 +798,7 @@ where
 }
 
 pub(crate) fn save_xls_book(book: &Biff8Book, path: &Path) -> Result<()> {
-    if let Some(parent) = path.parent()
-        && !parent.as_os_str().is_empty()
-    {
-        std::fs::create_dir_all(parent)?;
-    }
-    let mut file = File::create(path)?;
-    book.write_to(&mut file)?;
-    file.flush()?;
-    Ok(())
+    book.save_to_path(path).map_err(ExcelError::from)
 }
 
 pub(crate) fn write_sheet_to_biff8_book<T, I>(
@@ -1570,11 +1550,7 @@ impl HandlerHolderScope {
 }
 
 pub(crate) fn excel_column_width_pixels(width: u16) -> u32 {
-    if width == 0 {
-        0
-    } else {
-        u32::from(width) * 7 + 5
-    }
+    generation::column_width_pixels(width)
 }
 
 /// Sets an OOXML column width that serializes as exact character units.
@@ -1588,15 +1564,11 @@ pub(crate) fn set_xlsx_column_width_chars(
     column: u16,
     chars: u16,
 ) -> Result<()> {
-    let pixels = u32::from(chars).saturating_mul(7);
-    worksheet
-        .set_column_width_pixels(column, pixels)
-        .map_err(format_error)?;
-    Ok(())
+    generation::set_column_width_chars(worksheet, column, chars).map_err(format_error)
 }
 
 pub(crate) fn excel_row_height_pixels(height: Option<u16>) -> u32 {
-    height.map_or(20, |height| (u32::from(height) * 4 + 1) / 3)
+    generation::row_height_pixels(height)
 }
 
 pub(crate) fn write_sheet_to_workbook<T, I>(
@@ -1657,25 +1629,23 @@ where
     // Java `OnceAbsoluteMergeStrategy.afterSheetCreate` via registerWriteHandler
     apply_handler_once_absolute_merge(worksheet, handlers)?;
     for range in &options.merge_ranges {
-        worksheet
-            .merge_range(
-                range.first_row,
-                range.first_column,
-                range.last_row,
-                range.last_column,
-                "",
-                &Format::new(),
-            )
-            .map_err(format_error)?;
+        generation::merge_range(
+            worksheet,
+            range.first_row,
+            range.first_column,
+            range.last_row,
+            range.last_column,
+            "",
+            &generation::new_format(),
+        )
+        .map_err(format_error)?;
     }
     let head_rows = head_rows_for_schema(T::schema(), options)?;
     let freeze_panes = options
         .freeze_panes
         .or_else(|| (options.freeze_head && options.need_head).then_some((head_rows, 0)));
     if let Some((row, column)) = freeze_panes {
-        worksheet
-            .set_freeze_panes(row, column)
-            .map_err(format_error)?;
+        generation::freeze_panes(worksheet, row, column).map_err(format_error)?;
     }
 
     let sheet_context = WriteSheetContext::new(&options.sheet_name);
@@ -1705,7 +1675,7 @@ where
     // Optional autofit first; byte-length widths reapplied so LongestMatch
     // is not autofit-only (Java setColumnWidth(String.getBytes().length)).
     if options.auto_width || handlers_request_auto_width(handlers) {
-        worksheet.autofit();
+        generation::autofit(worksheet);
     }
     // LongestMatch measures in after_cell — re-apply measured widths after write
     // (Java AbstractColumnWidthStyleStrategy.afterCellDispose → setColumnWidth).
@@ -2180,9 +2150,7 @@ where
     for (index, format) in formats.iter().enumerate() {
         let row = u32::try_from(index)
             .map_err(|_| ExcelError::Format("too many template styles".to_owned()))?;
-        worksheet
-            .write_blank(row, 0, format)
-            .map_err(format_error)?;
+        generation::write_blank(worksheet, row, 0, format).map_err(format_error)?;
     }
     let bytes = compiler.save_to_buffer().map_err(format_error)?;
     let mapped = package.import_compiled_styles(&bytes, formats.len())?;
@@ -2381,16 +2349,16 @@ where
     apply_handler_once_absolute_merge(worksheet, handlers)?;
     for range in &write_options.merge_ranges {
         let offset = start_row;
-        worksheet
-            .merge_range(
-                range.first_row.saturating_add(offset),
-                range.first_column,
-                range.last_row.saturating_add(offset),
-                range.last_column,
-                "",
-                &Format::new(),
-            )
-            .map_err(format_error)?;
+        generation::merge_range(
+            worksheet,
+            range.first_row.saturating_add(offset),
+            range.first_column,
+            range.last_row.saturating_add(offset),
+            range.last_column,
+            "",
+            &generation::new_format(),
+        )
+        .map_err(format_error)?;
     }
 
     let sheet_context = WriteSheetContext::new(&target_name);
@@ -2418,7 +2386,7 @@ where
     )?;
     after_sheet(handlers, &sheet_context)?;
     if write_options.auto_width || handlers_request_auto_width(handlers) {
-        worksheet.autofit();
+        generation::autofit(worksheet);
     }
     // Byte-length widths win over optional autofit fallback.
     apply_handler_column_widths::<T>(worksheet, &write_options, handlers)?;
@@ -2444,16 +2412,16 @@ pub(crate) fn apply_loop_merges(
             .column_index
             .checked_add(strategy.column_extend - 1)
             .ok_or_else(|| ExcelError::Format("loop merge column overflow".to_owned()))?;
-        worksheet
-            .merge_range(
-                row_index,
-                strategy.column_index,
-                last_row,
-                last_column,
-                "",
-                &Format::new(),
-            )
-            .map_err(format_error)?;
+        generation::merge_range(
+            worksheet,
+            row_index,
+            strategy.column_index,
+            last_row,
+            last_column,
+            "",
+            &generation::new_format(),
+        )
+        .map_err(format_error)?;
     }
     Ok(())
 }
@@ -2898,16 +2866,16 @@ pub(crate) fn apply_once_absolute_merge_property(
         return Ok(());
     }
     #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-    worksheet
-        .merge_range(
-            merge.first_row_index as u32,
-            merge.first_column_index as u16,
-            merge.last_row_index as u32,
-            merge.last_column_index as u16,
-            "",
-            &Format::new(),
-        )
-        .map_err(format_error)?;
+    generation::merge_range(
+        worksheet,
+        merge.first_row_index as u32,
+        merge.first_column_index as u16,
+        merge.last_row_index as u32,
+        merge.last_column_index as u16,
+        "",
+        &generation::new_format(),
+    )
+    .map_err(format_error)?;
     Ok(())
 }
 
@@ -3447,9 +3415,14 @@ fn write_header_row_with_handlers(
             let format = cell_format(format_context);
             match &context.value {
                 CellValue::String(value) | CellValue::Error(value) => {
-                    worksheet
-                        .write_string_with_format(row_index, context.column_index, value, &format)
-                        .map_err(format_error)?;
+                    generation::write_string_with_format(
+                        worksheet,
+                        row_index,
+                        context.column_index,
+                        value,
+                        &format,
+                    )
+                    .map_err(format_error)?;
                 }
                 value => write_cell(
                     worksheet,
@@ -3465,9 +3438,7 @@ fn write_header_row_with_handlers(
     }
     finish_row_lifecycle(handlers, &row_context)?;
     if let Some(height) = row_context.row().requested_height() {
-        worksheet
-            .set_row_height(row_index, height)
-            .map_err(format_error)?;
+        generation::set_row_height(worksheet, row_index, height).map_err(format_error)?;
     }
     Ok(())
 }
@@ -3488,16 +3459,16 @@ fn merge_dynamic_head_groups(
             usize::try_from(range.first_row.saturating_sub(start_row)).unwrap_or(usize::MAX);
         let label = normalized_head_label(&head[column_position], relative_level);
         let format = cell_format(style.column(columns[column_position].2));
-        worksheet
-            .merge_range(
-                range.first_row,
-                range.first_column,
-                range.last_row,
-                range.last_column,
-                label,
-                &format,
-            )
-            .map_err(format_error)?;
+        generation::merge_range(
+            worksheet,
+            range.first_row,
+            range.first_column,
+            range.last_row,
+            range.last_column,
+            label,
+            &format,
+        )
+        .map_err(format_error)?;
     }
     Ok(())
 }
@@ -3595,9 +3566,7 @@ pub(crate) fn write_data_row_with_handlers(
     }
     finish_row_lifecycle(handlers, &row_context)?;
     if let Some(height) = row_context.row().requested_height() {
-        worksheet
-            .set_row_height(row_index, height)
-            .map_err(format_error)?;
+        generation::set_row_height(worksheet, row_index, height).map_err(format_error)?;
     }
     Ok(())
 }
@@ -3645,21 +3614,17 @@ fn write_cell(
                 if text.is_empty() {
                     // 空字符串经带格式写入会落成空白单元格（store_string 语义），
                     // 无格式写入则整格跳过——为保持优化前输出，回退带格式路径。
-                    let format = Format::new();
-                    return worksheet
-                        .write_string_with_format(row_index, column, text, &format)
-                        .map(|_| ())
-                        .map_err(format_error);
+                    let format = generation::new_format();
+                    return generation::write_string_with_format(
+                        worksheet, row_index, column, text, &format,
+                    )
+                    .map_err(format_error);
                 }
-                return worksheet
-                    .write_string(row_index, column, text)
-                    .map(|_| ())
+                return generation::write_string(worksheet, row_index, column, text)
                     .map_err(format_error);
             }
             CellValue::Bool(flag) => {
-                return worksheet
-                    .write_boolean(row_index, column, *flag)
-                    .map(|_| ())
+                return generation::write_boolean(worksheet, row_index, column, *flag)
                     .map_err(format_error);
             }
             CellValue::Int(number) => {
@@ -3672,19 +3637,20 @@ fn write_cell(
                 {
                     // 科学计数法需要数字格式，落入下方带格式路径。
                 } else {
-                    return worksheet
-                        .write_number(row_index, column, *number)
-                        .map(|_| ())
+                    return generation::write_number(worksheet, row_index, column, *number)
                         .map_err(format_error);
                 }
             }
             CellValue::Decimal(number) => {
                 let numeric = finite_decimal_f64(number, "XLSX")?;
                 if decimal_integer_requires_text(number)? {
-                    return worksheet
-                        .write_string(row_index, column, number.to_plain_string())
-                        .map(|_| ())
-                        .map_err(format_error);
+                    return generation::write_string(
+                        worksheet,
+                        row_index,
+                        column,
+                        number.to_plain_string(),
+                    )
+                    .map_err(format_error);
                 }
                 if global.use_scientific_format
                     && metadata.effective_number_format().is_none()
@@ -3692,16 +3658,12 @@ fn write_cell(
                 {
                     // 科学计数法需要数字格式，落入下方带格式路径。
                 } else {
-                    return worksheet
-                        .write_number(row_index, column, numeric)
-                        .map(|_| ())
+                    return generation::write_number(worksheet, row_index, column, numeric)
                         .map_err(format_error);
                 }
             }
             CellValue::Formula(text) => {
-                return worksheet
-                    .write_formula(row_index, column, text.as_str())
-                    .map(|_| ())
+                return generation::write_formula(worksheet, row_index, column, text.as_str())
                     .map_err(format_error);
             }
             // 其余类型（Empty/Date/DateTime/Hyperlink/Comment/Image/RichText/
@@ -3713,19 +3675,22 @@ fn write_cell(
     let format = cell_format(style);
     match value {
         CellValue::Empty => {
-            worksheet
-                .write_blank(row_index, column, &format)
+            generation::write_blank(worksheet, row_index, column, &format)
                 .map_err(format_error)?;
         }
         CellValue::String(value) | CellValue::Error(value) => {
             let text = maybe_trim_cell_string(value, global.auto_trim);
-            worksheet
-                .write_string_with_format(row_index, column, text.as_ref(), &format)
-                .map_err(format_error)?;
+            generation::write_string_with_format(
+                worksheet,
+                row_index,
+                column,
+                text.as_ref(),
+                &format,
+            )
+            .map_err(format_error)?;
         }
         CellValue::Bool(value) => {
-            worksheet
-                .write_boolean_with_format(row_index, column, *value, &format)
+            generation::write_boolean_with_format(worksheet, row_index, column, *value, &format)
                 .map_err(format_error)?;
         }
         CellValue::Int(value) => {
@@ -3737,18 +3702,28 @@ fn write_cell(
                 && metadata.effective_number_format().is_none()
                 && is_scientific_magnitude(*value)
             {
-                cell_format = cell_format.set_num_format("0.#####E0");
+                cell_format = generation::with_number_format(cell_format, "0.#####E0");
             }
-            worksheet
-                .write_number_with_format(row_index, column, *value, &cell_format)
-                .map_err(format_error)?;
+            generation::write_number_with_format(
+                worksheet,
+                row_index,
+                column,
+                *value,
+                &cell_format,
+            )
+            .map_err(format_error)?;
         }
         CellValue::Decimal(value) => {
             let numeric = finite_decimal_f64(value, "XLSX")?;
             if decimal_integer_requires_text(value)? {
-                worksheet
-                    .write_string_with_format(row_index, column, value.to_plain_string(), &format)
-                    .map_err(format_error)?;
+                generation::write_string_with_format(
+                    worksheet,
+                    row_index,
+                    column,
+                    value.to_plain_string(),
+                    &format,
+                )
+                .map_err(format_error)?;
                 return Ok(());
             }
             let mut cell_format = format.clone();
@@ -3756,53 +3731,73 @@ fn write_cell(
                 && metadata.effective_number_format().is_none()
                 && is_scientific_magnitude(numeric)
             {
-                cell_format = cell_format.set_num_format("0.#####E0");
+                cell_format = generation::with_number_format(cell_format, "0.#####E0");
             }
-            worksheet
-                .write_number_with_format(row_index, column, numeric, &cell_format)
-                .map_err(format_error)?;
+            generation::write_number_with_format(
+                worksheet,
+                row_index,
+                column,
+                numeric,
+                &cell_format,
+            )
+            .map_err(format_error)?;
         }
         CellValue::Date(value) => {
-            let format = format.clone().set_num_format(excel_date_format(
+            let number_format = excel_date_format(
                 metadata.effective_date_time_format(),
                 "yyyy-mm-dd",
-            ));
+            );
+            let format = generation::with_number_format(format.clone(), &number_format);
             if global.use_1904_windowing {
                 let serial = date_to_excel_serial_with_windowing(*value, true);
-                worksheet
-                    .write_number_with_format(row_index, column, serial, &format)
-                    .map_err(format_error)?;
+                generation::write_number_with_format(
+                    worksheet, row_index, column, serial, &format,
+                )
+                .map_err(format_error)?;
             } else {
-                worksheet
-                    .write_datetime_with_format(row_index, column, *value, &format)
+                generation::write_date_with_format(worksheet, row_index, column, *value, &format)
                     .map_err(format_error)?;
             }
         }
         CellValue::DateTime(value) => {
-            let format = format.clone().set_num_format(excel_date_format(
+            let number_format = excel_date_format(
                 metadata.effective_date_time_format(),
                 "yyyy-mm-dd hh:mm:ss",
-            ));
+            );
+            let format = generation::with_number_format(format.clone(), &number_format);
             if global.use_1904_windowing {
                 let serial = datetime_to_excel_serial_with_windowing(*value, true);
-                worksheet
-                    .write_number_with_format(row_index, column, serial, &format)
-                    .map_err(format_error)?;
+                generation::write_number_with_format(
+                    worksheet, row_index, column, serial, &format,
+                )
+                .map_err(format_error)?;
             } else {
-                worksheet
-                    .write_datetime_with_format(row_index, column, *value, &format)
-                    .map_err(format_error)?;
+                generation::write_datetime_with_format(
+                    worksheet, row_index, column, *value, &format,
+                )
+                .map_err(format_error)?;
             }
         }
         CellValue::Formula(value) => {
-            worksheet
-                .write_formula_with_format(row_index, column, value.as_str(), &format)
-                .map_err(format_error)?;
+            generation::write_formula_with_format(
+                worksheet,
+                row_index,
+                column,
+                value.as_str(),
+                &format,
+            )
+            .map_err(format_error)?;
         }
         CellValue::Hyperlink { url, text } => {
-            worksheet
-                .write_url_with_options(row_index, column, url.as_str(), text, "", Some(&format))
-                .map_err(format_error)?;
+            generation::write_url_with_options(
+                worksheet,
+                row_index,
+                column,
+                url.as_str(),
+                text,
+                &format,
+            )
+            .map_err(format_error)?;
         }
         CellValue::Comment { value, text } => {
             write_cell(
@@ -3814,14 +3809,10 @@ fn write_cell(
                 style,
                 image_layout,
             )?;
-            worksheet
-                .insert_note(row_index, column, &Note::new(text))
-                .map_err(format_error)?;
+            generation::insert_note(worksheet, row_index, column, text).map_err(format_error)?;
         }
         CellValue::Image(bytes) => {
-            let image = image_from_buffer(bytes)?;
-            worksheet
-                .insert_image_fit_to_cell(row_index, column, &image, true)
+            generation::insert_image_fit_to_cell(worksheet, row_index, column, bytes, true)
                 .map_err(format_error)?;
         }
         CellValue::RichText(value) => {
@@ -3845,15 +3836,6 @@ fn write_cell(
     Ok(())
 }
 
-fn image_from_buffer(bytes: &[u8]) -> Result<Image> {
-    if bytes.len() < 8 {
-        return Err(ExcelError::Format(
-            "image buffer is too short to contain a valid header".to_owned(),
-        ));
-    }
-    Image::new_from_buffer(bytes).map_err(format_error)
-}
-
 fn write_rich_text(
     worksheet: &mut Worksheet,
     row: u32,
@@ -3862,20 +3844,12 @@ fn write_rich_text(
     cell_format: &Format,
 ) -> Result<()> {
     if data.text_string().is_empty() {
-        worksheet
-            .write_string_with_format(row, column, "", cell_format)
-            .map(|_| ())
+        generation::write_string_with_format(worksheet, row, column, "", cell_format)
             .map_err(format_error)?;
         return Ok(());
     }
     let runs = rich_text_runs(data)?;
-    let references = runs
-        .iter()
-        .map(|(format, text)| (format, text.as_str()))
-        .collect::<Vec<_>>();
-    worksheet
-        .write_rich_string_with_format(row, column, &references, cell_format)
-        .map(|_| ())
+    generation::write_rich_string(worksheet, row, column, &runs, cell_format)
         .map_err(format_error)
 }
 
@@ -3916,7 +3890,7 @@ fn rich_text_runs(data: &RichTextStringData) -> Result<Vec<(Format, String)>> {
                 .find(|interval| interval.start_index() <= start && interval.end_index() >= end)
                 .map_or(data.write_font(), |interval| Some(interval.write_font()));
             Ok((
-                font.map_or_else(Format::new, rich_text_format),
+                font.map_or_else(generation::new_format, rich_text_format),
                 text[start_byte..end_byte].to_owned(),
             ))
         })
@@ -3938,47 +3912,20 @@ fn utf16_byte_index(text: &str, target: usize) -> Option<usize> {
 }
 
 fn rich_text_format(font: &WriteFont) -> Format {
-    let mut format = Format::new();
-    if let Some(name) = font.get_font_name() {
-        format = format.set_font_name(name);
-    }
-    if let Some(size) = font.get_font_height_in_points() {
-        format = format.set_font_size(size);
-    }
-    if let Some(italic) = font.get_italic() {
-        format = if italic {
-            format.set_italic()
-        } else {
-            format.unset_italic()
-        };
-    }
-    if let Some(strikeout) = font.get_strikeout() {
-        format = if strikeout {
-            format.set_font_strikethrough()
-        } else {
-            format.unset_font_strikethrough()
-        };
-    }
-    if let Some(color) = font.get_color() {
-        format = format.set_font_color(annotation_color(color));
-    }
-    if let Some(script) = font.get_type_offset() {
-        format = format.set_font_script(annotation_font_script(script));
-    }
-    if let Some(underline) = font.get_underline() {
-        format = format.set_underline(annotation_underline(underline));
-    }
-    if let Some(charset) = font.get_charset() {
-        format = format.set_font_charset(charset);
-    }
-    if let Some(bold) = font.get_bold() {
-        format = if bold {
-            format.set_bold()
-        } else {
-            format.unset_bold()
-        };
-    }
-    format
+    generation::build_format(&FormatSpec {
+        font: FontFormatSpec {
+            name: font.get_font_name().map(str::to_owned),
+            size: font.get_font_height_in_points(),
+            italic: font.get_italic(),
+            strikeout: font.get_strikeout(),
+            color: font.get_color().map(annotation_color),
+            script: font.get_type_offset().map(annotation_font_script),
+            underline: font.get_underline().map(annotation_underline),
+            charset: font.get_charset(),
+            bold: font.get_bold(),
+        },
+        ..FormatSpec::default()
+    })
 }
 
 fn insert_image_data(
@@ -4067,24 +4014,18 @@ fn insert_image_data(
         }
         AnchorType::DontMoveAndResize => ObjectMovement::DontMoveOrSizeWithCells,
     };
-    let image = image_from_buffer(data.image())?
-        .set_scale_to_size(width, height, false)
-        .set_object_movement(movement);
-    insert_scaled_image(worksheet, first_row, first_column, &image, left, top)
-}
-
-fn insert_scaled_image(
-    worksheet: &mut Worksheet,
-    row: u32,
-    column: u16,
-    image: &Image,
-    left: u32,
-    top: u32,
-) -> Result<()> {
-    worksheet
-        .insert_image_with_offset(row, column, image, left, top)
-        .map(|_| ())
-        .map_err(format_error)
+    generation::insert_scaled_image(
+        worksheet,
+        first_row,
+        first_column,
+        data.image(),
+        width,
+        height,
+        movement,
+        left,
+        top,
+    )
+    .map_err(format_error)
 }
 
 fn resolve_anchor_coordinate(
@@ -4107,7 +4048,7 @@ fn resolve_anchor_coordinate(
 // 按值传入与调用点构造惯例一致，改引用会增加不必要的借用链
 #[allow(clippy::large_types_passed_by_value)]
 fn cell_format(context: CellFormatContext<'_>) -> Format {
-    let mut format = Format::new();
+    let mut format = generation::new_format();
     // Annotation style merged with handler strategy style
     // (Java `WriteCellStyle.merge(strategy, cellData.getOrCreateStyle())`).
     let mut annotation_cell = context.converted_cell;
@@ -4137,7 +4078,7 @@ fn cell_format(context: CellFormatContext<'_>) -> Format {
         format = apply_annotation_cell_style(format, style);
     }
     if !merged_has_data_format && let Some(number_format) = context.converted_data_format {
-        format = format.set_num_format(number_format);
+        format = generation::with_number_format(format, number_format);
     }
     if let Some(font) = font {
         format = apply_annotation_font_style(format, font);
@@ -4145,232 +4086,92 @@ fn cell_format(context: CellFormatContext<'_>) -> Format {
     let Some(style) = context.explicit else {
         return format;
     };
-    if style.bold {
-        format = format.set_bold();
-    }
-    if style.italic {
-        format = format.set_italic();
-    }
-    if let Some(color) = style.font_color {
-        format = format.set_font_color(color);
-    }
-    if let Some(color) = style.background_color {
-        format = format
-            .set_background_color(color)
-            .set_pattern(FormatPattern::Solid);
-    }
-    if let Some(alignment) = style.horizontal_alignment {
-        format = format.set_align(horizontal_format_align(alignment));
-    }
-    if let Some(alignment) = style.vertical_alignment {
-        format = format.set_align(vertical_format_align(alignment));
-    }
-    if style.wrap_text {
-        format = format.set_text_wrap();
-    }
-    if let Some(number_format) = &style.number_format {
-        format = format.set_num_format(number_format);
-    }
-    format
+    generation::apply_format_spec(
+        format,
+        &FormatSpec {
+            horizontal_alignment: style.horizontal_alignment.map(horizontal_format_align),
+            vertical_alignment: style.vertical_alignment.map(vertical_format_align),
+            wrap_text: style.wrap_text.then_some(true),
+            fill_pattern: style.background_color.map(|_| FormatPattern::Solid),
+            fill_background_color: style.background_color,
+            number_format: style
+                .number_format
+                .as_ref()
+                .map(|value| NumberFormatSpec::Custom(value.clone())),
+            font: FontFormatSpec {
+                bold: style.bold.then_some(true),
+                italic: style.italic.then_some(true),
+                color: style.font_color,
+                ..FontFormatSpec::default()
+            },
+            ..FormatSpec::default()
+        },
+    )
 }
 
 fn apply_annotation_cell_style(mut format: Format, style: ExcelCellStyle) -> Format {
-    if let Some(hidden) = style.hidden {
-        format = if hidden {
-            format.set_hidden()
-        } else {
-            format.unset_hidden()
-        };
-    }
-    if let Some(locked) = style.locked {
-        format = if locked {
-            format.set_locked()
-        } else {
-            format.set_unlocked()
-        };
-    }
-    if let Some(quote_prefix) = style.quote_prefix {
-        format = if quote_prefix {
-            format.set_quote_prefix()
-        } else {
-            format.unset_quote_prefix()
-        };
-    }
-    if let Some(alignment) = style.horizontal_alignment {
-        format = format.set_align(annotation_horizontal_format_align(alignment));
-    }
-    if let Some(wrapped) = style.wrapped {
-        format = if wrapped {
-            format.set_text_wrap()
-        } else {
-            format.unset_text_wrap()
-        };
-    }
-    if let Some(alignment) = style.vertical_alignment {
-        format = format.set_align(annotation_vertical_format_align(alignment));
-    }
-    if let Some(rotation) = style.rotation {
-        format = format.set_rotation(rotation);
-    }
-    if let Some(indent) = style.indent {
-        format = format.set_indent(indent);
-    }
-    if let Some(border) = style.border_left {
-        format = format.set_border_left(annotation_border_style(border));
-    }
-    if let Some(border) = style.border_right {
-        format = format.set_border_right(annotation_border_style(border));
-    }
-    if let Some(border) = style.border_top {
-        format = format.set_border_top(annotation_border_style(border));
-    }
-    if let Some(border) = style.border_bottom {
-        format = format.set_border_bottom(annotation_border_style(border));
-    }
-    if let Some(color) = style.left_border_color {
-        format = format.set_border_left_color(annotation_color(color));
-    }
-    if let Some(color) = style.right_border_color {
-        format = format.set_border_right_color(annotation_color(color));
-    }
-    if let Some(color) = style.top_border_color {
-        format = format.set_border_top_color(annotation_color(color));
-    }
-    if let Some(color) = style.bottom_border_color {
-        format = format.set_border_bottom_color(annotation_color(color));
-    }
-    if let Some(pattern) = style.fill_pattern {
-        format = format.set_pattern(annotation_fill_pattern(pattern));
-    }
-    if let Some(color) = style.fill_background_color {
-        format = format.set_background_color(annotation_color(color));
-    }
-    if let Some(color) = style.fill_foreground_color {
-        format = format.set_foreground_color(annotation_color(color));
-    }
-    if let Some(shrink) = style.shrink_to_fit {
-        format = if shrink {
-            format.set_shrink()
-        } else {
-            format.unset_shrink()
-        };
-    }
-    if let Some(data_format) = style.data_format {
-        format = match data_format {
-            ExcelDataFormat::Builtin(index) => format.set_num_format_index(index),
-            ExcelDataFormat::Custom(value) => format.set_num_format(value),
-        };
-    }
+    let font = style.font;
+    let spec = FormatSpec {
+        hidden: style.hidden,
+        locked: style.locked,
+        quote_prefix: style.quote_prefix,
+        horizontal_alignment: style
+            .horizontal_alignment
+            .map(annotation_horizontal_format_align),
+        vertical_alignment: style
+            .vertical_alignment
+            .map(annotation_vertical_format_align),
+        wrap_text: style.wrapped,
+        rotation: style.rotation,
+        indent: style.indent,
+        border_left: style.border_left.map(annotation_border_style),
+        border_right: style.border_right.map(annotation_border_style),
+        border_top: style.border_top.map(annotation_border_style),
+        border_bottom: style.border_bottom.map(annotation_border_style),
+        left_border_color: style.left_border_color.map(annotation_color),
+        right_border_color: style.right_border_color.map(annotation_color),
+        top_border_color: style.top_border_color.map(annotation_color),
+        bottom_border_color: style.bottom_border_color.map(annotation_color),
+        fill_pattern: style.fill_pattern.map(annotation_fill_pattern),
+        fill_background_color: style.fill_background_color.map(annotation_color),
+        fill_foreground_color: style.fill_foreground_color.map(annotation_color),
+        shrink_to_fit: style.shrink_to_fit,
+        number_format: style.data_format.map(|value| match value {
+            ExcelDataFormat::Builtin(index) => NumberFormatSpec::Builtin(index),
+            ExcelDataFormat::Custom(value) => NumberFormatSpec::Custom(value),
+        }),
+        font: FontFormatSpec::default(),
+    };
+    format = generation::apply_format_spec(format, &spec);
     // Nested WriteFont / ExcelFontStyle (Java WriteCellStyle.writeFont)
-    if let Some(font) = style.font {
+    if let Some(font) = font {
         format = apply_annotation_font_style(format, font);
     }
     format
 }
 
-fn apply_annotation_font_style(mut format: Format, style: ExcelFontStyle) -> Format {
-    if let Some(font_name) = style.font_name {
-        format = format.set_font_name(font_name);
-    }
-    if let Some(font_height) = style.font_height_in_points {
-        format = format.set_font_size(font_height);
-    }
-    if let Some(italic) = style.italic {
-        format = if italic {
-            format.set_italic()
-        } else {
-            format.unset_italic()
-        };
-    }
-    if let Some(strikeout) = style.strikeout {
-        format = if strikeout {
-            format.set_font_strikethrough()
-        } else {
-            format.unset_font_strikethrough()
-        };
-    }
-    if let Some(color) = style.color {
-        format = format.set_font_color(annotation_color(color));
-    }
-    if let Some(script) = style.type_offset {
-        format = format.set_font_script(annotation_font_script(script));
-    }
-    if let Some(underline) = style.underline {
-        format = format.set_underline(annotation_underline(underline));
-    }
-    if let Some(charset) = style.charset {
-        format = format.set_font_charset(charset);
-    }
-    if let Some(bold) = style.bold {
-        format = if bold {
-            format.set_bold()
-        } else {
-            format.unset_bold()
-        };
-    }
-    format
+fn apply_annotation_font_style(format: Format, style: ExcelFontStyle) -> Format {
+    generation::apply_font_format_spec(
+        format,
+        &FontFormatSpec {
+            name: style.font_name,
+            size: style.font_height_in_points,
+            italic: style.italic,
+            strikeout: style.strikeout,
+            color: style.color.map(annotation_color),
+            script: style.type_offset.map(annotation_font_script),
+            underline: style.underline.map(annotation_underline),
+            charset: style.charset,
+            bold: style.bold,
+        },
+    )
 }
 
 fn annotation_color(color: ExcelColor) -> Color {
     match color {
-        ExcelColor::Rgb(value) => Color::RGB(value),
-        ExcelColor::Indexed(64) => Color::Automatic,
-        ExcelColor::Indexed(index) => indexed_color(index),
+        ExcelColor::Rgb(value) => generation::color_from_rgb(value),
+        ExcelColor::Indexed(index) => generation::color_from_indexed(index),
     }
-}
-
-fn indexed_color(index: u8) -> Color {
-    let rgb = match index {
-        0 | 8 => 0x0000_0000,
-        1 | 9 => 0x00ff_ffff,
-        2 | 10 => 0x00ff_0000,
-        3 | 11 => 0x0000_ff00,
-        4 | 12 | 39 => 0x0000_00ff,
-        5 | 13 | 34 => 0x00ff_ff00,
-        6 | 14 | 33 => 0x00ff_00ff,
-        7 | 15 | 35 => 0x0000_ffff,
-        16 | 37 => 0x0080_0000,
-        17 => 0x0000_8000,
-        18 | 32 => 0x0000_0080,
-        19 => 0x0080_8000,
-        20 | 36 => 0x0080_0080,
-        21 | 38 => 0x0000_8080,
-        22 => 0x00c0_c0c0,
-        23 => 0x0080_8080,
-        24 => 0x0099_99ff,
-        25 => 0x007f_0000,
-        26 => 0x00ff_ffcc,
-        27 | 41 => 0x00cc_ffff,
-        28 => 0x0066_0066,
-        29 => 0x00ff_8080,
-        30 => 0x0000_66cc,
-        31 => 0x00cc_ccff,
-        40 => 0x0000_ccff,
-        42 => 0x00cc_ffcc,
-        43 => 0x00ff_ff99,
-        44 => 0x0099_ccff,
-        45 => 0x00ff_99cc,
-        46 => 0x00cc_99ff,
-        47 => 0x00ff_cc99,
-        48 => 0x0033_66ff,
-        49 => 0x0033_cccc,
-        50 => 0x0099_cc00,
-        51 => 0x00ff_cc00,
-        52 => 0x00ff_9900,
-        53 => 0x00ff_6600,
-        54 => 0x0066_6699,
-        55 => 0x0096_9696,
-        56 => 0x0000_3366,
-        57 => 0x0033_9966,
-        58 => 0x0000_3300,
-        59 => 0x0033_3300,
-        60 => 0x0099_3300,
-        61 => 0x0099_3366,
-        62 => 0x0033_3399,
-        63 => 0x0033_3333,
-        _ => return Color::Default,
-    };
-    Color::RGB(rgb)
 }
 
 const fn annotation_horizontal_format_align(alignment: ExcelHorizontalAlignment) -> FormatAlign {
@@ -4486,20 +4287,7 @@ fn write_integer(
     value: i64,
     format: &Format,
 ) -> Result<()> {
-    const MAX_EXACT_EXCEL_INTEGER: u64 = 9_007_199_254_740_991;
-    if value.unsigned_abs() <= MAX_EXACT_EXCEL_INTEGER {
-        #[allow(clippy::cast_precision_loss)]
-        let number = value as f64;
-        worksheet
-            .write_number_with_format(row, column, number, format)
-            .map(|_| ())
-            .map_err(format_error)
-    } else {
-        worksheet
-            .write_string_with_format(row, column, value.to_string(), format)
-            .map(|_| ())
-            .map_err(format_error)
-    }
+    generation::write_integer(worksheet, row, column, value, Some(format)).map_err(format_error)
 }
 
 /// 无格式整数写入（无样式快速路径专用）：语义与 [`write_integer`] 完全一致，
@@ -4510,54 +4298,23 @@ fn write_integer_unformatted(
     column: u16,
     value: i64,
 ) -> Result<()> {
-    const MAX_EXACT_EXCEL_INTEGER: u64 = 9_007_199_254_740_991;
-    if value.unsigned_abs() <= MAX_EXACT_EXCEL_INTEGER {
-        #[allow(clippy::cast_precision_loss)]
-        let number = value as f64;
-        worksheet
-            .write_number(row, column, number)
-            .map(|_| ())
-            .map_err(format_error)
-    } else {
-        worksheet
-            .write_string(row, column, value.to_string())
-            .map(|_| ())
-            .map_err(format_error)
-    }
+    generation::write_integer(worksheet, row, column, value, None).map_err(format_error)
 }
 
 pub(crate) fn finite_decimal_f64(value: &BigDecimal, format: &str) -> Result<f64> {
-    value
-        .to_f64()
-        .filter(|value| value.is_finite())
-        .ok_or_else(|| ExcelError::Format(format!("decimal value exceeds {format} numeric range")))
+    easyexcel_format::finite_decimal_f64(value, format).map_err(format_error)
 }
 
 pub(crate) fn decimal_integer_requires_text(value: &BigDecimal) -> Result<bool> {
-    const MAX_EXACT_EXCEL_INTEGER: i64 = 9_007_199_254_740_991;
-    let _ = finite_decimal_f64(value, "Excel")?;
-    if value != &value.with_scale(0) {
-        return Ok(false);
-    }
-    let maximum = BigDecimal::from(MAX_EXACT_EXCEL_INTEGER);
-    let minimum = -maximum.clone();
-    Ok(value > &maximum || value < &minimum)
+    easyexcel_format::decimal_integer_requires_text(value).map_err(format_error)
 }
 
 fn excel_date_format(format: Option<&str>, default: &str) -> String {
-    format
-        .unwrap_or(default)
-        .replace("%Y", "yyyy")
-        .replace("%m", "mm")
-        .replace("%d", "dd")
-        .replace("%H", "hh")
-        .replace("%M", "mm")
-        .replace("%S", "ss")
+    easyexcel_format::excel_date_format_code(format, default)
 }
 
 pub(crate) fn to_column(index: usize) -> Result<u16> {
-    u16::try_from(index)
-        .map_err(|_| ExcelError::Format("column index exceeds XLSX limit".to_owned()))
+    generation::column_index(index).map_err(format_error)
 }
 
 pub(crate) fn format_error(error: impl std::fmt::Display) -> ExcelError {

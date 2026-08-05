@@ -14,6 +14,7 @@
 
 use std::collections::{BTreeMap, HashMap};
 use std::io::{Cursor, Write};
+use std::path::Path;
 
 use chrono::{NaiveDate, NaiveDateTime, Timelike};
 use easyexcel_io::{Error as ExcelError, Result};
@@ -409,6 +410,23 @@ impl Biff8Book {
     pub fn write_to<W: Write>(&self, mut writer: W) -> Result<()> {
         let bytes = self.to_cfb_bytes()?;
         writer.write_all(&bytes)?;
+        Ok(())
+    }
+
+    /// 将 BIFF8/OLE2 工作簿写入文件路径。
+    ///
+    /// # Errors
+    ///
+    /// 父目录创建、工作簿序列化、文件创建或写入失败时返回错误。
+    pub fn save_to_path(&self, path: &Path) -> Result<()> {
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            std::fs::create_dir_all(parent)?;
+        }
+        let mut file = std::fs::File::create(path)?;
+        self.write_to(&mut file)?;
+        file.flush()?;
         Ok(())
     }
 }

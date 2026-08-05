@@ -2,7 +2,9 @@
 
 mod builtin_formats;
 mod data_formatter;
+mod excel_locale;
 mod excel_general_number_format;
+mod locale_generated;
 mod number_utils;
 
 pub use builtin_formats::{
@@ -15,9 +17,11 @@ pub use data_formatter::{
     java_compat_format_code, java_plain_extreme_format, java_scientific_format,
     resolve_builtin_format_code, SpreadsheetLocale,
 };
+pub use excel_locale::ExcelLocale;
 pub use excel_general_number_format::format_general;
 pub use number_utils::{
-    NonFiniteNumber, NumberFormatError, NumberRoundingMode, format_decimal,
-    format_non_finite, parse_big_decimal, parse_big_int, parse_byte, parse_decimal,
-    parse_double, parse_float, parse_integer, parse_long, parse_short,
+    NonFiniteNumber, NumberFormatError, NumberRoundingMode, decimal_integer_requires_text,
+    excel_date_format_code, finite_decimal_f64, format_decimal, format_non_finite,
+    parse_big_decimal, parse_big_int, parse_byte, parse_decimal, parse_double, parse_float,
+    parse_integer, parse_long, parse_short,
 };

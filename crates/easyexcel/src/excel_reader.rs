@@ -3,6 +3,8 @@
 use std::marker::PhantomData;
 use std::path::PathBuf;
 
+use easyexcel_io::io::file_utils::TemporaryInput;
+
 use crate::core::{
     AnalysisContext, CompositeReadListener, ExcelError, ExcelRow, ReadListener, Result,
 };
@@ -48,7 +50,7 @@ where
     /// The compatible builder uses this for Java `read(InputStream, ...)`.
     pub(crate) fn from_temporary_input(
         path: impl Into<PathBuf>,
-        temporary_input: std::sync::Arc<tempfile::TempPath>,
+        temporary_input: std::sync::Arc<TemporaryInput>,
         options: ReadOptions,
         listener: L,
     ) -> Result<Self> {

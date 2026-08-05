@@ -4,7 +4,7 @@
 
 use crate::core::{ExcelError, Result};
 use crate::util::work_book_util::{CellCreator, RowCreator, SheetCreator, WorkBookCreator};
-use easyexcel_xlsx::xlsx::generation::{Workbook, Worksheet};
+use easyexcel_xlsx::xlsx::generation::{self, Workbook, Worksheet};
 
 use crate::write::biff8::{Biff8Book, Biff8Cell, Biff8Sheet};
 use crate::write::excel_writer_core::format_error;
@@ -31,13 +31,8 @@ impl SheetCreator for XlsxSheetCreator<'_> {
         Self: 'a;
 
     fn create_sheet(&mut self, sheet_name: &str) -> Result<Self::Sheet<'_>> {
-        let worksheet = if self.constant_memory {
-            self.workbook.add_worksheet_with_constant_memory()
-        } else {
-            self.workbook.add_worksheet()
-        };
-        worksheet.set_name(sheet_name).map_err(format_error)?;
-        Ok(worksheet)
+        generation::create_worksheet(self.workbook, sheet_name, self.constant_memory)
+            .map_err(format_error)
     }
 }
 

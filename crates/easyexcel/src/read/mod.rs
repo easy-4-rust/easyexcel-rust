@@ -2,7 +2,6 @@
 
 mod cell_conversion;
 mod locale;
-mod locale_generated;
 pub mod read_cache;
 mod read_csv;
 mod read_helpers;

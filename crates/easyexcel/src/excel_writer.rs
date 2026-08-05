@@ -12,11 +12,11 @@ use crate::core::{
     WriteSheetContext, WriteWorkbookContext,
 };
 use crate::util::work_book_util::create_sheet;
-use easyexcel_xlsx::xlsx::generation::Workbook;
+use easyexcel_xlsx::xlsx::generation::{self, Workbook};
 
 use crate::write::append_rows::append_rows_to_worksheet_with_gzip_and_context;
 use crate::write::biff8::Biff8Book;
-use crate::write::csv_encoding_writer::CsvEncodingWriter;
+use easyexcel_csv::CsvRecordWriter;
 use crate::write::excel_output_stream::ExcelOutputStream;
 use crate::write::excel_writer_core::{
     CapturedOutput, HandlerHolderScope, after_sheet, after_sheet_create, after_workbook,
@@ -65,7 +65,7 @@ pub struct ExcelWriter {
     current_effective_handlers: Vec<SharedWriteHandler>,
     sheets: HashMap<String, StatefulSheetState>,
     sheet_indexes: HashMap<usize, String>,
-    pub(crate) csv_writer: Option<csv::Writer<CsvEncodingWriter>>,
+    pub(crate) csv_writer: Option<CsvRecordWriter>,
     csv_capture: Option<CapturedOutput>,
     csv_charset: CsvCharset,
     csv_with_bom: bool,
@@ -505,9 +505,7 @@ impl ExcelWriter {
                 &parent_merges,
             )?;
         } else {
-            let worksheet = self
-                .workbook
-                .worksheet_from_name(sheet_name)
+            let worksheet = generation::worksheet_by_name(&mut self.workbook, sheet_name)
                 .map_err(format_error)?;
             for (column, width) in &options.column_widths {
                 set_xlsx_column_width_chars(worksheet, *column, *width)?;
@@ -1326,9 +1324,7 @@ impl ExcelWriter {
                 options.sheet_name.clone_from(&sheet_name);
                 let holder_scope =
                     self.handler_holder_scope::<T>(sheet.options(), &sheet_name, active_table_no)?;
-                let worksheet = self
-                    .workbook
-                    .worksheet_from_name(&sheet_name)
+                let worksheet = generation::worksheet_by_name(&mut self.workbook, &sheet_name)
                     .map_err(format_error)?;
                 let sheet_context = holder_scope.sheet(WriteSheetContext::new(&sheet_name));
                 if !skip_sheet_create_callbacks {
@@ -1357,7 +1353,7 @@ impl ExcelWriter {
                 // Java LongestMatchColumnWidthStyleStrategy setColumnWidth after cells
                 apply_handler_column_widths::<T>(worksheet, &options, handlers)?;
                 if options.auto_width || handlers_request_auto_width(handlers) {
-                    worksheet.autofit();
+                    generation::autofit(worksheet);
                 }
                 self.sheets.insert(
                     sheet_name.clone(),
@@ -1391,9 +1387,7 @@ impl ExcelWriter {
             batch_options.sheet_name.clone_from(&sheet_name);
             let holder_scope =
                 self.handler_holder_scope::<T>(sheet.options(), &sheet_name, active_table_no)?;
-            let worksheet = self
-                .workbook
-                .worksheet_from_name(&sheet_name)
+            let worksheet = generation::worksheet_by_name(&mut self.workbook, &sheet_name)
                 .map_err(format_error)?;
             let compress = batch_options.compress_temp_files;
             let metadata = if use_incoming_options {
@@ -1419,7 +1413,7 @@ impl ExcelWriter {
                 )?
             };
             if batch_options.auto_width || handlers_request_auto_width(handlers) {
-                worksheet.autofit();
+                generation::autofit(worksheet);
             }
             // Re-apply measured LongestMatch widths after incremental append.
             apply_handler_column_widths::<T>(worksheet, &batch_options, handlers)?;

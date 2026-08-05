@@ -3,7 +3,6 @@
 //! 对应 Java：`com.alibaba.excel.ExcelWriter` 的 CSV 写入路径。
 //! 原文件：easyexcel-core/src/main/java/com/alibaba/excel/write/ExcelWriter.java
 
-use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 
@@ -39,7 +38,7 @@ where
 {
     validate_excel_row_schema::<T>()?;
     validate_csv_options(options)?;
-    let file = File::create(path)?;
+    let file = easyexcel_io::io::file_utils::open_output_stream(path)?;
     write_csv_to::<T, I>(path, Box::new(file), options, rows, handlers)
 }
 

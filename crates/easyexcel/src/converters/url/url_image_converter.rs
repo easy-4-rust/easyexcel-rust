@@ -1,11 +1,8 @@
 //! 对应 Java：`com.alibaba.excel.converters.url.UrlImageConverter` with
 //! Java's default timeout values (1s connect, 5s read).
 
-use std::fmt::Display;
-use std::io::Read;
 use std::time::Duration;
 
-use ureq::Agent;
 use url::Url;
 
 use crate::converters::Converter;
@@ -54,19 +51,12 @@ impl UrlImageConverter {
     }
 
     fn download(self, value: &Url) -> Result<Vec<u8>, ExcelError> {
-        let agent: Agent = ureq::Agent::config_builder()
-            .timeout_connect(Some(self.connect_timeout))
-            .timeout_recv_body(Some(self.read_timeout))
-            .build()
-            .into();
-        let mut response = agent.get(value.as_str()).call().map_err(url_image_error)?;
-        let mut bytes = Vec::new();
-        response
-            .body_mut()
-            .as_reader()
-            .read_to_end(&mut bytes)
-            .map_err(url_image_error)?;
-        Ok(bytes)
+        easyexcel_io::io::http_fetch::download_bytes(
+            value.as_str(),
+            self.connect_timeout,
+            self.read_timeout,
+        )
+        .map_err(ExcelError::from)
     }
 }
 
@@ -92,8 +82,4 @@ impl IntoExcelCell for Url {
             .download(self)
             .map(CellValue::Image)
     }
-}
-
-fn url_image_error(error: impl Display) -> ExcelError {
-    ExcelError::Io(std::io::Error::other(error.to_string()))
 }

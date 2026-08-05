@@ -1104,15 +1104,12 @@ dependencies = [
  "flate2",
  "mockall",
  "num-bigint",
- "pure-rust-locales",
  "rust_xlsxwriter",
  "serde",
  "serde_json",
  "ssfmt",
- "sys-locale",
  "tempfile",
  "thiserror",
- "ureq",
  "url",
  "zip",
 ]
@@ -1244,7 +1241,9 @@ version = "0.1.0-alpha.1"
 dependencies = [
  "bigdecimal",
  "num-bigint",
+ "pure-rust-locales",
  "ssfmt",
+ "sys-locale",
  "thiserror",
 ]
 
@@ -1283,6 +1282,7 @@ dependencies = [
  "quick-xml 0.41.0",
  "tempfile",
  "thiserror",
+ "ureq",
  "zip",
 ]
 
@@ -1397,6 +1397,7 @@ dependencies = [
  "aes",
  "bigdecimal",
  "cfb 0.14.0",
+ "chrono",
  "easyexcel-cache",
  "easyexcel-format",
  "easyexcel-formula",

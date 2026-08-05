@@ -3,6 +3,8 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use easyexcel_io::io::file_utils::TemporaryInput;
+
 use crate::core::{
     AnalysisContext, CellExtra, ErrorAction, ExcelError, ExcelRow, ReadListener, Result,
 };
@@ -83,7 +85,7 @@ pub struct ExcelAnalyserImpl {
     /// Prevents multiple shutdowns. (Java `ExcelAnalyserImpl.finished`)
     finished: bool,
     /// Keeps a materialised Java-style input stream alive until `finish`.
-    temporary_input: Option<Arc<tempfile::TempPath>>,
+    temporary_input: Option<Arc<TemporaryInput>>,
     /// Captures the last typed analysis error.
     last_error: Option<ExcelError>,
 }
@@ -143,7 +145,7 @@ impl ExcelAnalyserImpl {
     /// also guarantees cleanup when analysis itself fails and calls `finish`.
     pub(crate) fn from_temporary_input(
         path: impl Into<PathBuf>,
-        temporary_input: Arc<tempfile::TempPath>,
+        temporary_input: Arc<TemporaryInput>,
         options: ReadOptions,
     ) -> Result<Self> {
         let mut analyser = Self::from_path(path, options)?;
@@ -630,12 +632,9 @@ mod tests_extra2 {
     #[test]
     fn from_temporary_input_keeps_the_guard_until_finish() -> Result<()> {
         // 对应 Java：InputStream 物化临时文件，finish() 前由 analyser 持有
-        let file = tempfile::NamedTempFile::with_suffix(".csv")?;
-        std::io::Write::write_all(&mut file.as_file(), b"a,b\n1,2\n")?;
-        let path = file.into_temp_path();
-        let guard = Arc::new(path);
+        let guard = Arc::new(TemporaryInput::from_bytes(b"a,b\n1,2\n", ".csv")?);
         let mut analyser = ExcelAnalyserImpl::from_temporary_input(
-            guard.to_path_buf(),
+            guard.path().to_path_buf(),
             Arc::clone(&guard),
             ReadOptions::default(),
         )?;
