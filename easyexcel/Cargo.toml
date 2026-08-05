@@ -53,6 +53,8 @@ rust_xlsxwriter.workspace = true
 [dev-dependencies]
 easyexcel-macro = { path = "../easyexcel-macro", version = "0.1.0-alpha.1" }
 base64.workspace = true
+# 读取/写入管线的回调契约测试（MockReadListener 断言调用次数/顺序/参数）
+mockall = "0.15"
 
 [lints]
 workspace = true

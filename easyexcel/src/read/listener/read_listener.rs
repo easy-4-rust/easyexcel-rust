@@ -1,5 +1,10 @@
 //! 对应 Java：`com.alibaba.excel.read.listener.ReadListener<T>` (and the
 //! `IgnoreExceptionReadListener` default implementation).
+//!
+//! 本文件经 `#[cfg_attr(test, mockall::automock)]` 在测试构建生成
+//! `MockReadListener<T>`——automock 展开代码会引用 trait 默认方法的
+//! 下划线参数（`_error`/`_head` 等），故豁免 `used_underscore_binding`。
+#![allow(clippy::used_underscore_binding)]
 
 use std::collections::HashMap;
 
@@ -12,6 +17,11 @@ use crate::core::excel_error::ExcelError;
 /// Java `ReadListener` is an interface with one abstract method (`invoke`).
 /// Rust keeps the same shape: `invoke` is the only required method; the
 /// other four callbacks have default no-op implementations.
+///
+/// 测试时经 `mockall::automock` 生成 `MockReadListener<T>`（仅 test 构建），
+/// 用于断言读取管线的回调契约（调用次数/顺序/参数）——见
+/// `read/row_consumer.rs` 的 `mockall_contract_tests`。
+#[cfg_attr(test, mockall::automock)]
 pub trait ReadListener<T> {
     /// Called when row conversion or processing fails.
     ///
