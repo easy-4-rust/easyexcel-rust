@@ -290,18 +290,41 @@ impl Sheet {
         CellValue::Empty
     }
 
+    /// 返回实际存储的单元格或样式覆盖区域。
+    ///
+    /// 该范围只描述工作表中持久化的稀疏 `cells` / `styles` 坐标，不包含
+    /// 公式计算产生的临时 spill 区域。读取器可据此按物理行遍历工作簿模型，
+    /// 无需在格式门面中重复实现边界扫描。
+    #[must_use]
+    pub fn stored_range(&self) -> Option<CellRange> {
+        let mut coordinates = self.cells.keys().chain(self.styles.keys()).copied();
+        let (first_row, first_column) = coordinates.next()?;
+        let (mut min_row, mut min_column, mut max_row, mut max_column) =
+            (first_row, first_column, first_row, first_column);
+        for (row, column) in coordinates {
+            min_row = min_row.min(row);
+            min_column = min_column.min(column);
+            max_row = max_row.max(row);
+            max_column = max_column.max(column);
+        }
+        Some(CellRange::new(
+            CellAddress::new(min_row, min_column),
+            CellAddress::new(max_row, max_column),
+        ))
+    }
+
     /// The used range as `(max_row, max_col)` exclusive bounds (0,0 if empty).
     pub fn dimensions(&self) -> (u32, u32) {
-        let mut max_row = 0;
-        let mut max_col = 0;
-        for &(r, c) in self.cells.keys().chain(self.styles.keys()) {
-            max_row = max_row.max(r + 1);
-            max_col = max_col.max(c + 1);
-        }
+        let (mut max_row, mut max_col) = self.stored_range().map_or((0, 0), |range| {
+            (
+                range.end.row.saturating_add(1),
+                range.end.col.saturating_add(1),
+            )
+        });
         // Include spilled regions so they're visible to readers/exporters.
         for (&(ar, ac), sp) in &self.spills {
-            max_row = max_row.max(ar + sp.rows);
-            max_col = max_col.max(ac + sp.cols);
+            max_row = max_row.max(ar.saturating_add(sp.rows));
+            max_col = max_col.max(ac.saturating_add(sp.cols));
         }
         (max_row, max_col)
     }

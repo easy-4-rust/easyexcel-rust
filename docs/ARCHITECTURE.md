@@ -101,8 +101,11 @@ flowchart LR
 | Java `ReadCacheSelector` 的阈值选择，以及 `Ehcache` 的活跃条目淘汰、写入/只读阶段切换和持久后备 | `easyexcel-cache::cache::{SharedStringCachePolicy,SharedStringCacheHandle,shared_string_cache}`（Moka + 临时文件） | selector 参数、`MokaCache` 的 `ReadCache` 适配；`Ehcache` 仅为 Java 兼容别名 |
 | CSV 物理行列索引的有界转换 | `easyexcel-csv::csv::index` | `ExcelError` 映射与 listener 行调度 |
 | 可克隆输出流的共享所有权、关闭与刷新 | `easyexcel-io::CloseableOutputStream` | `ExcelOutputStream` Java 兼容类型别名 |
+| 中立工作表持久化单元格/样式的稀疏边界扫描 | `easyexcel-model::Sheet::stored_range` | 按行映射为 EasyExcel `CellValue`、公式元数据并触发 listener |
 
 `crates/easyexcel/src/analysis/v03` 中保留的同名文件只做 EasyExcel 错误和事件回调适配，不再实现底层格式算法。`read/xlsx_rows.rs` 与 `write/template_write.rs` 仍然较大，是因为它们承载 listener/cache/handler 和 Java 模板语义；其 ZIP、OPC、BIFF、gzip 与 XML 修改原语已经由基础 crate 提供。
+
+基础引擎类型不仅供门面内部使用，也通过 `easyexcel::{csv,io,model,xls,xlsx,...}` 显式重导出。以 XLSX 为例，`XlsxSource`、事件读取器、`OoxmlTemplatePackage`、输入流物化函数和 `template_xml` 等能力均从 `easyexcel::xlsx` 到达，业务用户无需直接依赖 `easyexcel-xlsx`。
 
 边界回归由 `cargo run -p xtask -- facade-boundary-audit` 检查：`easyexcel` 必须依赖各基础引擎 crate，不得在生产依赖中直接引入 `calamine`、`cfb`、`zip`、`quick-xml`、`flate2`、`rust_xlsxwriter`、`moka` 或加密实现库；`Ehcache` 必须保持为 `MokaCache` 的 Java 兼容别名。
 

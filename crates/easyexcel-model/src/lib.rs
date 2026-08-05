@@ -11,8 +11,9 @@
 pub mod model;
 
 pub use model::{
-    Cell, CellAddress, CellError, CellRange, CellValue, DataFormatData, DateSystem, Error,
-    ExcelDataFormat, Result, Sheet, Workbook,
+    Cell, CellAddress, CellError, CellRange, CellValue, ColInfo, DataFormatData, DateSystem,
+    DefinedName, Error, ExcelDataFormat, FrozenPanes, Metadata, OpaquePart, Result, RowInfo, Sheet,
+    Spill, Table, Visibility, Workbook,
     chrono_date_format, date_to_excel_serial, datetime_to_excel_serial,
 };
 pub use model::{

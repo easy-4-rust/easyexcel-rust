@@ -11,6 +11,8 @@ const FACADE_LIB: &str = "crates/easyexcel/src/lib.rs";
 const EHCACHE_COMPAT: &str = "crates/easyexcel/src/cache/ehcache.rs";
 const MOKA_ADAPTER: &str = "crates/easyexcel/src/cache/moka_cache.rs";
 const OUTPUT_STREAM_COMPAT: &str = "crates/easyexcel/src/write/excel_output_stream.rs";
+const MODEL_ROW_ADAPTER: &str = "crates/easyexcel/src/read/row_processing.rs";
+const XLSX_FACADE: &str = "crates/easyexcel/src/xlsx.rs";
 
 const REQUIRED_ENGINE_DEPENDENCIES: &[&str] = &[
     "easyexcel-cache",
@@ -45,6 +47,14 @@ const FORBIDDEN_FACADE_DEPENDENCIES: &[&str] = &[
     "ssfmt",
     "tempfile",
     "zip",
+];
+
+const FOUNDATION_ADAPTERS: &[&str] = &[
+    "crates/easyexcel/src/constant/excel_xml_constants.rs",
+    "crates/easyexcel/src/constant/mod.rs",
+    "crates/easyexcel/src/metadata/format/mod.rs",
+    "crates/easyexcel/src/util/map_utils.rs",
+    "crates/easyexcel/src/util/string_utils.rs",
 ];
 
 /// 校验门面只依赖基础引擎，不直接依赖格式、压缩、加密或缓存实现库。
@@ -86,6 +96,19 @@ pub(crate) fn audit() -> TaskResult {
             &format!("pub mod {module};"),
             "foundation API facade module",
         )?;
+
+        let module_path = format!("crates/easyexcel/src/{module}.rs");
+        let module_source = read(&module_path)?;
+        require_absent(
+            &module_path,
+            &module_source,
+            "::*",
+            "wildcard foundation API re-export",
+        )?;
+    }
+    for path in FOUNDATION_ADAPTERS {
+        let source = read(path)?;
+        require_absent(path, &source, "::*", "wildcard foundation adapter re-export")?;
     }
 
     let ehcache = read(EHCACHE_COMPAT)?;
@@ -120,6 +143,36 @@ pub(crate) fn audit() -> TaskResult {
         "Arc<Mutex",
         "shared output implementation",
     )?;
+
+    let model_row_adapter = read(MODEL_ROW_ADAPTER)?;
+    require_contains(
+        MODEL_ROW_ADAPTER,
+        &model_row_adapter,
+        "sheet.stored_range()",
+        "engine-owned sparse model bounds",
+    )?;
+    require_absent(
+        MODEL_ROW_ADAPTER,
+        &model_row_adapter,
+        "sheet.cells.keys().chain(sheet.styles.keys())",
+        "facade-owned sparse model bounds scan",
+    )?;
+
+    let xlsx_facade = read(XLSX_FACADE)?;
+    for symbol in [
+        "XlsxSource",
+        "XlsxCellEventReader",
+        "OoxmlTemplatePackage",
+        "materialize_excel_input",
+        "template_xml",
+    ] {
+        require_contains(
+            XLSX_FACADE,
+            &xlsx_facade,
+            symbol,
+            "XLSX engine API facade export",
+        )?;
+    }
 
     println!(
         "facade-boundary-audit ok: {} engine dependencies, no low-level direct dependencies",

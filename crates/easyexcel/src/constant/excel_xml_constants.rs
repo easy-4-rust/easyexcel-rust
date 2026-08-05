@@ -1,3 +1,8 @@
 //! Java `ExcelXmlConstants` 兼容入口；OOXML 协议常量由 `easyexcel-xlsx` 维护。
 
-pub use easyexcel_xlsx::xlsx::ooxml_constants::*;
+pub use easyexcel_xlsx::xlsx::ooxml_constants::{
+    ATTRIBUTE_LOCATION, ATTRIBUTE_R, ATTRIBUTE_REF, ATTRIBUTE_RID, ATTRIBUTE_S, ATTRIBUTE_T,
+    CELL_FORMULA_TAG, CELL_INLINE_STRING_VALUE_TAG, CELL_RANGE_SPLIT, CELL_TAG, CELL_VALUE_TAG,
+    DIMENSION_TAG, HYPERLINK_TAG, MERGE_CELL_TAG, ROW_TAG, SHAREDSTRINGS_RPH_TAG,
+    SHAREDSTRINGS_SI_TAG, SHAREDSTRINGS_T_TAG,
+};

@@ -314,19 +314,14 @@ pub(crate) fn read_model_sheet(
     sheet_displays: &HashMap<(u32, usize), String>,
     consumer: &mut dyn RowConsumer,
 ) -> Result<ReadFlow> {
-    let mut bounds = sheet.cells.keys().chain(sheet.styles.keys()).copied();
-    let Some((first_row, first_column)) = bounds.next() else {
+    let Some(stored_range) = sheet.stored_range() else {
         consumer.after(&analysis_context(sheet_name, sheet_no, 0, options))?;
         return Ok(ReadFlow::Continue);
     };
-    let (mut min_row, mut min_column, mut max_row, mut max_column) =
-        (first_row, first_column, first_row, first_column);
-    for (row, column) in bounds {
-        min_row = min_row.min(row);
-        min_column = min_column.min(column);
-        max_row = max_row.max(row);
-        max_column = max_column.max(column);
-    }
+    let min_row = stored_range.start.row;
+    let min_column = stored_range.start.col;
+    let max_row = stored_range.end.row;
+    let max_column = stored_range.end.col;
 
     let width = usize::try_from(max_column)
         .map_err(|_| ExcelError::Format("XLS column index exceeds usize".to_owned()))?
