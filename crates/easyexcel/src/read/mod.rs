@@ -13,7 +13,6 @@ mod row_processing;
 mod scientific_format_mode;
 mod sheet_selector;
 pub mod stored_read_cache_selector;
-mod xls_display;
 mod xlsx_rows;
 mod xlsx_source;
 

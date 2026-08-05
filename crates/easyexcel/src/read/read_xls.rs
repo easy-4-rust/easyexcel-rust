@@ -7,7 +7,6 @@ use crate::read::read_helpers::reject_extra_read;
 use crate::read::read_options::ReadOptions;
 use crate::read::row_consumer::{ReadFlow, TypedRowConsumer};
 use crate::read::row_processing::{read_model_sheet, select_sheet_names};
-use crate::read::xls_display::load_xls_displays;
 
 /// Discovers worksheet names in workbook order.
 ///
@@ -53,11 +52,12 @@ where
     )?;
     // Overlay BIFF FORMAT/XF display strings so STRING mode matches Java
     // BuiltinFormats (e.g. short date id 22 → `yyyy-m-d h:mm`).
-    let displays = load_xls_displays(
+    let displays = easyexcel_xls::biff8::load_numeric_displays(
         path,
         options.use_1904_windowing,
         &options.locale.formatter(),
-    );
+    )
+    .unwrap_or_default();
     for (sheet_no, sheet_name) in sheets {
         let mut consumer = TypedRowConsumer::<T> { listener };
         let sheet_displays = displays.get(sheet_no).cloned().unwrap_or_default();

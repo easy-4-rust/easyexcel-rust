@@ -1,8 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.analysis.v07.handlers.sax.SharedStringsTableHandler`.
 //!
-//! Java's SAX handler parses `sharedStrings.xml` and populates the `ReadCache`.
-//! Rust's `xlsx_rows::parse_shared_strings` drives this handler from `quick_xml`
-//! events (same tag semantics: `si` / `t` / `rPh`).
+//! Java SAX handler 的状态契约保留在这里；`sharedStrings.xml` 的 XML 事件循环、
+//! OOXML 转义解码与共享字符串存储由 `easyexcel-xlsx` / `easyexcel-cache` 负责。
 
 use crate::constant::excel_xml_constants::{
     SHAREDSTRINGS_RPH_TAG, SHAREDSTRINGS_SI_TAG, SHAREDSTRINGS_T_TAG,

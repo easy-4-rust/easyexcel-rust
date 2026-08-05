@@ -1,7 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.analysis.v07.handlers.CellTagHandler`.
 //!
-//! Attribute parsing and temp-buffer logic live here; `xlsx_rows::XlsxDisplayCellReader`
-//! still owns the `quick_xml` event loop and calls into these helpers (只增不减).
+//! `quick_xml` 事件循环、A1 引用和索引解析由 `easyexcel-xlsx` 负责；本处理器只
+//! 保留 Java `CellTagHandler` 的临时状态与 EasyExcel `CellDataType` 映射。
 
 use std::collections::HashMap;
 
@@ -74,7 +74,7 @@ impl CellTagHandler {
         Ok(parsed)
     }
 
-    /// Pure attribute parse shared with `xlsx_rows::next_cell` (no self mutation required).
+    /// 不修改处理器状态地解析 Java handler 所需属性。
     ///
     /// Corresponds to the attribute-reading portion of Java `startElement`.
     ///
