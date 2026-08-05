@@ -2,6 +2,7 @@
 //!
 //! 对应 Java：`com.alibaba.excel.ExcelWriter`（fill 生命周期）
 
+use std::collections::BTreeMap;
 #[cfg(test)]
 use std::io::Cursor;
 use std::io::{Read, Write};
@@ -389,11 +390,7 @@ pub(crate) fn same_sheet(left: &TemplateSheet, right: &TemplateSheet) -> bool {
 /// Returns an I/O or format error for invalid ZIP/OOXML input or output failures.
 /// Legacy `.xls` templates are now supported via BIFF8 placeholder replacement.
 pub fn fill_xlsx_template(template: &Path, output: &Path, data: &TemplateData) -> Result<()> {
-    if template
-        .extension()
-        .and_then(|ext| ext.to_str())
-        .is_some_and(|ext| ext.eq_ignore_ascii_case("xls"))
-    {
+    if easyexcel_io::Format::from_path(template) == Some(easyexcel_io::Format::Xls) {
         return fill_xls_template_scalar(template, output, data);
     }
     let mut writer = ExcelTemplateWriter::new(template, output)?;
@@ -414,11 +411,7 @@ pub fn fill_xlsx_template_list(
     data: &FillWrapper,
     config: FillConfig,
 ) -> Result<()> {
-    if template
-        .extension()
-        .and_then(|ext| ext.to_str())
-        .is_some_and(|ext| ext.eq_ignore_ascii_case("xls"))
-    {
+    if easyexcel_io::Format::from_path(template) == Some(easyexcel_io::Format::Xls) {
         return fill_xls_template_list(template, output, data, config);
     }
     let mut writer = ExcelTemplateWriter::new(template, output)?;
@@ -441,17 +434,7 @@ pub fn fill_xlsx_template_list(
 /// for XLS workbooks.
 fn fill_xls_template_scalar(template: &Path, output: &Path, data: &TemplateData) -> Result<()> {
     let mut pkg = crate::write::xls_adapter::Biff8TemplatePackage::from_path(template)?;
-    let placeholders = pkg.scan_placeholders();
-    for (sheet_name, row, col, text) in &placeholders {
-        let key = text
-            .trim_start_matches('{')
-            .trim_end_matches('}')
-            .to_string();
-        if let Some(value) = data.values.get(&key) {
-            let replacement = value.as_text();
-            pkg.replace_label(sheet_name, *row, *col, &replacement)?;
-        }
-    }
+    pkg.replace_scalar_placeholders(&template_text_values(data))?;
     pkg.save_to_path(output)
 }
 
@@ -463,48 +446,26 @@ fn fill_xls_template_list(
     _config: FillConfig,
 ) -> Result<()> {
     let mut pkg = crate::write::xls_adapter::Biff8TemplatePackage::from_path(template)?;
-    let placeholders = pkg.scan_placeholders();
-    let prefix = data.name().map(|n| format!("{n}.")).unwrap_or_default();
-    let is_dot = prefix.is_empty();
-
-    for (sheet_name, row, col, text) in &placeholders {
-        let key = if is_dot && text.starts_with("{.") {
-            text.trim_start_matches("{.")
-                .trim_end_matches('}')
-                .to_string()
-        } else if !prefix.is_empty() && text.starts_with(&format!("{{{prefix}")) {
-            text.trim_start_matches(&format!("{{{prefix}"))
-                .trim_end_matches('}')
-                .to_string()
-        } else if text.starts_with('{') {
-            text.trim_start_matches('{')
-                .trim_end_matches('}')
-                .to_string()
-        } else {
-            continue;
-        };
-        if key.is_empty() {
-            continue;
-        }
-        for template_row in data.rows() {
-            if let Some(value) = template_row.values.get(&key) {
-                let replacement = value.as_text();
-                pkg.replace_label(sheet_name, *row, *col, &replacement)?;
-                break;
-            }
-        }
-    }
+    let rows = data
+        .rows()
+        .iter()
+        .map(template_text_values)
+        .collect::<Vec<_>>();
+    pkg.replace_collection_placeholders(data.name(), &rows)?;
     pkg.save_to_path(output)
+}
+
+fn template_text_values(data: &TemplateData) -> BTreeMap<String, String> {
+    data.values()
+        .iter()
+        .map(|(key, value)| (key.clone(), value.as_text()))
+        .collect()
 }
 
 pub(crate) fn load_entries(path: &Path) -> Result<Vec<TemplateEntry>> {
     // Scalar `.xls` fill is handled by [`fill_xlsx_template`] before ZIP load.
     // Stateful ExcelTemplateWriter / collection fill stay OOXML-only.
-    if path
-        .extension()
-        .and_then(|ext| ext.to_str())
-        .is_some_and(|ext| ext.eq_ignore_ascii_case("xls"))
-    {
+    if easyexcel_io::Format::from_path(path) == Some(easyexcel_io::Format::Xls) {
         return Err(ExcelError::Unsupported(
             // Java: ExcelWriter.fill on HSSFWorkbook. Rust fill is OOXML-only;
             // use with_template + doWrite (Biff8TemplatePackage) for .xls cells.

@@ -6,7 +6,7 @@
 /// 垂直单元格对齐。
 ///
 /// 对应 Java：`com.alibaba.excel.enums.poi.VerticalAlignmentEnum`。
-/// POI 的对齐码保留在 `biff8_valign` 函数中用于 BIFF8 写入。
+/// BIFF8 数值编码由 `easyexcel-xls` 内部完成。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VerticalAlignment {
     /// 顶部对齐。

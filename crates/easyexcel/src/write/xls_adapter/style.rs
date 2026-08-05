@@ -8,16 +8,21 @@ use crate::core::{
     ExcelCellStyle, ExcelColor, ExcelDataFormat, ExcelFillPattern, ExcelFontStyle,
     ExcelHorizontalAlignment, ExcelVerticalAlignment,
 };
+use crate::write::horizontal_alignment::HorizontalAlignment;
+use crate::write::vertical_alignment::VerticalAlignment;
 
-pub use easyexcel_xls::biff8::{Biff8NumberFormat, Biff8StyleRequest, Biff8StyleTable};
+pub use easyexcel_xls::biff8::{
+    Biff8Color, Biff8FillPattern, Biff8HorizontalAlignment, Biff8NumberFormat,
+    Biff8StyleRequest, Biff8StyleTable, Biff8VerticalAlignment,
+};
 
 /// 把 EasyExcel 单元格样式合并到 BIFF8 请求。
 pub(crate) fn apply_excel_cell_style(request: &mut Biff8StyleRequest, style: ExcelCellStyle) {
     if let Some(align) = style.horizontal_alignment {
-        request.halign = Some(excel_halign(align));
+        request.horizontal_alignment = Some(excel_halign(align));
     }
     if let Some(align) = style.vertical_alignment {
-        request.valign = Some(excel_valign(align));
+        request.vertical_alignment = Some(excel_valign(align));
     }
     if let Some(wrapped) = style.wrapped {
         request.wrap = wrapped;
@@ -26,13 +31,16 @@ pub(crate) fn apply_excel_cell_style(request: &mut Biff8StyleRequest, style: Exc
         request.fill_pattern = Some(excel_fill_pattern(pattern));
     }
     if let Some(color) = style.fill_foreground_color {
-        request.fill_fg_icv = Some(indexed_color_to_icv(color));
-        if request.fill_pattern.unwrap_or(0) == 0 {
-            request.fill_pattern = Some(1);
+        request.fill_foreground_color = Some(excel_color(color));
+        if request
+            .fill_pattern
+            .is_none_or(|pattern| pattern == Biff8FillPattern::None)
+        {
+            request.fill_pattern = Some(Biff8FillPattern::Solid);
         }
     }
     if let Some(color) = style.fill_background_color {
-        request.fill_bg_icv = Some(indexed_color_to_icv(color));
+        request.fill_background_color = Some(excel_color(color));
     }
     if let Some(font) = style.font {
         apply_excel_font_style(request, font);
@@ -66,62 +74,87 @@ pub(crate) fn apply_excel_font_style(request: &mut Biff8StyleRequest, style: Exc
         request.bold = bold;
     }
     if let Some(color) = style.color {
-        request.font_color_icv = Some(indexed_color_to_icv(color));
+        request.font_color = Some(excel_color(color));
     }
 }
 
-fn indexed_color_to_icv(color: ExcelColor) -> u16 {
+const fn excel_color(color: ExcelColor) -> Biff8Color {
     match color {
-        ExcelColor::Indexed(64) => 0x7fff,
-        ExcelColor::Indexed(index) => u16::from(index),
-        // RGB 在调用本适配器前已由工作簿调色板分配为 Indexed。
-        ExcelColor::Rgb(_) => 8,
+        ExcelColor::Indexed(64) => Biff8Color::Automatic,
+        ExcelColor::Indexed(index) => Biff8Color::Indexed(index),
+        ExcelColor::Rgb(rgb) => Biff8Color::Rgb(rgb),
     }
 }
 
-const fn excel_fill_pattern(pattern: ExcelFillPattern) -> u8 {
+const fn excel_fill_pattern(pattern: ExcelFillPattern) -> Biff8FillPattern {
     match pattern {
-        ExcelFillPattern::None => 0,
-        ExcelFillPattern::Solid => 1,
-        ExcelFillPattern::MediumGray => 2,
-        ExcelFillPattern::DarkGray => 3,
-        ExcelFillPattern::LightGray => 4,
-        ExcelFillPattern::DarkHorizontal => 5,
-        ExcelFillPattern::DarkVertical => 6,
-        ExcelFillPattern::DarkDown => 7,
-        ExcelFillPattern::DarkUp => 8,
-        ExcelFillPattern::DarkGrid => 9,
-        ExcelFillPattern::DarkTrellis => 10,
-        ExcelFillPattern::LightHorizontal => 11,
-        ExcelFillPattern::LightVertical => 12,
-        ExcelFillPattern::LightDown => 13,
-        ExcelFillPattern::LightUp => 14,
-        ExcelFillPattern::LightGrid => 15,
-        ExcelFillPattern::LightTrellis => 16,
-        ExcelFillPattern::Gray125 => 17,
-        ExcelFillPattern::Gray0625 => 18,
+        ExcelFillPattern::None => Biff8FillPattern::None,
+        ExcelFillPattern::Solid => Biff8FillPattern::Solid,
+        ExcelFillPattern::MediumGray => Biff8FillPattern::MediumGray,
+        ExcelFillPattern::DarkGray => Biff8FillPattern::DarkGray,
+        ExcelFillPattern::LightGray => Biff8FillPattern::LightGray,
+        ExcelFillPattern::DarkHorizontal => Biff8FillPattern::DarkHorizontal,
+        ExcelFillPattern::DarkVertical => Biff8FillPattern::DarkVertical,
+        ExcelFillPattern::DarkDown => Biff8FillPattern::DarkDown,
+        ExcelFillPattern::DarkUp => Biff8FillPattern::DarkUp,
+        ExcelFillPattern::DarkGrid => Biff8FillPattern::DarkGrid,
+        ExcelFillPattern::DarkTrellis => Biff8FillPattern::DarkTrellis,
+        ExcelFillPattern::LightHorizontal => Biff8FillPattern::LightHorizontal,
+        ExcelFillPattern::LightVertical => Biff8FillPattern::LightVertical,
+        ExcelFillPattern::LightDown => Biff8FillPattern::LightDown,
+        ExcelFillPattern::LightUp => Biff8FillPattern::LightUp,
+        ExcelFillPattern::LightGrid => Biff8FillPattern::LightGrid,
+        ExcelFillPattern::LightTrellis => Biff8FillPattern::LightTrellis,
+        ExcelFillPattern::Gray125 => Biff8FillPattern::Gray125,
+        ExcelFillPattern::Gray0625 => Biff8FillPattern::Gray0625,
     }
 }
 
-const fn excel_halign(align: ExcelHorizontalAlignment) -> u8 {
+const fn excel_halign(align: ExcelHorizontalAlignment) -> Biff8HorizontalAlignment {
     match align {
-        ExcelHorizontalAlignment::General => 0,
-        ExcelHorizontalAlignment::Left => 1,
-        ExcelHorizontalAlignment::Center => 2,
-        ExcelHorizontalAlignment::Right => 3,
-        ExcelHorizontalAlignment::Fill => 4,
-        ExcelHorizontalAlignment::Justify => 5,
-        ExcelHorizontalAlignment::CenterAcross => 6,
-        ExcelHorizontalAlignment::Distributed => 7,
+        ExcelHorizontalAlignment::General => Biff8HorizontalAlignment::General,
+        ExcelHorizontalAlignment::Left => Biff8HorizontalAlignment::Left,
+        ExcelHorizontalAlignment::Center => Biff8HorizontalAlignment::Center,
+        ExcelHorizontalAlignment::Right => Biff8HorizontalAlignment::Right,
+        ExcelHorizontalAlignment::Fill => Biff8HorizontalAlignment::Fill,
+        ExcelHorizontalAlignment::Justify => Biff8HorizontalAlignment::Justify,
+        ExcelHorizontalAlignment::CenterAcross => Biff8HorizontalAlignment::CenterAcross,
+        ExcelHorizontalAlignment::Distributed => Biff8HorizontalAlignment::Distributed,
     }
 }
 
-const fn excel_valign(align: ExcelVerticalAlignment) -> u8 {
+const fn excel_valign(align: ExcelVerticalAlignment) -> Biff8VerticalAlignment {
     match align {
-        ExcelVerticalAlignment::Top => 0,
-        ExcelVerticalAlignment::Center => 1,
-        ExcelVerticalAlignment::Bottom => 2,
-        ExcelVerticalAlignment::Justify => 3,
-        ExcelVerticalAlignment::Distributed => 4,
+        ExcelVerticalAlignment::Top => Biff8VerticalAlignment::Top,
+        ExcelVerticalAlignment::Center => Biff8VerticalAlignment::Center,
+        ExcelVerticalAlignment::Bottom => Biff8VerticalAlignment::Bottom,
+        ExcelVerticalAlignment::Justify => Biff8VerticalAlignment::Justify,
+        ExcelVerticalAlignment::Distributed => Biff8VerticalAlignment::Distributed,
+    }
+}
+
+pub(crate) const fn writer_horizontal_alignment(
+    align: HorizontalAlignment,
+) -> Biff8HorizontalAlignment {
+    match align {
+        HorizontalAlignment::General => Biff8HorizontalAlignment::General,
+        HorizontalAlignment::Left => Biff8HorizontalAlignment::Left,
+        HorizontalAlignment::Center => Biff8HorizontalAlignment::Center,
+        HorizontalAlignment::Right => Biff8HorizontalAlignment::Right,
+        HorizontalAlignment::Fill => Biff8HorizontalAlignment::Fill,
+        HorizontalAlignment::Justify => Biff8HorizontalAlignment::Justify,
+        HorizontalAlignment::CenterAcross => Biff8HorizontalAlignment::CenterAcross,
+    }
+}
+
+pub(crate) const fn writer_vertical_alignment(
+    align: VerticalAlignment,
+) -> Biff8VerticalAlignment {
+    match align {
+        VerticalAlignment::Top => Biff8VerticalAlignment::Top,
+        VerticalAlignment::Center => Biff8VerticalAlignment::Center,
+        VerticalAlignment::Bottom => Biff8VerticalAlignment::Bottom,
+        VerticalAlignment::Justify => Biff8VerticalAlignment::Justify,
+        VerticalAlignment::Distributed => Biff8VerticalAlignment::Distributed,
     }
 }

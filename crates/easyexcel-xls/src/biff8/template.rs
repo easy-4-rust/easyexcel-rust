@@ -21,14 +21,15 @@
 //!
 //! # Still unsupported
 //!
-//! Placeholder `fill` (Java `ExcelWriter.fill` on POI `HSSFWorkbook`) remains
-//! [`ExcelError::Unsupported`] at the template crate — list / `forceNewRow` /
-//! horizontal fill need row insertion and SST mutation beyond this MVP.
-//! Password-encrypted legacy workbooks are rejected.
+//! Scalar placeholders and the existing value-only collection replacement are
+//! handled here. Structural collection expansion (`forceNewRow` / horizontal
+//! fill) still needs BIFF row insertion and formula/range repair beyond this
+//! implementation. Password-encrypted legacy workbooks are rejected.
 //!
 //! For `.xls` cell append (Java `withTemplate` + `doWrite`), use this package
 //! via the writer facade instead of OOXML fill.
 
+use std::collections::BTreeMap;
 use std::io::{Cursor, Read, Write};
 use std::path::Path;
 
@@ -130,6 +131,29 @@ impl Biff8TemplatePackage {
     pub fn next_row_for_sheet(&self, sheet_name: &str) -> Result<u32> {
         let sheet = self.sheet(sheet_name)?;
         Ok(sheet_max_row(&self.records, sheet).map_or(0, |row| u32::from(row).saturating_add(1)))
+    }
+
+    /// 从工作表当前最后一行之后追加中立 BIFF8 单元格行。
+    /// 对应 Java：`HSSFSheet#getLastRowNum` 与逐行 `createRow`/`createCell`。
+    ///
+    /// 返回追加完成后的下一可写行号。
+    ///
+    /// # Errors
+    ///
+    /// 工作表不存在、坐标越界或单元格无法编码时返回错误。
+    pub fn append_rows(
+        &mut self,
+        sheet_name: &str,
+        rows: &[Vec<(usize, Biff8Cell)>],
+    ) -> Result<u32> {
+        let mut next_row = self.next_row_for_sheet(sheet_name)?;
+        for row in rows {
+            for (column, cell) in row {
+                self.set_cell(sheet_name, next_row, *column, cell)?;
+            }
+            next_row = next_row.saturating_add(1);
+        }
+        Ok(next_row)
     }
 
     /// Writes a cell value at `(row, col)`, replacing any existing cell record.
@@ -249,6 +273,73 @@ impl Biff8TemplatePackage {
             }
         }
         placeholders
+    }
+
+    /// 使用格式无关文本映射替换标量 `{key}` 占位符。
+    ///
+    /// 替换过程固定在 BIFF8 引擎内部，避免 LABEL、LABELSST、XF 保留和
+    /// record 修复逻辑泄漏到门面层。返回实际替换的单元格数量。
+    ///
+    /// # Errors
+    ///
+    /// 匹配单元格无法重写时返回 BIFF8 格式错误。
+    pub fn replace_scalar_placeholders(
+        &mut self,
+        values: &BTreeMap<String, String>,
+    ) -> Result<usize> {
+        let replacements = self
+            .scan_placeholders()
+            .into_iter()
+            .filter_map(|(sheet_name, row, col, text)| {
+                let key = scalar_placeholder_key(&text);
+                values
+                    .get(key)
+                    .cloned()
+                    .map(|replacement| (sheet_name, row, col, replacement))
+            })
+            .collect::<Vec<_>>();
+        let replacement_count = replacements.len();
+        for (sheet_name, row, col, replacement) in replacements {
+            self.replace_label(&sheet_name, row, col, &replacement)?;
+        }
+        Ok(replacement_count)
+    }
+
+    /// 使用格式无关文本行替换集合占位符。
+    ///
+    /// 未命名集合匹配 `{.field}`，命名集合匹配 `{name.field}`。为保持既有
+    /// XLS 仅替换值的行为，首个包含字段的输入行提供替换值。本方法不会插入
+    /// BIFF 行，结构化扩展仍明确不支持。返回实际替换的单元格数量。
+    ///
+    /// # Errors
+    ///
+    /// 匹配单元格无法重写时返回 BIFF8 格式错误。
+    pub fn replace_collection_placeholders(
+        &mut self,
+        collection_name: Option<&str>,
+        rows: &[BTreeMap<String, String>],
+    ) -> Result<usize> {
+        let replacements = self
+            .scan_placeholders()
+            .into_iter()
+            .filter_map(|(sheet_name, row, col, text)| {
+                let key = collection_placeholder_key(&text, collection_name)?;
+                if key.is_empty() {
+                    return None;
+                }
+                rows.iter().find_map(|values| {
+                    values
+                        .get(key)
+                        .cloned()
+                        .map(|replacement| (sheet_name.clone(), row, col, replacement))
+                })
+            })
+            .collect::<Vec<_>>();
+        let replacement_count = replacements.len();
+        for (sheet_name, row, col, replacement) in replacements {
+            self.replace_label(&sheet_name, row, col, &replacement)?;
+        }
+        Ok(replacement_count)
     }
 
     /// Replaces a cell value at `(row, col)` on the given sheet with
@@ -387,6 +478,23 @@ impl Biff8TemplatePackage {
             self.adjust_indices_after_insert(sheet_index, insert_at);
         }
     }
+}
+
+fn scalar_placeholder_key(text: &str) -> &str {
+    text.trim_start_matches('{').trim_end_matches('}')
+}
+
+fn collection_placeholder_key<'a>(
+    text: &'a str,
+    collection_name: Option<&str>,
+) -> Option<&'a str> {
+    let prefix = collection_name
+        .map(|name| format!("{{{name}."))
+        .unwrap_or_else(|| "{.".to_owned());
+    if text.starts_with(&prefix) {
+        return Some(text[prefix.len()..].trim_end_matches('}'));
+    }
+    text.strip_prefix('{').map(|key| key.trim_end_matches('}'))
 }
 
 fn encode_cell_record(row: u16, col: u8, xf: u16, value: &Biff8Value) -> Result<RawRecord> {
@@ -848,5 +956,21 @@ mod tests {
             Biff8TemplatePackage::from_bytes(b"not an xls"),
             Err(ExcelError::Xls(_))
         ));
+    }
+
+    #[test]
+    fn placeholder_keys_cover_scalar_named_and_unnamed_collection_forms() {
+        assert_eq!(scalar_placeholder_key("{name}"), "name");
+        assert_eq!(scalar_placeholder_key("{{name}}"), "name");
+        assert_eq!(collection_placeholder_key("{.name}", None), Some("name"));
+        assert_eq!(
+            collection_placeholder_key("{users.name}", Some("users")),
+            Some("name")
+        );
+        assert_eq!(
+            collection_placeholder_key("{fallback}", Some("users")),
+            Some("fallback")
+        );
+        assert_eq!(collection_placeholder_key("plain", None), None);
     }
 }

@@ -3,6 +3,7 @@
 //! OLE/CFB 打开、BIFF 记录保留、偏移修复和序列化均由 `easyexcel-xls`
 //! 实现；本模块只保留 Java EasyExcel `CellValue` 语义转换与兼容错误。
 
+use std::collections::BTreeMap;
 use std::io::Write;
 use std::path::Path;
 
@@ -44,45 +45,25 @@ impl Biff8TemplatePackage {
             .map_err(map_engine_error)
     }
 
-    /// 写入已转换的 BIFF8 单元格。
-    pub fn set_cell(
-        &mut self,
-        sheet_name: &str,
-        row: u32,
-        col: usize,
-        cell: &Biff8Cell,
-    ) -> Result<()> {
-        self.inner
-            .set_cell(sheet_name, row, col, cell)
-            .map_err(map_engine_error)
-    }
-
-    /// 写入 EasyExcel 单元格值。
-    pub fn set_cell_value(
-        &mut self,
-        sheet_name: &str,
-        row: u32,
-        col: usize,
-        value: &CellValue,
-    ) -> Result<()> {
-        let cell = cell_value_to_template_cell(value)?;
-        self.set_cell(sheet_name, row, col, &cell)
-    }
-
     /// 从当前最后一行后追加稀疏行。
     pub fn append_rows(
         &mut self,
         sheet_name: &str,
         rows: &[Vec<(usize, CellValue)>],
     ) -> Result<u32> {
-        let mut next = self.next_row_for_sheet(sheet_name)?;
-        for row_values in rows {
-            for (col, value) in row_values {
-                self.set_cell_value(sheet_name, next, *col, value)?;
-            }
-            next = next.saturating_add(1);
-        }
-        Ok(next)
+        let rows = rows
+            .iter()
+            .map(|row| {
+                row.iter()
+                    .map(|(column, value)| {
+                        cell_value_to_template_cell(value).map(|cell| (*column, cell))
+                    })
+                    .collect::<Result<Vec<_>>>()
+            })
+            .collect::<Result<Vec<_>>>()?;
+        self.inner
+            .append_rows(sheet_name, &rows)
+            .map_err(map_engine_error)
     }
 
     /// 添加合并区域。
@@ -97,22 +78,24 @@ impl Biff8TemplatePackage {
         self.inner.to_bytes().map_err(map_engine_error)
     }
 
-    /// 扫描工作簿内的文本占位符。
-    #[must_use]
-    pub fn scan_placeholders(&self) -> Vec<(String, u16, u8, String)> {
-        self.inner.scan_placeholders()
+    /// 使用中立文本数据替换 BIFF8 标量占位符。
+    pub fn replace_scalar_placeholders(
+        &mut self,
+        values: &BTreeMap<String, String>,
+    ) -> Result<usize> {
+        self.inner
+            .replace_scalar_placeholders(values)
+            .map_err(map_engine_error)
     }
 
-    /// 替换指定位置的 LABEL/LABELSST 文本。
-    pub fn replace_label(
+    /// 使用中立文本行替换 BIFF8 集合占位符。
+    pub fn replace_collection_placeholders(
         &mut self,
-        sheet_name: &str,
-        row: u16,
-        col: u8,
-        replacement: &str,
-    ) -> Result<()> {
+        collection_name: Option<&str>,
+        rows: &[BTreeMap<String, String>],
+    ) -> Result<usize> {
         self.inner
-            .replace_label(sheet_name, row, col, replacement)
+            .replace_collection_placeholders(collection_name, rows)
             .map_err(map_engine_error)
     }
 

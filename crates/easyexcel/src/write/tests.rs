@@ -6661,66 +6661,6 @@ fn workbook_util_creator_chain_materializes_real_xlsx_cells() -> Result<()> {
 }
 
 #[test]
-fn biff8_halign_returns_general() {
-    assert_eq!(biff8_halign(HorizontalAlignment::General), 0);
-}
-
-#[test]
-fn biff8_halign_returns_left() {
-    assert_eq!(biff8_halign(HorizontalAlignment::Left), 1);
-}
-
-#[test]
-fn biff8_halign_returns_center() {
-    assert_eq!(biff8_halign(HorizontalAlignment::Center), 2);
-}
-
-#[test]
-fn biff8_halign_returns_right() {
-    assert_eq!(biff8_halign(HorizontalAlignment::Right), 3);
-}
-
-#[test]
-fn biff8_halign_returns_fill() {
-    assert_eq!(biff8_halign(HorizontalAlignment::Fill), 4);
-}
-
-#[test]
-fn biff8_halign_returns_justify() {
-    assert_eq!(biff8_halign(HorizontalAlignment::Justify), 5);
-}
-
-#[test]
-fn biff8_halign_returns_center_across() {
-    assert_eq!(biff8_halign(HorizontalAlignment::CenterAcross), 6);
-}
-
-#[test]
-fn biff8_valign_returns_top() {
-    assert_eq!(biff8_valign(VerticalAlignment::Top), 0);
-}
-
-#[test]
-fn biff8_valign_returns_center() {
-    assert_eq!(biff8_valign(VerticalAlignment::Center), 1);
-}
-
-#[test]
-fn biff8_valign_returns_bottom() {
-    assert_eq!(biff8_valign(VerticalAlignment::Bottom), 2);
-}
-
-#[test]
-fn biff8_valign_returns_justify() {
-    assert_eq!(biff8_valign(VerticalAlignment::Justify), 3);
-}
-
-#[test]
-fn biff8_valign_returns_distributed() {
-    assert_eq!(biff8_valign(VerticalAlignment::Distributed), 4);
-}
-
-#[test]
 fn is_scientific_magnitude_large_positive() {
     assert!(easyexcel_format::is_scientific_magnitude(1e11));
 }

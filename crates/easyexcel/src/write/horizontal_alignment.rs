@@ -6,7 +6,7 @@
 /// 水平单元格对齐。
 ///
 /// 对应 Java：`com.alibaba.excel.enums.poi.HorizontalAlignmentEnum`。
-/// POI 的对齐码保留在 `biff8_halign` 函数中用于 BIFF8 写入。
+/// BIFF8 数值编码由 `easyexcel-xls` 内部完成。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HorizontalAlignment {
     /// Excel 的类型相关默认值。

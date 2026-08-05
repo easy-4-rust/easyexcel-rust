@@ -19,7 +19,10 @@ pub use numeric::{
     format_numeric_displays, load_numeric_displays, parse_format_record, scan_numeric_cells,
 };
 pub use continuation_chain::Biff8ContinuationChain;
-pub use style::{Biff8NumberFormat, Biff8StyleRequest, Biff8StyleTable};
+pub use style::{
+    Biff8Color, Biff8FillPattern, Biff8HorizontalAlignment, Biff8NumberFormat,
+    Biff8StyleRequest, Biff8StyleTable, Biff8VerticalAlignment,
+};
 pub use template::{Biff8TemplatePackage, looks_like_xls};
 pub use workbook::{
     Biff8Book, Biff8Cell, Biff8Merge, Biff8Sheet, Biff8Value, date_to_excel_serial,

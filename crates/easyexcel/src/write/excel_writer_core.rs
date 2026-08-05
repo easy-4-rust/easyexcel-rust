@@ -33,9 +33,11 @@ use easyexcel_xlsx::xlsx::generation::{
 
 use crate::write::append_rows::append_rows_to_worksheet_with_gzip_and_context;
 use crate::write::xls_adapter::{
-    apply_excel_cell_style, apply_excel_font_style,
-    Biff8Book, Biff8Cell, Biff8Merge, Biff8Sheet, Biff8StyleRequest, Biff8StyleTable, Biff8Value,
-    date_to_excel_serial_with_windowing, datetime_to_excel_serial_with_windowing,
+    Biff8Book, Biff8Cell, Biff8Color, Biff8FillPattern, Biff8Merge, Biff8Sheet,
+    Biff8StyleRequest, Biff8StyleTable, Biff8Value, apply_excel_cell_style,
+    apply_excel_font_style, date_to_excel_serial_with_windowing,
+    datetime_to_excel_serial_with_windowing, writer_horizontal_alignment,
+    writer_vertical_alignment,
 };
 use crate::write::creators::{
     Biff8RowCreator, XlsxCell, XlsxRowCreator, XlsxSheetCreator, XlsxWorkBookCreator,
@@ -1129,17 +1131,14 @@ pub(crate) fn cell_value_to_biff8_styled(
     format_ctx: CellFormatContext<'_>,
 ) -> Result<Biff8Cell> {
     let cell = cell_value_to_biff8(value, format_ctx.global)?;
-    let request = biff8_style_request(styles, format_ctx);
+    let request = biff8_style_request(format_ctx);
     let xf = styles.resolve_xf(&request, cell.xf);
     Ok(cell.with_xf(xf))
 }
 
 // 按值传入与调用点构造惯例一致，改引用会增加不必要的借用链
 #[allow(clippy::large_types_passed_by_value)]
-pub(crate) fn biff8_style_request(
-    styles: &mut Biff8StyleTable,
-    context: CellFormatContext<'_>,
-) -> Biff8StyleRequest {
+pub(crate) fn biff8_style_request(context: CellFormatContext<'_>) -> Biff8StyleRequest {
     let mut request = Biff8StyleRequest::default();
     let mut annotation_cell = context.converted_cell;
     if let Some(annotation_style) = context.cell {
@@ -1162,38 +1161,19 @@ pub(crate) fn biff8_style_request(
                 None => style_font,
             });
         }
-        // Remap RGB fills through the palette allocator before applying.
-        let mut style = style;
-        if let Some(ExcelColor::Rgb(rgb)) = style.fill_foreground_color {
-            style.fill_foreground_color = Some(ExcelColor::Indexed(
-                u8::try_from(styles.alloc_rgb_icv(rgb)).unwrap_or(8),
-            ));
-        }
-        if let Some(ExcelColor::Rgb(rgb)) = style.fill_background_color {
-            style.fill_background_color = Some(ExcelColor::Indexed(
-                u8::try_from(styles.alloc_rgb_icv(rgb)).unwrap_or(8),
-            ));
-        }
         apply_excel_cell_style(&mut request, style);
     }
     if let Some(font) = font {
-        let mut font = font;
-        if let Some(ExcelColor::Rgb(rgb)) = font.color {
-            font.color = Some(ExcelColor::Indexed(
-                u8::try_from(styles.alloc_rgb_icv(rgb)).unwrap_or(8),
-            ));
-        }
         apply_excel_font_style(&mut request, font);
     }
     if let Some(style) = context.explicit {
-        apply_writer_cell_style_to_request(&mut request, styles, style);
+        apply_writer_cell_style_to_request(&mut request, style);
     }
     request
 }
 
 pub(crate) fn apply_writer_cell_style_to_request(
     request: &mut Biff8StyleRequest,
-    styles: &mut Biff8StyleTable,
     style: &CellStyle,
 ) {
     if style.bold {
@@ -1203,18 +1183,17 @@ pub(crate) fn apply_writer_cell_style_to_request(
         request.italic = true;
     }
     if let Some(color) = style.font_color {
-        request.font_color_icv = Some(styles.alloc_rgb_icv(color));
+        request.font_color = Some(Biff8Color::Rgb(color));
     }
     if let Some(color) = style.background_color {
-        request.fill_pattern = Some(1);
-        request.fill_fg_icv = Some(styles.alloc_rgb_icv(color));
-        request.fill_bg_icv = Some(64); // automatic pattern background
+        request.fill_pattern = Some(Biff8FillPattern::Solid);
+        request.fill_foreground_color = Some(Biff8Color::Rgb(color));
     }
     if let Some(alignment) = style.horizontal_alignment {
-        request.halign = Some(biff8_halign(alignment));
+        request.horizontal_alignment = Some(writer_horizontal_alignment(alignment));
     }
     if let Some(alignment) = style.vertical_alignment {
-        request.valign = Some(biff8_valign(alignment));
+        request.vertical_alignment = Some(writer_vertical_alignment(alignment));
     }
     if style.wrap_text {
         request.wrap = true;
@@ -1309,28 +1288,6 @@ pub(crate) fn apply_biff8_once_absolute_merge_property(
             merge.last_column_index as u16,
         ),
     )
-}
-
-pub(crate) const fn biff8_halign(align: HorizontalAlignment) -> u8 {
-    match align {
-        HorizontalAlignment::General => 0,
-        HorizontalAlignment::Left => 1,
-        HorizontalAlignment::Center => 2,
-        HorizontalAlignment::Right => 3,
-        HorizontalAlignment::Fill => 4,
-        HorizontalAlignment::Justify => 5,
-        HorizontalAlignment::CenterAcross => 6,
-    }
-}
-
-pub(crate) const fn biff8_valign(align: VerticalAlignment) -> u8 {
-    match align {
-        VerticalAlignment::Top => 0,
-        VerticalAlignment::Center => 1,
-        VerticalAlignment::Bottom => 2,
-        VerticalAlignment::Justify => 3,
-        VerticalAlignment::Distributed => 4,
-    }
 }
 
 pub(crate) fn add_biff8_merge_range(sheet: &mut Biff8Sheet, range: MergeRange) -> Result<()> {

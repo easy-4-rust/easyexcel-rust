@@ -82,8 +82,8 @@ flowchart LR
 | 原 `easyexcel/src` 实现 | 新的唯一实现位置 | 门面保留内容 |
 |---|---|---|
 | `write/biff8/workbook.rs`、`cached.rs` | `easyexcel-xls::biff8::{workbook,cached}` | 兼容重导出与 `ExcelError` 自动转换 |
-| `write/biff8/style.rs` 的 FONT/XF/FORMAT/调色板分配 | `easyexcel-xls::biff8::style` | `ExcelCellStyle`、`ExcelFontStyle` 到 `Biff8StyleRequest` 的映射 |
-| `write/biff8/template.rs` 的 OLE/BIFF record-preserving 修改 | `easyexcel-xls::biff8::template` | `CellValue` 到 `Biff8Cell` 的转换 |
+| `write/biff8/style.rs` 的 FONT/XF/FORMAT/调色板分配及对齐/填充/颜色协议码 | `easyexcel-xls::biff8::style` | `ExcelCellStyle`、`ExcelFontStyle` 到语义化 `Biff8StyleRequest` 的映射 |
+| `write/biff8/template.rs` 的 OLE/BIFF record-preserving 修改与 XLS 占位符解析/替换 | `easyexcel-xls::biff8::template` | `CellValue` 到中立文本或 `Biff8Cell` 的转换 |
 | `read/xls_display.rs` 的 FORMAT/XF/NUMBER/RK/MULRK 扫描 | `easyexcel-xls::biff8::numeric` | POI/EasyExcel 本地化显示格式选择 |
 | `read/xlsx_rows.rs` 的 OPC 路径与关系解析 | `easyexcel-xlsx::xlsx::package` | listener、读取缓存、extra handler 与 Java 显示语义 |
 | `write/template_write.rs` 的 ZIP 条目保留/重打包 | `easyexcel-xlsx::xlsx::ooxml_package` | 模板来源选择与 EasyExcel 写入编排 |

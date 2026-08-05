@@ -12,6 +12,153 @@ use super::encode::{
 };
 use super::format::builtin_format_id;
 
+/// 由引擎解析为 BIFF8 调色板 ICV 的中立颜色请求。
+/// 对应 Java：`org.apache.poi.hssf.util.HSSFColor`。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Biff8Color {
+    /// 自动颜色（`ICV_AUTO`）。
+    Automatic,
+    /// 已有索引调色板颜色。
+    Indexed(u8),
+    /// 在工作簿自定义调色板中分配的 RGB 颜色。
+    Rgb(u32),
+}
+
+/// BIFF8 语义水平对齐；数值协议码仅保留在本 crate 内部。
+/// 对应 Java：`org.apache.poi.ss.usermodel.HorizontalAlignment`。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Biff8HorizontalAlignment {
+    /// 按单元格值类型决定的常规对齐。
+    General,
+    /// 左对齐。
+    Left,
+    /// 居中对齐。
+    Center,
+    /// 右对齐。
+    Right,
+    /// 横向重复内容以填满单元格。
+    Fill,
+    /// 两端对齐。
+    Justify,
+    /// 跨相邻单元格居中。
+    CenterAcross,
+    /// 分散对齐。
+    Distributed,
+}
+
+impl Biff8HorizontalAlignment {
+    const fn code(self) -> u8 {
+        match self {
+            Self::General => 0,
+            Self::Left => 1,
+            Self::Center => 2,
+            Self::Right => 3,
+            Self::Fill => 4,
+            Self::Justify => 5,
+            Self::CenterAcross => 6,
+            Self::Distributed => 7,
+        }
+    }
+}
+
+/// BIFF8 语义垂直对齐；数值协议码仅保留在本 crate 内部。
+/// 对应 Java：`org.apache.poi.ss.usermodel.VerticalAlignment`。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Biff8VerticalAlignment {
+    /// 顶部对齐。
+    Top,
+    /// 垂直居中。
+    Center,
+    /// 底部对齐。
+    Bottom,
+    /// 垂直两端对齐。
+    Justify,
+    /// 垂直分散对齐。
+    Distributed,
+}
+
+impl Biff8VerticalAlignment {
+    const fn code(self) -> u8 {
+        match self {
+            Self::Top => 0,
+            Self::Center => 1,
+            Self::Bottom => 2,
+            Self::Justify => 3,
+            Self::Distributed => 4,
+        }
+    }
+}
+
+/// BIFF8 语义填充图案。
+/// 对应 Java：`org.apache.poi.ss.usermodel.FillPatternType`。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Biff8FillPattern {
+    /// 无填充。
+    None,
+    /// 纯色填充。
+    Solid,
+    /// 中灰填充。
+    MediumGray,
+    /// 深灰填充。
+    DarkGray,
+    /// 浅灰填充。
+    LightGray,
+    /// 深色水平线。
+    DarkHorizontal,
+    /// 深色垂直线。
+    DarkVertical,
+    /// 深色向下斜线。
+    DarkDown,
+    /// 深色向上斜线。
+    DarkUp,
+    /// 深色网格。
+    DarkGrid,
+    /// 深色格架。
+    DarkTrellis,
+    /// 浅色水平线。
+    LightHorizontal,
+    /// 浅色垂直线。
+    LightVertical,
+    /// 浅色向下斜线。
+    LightDown,
+    /// 浅色向上斜线。
+    LightUp,
+    /// 浅色网格。
+    LightGrid,
+    /// 浅色格架。
+    LightTrellis,
+    /// 12.5% 灰色填充。
+    Gray125,
+    /// 6.25% 灰色填充。
+    Gray0625,
+}
+
+impl Biff8FillPattern {
+    const fn code(self) -> u8 {
+        match self {
+            Self::None => 0,
+            Self::Solid => 1,
+            Self::MediumGray => 2,
+            Self::DarkGray => 3,
+            Self::LightGray => 4,
+            Self::DarkHorizontal => 5,
+            Self::DarkVertical => 6,
+            Self::DarkDown => 7,
+            Self::DarkUp => 8,
+            Self::DarkGrid => 9,
+            Self::DarkTrellis => 10,
+            Self::LightHorizontal => 11,
+            Self::LightVertical => 12,
+            Self::LightDown => 13,
+            Self::LightUp => 14,
+            Self::LightGrid => 15,
+            Self::LightTrellis => 16,
+            Self::Gray125 => 17,
+            Self::Gray0625 => 18,
+        }
+    }
+}
+
 /// Resolved write-style inputs used when allocating an XF index.
 // 语义敏感：bold/italic/strikeout/wrap 与 Java `WriteCellStyle`/`WriteFont`
 // 布尔字段一一对应，合并会破坏 1:1 可追溯性，故豁免 struct_excessive_bools。
@@ -28,20 +175,20 @@ pub struct Biff8StyleRequest {
     pub font_height_points: Option<u16>,
     /// Font family name (`None` → `"Arial"`).
     pub font_name: Option<String>,
-    /// Font colour as palette ICV (`None` → automatic).
-    pub font_color_icv: Option<u16>,
-    /// Horizontal alignment POI code (`None` → general / 0).
-    pub halign: Option<u8>,
-    /// Vertical alignment POI code (`None` → bottom / 2).
-    pub valign: Option<u8>,
+    /// Semantic font colour (`None` → automatic).
+    pub font_color: Option<Biff8Color>,
+    /// Horizontal alignment (`None` → general).
+    pub horizontal_alignment: Option<Biff8HorizontalAlignment>,
+    /// Vertical alignment (`None` → bottom).
+    pub vertical_alignment: Option<Biff8VerticalAlignment>,
     /// Wrap text.
     pub wrap: bool,
-    /// Fill pattern POI code (`None` / 0 → no fill).
-    pub fill_pattern: Option<u8>,
-    /// Fill foreground palette ICV.
-    pub fill_fg_icv: Option<u16>,
-    /// Fill background palette ICV.
-    pub fill_bg_icv: Option<u16>,
+    /// Semantic fill pattern (`None` / [`Biff8FillPattern::None`] → no fill).
+    pub fill_pattern: Option<Biff8FillPattern>,
+    /// Fill foreground colour.
+    pub fill_foreground_color: Option<Biff8Color>,
+    /// Fill background colour.
+    pub fill_background_color: Option<Biff8Color>,
     /// Number format: built-in index or custom code.
     pub number_format: Option<Biff8NumberFormat>,
 }
@@ -64,12 +211,15 @@ impl Biff8StyleRequest {
             && !self.strikeout
             && self.font_height_points.is_none()
             && self.font_name.is_none()
-            && self.font_color_icv.is_none()
-            && self.halign.is_none()
-            && self.valign.is_none()
+            && self.font_color.is_none()
+            && self.horizontal_alignment.is_none()
+            && self.vertical_alignment.is_none()
             && !self.wrap
-            && self.fill_pattern.unwrap_or(0) == 0
-            && self.fill_fg_icv.is_none()
+            && self
+                .fill_pattern
+                .is_none_or(|pattern| pattern == Biff8FillPattern::None)
+            && self.fill_foreground_color.is_none()
+            && self.fill_background_color.is_none()
             && self.number_format.is_none()
     }
 }
@@ -135,15 +285,24 @@ impl Biff8StyleTable {
             return base_xf;
         }
         let font_index = self.ensure_font(request);
+        let fill_fg_icv = self.resolve_color(request.fill_foreground_color, 0x40);
+        let fill_bg_icv = self.resolve_color(
+            request.fill_background_color,
+            ICV_PATTERN_BG_DEFAULT,
+        );
         let key = XfKey {
             font_index,
             ifmt,
-            halign: request.halign.unwrap_or(0),
-            valign: request.valign.unwrap_or(2),
+            halign: request
+                .horizontal_alignment
+                .map_or(0, Biff8HorizontalAlignment::code),
+            valign: request
+                .vertical_alignment
+                .map_or(2, Biff8VerticalAlignment::code),
             wrap: request.wrap,
-            fill_pattern: request.fill_pattern.unwrap_or(0),
-            fill_fg_icv: request.fill_fg_icv.unwrap_or(0x40),
-            fill_bg_icv: request.fill_bg_icv.unwrap_or(ICV_PATTERN_BG_DEFAULT),
+            fill_pattern: request.fill_pattern.map_or(0, Biff8FillPattern::code),
+            fill_fg_icv,
+            fill_bg_icv,
         };
         if let Some(existing) = self.xf_cache.get(&key) {
             return *existing;
@@ -239,7 +398,7 @@ impl Biff8StyleTable {
             bold: request.bold,
             italic: request.italic,
             strikeout: request.strikeout,
-            color_icv: request.font_color_icv.unwrap_or(ICV_AUTO),
+            color_icv: self.resolve_color(request.font_color, ICV_AUTO),
             name: request
                 .font_name
                 .clone()
@@ -283,6 +442,15 @@ impl Biff8StyleTable {
         let index = (8 + self.palette_rgb.len()) as u16;
         self.palette_rgb.push((r, g, b));
         index
+    }
+
+    fn resolve_color(&mut self, color: Option<Biff8Color>, default: u16) -> u16 {
+        match color {
+            None => default,
+            Some(Biff8Color::Automatic) => ICV_AUTO,
+            Some(Biff8Color::Indexed(index)) => u16::from(index),
+            Some(Biff8Color::Rgb(rgb)) => self.alloc_rgb_icv(rgb),
+        }
     }
 }
 
@@ -410,6 +578,27 @@ mod tests {
         assert!(xf >= XF_CUSTOM_BASE);
         assert_eq!(table.custom_xfs().len(), 1);
         assert_eq!(table.custom_fonts().len(), 1);
+    }
+
+    #[test]
+    fn semantic_style_values_are_encoded_only_inside_the_biff8_engine() {
+        assert_eq!(Biff8HorizontalAlignment::Distributed.code(), 7);
+        assert_eq!(Biff8VerticalAlignment::Distributed.code(), 4);
+        assert_eq!(Biff8FillPattern::Gray0625.code(), 18);
+
+        let mut table = Biff8StyleTable::default();
+        let request = Biff8StyleRequest {
+            font_color: Some(Biff8Color::Rgb(0x11_22_33)),
+            horizontal_alignment: Some(Biff8HorizontalAlignment::Center),
+            vertical_alignment: Some(Biff8VerticalAlignment::Top),
+            fill_pattern: Some(Biff8FillPattern::Solid),
+            fill_foreground_color: Some(Biff8Color::Rgb(0x44_55_66)),
+            ..Biff8StyleRequest::default()
+        };
+        let xf = table.resolve_xf(&request, XF_GENERAL);
+        assert!(xf >= XF_CUSTOM_BASE);
+        assert_eq!(table.palette_overrides().len(), 2);
+        assert_eq!(table.custom_xfs().len(), 1);
     }
 
     #[test]
