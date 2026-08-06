@@ -18,9 +18,9 @@ use crate::template::sheet_fill_state::{
     PendingCollectionFill, PendingSheetFill, ResolvedSheetFill,
 };
 use crate::template::template_entry::TemplateEntry;
-use crate::template::template_output::{ReadSeek, TemplateOutput};
+use crate::template::template_output::TemplateOutput;
 #[cfg(test)]
-use crate::template::template_output::WriteSeek;
+use crate::template::template_output::{ReadSeek, WriteSeek};
 use crate::{FillConfig, FillWrapper, TemplateData, TemplateSheet};
 
 /// Stateful OOXML template writer matching Java `ExcelWriter.fill` lifecycle.
@@ -472,6 +472,7 @@ fn load_entries_from_reader(reader: Box<dyn Read + '_>) -> Result<Vec<TemplateEn
     Ok(easyexcel_xlsx::OoxmlPackage::from_stream(reader)?.into_entries())
 }
 
+#[cfg(test)]
 pub(crate) fn load_entries_from(reader: Box<dyn ReadSeek>) -> Result<Vec<TemplateEntry>> {
     Ok(easyexcel_xlsx::OoxmlPackage::from_reader(reader)?.into_entries())
 }
@@ -480,9 +481,8 @@ pub(crate) fn worksheet_path(entries: &[TemplateEntry], sheet: &TemplateSheet) -
     easyexcel_xlsx::worksheet_path(entries, sheet.as_engine_selector()).map_err(ExcelError::from)
 }
 
-pub(crate) use easyexcel_xlsx::{normalize_workbook_target, workbook_sheets};
 #[cfg(test)]
-pub(crate) use easyexcel_xlsx::xml_elements;
+pub(crate) use easyexcel_xlsx::{normalize_workbook_target, workbook_sheets, xml_elements};
 
 pub(crate) fn write_entries(path: &Path, entries: &[TemplateEntry]) -> Result<()> {
     Ok(easyexcel_xlsx::OoxmlPackage::from_entries(entries.to_vec()).save_to_path(path)?)
@@ -502,8 +502,7 @@ pub(crate) fn write_entries_to_output(
         }
         TemplateOutput::Owned(writer) => {
             let write_result = encode_entries(entries).and_then(|bytes| {
-                easyexcel_io::write_all_and_flush(writer.as_mut(), &bytes)
-                    .map_err(ExcelError::from)
+                easyexcel_io::write_all_and_flush(writer.as_mut(), &bytes).map_err(ExcelError::from)
             });
             let close_result = if auto_close_stream {
                 writer.close()

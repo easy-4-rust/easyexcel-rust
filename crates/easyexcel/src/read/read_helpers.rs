@@ -85,10 +85,7 @@ pub(crate) fn listener_error<T>(
     }
 }
 
-pub(crate) fn format_error(error: impl std::fmt::Display) -> ExcelError {
-    ExcelError::Format(error.to_string())
-}
-
+#[cfg(test)]
 pub(crate) fn to_column_index(column: u32) -> Result<usize> {
     easyexcel_utils::int_utils::checked_u16(column)
         .map(usize::from)

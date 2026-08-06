@@ -16,18 +16,19 @@ mod style;
 mod template;
 mod workbook;
 
-pub use numeric::{
-    Biff8NumericCell, Biff8NumericSheets, Biff8SheetDisplays, decode_rk,
-    format_numeric_displays, load_numeric_displays, parse_format_record, scan_numeric_cells,
-};
 pub use continuation_chain::Biff8ContinuationChain;
 pub use continuation_decoder::{
     Biff8ContinuableRecordDecoder, Biff8ContinuableRecordKind, Biff8ContinuationStatus,
     Biff8DecodedContinuableRecord,
 };
+pub(crate) use format::{builtin_format_code, builtin_format_id};
+pub use numeric::{
+    Biff8NumericCell, Biff8NumericSheets, Biff8SheetDisplays, decode_rk, format_numeric_displays,
+    load_numeric_displays, parse_format_record, scan_numeric_cells,
+};
 pub use style::{
-    Biff8Color, Biff8FillPattern, Biff8HorizontalAlignment, Biff8NumberFormat,
-    Biff8StyleRequest, Biff8StyleTable, Biff8VerticalAlignment,
+    Biff8Color, Biff8FillPattern, Biff8HorizontalAlignment, Biff8NumberFormat, Biff8StyleRequest,
+    Biff8StyleTable, Biff8VerticalAlignment,
 };
 pub use template::{Biff8TemplatePackage, looks_like_xls};
 pub use workbook::{

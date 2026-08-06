@@ -14,17 +14,16 @@ const OUTPUT_STREAM_COMPAT: &str = "crates/easyexcel/src/write/excel_output_stre
 const IO_ROW_RANGE_ENGINE: &str = "crates/easyexcel-io/src/io/row_range.rs";
 const IO_SHEET_SELECTION_ENGINE: &str = "crates/easyexcel-io/src/io/sheet_selection.rs";
 const IO_FORMAT_ENGINE: &str = "crates/easyexcel-io/src/io/format.rs";
+const IO_GZIP_CELL_ENGINE: &str = "crates/easyexcel-io/src/io/gzip_cell_record.rs";
 const MODEL_STORED_ROW_ENGINE: &str = "crates/easyexcel-model/src/model/stored_row.rs";
 const XLSX_FACADE: &str = "crates/easyexcel/src/xlsx.rs";
 const XLS_RECORD_DISPATCHER: &str = "crates/easyexcel/src/analysis/v03/xls_record_dispatcher.rs";
-const XLS_OBJ_HANDLER: &str =
-    "crates/easyexcel/src/analysis/v03/handlers/obj_record_handler.rs";
+const XLS_OBJ_HANDLER: &str = "crates/easyexcel/src/analysis/v03/handlers/obj_record_handler.rs";
 const STYLE_UTIL_ADAPTER: &str = "crates/easyexcel/src/util/style_util.rs";
 const FACADE_ERROR: &str = "crates/easyexcel/src/support/excel_error.rs";
 const XLS_TEMPLATE_ADAPTER: &str = "crates/easyexcel/src/write/xls_adapter/template.rs";
 const XLSX_TEMPLATE_ADAPTER: &str = "crates/easyexcel/src/template/template_writer.rs";
-const XLSX_TEMPLATE_SELECTION_ENGINE: &str =
-    "crates/easyexcel-xlsx/src/xlsx/template_source.rs";
+const XLSX_TEMPLATE_SELECTION_ENGINE: &str = "crates/easyexcel-xlsx/src/xlsx/template_source.rs";
 const ROW_PROCESSING_ADAPTER: &str = "crates/easyexcel/src/read/row_processing.rs";
 const TEMPLATE_WRITE_ADAPTER: &str = "crates/easyexcel/src/write/template_write.rs";
 const READ_HELPERS_ADAPTER: &str = "crates/easyexcel/src/read/read_helpers.rs";
@@ -33,6 +32,7 @@ const STRING_UTILS_ENGINE: &str = "crates/easyexcel-utils/src/utils/string_utils
 const CLASS_UTILS_ADAPTER: &str = "crates/easyexcel/src/util/class_utils.rs";
 const FIELD_UTILS_ADAPTER: &str = "crates/easyexcel/src/util/field_utils.rs";
 const EXCEL_ANALYSER_ADAPTER: &str = "crates/easyexcel/src/analysis/excel_analyser_impl.rs";
+const GZIP_SPILL_ADAPTER: &str = "crates/easyexcel/src/write/gzip_spill.rs";
 
 const REQUIRED_ENGINE_DEPENDENCIES: &[&str] = &[
     "easyexcel-cache",
@@ -122,7 +122,9 @@ pub(crate) fn audit() -> TaskResult {
     }
 
     let facade = read(FACADE_LIB)?;
-    for module in ["csv", "formula", "format", "io", "model", "tabular", "xls", "xlsx"] {
+    for module in [
+        "csv", "formula", "format", "io", "model", "tabular", "xls", "xlsx",
+    ] {
         require_contains(
             FACADE_LIB,
             &facade,
@@ -132,16 +134,11 @@ pub(crate) fn audit() -> TaskResult {
 
         let module_path = format!("crates/easyexcel/src/{module}.rs");
         let module_source = read(&module_path)?;
-        require_absent(
-            &module_path,
-            &module_source,
-            "::*",
-            "wildcard foundation API re-export",
-        )?;
+        require_no_wildcard_imports(&module_path, &module_source)?;
     }
     for path in FOUNDATION_ADAPTERS {
         let source = read(path)?;
-        require_absent(path, &source, "::*", "wildcard foundation adapter re-export")?;
+        require_no_wildcard_imports(path, &source)?;
     }
     for path in JAVA_TRIM_ADAPTERS {
         let source = read(path)?;
@@ -151,7 +148,12 @@ pub(crate) fn audit() -> TaskResult {
             "easyexcel_utils::string_utils::java_trim",
             "shared Java-compatible trimming",
         )?;
-        require_absent(path, &source, ".trim()", "Rust Unicode trim in Java adapter")?;
+        require_absent(
+            path,
+            &source,
+            ".trim()",
+            "Rust Unicode trim in Java adapter",
+        )?;
     }
 
     let ehcache = read(EHCACHE_COMPAT)?;
@@ -161,7 +163,12 @@ pub(crate) fn audit() -> TaskResult {
         "MokaCache as Ehcache",
         "Java-compatible alias",
     )?;
-    require_absent(EHCACHE_COMPAT, &ehcache, "struct Ehcache", "Ehcache implementation")?;
+    require_absent(
+        EHCACHE_COMPAT,
+        &ehcache,
+        "struct Ehcache",
+        "Ehcache implementation",
+    )?;
     require_absent(EHCACHE_COMPAT, &ehcache, "moka::", "direct Moka dependency")?;
 
     let moka_adapter = read(MOKA_ADAPTER)?;
@@ -177,7 +184,12 @@ pub(crate) fn audit() -> TaskResult {
         "SharedStringCachePolicy",
         "engine-owned cache policy",
     )?;
-    require_absent(MOKA_ADAPTER, &moka_adapter, "moka::", "direct Moka implementation")?;
+    require_absent(
+        MOKA_ADAPTER,
+        &moka_adapter,
+        "moka::",
+        "direct Moka implementation",
+    )?;
 
     let output_stream = read(OUTPUT_STREAM_COMPAT)?;
     require_contains(
@@ -304,7 +316,7 @@ pub(crate) fn audit() -> TaskResult {
     require_contains(
         XLSX_TEMPLATE_SELECTION_ENGINE,
         &xlsx_template_selection_engine,
-        "pub fn equivalent(self, other: TemplateSheetSelector<'_>) -> bool",
+        "pub fn equivalent<'b>(self, other: TemplateSheetSelector<'b>) -> bool",
         "template sheet equivalence algorithm",
     )?;
 
@@ -382,6 +394,45 @@ pub(crate) fn audit() -> TaskResult {
         "path.extension()",
         "facade-owned extension fallback",
     )?;
+
+    let io_gzip_cell_engine = read(IO_GZIP_CELL_ENGINE)?;
+    for symbol in [
+        "pub struct GzipCellSpillSnapshot",
+        "pub struct GzipCellSpillWriter",
+        "pub struct GzipCellSpillReader",
+    ] {
+        require_contains(
+            IO_GZIP_CELL_ENGINE,
+            &io_gzip_cell_engine,
+            symbol,
+            "engine-owned gzip sheet spill lifecycle",
+        )?;
+    }
+    let gzip_spill_adapter = read(GZIP_SPILL_ADAPTER)?;
+    require_contains(
+        GZIP_SPILL_ADAPTER,
+        &gzip_spill_adapter,
+        "GzipCellSpillWriter as EngineSpillWriter",
+        "I/O-owned gzip spill writer",
+    )?;
+    require_contains(
+        GZIP_SPILL_ADAPTER,
+        &gzip_spill_adapter,
+        "pub type GzipSpillSnapshot = easyexcel_io::GzipCellSpillSnapshot",
+        "I/O-owned gzip spill snapshot",
+    )?;
+    for forbidden in [
+        "pub struct GzipSpillSnapshot",
+        "GzipCellRecordWriter",
+        "GzipCellRecordReader",
+    ] {
+        require_absent(
+            GZIP_SPILL_ADAPTER,
+            &gzip_spill_adapter,
+            forbidden,
+            "facade-owned gzip spill lifecycle",
+        )?;
+    }
 
     let template_write_adapter = read(TEMPLATE_WRITE_ADAPTER)?;
     require_absent(
@@ -501,7 +552,8 @@ fn dependency_names(manifest: &str) -> BTreeSet<&str> {
             continue;
         }
         if let Some((name, _)) = line.split_once('=') {
-            dependencies.insert(name.trim());
+            let name = name.trim();
+            dependencies.insert(name.strip_suffix(".workspace").unwrap_or(name));
         }
     }
     dependencies
@@ -519,6 +571,20 @@ fn require_absent(path: &str, source: &str, needle: &str, purpose: &str) -> Task
         return Ok(());
     }
     Err(format!("{path} must not contain {needle:?} ({purpose})").into())
+}
+
+fn require_no_wildcard_imports(path: &str, source: &str) -> TaskResult {
+    let wildcard_import = source.lines().map(str::trim).find(|line| {
+        (line.starts_with("use ") || line.starts_with("pub use ")) && line.contains("::*")
+    });
+    if wildcard_import.is_none() {
+        return Ok(());
+    }
+    Err(format!(
+        "{path} must not contain wildcard imports: {}",
+        wildcard_import.unwrap_or_default()
+    )
+    .into())
 }
 
 fn require_path_absent(path: &str, purpose: &str) -> TaskResult {

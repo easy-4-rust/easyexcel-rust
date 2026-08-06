@@ -336,7 +336,9 @@ fn detect_excel_type(path: &Path) -> Result<ExcelTypeEnum> {
         easyexcel_io::Format::Xlsx => Ok(ExcelTypeEnum::Xlsx),
         easyexcel_io::Format::Xls => Ok(ExcelTypeEnum::Xls),
         easyexcel_io::Format::Csv => Ok(ExcelTypeEnum::Csv),
-        _ => Err(ExcelError::Format("unsupported spreadsheet format".to_owned())),
+        _ => Err(ExcelError::Format(
+            "unsupported spreadsheet format".to_owned(),
+        )),
     }
 }
 

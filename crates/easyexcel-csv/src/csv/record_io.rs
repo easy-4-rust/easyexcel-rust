@@ -4,12 +4,10 @@ use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
 
-use encoding_rs_io::DecodeReaderBytes;
 use easyexcel_io::{Error, Result};
+use encoding_rs_io::DecodeReaderBytes;
 
-use super::{
-    CsvCharset, CsvEncodingWriter, csv_bom, csv_encoding, decode_reader,
-};
+use super::{CsvCharset, CsvEncodingWriter, csv_bom, csv_encoding, decode_reader};
 
 /// 带字符集转码和 BOM 策略的 CSV 增量记录写入器。
 pub struct CsvRecordWriter {

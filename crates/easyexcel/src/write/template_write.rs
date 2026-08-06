@@ -10,9 +10,9 @@
 //! only when callers explicitly set
 //! [`crate::WriteOptions::use_legacy_template_seed`].
 
-use std::io::Write;
 #[cfg(test)]
 use std::io::Cursor;
+use std::io::Write;
 use std::path::Path;
 
 use crate::core::{CellValue, ExcelError, Result};
@@ -78,6 +78,7 @@ impl TemplatePackage {
     /// # Errors
     ///
     /// Returns [`ExcelError::SheetNotFound`] when the sheet is absent.
+    #[cfg(test)]
     pub(crate) fn worksheet_path_by_name(&self, sheet_name: &str) -> Result<String> {
         self.entries
             .worksheet_path_by_name(sheet_name)
@@ -89,6 +90,7 @@ impl TemplatePackage {
     /// # Errors
     ///
     /// Returns [`ExcelError::SheetNotFound`] when the index is out of range.
+    #[cfg(test)]
     pub(crate) fn worksheet_path_by_index(&self, index: usize) -> Result<(String, String)> {
         self.entries
             .worksheet_path_by_index(index)
@@ -118,6 +120,7 @@ impl TemplatePackage {
     /// # Errors
     ///
     /// Returns a format error when workbook / relationship metadata cannot be updated.
+    #[cfg(test)]
     pub(crate) fn create_sheet(&mut self, sheet_name: &str) -> Result<()> {
         self.entries
             .create_sheet(sheet_name)
@@ -181,13 +184,7 @@ impl TemplatePackage {
             })
             .collect::<Result<Vec<_>>>()?;
         self.entries
-            .append_rows(
-                sheet_name,
-                &rows,
-                row_heights,
-                cell_styles,
-                absent_rows,
-            )
+            .append_rows(sheet_name, &rows, row_heights, cell_styles, absent_rows)
             .map_err(ExcelError::from)
     }
 
@@ -261,7 +258,6 @@ impl TemplatePackage {
             .save_to_writer(output)
             .map_err(ExcelError::from)
     }
-
 }
 
 /// Returns whether [`crate::WriteOptions`] carries a template source.
@@ -1568,7 +1564,6 @@ mod tests_extra {
             .expect_err("missing worksheet part");
         assert!(error.to_string().contains("is missing"));
     }
-
 }
 
 #[cfg(test)]

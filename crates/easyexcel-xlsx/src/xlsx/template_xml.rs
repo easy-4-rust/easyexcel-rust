@@ -491,11 +491,7 @@ pub fn cell_references(xml: &str) -> Vec<(usize, usize, &str)> {
 
 /// 按行列增量平移单个 A1 引用。
 #[must_use]
-pub fn shift_cell_reference(
-    reference: &str,
-    row_delta: usize,
-    column_delta: usize,
-) -> String {
+pub fn shift_cell_reference(reference: &str, row_delta: usize, column_delta: usize) -> String {
     let split = reference
         .bytes()
         .position(|byte| byte.is_ascii_digit())
@@ -681,11 +677,7 @@ pub fn shift_formula_elements(xml: &str, threshold_row: usize, delta: usize) -> 
 
 /// 在公式文本中识别并平移独立 A1 引用。
 #[must_use]
-pub fn shift_formula_references(
-    formula: &str,
-    threshold_row: usize,
-    delta: usize,
-) -> String {
+pub fn shift_formula_references(formula: &str, threshold_row: usize, delta: usize) -> String {
     let bytes = formula.as_bytes();
     let mut output = String::new();
     let mut offset = 0;
@@ -942,7 +934,10 @@ mod tests {
     fn cell_reference_parser_covers_valid_invalid_and_bounds() {
         assert_eq!(parse_cell_reference("A1"), Some((1, 1)));
         assert_eq!(parse_cell_reference("AB10"), Some((28, 10)));
-        assert_eq!(parse_cell_reference("$XFD$1048576"), Some((16_384, 1_048_576)));
+        assert_eq!(
+            parse_cell_reference("$XFD$1048576"),
+            Some((16_384, 1_048_576))
+        );
         assert_eq!(parse_cell_reference(""), None);
         assert_eq!(parse_cell_reference("1A"), None);
         assert_eq!(parse_cell_reference("A!1"), None);
@@ -951,7 +946,10 @@ mod tests {
 
     #[test]
     fn worksheet_helpers_read_attributes_rows_styles_and_dimensions() {
-        assert_eq!(attribute_value(r#"<tag attr="value">"#, "attr"), Some("value"));
+        assert_eq!(
+            attribute_value(r#"<tag attr="value">"#, "attr"),
+            Some("value")
+        );
         assert_eq!(attribute_value(r#"<tag attr="value">"#, "missing"), None);
         assert_eq!(row_index("row"), None);
         assert_eq!(row_index("row r=\"15\""), Some(15));

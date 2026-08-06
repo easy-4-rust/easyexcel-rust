@@ -240,9 +240,7 @@ pub fn decode_rk(bytes: &[u8]) -> f64 {
 mod tests {
     use easyexcel_format::SpreadsheetLocale;
 
-    use super::{
-        decode_rk, format_numeric_displays, load_numeric_displays, parse_format_record,
-    };
+    use super::{decode_rk, format_numeric_displays, load_numeric_displays, parse_format_record};
 
     fn record(sid: u16, payload: &[u8]) -> Vec<u8> {
         let mut output = Vec::new();
@@ -315,10 +313,7 @@ mod tests {
 
         let mut utf16 = vec![5, 0, 2, 0, 1];
         utf16.extend_from_slice(&[0x30, 0, 0x2E, 0]);
-        assert_eq!(
-            parse_format_record(&utf16),
-            Some((5, "0.".to_owned()))
-        );
+        assert_eq!(parse_format_record(&utf16), Some((5, "0.".to_owned())));
         assert!(parse_format_record(&[0, 0]).is_none());
         assert!(parse_format_record(&[5, 0, 4, 0, 1, 0x41]).is_none());
     }
@@ -331,10 +326,7 @@ mod tests {
         workbook.extend_from_slice(&number_record(0, 0, 0, 12.34));
 
         let displays = format_numeric_displays(&workbook, false, &SpreadsheetLocale::default());
-        assert_eq!(
-            displays[0].get(&(0, 0)).map(String::as_str),
-            Some("12.3")
-        );
+        assert_eq!(displays[0].get(&(0, 0)).map(String::as_str), Some("12.3"));
     }
 
     #[test]
@@ -350,14 +342,8 @@ mod tests {
         workbook.extend_from_slice(&record(0x00BD, &payload));
 
         let displays = format_numeric_displays(&workbook, false, &SpreadsheetLocale::default());
-        assert_eq!(
-            displays[0].get(&(0, 0)).map(String::as_str),
-            Some("100.0")
-        );
-        assert_eq!(
-            displays[0].get(&(0, 1)).map(String::as_str),
-            Some("200.0")
-        );
+        assert_eq!(displays[0].get(&(0, 0)).map(String::as_str), Some("100.0"));
+        assert_eq!(displays[0].get(&(0, 1)).map(String::as_str), Some("200.0"));
     }
 
     #[test]
@@ -375,15 +361,13 @@ mod tests {
         let mut general = worksheet_bof();
         general.extend_from_slice(&xf_record(0));
         general.extend_from_slice(&number_record(0, 0, 0, 3.5));
-        let displays =
-            format_numeric_displays(&general, false, &SpreadsheetLocale::default());
+        let displays = format_numeric_displays(&general, false, &SpreadsheetLocale::default());
         assert!(!displays[0].contains_key(&(0, 0)));
 
         let mut unknown = worksheet_bof();
         unknown.extend_from_slice(&xf_record(99));
         unknown.extend_from_slice(&number_record(0, 0, 0, 1.5));
-        let displays =
-            format_numeric_displays(&unknown, false, &SpreadsheetLocale::default());
+        let displays = format_numeric_displays(&unknown, false, &SpreadsheetLocale::default());
         assert!(!displays[0].contains_key(&(0, 0)));
     }
 
@@ -402,8 +386,6 @@ mod tests {
         let directory = tempfile::tempdir().expect("temporary directory");
         let path = directory.path().join("invalid.xls");
         std::fs::write(&path, b"not an ole document").expect("write fixture");
-        assert!(
-            load_numeric_displays(&path, false, &SpreadsheetLocale::default()).is_err()
-        );
+        assert!(load_numeric_displays(&path, false, &SpreadsheetLocale::default()).is_err());
     }
 }

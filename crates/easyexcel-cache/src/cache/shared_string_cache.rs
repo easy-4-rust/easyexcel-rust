@@ -104,9 +104,7 @@ pub fn create_cache(mode: ReadCacheMode, xml_size: u64) -> Result<Box<dyn Shared
         ReadCacheMode::Auto if xml_size < DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES => {
             Ok(create_memory_cache())
         }
-        ReadCacheMode::Auto | ReadCacheMode::Disk => {
-            create_moka_cache(DEFAULT_MOKA_ACTIVE_ENTRIES)
-        }
+        ReadCacheMode::Auto | ReadCacheMode::Disk => create_moka_cache(DEFAULT_MOKA_ACTIVE_ENTRIES),
         ReadCacheMode::Memory => Ok(create_memory_cache()),
     }
 }
@@ -146,9 +144,7 @@ pub fn create_moka_cache_for_batches(
 pub fn create_weighted_moka_cache(max_active_bytes: u64) -> Result<Box<dyn SharedStringCache>> {
     let active = Cache::builder()
         .max_capacity(max_active_bytes.max(1))
-        .weigher(|_key: &usize, value: &Arc<str>| {
-            u32::try_from(value.len()).unwrap_or(u32::MAX)
-        })
+        .weigher(|_key: &usize, value: &Arc<str>| u32::try_from(value.len()).unwrap_or(u32::MAX))
         .build();
     Ok(Box::new(MokaSharedStringCache::new(active)?))
 }
@@ -374,6 +370,27 @@ impl SharedStringCacheReader for MokaSharedStringCache {
 
 impl SharedStringCache for MokaSharedStringCache {}
 
+/// 完成写入后的 Moka 热缓存与磁盘后备只读视图。
+struct MokaSharedStringReader {
+    active: Cache<usize, Arc<str>>,
+    backing: DiskSharedStringReader,
+}
+
+impl SharedStringCacheReader for MokaSharedStringReader {
+    fn get(&self, index: usize) -> Result<String> {
+        if let Some(value) = self.active.get(&index) {
+            return Ok(value.to_string());
+        }
+        let value = self.backing.get(index)?;
+        self.active.insert(index, Arc::<str>::from(value.as_str()));
+        Ok(value)
+    }
+
+    fn len(&self) -> usize {
+        self.backing.len()
+    }
+}
+
 struct DiskSharedStringCache {
     temporary_file: NamedTempFile,
     writer: File,
@@ -438,7 +455,10 @@ impl DiskSharedStringReader {
 }
 
 fn read_entry(path: &Path, entries: &[(u64, usize)], index: usize) -> Result<String> {
-    let (offset, length) = entries.get(index).copied().ok_or_else(|| out_of_bounds(index))?;
+    let (offset, length) = entries
+        .get(index)
+        .copied()
+        .ok_or_else(|| out_of_bounds(index))?;
     let mut file = File::open(path)?;
     file.seek(SeekFrom::Start(offset))?;
     let mut bytes = vec![0; length];

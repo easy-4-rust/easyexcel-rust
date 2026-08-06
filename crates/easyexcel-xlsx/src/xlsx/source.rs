@@ -5,8 +5,8 @@ use std::io::{BufRead, BufReader, Cursor, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use easyexcel_io::{Error, Result};
 use easyexcel_io::io::file_utils::TemporaryInput;
+use easyexcel_io::{Error, Result};
 
 /// 可 seek 的 XLSX 输入流。
 pub enum XlsxInput {
@@ -53,9 +53,8 @@ impl XlsxSource {
         if !is_compound_document(&mut reader) {
             return Ok(Self::File(path.to_owned()));
         }
-        let password = password.ok_or_else(|| {
-            Error::PasswordProtected("MS-OFFCRYPTO OOXML container".to_owned())
-        })?;
+        let password = password
+            .ok_or_else(|| Error::PasswordProtected("MS-OFFCRYPTO OOXML container".to_owned()))?;
         let decrypted = super::crypto::decrypt_file(path, password)?;
         Ok(Self::Memory(Arc::from(decrypted)))
     }

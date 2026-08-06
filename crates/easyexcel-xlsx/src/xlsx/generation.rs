@@ -57,13 +57,8 @@ pub fn create_worksheet<'a>(
 /// # Errors
 ///
 /// 工作表不存在时返回错误。
-pub fn worksheet_by_name<'a>(
-    workbook: &'a mut Workbook,
-    name: &str,
-) -> Result<&'a mut Worksheet> {
-    workbook
-        .worksheet_from_name(name)
-        .map_err(xlsxwriter_error)
+pub fn worksheet_by_name<'a>(workbook: &'a mut Workbook, name: &str) -> Result<&'a mut Worksheet> {
+    workbook.worksheet_from_name(name).map_err(xlsxwriter_error)
 }
 
 /// 设置工作表名称。
@@ -83,11 +78,7 @@ pub fn set_worksheet_name<'a>(
 /// # Errors
 ///
 /// 行列坐标或宽度无效时返回错误。
-pub fn set_column_width_pixels(
-    worksheet: &mut Worksheet,
-    column: u16,
-    pixels: u32,
-) -> Result<()> {
+pub fn set_column_width_pixels(worksheet: &mut Worksheet, column: u16, pixels: u32) -> Result<()> {
     worksheet
         .set_column_width_pixels(column, pixels)
         .map(|_| ())
@@ -99,22 +90,14 @@ pub fn set_column_width_pixels(
 /// # Errors
 ///
 /// 列坐标或宽度无效时返回错误。
-pub fn set_column_width_chars(
-    worksheet: &mut Worksheet,
-    column: u16,
-    chars: u16,
-) -> Result<()> {
+pub fn set_column_width_chars(worksheet: &mut Worksheet, column: u16, chars: u16) -> Result<()> {
     set_column_width_pixels(worksheet, column, u32::from(chars).saturating_mul(7))
 }
 
 /// 将 Java/POI 字符列宽换算为图片布局像素宽度。
 #[must_use]
 pub const fn column_width_pixels(width: u16) -> u32 {
-    if width == 0 {
-        0
-    } else {
-        width as u32 * 7 + 5
-    }
+    if width == 0 { 0 } else { width as u32 * 7 + 5 }
 }
 
 /// 将 Java/POI 行高换算为图片布局像素高度。
@@ -262,12 +245,7 @@ pub fn write_string_with_format(
 }
 
 /// 写入无格式布尔值。
-pub fn write_boolean(
-    worksheet: &mut Worksheet,
-    row: u32,
-    column: u16,
-    value: bool,
-) -> Result<()> {
+pub fn write_boolean(worksheet: &mut Worksheet, row: u32, column: u16, value: bool) -> Result<()> {
     worksheet
         .write_boolean(row, column, value)
         .map(|_| ())
@@ -289,12 +267,7 @@ pub fn write_boolean_with_format(
 }
 
 /// 写入无格式数字。
-pub fn write_number(
-    worksheet: &mut Worksheet,
-    row: u32,
-    column: u16,
-    value: f64,
-) -> Result<()> {
+pub fn write_number(worksheet: &mut Worksheet, row: u32, column: u16, value: f64) -> Result<()> {
     worksheet
         .write_number(row, column, value)
         .map(|_| ())
@@ -409,12 +382,7 @@ pub fn write_datetime_with_format(
 }
 
 /// 插入单元格批注。
-pub fn insert_note(
-    worksheet: &mut Worksheet,
-    row: u32,
-    column: u16,
-    text: &str,
-) -> Result<()> {
+pub fn insert_note(worksheet: &mut Worksheet, row: u32, column: u16, text: &str) -> Result<()> {
     worksheet
         .insert_note(row, column, &Note::new(text))
         .map(|_| ())
@@ -502,14 +470,23 @@ pub enum NumberFormatSpec {
 /// 与具体门面元数据解耦的 XLSX 字体格式描述。
 #[derive(Debug, Clone, Default)]
 pub struct FontFormatSpec {
+    /// 字体名称。
     pub name: Option<String>,
+    /// 字号（磅）。
     pub size: Option<f64>,
+    /// 是否斜体。
     pub italic: Option<bool>,
+    /// 是否使用删除线。
     pub strikeout: Option<bool>,
+    /// 字体颜色。
     pub color: Option<Color>,
+    /// 上标或下标格式。
     pub script: Option<FormatScript>,
+    /// 下划线格式。
     pub underline: Option<FormatUnderline>,
+    /// 字符集编号。
     pub charset: Option<u8>,
+    /// 是否粗体。
     pub bold: Option<bool>,
 }
 
@@ -518,27 +495,49 @@ pub struct FontFormatSpec {
 /// 门面负责合并 Java 风格元数据，本结构只表达最终后端意图。
 #[derive(Debug, Clone, Default)]
 pub struct FormatSpec {
+    /// 是否隐藏公式。
     pub hidden: Option<bool>,
+    /// 是否锁定单元格。
     pub locked: Option<bool>,
+    /// 是否启用引用前缀。
     pub quote_prefix: Option<bool>,
+    /// 水平对齐方式。
     pub horizontal_alignment: Option<FormatAlign>,
+    /// 垂直对齐方式。
     pub vertical_alignment: Option<FormatAlign>,
+    /// 是否自动换行。
     pub wrap_text: Option<bool>,
+    /// 文本旋转角度。
     pub rotation: Option<i16>,
+    /// 文本缩进级别。
     pub indent: Option<u8>,
+    /// 左边框样式。
     pub border_left: Option<FormatBorder>,
+    /// 右边框样式。
     pub border_right: Option<FormatBorder>,
+    /// 上边框样式。
     pub border_top: Option<FormatBorder>,
+    /// 下边框样式。
     pub border_bottom: Option<FormatBorder>,
+    /// 左边框颜色。
     pub left_border_color: Option<Color>,
+    /// 右边框颜色。
     pub right_border_color: Option<Color>,
+    /// 上边框颜色。
     pub top_border_color: Option<Color>,
+    /// 下边框颜色。
     pub bottom_border_color: Option<Color>,
+    /// 填充图案。
     pub fill_pattern: Option<FormatPattern>,
+    /// 填充背景色。
     pub fill_background_color: Option<Color>,
+    /// 填充前景色。
     pub fill_foreground_color: Option<Color>,
+    /// 是否缩小字体以适应单元格。
     pub shrink_to_fit: Option<bool>,
+    /// 数字格式。
     pub number_format: Option<NumberFormatSpec>,
+    /// 字体格式。
     pub font: FontFormatSpec,
 }
 
@@ -768,11 +767,7 @@ pub const fn color_from_rgb(rgb: u32) -> Color {
 /// # Errors
 ///
 /// XLSX 序列化、文件写入或加密失败时返回错误。
-pub fn save_workbook(
-    workbook: &mut Workbook,
-    path: &Path,
-    password: Option<&str>,
-) -> Result<()> {
+pub fn save_workbook(workbook: &mut Workbook, path: &Path, password: Option<&str>) -> Result<()> {
     let Some(password) = password else {
         return workbook.save(path).map_err(xlsxwriter_error);
     };

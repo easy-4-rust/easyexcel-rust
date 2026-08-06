@@ -30,6 +30,7 @@ where
     }
 }
 
+#[cfg(test)]
 pub(crate) use easyexcel_xlsx::xlsx::ReadSeek;
 
 #[cfg(test)]

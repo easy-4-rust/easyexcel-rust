@@ -6,9 +6,7 @@
 use crate::metadata::data::DataFormatData;
 use crate::metadata::data::hyperlink_data::HyperlinkType;
 use crate::metadata::data::rich_text_string_data::RichTextStringData;
-use crate::write::metadata::style::write_cell_style::{
-    WriteCellStyle, merge_write_cell_style,
-};
+use crate::write::metadata::style::write_cell_style::{WriteCellStyle, merge_write_cell_style};
 use crate::write::metadata::style::write_font::{WriteFont, merge_write_font};
 
 /// 合并来源样式与新写入样式。
@@ -135,7 +133,10 @@ mod tests {
         let rich = RichTextStringData::new("rich");
         assert_eq!(build_rich_text_string(Some(&rich)), Some(rich));
         assert_eq!(get_hyperlink_type(None), HyperlinkType::None);
-        assert_eq!(get_hyperlink_type(Some(HyperlinkType::Url)), HyperlinkType::Url);
+        assert_eq!(
+            get_hyperlink_type(Some(HyperlinkType::Url)),
+            HyperlinkType::Url
+        );
     }
 
     #[test]

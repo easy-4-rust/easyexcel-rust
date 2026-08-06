@@ -60,9 +60,9 @@ impl XlsRecordHandler for TextObjectRecordHandler {
                         .or_insert_with(|| format!("TxO_{object_id}"));
                 }
             }
-            Some(easyexcel_xls::biff8::event_record::Biff8TextObjectFragment::Continue(
-                text,
-            )) if !self.object_cache.is_empty() => {
+            Some(easyexcel_xls::biff8::event_record::Biff8TextObjectFragment::Continue(text))
+                if !self.object_cache.is_empty() =>
+            {
                 // Attach to the most recent TxO entry
                 if let Some((_, val)) = self.object_cache.iter_mut().last() {
                     val.push_str(&text);

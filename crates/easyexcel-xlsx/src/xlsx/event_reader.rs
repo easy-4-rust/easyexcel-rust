@@ -204,11 +204,8 @@ impl<R: Read + Seek> XlsxEventMetadata<R> {
         let workbook_path = resolve_target("", workbook_target)?;
         let workbook_relationships_path = relationship_part_name(&workbook_path);
         let workbook_relationships = package.relationships(&workbook_relationships_path)?;
-        let (sheets, _) = read_workbook_metadata(
-            &mut package,
-            &workbook_path,
-            &workbook_relationships,
-        )?;
+        let (sheets, _) =
+            read_workbook_metadata(&mut package, &workbook_path, &workbook_relationships)?;
         let sheet_names = sheets.iter().map(|(name, _)| name.clone()).collect();
         let sheet_paths = sheets.into_iter().collect::<HashMap<_, _>>();
         let cell_formats = workbook_relationships
@@ -308,12 +305,8 @@ impl<R: Read + Seek> XlsxEventMetadata<R> {
         } else {
             RawRelationships::new()
         };
-        let mut extras = read_worksheet_extras(
-            &mut self.package,
-            &sheet_path,
-            &relationships,
-            enabled,
-        )?;
+        let mut extras =
+            read_worksheet_extras(&mut self.package, &sheet_path, &relationships, enabled)?;
         if enabled.contains(&XlsxExtraKind::Comment)
             && let Some((target, _, false)) = relationships
                 .values()
@@ -396,10 +389,11 @@ impl<'a> XlsxCellEventReader<'a> {
                 }
                 Event::Start(element) if element.local_name().as_ref() == b"c" => {
                     let values = attributes(&element, self.reader.decoder())?;
-                    let position = values.get("r").map_or(
-                        Ok((self.row_index, self.column_index)),
-                        |reference| parse_a1_cell_reference(reference),
-                    )?;
+                    let position = values
+                        .get("r")
+                        .map_or(Ok((self.row_index, self.column_index)), |reference| {
+                            parse_a1_cell_reference(reference)
+                        })?;
                     let style_index = values
                         .get("s")
                         .filter(|value| !value.is_empty())
@@ -459,7 +453,9 @@ impl<'a> XlsxCellEventReader<'a> {
                     in_text = true;
                 }
                 Event::Text(value) => {
-                    let text = value.xml_content(XmlVersion::Implicit1_0).map_err(xlsx_error)?;
+                    let text = value
+                        .xml_content(XmlVersion::Implicit1_0)
+                        .map_err(xlsx_error)?;
                     append_cell_text(
                         &text,
                         in_value,
@@ -471,7 +467,9 @@ impl<'a> XlsxCellEventReader<'a> {
                     );
                 }
                 Event::CData(value) => {
-                    let text = value.xml_content(XmlVersion::Implicit1_0).map_err(xlsx_error)?;
+                    let text = value
+                        .xml_content(XmlVersion::Implicit1_0)
+                        .map_err(xlsx_error)?;
                     append_cell_text(
                         &text,
                         in_value,
@@ -519,9 +517,7 @@ impl<'a> XlsxCellEventReader<'a> {
         let number = if matches!(cell_type, Some("n") | None) && !raw_value.is_empty() {
             let number = excel_display_number(raw_value.parse::<f64>().map_err(xlsx_error)?);
             if !number.is_finite() {
-                return Err(Error::Xlsx(
-                    "non-finite XLSX numeric cell value".to_owned(),
-                ));
+                return Err(Error::Xlsx("non-finite XLSX numeric cell value".to_owned()));
             }
             Some(number)
         } else {
@@ -536,23 +532,24 @@ impl<'a> XlsxCellEventReader<'a> {
                     XlsxCellValue::String(self.shared_strings.get(index)?)
                 }
             }
-            Some("inlineStr" | "str") => XlsxCellValue::String(decode_ooxml_escape(if inline_value.is_empty() {
-                raw_value
-            } else {
-                inline_value
-            })),
+            Some("inlineStr" | "str") => {
+                XlsxCellValue::String(decode_ooxml_escape(if inline_value.is_empty() {
+                    raw_value
+                } else {
+                    inline_value
+                }))
+            }
             Some("b") => XlsxCellValue::Bool(matches!(raw_value, "1" | "true")),
             Some("e") => XlsxCellValue::Error(raw_value.to_owned()),
             Some("d") => XlsxCellValue::String(raw_value.to_owned()),
             Some("n") | None => number.map_or(XlsxCellValue::Empty, XlsxCellValue::Number),
             Some(other) => {
-                return Err(Error::Xlsx(format!(
-                    "unsupported XLSX cell type: {other}"
-                )));
+                return Err(Error::Xlsx(format!("unsupported XLSX cell type: {other}")));
             }
         };
         let format = self.cell_formats.get(style_index);
-        let date_formatted = number.is_some() && format.is_some_and(XlsxNumberFormat::is_date_format);
+        let date_formatted =
+            number.is_some() && format.is_some_and(XlsxNumberFormat::is_date_format);
         let (display_value, decimal_value) = number.map_or((None, None), |number| {
             let decimal = number.to_string().parse::<BigDecimal>().ok();
             let display = format.and_then(|format| {
@@ -720,9 +717,8 @@ fn parse_comments(input: &mut dyn BufRead, comments_path: &str) -> Result<Vec<Xl
                     text.push(character);
                 } else {
                     let name = String::from_utf8_lossy(value.as_ref());
-                    let replacement = resolve_predefined_entity(&name).ok_or_else(|| {
-                        Error::Xlsx(format!("unrecognized XML entity: {name}"))
-                    })?;
+                    let replacement = resolve_predefined_entity(&name)
+                        .ok_or_else(|| Error::Xlsx(format!("unrecognized XML entity: {name}")))?;
                     text.push_str(replacement);
                 }
             }
@@ -792,9 +788,7 @@ fn read_cell_formats<R: Read + Seek>(
             }
             Event::End(element) if element.local_name().as_ref() == b"styleSheet" => break,
             Event::Eof => {
-                return Err(Error::Xlsx(
-                    "unexpected end of XML in styles".to_owned(),
-                ));
+                return Err(Error::Xlsx("unexpected end of XML in styles".to_owned()));
             }
             _ => {}
         }
@@ -821,10 +815,7 @@ where
     cache.finish()
 }
 
-fn parse_shared_strings(
-    input: &mut dyn BufRead,
-    cache: &mut dyn SharedStringCache,
-) -> Result<()> {
+fn parse_shared_strings(input: &mut dyn BufRead, cache: &mut dyn SharedStringCache) -> Result<()> {
     let mut reader = XmlReader::from_reader(input);
     reader.config_mut().expand_empty_elements = true;
     let mut buffer = Vec::with_capacity(256);
@@ -902,12 +893,9 @@ fn read_workbook_metadata<R: Read + Seek>(
                 let relationship_id = values
                     .get("id")
                     .ok_or_else(|| Error::Xlsx("sheet relationship is missing".to_owned()))?;
-                let (target, relationship_type) = relationships
-                    .get(relationship_id)
-                    .ok_or_else(|| {
-                        Error::Xlsx(format!(
-                            "sheet relationship not found: {relationship_id}"
-                        ))
+                let (target, relationship_type) =
+                    relationships.get(relationship_id).ok_or_else(|| {
+                        Error::Xlsx(format!("sheet relationship not found: {relationship_id}"))
                     })?;
                 if relationship_type.ends_with("/worksheet") {
                     sheets.push((name.clone(), resolve_target(workbook_path, target)?));
@@ -915,9 +903,7 @@ fn read_workbook_metadata<R: Read + Seek>(
             }
             Event::End(element) if element.local_name().as_ref() == b"workbook" => break,
             Event::Eof => {
-                return Err(Error::Xlsx(
-                    "unexpected end of XML in workbook".to_owned(),
-                ));
+                return Err(Error::Xlsx("unexpected end of XML in workbook".to_owned()));
             }
             _ => {}
         }
@@ -959,9 +945,7 @@ fn scan_last_row<R: BufRead>(input: R) -> Result<Option<u32>> {
                 return Ok(last_row.or(dimension_last_row));
             }
             Event::Eof => {
-                return Err(Error::Xlsx(
-                    "unexpected end of XML in worksheet".to_owned(),
-                ));
+                return Err(Error::Xlsx("unexpected end of XML in worksheet".to_owned()));
             }
             _ => {}
         }

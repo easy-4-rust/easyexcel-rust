@@ -135,11 +135,8 @@ pub fn replace_collection_fills_in_sheet(
                 );
                 let row_tag =
                     replace_attribute(&template.row_tag, "r", &(target_row + 1).to_string());
-                xml = upsert_collection_row(
-                    &xml,
-                    &format!("{row_tag}{cell}</row>"),
-                    target_row + 1,
-                );
+                xml =
+                    upsert_collection_row(&xml, &format!("{row_tag}{cell}</row>"), target_row + 1);
                 cursor.last_indices[index] = Some(last_index);
             }
             cursor.initialized = true;
@@ -159,10 +156,7 @@ pub fn replace_scalar_cells_in_sheet(
 }
 
 /// 在全部 worksheet part 中替换标量占位符。
-pub fn replace_scalar_cells(
-    entries: &mut [OoxmlZipEntry],
-    data: &TemplateFillData,
-) -> Result<()> {
+pub fn replace_scalar_cells(entries: &mut [OoxmlZipEntry], data: &TemplateFillData) -> Result<()> {
     replace_scalar_cells_matching(entries, None, data)
 }
 
@@ -249,11 +243,7 @@ pub fn replace_scalar_cells_in_xml(
 
 /// 渲染保留原坐标与可选样式的类型化单元格。
 #[must_use]
-pub fn render_typed_cell(
-    cell: &str,
-    value: &TemplateCellValue,
-    auto_style: bool,
-) -> String {
+pub fn render_typed_cell(cell: &str, value: &TemplateCellValue, auto_style: bool) -> String {
     let Some(tag_end) = cell.find('>') else {
         return cell.to_owned();
     };
@@ -315,11 +305,8 @@ fn shift_following_rows_for_fill(
         for template in &mut cached.templates {
             if template.row > maximum {
                 template.row = template.row.saturating_add(shift);
-                template.row_tag = replace_attribute(
-                    &template.row_tag,
-                    "r",
-                    &(template.row + 1).to_string(),
-                );
+                template.row_tag =
+                    replace_attribute(&template.row_tag, "r", &(template.row + 1).to_string());
             }
         }
     }

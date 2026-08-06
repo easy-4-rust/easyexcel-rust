@@ -32,13 +32,6 @@ use easyexcel_xlsx::xlsx::generation::{
 };
 
 use crate::write::append_rows::append_rows_to_worksheet_with_gzip_and_context;
-use crate::write::xls_adapter::{
-    Biff8Book, Biff8Cell, Biff8Color, Biff8FillPattern, Biff8Merge, Biff8Sheet,
-    Biff8StyleRequest, Biff8StyleTable, Biff8Value, apply_excel_cell_style,
-    apply_excel_font_style, date_to_excel_serial_with_windowing,
-    datetime_to_excel_serial_with_windowing, writer_horizontal_alignment,
-    writer_vertical_alignment,
-};
 use crate::write::creators::{
     Biff8RowCreator, XlsxCell, XlsxRowCreator, XlsxSheetCreator, XlsxWorkBookCreator,
 };
@@ -46,6 +39,12 @@ use crate::write::handler_execution_scope::HandlerExecutionScope;
 use crate::write::image_layout::ImageLayout;
 use crate::write::shared_write_handler::StatefulSheetState;
 use crate::write::sheet_style_context::{CellFormatContext, SheetStyleContext};
+use crate::write::xls_adapter::{
+    Biff8Book, Biff8Cell, Biff8Color, Biff8FillPattern, Biff8Merge, Biff8Sheet, Biff8StyleRequest,
+    Biff8StyleTable, Biff8Value, apply_excel_cell_style, apply_excel_font_style,
+    date_to_excel_serial_with_windowing, datetime_to_excel_serial_with_windowing,
+    writer_horizontal_alignment, writer_vertical_alignment,
+};
 
 pub use crate::write::append_rows::{append_rows_to_worksheet, append_rows_to_worksheet_with_gzip};
 pub use crate::write::excel_writer::ExcelWriter;
@@ -547,6 +546,7 @@ pub(crate) fn save_workbook_to_writer(
         .map_err(ExcelError::from)
 }
 
+#[cfg(test)]
 pub(crate) fn save_encrypted_workbook_to(
     workbook: &mut Workbook,
     password: &str,
@@ -983,8 +983,7 @@ pub(crate) fn write_biff8_headers(
         }
         finish_row_lifecycle(handlers, &row_context)?;
         if let Some(height) = row_context.row().requested_height() {
-            book.sheet_mut(sheet_name)
-                .set_row_height_at(row, height)?;
+            book.sheet_mut(sheet_name).set_row_height_at(row, height)?;
         }
     }
     Ok(())
@@ -2119,8 +2118,7 @@ pub(crate) fn save_template_package(
         generation::save_package_bytes_to_writer(&plaintext, writer, password)
             .map_err(ExcelError::from)
     } else {
-        generation::save_package_bytes_to_path(&plaintext, path, password)
-            .map_err(ExcelError::from)
+        generation::save_package_bytes_to_path(&plaintext, path, password).map_err(ExcelError::from)
     }
 }
 
@@ -3508,8 +3506,7 @@ fn write_cell(
     let format = cell_format(style);
     match value {
         CellValue::Empty => {
-            generation::write_blank(worksheet, row_index, column, &format)
-                .map_err(format_error)?;
+            generation::write_blank(worksheet, row_index, column, &format).map_err(format_error)?;
         }
         CellValue::String(value) | CellValue::Error(value) => {
             let text = easyexcel_utils::string_utils::maybe_trim(value, global.auto_trim);
@@ -3583,10 +3580,8 @@ fn write_cell(
             let format = generation::with_number_format(format.clone(), &number_format);
             if global.use_1904_windowing {
                 let serial = date_to_excel_serial_with_windowing(*value, true);
-                generation::write_number_with_format(
-                    worksheet, row_index, column, serial, &format,
-                )
-                .map_err(format_error)?;
+                generation::write_number_with_format(worksheet, row_index, column, serial, &format)
+                    .map_err(format_error)?;
             } else {
                 generation::write_date_with_format(worksheet, row_index, column, *value, &format)
                     .map_err(format_error)?;
@@ -3600,10 +3595,8 @@ fn write_cell(
             let format = generation::with_number_format(format.clone(), &number_format);
             if global.use_1904_windowing {
                 let serial = datetime_to_excel_serial_with_windowing(*value, true);
-                generation::write_number_with_format(
-                    worksheet, row_index, column, serial, &format,
-                )
-                .map_err(format_error)?;
+                generation::write_number_with_format(worksheet, row_index, column, serial, &format)
+                    .map_err(format_error)?;
             } else {
                 generation::write_datetime_with_format(
                     worksheet, row_index, column, *value, &format,
@@ -3682,8 +3675,7 @@ fn write_rich_text(
         return Ok(());
     }
     let runs = rich_text_runs(data)?;
-    generation::write_rich_string(worksheet, row, column, &runs, cell_format)
-        .map_err(format_error)
+    generation::write_rich_string(worksheet, row, column, &runs, cell_format).map_err(format_error)
 }
 
 fn rich_text_runs(data: &RichTextStringData) -> Result<Vec<(Format, String)>> {
@@ -3835,7 +3827,7 @@ fn cell_format(context: CellFormatContext<'_>) -> Format {
             vertical_alignment: style.vertical_alignment.map(vertical_format_align),
             wrap_text: style.wrap_text.then_some(true),
             fill_pattern: style.background_color.map(|_| FormatPattern::Solid),
-            fill_background_color: style.background_color,
+            fill_background_color: style.background_color.map(generation::color_from_rgb),
             number_format: style
                 .number_format
                 .as_ref()
@@ -3843,7 +3835,7 @@ fn cell_format(context: CellFormatContext<'_>) -> Format {
             font: FontFormatSpec {
                 bold: style.bold.then_some(true),
                 italic: style.italic.then_some(true),
-                color: style.font_color,
+                color: style.font_color.map(generation::color_from_rgb),
                 ..FontFormatSpec::default()
             },
             ..FormatSpec::default()
@@ -3880,7 +3872,7 @@ fn apply_annotation_cell_style(mut format: Format, style: ExcelCellStyle) -> For
         shrink_to_fit: style.shrink_to_fit,
         number_format: style.data_format.map(|value| match value {
             ExcelDataFormat::Builtin(index) => NumberFormatSpec::Builtin(index),
-            ExcelDataFormat::Custom(value) => NumberFormatSpec::Custom(value),
+            ExcelDataFormat::Custom(value) => NumberFormatSpec::Custom(value.to_owned()),
         }),
         font: FontFormatSpec::default(),
     };
@@ -3896,7 +3888,7 @@ fn apply_annotation_font_style(format: Format, style: ExcelFontStyle) -> Format 
     generation::apply_font_format_spec(
         format,
         &FontFormatSpec {
-            name: style.font_name,
+            name: style.font_name.map(str::to_owned),
             size: style.font_height_in_points,
             italic: style.italic,
             strikeout: style.strikeout,
@@ -4060,6 +4052,7 @@ pub(crate) fn format_error(error: impl std::fmt::Display) -> ExcelError {
 }
 
 #[cfg(test)]
+#[cfg(test)]
 #[path = "missing_tests.rs"]
 mod missing_tests;
 pub use crate::write::write_csv::*;
@@ -4068,6 +4061,7 @@ pub use crate::write::write_csv::*;
 pub use crate::write::write_xls::*;
 pub use crate::write::xlsx_write::*;
 
+#[cfg(test)]
 #[path = "tests.rs"]
 mod tests;
 

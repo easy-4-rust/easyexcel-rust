@@ -246,9 +246,10 @@ fn write_compressed_java_fixture(path: &Path, fixture: &str) -> Result<()> {
 fn write_java_composite_fixture(path: &Path) -> Result<()> {
     write_compressed_java_fixture(
         path,
-        include_str!(
-            "../../../easyexcel-test/tests/fixtures/java-fixtures/java-demo-composite.xlsx.gz.b64"
-        ),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-demo-composite.xlsx.gz.b64"
+        )),
     )
 }
 
@@ -435,9 +436,10 @@ fn fills_java_official_simple_template_with_typed_number() -> Result<()> {
     let output = directory.path().join("java-simple-filled.xlsx");
     write_compressed_java_fixture(
         &template,
-        include_str!(
-            "../../../easyexcel-test/tests/fixtures/java-fixtures/java-demo-simple.xlsx.gz.b64"
-        ),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-demo-simple.xlsx.gz.b64"
+        )),
     )?;
 
     let mut source: Xlsx<_> = open_workbook(&template).map_err(test_error)?;
@@ -471,9 +473,10 @@ fn java_complex_fill_with_table_appends_summary_after_repeated_fill() -> Result<
     let output = directory.path().join("java-complex-table-filled.xlsx");
     write_compressed_java_fixture(
         &template,
-        include_str!(
-            "../../../easyexcel-test/tests/fixtures/java-fixtures/java-demo-complex-fill-with-table.xlsx.gz.b64"
-        ),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-demo-complex-fill-with-table.xlsx.gz.b64"
+        )),
     )?;
 
     let entries = load_entries(&template)?;

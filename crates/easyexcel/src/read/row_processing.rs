@@ -56,9 +56,7 @@ pub(crate) fn select_xls_sheets(
             .enumerate()
             .find(|(_, (candidate, _))| {
                 easyexcel_utils::string_utils::equals_with_optional_java_trim(
-                    candidate,
-                    name,
-                    auto_trim,
+                    candidate, name, auto_trim,
                 )
             })
             .map(|(index, (candidate, range))| vec![(index, candidate, range)])

@@ -27,9 +27,7 @@ pub(crate) fn excel_serial_datetime_cell(value: f64, use_1904_windowing: bool) -
 }
 
 /// 将中立模型单元格转换为门面值及公式元数据。
-pub(crate) fn from_model_cell(
-    cell: &easyexcel_model::Cell,
-) -> (CellValue, Option<FormulaData>) {
+pub(crate) fn from_model_cell(cell: &easyexcel_model::Cell) -> (CellValue, Option<FormulaData>) {
     use easyexcel_model::{Cell, value::CellValue as ModelCellValue};
 
     let value = match cell.value() {

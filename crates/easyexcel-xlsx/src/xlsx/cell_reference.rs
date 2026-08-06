@@ -31,11 +31,9 @@ pub fn parse_xlsx_row_number(value: &str) -> Result<u32> {
 ///
 /// 属性值不是平台可表示的无符号下标时返回 XLSX 格式错误。
 pub fn parse_xlsx_index(value: &str, attribute: &str) -> Result<usize> {
-    value.parse::<usize>().map_err(|error| {
-        Error::Xlsx(format!(
-            "invalid XLSX {attribute} index {value:?}: {error}"
-        ))
-    })
+    value
+        .parse::<usize>()
+        .map_err(|error| Error::Xlsx(format!("invalid XLSX {attribute} index {value:?}: {error}")))
 }
 
 /// 解析 A1 单元格引用，返回零基行列坐标。
@@ -53,9 +51,7 @@ pub fn parse_a1_cell_reference(reference: &str) -> Result<(u32, usize)> {
     let (column, row) = reference.split_at(column_end);
     let row = row.strip_prefix('$').unwrap_or(row);
     if column.is_empty() || row.is_empty() || !row.bytes().all(|byte| byte.is_ascii_digit()) {
-        return Err(Error::Xlsx(format!(
-            "invalid cell reference: {reference}"
-        )));
+        return Err(Error::Xlsx(format!("invalid cell reference: {reference}")));
     }
 
     let mut one_based_column = 0_usize;
@@ -101,8 +97,6 @@ pub fn parse_a1_cell_range(reference: &str) -> Result<(u32, u32, usize, usize)> 
 ///
 /// dimension 尾部引用无效时返回格式错误。
 pub fn dimension_last_row(reference: &str) -> Result<u32> {
-    let end = reference
-        .rsplit_once(':')
-        .map_or(reference, |(_, end)| end);
+    let end = reference.rsplit_once(':').map_or(reference, |(_, end)| end);
     parse_a1_cell_reference(end).map(|(row, _)| row)
 }

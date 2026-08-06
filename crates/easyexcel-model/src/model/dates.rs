@@ -48,7 +48,9 @@ pub fn parse_java_date<'a>(
 /// 使用 Java `SimpleDateFormat` 模式格式化日期时间。
 #[must_use]
 pub fn format_java_date(value: NaiveDateTime, pattern: &str) -> String {
-    value.format(&java_date_format_to_chrono(pattern)).to_string()
+    value
+        .format(&java_date_format_to_chrono(pattern))
+        .to_string()
 }
 
 /// 将 Excel 1900 日期系统的整数天数转换为 UTC 时间。
@@ -168,9 +170,7 @@ impl DateSystem {
         let base = match self {
             // Before serial 61, POI uses 1899-12-31 so the unrepresentable
             // fictional leap day (60) resolves to the same real date as 61.
-            DateSystem::Date1900 if whole_days < 61 => {
-                NaiveDate::from_ymd_opt(1899, 12, 31)?
-            }
+            DateSystem::Date1900 if whole_days < 61 => NaiveDate::from_ymd_opt(1899, 12, 31)?,
             // From serial 61 onward the phantom day is included in the epoch.
             DateSystem::Date1900 => NaiveDate::from_ymd_opt(1899, 12, 30)?,
             DateSystem::Date1904 => NaiveDate::from_ymd_opt(1904, 1, 1)?,

@@ -435,7 +435,9 @@ fn blank_worksheet_with_inherited_format(entries: &[OoxmlZipEntry]) -> Vec<u8> {
             r#"<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" "#,
             r#"xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">"#,
             r#"<dimension ref="A1"/>{format}{columns}<sheetData></sheetData></worksheet>"#
-        )
+        ),
+        format = format,
+        columns = columns
     )
     .into_bytes()
 }
@@ -535,7 +537,10 @@ mod tests {
                 bytes: Vec::new(),
             },
         ];
-        assert_eq!(next_worksheet_part_name(&entries), "xl/worksheets/sheet10.xml");
+        assert_eq!(
+            next_worksheet_part_name(&entries),
+            "xl/worksheets/sheet10.xml"
+        );
         assert_eq!(
             next_relationship_id(r#"<Relationship Id="rId2"/><Relationship Id="rId8"/>"#),
             "rId9"

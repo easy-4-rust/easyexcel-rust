@@ -19,7 +19,10 @@ pub struct RichTextSegment {
 /// # Errors
 ///
 /// 区间为空、越界或边界落在 UTF-16 代理对中间时返回 XLSX 格式错误。
-pub fn segment_utf16_text(text: &str, intervals: &[(usize, usize)]) -> Result<Vec<RichTextSegment>> {
+pub fn segment_utf16_text(
+    text: &str,
+    intervals: &[(usize, usize)],
+) -> Result<Vec<RichTextSegment>> {
     let utf16_length = text.encode_utf16().count();
     let mut boundaries = vec![0, utf16_length];
     for &(start, end) in intervals {

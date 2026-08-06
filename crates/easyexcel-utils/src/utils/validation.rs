@@ -9,11 +9,7 @@
 ///
 /// 当 `expression` 为 `false` 时返回 `error`。
 pub fn ensure<E>(expression: bool, error: E) -> Result<(), E> {
-    if expression {
-        Ok(())
-    } else {
-        Err(error)
-    }
+    if expression { Ok(()) } else { Err(error) }
 }
 
 #[cfg(test)]

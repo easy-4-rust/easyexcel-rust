@@ -445,9 +445,9 @@ impl XlsRecordDispatcher {
 
     fn try_finalize_continuable_record(&mut self, require_complete: bool) -> Result<()> {
         match self.continuable_record.try_finish(require_complete)? {
-            Biff8ContinuationStatus::Complete(
-                Biff8DecodedContinuableRecord::SharedStrings(strings),
-            ) => {
+            Biff8ContinuationStatus::Complete(Biff8DecodedContinuableRecord::SharedStrings(
+                strings,
+            )) => {
                 let unique = u32::try_from(strings.len()).map_err(|_| {
                     crate::core::ExcelError::Format(
                         "decoded SST size exceeds BIFF u32 range".to_owned(),
@@ -457,9 +457,9 @@ impl XlsRecordDispatcher {
                 self.state.unique_string_count = Some(unique);
                 self.state.shared_strings = strings;
             }
-            Biff8ContinuationStatus::Complete(
-                Biff8DecodedContinuableRecord::UnicodeString(value),
-            ) => {
+            Biff8ContinuationStatus::Complete(Biff8DecodedContinuableRecord::UnicodeString(
+                value,
+            )) => {
                 self.string.process_decoded(value.clone());
                 if let Some((cell, _)) =
                     StringRecordHandler::process_string(&mut self.formula, value, self.auto_trim)

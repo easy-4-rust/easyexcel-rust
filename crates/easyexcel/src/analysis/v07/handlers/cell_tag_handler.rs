@@ -87,13 +87,15 @@ impl CellTagHandler {
         fallback_column: usize,
     ) -> Result<CellStartAttrs> {
         let position = match attrs.get(ATTRIBUTE_R) {
-            Some(reference) => easyexcel_xlsx::parse_a1_cell_reference(reference)
-                .map_err(ExcelError::from)?,
+            Some(reference) => {
+                easyexcel_xlsx::parse_a1_cell_reference(reference).map_err(ExcelError::from)?
+            }
             None => (fallback_row, fallback_column),
         };
         let style_index = match attrs.get(ATTRIBUTE_S) {
-            Some(value) if !value.is_empty() => easyexcel_xlsx::parse_xlsx_index(value, "style")
-                .map_err(ExcelError::from)?,
+            Some(value) if !value.is_empty() => {
+                easyexcel_xlsx::parse_xlsx_index(value, "style").map_err(ExcelError::from)?
+            }
             _ => DEFAULT_FORMAT_INDEX,
         };
         let cell_type = attrs.get(ATTRIBUTE_T).cloned();

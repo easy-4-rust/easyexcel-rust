@@ -26,10 +26,7 @@ pub(crate) fn format_non_finite(
     easyexcel_format::format_non_finite(value, pattern).map_err(Into::into)
 }
 
-pub(crate) fn parse_decimal(
-    value: &str,
-    pattern: Option<&str>,
-) -> Result<BigDecimal, ExcelError> {
+pub(crate) fn parse_decimal(value: &str, pattern: Option<&str>) -> Result<BigDecimal, ExcelError> {
     easyexcel_format::parse_decimal(value, pattern).map_err(Into::into)
 }
 

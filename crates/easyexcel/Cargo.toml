@@ -39,6 +39,7 @@ base64.workspace = true
 calamine.workspace = true
 cfb.workspace = true
 csv.workspace = true
+encoding_rs.workspace = true
 flate2.workspace = true
 rust_xlsxwriter.workspace = true
 ssfmt.workspace = true

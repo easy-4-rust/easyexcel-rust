@@ -16,7 +16,7 @@ use easyexcel_model::value::CellValue;
 
 use super::biff::{self, RawRecord, Records};
 use super::sst;
-use crate::biff8::format::builtin_format_code;
+use crate::biff8::builtin_format_code;
 
 /// Read an XLS workbook from any seekable reader.
 pub fn read<R: Read + Seek>(reader: R) -> Result<Workbook> {

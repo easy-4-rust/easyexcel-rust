@@ -39,8 +39,9 @@ impl RowTagHandler {
     /// 返回 [`ExcelError::Format`]。
     pub fn resolve_row_index(row_attr: Option<&str>, before: u32) -> Result<u32> {
         match row_attr {
-            Some(value) if !value.is_empty() => easyexcel_xlsx::parse_xlsx_row_number(value)
-                .map_err(ExcelError::from),
+            Some(value) if !value.is_empty() => {
+                easyexcel_xlsx::parse_xlsx_row_number(value).map_err(ExcelError::from)
+            }
             _ => Ok(before),
         }
     }

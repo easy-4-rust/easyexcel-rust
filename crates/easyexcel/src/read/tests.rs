@@ -571,18 +571,10 @@ fn helpers_preserve_diagnostics_and_xlsx_column_limits() {
         "\u{a0}value\u{a0}"
     );
     assert!(
-        easyexcel_utils::string_utils::equals_with_optional_java_trim(
-            " Sheet ",
-            "Sheet",
-            true
-        )
+        easyexcel_utils::string_utils::equals_with_optional_java_trim(" Sheet ", "Sheet", true)
     );
     assert!(
-        !easyexcel_utils::string_utils::equals_with_optional_java_trim(
-            " Sheet ",
-            "Sheet",
-            false
-        )
+        !easyexcel_utils::string_utils::equals_with_optional_java_trim(" Sheet ", "Sheet", false)
     );
 }
 
@@ -836,7 +828,7 @@ fn reads_java_easyexcel_legacy_multisheet_fixture() -> Result<()> {
     let directory = tempdir()?;
     let path = directory.path().join("java-multiplesheets.xls");
     let compressed = base64::engine::general_purpose::STANDARD
-        .decode(include_str!("../../../easyexcel-test/tests/fixtures/java-fixtures/java-multiplesheets.xls.gz.b64").trim())
+        .decode(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-multiplesheets.xls.gz.b64")).trim())
         .map_err(test_error)?;
     let mut decoder = GzDecoder::new(compressed.as_slice());
     let mut workbook = Vec::new();
@@ -924,30 +916,38 @@ fn reads_java_easyexcel_legacy_multisheet_fixture() -> Result<()> {
 
 fn java_compatibility_fixture(directory: &TempDir, name: &str) -> Result<std::path::PathBuf> {
     let encoded = match name {
-        "t01.xls" => include_str!(
-            "../../../easyexcel-test/tests/fixtures/java-fixtures/java-compat-t01.xls.gz.b64"
-        ),
-        "t02.xlsx" => include_str!(
-            "../../../easyexcel-test/tests/fixtures/java-fixtures/java-compat-t02.xlsx.gz.b64"
-        ),
-        "t03.xlsx" => include_str!(
-            "../../../easyexcel-test/tests/fixtures/java-fixtures/java-compat-t03.xlsx.gz.b64"
-        ),
-        "t04.xlsx" => include_str!(
-            "../../../easyexcel-test/tests/fixtures/java-fixtures/java-compat-t04.xlsx.gz.b64"
-        ),
-        "t05.xlsx" => include_str!(
-            "../../../easyexcel-test/tests/fixtures/java-fixtures/java-compat-t05.xlsx.gz.b64"
-        ),
-        "t06.xlsx" => include_str!(
-            "../../../easyexcel-test/tests/fixtures/java-fixtures/java-compat-t06.xlsx.gz.b64"
-        ),
-        "t07.xlsx" => include_str!(
-            "../../../easyexcel-test/tests/fixtures/java-fixtures/java-compat-t07.xlsx.gz.b64"
-        ),
-        "t09.xlsx" => include_str!(
-            "../../../easyexcel-test/tests/fixtures/java-fixtures/java-compat-t09.xlsx.gz.b64"
-        ),
+        "t01.xls" => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-compat-t01.xls.gz.b64"
+        )),
+        "t02.xlsx" => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-compat-t02.xlsx.gz.b64"
+        )),
+        "t03.xlsx" => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-compat-t03.xlsx.gz.b64"
+        )),
+        "t04.xlsx" => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-compat-t04.xlsx.gz.b64"
+        )),
+        "t05.xlsx" => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-compat-t05.xlsx.gz.b64"
+        )),
+        "t06.xlsx" => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-compat-t06.xlsx.gz.b64"
+        )),
+        "t07.xlsx" => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-compat-t07.xlsx.gz.b64"
+        )),
+        "t09.xlsx" => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-compat-t09.xlsx.gz.b64"
+        )),
         _ => {
             return Err(ExcelError::Format(format!(
                 "unknown compatibility fixture: {name}"
@@ -1078,9 +1078,7 @@ fn reads_java_easyexcel_encrypted_xlsx_fixture() -> Result<()> {
     let path = directory.path().join("java-encrypt07.xlsx");
     let compressed = base64::engine::general_purpose::STANDARD
         .decode(
-            include_str!(
-                "../../../easyexcel-test/tests/fixtures/java-fixtures/java-encrypt07.xlsx.gz.b64"
-            )
+            include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-encrypt07.xlsx.gz.b64"))
             .trim(),
         )
         .map_err(test_error)?;
@@ -1899,15 +1897,17 @@ fn reads_java_easyexcel_official_csv_bom_fixtures() -> Result<()> {
     for (name, fixture) in [
         (
             "no-bom.csv",
-            include_str!(
-                "../../../easyexcel-test/tests/fixtures/java-fixtures/java-bom-no-bom.csv.b64"
-            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-bom-no-bom.csv.b64"
+            )),
         ),
         (
             "office-bom.csv",
-            include_str!(
-                "../../../easyexcel-test/tests/fixtures/java-fixtures/java-bom-office-bom.csv.b64"
-            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-bom-office-bom.csv.b64"
+            )),
         ),
     ] {
         let path = directory.path().join(name);

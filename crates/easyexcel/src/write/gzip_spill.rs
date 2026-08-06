@@ -35,13 +35,8 @@ impl GzipSheetDataWriter {
     /// Returns an I/O error when the tempfile cannot be created.
     pub fn create(dir: &Path, sheet_name: impl Into<String>) -> Result<Self> {
         Ok(Self {
-            inner: EngineSpillWriter::create(
-                dir,
-                sheet_name,
-                "easyexcel-sxssf-",
-                ".xml.gz",
-            )
-            .map_err(ExcelError::from)?,
+            inner: EngineSpillWriter::create(dir, sheet_name, "easyexcel-sxssf-", ".xml.gz")
+                .map_err(ExcelError::from)?,
         })
     }
 
@@ -52,12 +47,8 @@ impl GzipSheetDataWriter {
     /// Returns an I/O error when the temp directory or file cannot be created.
     pub fn create_owned(sheet_name: impl Into<String>) -> Result<Self> {
         Ok(Self {
-            inner: EngineSpillWriter::create_owned(
-                sheet_name,
-                "easyexcel-sxssf-",
-                ".xml.gz",
-            )
-            .map_err(ExcelError::from)?,
+            inner: EngineSpillWriter::create_owned(sheet_name, "easyexcel-sxssf-", ".xml.gz")
+                .map_err(ExcelError::from)?,
         })
     }
 
@@ -168,9 +159,10 @@ fn from_spill_value(value: GzipCellValue) -> Result<CellValue> {
         GzipCellValue::Bool(flag) => CellValue::Bool(flag),
         GzipCellValue::Int(number) => CellValue::Int(number),
         GzipCellValue::Float(number) => CellValue::Float(number),
-        GzipCellValue::Decimal(text) => CellValue::Decimal(text.parse().map_err(|error| {
-            ExcelError::Format(format!("invalid decimal spill: {error}"))
-        })?),
+        GzipCellValue::Decimal(text) => CellValue::Decimal(
+            text.parse()
+                .map_err(|error| ExcelError::Format(format!("invalid decimal spill: {error}")))?,
+        ),
         GzipCellValue::Date(text) => CellValue::Date(
             NaiveDate::parse_from_str(&text, "%Y-%m-%d")
                 .map_err(|error| ExcelError::Format(format!("invalid date spill: {error}")))?,

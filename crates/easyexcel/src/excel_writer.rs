@@ -15,8 +15,6 @@ use crate::util::work_book_util::create_sheet;
 use easyexcel_xlsx::xlsx::generation::{self, Workbook};
 
 use crate::write::append_rows::append_rows_to_worksheet_with_gzip_and_context;
-use crate::write::xls_adapter::Biff8Book;
-use easyexcel_csv::CsvRecordWriter;
 use crate::write::excel_output_stream::ExcelOutputStream;
 use crate::write::excel_writer_core::{
     CapturedOutput, HandlerHolderScope, after_sheet, after_sheet_create, after_workbook,
@@ -28,14 +26,12 @@ use crate::write::excel_writer_core::{
     collect_handler_once_absolute_merges, collect_once_absolute_merges,
     collect_template_append_rows, create_csv_record_writer, create_stateful_csv_writer,
     finish_csv_record_writer, format_error, handlers_request_auto_width, head_rows_for_schema,
-    merge_range_to_biff8, relative_head_start_row,
-    run_own_workbook_callbacks, run_template_handler_callbacks, save_template_package,
-    save_workbook, save_workbook_to_writer, save_xls_book, set_xlsx_column_width_chars,
-    sort_handlers, take_captured_output, template_append_cell_styles, template_append_row_heights,
-    validate_excel_row_schema, validate_stateful_backend, validate_stateful_schema,
-    write_sheet_to_workbook_with_gzip,
+    merge_range_to_biff8, relative_head_start_row, run_own_workbook_callbacks,
+    run_template_handler_callbacks, save_template_package, save_workbook, save_workbook_to_writer,
+    save_xls_book, set_xlsx_column_width_chars, sort_handlers, take_captured_output,
+    template_append_cell_styles, template_append_row_heights, validate_excel_row_schema,
+    validate_stateful_backend, validate_stateful_schema, write_sheet_to_workbook_with_gzip,
 };
-use crate::write_type_helpers::effective_write_type;
 use crate::write::handler::default_write_handler_loader::DefaultWriteHandlerLoader;
 use crate::write::handler_execution_scope::{
     HandlerExecutionScope, ensure_gzip_spill, load_annotation_handlers,
@@ -47,6 +43,9 @@ use crate::write::shared_write_handler::{
 use crate::write::write_options::WriteOptions;
 use crate::write::write_progress::WriteProgress;
 use crate::write::write_sheet::WriteSheet;
+use crate::write::xls_adapter::Biff8Book;
+use crate::write_type_helpers::effective_write_type;
+use easyexcel_csv::CsvRecordWriter;
 
 /// Stateful XLSX or single-sheet CSV writer matching Java `ExcelWriter`'s lifecycle.
 #[allow(clippy::struct_excessive_bools)]

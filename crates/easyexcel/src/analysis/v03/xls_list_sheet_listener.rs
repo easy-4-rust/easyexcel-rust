@@ -87,7 +87,7 @@ mod tests {
     fn write_java_multisheet_xls() -> NamedTempFile {
         let file = NamedTempFile::with_suffix(".xls").expect("temp xls");
         let compressed = base64::engine::general_purpose::STANDARD
-            .decode(include_str!("../../../../easyexcel-test/tests/fixtures/java-fixtures/java-multiplesheets.xls.gz.b64").trim())
+            .decode(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-multiplesheets.xls.gz.b64")).trim())
             .expect("fixture b64");
         let mut decoder = GzDecoder::new(compressed.as_slice());
         let mut workbook = Vec::new();

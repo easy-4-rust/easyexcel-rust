@@ -10,8 +10,7 @@ use crate::core::excel_error::ExcelError;
 ///
 /// 当 `expression` 为 `false` 时返回 [`ExcelError::Unsupported`]，错误消息为 `message`。
 pub fn is_true(expression: bool, message: impl Into<String>) -> Result<(), ExcelError> {
-    easyexcel_utils::validation::ensure(expression, message.into())
-        .map_err(ExcelError::Unsupported)
+    easyexcel_utils::validation::ensure(expression, message.into()).map_err(ExcelError::Unsupported)
 }
 
 #[cfg(test)]

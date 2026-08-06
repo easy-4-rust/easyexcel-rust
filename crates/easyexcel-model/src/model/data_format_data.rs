@@ -51,7 +51,11 @@ impl DataFormatData {
         if let Some(index) = source.index {
             target.index = Some(index);
         }
-        if let Some(format) = source.format.as_ref().filter(|value| !value.trim().is_empty()) {
+        if let Some(format) = source
+            .format
+            .as_ref()
+            .filter(|value| !value.trim().is_empty())
+        {
             target.format = Some(format.clone());
         }
     }

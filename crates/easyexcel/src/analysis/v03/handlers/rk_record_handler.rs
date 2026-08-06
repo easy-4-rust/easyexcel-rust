@@ -36,8 +36,7 @@ impl XlsRecordHandler for RkRecordHandler {
         if record_sid != RK_SID {
             return;
         }
-        if let Some((row, column)) =
-            easyexcel_xls::biff8::event_record::decode_cell_position(data)
+        if let Some((row, column)) = easyexcel_xls::biff8::event_record::decode_cell_position(data)
         {
             self.last_cell = Some(Self::process_rk(row, column));
         }

@@ -22,7 +22,7 @@ use easyexcel_model::value::CellValue;
 
 use super::biff;
 use super::sst;
-use crate::biff8::format::builtin_format_id;
+use crate::biff8::builtin_format_id;
 
 /// Write a workbook as XLS (BIFF8) to any seekable writer.
 pub fn write<W: Write + Seek>(wb: &Workbook, mut writer: W) -> Result<()> {

@@ -28,6 +28,7 @@ impl CsvEncodingWriter {
         Ok(Self { inner })
     }
 
+    #[cfg(test)]
     pub(crate) fn new(output: Box<dyn Write + Send>, encoding: CsvEncoding) -> Self {
         Self {
             inner: easyexcel_csv::CsvEncodingWriter::new(output, encoding),

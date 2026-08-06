@@ -1101,6 +1101,7 @@ dependencies = [
  "easyexcel-utils",
  "easyexcel-xls",
  "easyexcel-xlsx",
+ "encoding_rs",
  "flate2",
  "mockall",
  "num-bigint",

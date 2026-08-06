@@ -33,9 +33,9 @@ pub struct TrimEditor;
 impl CellEditor for TrimEditor {
     fn edit(&self, original: &CellValue, _sheet_name: &str, _row: u32, _col: u32) -> CellValue {
         match original {
-            CellValue::String(s) => CellValue::String(
-                easyexcel_utils::string_utils::java_trim(s).to_owned(),
-            ),
+            CellValue::String(s) => {
+                CellValue::String(easyexcel_utils::string_utils::java_trim(s).to_owned())
+            }
             other => other.clone(),
         }
     }

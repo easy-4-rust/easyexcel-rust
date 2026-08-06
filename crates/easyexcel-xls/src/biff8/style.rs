@@ -286,10 +286,7 @@ impl Biff8StyleTable {
         }
         let font_index = self.ensure_font(request);
         let fill_fg_icv = self.resolve_color(request.fill_foreground_color, 0x40);
-        let fill_bg_icv = self.resolve_color(
-            request.fill_background_color,
-            ICV_PATTERN_BG_DEFAULT,
-        );
+        let fill_bg_icv = self.resolve_color(request.fill_background_color, ICV_PATTERN_BG_DEFAULT);
         let key = XfKey {
             font_index,
             ifmt,

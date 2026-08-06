@@ -10,7 +10,7 @@ use crate::{Error, Result};
 use super::gzip_record::{GzipRecordReader, GzipRecordSnapshot, GzipRecordWriter};
 
 /// 带逻辑工作表名称的 gzip spill 可观测状态。
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GzipCellSpillSnapshot {
     /// spill 所属的逻辑工作表名称。
     pub sheet_name: String,
@@ -48,16 +48,28 @@ pub enum GzipCellValue {
     /// 公式表达式。
     Formula(String),
     /// 超链接显示值。
-    Hyperlink { url: String, text: String },
+    Hyperlink {
+        /// 目标地址。
+        url: String,
+        /// 显示文本。
+        text: String,
+    },
     /// 带批注的嵌套值。
-    Comment { value: Box<Self>, text: String },
+    Comment {
+        /// 被批注修饰的原始单元格值。
+        value: Box<Self>,
+        /// 批注正文。
+        text: String,
+    },
     /// 图片字节。
     Image(Vec<u8>),
     /// 已展平的富文本。
     RichText(String),
     /// 单元格值及多张图片。
     Images {
+        /// 被图片修饰的原始单元格值。
         value: Box<Self>,
+        /// 图片二进制内容。
         images: Vec<Vec<u8>>,
     },
 }
@@ -131,11 +143,7 @@ impl GzipCellSpillWriter {
     }
 
     /// 创建自持有临时目录的工作表 spill 文件。
-    pub fn create_owned(
-        sheet_name: impl Into<String>,
-        prefix: &str,
-        suffix: &str,
-    ) -> Result<Self> {
+    pub fn create_owned(sheet_name: impl Into<String>, prefix: &str, suffix: &str) -> Result<Self> {
         Ok(Self {
             sheet_name: sheet_name.into(),
             inner: GzipCellRecordWriter::create_owned(prefix, suffix)?,
@@ -154,7 +162,10 @@ impl GzipCellSpillWriter {
 
     /// 返回当前 spill 状态。
     pub fn snapshot(&mut self) -> Result<GzipCellSpillSnapshot> {
-        Ok(spill_snapshot(self.sheet_name.clone(), self.inner.snapshot()?))
+        Ok(spill_snapshot(
+            self.sheet_name.clone(),
+            self.inner.snapshot()?,
+        ))
     }
 
     /// 完成压缩并切换到读取阶段。
@@ -219,7 +230,10 @@ impl GzipCellRecordReader {
 
     /// 读取下一行；到达 EOF 时返回 `None`。
     pub fn next_row(&mut self) -> Result<Option<Vec<GzipCellValue>>> {
-        self.inner.next_record()?.map(|row| decode_row(&row)).transpose()
+        self.inner
+            .next_record()?
+            .map(|row| decode_row(&row))
+            .transpose()
     }
 }
 
@@ -404,7 +418,7 @@ fn read_bytes(buf: &[u8], cursor: &mut usize) -> Result<Vec<u8>> {
 
 #[cfg(test)]
 mod tests {
-    use super::{GzipCellValue, decode_cell, decode_row, encode_row};
+    use super::{GzipCellSpillWriter, GzipCellValue, decode_cell, decode_row, encode_row};
 
     #[test]
     fn row_protocol_round_trips_nested_values() {
@@ -439,5 +453,29 @@ mod tests {
     #[test]
     fn row_protocol_rejects_truncated_cell_count() {
         assert!(decode_row(&[1, 0, 0]).is_err());
+    }
+
+    #[test]
+    fn sheet_spill_owns_name_snapshot_and_writer_to_reader_lifecycle() {
+        let directory = tempfile::tempdir().expect("tempdir");
+        let mut writer =
+            GzipCellSpillWriter::create(directory.path(), "Data", "easyexcel-io-", ".rows.gz")
+                .expect("create spill");
+        let row = vec![
+            GzipCellValue::Text("name".to_owned()),
+            GzipCellValue::Int(7),
+        ];
+        writer.write_row(&row).expect("write row");
+        let active = writer.snapshot().expect("active snapshot");
+        assert_eq!(active.sheet_name, "Data");
+        assert!(active.is_gzip);
+        assert!(active.uncompressed_len > 0);
+
+        let mut reader = writer.finish().expect("finish spill");
+        let finished = reader.snapshot();
+        assert_eq!(finished.sheet_name, "Data");
+        assert_eq!(finished.path, active.path);
+        assert_eq!(reader.next_row().expect("read row"), Some(row));
+        assert_eq!(reader.next_row().expect("read eof"), None);
     }
 }

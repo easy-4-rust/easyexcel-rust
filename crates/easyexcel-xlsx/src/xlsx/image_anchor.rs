@@ -137,9 +137,7 @@ fn resolve_coordinate(current: u32, coordinate: AnchorCoordinate, label: &str) -
     let Some(relative) = coordinate.relative else {
         return Ok(current);
     };
-    current.checked_add_signed(relative).ok_or_else(|| {
-        Error::Xlsx(format!(
-            "image anchor {label} is outside the worksheet"
-        ))
-    })
+    current
+        .checked_add_signed(relative)
+        .ok_or_else(|| Error::Xlsx(format!("image anchor {label} is outside the worksheet")))
 }

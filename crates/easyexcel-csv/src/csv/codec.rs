@@ -19,9 +19,8 @@ use super::CsvCharset;
 ///
 /// Returns [`Error::Unsupported`] when the configured charset label is unknown.
 pub fn resolve_encoding(charset: &CsvCharset) -> Result<&'static Encoding> {
-    Encoding::for_label(charset.name().as_bytes()).ok_or_else(|| {
-        Error::Unsupported(format!("unsupported CSV charset: {}", charset.name()))
-    })
+    Encoding::for_label(charset.name().as_bytes())
+        .ok_or_else(|| Error::Unsupported(format!("unsupported CSV charset: {}", charset.name())))
 }
 
 /// Wrap a byte reader with streaming BOM removal and UTF-8 transcoding.

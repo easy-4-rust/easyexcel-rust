@@ -69,9 +69,8 @@ impl Sheet {
     /// 保留原工作簿行号。
     pub fn stored_rows(&self) -> impl Iterator<Item = StoredRow<'_>> {
         self.stored_range().into_iter().flat_map(move |range| {
-            (range.start.row..=range.end.row).map(move |index| {
-                StoredRow::new(self, index, range.start.col, range.end.col)
-            })
+            (range.start.row..=range.end.row)
+                .map(move |index| StoredRow::new(self, index, range.start.col, range.end.col))
         })
     }
 }

@@ -73,11 +73,6 @@ impl Biff8TemplatePackage {
             .map_err(ExcelError::from)
     }
 
-    /// 序列化为 OLE/CFB 字节。
-    pub fn to_bytes(&self) -> Result<Vec<u8>> {
-        self.inner.to_bytes().map_err(ExcelError::from)
-    }
-
     /// 使用中立文本数据替换 BIFF8 标量占位符。
     pub fn replace_scalar_placeholders(
         &mut self,

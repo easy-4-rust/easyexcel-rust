@@ -6,9 +6,7 @@ pub const EMU_PER_POINT: i32 = 12_700;
 /// 将可选点坐标转换为 EMU；缺失坐标按零处理。
 #[must_use]
 pub fn points_to_emu(coordinate: Option<i32>) -> i32 {
-    coordinate
-        .unwrap_or_default()
-        .saturating_mul(EMU_PER_POINT)
+    coordinate.unwrap_or_default().saturating_mul(EMU_PER_POINT)
 }
 
 /// 按 Java EasyExcel 优先级解析单元格内坐标。

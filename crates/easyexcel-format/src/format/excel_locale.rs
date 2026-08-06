@@ -5,7 +5,8 @@
 use std::str::FromStr;
 
 use pure_rust_locales::Locale as SystemLocale;
-use easyexcel_format::SpreadsheetLocale as FormatLocale;
+
+use crate::SpreadsheetLocale as FormatLocale;
 
 use super::locale_generated::formatter_locale;
 
@@ -38,6 +39,8 @@ impl ExcelLocale {
         &self.language_tag
     }
 
+    /// 返回解析后的电子表格格式化区域数据。
+    #[must_use]
     pub fn formatter(&self) -> FormatLocale {
         self.formatter.clone()
     }

@@ -59,9 +59,7 @@ pub fn select_sheet_names(
         SheetSelection::Name(name) => names
             .iter()
             .enumerate()
-            .find(|(_, candidate)| {
-                equals_with_optional_java_trim(candidate, name, auto_trim)
-            })
+            .find(|(_, candidate)| equals_with_optional_java_trim(candidate, name, auto_trim))
             .map(|(index, candidate)| vec![(index, candidate.clone())])
             .ok_or_else(|| Error::SheetNotFound(name.to_owned())),
         SheetSelection::All => Ok(names.into_iter().enumerate().collect()),

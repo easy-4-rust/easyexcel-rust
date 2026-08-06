@@ -484,10 +484,7 @@ fn scalar_placeholder_key(text: &str) -> &str {
     text.trim_start_matches('{').trim_end_matches('}')
 }
 
-fn collection_placeholder_key<'a>(
-    text: &'a str,
-    collection_name: Option<&str>,
-) -> Option<&'a str> {
+fn collection_placeholder_key<'a>(text: &'a str, collection_name: Option<&str>) -> Option<&'a str> {
     let prefix = collection_name
         .map(|name| format!("{{{name}."))
         .unwrap_or_else(|| "{.".to_owned());

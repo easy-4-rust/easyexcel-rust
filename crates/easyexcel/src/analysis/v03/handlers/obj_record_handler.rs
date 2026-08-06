@@ -34,8 +34,7 @@ impl XlsRecordHandler for ObjRecordHandler {
             return;
         }
         if let Some(common) = easyexcel_xls::biff8::event_record::decode_obj_common_data(data)
-            && common.object_type
-                == easyexcel_xls::biff8::event_record::BIFF8_OBJECT_TYPE_COMMENT
+            && common.object_type == easyexcel_xls::biff8::event_record::BIFF8_OBJECT_TYPE_COMMENT
         {
             self.process_obj(common.object_id);
         }

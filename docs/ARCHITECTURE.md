@@ -99,7 +99,7 @@ flowchart LR
 | Excel 15 位有效数字数学上下文常量 | `easyexcel-format::EXCEL_MATH_CONTEXT_PRECISION` | Java `EasyExcelConstants` 路径重导出 |
 | `util/file_utils.rs`、`util/io_utils.rs` | `easyexcel-io::io::{file_utils,io_utils}` | Java 包路径和错误类型兼容代理 |
 | `util` 中与门面类型无关的集合、字符串、坐标和条件校验算法 | `easyexcel-utils::utils` | Java 工具类方法名和 `ExcelError` 映射 |
-| `write/gzip_spill.rs` 的临时文件/gzip/framing/单元格协议 | `easyexcel-io::io::{gzip_record,gzip_cell_record}` | EasyExcel `CellValue` 与中立 `GzipCellValue` 的映射 |
+| `write/gzip_spill.rs` 的临时文件/gzip/framing/单元格协议、工作表名称快照及 writer→reader 生命周期 | `easyexcel-io::io::{gzip_record,gzip_cell_record}` | EasyExcel `CellValue` 与中立 `GzipCellValue` 的双向映射及错误适配 |
 | Java `ReadCacheSelector` 的阈值选择，以及旧 `Ehcache` 语义对应的活跃条目淘汰、写入/只读阶段切换和持久后备 | `easyexcel-cache::cache::{SharedStringCachePolicy,SharedStringCacheHandle,shared_string_cache}`（Moka + 临时文件） | selector 参数、`MokaCache` 的 `ReadCache` 适配；内部入口使用 `moka()`，`Ehcache`/`ehcache()` 仅为弃用兼容名称 |
 | CSV 物理行列索引的有界转换 | `easyexcel-csv::csv::index` | `ExcelError` 映射与 listener 行调度 |
 | 路径扩展名与文件头 magic 的工作簿格式探测、未知格式默认 CSV | `easyexcel-io::Format::detect_path` | `Format` 到 Java `ExcelTypeEnum` 与 executor 的映射 |

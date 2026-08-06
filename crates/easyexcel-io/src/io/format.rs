@@ -33,8 +33,7 @@ impl Format {
     #[must_use]
     pub fn from_path(path: &Path) -> Option<Self> {
         Self::from_extension(
-            path
-                .extension()
+            path.extension()
                 .and_then(|extension| extension.to_str())
                 .unwrap_or_default(),
         )
@@ -82,14 +81,20 @@ mod tests {
             .expect("temp xls");
         xls.write_all(&[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1])
             .expect("magic");
-        assert_eq!(Format::detect_path(xls.path()).expect("detect"), Format::Xls);
+        assert_eq!(
+            Format::detect_path(xls.path()).expect("detect"),
+            Format::Xls
+        );
 
         let mut csv = tempfile::Builder::new()
             .suffix(".unknown")
             .tempfile()
             .expect("temp csv");
         csv.write_all(b"a,b\n1,2\n").expect("csv");
-        assert_eq!(Format::detect_path(csv.path()).expect("detect"), Format::Csv);
+        assert_eq!(
+            Format::detect_path(csv.path()).expect("detect"),
+            Format::Csv
+        );
     }
 }
 

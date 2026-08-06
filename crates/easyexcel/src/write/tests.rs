@@ -4744,7 +4744,10 @@ fn image_anchor_layout_and_validation_cover_java_coordinate_boundaries() -> Resu
     assert_eq!(layout.row_height(0), 24);
     assert_eq!(layout.row_height(1), 40);
     assert_eq!(easyexcel_xlsx::xlsx::generation::column_width_pixels(0), 0);
-    assert_eq!(easyexcel_xlsx::xlsx::generation::row_height_pixels(None), 20);
+    assert_eq!(
+        easyexcel_xlsx::xlsx::generation::row_height_pixels(None),
+        20
+    );
     assert_eq!(resolve_anchor_coordinate(4, Some(3), Some(8), "row")?, 3);
     assert_eq!(resolve_anchor_coordinate(4, Some(0), Some(-2), "row")?, 2);
     assert_eq!(resolve_anchor_coordinate(4, None, None, "row")?, 4);

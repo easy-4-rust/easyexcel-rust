@@ -12,8 +12,8 @@ use crate::write::horizontal_alignment::HorizontalAlignment;
 use crate::write::vertical_alignment::VerticalAlignment;
 
 pub use easyexcel_xls::biff8::{
-    Biff8Color, Biff8FillPattern, Biff8HorizontalAlignment, Biff8NumberFormat,
-    Biff8StyleRequest, Biff8StyleTable, Biff8VerticalAlignment,
+    Biff8Color, Biff8FillPattern, Biff8HorizontalAlignment, Biff8NumberFormat, Biff8StyleRequest,
+    Biff8VerticalAlignment,
 };
 
 /// 把 EasyExcel 单元格样式合并到 BIFF8 请求。
@@ -147,9 +147,7 @@ pub(crate) const fn writer_horizontal_alignment(
     }
 }
 
-pub(crate) const fn writer_vertical_alignment(
-    align: VerticalAlignment,
-) -> Biff8VerticalAlignment {
+pub(crate) const fn writer_vertical_alignment(align: VerticalAlignment) -> Biff8VerticalAlignment {
     match align {
         VerticalAlignment::Top => Biff8VerticalAlignment::Top,
         VerticalAlignment::Center => Biff8VerticalAlignment::Center,

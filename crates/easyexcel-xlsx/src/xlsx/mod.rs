@@ -6,15 +6,15 @@
 use easyexcel_io::Result;
 use easyexcel_model::model::Workbook;
 
-mod crypto;
 mod cell_reference;
+mod crypto;
 mod encrypt;
 mod event_reader;
-mod image_anchor;
 pub mod generation;
+mod image_anchor;
 mod legacy_template;
-mod ooxml_package;
 pub mod ooxml_constants;
+mod ooxml_package;
 pub mod package;
 mod package_reader;
 mod reader;
@@ -24,19 +24,20 @@ mod source;
 mod stream;
 mod styles;
 mod tables;
-mod template_package;
 pub mod template_fill;
+mod template_package;
 mod template_source;
 pub mod template_styles;
 pub mod template_xml;
 mod writer;
 mod xmlutil;
 
-pub use encrypt::{ReadWriteSeek, encrypt_package_to};
 pub use cell_reference::{
-    MAX_XLSX_COLUMN_NUMBER, MAX_XLSX_ROW_NUMBER, dimension_last_row,
-    parse_a1_cell_range, parse_a1_cell_reference, parse_xlsx_index, parse_xlsx_row_number,
+    MAX_XLSX_COLUMN_NUMBER, MAX_XLSX_ROW_NUMBER, dimension_last_row, parse_a1_cell_range,
+    parse_a1_cell_reference, parse_xlsx_index, parse_xlsx_row_number,
 };
+pub use crypto::{decrypt_file, is_encrypted_ooxml};
+pub use encrypt::{ReadWriteSeek, encrypt_package_to};
 pub use event_reader::{
     ReadSeek, XlsxCellEvent, XlsxCellEventReader, XlsxCellValue, XlsxDisplayOptions,
     XlsxEventMetadata, XlsxExtra, XlsxExtraKind, XlsxNumberFormat,
@@ -44,24 +45,23 @@ pub use event_reader::{
 pub use image_anchor::{
     AnchorCoordinate, ImageAnchorSpec, ResolvedImageAnchor, resolve_image_anchor,
 };
-pub use crypto::{decrypt_file, is_encrypted_ooxml};
-pub use ooxml_package::{OoxmlPackage, OoxmlZipEntry};
-pub use package_reader::XlsxPackageReader;
 pub use legacy_template::{
     LegacyTemplateSheet, load_legacy_template_sheets, seed_legacy_template_workbook,
 };
+pub use ooxml_package::{OoxmlPackage, OoxmlZipEntry};
+pub use package_reader::XlsxPackageReader;
 pub use reader::{read, read_with_password};
 pub use rich_text_segment::{RichTextSegment, segment_utf16_text};
 pub use source::{
     XlsxInput, XlsxSource, excel_input_suffix, is_compound_document, materialize_excel_input,
 };
 pub use stream::stream;
-pub use template_package::OoxmlTemplatePackage;
 pub use template_fill::{
     TemplateCollectionFill, TemplateFillData, TemplateFillDirection, append_rows_to_sheet,
-    append_rows_to_xml, render_typed_cell, replace_collection_fills_in_sheet,
-    replace_scalar_cells, replace_scalar_cells_in_sheet, replace_scalar_cells_in_xml,
+    append_rows_to_xml, render_typed_cell, replace_collection_fills_in_sheet, replace_scalar_cells,
+    replace_scalar_cells_in_sheet, replace_scalar_cells_in_xml,
 };
+pub use template_package::OoxmlTemplatePackage;
 pub use template_source::{
     TemplateSheetSelector, has_template, load_template_bytes, normalize_workbook_target,
     resolve_sheet_target, validate_xlsx_template_source, workbook_sheets, worksheet_path,

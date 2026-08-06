@@ -7,13 +7,13 @@ use std::io::Write;
 use std::path::Path;
 
 use crate::core::{ExcelError, ExcelRow, Result, WriteHandler, WriteWorkbookContext};
-use crate::write::xls_adapter::Biff8Book;
 use crate::write::excel_writer_core::{
     HandlerHolderScope, after_workbook, after_workbook_create, before_workbook, sort_handlers,
     validate_excel_row_schema, with_default_write_converters, write_sheet_to_biff8_book,
     write_xls_onto_template,
 };
 use crate::write::write_options::WriteOptions;
+use crate::write::xls_adapter::Biff8Book;
 
 /// 将类型化行写入 BIFF8 (`.xls`) 文件。
 ///
@@ -214,8 +214,8 @@ mod tests_extra {
     use super::*;
 
     use crate::core::{DynamicRow, DynamicValue};
-    use crate::write::xls_adapter::Biff8Book;
     use crate::write::write_options::WriteOptions;
+    use crate::write::xls_adapter::Biff8Book;
     use std::collections::BTreeMap;
     use std::io::Cursor;
 

@@ -159,9 +159,7 @@ pub fn decode_obj_common_data(data: &[u8]) -> Option<Biff8CommonObjectData> {
         let payload = data.get(payload_start..payload_end)?;
         if subrecord_type == 0x0015 {
             let object_type = u16::from_le_bytes(payload.get(0..2)?.try_into().ok()?);
-            let object_id = u32::from(u16::from_le_bytes(
-                payload.get(2..4)?.try_into().ok()?,
-            ));
+            let object_id = u32::from(u16::from_le_bytes(payload.get(2..4)?.try_into().ok()?));
             return Some(Biff8CommonObjectData {
                 object_type,
                 object_id,

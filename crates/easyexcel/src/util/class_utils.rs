@@ -57,7 +57,9 @@ pub fn combine_excel_content_property(
         number_format_property: field_property
             .number_format_property
             .or(type_property.number_format_property),
-        date_time_format: field_property.date_time_format.or(type_property.date_time_format),
+        date_time_format: field_property
+            .date_time_format
+            .or(type_property.date_time_format),
         number_format: field_property.number_format.or(type_property.number_format),
     })
 }

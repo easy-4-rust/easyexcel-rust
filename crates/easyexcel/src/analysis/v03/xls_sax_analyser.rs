@@ -112,13 +112,10 @@ impl XlsSaxAnalyser {
         let workbook = easyexcel_xls::biff8::record_stream::read_workbook_stream(&self.path)
             .map_err(ExcelError::from)?;
         self.record_dispatcher.reset();
-        easyexcel_xls::biff8::record_stream::walk_biff_records(
-            &workbook,
-            |record_sid, data| {
-                self.process_record(record_sid, data)
-                    .map_err(|error| easyexcel_io::Error::Other(error.to_string()))
-            },
-        )
+        easyexcel_xls::biff8::record_stream::walk_biff_records(&workbook, |record_sid, data| {
+            self.process_record(record_sid, data)
+                .map_err(|error| easyexcel_io::Error::Other(error.to_string()))
+        })
         .map_err(ExcelError::from)?;
         self.record_dispatcher.finish_records()
     }
@@ -213,7 +210,7 @@ mod tests {
     fn write_java_multisheet_xls() -> NamedTempFile {
         let file = NamedTempFile::with_suffix(".xls").expect("temp xls");
         let compressed = base64::engine::general_purpose::STANDARD
-            .decode(include_str!("../../../../easyexcel-test/tests/fixtures/java-fixtures/java-multiplesheets.xls.gz.b64").trim())
+            .decode(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-multiplesheets.xls.gz.b64")).trim())
             .expect("fixture b64");
         let mut decoder = GzDecoder::new(compressed.as_slice());
         let mut workbook = Vec::new();
@@ -394,7 +391,7 @@ mod tests_extra {
     fn write_java_multisheet_xls() -> NamedTempFile {
         let file = NamedTempFile::with_suffix(".xls").expect("temp xls");
         let compressed = base64::engine::general_purpose::STANDARD
-            .decode(include_str!("../../../../easyexcel-test/tests/fixtures/java-fixtures/java-multiplesheets.xls.gz.b64").trim())
+            .decode(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../tests/easyexcel-test/tests/fixtures/java-fixtures/java-multiplesheets.xls.gz.b64")).trim())
             .expect("fixture b64");
         let mut decoder = GzDecoder::new(compressed.as_slice());
         let mut workbook = Vec::new();

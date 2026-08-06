@@ -275,13 +275,11 @@ impl Biff8Sheet {
 }
 
 fn checked_row_index(row: u32) -> Result<u16> {
-    u16::try_from(row)
-        .map_err(|_| ExcelError::Xls("BIFF8 supports at most 65536 rows".to_owned()))
+    u16::try_from(row).map_err(|_| ExcelError::Xls("BIFF8 supports at most 65536 rows".to_owned()))
 }
 
 fn checked_column_index(col: usize) -> Result<u8> {
-    u8::try_from(col)
-        .map_err(|_| ExcelError::Xls("BIFF8 supports at most 256 columns".to_owned()))
+    u8::try_from(col).map_err(|_| ExcelError::Xls("BIFF8 supports at most 256 columns".to_owned()))
 }
 
 /// Multi-sheet BIFF8 workbook buffer.

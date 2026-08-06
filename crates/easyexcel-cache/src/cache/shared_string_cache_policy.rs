@@ -84,10 +84,7 @@ impl SharedStringCachePolicy {
     /// # Errors
     ///
     /// 磁盘后备所需的临时文件无法创建时返回错误。
-    pub fn create_cache(
-        self,
-        shared_strings_xml_size: u64,
-    ) -> Result<Box<dyn SharedStringCache>> {
+    pub fn create_cache(self, shared_strings_xml_size: u64) -> Result<Box<dyn SharedStringCache>> {
         if self.select_mode(shared_strings_xml_size) == ReadCacheMode::Memory {
             return create_cache(ReadCacheMode::Memory, shared_strings_xml_size);
         }

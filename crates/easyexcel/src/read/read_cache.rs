@@ -8,6 +8,8 @@ pub use easyexcel_cache::{
 };
 
 pub(crate) use easyexcel_cache::{
-    DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES, create_cache, memory_cache,
-    remove_thread_local_cache,
+    DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES, create_cache, remove_thread_local_cache,
 };
+
+#[cfg(test)]
+pub(crate) use easyexcel_cache::memory_cache;

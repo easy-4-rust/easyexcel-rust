@@ -25,16 +25,23 @@ pub enum TemplateSheetSelector<'a> {
     Name(&'a str),
 }
 
-impl TemplateSheetSelector<'_> {
+impl<'a> TemplateSheetSelector<'a> {
     /// 判断两个模板工作表选择器是否指向同一逻辑目标。
     ///
     /// 未显式选择与零基下标 `0` 都表示第一张工作表；名称只与相同名称等价。
     #[must_use]
-    pub fn equivalent(self, other: TemplateSheetSelector<'_>) -> bool {
+    pub fn equivalent<'b>(self, other: TemplateSheetSelector<'b>) -> bool {
         match (self, other) {
-            (Self::First | Self::Index(0), Self::First | Self::Index(0)) => true,
-            (Self::Index(left), Self::Index(right)) => left == right,
-            (Self::Name(left), Self::Name(right)) => left == right,
+            (
+                TemplateSheetSelector::First | TemplateSheetSelector::Index(0),
+                TemplateSheetSelector::First | TemplateSheetSelector::Index(0),
+            ) => true,
+            (TemplateSheetSelector::Index(left), TemplateSheetSelector::Index(right)) => {
+                left == right
+            }
+            (TemplateSheetSelector::Name(left), TemplateSheetSelector::Name(right)) => {
+                left == right
+            }
             _ => false,
         }
     }
@@ -261,11 +268,13 @@ mod tests {
     fn first_and_zero_index_are_equivalent_template_targets() {
         assert!(TemplateSheetSelector::First.equivalent(TemplateSheetSelector::Index(0)));
         assert!(TemplateSheetSelector::Index(2).equivalent(TemplateSheetSelector::Index(2)));
-        assert!(TemplateSheetSelector::Name("Data")
-            .equivalent(TemplateSheetSelector::Name("Data")));
+        assert!(
+            TemplateSheetSelector::Name("Data").equivalent(TemplateSheetSelector::Name("Data"))
+        );
         assert!(!TemplateSheetSelector::First.equivalent(TemplateSheetSelector::Index(1)));
-        assert!(!TemplateSheetSelector::Name("Data")
-            .equivalent(TemplateSheetSelector::Name("Other")));
+        assert!(
+            !TemplateSheetSelector::Name("Data").equivalent(TemplateSheetSelector::Name("Other"))
+        );
     }
 
     #[test]

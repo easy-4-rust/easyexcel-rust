@@ -39,13 +39,13 @@ impl NumberFormatError {
 /// # Errors
 ///
 /// 超出目标电子表格数值范围时返回格式错误。
-pub fn finite_decimal_f64(
-    value: &BigDecimal,
-    format: &str,
-) -> Result<f64, NumberFormatError> {
-    value.to_f64().filter(|value| value.is_finite()).ok_or_else(|| {
-        NumberFormatError::new(format!("decimal value exceeds {format} numeric range"))
-    })
+pub fn finite_decimal_f64(value: &BigDecimal, format: &str) -> Result<f64, NumberFormatError> {
+    value
+        .to_f64()
+        .filter(|value| value.is_finite())
+        .ok_or_else(|| {
+            NumberFormatError::new(format!("decimal value exceeds {format} numeric range"))
+        })
 }
 
 /// 判断整数十进制数是否超出 Excel 可精确表示的 53 位范围。
@@ -131,9 +131,13 @@ impl From<RoundingMode> for NumberRoundingMode {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 无法用普通十进制表示的 IEEE 754 数值类别。
 pub enum NonFiniteNumber {
+    /// 非数字值。
     Nan,
+    /// 正无穷。
     PositiveInfinity,
+    /// 负无穷。
     NegativeInfinity,
 }
 
@@ -204,10 +208,7 @@ pub fn format_non_finite(
 }
 
 /// Parses a string like Java `NumberUtils.parseBigDecimal`.
-pub fn parse_decimal(
-    value: &str,
-    pattern: Option<&str>,
-) -> Result<BigDecimal, NumberFormatError> {
+pub fn parse_decimal(value: &str, pattern: Option<&str>) -> Result<BigDecimal, NumberFormatError> {
     let Some(pattern) = pattern.filter(|pattern| !pattern.is_empty()) else {
         // Java `new BigDecimal(string)` does not trim leading/trailing spaces
         // and requires the complete input to be numeric.
@@ -451,7 +452,11 @@ impl DecimalSubpattern {
         ))
     }
 
-    fn parse_number(&self, input: &str, negative: bool) -> Result<Option<BigDecimal>, NumberFormatError> {
+    fn parse_number(
+        &self,
+        input: &str,
+        negative: bool,
+    ) -> Result<Option<BigDecimal>, NumberFormatError> {
         let Some(mut remaining) = input.strip_prefix(&self.prefix) else {
             return Ok(None);
         };
@@ -495,8 +500,9 @@ impl DecimalSubpattern {
             let _ = after_suffix;
         }
         let normalized = numeric.replace(',', "");
-        let mut value = BigDecimal::from_str(&normalized)
-            .map_err(|_| NumberFormatError::new(format!("DecimalFormat could not parse {input:?}")))?;
+        let mut value = BigDecimal::from_str(&normalized).map_err(|_| {
+            NumberFormatError::new(format!("DecimalFormat could not parse {input:?}"))
+        })?;
         if self.multiplier != 1 {
             value /= self.multiplier;
         }
@@ -553,7 +559,10 @@ fn render_affix(tokens: &[PatternToken]) -> String {
     tokens.iter().map(|token| token.value).collect()
 }
 
-fn affix_multiplier(prefix: &[PatternToken], suffix: &[PatternToken]) -> Result<i32, NumberFormatError> {
+fn affix_multiplier(
+    prefix: &[PatternToken],
+    suffix: &[PatternToken],
+) -> Result<i32, NumberFormatError> {
     let percent = prefix
         .iter()
         .chain(suffix)
