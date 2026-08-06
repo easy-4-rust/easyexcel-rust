@@ -8,9 +8,6 @@ use crate::read::read_options::ReadOptions;
 
 pub(crate) use easyexcel_xlsx::xlsx::XlsxSource;
 
-#[cfg(test)]
-pub(crate) use easyexcel_xlsx::xlsx::XlsxInput;
-
 pub(crate) fn open_xlsx_source(path: &Path, options: &ReadOptions) -> Result<XlsxSource> {
     validate_read_options(options)?;
     XlsxSource::open(path, options.password.as_deref()).map_err(|error| match error {

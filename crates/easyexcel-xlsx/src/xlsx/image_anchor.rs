@@ -141,3 +141,51 @@ fn resolve_coordinate(current: u32, coordinate: AnchorCoordinate, label: &str) -
         .checked_add_signed(relative)
         .ok_or_else(|| Error::Xlsx(format!("image anchor {label} is outside the worksheet")))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn coordinate_resolution_matches_easyexcel_absolute_and_relative_rules() {
+        assert_eq!(
+            resolve_coordinate(
+                4,
+                AnchorCoordinate {
+                    absolute: Some(3),
+                    relative: Some(8),
+                },
+                "row"
+            )
+            .expect("absolute coordinate"),
+            3
+        );
+        assert_eq!(
+            resolve_coordinate(
+                4,
+                AnchorCoordinate {
+                    absolute: Some(0),
+                    relative: Some(-2),
+                },
+                "row"
+            )
+            .expect("relative coordinate"),
+            2
+        );
+        assert_eq!(
+            resolve_coordinate(4, AnchorCoordinate::default(), "row").expect("current coordinate"),
+            4
+        );
+        assert!(
+            resolve_coordinate(
+                0,
+                AnchorCoordinate {
+                    absolute: None,
+                    relative: Some(-1),
+                },
+                "row"
+            )
+            .is_err()
+        );
+    }
+}

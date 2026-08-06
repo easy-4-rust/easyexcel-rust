@@ -558,7 +558,7 @@ fn helpers_preserve_diagnostics_and_xlsx_column_limits() {
     );
     assert!(to_column_index(u32::from(u16::MAX) + 1).is_err());
     assert_eq!(
-        format_error("broken").to_string(),
+        ExcelError::Format("broken".to_owned()).to_string(),
         "excel format error: broken"
     );
     assert!(!is_compound_document(&mut FaultyBufRead));
@@ -1744,13 +1744,13 @@ fn csv_read_uses_typed_lifecycle_single_sheet_selection_and_flexible_rows() -> R
         ..Probe::default()
     };
     assert!(read_csv::<TestRow, _>(&path, &options(), &mut failing_head).is_err());
-    let record = csv::StringRecord::from(vec!["value"]);
+    let record = vec!["value".to_owned()];
     let mut record_probe = Probe {
         continue_reading: true,
         ..Probe::default()
     };
     read_csv_records::<TestRow, _>(
-        &mut [Ok(record.clone())].into_iter(),
+        &mut [Ok::<_, easyexcel_io::Error>(record.clone())].into_iter(),
         0,
         "Sheet1",
         &ReadOptions {
@@ -1761,7 +1761,11 @@ fn csv_read_uses_typed_lifecycle_single_sheet_selection_and_flexible_rows() -> R
     )?;
     assert_eq!(record_probe.rows, vec![TestRow("value".to_owned())]);
     read_csv_records::<TestRow, _>(
-        &mut [Ok(record.clone()), Ok(record.clone())].into_iter(),
+        &mut [
+            Ok::<_, easyexcel_io::Error>(record.clone()),
+            Ok(record.clone()),
+        ]
+        .into_iter(),
         0,
         "Sheet1",
         &ReadOptions {
@@ -1773,7 +1777,11 @@ fn csv_read_uses_typed_lifecycle_single_sheet_selection_and_flexible_rows() -> R
     assert_eq!(record_probe.rows.len(), 3);
     let mut stopped = Probe::default();
     read_csv_records::<TestRow, _>(
-        &mut [Ok(record.clone()), Ok(record.clone())].into_iter(),
+        &mut [
+            Ok::<_, easyexcel_io::Error>(record.clone()),
+            Ok(record.clone()),
+        ]
+        .into_iter(),
         0,
         "Sheet1",
         &ReadOptions {
@@ -1784,12 +1792,12 @@ fn csv_read_uses_typed_lifecycle_single_sheet_selection_and_flexible_rows() -> R
     )?;
     assert_eq!(stopped.rows, vec![TestRow("value".to_owned())]);
     assert!(stopped.after.is_empty());
-    let mut invalid_utf8_reader = csv::ReaderBuilder::new()
-        .has_headers(false)
-        .from_reader([0xFF].as_slice());
     assert!(
         read_csv_records::<TestRow, _>(
-            &mut invalid_utf8_reader.records(),
+            &mut [Err(easyexcel_io::Error::Csv(
+                "invalid UTF-8 record".to_owned(),
+            ))]
+            .into_iter(),
             0,
             "Sheet1",
             &ReadOptions {
@@ -1803,7 +1811,7 @@ fn csv_read_uses_typed_lifecycle_single_sheet_selection_and_flexible_rows() -> R
     if usize::BITS > 32 {
         assert!(
             read_csv_records::<TestRow, _>(
-                &mut [Ok(record.clone())].into_iter(),
+                &mut [Ok::<_, easyexcel_io::Error>(record.clone())].into_iter(),
                 usize::try_from(u64::from(u32::MAX) + 1).unwrap(),
                 "Sheet1",
                 &ReadOptions {
@@ -1817,7 +1825,7 @@ fn csv_read_uses_typed_lifecycle_single_sheet_selection_and_flexible_rows() -> R
     }
     assert!(
         read_csv_records::<TestRow, _>(
-            &mut [Ok(record.clone()), Ok(record)].into_iter(),
+            &mut [Ok::<_, easyexcel_io::Error>(record.clone()), Ok(record)].into_iter(),
             usize::MAX,
             "Sheet1",
             &ReadOptions {

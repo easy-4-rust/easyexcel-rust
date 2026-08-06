@@ -1336,11 +1336,6 @@ fn default_options_and_helpers_are_deterministic() {
             use_legacy_template_seed: false,
         }
     );
-    assert_eq!(excel_date_format(None, "yyyy-mm-dd"), "yyyy-mm-dd");
-    assert_eq!(
-        excel_date_format(Some("%Y/%m/%d %H:%M:%S"), "unused"),
-        "yyyy/mm/dd hh:mm:ss"
-    );
     assert_eq!(to_column(0).expect("column"), 0);
     assert_eq!(to_column(usize::from(u16::MAX)).expect("column"), u16::MAX);
     assert!(to_column(usize::from(u16::MAX) + 1).is_err());
@@ -2705,19 +2700,6 @@ fn output_stream_exposes_real_ownership_close_and_poison_failures() {
         take_captured_output(&capture).expect("take capture"),
         b"capture"
     );
-
-    let mut poisoned_capture = CapturedOutput::default();
-    let capture_lock_holder = poisoned_capture.clone();
-    assert!(
-        std::thread::spawn(move || {
-            let _guard = capture_lock_holder.0.lock().expect("lock before poison");
-            panic!("poison capture lock");
-        })
-        .join()
-        .is_err()
-    );
-    assert!(poisoned_capture.write_all(b"rejected").is_err());
-    assert!(take_captured_output(&poisoned_capture).is_err());
 }
 
 #[test]
@@ -4652,11 +4634,6 @@ fn rich_text_writer_applies_java_whole_and_utf16_interval_fonts() -> Result<()> 
             .collect::<Vec<_>>(),
         ["A", "😀", "B", "C"]
     );
-    assert_eq!(utf16_byte_index("A😀BC", 0), Some(0));
-    assert_eq!(utf16_byte_index("A😀BC", 1), Some(1));
-    assert_eq!(utf16_byte_index("A😀BC", 2), None);
-    assert_eq!(utf16_byte_index("A😀BC", 5), Some("A😀BC".len()));
-    assert_eq!(utf16_byte_index("A😀BC", 6), None);
     assert_eq!(rich_text_runs(&RichTextStringData::new("plain"))?.len(), 1);
     assert!(
         rich_text_runs(&RichTextStringData::new("abc").apply_font_range(1, 1, WriteFont::new()))
@@ -4748,11 +4725,6 @@ fn image_anchor_layout_and_validation_cover_java_coordinate_boundaries() -> Resu
         easyexcel_xlsx::xlsx::generation::row_height_pixels(None),
         20
     );
-    assert_eq!(resolve_anchor_coordinate(4, Some(3), Some(8), "row")?, 3);
-    assert_eq!(resolve_anchor_coordinate(4, Some(0), Some(-2), "row")?, 2);
-    assert_eq!(resolve_anchor_coordinate(4, None, None, "row")?, 4);
-    assert!(resolve_anchor_coordinate(0, None, Some(-1), "row").is_err());
-
     let bytes = tiny_png();
     let mut workbook = Workbook::new();
     let worksheet = workbook.add_worksheet();
@@ -4833,8 +4805,6 @@ fn image_anchor_layout_and_validation_cover_java_coordinate_boundaries() -> Resu
         )
         .is_err()
     );
-    let valid_image = image_from_buffer(&bytes)?;
-    assert!(insert_scaled_image(worksheet, u32::MAX, 0, &valid_image, 0, 0).is_err());
     let metadata = ExcelWriteMetadata::new();
     let style = SheetStyleContext::content(None, &metadata, WriteGlobalFlags::default())
         .column(&TEST_COLUMN);
@@ -5220,12 +5190,14 @@ fn stateful_writer_propagates_start_sheet_and_finish_failures() -> Result<()> {
 
     let mut failed_csv_finish = ExcelWriter::new(directory.path().join("failed-csv-finish.csv"));
     failed_csv_finish.start()?;
-    failed_csv_finish.csv_writer = Some(csv::WriterBuilder::new().from_writer(
-        CsvEncodingWriter::new(
+    failed_csv_finish.csv_writer = Some(
+        easyexcel_csv::CsvRecordWriter::new(
             Box::new(FaultyWrite::flushing()),
-            CsvEncoding::Standard(encoding_rs::UTF_8),
-        ),
-    ));
+            &CsvCharset::default(),
+            false,
+        )
+        .map_err(ExcelError::from)?,
+    );
     assert!(failed_csv_finish.finish().is_err());
 
     Ok(())

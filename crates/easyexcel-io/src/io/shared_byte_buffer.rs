@@ -36,3 +36,28 @@ impl Write for SharedByteBuffer {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn shared_buffer_takes_bytes_and_reports_poisoned_lock() {
+        let mut buffer = SharedByteBuffer::default();
+        buffer.write_all(b"capture").expect("write shared bytes");
+        assert_eq!(buffer.take().expect("take shared bytes"), b"capture");
+        assert!(buffer.take().expect("buffer was cleared").is_empty());
+
+        let poison = buffer.clone();
+        assert!(
+            std::thread::spawn(move || {
+                let _guard = poison.bytes.lock().expect("lock before poison");
+                panic!("poison shared byte buffer lock");
+            })
+            .join()
+            .is_err()
+        );
+        assert!(buffer.write_all(b"rejected").is_err());
+        assert!(buffer.take().is_err());
+    }
+}

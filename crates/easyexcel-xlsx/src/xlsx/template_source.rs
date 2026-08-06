@@ -8,7 +8,7 @@ use std::path::Path;
 use easyexcel_io::{Error, Result, path_has_extension};
 
 use super::ooxml_package::OoxmlZipEntry;
-use super::package::resolve_target;
+use super::package::{normalize_path, resolve_target};
 use super::template_xml::attribute_value;
 
 const WORKBOOK_PATH: &str = "xl/workbook.xml";
@@ -197,7 +197,11 @@ pub fn workbook_sheets(xml: &str) -> Vec<(String, String)> {
 
 /// 将 workbook relationship 的 Target 解析为包内绝对路径。
 pub fn normalize_workbook_target(target: &str) -> Result<String> {
-    resolve_target(WORKBOOK_PATH, target)
+    if target.starts_with("xl/") {
+        normalize_path(target)
+    } else {
+        resolve_target(WORKBOOK_PATH, target)
+    }
 }
 
 fn looks_like_csv(bytes: &[u8]) -> bool {

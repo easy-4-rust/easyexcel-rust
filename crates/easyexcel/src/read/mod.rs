@@ -58,7 +58,7 @@ pub(crate) use cell_conversion::{from_calamine, from_data};
 #[cfg(test)]
 pub(crate) use read_csv::{csv_row_index, csv_sheet_name, read_csv_records};
 #[cfg(test)]
-pub(crate) use read_helpers::{format_error, to_column_index, validate_read_options};
+pub(crate) use read_helpers::{to_column_index, validate_read_options};
 #[cfg(test)]
 pub(crate) use read_xlsx::read_xlsx_source;
 #[cfg(test)]

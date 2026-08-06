@@ -31,9 +31,6 @@ where
 }
 
 #[cfg(test)]
-pub(crate) use easyexcel_xlsx::xlsx::ReadSeek;
-
-#[cfg(test)]
 pub(crate) trait WriteSeek: Write + Seek + Any {
     fn into_any(self: Box<Self>) -> Box<dyn Any>;
 }

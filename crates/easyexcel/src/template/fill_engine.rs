@@ -14,14 +14,10 @@ use easyexcel_xlsx::{TemplateCollectionFill, TemplateFillData, TemplateFillDirec
 // 保留既有内部路径，供模板生命周期与迁移中的特征测试引用；真实算法位于引擎 crate。
 #[cfg(test)]
 pub(crate) use easyexcel_xlsx::xlsx::template_xml::{
-    all_cells, attribute_value, cell_references, column_name, contains_unescaped, element_value,
-    escape_xml, last_worksheet_row, merge_collection_cells, parse_cell_reference, remove_attribute,
-    replace_attribute, replace_tag_attribute, row_index, row_tag_with_reference,
-    shared_string_values, shift_a1_reference, shift_cell_reference, shift_formula_elements,
-    shift_formula_references, shift_reference_list, shift_row, shift_rows, shift_tag_references,
-    shift_worksheet_metadata, shift_worksheet_rows_after, text_node_values,
-    update_worksheet_dimension, upsert_collection_row, validate_collection_target,
-    worksheet_max_row,
+    all_cells, attribute_value, contains_unescaped, escape_xml, parse_cell_reference,
+    replace_tag_attribute, shift_a1_reference, shift_formula_elements, shift_formula_references,
+    shift_reference_list, shift_tag_references, shift_worksheet_metadata,
+    update_worksheet_dimension,
 };
 
 /// 执行指定工作表的集合模板填充。

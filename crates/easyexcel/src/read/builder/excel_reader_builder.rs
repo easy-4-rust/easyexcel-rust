@@ -564,6 +564,7 @@ mod tests {
 mod tests_extra {
     use super::*;
     use crate::core::DynamicRow;
+    use std::io::Write;
     use tempfile::NamedTempFile;
 
     #[derive(Default)]

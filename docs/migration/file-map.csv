@@ -250,7 +250,7 @@ easyexcel-core/src/main/java/com/alibaba/excel/util/IntUtils.java,easyexcel/src/
 easyexcel-core/src/main/java/com/alibaba/excel/util/IoUtils.java,easyexcel/src/util/io_utils.rs,easyexcel,io_utils,core,in_progress,,3afdea9d
 easyexcel-core/src/main/java/com/alibaba/excel/util/ListUtils.java,easyexcel/src/util/list_utils.rs,easyexcel,list_utils,core,in_progress,,3afdea9d
 easyexcel-core/src/main/java/com/alibaba/excel/util/MapUtils.java,easyexcel/src/util/map_utils.rs,easyexcel,map_utils,core,in_progress,,3afdea9d
-easyexcel-core/src/main/java/com/alibaba/excel/util/MemberUtils.java,easyexcel/src/util/member_utils.rs,easyexcel,member_utils,core,in_progress,,3afdea9d
+easyexcel-core/src/main/java/com/alibaba/excel/util/MemberUtils.java,,easyexcel,member_utils,core,excluded,Rust has no JVM reflective accessibility model,3afdea9d
 easyexcel-core/src/main/java/com/alibaba/excel/util/NumberDataFormatterUtils.java,easyexcel/src/util/number_data_formatter_utils.rs,easyexcel,number_data_formatter_utils,core,in_progress,,3afdea9d
 easyexcel-core/src/main/java/com/alibaba/excel/util/NumberUtils.java,easyexcel/src/util/number_utils.rs,easyexcel,number_utils,core,in_progress,,3afdea9d
 easyexcel-core/src/main/java/com/alibaba/excel/util/PoiUtils.java,easyexcel/src/util/poi_utils.rs,easyexcel,poi_utils,core,in_progress,,3afdea9d

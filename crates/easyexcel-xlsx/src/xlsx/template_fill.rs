@@ -554,3 +554,159 @@ fn find_next_cell(xml: &str, offset: usize) -> Option<(usize, usize)> {
     let end = tag_end + 1 + xml[tag_end + 1..].find("</c>")? + 4;
     Some((start, end))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use zip::CompressionMethod;
+
+    fn entry(name: &str, bytes: impl Into<Vec<u8>>) -> OoxmlZipEntry {
+        OoxmlZipEntry {
+            name: name.to_owned(),
+            is_dir: false,
+            compression: CompressionMethod::Stored,
+            unix_mode: None,
+            bytes: bytes.into(),
+        }
+    }
+
+    fn data() -> TemplateFillData {
+        TemplateFillData {
+            values: BTreeMap::from([
+                (
+                    "name".to_owned(),
+                    TemplateCellValue::Text("<值>".to_owned()),
+                ),
+                (
+                    "number".to_owned(),
+                    TemplateCellValue::Number("2".to_owned()),
+                ),
+            ]),
+        }
+    }
+
+    #[test]
+    fn scalar_and_collection_rendering_stays_inside_xlsx_engine() {
+        let data = data();
+        assert_eq!(
+            replace_template_values("{name}-{missing}", &data.values, None, true, true),
+            "&lt;值&gt;-{missing}"
+        );
+        assert_eq!(
+            replace_template_values(r"\{name\}-{name}", &data.values, None, true, true),
+            "{name}-&lt;值&gt;"
+        );
+        assert_eq!(
+            fill_cell(
+                r#"<c r="A1" s="2" t="inlineStr"><is><t>{.name}</t></is></c>"#,
+                &data,
+                None,
+                &[],
+                false,
+            ),
+            r#"<c r="A1" t="inlineStr"><is><t>&lt;值&gt;</t></is></c>"#
+        );
+        assert_eq!(
+            render_typed_cell(r#"<c r="B1"></c>"#, &TemplateCellValue::Bool(false), true),
+            r#"<c r="B1" t="b"><v>0</v></c>"#
+        );
+        assert!(collection_template_cells("<row", None, &[]).is_empty());
+        assert!(
+            collection_template_cells(
+                r#"<row><c r="bad" t="inlineStr"><is><t>{.name}</t></is></c></row>"#,
+                None,
+                &[],
+            )
+            .is_empty()
+        );
+        assert_eq!(cell_value(r#"<c t="s"><v>9</v></c>"#, &[]), None);
+        assert!(!contains_collection_marker("{other.name}", Some("items")));
+    }
+
+    #[test]
+    fn package_operations_report_missing_and_invalid_worksheet_data() {
+        let fill = TemplateCollectionFill {
+            name: Some("items".to_owned()),
+            rows: vec![data()],
+            ..TemplateCollectionFill::default()
+        };
+        assert!(replace_collection_fills_in_sheet(&mut [], "missing.xml", &[]).is_ok());
+        assert!(
+            replace_collection_fills_in_sheet(&mut [], "missing.xml", std::slice::from_ref(&fill),)
+                .is_err()
+        );
+        assert!(append_rows_to_xml("<worksheet/>", &[vec![]]).is_err());
+        assert!(append_rows_to_sheet(&mut [], "missing.xml", &[vec![]]).is_err());
+
+        let mut invalid = vec![entry("xl/worksheets/sheet1.xml", vec![0xff])];
+        assert!(replace_scalar_cells(&mut invalid, &TemplateFillData::default()).is_err());
+        invalid[0].bytes = vec![0xff];
+        assert!(
+            replace_collection_fills_in_sheet(&mut invalid, "xl/worksheets/sheet1.xml", &[fill],)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn repeated_collection_fill_shifts_cached_templates_and_dimension() {
+        let worksheet = concat!(
+            r#"<worksheet><dimension ref="A1:A5"/><sheetData>"#,
+            r#"<row r="1"><c r="A1" t="inlineStr"><is><t>{a.name}</t></is></c></row>"#,
+            r#"<row r="3"><c r="A3" t="inlineStr"><is><t>{b.name}</t></is></c></row>"#,
+            r#"<row r="5"><c r="A5" t="inlineStr"><is><t>Footer</t></is></c></row>"#,
+            "</sheetData></worksheet>",
+        );
+        let mut entries = vec![entry("xl/worksheets/sheet1.xml", worksheet.as_bytes())];
+        let fills = [
+            TemplateCollectionFill {
+                name: Some("b".to_owned()),
+                rows: vec![TemplateFillData {
+                    values: BTreeMap::from([(
+                        "name".to_owned(),
+                        TemplateCellValue::Text("B1".to_owned()),
+                    )]),
+                }],
+                order: 0,
+                ..TemplateCollectionFill::default()
+            },
+            TemplateCollectionFill {
+                name: Some("a".to_owned()),
+                rows: vec![
+                    TemplateFillData {
+                        values: BTreeMap::from([(
+                            "name".to_owned(),
+                            TemplateCellValue::Text("A1".to_owned()),
+                        )]),
+                    },
+                    TemplateFillData {
+                        values: BTreeMap::from([(
+                            "name".to_owned(),
+                            TemplateCellValue::Text("A2".to_owned()),
+                        )]),
+                    },
+                ],
+                force_new_row: true,
+                order: 1,
+                ..TemplateCollectionFill::default()
+            },
+            TemplateCollectionFill {
+                name: Some("b".to_owned()),
+                rows: vec![TemplateFillData {
+                    values: BTreeMap::from([(
+                        "name".to_owned(),
+                        TemplateCellValue::Text("B2".to_owned()),
+                    )]),
+                }],
+                order: 2,
+                ..TemplateCollectionFill::default()
+            },
+        ];
+
+        replace_collection_fills_in_sheet(&mut entries, "xl/worksheets/sheet1.xml", &fills)
+            .expect("fill collections");
+        let xml = std::str::from_utf8(&entries[0].bytes).expect("worksheet UTF-8");
+        assert!(xml.contains("A2"));
+        assert!(xml.contains("B2"));
+        assert!(xml.contains(r#"ref="A1:A6""#));
+    }
+}

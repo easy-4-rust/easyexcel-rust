@@ -13,9 +13,6 @@ use crate::write::excel_writer_core::{
     with_default_write_converters, write_sheet_to_workbook, write_xlsx_onto_template_package,
 };
 use crate::write::write_options::WriteOptions;
-#[cfg(test)]
-use easyexcel_xlsx::xlsx::generation::Workbook;
-
 /// 将类型化行写入 XLSX 文件。
 ///
 /// # Errors

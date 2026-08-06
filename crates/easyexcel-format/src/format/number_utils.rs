@@ -1124,4 +1124,13 @@ mod tests_extra {
         assert_eq!(parse_byte("-1.0").unwrap(), -1);
         assert_eq!(parse_byte("127.9").unwrap(), 127);
     }
+
+    #[test]
+    fn excel_date_format_code_translates_java_writer_patterns() {
+        assert_eq!(excel_date_format_code(None, "yyyy-mm-dd"), "yyyy-mm-dd");
+        assert_eq!(
+            excel_date_format_code(Some("%Y/%m/%d %H:%M:%S"), "unused"),
+            "yyyy/mm/dd hh:mm:ss"
+        );
+    }
 }

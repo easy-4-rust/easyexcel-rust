@@ -165,11 +165,6 @@ fn parse_workbook_stream(buf: &[u8]) -> Result<Workbook> {
         wb.sheets.push(sheet);
     }
 
-    if wb.sheets.is_empty() {
-        // Degenerate file; give it an empty sheet so downstream code is happy.
-        wb.sheets.push(Sheet::new("Sheet1"));
-    }
-
     Ok(wb)
 }
 
@@ -563,6 +558,22 @@ mod tests {
     fn rk_decode_matches_biff() {
         // 0x3FF00000 -> 1.0 (double form)
         assert_eq!(biff::decode_rk(0x3FF0_0000), 1.0);
+    }
+
+    #[test]
+    fn globals_without_boundsheet_remain_a_zero_sheet_workbook() {
+        let mut bytes = Vec::new();
+        for (sid, payload) in [(biff::BOF, vec![0_u8, 0, 0x05, 0]), (biff::EOF, vec![])] {
+            bytes.extend_from_slice(&sid.to_le_bytes());
+            bytes.extend_from_slice(
+                &u16::try_from(payload.len())
+                    .expect("small BIFF test payload")
+                    .to_le_bytes(),
+            );
+            bytes.extend_from_slice(&payload);
+        }
+        let workbook = parse_workbook_stream(&bytes).expect("parse workbook globals");
+        assert!(workbook.sheets.is_empty());
     }
 
     #[test]

@@ -469,3 +469,37 @@ fn read_entry(path: &Path, entries: &[(u64, usize)], index: usize) -> Result<Str
 fn out_of_bounds(index: usize) -> Error {
     Error::Other(format!("shared string index is out of bounds: {index}"))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn moka_hot_tier_keeps_lossless_disk_backing_before_and_after_finish() {
+        let mut cache = create_moka_cache(1).expect("create Moka cache");
+        for index in 0..128 {
+            cache
+                .put(format!("shared-{index}"))
+                .expect("append shared string");
+        }
+        assert_eq!(cache.len(), 128);
+        assert_eq!(cache.get(0).expect("read first backing value"), "shared-0");
+        assert_eq!(
+            cache.get(127).expect("read latest active value"),
+            "shared-127"
+        );
+
+        let reader = cache.finish().expect("finish Moka cache");
+        assert_eq!(reader.len(), 128);
+        assert_eq!(reader.get(1).expect("read after finish"), "shared-1");
+        assert!(reader.get(128).is_err());
+    }
+
+    #[test]
+    fn weighted_moka_cache_accepts_multibyte_values() {
+        let mut cache = create_weighted_moka_cache(4).expect("create weighted cache");
+        cache.put("中文".to_owned()).expect("append UTF-8 value");
+        cache.put("second".to_owned()).expect("append second value");
+        assert_eq!(cache.get(0).expect("read disk-backed UTF-8"), "中文");
+    }
+}

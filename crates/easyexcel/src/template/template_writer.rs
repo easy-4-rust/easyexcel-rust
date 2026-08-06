@@ -20,7 +20,7 @@ use crate::template::sheet_fill_state::{
 use crate::template::template_entry::TemplateEntry;
 use crate::template::template_output::TemplateOutput;
 #[cfg(test)]
-use crate::template::template_output::{ReadSeek, WriteSeek};
+use crate::template::template_output::WriteSeek;
 use crate::{FillConfig, FillWrapper, TemplateData, TemplateSheet};
 
 /// Stateful OOXML template writer matching Java `ExcelWriter.fill` lifecycle.
@@ -472,11 +472,6 @@ fn load_entries_from_reader(reader: Box<dyn Read + '_>) -> Result<Vec<TemplateEn
     Ok(easyexcel_xlsx::OoxmlPackage::from_stream(reader)?.into_entries())
 }
 
-#[cfg(test)]
-pub(crate) fn load_entries_from(reader: Box<dyn ReadSeek>) -> Result<Vec<TemplateEntry>> {
-    Ok(easyexcel_xlsx::OoxmlPackage::from_reader(reader)?.into_entries())
-}
-
 pub(crate) fn worksheet_path(entries: &[TemplateEntry], sheet: &TemplateSheet) -> Result<String> {
     easyexcel_xlsx::worksheet_path(entries, sheet.as_engine_selector()).map_err(ExcelError::from)
 }
@@ -529,12 +524,6 @@ pub(crate) fn archive_output_bytes(writer: Box<dyn WriteSeek>) -> Result<Vec<u8>
 }
 
 #[cfg(test)]
-pub(crate) fn write_file_entries(writer: std::fs::File, entries: &[TemplateEntry]) -> Result<()> {
-    let _writer = easyexcel_xlsx::OoxmlPackage::from_entries(entries.to_vec()).write_to(writer)?;
-    Ok(())
-}
-
-#[cfg(test)]
 pub(crate) fn write_entries_to(
     writer: Box<dyn WriteSeek>,
     entries: &[TemplateEntry],
@@ -551,9 +540,10 @@ pub(crate) fn format_error(error: impl std::fmt::Display) -> ExcelError {
 mod tests_extra {
     use super::*;
     use calamine::Reader;
-    use std::fs;
+    use std::fs::{self, File};
     use tempfile::tempdir;
     use zip::CompressionMethod;
+    use zip::write::{SimpleFileOptions, ZipWriter};
 
     // 错误转换直接复用生产 `format_error`（与 `zip_writer_operation` 一致），
     // 不再保留独立测试副本：`map_err` 闭包只在出错时执行，测试中恒成功，

@@ -18,6 +18,8 @@ use std::process::ExitCode;
 const SOURCE_COMMIT: &str = "3afdea9d5da7f24a66eda6ec44a9dfce80b16802";
 const EXPECTED_JAVA_MAIN: usize = 325;
 const MAP_PATH: &str = "docs/migration/file-map.csv";
+const LEGACY_FACADE_PREFIX: &str = "easyexcel/src/";
+const WORKSPACE_FACADE_PREFIX: &str = "crates/easyexcel/src/";
 
 pub(crate) type TaskResult<T = ()> = Result<T, Box<dyn std::error::Error>>;
 
@@ -93,7 +95,7 @@ fn audit(strict: bool) -> TaskResult {
             // 允许多个 java 映射到同一 rust（一对多时用 capability 区分），仅警告
             eprintln!("warn: shared rust_file: {rust}");
         }
-        if !rust.is_empty() && !Path::new(rust).is_file() {
+        if !rust.is_empty() && !rust_target_exists(rust) {
             missing_rust += 1;
             eprintln!("missing rust file: {rust} (from {java})");
         }
@@ -129,4 +131,18 @@ fn audit(strict: bool) -> TaskResult {
 
     println!("migration-audit ok (strict={strict})");
     Ok(())
+}
+
+/// 判断迁移表中的 Rust 目标是否存在。
+///
+/// 迁移表保留了历史逻辑路径 `easyexcel/src/...`，而 workspace 规范化后门面
+/// crate 位于 `crates/easyexcel/src/...`。审计同时识别两种表示，避免目录布局
+/// 调整使既有迁移证据失效；新建的 engine crate 路径则按原值校验。
+fn rust_target_exists(rust: &str) -> bool {
+    if Path::new(rust).is_file() {
+        return true;
+    }
+
+    rust.strip_prefix(LEGACY_FACADE_PREFIX)
+        .is_some_and(|relative| Path::new(WORKSPACE_FACADE_PREFIX).join(relative).is_file())
 }

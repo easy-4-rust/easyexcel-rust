@@ -82,3 +82,27 @@ fn utf16_byte_index(text: &str, target: usize) -> Option<usize> {
     }
     (utf16_index == target).then_some(text.len())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn utf16_boundaries_reject_surrogate_pair_splits() {
+        assert_eq!(utf16_byte_index("A😀BC", 0), Some(0));
+        assert_eq!(utf16_byte_index("A😀BC", 1), Some(1));
+        assert_eq!(utf16_byte_index("A😀BC", 2), None);
+        assert_eq!(utf16_byte_index("A😀BC", 5), Some("A😀BC".len()));
+        assert_eq!(utf16_byte_index("A😀BC", 6), None);
+
+        let segments = segment_utf16_text("A😀BC", &[(1, 3)]).expect("valid UTF-16 range");
+        assert_eq!(
+            segments
+                .iter()
+                .map(|segment| segment.text.as_str())
+                .collect::<Vec<_>>(),
+            ["A", "😀", "BC"]
+        );
+        assert!(segment_utf16_text("😀", &[(0, 1)]).is_err());
+    }
+}

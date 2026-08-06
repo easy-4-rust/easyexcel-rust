@@ -1,6 +1,4 @@
-use std::collections::BTreeMap;
 use std::fs;
-use std::fs::File;
 use std::io::{self, Cursor, Read, Seek, SeekFrom, Write};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -17,11 +15,9 @@ use num_bigint::BigInt;
 use rust_xlsxwriter::{Format, Workbook};
 use tempfile::{TempDir, tempdir};
 use zip::CompressionMethod;
-use zip::write::ZipWriter;
 
 use super::*;
 use crate::template::fill_engine::*;
-use crate::template::sheet_fill_state::*;
 use crate::template::template_entry::*;
 use crate::template::template_output::*;
 use crate::template::template_writer::*;
@@ -128,18 +124,6 @@ impl FaultyIo {
             seeks: 0,
         }
     }
-
-    fn seeking(bytes: Vec<u8>, fail_at: usize) -> Self {
-        Self {
-            inner: Cursor::new(bytes),
-            fail_read_at: None,
-            fail_write_at: None,
-            fail_seek_at: Some(fail_at),
-            reads: 0,
-            writes: 0,
-            seeks: 0,
-        }
-    }
 }
 
 impl Read for FaultyIo {
@@ -181,10 +165,6 @@ impl Seek for FaultyIo {
 
 fn test_error(error: impl std::fmt::Display) -> ExcelError {
     ExcelError::Format(error.to_string())
-}
-
-fn successful_zip_operation(writer: &mut ArchiveWriter) -> Result<()> {
-    writer.flush().map_err(ExcelError::from)
 }
 
 fn template_fixture() -> Result<(TempDir, std::path::PathBuf)> {
@@ -287,23 +267,6 @@ fn template_data_and_xml_escaping_are_deterministic() {
         Some(&CellValue::String("Bob".to_owned()))
     );
     assert_eq!(escape_xml("<&>\"' text"), "&lt;&amp;&gt;&quot;&apos; text");
-    assert_eq!(
-        replace_placeholders(
-            "{a}-{missing}-{b}",
-            &BTreeMap::from([
-                ("a".to_owned(), CellValue::String("<".to_owned())),
-                ("b".to_owned(), CellValue::String("&".to_owned()))
-            ])
-        ),
-        "&lt;-{missing}-&amp;"
-    );
-    assert_eq!(
-        replace_placeholders(
-            r"\{a\}-{a}-\{missing\}",
-            &BTreeMap::from([("a".to_owned(), CellValue::String("<值>".to_owned()))])
-        ),
-        "{a}-&lt;值&gt;-{missing}"
-    );
     assert!(!contains_unescaped(r"\{users.name}", "{users."));
     assert!(contains_unescaped("{users.name}", "{users."));
     assert_eq!(TemplateData::default(), TemplateData::new());
@@ -479,23 +442,6 @@ fn java_complex_fill_with_table_appends_summary_after_repeated_fill() -> Result<
         )),
     )?;
 
-    let entries = load_entries(&template)?;
-    let shared_strings = entries
-        .iter()
-        .find(|entry| entry.name == "xl/sharedStrings.xml")
-        .and_then(|entry| std::str::from_utf8(&entry.bytes).ok())
-        .map(shared_string_values)
-        .expect("official shared strings");
-    let sheet = entries
-        .iter()
-        .find(|entry| entry.name == "xl/worksheets/sheet1.xml")
-        .and_then(|entry| std::str::from_utf8(&entry.bytes).ok())
-        .expect("official worksheet");
-    let marker = FillWrapper::new([TemplateData::new().with("name", "probe")]);
-    let (_, _, marker_row, _, _, _) =
-        find_collection_row(sheet, &marker, &shared_strings).expect("list marker row");
-    let first_data_row = row_index(marker_row).expect("marker row index") - 1;
-
     let first = [
         TemplateData::new().with("name", "A").with("number", 1),
         TemplateData::new().with("name", "B").with("number", 2),
@@ -521,6 +467,9 @@ fn java_complex_fill_with_table_appends_summary_after_repeated_fill() -> Result<
 
     let mut workbook: Xlsx<_> = open_workbook(&output).map_err(test_error)?;
     let range = workbook.worksheet_range("Sheet1").map_err(test_error)?;
+    let first_data_row = find_string_coordinate(&range, "A")
+        .map(|(row, _)| usize::try_from(row).expect("row index fits usize"))
+        .expect("first filled collection row");
     for (offset, (name, number)) in [
         ("A", 1.0),
         ("B", 2.0),
@@ -567,22 +516,6 @@ fn template_reader_and_owned_output_follow_java_default_close_lifecycle() -> Res
     assert_eq!(
         writer.sheets[0].scalar.values().get("name"),
         Some(&CellValue::String("stream".to_owned()))
-    );
-    let shared_strings = writer
-        .entries
-        .iter()
-        .find(|entry| entry.name == "xl/sharedStrings.xml")
-        .and_then(|entry| std::str::from_utf8(&entry.bytes).ok())
-        .map_or_else(Vec::new, shared_string_values);
-    let worksheet = writer
-        .entries
-        .iter()
-        .find(|entry| entry.name == "xl/worksheets/sheet1.xml")
-        .and_then(|entry| std::str::from_utf8(&entry.bytes).ok())
-        .expect("worksheet XML");
-    assert!(
-        replace_scalar_cells_in_xml(worksheet, &writer.sheets[0].scalar, &shared_strings)
-            .contains("stream")
     );
     writer.finish()?;
 
@@ -945,115 +878,6 @@ fn repeated_fill_applies_each_calls_force_row_and_auto_style_config() -> Result<
 // 拆分多个测试会重复搭建模板/填充夹具，故豁免 too_many_lines。
 #[allow(clippy::too_many_lines)]
 #[test]
-fn collection_cursor_defensive_paths_and_shifted_cached_templates_are_covered() -> Result<()> {
-    let wrapper = FillWrapper::named("items", [TemplateData::new().with("name", "value")]);
-    let fill = PendingCollectionFill {
-        wrapper: wrapper.clone(),
-        config: FillConfig::new(),
-        order: 0,
-    };
-    assert!(replace_collection_fills_in_sheet(&mut [], "missing.xml", &[]).is_ok());
-    assert!(matches!(
-        replace_collection_fills_in_sheet(&mut [], "missing.xml", std::slice::from_ref(&fill)),
-        Err(ExcelError::Format(message)) if message.contains("worksheet part")
-    ));
-    let mut invalid_utf8 = vec![synthetic_entry("xl/worksheets/sheet1.xml", vec![0xff])];
-    assert!(
-        replace_collection_fills_in_sheet(
-            &mut invalid_utf8,
-            "xl/worksheets/sheet1.xml",
-            std::slice::from_ref(&fill)
-        )
-        .is_err()
-    );
-    let worksheet_without_marker = r#"<worksheet><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>plain</t></is></c></row></sheetData></worksheet>"#;
-    let mut entries_without_marker = vec![synthetic_entry(
-        "xl/worksheets/sheet1.xml",
-        worksheet_without_marker.as_bytes().to_vec(),
-    )];
-    let fill_without_marker = PendingCollectionFill {
-        wrapper: wrapper.clone(),
-        config: FillConfig::new().force_new_row(true),
-        order: 1,
-    };
-    replace_collection_fills_in_sheet(
-        &mut entries_without_marker,
-        "xl/worksheets/sheet1.xml",
-        std::slice::from_ref(&fill_without_marker),
-    )?;
-    assert_eq!(
-        entries_without_marker[0].bytes,
-        worksheet_without_marker.as_bytes()
-    );
-
-    assert!(collection_template_cells("<row", &wrapper, &[]).is_empty());
-    assert!(
-        collection_template_cells(
-            r#"<row><c t="inlineStr"><is><t>{items.name}</t></is></c></row>"#,
-            &wrapper,
-            &[]
-        )
-        .is_empty()
-    );
-    assert!(
-        collection_template_cells(
-            r#"<row><c r="bad" t="inlineStr"><is><t>{items.name}</t></is></c></row>"#,
-            &wrapper,
-            &[]
-        )
-        .is_empty()
-    );
-    assert_eq!(row_tag_with_reference("<row>", 7), "<row>");
-    assert!(validate_collection_target(1_048_576, 0).is_err());
-    assert!(validate_collection_target(0, 16_384).is_err());
-    assert_eq!(last_worksheet_row("<row"), None);
-    assert_eq!(
-        last_worksheet_row(r#"<row r="2"></row><row r="5"></row>"#),
-        Some(4)
-    );
-    assert_eq!(shift_worksheet_rows_after("<row", 0, 1), "<row");
-    assert_eq!(
-        shift_worksheet_rows_after(r#"<row r="1"></row>"#, 1, 1),
-        r#"<row r="1"></row>"#
-    );
-
-    let worksheet = r#"<worksheet><dimension ref="A1:A5"/><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>{a.name}</t></is></c></row><row r="3"><c r="A3" t="inlineStr"><is><t>{b.name}</t></is></c></row><row r="5"><c r="A5" t="inlineStr"><is><t>Footer</t></is></c></row></sheetData></worksheet>"#;
-    let mut entries = vec![synthetic_entry(
-        "xl/worksheets/sheet1.xml",
-        worksheet.as_bytes().to_vec(),
-    )];
-    let fills = [
-        PendingCollectionFill {
-            wrapper: FillWrapper::named("b", [TemplateData::new().with("name", "B1")]),
-            config: FillConfig::new(),
-            order: 0,
-        },
-        PendingCollectionFill {
-            wrapper: FillWrapper::named(
-                "a",
-                [
-                    TemplateData::new().with("name", "A1"),
-                    TemplateData::new().with("name", "A2"),
-                ],
-            ),
-            config: FillConfig::new().force_new_row(true),
-            order: 1,
-        },
-        PendingCollectionFill {
-            wrapper: FillWrapper::named("b", [TemplateData::new().with("name", "B2")]),
-            config: FillConfig::new(),
-            order: 2,
-        },
-    ];
-    replace_collection_fills_in_sheet(&mut entries, "xl/worksheets/sheet1.xml", &fills)?;
-    let xml = std::str::from_utf8(&entries[0].bytes).map_err(test_error)?;
-    assert!(xml.contains("A2"));
-    assert!(xml.contains("B2"));
-    assert!(xml.contains(r#"ref="A1:A6""#));
-    Ok(())
-}
-
-#[test]
 fn template_sheet_selection_reports_missing_names_and_indexes() -> Result<()> {
     let (directory, template) = multi_sheet_template_fixture()?;
     assert_eq!(TemplateSheet::default(), TemplateSheet::first());
@@ -1334,73 +1158,6 @@ fn invalid_archives_xml_and_output_paths_return_typed_errors() -> Result<()> {
 }
 
 #[test]
-fn injected_archive_io_failures_cover_all_propagation_boundaries() -> Result<()> {
-    let entries = vec![
-        TemplateEntry {
-            name: "folder/".to_owned(),
-            is_dir: true,
-            compression: CompressionMethod::Stored,
-            unix_mode: None,
-            bytes: Vec::new(),
-        },
-        TemplateEntry {
-            name: "folder/data.xml".to_owned(),
-            is_dir: false,
-            compression: CompressionMethod::Stored,
-            unix_mode: Some(0o644),
-            bytes: b"<value>{name}</value>".to_vec(),
-        },
-    ];
-    let directory = tempdir()?;
-    let archive_path = directory.path().join("faults.zip");
-    write_entries(&archive_path, &entries)?;
-    let bytes = fs::read(&archive_path)?;
-
-    let read_errors = (0..64)
-        .filter(|fail_at| {
-            load_entries_from(Box::new(FaultyIo::reading(bytes.clone(), *fail_at))).is_err()
-        })
-        .count();
-    let seek_errors = (0..64)
-        .filter(|fail_at| {
-            load_entries_from(Box::new(FaultyIo::seeking(bytes.clone(), *fail_at))).is_err()
-        })
-        .count();
-    let write_errors = (0..128)
-        .filter(|fail_at| {
-            write_entries_to(Box::new(FaultyIo::writing(*fail_at)), &entries).is_err()
-        })
-        .count();
-    assert!(read_errors > 1);
-    assert!(seek_errors > 1);
-    assert!(write_errors > 3);
-
-    let read_only_path = directory.path().join("read-only.bin");
-    fs::write(&read_only_path, b"existing")?;
-    assert!(write_file_entries(File::open(read_only_path)?, &entries).is_err());
-
-    let mut missing_writer: Option<ArchiveWriter> = None;
-    assert!(finish_zip_writer(&mut missing_writer).is_err());
-    let mut success = successful_zip_operation;
-    assert!(zip_writer_operation(&mut missing_writer, &mut success).is_err());
-
-    let mut active_writer = Some(ZipWriter::new(
-        Box::new(Cursor::new(Vec::new())) as Box<dyn WriteSeek>
-    ));
-    zip_writer_operation(&mut active_writer, &mut success)?;
-    let _ = finish_zip_writer(&mut active_writer)?;
-
-    let mut panicking_writer = Some(ZipWriter::new(
-        Box::new(Cursor::new(Vec::new())) as Box<dyn WriteSeek>
-    ));
-    let mut panic_operation =
-        |_: &mut ArchiveWriter| -> Result<()> { panic!("injected ZIP panic") };
-    assert!(zip_writer_operation(&mut panicking_writer, &mut panic_operation).is_err());
-    assert!(panicking_writer.is_none());
-    Ok(())
-}
-
-#[test]
 fn fill_config_and_wrapper_match_java_defaults_and_builders() {
     let rows = vec![TemplateData::new().with("name", "Alice")];
     let unnamed = FillWrapper::new(rows.clone());
@@ -1542,34 +1299,6 @@ fn fills_java_official_composite_template_across_all_analysis_cells() -> Result<
     let template = directory.path().join("java-composite.xlsx");
     let output = directory.path().join("java-composite-filled.xlsx");
     write_java_composite_fixture(&template)?;
-
-    let entries = load_entries(&template)?;
-    let shared_strings = entries
-        .iter()
-        .find(|entry| entry.name == "xl/sharedStrings.xml")
-        .and_then(|entry| std::str::from_utf8(&entry.bytes).ok())
-        .map(shared_string_values)
-        .expect("official shared strings");
-    let sheet = entries
-        .iter()
-        .find(|entry| entry.name == "xl/worksheets/sheet1.xml")
-        .and_then(|entry| std::str::from_utf8(&entry.bytes).ok())
-        .expect("official worksheet");
-    let data2 = FillWrapper::named(
-        "data2",
-        [TemplateData::new().with("name", "X").with("number", 10)],
-    );
-    let (_, _, data2_row, _, _, _) =
-        find_collection_row(sheet, &data2, &shared_strings).expect("data2 marker row");
-    let filled_data2_row = fill_row_cells(
-        data2_row,
-        &data2.rows()[0],
-        data2.name(),
-        &shared_strings,
-        true,
-    );
-    assert!(filled_data2_row.contains("r=\"A9\""));
-    assert!(filled_data2_row.contains("r=\"B9\""));
 
     let horizontal = FillConfig::new().direction(FillDirection::Horizontal);
     let mut writer = ExcelTemplateWriter::new(&template, &output)?;
@@ -1779,379 +1508,6 @@ fn expands_horizontal_unnamed_cells_and_can_drop_style() -> Result<()> {
     assert_eq!(range.get_value((0, 1)), Some(&Data::String("B".to_owned())));
     assert_eq!(range.get_value((0, 2)), Some(&Data::String("C".to_owned())));
     Ok(())
-}
-
-#[test]
-#[allow(clippy::too_many_lines)]
-fn collection_parser_defensive_paths_are_deterministic() {
-    let empty = FillWrapper::default();
-    let mut no_entries = Vec::new();
-    replace_collection_placeholders(&mut no_entries, &empty, FillConfig::new());
-
-    let wrapper = FillWrapper::new([TemplateData::new().with("name", "X")]);
-    let mut entries = vec![
-        TemplateEntry {
-            name: "xl/sharedStrings.xml".to_owned(),
-            is_dir: false,
-            compression: CompressionMethod::Stored,
-            unix_mode: None,
-            bytes: vec![0xff],
-        },
-        TemplateEntry {
-            name: "xl/worksheets/sheet1.xml".to_owned(),
-            is_dir: false,
-            compression: CompressionMethod::Stored,
-            unix_mode: None,
-            bytes: vec![0xff],
-        },
-        TemplateEntry {
-            name: "other.xml".to_owned(),
-            is_dir: false,
-            compression: CompressionMethod::Stored,
-            unix_mode: None,
-            bytes: b"<row/>".to_vec(),
-        },
-        TemplateEntry {
-            name: "xl/worksheets/sheet2.xml".to_owned(),
-            is_dir: false,
-            compression: CompressionMethod::Stored,
-            unix_mode: None,
-            bytes: b"<worksheet/>".to_vec(),
-        },
-    ];
-    replace_collection_placeholders(&mut entries, &wrapper, FillConfig::new());
-
-    assert_eq!(shared_string_values("<si"), Vec::<String>::new());
-    assert_eq!(shared_string_values("<si>missing"), Vec::<String>::new());
-    assert_eq!(text_node_values("<t"), "");
-    assert_eq!(text_node_values("<t>missing"), "");
-    assert!(expand_vertical_rows("<sheet/>", &wrapper, FillConfig::new(), &[]).is_none());
-    assert!(expand_horizontal_cells("<row>", &wrapper, &[]).is_none());
-    assert_eq!(
-        expand_vertical_rows(
-            "<row r=\"1\"><c r=\"A1\" t=\"inlineStr\"><is><t>{.name}</t></is></c></row>",
-            &wrapper,
-            FillConfig::new(),
-            &[]
-        ),
-        Some("<row r=\"1\"><c r=\"A1\" t=\"inlineStr\"><is><t>X</t></is></c></row>".to_owned())
-    );
-    assert!(find_collection_row("<row>", &wrapper, &[]).is_none());
-    assert!(find_collection_cell("<c>", &wrapper, &[]).is_none());
-    assert_eq!(
-        fill_row_cells("before<c", wrapper.rows().first().unwrap(), None, &[], true),
-        "before<c"
-    );
-
-    let data = wrapper.rows().first().unwrap();
-    assert_eq!(exact_collection_value("{.name", data, None), None);
-    assert_eq!(
-        exact_collection_value("{other.name}", data, Some("users")),
-        None
-    );
-    assert_eq!(
-        exact_collection_value("{usersname}", data, Some("users")),
-        None
-    );
-    assert_eq!(exact_collection_value("{name}", data, None), None);
-    assert_eq!(fill_cell("<c", data, None, &[], true), "<c");
-    assert_eq!(fill_cell("<c></c>", data, None, &[], true), "<c></c>");
-    assert_eq!(
-        fill_cell(
-            "<c t=\"inlineStr\"><is><t>plain</t></is></c>",
-            data,
-            None,
-            &[],
-            true
-        ),
-        "<c t=\"inlineStr\"><is><t>plain</t></is></c>"
-    );
-    assert_eq!(
-        fill_cell(
-            "<c r=\"A1\" s=\"2\" t=\"inlineStr\"><is><t>{.name}</t></is></c>",
-            data,
-            None,
-            &[],
-            false
-        ),
-        "<c r=\"A1\" t=\"inlineStr\"><is><t>X</t></is></c>"
-    );
-    assert_eq!(
-        fill_cell(
-            "<c r=\"A1\" s=\"2\" t=\"inlineStr\"><is><t>{.name}</t></is></c>",
-            data,
-            None,
-            &[],
-            true
-        ),
-        "<c r=\"A1\" s=\"2\" t=\"inlineStr\"><is><t>X</t></is></c>"
-    );
-    assert_eq!(
-        fill_cell(
-            "<c r=\"A1\" s=\"2\" t=\"inlineStr\"><is><t>Name {.name}</t></is></c>",
-            data,
-            None,
-            &[],
-            false
-        ),
-        "<c r=\"A1\" t=\"inlineStr\"><is><t>Name X</t></is></c>"
-    );
-    assert_eq!(render_typed_cell("<c", &CellValue::Int(1), true), "<c");
-    assert_eq!(
-        render_typed_cell(
-            "<c r=\"A1\"></c>",
-            &CellValue::RichText(crate::core::RichTextStringData::new("rich")),
-            true
-        ),
-        "<c r=\"A1\" t=\"inlineStr\"><is><t>rich</t></is></c>"
-    );
-    assert_eq!(
-        render_typed_cell(
-            "<c r=\"A1\"></c>",
-            &CellValue::Comment {
-                value: Box::new(CellValue::String("commented".to_owned())),
-                text: "note".to_owned(),
-            },
-            true
-        ),
-        "<c r=\"A1\" t=\"inlineStr\"><is><t>commented</t></is></c>"
-    );
-    assert_eq!(
-        render_typed_cell(
-            "<c r=\"A1\"></c>",
-            &CellValue::Images {
-                value: Box::new(CellValue::Bool(false)),
-                images: Vec::new(),
-            },
-            true
-        ),
-        "<c r=\"A1\" t=\"b\"><v>0</v></c>"
-    );
-    assert_eq!(
-        render_typed_cell(
-            "<c r=\"A1\"></c>",
-            &CellValue::Hyperlink {
-                url: "https://example.com".to_owned(),
-                text: "link".to_owned(),
-            },
-            true
-        ),
-        "<c r=\"A1\" t=\"inlineStr\"><is><t>link</t></is></c>"
-    );
-    assert_eq!(
-        render_typed_cell("<c r=\"A1\"></c>", &CellValue::Image(vec![1]), true),
-        "<c r=\"A1\"></c>"
-    );
-    assert_eq!(
-        replace_scalar_cells_in_xml("<worksheet><sheetData><c", &TemplateData::new(), &[]),
-        "<worksheet><sheetData><c"
-    );
-    // `<cols>` / `<col>` must not be treated as cells (complex.xlsx regression).
-    let cols_xml = concat!(
-        r#"<worksheet><cols><col min="1" max="1" width="10"/></cols>"#,
-        r#"<sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>{date}</t></is></c>"#,
-        r#"<c r="B1" s="1"/></row></sheetData></worksheet>"#
-    );
-    let filled_cols = replace_scalar_cells_in_xml(
-        cols_xml,
-        &TemplateData::new().with("date", "2019年10月9日13:28:28"),
-        &[],
-    );
-    assert!(
-        filled_cols.contains("<cols>") && filled_cols.contains("</cols>"),
-        "cols section must survive scalar fill: {filled_cols}"
-    );
-    assert!(
-        filled_cols.contains("2019年10月9日13:28:28"),
-        "scalar date must be filled: {filled_cols}"
-    );
-    assert!(
-        filled_cols.contains(r#"<c r="B1" s="1"/>"#),
-        "self-closing cells must survive: {filled_cols}"
-    );
-    assert_eq!(cell_value("<c t=\"s\"></c>", &[]), None);
-    assert_eq!(cell_value("<c t=\"s\"><v>x</v></c>", &[]), None);
-    assert_eq!(cell_value("<c t=\"s\"><v>9</v></c>", &[]), None);
-    assert_eq!(cell_value("<c></c>", &[]), None);
-    assert!(!contains_collection_marker("{other.name}", &wrapper));
-}
-
-#[test]
-fn collection_coordinate_helpers_and_missing_input_are_deterministic() -> Result<()> {
-    let directory = tempdir()?;
-    assert_eq!(element_value("", "v"), None);
-    assert_eq!(element_value("<v>1", "v"), None);
-    assert_eq!(attribute_value("", "r"), None);
-    assert_eq!(attribute_value(" r=\"broken", "r"), None);
-    assert_eq!(replace_attribute("<c>", "r", "A1"), "<c>");
-    assert_eq!(remove_attribute("<c>", "s"), "<c>");
-    assert_eq!(shift_rows("tail", 2), "tail");
-    assert_eq!(shift_rows("tail", 0), "tail");
-    assert_eq!(shift_rows("<row r=\"1\">broken", 2), "<row r=\"1\">broken");
-    assert_eq!(shift_row("<c r=\"A1\"/>", 1, 1), "<c r=\"B2\"/>");
-    assert_eq!(
-        shift_row("<row r=\"x\"></row>", 1, 0),
-        "<row r=\"x\"></row>"
-    );
-    assert!(cell_references(" r=\"broken").is_empty());
-    assert!(cell_references(" r=\"abc\"").is_empty());
-    assert_eq!(shift_cell_reference("ABC", 1, 0), "ABC");
-    assert_eq!(shift_cell_reference("A-invalid", 1, 0), "A-invalid");
-    assert_eq!(shift_cell_reference("1", 1, 0), "1");
-    assert_eq!(shift_cell_reference("A1x", 1, 0), "A1x");
-    assert_eq!(column_name(0), "");
-    assert_eq!(column_name(27), "AA");
-    assert_eq!(worksheet_max_row("<row"), 0);
-    assert_eq!(worksheet_max_row("<row><c/></row>"), 0);
-    assert!(append_rows_to_xml("<worksheet/>", &[vec![]]).is_err());
-    let mut no_sheet = Vec::new();
-    assert!(append_rows_to_first_sheet(&mut no_sheet, &[vec![]]).is_err());
-    let mut invalid_sheet = vec![TemplateEntry {
-        name: "xl/worksheets/sheet1.xml".to_owned(),
-        is_dir: false,
-        compression: CompressionMethod::Stored,
-        unix_mode: None,
-        bytes: vec![0xff],
-    }];
-    assert!(append_rows_to_first_sheet(&mut invalid_sheet, &[vec![]]).is_err());
-    invalid_sheet[0].bytes = vec![0xff];
-    assert!(replace_scalar_cells(&mut invalid_sheet, &TemplateData::new()).is_err());
-    invalid_sheet[0].bytes = vec![0xff];
-    let mut no_sheet_data = vec![TemplateEntry {
-        name: "xl/worksheets/sheet1.xml".to_owned(),
-        is_dir: false,
-        compression: CompressionMethod::Stored,
-        unix_mode: None,
-        bytes: b"<worksheet/>".to_vec(),
-    }];
-    assert!(append_rows_to_first_sheet(&mut no_sheet_data, &[vec![]]).is_err());
-    no_sheet_data[0].bytes = b"<worksheet/>".to_vec();
-
-    let mut invalid_scalar_writer = ExcelTemplateWriter {
-        output: TemplateOutput::Path(directory.path().join("invalid-scalar.xlsx")),
-        entries: invalid_sheet,
-        sheets: vec![PendingSheetFill::new(TemplateSheet::first())],
-        next_collection_order: 0,
-        finished: false,
-        auto_close_stream: true,
-    };
-    assert!(invalid_scalar_writer.finish().is_err());
-    assert!(!invalid_scalar_writer.is_finished());
-    let mut invalid_append_writer = ExcelTemplateWriter {
-        output: TemplateOutput::Path(directory.path().join("invalid-append.xlsx")),
-        entries: no_sheet_data,
-        sheets: vec![PendingSheetFill {
-            sheet: TemplateSheet::first(),
-            scalar: TemplateData::new(),
-            collections: Vec::new(),
-            appended_rows: vec![vec![]],
-        }],
-        next_collection_order: 0,
-        finished: false,
-        auto_close_stream: true,
-    };
-    assert!(invalid_append_writer.finish().is_err());
-    assert!(!invalid_append_writer.is_finished());
-
-    let wrapper = FillWrapper::new([TemplateData::new().with("name", "X")]);
-    assert!(
-        fill_xlsx_template_list(
-            &directory.path().join("missing.xlsx"),
-            &directory.path().join("out.xlsx"),
-            &wrapper,
-            FillConfig::new()
-        )
-        .is_err()
-    );
-    let (_template_directory, template) = template_fixture()?;
-    fill_xlsx_template_list(
-        &template,
-        &directory.path().join("empty-list-output.xlsx"),
-        &FillWrapper::default(),
-        FillConfig::new(),
-    )?;
-    Ok(())
-}
-
-#[test]
-fn collection_row_merge_helpers_cover_missing_existing_and_inserted_rows() {
-    let data = TemplateData::new().with("name", "X");
-    let wrapper = FillWrapper::new([data.clone()]);
-    let marker = "<row r=\"1\"><c r=\"A1\" t=\"inlineStr\"><is><t>{.name}</t></is></c></row>";
-    assert!(
-        expand_vertical_rows(marker, &FillWrapper::default(), FillConfig::new(), &[]).is_none()
-    );
-    assert!(
-        expand_vertical_rows(
-            "<row><c r=\"A1\" t=\"inlineStr\"><is><t>{.name}</t></is></c></row>",
-            &wrapper,
-            FillConfig::new(),
-            &[]
-        )
-        .is_none()
-    );
-    assert!(
-        expand_vertical_rows(
-            "<row><c r=\"A1\" t=\"inlineStr\"><is><t>{.name}</t></is></c></row>",
-            &wrapper,
-            FillConfig::new().force_new_row(true),
-            &[]
-        )
-        .is_none()
-    );
-    assert_eq!(
-        collection_only_row("<row", &data, &wrapper, &[], true, 1),
-        "<row"
-    );
-    assert!(collection_cells("<c", &wrapper, &[]).is_empty());
-
-    let inserted = "<row r=\"2\"><c r=\"A2\"></c></row>";
-    assert_eq!(
-        upsert_collection_row(
-            "<row r=\"3\"><c r=\"A3\"></c></row></sheetData>",
-            inserted,
-            2
-        ),
-        format!("{inserted}<row r=\"3\"><c r=\"A3\"></c></row></sheetData>")
-    );
-    assert_eq!(
-        upsert_collection_row(
-            "<row r=\"1\"><c r=\"A1\"></c></row></sheetData>",
-            inserted,
-            2
-        ),
-        format!("<row r=\"1\"><c r=\"A1\"></c></row>{inserted}</sheetData>")
-    );
-    assert_eq!(
-        upsert_collection_row("<row r=\"1\">broken", inserted, 2),
-        format!("<row r=\"1\">broken{inserted}")
-    );
-    assert_eq!(
-        upsert_collection_row("<row r=\"bad\"></row>", inserted, 2),
-        format!("<row r=\"bad\"></row>{inserted}")
-    );
-
-    assert_eq!(
-        merge_collection_cells("<row r=\"2\"></row>", "<row><c><v>1</v></c></row>"),
-        "<row r=\"2\"></row>"
-    );
-    assert_eq!(
-        merge_collection_cells(
-            "<row r=\"2\"><c r=\"A2\"></c></row>",
-            "<row r=\"2\"><c r=\"B2\"></c></row>"
-        ),
-        "<row r=\"2\"><c r=\"A2\"></c><c r=\"B2\"></c></row>"
-    );
-    assert_eq!(
-        merge_collection_cells(
-            "<row r=\"2\"><c r=\"A2\"></c>",
-            "<row r=\"2\"><c r=\"B2\"></c></row>"
-        ),
-        "<row r=\"2\"><c r=\"A2\"></c>"
-    );
-    assert!(all_cells("<c").is_empty());
-    assert_eq!(row_index("<row></row>"), None);
-    assert_eq!(row_index("<row r=\"bad\"></row>"), None);
 }
 
 #[test]
