@@ -5,7 +5,7 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "easyexcel-support warp adapter for easyexcel-rust"
+description = "Native Warp filter and reply adapter for easyexcel-web"
 repository.workspace = true
 
 [dependencies]

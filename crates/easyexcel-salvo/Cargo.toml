@@ -5,7 +5,7 @@ version.workspace = true
 edition.workspace = true
 rust-version = "1.89"
 license.workspace = true
-description = "easyexcel-support salvo adapter for easyexcel-rust"
+description = "Native Salvo extractor and writer adapter for easyexcel-web"
 repository.workspace = true
 
 [dependencies]
