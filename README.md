@@ -191,6 +191,11 @@ Web 服务额外依赖 `easyexcel-web`，统一使用 `ExcelImport<T>`、`ExcelR
 `ExcelExport<T>`、`ExcelWebPolicy` 和应用级 `ExcelWebRuntime`。具体 Web 框架 crate 只承担原生 extractor /
 responder 的薄适配，不再各自实现文件缓存、资源限制和错误映射。
 
+Axum、Actix Web、Hyper、Poem、Rocket、Salvo、Warp 均提供同语义的
+`ExcelRequest<T>` 与 `ExcelResponse<T>`。可运行示例位于 `examples/<framework>`，七框架共享契约
+位于 `tests/easyexcel-web-conformance`。上传使用原始请求体，并通过
+`x-excel-file-name`（或 `Content-Disposition`）与 `Content-Type` 提供格式信息。
+
 ## Java Compatibility
 
 easyexcel-rust is a 1:1 mirror of Java EasyExcel 4.0.3:

@@ -9,10 +9,12 @@ repository.workspace = true
 
 [dependencies]
 easyexcel = { workspace = true }
+easyexcel-web = { workspace = true }
+futures-util = { workspace = true }
 http = { workspace = true }
 poem = { workspace = true }
 serde_json = { workspace = true }
-tempfile = { workspace = true }
+tokio-util = { workspace = true }
 urlencoding = { workspace = true }
 
 [dev-dependencies]

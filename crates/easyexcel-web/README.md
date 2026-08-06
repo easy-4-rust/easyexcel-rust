@@ -29,6 +29,12 @@ flowchart LR
 - `WebExecutionContext`：传递请求标识和取消令牌；
 - `ExcelWebError` / `ExcelProblemDetails`：提供稳定错误码和 RFC 9457 风格响应。
 
+七个框架适配器统一公开 `ExcelRequest<T>` 与 `ExcelResponse<T>`，但保留各框架原生
+extractor/responder 机制。上传契约为原始请求体，格式由 `x-excel-file-name`、
+`Content-Disposition` 或 `Content-Type` 解析；`x-request-id` 会进入 tracing 与稳定错误响应。
+可运行服务见 `examples/{axum,actix,hyper,poem,rocket,salvo,warp}`，同一组上传、下载、
+响应头和 OOXML 断言位于 `tests/easyexcel-web-conformance`。
+
 XLSX 和旧 XLS 解析器需要随机访问完整容器，所以“流式上传”指请求体按块落盘，
 而不是把整个文件缓存为 `Vec<u8>`；上传完成后，行解析才以有界流向业务代码输出。
 这同时保证恒定内存、背压、格式可靠性和失败前不发送不完整下载响应。

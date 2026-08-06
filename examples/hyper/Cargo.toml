@@ -1,0 +1,27 @@
+[package]
+name = "easyexcel-demo-hyper"
+publish = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Hyper native easyexcel-web streaming demo"
+repository.workspace = true
+
+[[bin]]
+name = "easyexcel-demo-hyper"
+path = "src/main.rs"
+
+[dependencies]
+bytes.workspace = true
+easyexcel.workspace = true
+easyexcel-hyper.workspace = true
+http-body-util.workspace = true
+hyper.workspace = true
+hyper-util.workspace = true
+tokio = { workspace = true, features = ["macros", "net", "rt-multi-thread"] }
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[lints]
+workspace = true

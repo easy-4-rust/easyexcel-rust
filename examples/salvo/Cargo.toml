@@ -1,0 +1,22 @@
+[package]
+name = "easyexcel-demo-salvo"
+publish = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Salvo native easyexcel-web streaming demo"
+repository.workspace = true
+
+[[bin]]
+name = "easyexcel-demo-salvo"
+path = "src/main.rs"
+
+[dependencies]
+easyexcel.workspace = true
+easyexcel-salvo.workspace = true
+salvo.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+
+[lints]
+workspace = true

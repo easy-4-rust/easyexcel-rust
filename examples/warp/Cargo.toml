@@ -1,0 +1,22 @@
+[package]
+name = "easyexcel-demo-warp"
+publish = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Warp native easyexcel-web streaming demo"
+repository.workspace = true
+
+[[bin]]
+name = "easyexcel-demo-warp"
+path = "src/main.rs"
+
+[dependencies]
+easyexcel.workspace = true
+easyexcel-warp.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+warp.workspace = true
+
+[lints]
+workspace = true

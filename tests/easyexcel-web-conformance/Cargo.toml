@@ -1,0 +1,37 @@
+[package]
+name = "easyexcel-web-conformance"
+description = "Shared conformance suite for EasyExcel Web framework adapters"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+easyexcel.workspace = true
+easyexcel-web.workspace = true
+bytes.workspace = true
+futures-util.workspace = true
+
+[dev-dependencies]
+easyexcel-actix.workspace = true
+easyexcel-axum.workspace = true
+easyexcel-hyper.workspace = true
+easyexcel-poem.workspace = true
+easyexcel-rocket.workspace = true
+easyexcel-salvo.workspace = true
+easyexcel-warp.workspace = true
+actix-web.workspace = true
+axum.workspace = true
+http.workspace = true
+http-body-util.workspace = true
+hyper.workspace = true
+poem.workspace = true
+rocket.workspace = true
+salvo.workspace = true
+tokio.workspace = true
+tower.workspace = true
+warp.workspace = true
+
+[lints]
+workspace = true

@@ -1,17 +1,14 @@
-//! Actix-web 版 Web 读写演示。
+//! Actix Web 原生 `ExcelRequest<T>` / `ExcelResponse<T>` 示例。
 
-use actix_multipart::Multipart;
-use actix_web::{App, HttpResponse, HttpServer, Responder, web};
+use actix_web::{App, HttpServer, web};
 use chrono::NaiveDateTime;
-use easyexcel::{AnalysisContext, ExcelRow, ReadListener, Result as ExcelResult};
+use easyexcel::ExcelRow;
+use easyexcel::io::{Format, ResourceLimits};
 use easyexcel_actix::{
-    excel_download_or_json_response, excel_download_response, extension_from_path,
-    read_upload_with_listener,
+    ExcelActixError, ExcelRequest, ExcelResponse, ExcelWebPolicy, ExcelWebRuntime,
 };
-use futures_util::StreamExt;
 use tracing::info;
 
-/// 下载数据行，对应 Java `DownloadData`。
 #[derive(Debug, Clone, ExcelRow)]
 struct DownloadData {
     #[excel(name = "字符串标题", index = 0)]
@@ -22,7 +19,6 @@ struct DownloadData {
     double_data: f64,
 }
 
-/// 上传数据行，对应 Java `UploadData`。
 #[derive(Debug, Clone, ExcelRow)]
 struct UploadData {
     #[excel(index = 0)]
@@ -33,117 +29,58 @@ struct UploadData {
     double_data: f64,
 }
 
-/// 上传监听器，对应 Java `UploadDataListener`。
-struct UploadDataListener {
-    batch: Vec<UploadData>,
-}
-
-impl UploadDataListener {
-    fn new() -> Self {
-        Self { batch: Vec::new() }
-    }
-
-    fn save_batch(rows: &[UploadData]) {
-        info!("存储 {} 条上传数据", rows.len());
-        for row in rows {
-            info!(?row, "解析到一条数据");
-        }
-    }
-}
-
-impl ReadListener<UploadData> for UploadDataListener {
-    fn invoke(&mut self, data: UploadData, _context: &AnalysisContext) -> ExcelResult<()> {
-        self.batch.push(data);
-        if self.batch.len() >= 5 {
-            Self::save_batch(&self.batch);
-            self.batch.clear();
-        }
-        Ok(())
-    }
-
-    fn do_after_all_analysed(&mut self, _context: &AnalysisContext) -> ExcelResult<()> {
-        if !self.batch.is_empty() {
-            Self::save_batch(&self.batch);
-            self.batch.clear();
-        }
-        info!("所有数据解析完成！");
-        Ok(())
-    }
-}
-
-fn sample_download_rows() -> Vec<DownloadData> {
+fn sample_download_rows() -> impl Iterator<Item = DownloadData> {
     let date = NaiveDateTime::parse_from_str("2020-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")
         .expect("valid demo date");
-    (0..10)
-        .map(|_| DownloadData {
-            string: "字符串0".to_owned(),
-            date,
-            double_data: 0.56,
-        })
-        .collect()
+    (0..10).map(move |_| DownloadData {
+        string: "字符串0".to_owned(),
+        date,
+        double_data: 0.56,
+    })
 }
 
-fn encoded_file_name() -> String {
-    urlencoding::encode("测试").replace('+', "%20")
+async fn download(
+    runtime: web::Data<ExcelWebRuntime>,
+) -> Result<ExcelResponse<DownloadData>, ExcelActixError> {
+    ExcelResponse::prepare(
+        sample_download_rows(),
+        Format::Xlsx,
+        "测试.xlsx",
+        "模板",
+        runtime.generated_context(),
+    )
+    .await
 }
 
-async fn download() -> impl Responder {
-    match excel_download_response(&encoded_file_name(), "模板", sample_download_rows()) {
-        Ok(response) => response,
-        Err(error) => HttpResponse::InternalServerError().body(error.to_string()),
+async fn upload(request: ExcelRequest<UploadData>) -> Result<String, ExcelActixError> {
+    let request_id = request.request_id().to_string();
+    let mut rows = request.into_rows();
+    let mut row_count = 0_u64;
+    while let Some(row) = rows.next_row().await {
+        let row = row.map_err(|error| ExcelActixError::new(error, &request_id))?;
+        info!(?row, "解析到上传数据");
+        row_count += 1;
     }
-}
-
-async fn download_failed_using_json() -> impl Responder {
-    excel_download_or_json_response(&encoded_file_name(), "模板", sample_download_rows())
-}
-
-async fn upload(mut payload: Multipart) -> impl Responder {
-    // 对应 Java `WebTest.upload(MultipartFile file)`：按单个上传字段处理并立即返回。
-    if let Some(item) = payload.next().await {
-        let mut field = match item {
-            Ok(field) => field,
-            Err(error) => return HttpResponse::BadRequest().body(error.to_string()),
-        };
-        let file_name = field
-            .content_disposition()
-            .and_then(|value| value.get_filename().map(str::to_owned))
-            .unwrap_or_else(|| "upload.xlsx".to_owned());
-        let mut bytes = Vec::new();
-        while let Some(chunk) = field.next().await {
-            match chunk {
-                Ok(data) => bytes.extend_from_slice(data.as_ref()),
-                Err(error) => return HttpResponse::BadRequest().body(error.to_string()),
-            }
-        }
-        let extension = extension_from_path(std::path::Path::new(&file_name));
-        if let Err(error) =
-            read_upload_with_listener::<UploadData, _>(&bytes, extension, UploadDataListener::new())
-        {
-            return HttpResponse::InternalServerError().body(error.to_string());
-        }
-        return HttpResponse::Ok().body("success");
-    }
-    HttpResponse::BadRequest().body("未收到上传文件")
+    Ok(format!("success: {row_count} rows"))
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     tracing_subscriber::fmt::init();
-    // 端口可经 PORT 环境变量配置（对应 Java Quarkus 的 quarkus.http.port，默认 8081）
     let port = std::env::var("PORT")
         .ok()
         .and_then(|value| value.parse::<u16>().ok())
         .unwrap_or(8081);
-    info!("Actix WebTest 演示监听 http://127.0.0.1:{port}");
+    let policy = ExcelWebPolicy::new(ResourceLimits::default())
+        .with_max_concurrent_tasks(4)
+        .with_row_channel_capacity(32);
+    let runtime = web::Data::new(ExcelWebRuntime::new(policy));
+    info!("Actix EasyExcel 示例监听 http://127.0.0.1:{port}");
 
-    HttpServer::new(|| {
+    HttpServer::new(move || {
         App::new()
+            .app_data(runtime.clone())
             .route("/download", web::get().to(download))
-            .route(
-                "/downloadFailedUsingJson",
-                web::get().to(download_failed_using_json),
-            )
             .route("/upload", web::post().to(upload))
     })
     .bind(("127.0.0.1", port))?

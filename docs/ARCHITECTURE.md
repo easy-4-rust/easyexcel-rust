@@ -22,6 +22,7 @@ easyexcel-rust/                       (workspace root)
 │   └── easyexcel-{axum,actix,...}/  ← framework-native thin adapters
 ├── examples/                         ← read/write/fill/web demos
 ├── tests/easyexcel-test/             ← integration and parity tests
+├── tests/easyexcel-web-conformance/  ← seven-adapter shared Web contract
 ├── xtask/                           ← audit and maintenance commands
 ├── docs/
 ├── scripts/
@@ -47,6 +48,24 @@ flowchart LR
 风格的行映射与用例编排；各框架适配器只能把原生请求体转换为 `ExcelImport<T>`，
 或把 `ExcelExport<T>` 转换为原生响应，不得重复实现临时文件、资源限制、背压、
 取消、超时和错误协议。
+
+```mermaid
+flowchart TB
+    Runtime["ExcelWebRuntime<br/>policy / concurrency / cancellation"]
+    Request["ExcelRequest<T><br/>native extractor"]
+    Import["ExcelImport<T><br/>bounded temporary artifact"]
+    Rows["ExcelRows<T><br/>bounded-channel backpressure"]
+    Response["ExcelResponse<T><br/>native responder"]
+    Export["ExcelExport<T><br/>constant-memory generation"]
+    Frameworks["Axum / Actix / Hyper / Poem / Rocket / Salvo / Warp"]
+    Suite["shared conformance suite"]
+
+    Frameworks --> Request --> Import --> Rows
+    Frameworks --> Response --> Export
+    Runtime --> Request
+    Runtime --> Response
+    Suite -. "same upload/download assertions" .-> Frameworks
+```
 
 ## Code Placement Boundary
 

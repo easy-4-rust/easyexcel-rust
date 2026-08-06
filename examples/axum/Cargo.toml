@@ -15,12 +15,11 @@ path = "src/main.rs"
 [dependencies]
 easyexcel = { workspace = true }
 easyexcel-axum.workspace = true
-axum = { workspace = true, features = ["multipart"] }
+axum = { workspace = true }
 chrono = { workspace = true, default-features = false, features = ["std", "clock"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
-urlencoding = { workspace = true }
 
 [dev-dependencies]
 libc.workspace = true

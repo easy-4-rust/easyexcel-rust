@@ -8,6 +8,6 @@
 pub mod web;
 
 pub use web::{
-    ExcelExport, ExcelImport, ExcelProblemDetails, ExcelRows, ExcelWebError, ExcelWebErrorCode,
-    ExcelWebPolicy, ExcelWebRuntime, WebExecutionContext,
+    ExcelExport, ExcelImport, ExcelProblemDetails, ExcelRequestMetadata, ExcelRows, ExcelWebError,
+    ExcelWebErrorCode, ExcelWebPolicy, ExcelWebRuntime, WebExecutionContext,
 };

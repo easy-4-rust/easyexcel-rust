@@ -16,12 +16,9 @@ path = "src/main.rs"
 easyexcel = { workspace = true }
 easyexcel-actix.workspace = true
 actix-web = { workspace = true }
-actix-multipart = { workspace = true }
 chrono = { workspace = true, default-features = false, features = ["std", "clock"] }
-futures-util = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
-urlencoding = { workspace = true }
 
 [dev-dependencies]
 libc.workspace = true

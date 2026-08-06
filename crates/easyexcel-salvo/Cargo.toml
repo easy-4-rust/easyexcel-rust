@@ -2,16 +2,19 @@
 name = "easyexcel-salvo"
 version.workspace = true
 edition.workspace = true
-rust-version = "1.94"
+rust-version.workspace = true
 license.workspace = true
 description = "easyexcel-support salvo adapter for easyexcel-rust"
 repository.workspace = true
 
 [dependencies]
 easyexcel = { workspace = true }
+easyexcel-web = { workspace = true }
+futures-util = { workspace = true }
+http-body-util = { workspace = true }
 salvo = { workspace = true }
 serde_json = { workspace = true }
-tempfile = { workspace = true }
+tokio-util = { workspace = true }
 urlencoding = { workspace = true }
 
 [lints]
