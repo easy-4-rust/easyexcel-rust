@@ -60,7 +60,7 @@ easyexcel-core/src/main/java/com/alibaba/excel/annotation/write/style/HeadFontSt
 easyexcel-core/src/main/java/com/alibaba/excel/annotation/write/style/HeadRowHeight.java,crates/easyexcel-derive/src/annotation/write/style/head_row_height.rs,easyexcel-derive,head_row_height,write,complete,annotation_contract::exposes_all_java_annotation_metadata,3afdea9d
 easyexcel-core/src/main/java/com/alibaba/excel/annotation/write/style/HeadStyle.java,crates/easyexcel-derive/src/annotation/write/style/head_style.rs,easyexcel-derive,head_style,write,complete,annotation_contract::exposes_all_java_annotation_metadata,3afdea9d
 easyexcel-core/src/main/java/com/alibaba/excel/annotation/write/style/OnceAbsoluteMerge.java,crates/easyexcel-derive/src/annotation/write/style/once_absolute_merge.rs,easyexcel-derive,once_absolute_merge,write,complete,annotation_contract::exposes_all_java_annotation_metadata,3afdea9d
-easyexcel-core/src/main/java/com/alibaba/excel/cache/Ehcache.java,easyexcel/src/cache/ehcache.rs,easyexcel,ehcache,core,in_progress,,3afdea9d
+easyexcel-core/src/main/java/com/alibaba/excel/cache/Ehcache.java,easyexcel/src/cache/moka_cache.rs,easyexcel,moka_cache,core,complete,easyexcel::cache::tests::moka_cache_retains_all_objects_until_destroy,3afdea9d
 easyexcel-core/src/main/java/com/alibaba/excel/cache/MapCache.java,easyexcel/src/cache/map_cache.rs,easyexcel,map_cache,core,in_progress,,3afdea9d
 easyexcel-core/src/main/java/com/alibaba/excel/cache/ReadCache.java,easyexcel/src/cache/read_cache.rs,easyexcel,read_cache,core,in_progress,,3afdea9d
 easyexcel-core/src/main/java/com/alibaba/excel/cache/XlsCache.java,easyexcel/src/cache/xls_cache.rs,easyexcel,xls_cache,core,in_progress,,3afdea9d

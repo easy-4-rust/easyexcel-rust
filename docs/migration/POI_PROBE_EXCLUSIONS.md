@@ -8,7 +8,7 @@
 
 EasyExcel-rs wraps `rust_xlsxwriter` + `calamine` + custom BIFF8 code,
 not Apache POI. Tests that verify POI internals (HSSFWorkbook format
-details, Ehcache PersistentCacheManager, RC4 key derivation internals)
+details, JVM persistent-cache manager behavior, RC4 key derivation internals)
 test the engine, not the facade. These are excluded by design.
 
 ## Per-class exclusion list
@@ -17,7 +17,7 @@ test the engine, not the facade. These are excluded by design.
 
 | Method | Reason for exclusion |
 |--------|---------------------|
-| `cache` | Directly tests `org.ehcache.PersistentCacheManager.put/clear` — not EasyExcel `com.alibaba.excel.cache.Ehcache` facade. Rust has portable `ReadCacheMode::Disk` equiv. |
+| `cache` | Directly tests a JVM persistent-cache manager's `put/clear` — not the EasyExcel Rust facade. Rust has portable `ReadCacheMode::File` and `MokaCache` equivalents. |
 
 ### temp.poi.PoiTest (14 methods)
 
@@ -58,7 +58,7 @@ POI `BuiltinFormats` / custom format probing.
 
 | Package | Methods | Reason |
 |---------|---------|--------|
-| `temp.cache.CacheTest` | 1 | Ehcache PersistentCacheManager internal |
+| `temp.cache.CacheTest` | 1 | JVM persistent-cache manager internal |
 | `temp.poi.PoiTest` | 14 | POI HSSF/XSSF internal |
 | `temp.poi.PoiWriteTest` | 7 | POI write internal |
 | `temp.poi.Poi2Test` | 2 | POI encryption detection |
@@ -83,6 +83,6 @@ POI `BuiltinFormats` / custom format probing.
 | `PoiDateFormatTest#test` | `builtin_formats` + `data_formatter` tests | `easyexcel-core/src/constant/builtin_formats.rs` |
 | `PoiEncryptTest#*` (2 methods) | `biff8::encrypt::tests::rc4_round_trip` | `easyexcel-writer/src/biff8/encrypt.rs` |
 | `PoiFormatTest#*` (2 methods) | `builtin_formats` coverage tests | `easyexcel-core/src/constant/builtin_formats.rs` |
-| `CacheTest#cache` | `cache_ehcache_facade_disk_put_get` | `easyexcel-test/tests/temp_1to1_tests/cache.rs` |
+| `CacheTest#cache` | `cache_moka_facade_object_put_get` | `easyexcel-test/tests/temp_1to1_tests/cache.rs` |
 
 **31/31 methods have Rust behavioral equivalents.** All 31 Rust tests run as part of `cargo test --workspace --all-features`.

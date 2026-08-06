@@ -5,35 +5,32 @@
 //! | Java | Rust | Notes |
 //! |------|------|-------|
 //! | `MapCache` | [`MapCache`] | In-memory `HashMap`-style backend |
-//! | `MokaCache` | [`MokaCache`] | Moka active tier + lossless tempfile backing |
-//! | `Ehcache` | [`Ehcache`] | Java-compatible alias of [`MokaCache`]; **not** JVM `PersistentCacheManager` |
+//! | `MokaCache` | [`MokaCache`] | Lifecycle-scoped object cache without entry eviction |
+//! | file cache | [`FileCache`] | Temporary-file backend for bounded-memory SAX reads |
 //! | `XlsCache` | [`XlsCache`] | Pre-built SST table for BIFF reads |
 //! | `SimpleReadCacheSelector` | [`SimpleReadCacheSelector`] | 5 MB (`5_000_000` byte) Auto boundary |
-//! | `EternalReadCacheSelector` | [`EternalReadCacheSelector`] | Pins Memory or Disk regardless of size |
+//! | `EternalReadCacheSelector` | [`EternalReadCacheSelector`] | Pins Memory, Moka or File regardless of size |
 //! | `ReadCache` | [`ReadCache`] | Shared-string put/get contract |
 //!
-//! XLSX SAX uses [`crate::read::read_cache::ReadCacheMode`] (`Auto` / `Memory` / `Disk`) wired
+//! XLSX SAX uses [`crate::read::read_cache::ReadCacheMode`] (`Auto` / `Memory` / `Moka` / `File`) wired
 //! through [`ReadOptions::read_cache`] and optional [`ReadOptions::read_cache_selector`].
 //! Legacy XLS reads use the `easyexcel-xls` BIFF engine and do not consult these selectors.
 
-mod ehcache;
+mod file_cache;
 mod map_cache;
 mod moka_cache;
 mod read_cache;
 pub mod selector;
 mod xls_cache;
 
-pub use ehcache::Ehcache;
+pub use file_cache::FileCache;
 pub use map_cache::MapCache;
-#[allow(deprecated)]
-pub use moka_cache::{
-    DEFAULT_MAX_EHCACHE_ACTIVATE_BATCH_COUNT, DEFAULT_MAX_MOKA_ACTIVE_BATCH_COUNT, MokaCache,
-};
+pub use moka_cache::MokaCache;
 pub use read_cache::ReadCache;
 pub use selector::{EternalReadCacheSelector, ReadCacheSelector, SimpleReadCacheSelector};
 pub use xls_cache::XlsCache;
 
-pub use read_cache::{new_disk_cache, new_map_cache, resolve_read_cache_mode};
+pub use read_cache::{new_file_cache, new_map_cache, new_moka_cache, resolve_read_cache_mode};
 
 #[cfg(test)]
 mod tests;

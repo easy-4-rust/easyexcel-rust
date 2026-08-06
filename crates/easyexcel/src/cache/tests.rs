@@ -1,7 +1,7 @@
 //! Cache facade tests.
 
 use super::{
-    Ehcache, EternalReadCacheSelector, MapCache, ReadCache, ReadCacheSelector,
+    EternalReadCacheSelector, FileCache, MapCache, MokaCache, ReadCache, ReadCacheSelector,
     SimpleReadCacheSelector, XlsCache,
 };
 use crate::ReadCacheMode;
@@ -27,43 +27,65 @@ fn xls_cache_reads_preloaded_sst_values() {
 fn simple_selector_matches_java_five_megabyte_threshold() {
     let selector = SimpleReadCacheSelector::new();
     assert_eq!(selector.select_mode(4_999_999), ReadCacheMode::Memory);
-    assert_eq!(selector.select_mode(5_000_000), ReadCacheMode::Disk);
+    assert_eq!(selector.select_mode(5_000_000), ReadCacheMode::File);
 }
 
 #[test]
 fn simple_selector_custom_mb_threshold() {
     let selector = SimpleReadCacheSelector::with_max_use_map_cache_size_mb(1);
     assert_eq!(selector.select_mode(999_999), ReadCacheMode::Memory);
-    assert_eq!(selector.select_mode(1_000_000), ReadCacheMode::Disk);
+    assert_eq!(selector.select_mode(1_000_000), ReadCacheMode::File);
 }
 
 #[test]
 fn eternal_selector_pins_backend_mode() {
     let selector = EternalReadCacheSelector::map_cache();
     assert_eq!(selector.select_mode(9_999_999), ReadCacheMode::Memory);
-    let disk = EternalReadCacheSelector::moka();
-    assert_eq!(disk.select_mode(0), ReadCacheMode::Disk);
+    let moka = EternalReadCacheSelector::moka();
+    assert_eq!(moka.select_mode(0), ReadCacheMode::Moka);
+    let file = EternalReadCacheSelector::file_cache();
+    assert_eq!(file.select_mode(0), ReadCacheMode::File);
 }
 
 #[test]
-fn ehcache_round_trips_values_through_disk_backend() {
-    let mut cache = Ehcache::new(Some(20)).expect("ehcache");
-    cache.put("disk-value".to_owned()).expect("put");
+fn moka_cache_round_trips_objects() {
+    let mut cache = MokaCache::new();
+    cache.put("object-value".to_owned()).expect("put");
     cache.put_finished().expect("put finished");
     assert_eq!(
         cache.get(Some(0)).expect("get"),
-        Some("disk-value".to_owned())
+        Some("object-value".to_owned())
     );
     cache.destroy();
+    assert!(cache.get(Some(0)).is_err());
 }
 
 #[test]
-fn ehcache_deprecated_size_constructor_is_accepted() {
-    let mut cache = Ehcache::with_max_cache_activate_size_mb(Some(20)).expect("ehcache");
-    cache.put("legacy-knob".to_owned()).expect("put");
+fn moka_cache_retains_all_objects_until_destroy() {
+    let mut cache = MokaCache::new();
+    for index in 0..10_000 {
+        cache.put(format!("object-{index}")).expect("put");
+    }
+    cache.put_finished().expect("put finished");
+    assert_eq!(
+        cache.get(Some(0)).expect("get").as_deref(),
+        Some("object-0")
+    );
+    assert_eq!(
+        cache.get(Some(9_999)).expect("get").as_deref(),
+        Some("object-9999")
+    );
+}
+
+#[test]
+fn file_cache_round_trips_values_and_releases_file_on_destroy() {
+    let mut cache = FileCache::new().expect("file cache");
+    cache.put("file-value".to_owned()).expect("put");
     cache.put_finished().expect("put finished");
     assert_eq!(
         cache.get(Some(0)).expect("get"),
-        Some("legacy-knob".to_owned())
+        Some("file-value".to_owned())
     );
+    cache.destroy();
+    assert!(cache.get(Some(0)).is_err());
 }

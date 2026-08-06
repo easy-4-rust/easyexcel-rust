@@ -41,7 +41,7 @@ mod into_sheet_selector;
 mod write_type_helpers;
 
 pub use crate::cache::{
-    Ehcache, EternalReadCacheSelector, MapCache, MokaCache, ReadCache, ReadCacheSelector,
+    EternalReadCacheSelector, FileCache, MapCache, MokaCache, ReadCache, ReadCacheSelector,
     SimpleReadCacheSelector, XlsCache,
 };
 pub use crate::core::*;

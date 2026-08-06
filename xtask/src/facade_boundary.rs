@@ -8,7 +8,12 @@ use crate::TaskResult;
 
 const FACADE_MANIFEST: &str = "crates/easyexcel/Cargo.toml";
 const FACADE_LIB: &str = "crates/easyexcel/src/lib.rs";
-const EHCACHE_COMPAT: &str = "crates/easyexcel/src/cache/ehcache.rs";
+const CACHE_ENGINE_MANIFEST: &str = "crates/easyexcel-cache/Cargo.toml";
+const CACHE_ENGINE: &str = "crates/easyexcel-cache/src/cache/shared_string_cache.rs";
+const CACHE_POLICY_ENGINE: &str = "crates/easyexcel-cache/src/cache/shared_string_cache_policy.rs";
+const FACADE_CACHE_MOD: &str = "crates/easyexcel/src/cache/mod.rs";
+const REMOVED_JAVA_CACHE_ADAPTER: &str = concat!("crates/easyexcel/src/cache/eh", "cache.rs");
+const FILE_CACHE_ADAPTER: &str = "crates/easyexcel/src/cache/file_cache.rs";
 const MOKA_ADAPTER: &str = "crates/easyexcel/src/cache/moka_cache.rs";
 const OUTPUT_STREAM_COMPAT: &str = "crates/easyexcel/src/write/excel_output_stream.rs";
 const IO_ROW_RANGE_ENGINE: &str = "crates/easyexcel-io/src/io/row_range.rs";
@@ -16,14 +21,19 @@ const IO_SHEET_SELECTION_ENGINE: &str = "crates/easyexcel-io/src/io/sheet_select
 const IO_FORMAT_ENGINE: &str = "crates/easyexcel-io/src/io/format.rs";
 const IO_GZIP_CELL_ENGINE: &str = "crates/easyexcel-io/src/io/gzip_cell_record.rs";
 const MODEL_STORED_ROW_ENGINE: &str = "crates/easyexcel-model/src/model/stored_row.rs";
+const CSV_ENCODING_ADAPTER: &str = "crates/easyexcel/src/write/csv_encoding_writer.rs";
+const EXCEL_TYPE_ADAPTER: &str = "crates/easyexcel/src/support/excel_type_enum.rs";
 const XLSX_FACADE: &str = "crates/easyexcel/src/xlsx.rs";
 const XLS_RECORD_DISPATCHER: &str = "crates/easyexcel/src/analysis/v03/xls_record_dispatcher.rs";
+const XLS_SAX_ADAPTER: &str = "crates/easyexcel/src/analysis/v03/xls_sax_analyser.rs";
+const XLSX_SAX_ADAPTER: &str = "crates/easyexcel/src/analysis/v07/xlsx_sax_analyser.rs";
 const XLS_OBJ_HANDLER: &str = "crates/easyexcel/src/analysis/v03/handlers/obj_record_handler.rs";
 const STYLE_UTIL_ADAPTER: &str = "crates/easyexcel/src/util/style_util.rs";
 const FACADE_ERROR: &str = "crates/easyexcel/src/support/excel_error.rs";
 const XLS_TEMPLATE_ADAPTER: &str = "crates/easyexcel/src/write/xls_adapter/template.rs";
 const XLSX_TEMPLATE_ADAPTER: &str = "crates/easyexcel/src/template/template_writer.rs";
 const XLSX_TEMPLATE_SELECTION_ENGINE: &str = "crates/easyexcel-xlsx/src/xlsx/template_source.rs";
+const XLSX_EVENT_READER_ENGINE: &str = "crates/easyexcel-xlsx/src/xlsx/event_reader.rs";
 const ROW_PROCESSING_ADAPTER: &str = "crates/easyexcel/src/read/row_processing.rs";
 const TEMPLATE_WRITE_ADAPTER: &str = "crates/easyexcel/src/write/template_write.rs";
 const READ_HELPERS_ADAPTER: &str = "crates/easyexcel/src/read/read_helpers.rs";
@@ -90,6 +100,100 @@ const JAVA_TRIM_ADAPTERS: &[&str] = &[
     "crates/easyexcel/src/util/cell_editor.rs",
 ];
 
+const XLS_RECORD_DECODER_ADAPTERS: &[(&str, &str)] = &[
+    (
+        "crates/easyexcel/src/analysis/v03/handlers/blank_record_handler.rs",
+        "event_record::decode_cell_header(data)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v03/handlers/bof_record_handler.rs",
+        "event_record::decode_bof_type(data)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v03/handlers/bool_err_record_handler.rs",
+        "event_record::decode_bool_err_record(data)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v03/handlers/bound_sheet_record_handler.rs",
+        "event_record::decode_bound_sheet_record(data)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v03/handlers/formula_record_handler.rs",
+        "event_record::decode_formula_record(data)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v03/handlers/hyperlink_record_handler.rs",
+        "event_record::decode_cell_range(data)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v03/handlers/index_record_handler.rs",
+        "event_record::decode_index_last_row(data)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v03/handlers/label_record_handler.rs",
+        "event_record::decode_label_record_position(data)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v03/handlers/label_sst_record_handler.rs",
+        "event_record::decode_label_sst_record(data)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v03/handlers/merge_cells_record_handler.rs",
+        "event_record::decode_merge_ranges(data)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v03/handlers/note_record_handler.rs",
+        "event_record::decode_note_record_position(data)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v03/handlers/number_record_handler.rs",
+        "event_record::decode_number_record(data)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v03/handlers/obj_record_handler.rs",
+        "event_record::decode_obj_common_data(data)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v03/handlers/rk_record_handler.rs",
+        "event_record::decode_cell_position(data)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v03/handlers/sst_record_handler.rs",
+        "event_record::decode_sst_unique_count(data)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v03/handlers/string_record_handler.rs",
+        "biff8::string::decode_unicode_string_record(data)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v03/handlers/text_object_record_handler.rs",
+        "event_record::decode_text_object_fragment(",
+    ),
+];
+
+const XLSX_HANDLER_ADAPTERS: &[(&str, &str)] = &[
+    (
+        "crates/easyexcel/src/analysis/v07/handlers/cell_tag_handler.rs",
+        "easyexcel_xlsx::parse_a1_cell_reference(reference)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v07/handlers/count_tag_handler.rs",
+        "easyexcel_xlsx::dimension_last_row(ref_attr)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v07/handlers/merge_cell_tag_handler.rs",
+        "easyexcel_xlsx::parse_a1_cell_range(reference)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v07/handlers/row_tag_handler.rs",
+        "easyexcel_xlsx::parse_xlsx_row_number(value)",
+    ),
+    (
+        "crates/easyexcel/src/analysis/v07/handlers/sax/shared_strings_table_handler.rs",
+        "easyexcel_xlsx::decode_ooxml_escape(value)",
+    ),
+];
+
 /// 校验门面只依赖基础引擎，不直接依赖格式、压缩、加密或缓存实现库。
 pub(crate) fn audit() -> TaskResult {
     let manifest = read(FACADE_MANIFEST)?;
@@ -119,6 +223,77 @@ pub(crate) fn audit() -> TaskResult {
             forbidden.join(", ")
         )
         .into());
+    }
+
+    let cache_manifest = read(CACHE_ENGINE_MANIFEST)?;
+    let cache_dependencies = dependency_names(&cache_manifest);
+    for dependency in ["moka", "tempfile"] {
+        if !cache_dependencies.contains(dependency) {
+            return Err(format!(
+                "cache engine is missing required implementation dependency: {dependency}"
+            )
+            .into());
+        }
+    }
+
+    let cache_engine = read(CACHE_ENGINE)?;
+    for (needle, purpose) in [
+        ("use moka::sync::Cache;", "Moka cache implementation"),
+        ("struct MokaSharedStringCache", "Moka write-phase cache"),
+        ("objects: Cache<usize, Arc<str>>", "Moka object store"),
+        (
+            "objects: Cache::builder().build()",
+            "unbounded Moka construction",
+        ),
+        ("self.objects.insert(index", "Moka object insertion"),
+        ("struct MokaSharedStringReader", "Moka read-phase cache"),
+        ("struct FileSharedStringCache", "file-cache write phase"),
+        ("struct FileSharedStringReader", "file-cache read phase"),
+        ("temporary_file: NamedTempFile", "file-cache lifetime guard"),
+    ] {
+        require_contains(CACHE_ENGINE, &cache_engine, needle, purpose)?;
+    }
+    for forbidden in ["max_capacity(", "time_to_live(", "time_to_idle("] {
+        require_absent(
+            CACHE_ENGINE,
+            &cache_engine,
+            forbidden,
+            "Moka entry eviction",
+        )?;
+    }
+
+    let cache_policy_engine = read(CACHE_POLICY_ENGINE)?;
+    require_contains(
+        CACHE_POLICY_ENGINE,
+        &cache_policy_engine,
+        "create_cache(ReadCacheMode::File, shared_strings_xml_size)",
+        "bounded-memory file-cache policy",
+    )?;
+    for forbidden in ["max_active_", "weighted", "batches"] {
+        require_absent(
+            CACHE_POLICY_ENGINE,
+            &cache_policy_engine,
+            forbidden,
+            "Moka eviction policy",
+        )?;
+    }
+
+    let xlsx_event_reader_engine = read(XLSX_EVENT_READER_ENGINE)?;
+    for (needle, purpose) in [
+        (
+            "create_cache(cache_mode, xml_size)",
+            "cache selection in XLSX SAX metadata",
+        ),
+        ("BufReader::new(file)", "buffered XLSX part streaming"),
+        ("read_event_into", "incremental XML event reading"),
+        ("parse_shared_strings", "streamed shared-string decoding"),
+    ] {
+        require_contains(
+            XLSX_EVENT_READER_ENGINE,
+            &xlsx_event_reader_engine,
+            needle,
+            purpose,
+        )?;
     }
 
     let facade = read(FACADE_LIB)?;
@@ -156,39 +331,54 @@ pub(crate) fn audit() -> TaskResult {
         )?;
     }
 
-    let ehcache = read(EHCACHE_COMPAT)?;
-    require_contains(
-        EHCACHE_COMPAT,
-        &ehcache,
-        "MokaCache as Ehcache",
-        "Java-compatible alias",
+    require_path_absent(REMOVED_JAVA_CACHE_ADAPTER, "removed Java cache adapter")?;
+    require_tree_absent_case_insensitive(
+        "crates/easyexcel/src",
+        concat!("eh", "cache"),
+        "removed Java cache vocabulary",
     )?;
+    let facade_cache_mod = read(FACADE_CACHE_MOD)?;
     require_absent(
-        EHCACHE_COMPAT,
-        &ehcache,
-        "struct Ehcache",
-        "Ehcache implementation",
+        FACADE_CACHE_MOD,
+        &facade_cache_mod,
+        concat!("eh", "cache"),
+        "removed Java cache vocabulary",
     )?;
-    require_absent(EHCACHE_COMPAT, &ehcache, "moka::", "direct Moka dependency")?;
 
     let moka_adapter = read(MOKA_ADAPTER)?;
     require_contains(
         MOKA_ADAPTER,
         &moka_adapter,
-        "DEFAULT_MAX_MOKA_ACTIVE_BATCH_COUNT",
-        "Moka-native default naming",
-    )?;
-    require_contains(
-        MOKA_ADAPTER,
-        &moka_adapter,
-        "SharedStringCachePolicy",
-        "engine-owned cache policy",
+        "easyexcel_cache::create_moka_cache()",
+        "engine-owned Moka object cache",
     )?;
     require_absent(
         MOKA_ADAPTER,
         &moka_adapter,
         "moka::",
         "direct Moka implementation",
+    )?;
+    for forbidden in ["max_capacity", "max_active", "megabytes", "batches"] {
+        require_absent(
+            MOKA_ADAPTER,
+            &moka_adapter,
+            forbidden,
+            "Moka eviction configuration",
+        )?;
+    }
+
+    let file_cache_adapter = read(FILE_CACHE_ADAPTER)?;
+    require_contains(
+        FILE_CACHE_ADAPTER,
+        &file_cache_adapter,
+        "easyexcel_cache::create_file_cache()?",
+        "engine-owned file cache",
+    )?;
+    require_absent(
+        FILE_CACHE_ADAPTER,
+        &file_cache_adapter,
+        "tempfile::",
+        "facade-owned temporary-file implementation",
     )?;
 
     let output_stream = read(OUTPUT_STREAM_COMPAT)?;
@@ -204,6 +394,54 @@ pub(crate) fn audit() -> TaskResult {
         "Arc<Mutex",
         "shared output implementation",
     )?;
+
+    let csv_encoding_adapter = read(CSV_ENCODING_ADAPTER)?;
+    for (needle, purpose) in [
+        (
+            "inner: easyexcel_csv::CsvEncodingWriter",
+            "CSV-engine-owned encoder",
+        ),
+        (
+            "easyexcel_csv::CsvEncodingWriter::encode_utf16",
+            "CSV-engine-owned UTF-16 encoding",
+        ),
+        (
+            "easyexcel_csv::csv_encoding",
+            "CSV-engine-owned charset lookup",
+        ),
+        ("easyexcel_csv::csv_bom", "CSV-engine-owned BOM selection"),
+    ] {
+        require_contains(CSV_ENCODING_ADAPTER, &csv_encoding_adapter, needle, purpose)?;
+    }
+    for forbidden in ["encoding_rs::", "encode_utf16().flat_map", "to_le_bytes()"] {
+        require_absent(
+            CSV_ENCODING_ADAPTER,
+            &csv_encoding_adapter,
+            forbidden,
+            "facade-owned CSV encoding",
+        )?;
+    }
+
+    let excel_type_adapter = read(EXCEL_TYPE_ADAPTER)?;
+    for needle in [
+        "easyexcel_io::Format::from_magic(bytes)",
+        "easyexcel_io::Format::from_extension(extension)",
+    ] {
+        require_contains(
+            EXCEL_TYPE_ADAPTER,
+            &excel_type_adapter,
+            needle,
+            "I/O-owned format recognition",
+        )?;
+    }
+    for forbidden in ["bytes.starts_with", "path.extension()"] {
+        require_absent(
+            EXCEL_TYPE_ADAPTER,
+            &excel_type_adapter,
+            forbidden,
+            "facade-owned format recognition",
+        )?;
+    }
 
     let model_stored_row_engine = read(MODEL_STORED_ROW_ENGINE)?;
     require_contains(
@@ -268,6 +506,77 @@ pub(crate) fn audit() -> TaskResult {
         "parse is deferred",
         "deferred BIFF OBJ parsing stub",
     )?;
+
+    for (path, decoder) in XLS_RECORD_DECODER_ADAPTERS {
+        let source = read(path)?;
+        let production = production_prefix(&source);
+        require_contains(path, production, decoder, "XLS-engine-owned BIFF decoding")?;
+        for forbidden in [
+            "from_le_bytes",
+            "from_be_bytes",
+            "std::str::from_utf8",
+            "cfb::",
+            "data[",
+        ] {
+            require_absent(path, production, forbidden, "facade-owned BIFF decoding")?;
+        }
+    }
+
+    let xls_sax_adapter = read(XLS_SAX_ADAPTER)?;
+    let xls_sax_production = production_prefix(&xls_sax_adapter);
+    for (needle, purpose) in [
+        (
+            "record_stream::read_workbook_stream(&self.path)",
+            "XLS-engine-owned OLE workbook extraction",
+        ),
+        (
+            "record_stream::walk_biff_records(&workbook",
+            "XLS-engine-owned BIFF record traversal",
+        ),
+    ] {
+        require_contains(XLS_SAX_ADAPTER, xls_sax_production, needle, purpose)?;
+    }
+    for forbidden in ["cfb::", "from_le_bytes", "File::open", "read_to_end"] {
+        require_absent(
+            XLS_SAX_ADAPTER,
+            xls_sax_production,
+            forbidden,
+            "facade-owned XLS binary/OLE processing",
+        )?;
+    }
+
+    let xlsx_sax_adapter = read(XLSX_SAX_ADAPTER)?;
+    let xlsx_sax_production = production_prefix(&xlsx_sax_adapter);
+    for needle in ["list_xlsx_sheets(&path, &options)", "read_xlsx::<T, L>("] {
+        require_contains(
+            XLSX_SAX_ADAPTER,
+            xlsx_sax_production,
+            needle,
+            "XLSX-engine-backed facade analysis",
+        )?;
+    }
+    for forbidden in ["quick_xml::", "zip::", "ZipArchive", "from_utf8"] {
+        require_absent(
+            XLSX_SAX_ADAPTER,
+            xlsx_sax_production,
+            forbidden,
+            "facade-owned XML/ZIP processing",
+        )?;
+    }
+
+    for (path, engine_call) in XLSX_HANDLER_ADAPTERS {
+        let source = read(path)?;
+        let production = production_prefix(&source);
+        require_contains(
+            path,
+            production,
+            engine_call,
+            "XLSX-engine-owned reusable parsing",
+        )?;
+        for forbidden in ["quick_xml::", "from_utf8", "split_once(':')"] {
+            require_absent(path, production, forbidden, "facade-owned OOXML parsing")?;
+        }
+    }
 
     let style_util_adapter = read(STYLE_UTIL_ADAPTER)?;
     require_contains(
@@ -448,6 +757,14 @@ pub(crate) fn audit() -> TaskResult {
         "duplicated facade sheet-index bounds check",
     )?;
 
+    let xlsx_template_adapter = read(XLSX_TEMPLATE_ADAPTER)?;
+    require_contains(
+        XLSX_TEMPLATE_ADAPTER,
+        &xlsx_template_adapter,
+        "easyexcel_xlsx::OoxmlPackage::from_entries(entries.to_vec()).to_bytes()",
+        "XLSX-engine-owned OOXML ZIP encoding",
+    )?;
+
     let read_helpers_adapter = read(READ_HELPERS_ADAPTER)?;
     require_contains(
         READ_HELPERS_ADAPTER,
@@ -518,6 +835,7 @@ pub(crate) fn audit() -> TaskResult {
         "derive-owned field lookup",
     )?;
     for obsolete in [
+        "easyexcel/src",
         "crates/easyexcel/src/read/read.rs",
         "crates/easyexcel/src/read/read/metadata.rs",
         "crates/easyexcel/src/util/member_utils.rs",
@@ -559,6 +877,12 @@ fn dependency_names(manifest: &str) -> BTreeSet<&str> {
     dependencies
 }
 
+fn production_prefix(source: &str) -> &str {
+    source
+        .split_once("#[cfg(test)]")
+        .map_or(source, |(production, _)| production)
+}
+
 fn require_contains(path: &str, source: &str, needle: &str, purpose: &str) -> TaskResult {
     if source.contains(needle) {
         return Ok(());
@@ -592,4 +916,27 @@ fn require_path_absent(path: &str, purpose: &str) -> TaskResult {
         return Ok(());
     }
     Err(format!("{path} must not exist ({purpose})").into())
+}
+
+fn require_tree_absent_case_insensitive(root: &str, needle: &str, purpose: &str) -> TaskResult {
+    let needle = needle.to_ascii_lowercase();
+    let mut pending = vec![Path::new(root).to_path_buf()];
+    while let Some(path) = pending.pop() {
+        if path.is_dir() {
+            for entry in fs::read_dir(&path)? {
+                pending.push(entry?.path());
+            }
+            continue;
+        }
+        if path.extension().and_then(|value| value.to_str()) != Some("rs") {
+            continue;
+        }
+        let source = fs::read_to_string(&path)?;
+        if source.to_ascii_lowercase().contains(&needle) {
+            return Err(
+                format!("{} must not contain {needle:?} ({purpose})", path.display()).into(),
+            );
+        }
+    }
+    Ok(())
 }

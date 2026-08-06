@@ -3,10 +3,7 @@
 use crate::core::Result;
 
 use crate::cache::selector::ReadCacheSelector;
-use crate::read::read_cache::{
-    DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES, ReadCacheMode, SharedStringCache,
-    SharedStringCacheReader, create_cache,
-};
+use crate::read::read_cache::{ReadCacheMode, SharedStringCache, SharedStringCacheReader};
 
 /// Shared-string cache contract matching Java `ReadCache`.
 ///
@@ -19,7 +16,7 @@ pub trait ReadCache: Send {
     /// override to allocate resources.
     fn init(&mut self) {
         // Default: no resources to allocate (in-memory caches are lazy).
-        // Concrete impls override for Moka/disk-backed adapters when needed.
+        // Concrete implementations may override when allocation is eager.
     }
 
     /// Stores the next shared string. (Java `put(String)`)
@@ -45,11 +42,11 @@ pub trait ReadCache: Send {
 
     /// Releases cache resources. (Java `destroy()`)
     ///
-    /// Default implementation is a no-op; concrete Moka/disk-backed
-    /// implementations override to close files and free handles.
+    /// Default implementation is a no-op; owned cache objects release their
+    /// entries when dropped.
     fn destroy(&mut self) {
         // Default: nothing to release for in-memory caches.
-        // Concrete impls override for disk-based caches.
+        // Concrete implementations release owned resources when dropped.
     }
 }
 
@@ -59,17 +56,19 @@ pub fn new_map_cache() -> Box<dyn SharedStringCache> {
     easyexcel_cache::create_memory_cache()
 }
 
-/// Creates a Moka active cache with a disk-backed lossless tier.
-/// (Java `new Ehcache(...)`)
+/// 创建生命周期内不淘汰对象的 Moka 缓存。
+#[must_use]
+pub fn new_moka_cache() -> Box<dyn SharedStringCache> {
+    easyexcel_cache::create_moka_cache()
+}
+
+/// 创建用于大文件 SAX 读取的临时文件缓存。
 ///
 /// # Errors
 ///
-/// Returns an I/O error when the temporary cache file cannot be created.
-pub fn new_disk_cache() -> Result<Box<dyn SharedStringCache>> {
-    Ok(create_cache(
-        ReadCacheMode::Disk,
-        DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES,
-    )?)
+/// 临时文件无法创建时返回错误。
+pub fn new_file_cache() -> Result<Box<dyn SharedStringCache>> {
+    Ok(easyexcel_cache::create_file_cache()?)
 }
 
 /// Resolves the effective [`ReadCacheMode`] for a shared-string table size.
@@ -180,17 +179,17 @@ mod tests_extra {
         // 对应 Java：ReadWorkbookHolder 中 selector.selectMode 优先于 readCache
         let selector = SimpleReadCacheSelector::with_max_use_map_cache_size_mb(1);
         assert_eq!(
-            resolve_read_cache_mode(ReadCacheMode::Disk, Some(&selector), 500),
+            resolve_read_cache_mode(ReadCacheMode::Moka, Some(&selector), 500),
             ReadCacheMode::Memory
         );
         assert_eq!(
             resolve_read_cache_mode(ReadCacheMode::Memory, Some(&selector), 2_000_000),
-            ReadCacheMode::Disk
+            ReadCacheMode::File
         );
         // 无 selector 时回退到配置的 mode
         assert_eq!(
-            resolve_read_cache_mode(ReadCacheMode::Disk, None, 500),
-            ReadCacheMode::Disk
+            resolve_read_cache_mode(ReadCacheMode::Moka, None, 500),
+            ReadCacheMode::Moka
         );
     }
 

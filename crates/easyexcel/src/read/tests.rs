@@ -1401,7 +1401,11 @@ fn xlsx_stream_matches_java_cell_types_cached_formulas_dates_and_trimming() -> R
     );
 
     let expected = probe.0[0].clone();
-    for read_cache in [ReadCacheMode::Memory, ReadCacheMode::Disk] {
+    for read_cache in [
+        ReadCacheMode::Memory,
+        ReadCacheMode::Moka,
+        ReadCacheMode::File,
+    ] {
         let mut cached = RawProbe::default();
         read_xlsx::<RawRow, _>(
             &path,

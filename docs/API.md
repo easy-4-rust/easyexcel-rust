@@ -28,7 +28,7 @@
 * `inputStream` 与`file`二选一。读取文件的流，如果接收到的是流就只用，不用流建议使用`file`参数。因为使用了`inputStream` easyexcel会帮忙创建临时文件，最终还是`file`
 * `file` 与`inputStream`二选一。读取文件的文件。
 * `autoCloseStream` 自动关闭流。
-* `readCache` 默认小于5M用 内存，超过5M会使用 `EhCache`,这里不建议使用这个参数。
+* `readCache` 默认小于 5 MB 使用内存缓存，达到阈值后使用临时文件缓存；也可显式选择生命周期内不淘汰的 Moka 对象缓存。
 #### ReadSheet（就是excel的一个Sheet）参数
 * `sheetNo` 需要读取Sheet的编码，建议使用这个来指定读取哪个Sheet
 * `sheetName` 根据名字去匹配Sheet,excel 2003不支持根据名字去匹配

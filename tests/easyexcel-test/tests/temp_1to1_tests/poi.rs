@@ -1,7 +1,7 @@
 //! 1:1 method matrix for Java `com.alibaba.easyexcel.test.temp.poi.*`
 //!
 //! Local-path / contractable probes use repo fixtures + `EasyExcel` APIs.
-//! Pure Apache POI / Ehcache stress remains `#[ignore]` elsewhere.
+//! Pure Apache POI / legacy JVM cache stress remains `#[ignore]` elsewhere.
 
 use super::helpers;
 

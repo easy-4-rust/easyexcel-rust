@@ -6,11 +6,9 @@ mod shared_string_cache_policy;
 
 pub use read_cache_mode::ReadCacheMode;
 pub use shared_string_cache::{
-    DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES, DEFAULT_MOKA_ACTIVE_BATCHES,
-    DEFAULT_MOKA_ACTIVE_ENTRIES, SHARED_STRING_CACHE_BATCH_SIZE, SharedStringCache,
-    SharedStringCacheHandle, SharedStringCacheReader, SharedStringCacheWriter, create_cache,
-    create_memory_cache, create_moka_cache, create_moka_cache_for_batches,
-    create_weighted_moka_cache, create_weighted_moka_cache_mb, memory_cache, prebuilt_cache,
+    DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES, SharedStringCache, SharedStringCacheHandle,
+    SharedStringCacheReader, SharedStringCacheWriter, create_cache, create_file_cache,
+    create_memory_cache, create_moka_cache, memory_cache, prebuilt_cache,
     remove_thread_local_cache,
 };
 pub use shared_string_cache_policy::SharedStringCachePolicy;

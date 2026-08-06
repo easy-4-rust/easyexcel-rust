@@ -569,7 +569,7 @@
 | Apache POI (SAX) | `quick-xml` | XML 解析 |
 | Apache POI (HSSF) | `calamine` | XLS 读取 |
 | commons-csv | `csv` | CSV 处理 |
-| Ehcache | `tempfile` + 自实现 | 共享字符串缓存 |
+| Java 旧对象缓存 | `MokaCache` + 独立 `FileCache` | Moka 生命周期对象缓存；文件缓存服务大文件 SAX |
 | Lombok | `proc-macro2` + `syn` | 派生宏 |
 | JUnit | `#[test]` | 测试框架 |
 

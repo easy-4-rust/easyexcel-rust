@@ -174,7 +174,7 @@ mod compatibility_test {
         assert_eq!(dyn_str(&rows_string[0], 11), "24.20");
     }
 
-    /// Java `CompatibilityTest#t08` — Ehcache recreate after tmp wipe → `ReadCacheMode`.
+    /// Java `CompatibilityTest#t08` — legacy cache recreation maps to `ReadCacheMode`.
     #[test]
     fn t08() {
         #[derive(Debug, Clone, ExcelRow)]
@@ -194,13 +194,13 @@ mod compatibility_test {
             .unwrap();
 
         let first = EasyExcel::read_dynamic_sync(&path)
-            .read_cache(ReadCacheMode::Disk)
+            .read_cache(ReadCacheMode::File)
             .do_read_sync()
             .unwrap();
         assert_eq!(first.len(), 10);
 
         let second = EasyExcel::read_dynamic_sync(&path)
-            .read_cache(ReadCacheMode::Disk)
+            .read_cache(ReadCacheMode::File)
             .do_read_sync()
             .unwrap();
         assert_eq!(second.len(), 10);

@@ -208,10 +208,10 @@ pub fn assert_head_read() {
     assert!(!rows.is_empty());
 }
 
-/// Java `HeadReadTest#testCache` — three consecutive reads with disk cache.
+/// Java `HeadReadTest#testCache` — three consecutive reads with Moka object cache.
 ///
-/// Java uses `readCache(new Ehcache(20))` on a local `.xls` path. Rust maps that
-/// knob to [`ReadCacheMode::Disk`]; XLS calamine reads ignore shared-string
+/// Java uses its legacy object cache on a local `.xls` path. Rust maps that
+/// knob to [`ReadCacheMode::File`]; XLS calamine reads ignore shared-string
 /// cache but the API accepts the setting and must remain stable across repeats.
 pub fn assert_head_read_with_disk_cache() {
     use easyexcel::ReadCacheMode;
@@ -221,7 +221,7 @@ pub fn assert_head_read_with_disk_cache() {
     for _ in 0..3 {
         let rows = EasyExcel::read_dynamic_sync(&path)
             .sheet(0usize)
-            .read_cache(ReadCacheMode::Disk)
+            .read_cache(ReadCacheMode::File)
             .do_read_sync()
             .unwrap();
         assert!(!rows.is_empty(), "disk-cache XLS read must yield rows");

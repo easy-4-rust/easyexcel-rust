@@ -4,7 +4,7 @@
 
 ## 结论（诚实）
 
-**仍未达到严格 100%（含 Ehcache stress、xls 写细节、large07 全量、Fill composite / FillAnnotation 样式断言）。**  
+**仍未达到严格 100%（含 JVM 旧缓存 stress、xls 写细节、large07 全量、Fill composite / FillAnnotation 样式断言）。**
 本轮将 Java golden **103 → 110**（门槛 ≥108），补齐仍缺格式变体与 Fill complex。  
 **P0-3（core 缺类 STRING 读写产物）判定 DONE / 饱和**——见下方清单。  
 无本机 JDK 时 `cargo test -p easyexcel --test java_golden_tests` 仍绿（缺文件硬失败，禁止 soft-skip）。  
@@ -82,7 +82,7 @@
 
 ## 距 100% 剩余（非 P0-3）
 
-1. **temp 仍 ignore（1）**：`CacheTest#cache`（`org.ehcache.PersistentCacheManager` 探针，非 EasyExcel `Ehcache` 门面）。`HeadReadTest#testCache` 已改为 `ReadCacheMode::Disk` 三次 XLS 读断言。
+1. **temp 仍 ignore（1）**：`CacheTest#cache`（JVM 持久缓存管理器探针，非 EasyExcel Rust 门面）。`HeadReadTest#testCache` 已改为 `ReadCacheMode::File` 三次 XLS 读断言。
 2. **xls 写**能力仍在收敛 —— Java 写 `.xls` 以 Rust **读**对照为主。
 3. **large07**（74MB）未纳入 golden（体积/耗时）。
 4. **Fill composite / FillAnnotation / FillStyle** —— 复合 FillWrapper、样式/合并/图片 POI 断言；非纯 STRING 产物。

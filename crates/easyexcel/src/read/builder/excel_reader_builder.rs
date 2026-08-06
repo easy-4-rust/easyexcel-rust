@@ -622,9 +622,9 @@ mod tests_extra {
         assert!(builder.options.read_cache_selector.is_none());
 
         let builder = ExcelReaderBuilder::new()
-            .read_cache(ReadCacheMode::Disk)
+            .read_cache(ReadCacheMode::File)
             .simple_read_cache_selector(SimpleReadCacheSelector::new());
-        assert_eq!(builder.options.read_cache, ReadCacheMode::Disk);
+        assert_eq!(builder.options.read_cache, ReadCacheMode::File);
         assert!(matches!(
             builder.options.read_cache_selector,
             Some(StoredReadCacheSelector::Simple(_))

@@ -16,7 +16,7 @@ fn read_head_read_test_test() {
 
 /// Java `com.alibaba.easyexcel.test.temp.read.HeadReadTest#testCache`
 ///
-/// Java `readCache(new Ehcache(20))` → Rust `ReadCacheMode::Disk`; three stable
+/// The Java file-cache case maps to Rust `ReadCacheMode::File`; three stable
 /// reads on an XLS fixture (see `helpers::assert_head_read_with_disk_cache`).
 #[test]
 fn read_head_read_test_test_cache() {

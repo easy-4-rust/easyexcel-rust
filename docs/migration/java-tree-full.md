@@ -517,7 +517,7 @@ temp/
 ├── WriteV34Test.java
 ├── Xls03Test.java
 ├── cache/
-│   └── CacheTest.java                    [ehcache probes]
+│   └── CacheTest.java                    [legacy JVM cache probes]
 ├── csv/
 │   └── CsvReadTest.java
 ├── dataformat/

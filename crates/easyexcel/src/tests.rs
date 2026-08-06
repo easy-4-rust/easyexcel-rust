@@ -743,7 +743,7 @@ fn factories_and_builder_options_match_java_style_chaining() {
         .read_rows(5, 7)
         .header_alias("Source", "Value")
         .custom_object("event-context".to_owned())
-        .read_cache(ReadCacheMode::Disk)
+        .read_cache(ReadCacheMode::File)
         .read_default_return(ReadDefaultReturn::ActualData)
         .extra_read(CellExtraType::Comment)
         .extra_read(CellExtraType::Merge)
@@ -781,7 +781,7 @@ fn factories_and_builder_options_match_java_style_chaining() {
         read.options.read_default_return,
         ReadDefaultReturn::ActualData
     );
-    assert_eq!(read.options.read_cache, ReadCacheMode::Disk);
+    assert_eq!(read.options.read_cache, ReadCacheMode::File);
     assert!(read.options.extra_read.contains(&CellExtraType::Comment));
     assert!(read.options.extra_read.contains(&CellExtraType::Merge));
     assert_eq!(read.options.password.as_deref(), Some("read-secret"));

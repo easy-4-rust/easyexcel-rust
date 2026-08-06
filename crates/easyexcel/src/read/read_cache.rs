@@ -1,6 +1,6 @@
 //! EasyExcel 共享字符串缓存兼容入口。
 //!
-//! 缓存协议、内存实现、Moka 活跃层和临时文件后备均由
+//! 缓存协议、内存实现、Moka 对象缓存和独立文件缓存均由
 //! `easyexcel-cache` 提供；本模块只维持 Java EasyExcel 风格的公开路径。
 
 pub use easyexcel_cache::{

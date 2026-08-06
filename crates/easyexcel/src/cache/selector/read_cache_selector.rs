@@ -9,7 +9,7 @@ use crate::read::read_cache::{ReadCacheMode, SharedStringCache};
 /// Java receives the `sharedStrings.xml` package part size in bytes. Rust passes
 /// the same measurement into [`select_mode`](Self::select_mode). Use
 /// [`SimpleReadCacheSelector`] for the default 5 MB Auto boundary, or
-/// [`EternalReadCacheSelector`] to pin Memory/Disk regardless of size.
+/// [`EternalReadCacheSelector`] to pin Memory/Moka/File regardless of size.
 pub trait ReadCacheSelector: Send + Sync {
     /// Selects a cache mode for the given `sharedStrings.xml` size.
     ///
@@ -23,7 +23,7 @@ pub trait ReadCacheSelector: Send + Sync {
     ///
     /// # Errors
     ///
-    /// Moka 磁盘后备所需临时文件无法创建时返回错误。
+    /// 选择文件缓存且临时文件无法创建时返回错误。
     fn create_cache(
         &self,
         shared_strings_xml_size: u64,

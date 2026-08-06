@@ -33,7 +33,7 @@ mod global_configuration;
 pub use crate::analysis::v03::XlsSaxAnalyser;
 pub use crate::analysis::v07::XlsxSaxAnalyser;
 pub use crate::cache::{
-    Ehcache, EternalReadCacheSelector, MapCache, MokaCache, ReadCache, ReadCacheSelector,
+    EternalReadCacheSelector, FileCache, MapCache, MokaCache, ReadCache, ReadCacheSelector,
     SimpleReadCacheSelector, XlsCache,
 };
 pub use builder::excel_reader_builder::ExcelReaderBuilder as CompatibleExcelReaderBuilder;
@@ -83,12 +83,15 @@ mod tests_extra {
         // 对应 Java：ReadCacheSelector.selectMode 委托给具体实现
         let simple = StoredReadCacheSelector::Simple(SimpleReadCacheSelector::new());
         assert_eq!(simple.select_mode(100), ReadCacheMode::Memory);
-        assert_eq!(simple.select_mode(10_000_000), ReadCacheMode::Disk);
+        assert_eq!(simple.select_mode(10_000_000), ReadCacheMode::File);
 
         let eternal_map = StoredReadCacheSelector::Eternal(EternalReadCacheSelector::map_cache());
         assert_eq!(eternal_map.select_mode(10_000_000), ReadCacheMode::Memory);
 
-        let eternal_disk = StoredReadCacheSelector::Eternal(EternalReadCacheSelector::moka());
-        assert_eq!(eternal_disk.select_mode(100), ReadCacheMode::Disk);
+        let eternal_moka = StoredReadCacheSelector::Eternal(EternalReadCacheSelector::moka());
+        assert_eq!(eternal_moka.select_mode(100), ReadCacheMode::Moka);
+
+        let eternal_file = StoredReadCacheSelector::Eternal(EternalReadCacheSelector::file_cache());
+        assert_eq!(eternal_file.select_mode(100), ReadCacheMode::File);
     }
 }

@@ -5,7 +5,7 @@ use crate::core::ReadDefaultReturn;
 use super::*;
 
 // ============================================================================
-// CacheDataTest (4 tests) — Cache mode
+// CacheDataTest — Cache mode
 // ============================================================================
 
 #[test]
@@ -17,14 +17,23 @@ fn cache_mode_default_is_auto() {
 fn cache_mode_memory_variant() {
     let mode = ReadCacheMode::Memory;
     assert_eq!(mode, ReadCacheMode::Memory);
-    assert_ne!(mode, ReadCacheMode::Disk);
+    assert_ne!(mode, ReadCacheMode::Moka);
     assert_ne!(mode, ReadCacheMode::Auto);
 }
 
 #[test]
-fn cache_mode_disk_variant() {
-    let mode = ReadCacheMode::Disk;
-    assert_eq!(mode, ReadCacheMode::Disk);
+fn cache_mode_moka_variant() {
+    let mode = ReadCacheMode::Moka;
+    assert_eq!(mode, ReadCacheMode::Moka);
+    assert_ne!(mode, ReadCacheMode::Memory);
+    assert_ne!(mode, ReadCacheMode::Auto);
+}
+
+#[test]
+fn cache_mode_file_variant() {
+    let mode = ReadCacheMode::File;
+    assert_eq!(mode, ReadCacheMode::File);
+    assert_ne!(mode, ReadCacheMode::Moka);
     assert_ne!(mode, ReadCacheMode::Memory);
     assert_ne!(mode, ReadCacheMode::Auto);
 }
@@ -32,8 +41,11 @@ fn cache_mode_disk_variant() {
 #[test]
 fn cache_mode_all_variants_distinct() {
     assert_ne!(ReadCacheMode::Auto, ReadCacheMode::Memory);
-    assert_ne!(ReadCacheMode::Auto, ReadCacheMode::Disk);
-    assert_ne!(ReadCacheMode::Memory, ReadCacheMode::Disk);
+    assert_ne!(ReadCacheMode::Auto, ReadCacheMode::Moka);
+    assert_ne!(ReadCacheMode::Auto, ReadCacheMode::File);
+    assert_ne!(ReadCacheMode::Memory, ReadCacheMode::Moka);
+    assert_ne!(ReadCacheMode::Memory, ReadCacheMode::File);
+    assert_ne!(ReadCacheMode::Moka, ReadCacheMode::File);
 }
 
 // ============================================================================

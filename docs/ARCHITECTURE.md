@@ -71,7 +71,7 @@ flowchart LR
 | 格式识别、BOM、资源限制、RowSource/RowSink | `easyexcel-io` | `easyexcel::io` 显式重导出及 Java 枚举映射 |
 | Workbook/Sheet/Cell/Style 中立模型 | `easyexcel-model` | `easyexcel::model` 显式重导出 |
 | CSV 字符集、转码、CSV codec | `easyexcel-csv` | `easyexcel::csv` 与旧 Java 路径兼容重导出 |
-| 共享字符串内存/Moka/临时文件缓存 | `easyexcel-cache` | Java `ReadCache` 与 selector 契约适配；`Ehcache` 只保留兼容名称 |
+| 共享字符串内存/Moka/临时文件缓存 | `easyexcel-cache` | `ReadCache` 与 selector 契约适配；Moka 和文件缓存是彼此独立的后端 |
 | BIFF8 record、SST/Unicode、Ptg、RC4、OLE | `easyexcel-xls` | 错误类型与 listener 生命周期 adapter |
 | OOXML ZIP、流式行、RoundTrip、加解密 | `easyexcel-xlsx` | converter/handler 编排与 `rust_xlsxwriter` 生成 adapter |
 | 公式 AST/求值/重算 | `easyexcel-formula` | `easyexcel::formula` 重导出及 Java API 调用适配 |
@@ -100,7 +100,7 @@ flowchart LR
 | `util/file_utils.rs`、`util/io_utils.rs` | `easyexcel-io::io::{file_utils,io_utils}` | Java 包路径和错误类型兼容代理 |
 | `util` 中与门面类型无关的集合、字符串、坐标和条件校验算法 | `easyexcel-utils::utils` | Java 工具类方法名和 `ExcelError` 映射 |
 | `write/gzip_spill.rs` 的临时文件/gzip/framing/单元格协议、工作表名称快照及 writer→reader 生命周期 | `easyexcel-io::io::{gzip_record,gzip_cell_record}` | EasyExcel `CellValue` 与中立 `GzipCellValue` 的双向映射及错误适配 |
-| Java `ReadCacheSelector` 的阈值选择，以及旧 `Ehcache` 语义对应的活跃条目淘汰、写入/只读阶段切换和持久后备 | `easyexcel-cache::cache::{SharedStringCachePolicy,SharedStringCacheHandle,shared_string_cache}`（Moka + 临时文件） | selector 参数、`MokaCache` 的 `ReadCache` 适配；内部入口使用 `moka()`，`Ehcache`/`ehcache()` 仅为弃用兼容名称 |
+| `ReadCacheSelector` 的阈值选择、写入/只读阶段切换、Moka 对象缓存与大文件临时文件缓存 | `easyexcel-cache::cache::{SharedStringCachePolicy,SharedStringCacheHandle,shared_string_cache}` | `MokaCache` 仅做生命周期内不淘汰的对象缓存；`FileCache` 独立维持 SAX 大文件读取的内存边界；`Auto` 小文件选 Memory、大文件选 File |
 | CSV 物理行列索引的有界转换 | `easyexcel-csv::csv::index` | `ExcelError` 映射与 listener 行调度 |
 | 路径扩展名与文件头 magic 的工作簿格式探测、未知格式默认 CSV | `easyexcel-io::Format::detect_path` | `Format` 到 Java `ExcelTypeEnum` 与 executor 的映射 |
 | 可克隆输出流的共享所有权、关闭与刷新 | `easyexcel-io::CloseableOutputStream` | `ExcelOutputStream` Java 兼容类型别名 |
@@ -123,7 +123,7 @@ Java 中仅用于 JVM 反射可访问性修复的包级 `MemberUtils` 没有 Rus
 
 基础引擎类型不仅供门面内部使用，也通过 `easyexcel::{csv,io,model,xls,xlsx,...}` 显式重导出。以 XLSX 为例，`XlsxSource`、事件读取器、`OoxmlTemplatePackage`、输入流物化函数和 `template_xml` 等能力均从 `easyexcel::xlsx` 到达，业务用户无需直接依赖 `easyexcel-xlsx`。
 
-边界回归由 `cargo run -p xtask -- facade-boundary-audit` 检查：`easyexcel` 必须依赖各基础引擎 crate，不得在生产依赖中直接引入 `calamine`、`cfb`、`zip`、`quick-xml`、`flate2`、`rust_xlsxwriter`、`moka` 或加密实现库；`Ehcache` 必须保持为 `MokaCache` 的 Java 兼容别名。
+边界回归由 `cargo run -p xtask -- facade-boundary-audit` 检查：`easyexcel` 必须依赖各基础引擎 crate，不得在生产依赖中直接引入 `calamine`、`cfb`、`zip`、`quick-xml`、`flate2`、`rust_xlsxwriter`、`moka` 或加密实现库；Moka 不得配置容量/时间淘汰，文件缓存不得进入门面实现层。
 
 ## Data Flow
 

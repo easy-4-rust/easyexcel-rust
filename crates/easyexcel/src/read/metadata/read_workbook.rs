@@ -196,8 +196,8 @@ mod tests {
         workbook.set_head_row_number(3);
         assert_eq!(workbook.head_row_number(), 3);
 
-        workbook.set_read_cache(ReadCacheMode::Disk);
-        assert_eq!(workbook.read_cache(), ReadCacheMode::Disk);
+        workbook.set_read_cache(ReadCacheMode::File);
+        assert_eq!(workbook.read_cache(), ReadCacheMode::File);
 
         assert!(workbook.read_cache_selector().is_none());
         workbook.set_read_cache_selector(StoredReadCacheSelector::Simple(

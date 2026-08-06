@@ -31,19 +31,16 @@ impl EternalReadCacheSelector {
         Self::new(ReadCacheMode::Memory)
     }
 
-    /// 创建固定使用 Moka 活跃层与临时文件后备的选择器。
+    /// 创建固定使用 Moka 对象缓存的选择器。
     #[must_use]
     pub const fn moka() -> Self {
-        Self::new(ReadCacheMode::Disk)
+        Self::new(ReadCacheMode::Moka)
     }
 
-    /// Creates a selector equivalent to Java `readCache(new Ehcache(...))`.
-    ///
-    /// 仅保留 Java API 名称兼容；Rust 内部实现和新代码统一使用 [`Self::moka`]。
+    /// 创建固定使用临时文件缓存的选择器。
     #[must_use]
-    #[deprecated(note = "use EternalReadCacheSelector::moka")]
-    pub const fn ehcache() -> Self {
-        Self::moka()
+    pub const fn file_cache() -> Self {
+        Self::new(ReadCacheMode::File)
     }
 }
 
