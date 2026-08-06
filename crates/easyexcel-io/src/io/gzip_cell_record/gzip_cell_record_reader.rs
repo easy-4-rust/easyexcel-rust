@@ -1,0 +1,36 @@
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 中立单元格行 gzip spill 读取器。
+pub struct GzipCellRecordReader {
+    inner: GzipRecordReader,
+}
+
+impl GzipCellRecordReader {
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 打开已有 spill 文件。
+    ///
+    /// # Errors
+    ///
+    /// 文件无法打开或 gzip 流无法初始化时返回错误。
+    pub fn open_path(path: impl Into<PathBuf>) -> Result<Self> {
+        Ok(Self {
+            inner: GzipRecordReader::open_path(path)?,
+        })
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回 spill 状态。
+    #[must_use]
+    pub fn snapshot(&self) -> GzipRecordSnapshot {
+        self.inner.snapshot()
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 读取下一行；到达 EOF 时返回 `None`。
+    ///
+    /// # Errors
+    ///
+    /// gzip 记录损坏或单元格行解码失败时返回错误。
+    pub fn next_row(&mut self) -> Result<Option<Vec<GzipCellValue>>> {
+        self.inner
+            .next_record()?
+            .map(|row| decode_row(&row))
+            .transpose()
+    }
+}
+

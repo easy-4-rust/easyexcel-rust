@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "suite_id": "easyexcel-java-rust-v1",
+  "row_model": {
+    "sheet_name": "Data",
+    "headers": ["ID", "Name", "Date", "Score"],
+    "columns": [
+      {"name": "id", "type": "i64", "expression": "id"},
+      {"name": "name", "type": "string", "expression": "row-{id}"},
+      {"name": "date", "type": "date", "expression": "2024-01-01 + id % 28 days"},
+      {"name": "score", "type": "f64", "expression": "id * 0.5"}
+    ],
+    "checksum": "sha256(id\\tname\\tYYYY-MM-DD\\tIEEE754_HEX\\n)"
+  },
+  "profiles": {
+    "pr": {"rows": [10000], "temperatures": ["cold"], "warmups": 0, "measurements": 1, "duration_seconds": 0},
+    "nightly": {"rows": [100000], "temperatures": ["cold", "steady"], "warmups": 3, "measurements": 7, "duration_seconds": 0},
+    "release": {"rows": [1000000], "temperatures": ["cold", "steady"], "warmups": 3, "measurements": 7, "duration_seconds": 1800}
+  },
+  "concurrency": [1, 2, 4, 8, 16],
+  "batch_size": 10000,
+  "mixed_workload": {
+    "format": "xlsx",
+    "read_scenario": "xlsx-event-read",
+    "write_scenario": "xlsx-stream-write",
+    "read_weight": 7,
+    "write_weight": 3,
+    "workers": 16,
+    "measurements_per_implementation": 2
+  },
+  "scenarios": [
+    {"id": "xlsx-stream-write", "format": "xlsx", "operation": "write", "mode": "event", "memory": "constant"},
+    {"id": "xlsx-full-write", "format": "xlsx", "operation": "write", "mode": "workbook", "memory": "full"},
+    {"id": "xlsx-event-read", "format": "xlsx", "operation": "read", "mode": "event", "memory": "constant"},
+    {"id": "xlsx-workbook-read", "format": "xlsx", "operation": "read", "mode": "workbook", "memory": "full"},
+    {"id": "xlsx-roundtrip", "format": "xlsx", "operation": "roundtrip", "mode": "workbook", "memory": "full"},
+    {"id": "xls-stream-write", "format": "xls", "operation": "write", "mode": "event", "memory": "constant"},
+    {"id": "xls-event-read", "format": "xls", "operation": "read", "mode": "event", "memory": "constant"},
+    {"id": "csv-stream-write", "format": "csv", "operation": "write", "mode": "event", "memory": "constant"},
+    {"id": "csv-event-read", "format": "csv", "operation": "read", "mode": "event", "memory": "constant"}
+  ],
+  "gates": {
+    "checksum_match_required": true,
+    "reread_required": true,
+    "max_coefficient_of_variation": 0.10,
+    "max_median_throughput_regression": 0.10,
+    "max_peak_rss_regression": 0.15
+  }
+}

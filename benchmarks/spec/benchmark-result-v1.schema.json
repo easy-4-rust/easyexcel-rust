@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://easy4rust.org/schemas/benchmark-result-v1.schema.json",
+  "title": "EasyExcel Java/Rust BenchmarkResult",
+  "type": "object",
+  "required": ["schema_version", "implementation", "phase", "temperature", "scenario_id", "operation", "rows", "cells", "wall_time_ns", "rows_per_second", "cells_per_second", "success", "errors", "correctness", "environment"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "implementation": {"enum": ["java", "rust"]},
+    "phase": {"enum": ["single", "matrix", "mixed-soak"]},
+    "temperature": {"enum": ["cold", "steady"]},
+    "scenario_id": {"type": "string"},
+    "fixture_origin": {"type": ["string", "null"], "enum": ["java", "rust", null]},
+    "input_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "operation": {"enum": ["read", "write", "roundtrip"]},
+    "rows": {"type": "integer", "minimum": 0},
+    "cells": {"type": "integer", "minimum": 0},
+    "wall_time_ns": {"type": "integer", "minimum": 0},
+    "process_wall_time_ns": {"type": ["integer", "null"], "minimum": 0},
+    "cpu_user_time_ns": {"type": ["integer", "null"], "minimum": 0},
+    "cpu_system_time_ns": {"type": ["integer", "null"], "minimum": 0},
+    "rows_per_second": {"type": "number", "minimum": 0},
+    "cells_per_second": {"type": "number", "minimum": 0},
+    "mib_per_second": {"type": "number", "minimum": 0},
+    "peak_rss_bytes": {"type": ["integer", "null"], "minimum": 0},
+    "java_heap_peak_bytes": {"type": ["integer", "null"], "minimum": 0},
+    "gc_count": {"type": ["integer", "null"], "minimum": 0},
+    "gc_time_ns": {"type": ["integer", "null"], "minimum": 0},
+    "gc_max_pause_ns": {"type": ["integer", "null"], "minimum": 0},
+    "allocator_allocations": {"type": ["integer", "null"], "minimum": 0},
+    "allocator_peak_bytes": {"type": ["integer", "null"], "minimum": 0},
+    "temporary_disk_peak_bytes": {"type": ["integer", "null"], "minimum": 0},
+    "file_size_bytes": {"type": "integer", "minimum": 0},
+    "total_written_bytes": {"type": ["integer", "null"], "minimum": 0},
+    "worker_count": {"type": "integer", "minimum": 1},
+    "trial": {"type": ["integer", "null"]},
+    "worker_id": {"type": ["integer", "null"], "minimum": 0},
+    "success": {"type": "boolean"},
+    "errors": {"type": "integer", "minimum": 0},
+    "correctness": {
+      "type": "object",
+      "required": ["observed_rows", "checksum", "rereadable"],
+      "properties": {
+        "observed_rows": {"type": "integer", "minimum": 0},
+        "checksum": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "rereadable": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "environment": {
+      "type": "object",
+      "required": ["git_sha", "runtime", "os", "arch", "spec_sha256"],
+      "properties": {
+        "git_sha": {"type": "string"},
+        "runtime": {"type": "string"},
+        "os": {"type": "string"},
+        "arch": {"type": "string"},
+        "spec_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
