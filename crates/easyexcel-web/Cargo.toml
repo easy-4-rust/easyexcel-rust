@@ -1,0 +1,30 @@
+[package]
+name = "easyexcel-web"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "EasyExcel 的框架中立 Web 流式导入导出内核"
+readme = "README.md"
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+bytes.workspace = true
+easyexcel.workspace = true
+futures-util.workspace = true
+http.workspace = true
+serde.workspace = true
+tempfile.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+
+[lints]
+workspace = true

@@ -35,7 +35,9 @@ evidence because the former Java and Rust workloads were not equivalent.
    hosted runner. `environment-manifest.json` records the observed machine,
    disk, runtime, repository, lockfile, binary, and spec identities.
 2. Use UTC and a fixed locale. Java release runs use fixed `-Xms`/`-Xmx` and a
-   named GC. Keep GC logs as raw artifacts so maximum pause can be derived.
+   named GC. BenchmarkSpec v1 pins JDK 17, G1, `-Xms512m -Xmx4g`, Rust 1.97.1,
+   UTC, and `en_US.UTF-8`; the orchestrator rejects runtime drift before fixture
+   generation. Keep GC logs as raw artifacts so maximum pause can be derived.
 3. Run cold-start and steady-state suites separately. `temperature=cold` starts
    without warm-up. `temperature=steady` performs three warm-up operations in
    the same runner process before each measured operation, followed by at least
@@ -45,6 +47,15 @@ evidence because the former Java and Rust workloads were not equivalent.
    `process_wall_time_ns`, CPU time, and RSS describe the complete runner
    envelope (including same-process warm-up for steady-state samples), so the
    report never mixes operation latency with process CPU accounting.
+   After Java warm-up and before counters are reset, the runner performs an
+   explicit collection outside the timed region. This matches Rust's
+   deterministic drop boundary and prevents unreachable warm-up workbooks from
+   deciding whether a measured iteration happens to trigger G1.
+   Each worker receives an isolated temporary directory through `TMPDIR`,
+   `TMP`, `TEMP`, and Java `java.io.tmpdir`. Only that directory contributes to
+   `temporary_disk_peak_bytes`; final output files and GC logs are excluded.
+   This is required for Java's disk-backed shared-strings cache and prevents
+   fixture origins or concurrent workers from sharing temporary I/O state.
 4. Interleave implementations in `Rust -> Java -> Java -> Rust` order. Never
    publish the best run.
 5. Event and Workbook modes, and constant-memory and full-memory modes, are
@@ -62,7 +73,13 @@ evidence because the former Java and Rust workloads were not equivalent.
 |---|---:|---|
 | PR | 10K, one measured run | Correctness and runner smoke only |
 | Nightly | 100K, 3 warm-ups + 7 runs | Stable Java/Rust comparison and regression detection |
-| Release | 1M, workers 1/2/4/8/16, 30 minutes | Throughput, memory, concurrency, and soak evidence |
+| Release | 1M, Event Read/streaming Write workers 1/2/4/8/16, 30 minutes | Throughput, memory, concurrency, and soak evidence |
+
+Full-memory Write, Workbook Read, RoundTrip, XLS, and CSV remain single-worker
+release scenarios. The concurrency matrix targets XLSX Event Read and streaming
+Write, while the 16-worker soak exercises their 70/30 mixed workload. This
+keeps the concurrency contract focused on the production streaming paths and
+avoids multiplying sixteen independent full-memory JVM workloads.
 
 The Java/Rust ratio is reported for engineering insight. Release gates compare
 each implementation with its own pinned stable baseline: checksum and reopen
@@ -89,6 +106,7 @@ python3 benchmarks/scripts/run_matrix.py \
   --output-dir benchmarks/results/pr
 
 python3 benchmarks/scripts/compare_results.py \
+  --profile pr \
   --spec benchmarks/spec/benchmark-suite-v1.json \
   --output benchmarks/results/pr/report.json \
   benchmarks/results/pr/raw-results.jsonl
@@ -102,5 +120,6 @@ python3 benchmarks/scripts/run_soak.py \
 
 The Java classpath must begin with the pinned Java repository's
 `easyexcel-test/target/test-classes` and include its Maven dependency
-classpath. `run_matrix.py` fixes UTC, English locale, G1, and equal `-Xms/-Xmx`;
-the default heap is 4 GiB and can be changed explicitly with `--java-heap`.
+classpath. `run_matrix.py` fixes UTC, English locale, G1, and the contracted
+`-Xms512m -Xmx4g` bounds. Heap settings can only change together with a
+versioned BenchmarkSpec update.

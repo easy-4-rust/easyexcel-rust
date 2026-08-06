@@ -18,6 +18,17 @@
     "release": {"rows": [1000000], "temperatures": ["cold", "steady"], "warmups": 3, "measurements": 7, "duration_seconds": 1800}
   },
   "concurrency": [1, 2, 4, 8, 16],
+  "concurrency_scenarios": ["xlsx-stream-write", "xlsx-event-read"],
+  "runtime_contract": {
+    "rust_toolchain": "1.97.1",
+    "java_version": "17",
+    "java_gc": "G1",
+    "java_xms": "512m",
+    "java_xmx": "4g",
+    "timezone": "UTC",
+    "locale": "en_US.UTF-8",
+    "temp_directory": "isolated-per-worker"
+  },
   "batch_size": 10000,
   "mixed_workload": {
     "format": "xlsx",

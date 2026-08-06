@@ -173,6 +173,7 @@ EasyExcel::write::<User>("output.xlsx")
 | `easyexcel-xlsx` | OOXML streaming, package handling and encryption | XLSX backend |
 | `easyexcel-formula` | Formula AST, parser and evaluator | Formula engine |
 | `easyexcel-tabular` | Markdown, HTML and JSON table conversion | Tabular interchange |
+| `easyexcel-web` | Framework-neutral streaming import/export, limits, cancellation and error protocol | Web execution kernel |
 
 基础 crates 是内部引擎层，普通 Rust 用户仍只依赖 `easyexcel`：
 
@@ -185,6 +186,10 @@ use easyexcel::xlsx;
 ```
 
 `easyexcel::{csv, io, model, formula, tabular, xls, xlsx}` 均直接重导出对应基础 crate 的公共类型，不创建第二套模型。`EasyExcel`、builder、listener、converter、handler 与 `#[derive(ExcelRow)]` 继续由门面提供。
+
+Web 服务额外依赖 `easyexcel-web`，统一使用 `ExcelImport<T>`、`ExcelRows<T>`、
+`ExcelExport<T>`、`ExcelWebPolicy` 和应用级 `ExcelWebRuntime`。具体 Web 框架 crate 只承担原生 extractor /
+responder 的薄适配，不再各自实现文件缓存、资源限制和错误映射。
 
 ## Java Compatibility
 

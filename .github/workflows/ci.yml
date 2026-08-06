@@ -36,6 +36,10 @@ jobs:
       - run: cargo audit
       - run: cargo deny check advisories bans licenses sources
       - run: cargo fmt --all -- --check
+      - name: Validate shared benchmark harness
+        run: |
+          python3 -m py_compile benchmarks/scripts/*.py benchmarks/scripts/tests/*.py
+          python3 -m unittest discover -s benchmarks/scripts/tests -v
       - run: cargo doc --workspace --all-features --no-deps
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
       - run: cargo test --workspace --all-features

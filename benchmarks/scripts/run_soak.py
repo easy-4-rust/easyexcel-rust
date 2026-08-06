@@ -58,7 +58,8 @@ def main() -> int:
     parser.add_argument("--rust-bin", type=Path, required=True)
     parser.add_argument("--java-bin", type=Path, default=Path("java"))
     parser.add_argument("--java-classpath", required=True)
-    parser.add_argument("--java-heap", default="4g")
+    parser.add_argument("--java-xms", default="512m")
+    parser.add_argument("--java-xmx", default="4g")
     parser.add_argument("--java-repo", type=Path)
     parser.add_argument("--rust-repo", type=Path, default=ROOT)
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -79,7 +80,8 @@ def main() -> int:
     cycle = [read_scenario] * soak["read_weight"] + [write_scenario] * soak["write_weight"]
 
     arguments.output_dir.mkdir(parents=True, exist_ok=True)
-    run_matrix.write_environment_manifest(arguments)
+    run_matrix.validate_runtime_contract(spec, arguments)
+    run_matrix.write_environment_manifest(arguments, spec)
     fixtures = run_matrix.create_fixtures(spec, arguments, rows, soak["format"])
     fixture = fixtures["rust"]
     raw_path = arguments.output_dir / "raw-results.jsonl"

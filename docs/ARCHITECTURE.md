@@ -18,7 +18,8 @@ easyexcel-rust/                       (workspace root)
 │   ├── easyexcel-tabular/           ← Markdown/HTML/JSON conversion
 │   ├── easyexcel-derive/            ← internal `#[derive(ExcelRow)]` proc macro
 │   ├── easyexcel/                    ← user-facing EasyExcel facade
-│   └── easyexcel-{axum,actix,...}/  ← web framework adapters
+│   ├── easyexcel-web/                ← framework-neutral Web execution kernel
+│   └── easyexcel-{axum,actix,...}/  ← framework-native thin adapters
 ├── examples/                         ← read/write/fill/web demos
 ├── tests/easyexcel-test/             ← integration and parity tests
 ├── xtask/                           ← audit and maintenance commands
@@ -34,11 +35,18 @@ easyexcel-rust/                       (workspace root)
 ```mermaid
 flowchart LR
     Facade["easyexcel facade"] --> Foundation["foundation crates"]
+    Web["easyexcel-web<br/>streaming / limits / errors"] --> Facade
+    Adapter["framework adapters"] --> Web
     Product["xls-cli library + binary product"] --> Foundation
     Fork["xls fork"] -. "feature-tested source migration" .-> Foundation
 ```
 
 `easyexcel` 与独立 `xls-cli` 是并列消费者；门面不依赖命令层，`xls-cli` 的 library/application、CLI、TUI、npm 和 Skills 位于同一产品仓库，且不依赖旧 fork。
+
+`easyexcel-web` 是唯一 Web 执行内核。它依赖 `easyexcel` 门面完成 Java EasyExcel
+风格的行映射与用例编排；各框架适配器只能把原生请求体转换为 `ExcelImport<T>`，
+或把 `ExcelExport<T>` 转换为原生响应，不得重复实现临时文件、资源限制、背压、
+取消、超时和错误协议。
 
 ## Code Placement Boundary
 

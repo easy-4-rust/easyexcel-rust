@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
+import hashlib
 import json
 import math
 from pathlib import Path
+import re
 import statistics
 from typing import Any
 
@@ -41,6 +43,52 @@ def load_results(paths: list[Path]) -> list[dict[str, Any]]:
     return results
 
 
+def json_type_matches(value: Any, expected: str) -> bool:
+    """Match the JSON types used by the v1 result schema without dependencies."""
+    return {
+        "object": isinstance(value, dict),
+        "array": isinstance(value, list),
+        "string": isinstance(value, str),
+        "integer": isinstance(value, int) and not isinstance(value, bool),
+        "number": isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(value),
+        "boolean": isinstance(value, bool),
+        "null": value is None,
+    }.get(expected, False)
+
+
+def validate_json_schema(value: Any, schema: dict[str, Any], path: str = "$") -> list[str]:
+    """Validate the JSON-Schema subset used by BenchmarkResult v1."""
+    errors: list[str] = []
+    declared_type = schema.get("type")
+    if declared_type is not None:
+        expected_types = declared_type if isinstance(declared_type, list) else [declared_type]
+        if not any(json_type_matches(value, expected) for expected in expected_types):
+            return [f"{path}: expected type {expected_types}"]
+    if "const" in schema and value != schema["const"]:
+        errors.append(f"{path}: expected constant {schema['const']!r}")
+    if "enum" in schema and value not in schema["enum"]:
+        errors.append(f"{path}: value is outside enum")
+    if "minimum" in schema and isinstance(value, (int, float)) and value < schema["minimum"]:
+        errors.append(f"{path}: value is below minimum {schema['minimum']}")
+    if "pattern" in schema and isinstance(value, str) and re.search(schema["pattern"], value) is None:
+        errors.append(f"{path}: string does not match required pattern")
+    if isinstance(value, dict):
+        required = schema.get("required", [])
+        for name in required:
+            if name not in value:
+                errors.append(f"{path}: missing required property {name}")
+        properties = schema.get("properties", {})
+        if schema.get("additionalProperties") is False:
+            for name in value.keys() - properties.keys():
+                errors.append(f"{path}: unexpected property {name}")
+        for name, child_schema in properties.items():
+            if name in value:
+                errors.extend(validate_json_schema(value[name], child_schema, f"{path}.{name}"))
+    return errors
+
+
 def group_key(result: dict[str, Any]) -> tuple[str, str, str, str, str | None, int, int]:
     return (
         result["implementation"],
@@ -58,18 +106,153 @@ def summarize_present(samples: list[dict[str, Any]], field: str) -> dict[str, fl
     return summarize(values) if values else None
 
 
+def summarize_concurrent_throughput(
+    samples: list[dict[str, Any]],
+) -> dict[str, float] | None:
+    """Aggregate workers by trial before computing concurrency statistics."""
+    trials: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for sample in samples:
+        if sample.get("trial") is not None:
+            trials[sample["trial"]].append(sample)
+    rates = []
+    for trial_samples in trials.values():
+        elapsed_ns = max(sample["wall_time_ns"] for sample in trial_samples)
+        total_rows = sum(sample["rows"] for sample in trial_samples)
+        rates.append(total_rows / (elapsed_ns / 1_000_000_000))
+    return summarize(rates) if rates else None
+
+
+def expected_matrix_groups(
+    spec: dict[str, Any], profile_name: str
+) -> dict[tuple[str, str, str, str, str | None, int, int], int]:
+    """Build the exact matrix shape required by one benchmark profile."""
+    profile = spec["profiles"][profile_name]
+    expected: dict[tuple[str, str, str, str, str | None, int, int], int] = {}
+    for implementation in ("rust", "java"):
+        for temperature in profile["temperatures"]:
+            for scenario in spec["scenarios"]:
+                workers = [1]
+                if (
+                    profile_name == "release"
+                    and scenario["id"] in spec["concurrency_scenarios"]
+                ):
+                    workers = spec["concurrency"]
+                origins: list[str | None] = [None]
+                if scenario["operation"] in ("read", "roundtrip"):
+                    origins = ["rust", "java"]
+                for origin in origins:
+                    for rows in profile["rows"]:
+                        for worker_count in workers:
+                            key = (
+                                implementation,
+                                "matrix",
+                                temperature,
+                                scenario["id"],
+                                origin,
+                                rows,
+                                worker_count,
+                            )
+                            expected[key] = profile["measurements"] * worker_count
+    return expected
+
+
+def validate_matrix_completeness(
+    grouped: dict[tuple[str, str, str, str, str | None, int, int], list[dict[str, Any]]],
+    spec: dict[str, Any],
+    profile_name: str,
+    failures: list[str],
+) -> None:
+    """Reject missing, extra, duplicated, or malformed matrix samples."""
+    expected = expected_matrix_groups(spec, profile_name)
+    actual = {key: samples for key, samples in grouped.items() if key[1] == "matrix"}
+    for key in sorted(expected.keys() - actual.keys(), key=str):
+        failures.append(f"missing benchmark group: {'/'.join(map(str, key))}")
+    for key in sorted(actual.keys() - expected.keys(), key=str):
+        failures.append(f"unexpected benchmark group: {'/'.join(map(str, key))}")
+    for key in sorted(expected.keys() & actual.keys(), key=str):
+        samples = actual[key]
+        expected_samples = expected[key]
+        label = "/".join(map(str, key))
+        if len(samples) != expected_samples:
+            failures.append(
+                f"sample count mismatch: {label}: expected {expected_samples}, got {len(samples)}"
+            )
+        workers = key[-1]
+        trials: dict[int, list[int]] = defaultdict(list)
+        for sample in samples:
+            trial = sample.get("trial")
+            worker_id = sample.get("worker_id")
+            if not isinstance(trial, int) or not isinstance(worker_id, int):
+                failures.append(f"missing integer trial/worker identity: {label}")
+                continue
+            trials[trial].append(worker_id)
+        expected_measurements = spec["profiles"][profile_name]["measurements"]
+        if len(trials) != expected_measurements:
+            failures.append(
+                f"trial count mismatch: {label}: expected {expected_measurements}, got {len(trials)}"
+            )
+        expected_workers = list(range(workers))
+        for trial, worker_ids in sorted(trials.items()):
+            if sorted(worker_ids) != expected_workers:
+                failures.append(
+                    f"worker set mismatch: {label}/trial-{trial}: "
+                    f"expected {expected_workers}, got {sorted(worker_ids)}"
+                )
+
+
+def validate_result_provenance(
+    results: list[dict[str, Any]], spec: dict[str, Any], spec_path: Path, failures: list[str]
+) -> None:
+    """Ensure every sample belongs to this exact shared contract and a real build."""
+    expected_spec_sha = hashlib.sha256(spec_path.read_bytes()).hexdigest()
+    for index, result in enumerate(results, start=1):
+        environment = result.get("environment") or {}
+        if environment.get("spec_sha256") != expected_spec_sha:
+            failures.append(f"spec SHA mismatch at sample {index}")
+        if environment.get("git_sha") in (None, "", "unknown"):
+            failures.append(f"unknown implementation Git SHA at sample {index}")
+        runtime = environment.get("runtime", "")
+        contract = spec["runtime_contract"]
+        implementation = result.get("implementation")
+        if implementation == "java" and not runtime.startswith(contract["java_version"]):
+            failures.append(f"Java runtime contract mismatch at sample {index}")
+        if implementation == "rust" and contract["rust_toolchain"] not in runtime:
+            failures.append(f"Rust runtime contract mismatch at sample {index}")
+        origin = result.get("fixture_origin")
+        operation = result.get("operation")
+        if result.get("phase") == "matrix":
+            if operation in ("read", "roundtrip") and origin not in ("rust", "java"):
+                failures.append(f"missing fixture origin at sample {index}")
+            if operation == "write" and origin is not None:
+                failures.append(f"unexpected fixture origin at sample {index}")
+            if origin is not None and not result.get("input_sha256"):
+                failures.append(f"missing input SHA at sample {index}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("results", nargs="+", type=Path)
     parser.add_argument("--spec", required=True, type=Path)
+    parser.add_argument("--schema", type=Path)
+    parser.add_argument("--profile", required=True, choices=("pr", "nightly", "release"))
     parser.add_argument("--baseline", type=Path)
     parser.add_argument("--require-baseline", action="store_true")
     parser.add_argument("--output", type=Path)
     arguments = parser.parse_args()
     spec = json.loads(arguments.spec.read_text(encoding="utf-8"))
+    schema_path = arguments.schema or arguments.spec.parent / "benchmark-result-v1.schema.json"
+    result_schema = json.loads(schema_path.read_text(encoding="utf-8"))
     gates = spec["gates"]
-    results = load_results(arguments.results)
+    input_results = load_results(arguments.results)
     failures: list[str] = []
+    results = []
+    for index, result in enumerate(input_results, start=1):
+        schema_errors = validate_json_schema(result, result_schema)
+        if schema_errors:
+            failures.extend(f"schema violation at sample {index}: {error}" for error in schema_errors)
+        else:
+            results.append(result)
+    validate_result_provenance(results, spec, arguments.spec, failures)
     if arguments.require_baseline and not arguments.baseline:
         failures.append("stable baseline is required for this benchmark layer")
     checksums: dict[tuple[str, str, str, str | None, int, int], set[str]] = defaultdict(set)
@@ -83,6 +266,7 @@ def main() -> int:
             failures.append(f"correctness failed: {group_key(result)}")
         if gates["reread_required"] and not result["correctness"]["rereadable"]:
             failures.append(f"reread failed: {group_key(result)}")
+    validate_matrix_completeness(grouped, spec, arguments.profile, failures)
     for key, values in checksums.items():
         if len(values) != 1:
             failures.append(f"cross-implementation checksum mismatch: {key}")
@@ -115,19 +299,9 @@ def main() -> int:
             "file_size_bytes": summarize_present(samples, "file_size_bytes"),
             "total_written_bytes": summarize_present(samples, "total_written_bytes"),
         }
-        trials: dict[int, list[dict[str, Any]]] = defaultdict(list)
-        for sample in samples:
-            if sample.get("trial") is not None:
-                trials[sample["trial"]].append(sample)
-        concurrent_rates = []
-        for trial_samples in trials.values():
-            elapsed_ns = max(sample["wall_time_ns"] for sample in trial_samples)
-            total_rows = sum(sample["rows"] for sample in trial_samples)
-            concurrent_rates.append(total_rows / (elapsed_ns / 1_000_000_000))
-        summaries[label]["concurrent_rows_per_second"] = (
-            summarize(concurrent_rates) if concurrent_rates else None
-        )
-        if throughput["coefficient_of_variation"] > gates["max_coefficient_of_variation"]:
+        summaries[label]["concurrent_rows_per_second"] = summarize_concurrent_throughput(samples)
+        stability = summaries[label]["concurrent_rows_per_second"]
+        if stability["coefficient_of_variation"] > gates["max_coefficient_of_variation"]:
             failures.append(f"unstable throughput environment: {label}")
 
     # 并发加速比以同实现、同场景、同输入来源、同行数的单 worker 为基线。
@@ -219,6 +393,10 @@ def main() -> int:
 
     report = {
         "schema_version": 1,
+        "profile": arguments.profile,
+        "spec_sha256": hashlib.sha256(arguments.spec.read_bytes()).hexdigest(),
+        "sample_count": len(input_results),
+        "valid_sample_count": len(results),
         "summaries": summaries,
         "workload_summaries": workload_summaries,
         "cross_runtime_ratios": cross_runtime_ratios,

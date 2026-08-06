@@ -32,6 +32,7 @@ def runner_command(
     temperature: str = "cold",
     warmups: int = 0,
     gc_log: Path | None = None,
+    temp_dir: Path | None = None,
 ) -> list[str]:
     common = [
         "--spec", str(arguments.spec),
@@ -49,8 +50,8 @@ def runner_command(
         return [str(arguments.rust_bin), *common]
     java_options = [
         str(arguments.java_bin),
-        f"-Xms{arguments.java_heap}",
-        f"-Xmx{arguments.java_heap}",
+        f"-Xms{arguments.java_xms}",
+        f"-Xmx{arguments.java_xmx}",
         "-XX:+UseG1GC",
         "-Duser.timezone=UTC",
         "-Duser.language=en",
@@ -60,6 +61,8 @@ def runner_command(
     if gc_log:
         gc_log.parent.mkdir(parents=True, exist_ok=True)
         java_options.append(f"-Xlog:gc*:file={gc_log}:time,uptime,level,tags")
+    if temp_dir:
+        java_options.append(f"-Djava.io.tmpdir={temp_dir}")
     return [
         *java_options,
         "-cp", arguments.java_classpath,
@@ -70,13 +73,22 @@ def runner_command(
 
 def invoke(
     command: list[str],
-    watch_dir: Path,
+    watch_dir: Path | None,
     measured: bool,
+    temp_dir: Path | None = None,
 ) -> dict[str, Any]:
     actual = command
-    if measured:
+    if measured and watch_dir:
         actual = [sys.executable, str(MEASURE), "--watch-dir", str(watch_dir), "--", *command]
-    completed = subprocess.run(actual, check=False, capture_output=True, text=True)
+    environment = os.environ.copy()
+    environment.update({"TZ": "UTC", "LANG": "en_US.UTF-8", "LC_ALL": "en_US.UTF-8"})
+    if temp_dir:
+        environment.update(
+            {"TMPDIR": str(temp_dir), "TMP": str(temp_dir), "TEMP": str(temp_dir)}
+        )
+    completed = subprocess.run(
+        actual, check=False, capture_output=True, text=True, env=environment
+    )
     if completed.returncode != 0:
         raise RuntimeError(
             f"benchmark command failed ({completed.returncode}): {' '.join(command)}\n"
@@ -103,8 +115,13 @@ def create_fixtures(
     scenario = fixture_scenario(spec, file_format)
     for implementation in ("rust", "java"):
         path = arguments.output_dir / "fixtures" / str(rows) / f"{implementation}.{file_format}"
-        command = runner_command(implementation, arguments, scenario, rows, 1, None, path)
-        result = invoke(command, path.parent, measured=False)
+        temp_dir = path.parent / "tmp" / implementation
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        command = runner_command(
+            implementation, arguments, scenario, rows, 1, None, path,
+            temp_dir=temp_dir,
+        )
+        result = invoke(command, None, measured=False, temp_dir=temp_dir)
         if not result["success"]:
             raise RuntimeError(f"fixture generation failed: {implementation}/{file_format}/{rows}")
         fixtures[implementation] = path
@@ -155,17 +172,20 @@ def run_worker(
 ) -> dict[str, Any]:
     run_dir = (
         arguments.output_dir / "work" / scenario["id"] / str(rows)
-        / temperature / f"trial-{trial}" / f"{implementation}-worker-{worker}"
+        / temperature / f"trial-{trial}" / (fixture_origin or "generated")
+        / f"{implementation}-worker-{worker}"
     )
+    temp_dir = run_dir / "tmp"
+    temp_dir.mkdir(parents=True, exist_ok=True)
     output = None
     if scenario["operation"] in ("write", "roundtrip"):
         output = run_dir / f"output.{scenario['format']}"
     gc_log = run_dir / "gc.log" if implementation == "java" and measured else None
     command = runner_command(
         implementation, arguments, scenario, rows, workers, fixture, output,
-        temperature, warmups, gc_log
+        temperature, warmups, gc_log, temp_dir
     )
-    result = invoke(command, run_dir, measured)
+    result = invoke(command, temp_dir, measured, temp_dir=temp_dir)
     result["phase"] = "matrix"
     result["fixture_origin"] = fixture_origin
     result["input_sha256"] = (
@@ -200,6 +220,8 @@ def verify_written_output(
     }
     validations = []
     for implementation in ("rust", "java"):
+        temp_dir = output_path.parent / "verify-tmp" / implementation
+        temp_dir.mkdir(parents=True, exist_ok=True)
         command = runner_command(
             implementation,
             arguments,
@@ -208,8 +230,9 @@ def verify_written_output(
             1,
             output_path,
             None,
+            temp_dir=temp_dir,
         )
-        validations.append(invoke(command, output_path.parent, measured=False))
+        validations.append(invoke(command, None, measured=False, temp_dir=temp_dir))
     observed = {value["correctness"]["observed_rows"] for value in validations}
     checksums = {value["correctness"]["checksum"] for value in validations}
     if any(not value["success"] for value in validations) or len(observed) != 1 or len(checksums) != 1:
@@ -339,7 +362,50 @@ def total_memory_bytes() -> int | None:
     return None
 
 
-def write_environment_manifest(arguments: argparse.Namespace) -> None:
+def validate_runtime_contract(spec: dict[str, Any], arguments: argparse.Namespace) -> None:
+    """Fail before fixture generation when the pinned runtime contract drifts."""
+    contract = spec["runtime_contract"]
+    orchestrator_values = {
+        "java_gc": "G1",
+        "timezone": "UTC",
+        "locale": "en_US.UTF-8",
+        "temp_directory": "isolated-per-worker",
+    }
+    for name, actual in orchestrator_values.items():
+        if contract[name] != actual:
+            raise RuntimeError(
+                f"orchestrator {name} mismatch: expected {contract[name]}, got {actual}"
+            )
+    java_version = subprocess.run(
+        [str(arguments.java_bin), "-version"], check=False, capture_output=True, text=True
+    )
+    version_text = java_version.stderr or java_version.stdout
+    version_match = re.search(r'version "(\d+)', version_text)
+    if java_version.returncode != 0 or version_match is None:
+        raise RuntimeError(f"cannot determine Java version from {arguments.java_bin}")
+    if version_match.group(1) != contract["java_version"]:
+        raise RuntimeError(
+            f"Java version mismatch: expected {contract['java_version']}, "
+            f"got {version_match.group(1)}"
+        )
+    if arguments.java_xms != contract["java_xms"]:
+        raise RuntimeError(
+            f"Java Xms mismatch: expected {contract['java_xms']}, got {arguments.java_xms}"
+        )
+    if arguments.java_xmx != contract["java_xmx"]:
+        raise RuntimeError(
+            f"Java Xmx mismatch: expected {contract['java_xmx']}, got {arguments.java_xmx}"
+        )
+    locales = subprocess.run(
+        ["locale", "-a"], check=False, capture_output=True, text=True
+    )
+    normalized = {value.strip().lower().replace("-", "") for value in locales.stdout.splitlines()}
+    expected_locale = contract["locale"].lower().replace("-", "")
+    if locales.returncode != 0 or expected_locale not in normalized:
+        raise RuntimeError(f"required locale is unavailable: {contract['locale']}")
+
+
+def write_environment_manifest(arguments: argparse.Namespace, spec: dict[str, Any]) -> None:
     disk = shutil.disk_usage(arguments.output_dir)
     rust_dirty, rust_source_sha256 = repository_fingerprint(arguments.rust_repo)
     java_dirty, java_source_sha256 = repository_fingerprint(arguments.java_repo)
@@ -372,13 +438,19 @@ def write_environment_manifest(arguments: argparse.Namespace) -> None:
         "java_root_pom_sha256": file_sha256(
             arguments.java_repo / "pom.xml" if arguments.java_repo else None
         ),
-        "java_heap": arguments.java_heap,
-        "locale": "en_US",
-        "timezone": "UTC",
-        "gc": "G1",
+        "java_xms": arguments.java_xms,
+        "java_xmx": arguments.java_xmx,
+        "locale": spec["runtime_contract"]["locale"],
+        "timezone": spec["runtime_contract"]["timezone"],
+        "gc": spec["runtime_contract"]["java_gc"],
+        "runtime_contract": spec["runtime_contract"],
     }
     path = arguments.output_dir / "environment-manifest.json"
     path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    shutil.copyfile(arguments.spec, arguments.output_dir / "benchmark-suite-v1.json")
+    schema = arguments.spec.parent / "benchmark-result-v1.schema.json"
+    if schema.is_file():
+        shutil.copyfile(schema, arguments.output_dir / "benchmark-result-v1.schema.json")
 
 
 def main() -> int:
@@ -388,7 +460,8 @@ def main() -> int:
     parser.add_argument("--rust-bin", type=Path, required=True)
     parser.add_argument("--java-bin", type=Path, default=Path("java"))
     parser.add_argument("--java-classpath", required=True)
-    parser.add_argument("--java-heap", default="4g")
+    parser.add_argument("--java-xms", default="512m")
+    parser.add_argument("--java-xmx", default="4g")
     parser.add_argument("--java-repo", type=Path)
     parser.add_argument("--rust-repo", type=Path, default=ROOT)
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -396,19 +469,25 @@ def main() -> int:
     arguments = parser.parse_args()
     arguments.java_git_sha = git_sha(arguments.java_repo)
     spec = json.loads(arguments.spec.read_text(encoding="utf-8"))
+    validate_runtime_contract(spec, arguments)
     profile = spec["profiles"][arguments.profile]
     scenarios = [
         scenario for scenario in spec["scenarios"]
         if not arguments.scenario or scenario["id"] in arguments.scenario
     ]
-    workers_matrix = spec["concurrency"] if arguments.profile == "release" else [1]
     arguments.output_dir.mkdir(parents=True, exist_ok=True)
-    write_environment_manifest(arguments)
+    write_environment_manifest(arguments, spec)
     raw_path = arguments.output_dir / "raw-results.jsonl"
     with raw_path.open("w", encoding="utf-8") as raw:
         for rows in profile["rows"]:
             fixture_cache: dict[str, dict[str, Path]] = {}
             for scenario in scenarios:
+                workers_matrix = [1]
+                if (
+                    arguments.profile == "release"
+                    and scenario["id"] in spec["concurrency_scenarios"]
+                ):
+                    workers_matrix = spec["concurrency"]
                 origins: list[tuple[str | None, Path | None]] = [(None, None)]
                 if scenario["operation"] in ("read", "roundtrip"):
                     file_format = scenario["format"]

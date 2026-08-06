@@ -1389,6 +1389,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "easyexcel-web"
+version = "0.1.0-alpha.1"
+dependencies = [
+ "bytes",
+ "easyexcel",
+ "futures-util",
+ "http 1.5.0",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "tokio-util",
+ "tracing",
+]
+
+[[package]]
 name = "easyexcel-xls"
 version = "0.1.0-alpha.1"
 dependencies = [
@@ -4201,6 +4218,7 @@ dependencies = [
  "bytes",
  "futures-core",
  "futures-sink",
+ "futures-util",
  "libc",
  "pin-project-lite",
  "tokio",
