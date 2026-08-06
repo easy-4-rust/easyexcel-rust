@@ -369,15 +369,8 @@ impl<'a> ExcelTemplateWriter<'a> {
 }
 
 pub(crate) fn same_sheet(left: &TemplateSheet, right: &TemplateSheet) -> bool {
-    match (left, right) {
-        (
-            TemplateSheet::First | TemplateSheet::Index(0),
-            TemplateSheet::First | TemplateSheet::Index(0),
-        ) => true,
-        (TemplateSheet::Index(left), TemplateSheet::Index(right)) => left == right,
-        (TemplateSheet::Name(left), TemplateSheet::Name(right)) => left == right,
-        _ => false,
-    }
+    left.as_engine_selector()
+        .equivalent(right.as_engine_selector())
 }
 
 /// Fills scalar `{key}` placeholders while preserving the XLSX package structure.
@@ -484,12 +477,7 @@ pub(crate) fn load_entries_from(reader: Box<dyn ReadSeek>) -> Result<Vec<Templat
 }
 
 pub(crate) fn worksheet_path(entries: &[TemplateEntry], sheet: &TemplateSheet) -> Result<String> {
-    let selector = match sheet {
-        TemplateSheet::First => easyexcel_xlsx::TemplateSheetSelector::First,
-        TemplateSheet::Index(index) => easyexcel_xlsx::TemplateSheetSelector::Index(*index),
-        TemplateSheet::Name(name) => easyexcel_xlsx::TemplateSheetSelector::Name(name),
-    };
-    easyexcel_xlsx::worksheet_path(entries, selector).map_err(ExcelError::from)
+    easyexcel_xlsx::worksheet_path(entries, sheet.as_engine_selector()).map_err(ExcelError::from)
 }
 
 pub(crate) use easyexcel_xlsx::{normalize_workbook_target, workbook_sheets};

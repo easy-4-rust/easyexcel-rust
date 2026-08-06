@@ -18,6 +18,24 @@ pub enum SheetSelection<'a> {
     All,
 }
 
+impl SheetSelection<'_> {
+    /// 判断工作簿顺序中的一张工作表是否命中当前选择请求。
+    ///
+    /// `index` 为零基下标；启用 `auto_trim` 时，名称匹配采用 Java
+    /// `String#trim` 语义。该方法适用于无法预先收集全部工作表的事件读取器。
+    #[must_use]
+    pub fn matches(self, index: usize, name: Option<&str>, auto_trim: bool) -> bool {
+        match self {
+            Self::First => index == 0,
+            Self::Index(selected) => index == selected,
+            Self::Name(selected) => name.is_some_and(|candidate| {
+                equals_with_optional_java_trim(candidate, selected, auto_trim)
+            }),
+            Self::All => true,
+        }
+    }
+}
+
 /// 从有序工作表名称中解析选择结果。
 ///
 /// 返回值保留原始工作簿下标与名称。启用 `auto_trim` 时，名称匹配采用
@@ -47,5 +65,21 @@ pub fn select_sheet_names(
             .map(|(index, candidate)| vec![(index, candidate.clone())])
             .ok_or_else(|| Error::SheetNotFound(name.to_owned())),
         SheetSelection::All => Ok(names.into_iter().enumerate().collect()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SheetSelection;
+
+    #[test]
+    fn streaming_match_uses_index_name_and_java_trim_semantics() {
+        assert!(SheetSelection::First.matches(0, Some("First"), false));
+        assert!(!SheetSelection::First.matches(1, Some("Second"), false));
+        assert!(SheetSelection::Index(2).matches(2, None, false));
+        assert!(SheetSelection::Name("Data").matches(3, Some(" Data "), true));
+        assert!(!SheetSelection::Name("Data").matches(3, Some(" Data "), false));
+        assert!(!SheetSelection::Name("Data").matches(3, None, true));
+        assert!(SheetSelection::All.matches(99, None, false));
     }
 }

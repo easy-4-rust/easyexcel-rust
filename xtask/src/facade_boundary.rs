@@ -11,6 +11,9 @@ const FACADE_LIB: &str = "crates/easyexcel/src/lib.rs";
 const EHCACHE_COMPAT: &str = "crates/easyexcel/src/cache/ehcache.rs";
 const MOKA_ADAPTER: &str = "crates/easyexcel/src/cache/moka_cache.rs";
 const OUTPUT_STREAM_COMPAT: &str = "crates/easyexcel/src/write/excel_output_stream.rs";
+const IO_ROW_RANGE_ENGINE: &str = "crates/easyexcel-io/src/io/row_range.rs";
+const IO_SHEET_SELECTION_ENGINE: &str = "crates/easyexcel-io/src/io/sheet_selection.rs";
+const IO_FORMAT_ENGINE: &str = "crates/easyexcel-io/src/io/format.rs";
 const MODEL_STORED_ROW_ENGINE: &str = "crates/easyexcel-model/src/model/stored_row.rs";
 const XLSX_FACADE: &str = "crates/easyexcel/src/xlsx.rs";
 const XLS_RECORD_DISPATCHER: &str = "crates/easyexcel/src/analysis/v03/xls_record_dispatcher.rs";
@@ -20,6 +23,8 @@ const STYLE_UTIL_ADAPTER: &str = "crates/easyexcel/src/util/style_util.rs";
 const FACADE_ERROR: &str = "crates/easyexcel/src/support/excel_error.rs";
 const XLS_TEMPLATE_ADAPTER: &str = "crates/easyexcel/src/write/xls_adapter/template.rs";
 const XLSX_TEMPLATE_ADAPTER: &str = "crates/easyexcel/src/template/template_writer.rs";
+const XLSX_TEMPLATE_SELECTION_ENGINE: &str =
+    "crates/easyexcel-xlsx/src/xlsx/template_source.rs";
 const ROW_PROCESSING_ADAPTER: &str = "crates/easyexcel/src/read/row_processing.rs";
 const TEMPLATE_WRITE_ADAPTER: &str = "crates/easyexcel/src/write/template_write.rs";
 const READ_HELPERS_ADAPTER: &str = "crates/easyexcel/src/read/read_helpers.rs";
@@ -27,6 +32,7 @@ const EXCEL_WRITER_CORE: &str = "crates/easyexcel/src/write/excel_writer_core.rs
 const STRING_UTILS_ENGINE: &str = "crates/easyexcel-utils/src/utils/string_utils.rs";
 const CLASS_UTILS_ADAPTER: &str = "crates/easyexcel/src/util/class_utils.rs";
 const FIELD_UTILS_ADAPTER: &str = "crates/easyexcel/src/util/field_utils.rs";
+const EXCEL_ANALYSER_ADAPTER: &str = "crates/easyexcel/src/analysis/excel_analyser_impl.rs";
 
 const REQUIRED_ENGINE_DEPENDENCIES: &[&str] = &[
     "easyexcel-cache",
@@ -162,6 +168,12 @@ pub(crate) fn audit() -> TaskResult {
     require_contains(
         MOKA_ADAPTER,
         &moka_adapter,
+        "DEFAULT_MAX_MOKA_ACTIVE_BATCH_COUNT",
+        "Moka-native default naming",
+    )?;
+    require_contains(
+        MOKA_ADAPTER,
+        &moka_adapter,
         "SharedStringCachePolicy",
         "engine-owned cache policy",
     )?;
@@ -218,6 +230,18 @@ pub(crate) fn audit() -> TaskResult {
         "fn is_ignorable_sid",
         "facade-owned BIFF SID classification",
     )?;
+    require_contains(
+        XLS_RECORD_DISPATCHER,
+        &xls_record_dispatcher,
+        ".as_engine_selection().matches(",
+        "I/O-owned event sheet selection",
+    )?;
+    require_absent(
+        XLS_RECORD_DISPATCHER,
+        &xls_record_dispatcher,
+        "SheetSelector::First => index == 0",
+        "facade-owned event sheet selection",
+    )?;
 
     let xls_obj_handler = read(XLS_OBJ_HANDLER)?;
     require_contains(
@@ -263,12 +287,32 @@ pub(crate) fn audit() -> TaskResult {
             "string-parsed sheet-not-found error",
         )?;
     }
+    let xlsx_template_adapter = read(XLSX_TEMPLATE_ADAPTER)?;
+    require_contains(
+        XLSX_TEMPLATE_ADAPTER,
+        &xlsx_template_adapter,
+        ".equivalent(right.as_engine_selector())",
+        "XLSX-engine-owned template sheet equivalence",
+    )?;
+    require_absent(
+        XLSX_TEMPLATE_ADAPTER,
+        &xlsx_template_adapter,
+        "TemplateSheet::First | TemplateSheet::Index(0)",
+        "facade-owned template sheet equivalence",
+    )?;
+    let xlsx_template_selection_engine = read(XLSX_TEMPLATE_SELECTION_ENGINE)?;
+    require_contains(
+        XLSX_TEMPLATE_SELECTION_ENGINE,
+        &xlsx_template_selection_engine,
+        "pub fn equivalent(self, other: TemplateSheetSelector<'_>) -> bool",
+        "template sheet equivalence algorithm",
+    )?;
 
     let row_processing_adapter = read(ROW_PROCESSING_ADAPTER)?;
     require_contains(
         ROW_PROCESSING_ADAPTER,
         &row_processing_adapter,
-        "easyexcel_io::select_sheet_names(names, selection, auto_trim)",
+        "easyexcel_io::select_sheet_names(names, selector.as_engine_selection(), auto_trim)",
         "I/O-owned sheet selection",
     )?;
     require_absent(
@@ -288,6 +332,55 @@ pub(crate) fn audit() -> TaskResult {
         &row_processing_adapter,
         ".cells\n            .range",
         "facade-owned sparse model traversal",
+    )?;
+    require_contains(
+        ROW_PROCESSING_ADAPTER,
+        &row_processing_adapter,
+        "easyexcel_io::row_is_selected(",
+        "I/O-owned row filtering",
+    )?;
+    require_absent(
+        ROW_PROCESSING_ADAPTER,
+        &row_processing_adapter,
+        "row_index >= options.head_row_number",
+        "facade-owned row filtering",
+    )?;
+
+    let io_sheet_selection_engine = read(IO_SHEET_SELECTION_ENGINE)?;
+    require_contains(
+        IO_SHEET_SELECTION_ENGINE,
+        &io_sheet_selection_engine,
+        "pub fn matches(self, index: usize, name: Option<&str>, auto_trim: bool) -> bool",
+        "streaming sheet-selection predicate",
+    )?;
+
+    let io_row_range_engine = read(IO_ROW_RANGE_ENGINE)?;
+    require_contains(
+        IO_ROW_RANGE_ENGINE,
+        &io_row_range_engine,
+        "pub fn row_is_selected(",
+        "shared row-selection predicate",
+    )?;
+
+    let io_format_engine = read(IO_FORMAT_ENGINE)?;
+    require_contains(
+        IO_FORMAT_ENGINE,
+        &io_format_engine,
+        "pub fn detect_path(path: &Path) -> Result<Self>",
+        "path extension and magic format detection",
+    )?;
+    let excel_analyser_adapter = read(EXCEL_ANALYSER_ADAPTER)?;
+    require_contains(
+        EXCEL_ANALYSER_ADAPTER,
+        &excel_analyser_adapter,
+        "easyexcel_io::Format::detect_path(path)",
+        "I/O-owned workbook format detection",
+    )?;
+    require_absent(
+        EXCEL_ANALYSER_ADAPTER,
+        &excel_analyser_adapter,
+        "path.extension()",
+        "facade-owned extension fallback",
     )?;
 
     let template_write_adapter = read(TEMPLATE_WRITE_ADAPTER)?;

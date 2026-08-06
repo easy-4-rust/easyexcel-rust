@@ -429,16 +429,14 @@ impl XlsRecordDispatcher {
     }
 
     fn should_read_sheet(&self, index: usize) -> bool {
-        match &self.sheet_selector {
-            SheetSelector::First => index == 0,
-            SheetSelector::Index(selected) => index == *selected,
-            SheetSelector::Name(selected) => self
-                .state
+        self.sheet_selector.as_engine_selection().matches(
+            index,
+            self.state
                 .bound_sheets
                 .get(index)
-                .is_some_and(|sheet| sheet.name == *selected),
-            SheetSelector::All => true,
-        }
+                .map(|sheet| sheet.name.as_str()),
+            self.auto_trim,
+        )
     }
 
     fn finish_pending_records(&mut self) -> Result<()> {

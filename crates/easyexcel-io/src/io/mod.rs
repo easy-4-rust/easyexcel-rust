@@ -29,7 +29,7 @@ pub use format::{
 };
 pub use read_mode::ReadMode;
 pub use resource_limits::ResourceLimits;
-pub use row_range::validate_row_range;
+pub use row_range::{row_is_selected, validate_row_range};
 pub use sheet_selection::{SheetSelection, select_sheet_names};
 pub use row_sink::RowSink;
 pub use row_source::RowSource;

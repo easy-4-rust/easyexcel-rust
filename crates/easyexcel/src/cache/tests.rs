@@ -41,7 +41,7 @@ fn simple_selector_custom_mb_threshold() {
 fn eternal_selector_pins_backend_mode() {
     let selector = EternalReadCacheSelector::map_cache();
     assert_eq!(selector.select_mode(9_999_999), ReadCacheMode::Memory);
-    let disk = EternalReadCacheSelector::ehcache();
+    let disk = EternalReadCacheSelector::moka();
     assert_eq!(disk.select_mode(0), ReadCacheMode::Disk);
 }
 

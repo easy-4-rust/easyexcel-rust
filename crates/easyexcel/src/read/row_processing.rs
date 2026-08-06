@@ -21,13 +21,8 @@ pub(crate) fn select_sheet_names(
     selector: &SheetSelector,
     auto_trim: bool,
 ) -> Result<Vec<(usize, String)>> {
-    let selection = match selector {
-        SheetSelector::First => easyexcel_io::SheetSelection::First,
-        SheetSelector::Index(index) => easyexcel_io::SheetSelection::Index(*index),
-        SheetSelector::Name(name) => easyexcel_io::SheetSelection::Name(name),
-        SheetSelector::All => easyexcel_io::SheetSelection::All,
-    };
-    easyexcel_io::select_sheet_names(names, selection, auto_trim).map_err(ExcelError::from)
+    easyexcel_io::select_sheet_names(names, selector.as_engine_selection(), auto_trim)
+        .map_err(ExcelError::from)
 }
 
 #[cfg(test)]
@@ -393,10 +388,12 @@ pub(crate) fn dispatch_row(
     options: &ReadOptions,
     headers: &mut Arc<HashMap<String, usize>>,
 ) -> Result<ReadFlow> {
-    if row_index >= options.head_row_number
-        && (options.start_row.is_some_and(|start| row_index < start)
-            || options.end_row.is_some_and(|end| row_index > end))
-    {
+    if !easyexcel_io::row_is_selected(
+        row_index,
+        options.head_row_number,
+        options.start_row,
+        options.end_row,
+    ) {
         return Ok(ReadFlow::Continue);
     }
     consumer.process(

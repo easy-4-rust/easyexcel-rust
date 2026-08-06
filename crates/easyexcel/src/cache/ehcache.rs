@@ -4,6 +4,8 @@
 //! `ReadCache` 适配类型是 [`MokaCache`](super::MokaCache)，活跃层与临时文件
 //! 后备由 `easyexcel-cache` 唯一实现。
 
+#[allow(deprecated)]
 pub use super::moka_cache::{
-    BATCH_COUNT, DEFAULT_MAX_EHCACHE_ACTIVATE_BATCH_COUNT, MokaCache as Ehcache,
+    BATCH_COUNT, DEFAULT_MAX_EHCACHE_ACTIVATE_BATCH_COUNT, DEFAULT_MAX_MOKA_ACTIVE_BATCH_COUNT,
+    MokaCache as Ehcache,
 };

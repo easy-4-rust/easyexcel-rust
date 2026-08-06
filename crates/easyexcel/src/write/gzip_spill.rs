@@ -6,35 +6,25 @@
 //! written; [`ExcelWriter`] materializes into a constant-memory worksheet only
 //! at `finish` (stream decode → write → ZIP), keeping peak RAM bounded.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::core::{CellValue, ExcelError, ImageData, Result, RichTextStringData};
 #[cfg(test)]
 use bigdecimal::BigDecimal;
 use chrono::{NaiveDate, NaiveDateTime};
-use easyexcel_io::{GzipCellRecordReader, GzipCellRecordWriter, GzipCellValue};
+use easyexcel_io::{
+    GzipCellSpillReader as EngineSpillReader, GzipCellSpillWriter as EngineSpillWriter,
+    GzipCellValue,
+};
 
 pub use easyexcel_io::io::gzip_record::{GZIP_MAGIC, file_has_gzip_magic};
 
 /// Observable snapshot of an active or finished gzip spill file.
-#[derive(Debug, Clone)]
-pub struct GzipSpillSnapshot {
-    /// Logical sheet name this spill belongs to.
-    pub sheet_name: String,
-    /// Path of the gzip tempfile (named, so tests can open it).
-    pub path: PathBuf,
-    /// Whether the file begins with gzip magic.
-    pub is_gzip: bool,
-    /// On-disk compressed size in bytes.
-    pub compressed_len: u64,
-    /// Uncompressed payload bytes written into the encoder.
-    pub uncompressed_len: u64,
-}
+pub type GzipSpillSnapshot = easyexcel_io::GzipCellSpillSnapshot;
 
 /// Streaming gzip spill writer mirroring POI `GZIPSheetDataWriter`.
 pub struct GzipSheetDataWriter {
-    sheet_name: String,
-    writer: GzipCellRecordWriter,
+    inner: EngineSpillWriter,
 }
 
 impl GzipSheetDataWriter {
@@ -44,11 +34,14 @@ impl GzipSheetDataWriter {
     ///
     /// Returns an I/O error when the tempfile cannot be created.
     pub fn create(dir: &Path, sheet_name: impl Into<String>) -> Result<Self> {
-        let sheet_name = sheet_name.into();
         Ok(Self {
-            sheet_name,
-            writer: GzipCellRecordWriter::create(dir, "easyexcel-sxssf-", ".xml.gz")
-                .map_err(ExcelError::from)?,
+            inner: EngineSpillWriter::create(
+                dir,
+                sheet_name,
+                "easyexcel-sxssf-",
+                ".xml.gz",
+            )
+            .map_err(ExcelError::from)?,
         })
     }
 
@@ -59,9 +52,12 @@ impl GzipSheetDataWriter {
     /// Returns an I/O error when the temp directory or file cannot be created.
     pub fn create_owned(sheet_name: impl Into<String>) -> Result<Self> {
         Ok(Self {
-            sheet_name: sheet_name.into(),
-            writer: GzipCellRecordWriter::create_owned("easyexcel-sxssf-", ".xml.gz")
-                .map_err(ExcelError::from)?,
+            inner: EngineSpillWriter::create_owned(
+                sheet_name,
+                "easyexcel-sxssf-",
+                ".xml.gz",
+            )
+            .map_err(ExcelError::from)?,
         })
     }
 
@@ -75,7 +71,7 @@ impl GzipSheetDataWriter {
             .iter()
             .map(to_spill_value)
             .collect::<Result<Vec<_>>>()?;
-        self.writer.write_row(&values).map_err(ExcelError::from)
+        self.inner.write_row(&values).map_err(ExcelError::from)
     }
 
     /// Flushes buffered gzip bytes so magic / size are observable on disk.
@@ -84,7 +80,7 @@ impl GzipSheetDataWriter {
     ///
     /// Returns an I/O error on flush failure.
     pub fn flush(&mut self) -> Result<()> {
-        self.writer.flush().map_err(ExcelError::from)
+        self.inner.flush().map_err(ExcelError::from)
     }
 
     /// Returns a snapshot suitable for tests (gzip magic + sizes).
@@ -93,14 +89,7 @@ impl GzipSheetDataWriter {
     ///
     /// Returns an I/O error when flushing or stating the file fails.
     pub fn snapshot(&mut self) -> Result<GzipSpillSnapshot> {
-        let snapshot = self.writer.snapshot().map_err(ExcelError::from)?;
-        Ok(GzipSpillSnapshot {
-            sheet_name: self.sheet_name.clone(),
-            path: snapshot.path,
-            is_gzip: snapshot.is_gzip,
-            compressed_len: snapshot.compressed_len,
-            uncompressed_len: snapshot.uncompressed_len,
-        })
+        self.inner.snapshot().map_err(ExcelError::from)
     }
 
     /// Finishes the encoder and returns a readable spill handle.
@@ -110,30 +99,21 @@ impl GzipSheetDataWriter {
     /// Returns an I/O error when finishing gzip or reopening the file fails.
     pub fn finish(self) -> Result<GzipSpillReader> {
         Ok(GzipSpillReader {
-            sheet_name: self.sheet_name,
-            reader: self.writer.finish().map_err(ExcelError::from)?,
+            inner: self.inner.finish().map_err(ExcelError::from)?,
         })
     }
 }
 
 /// Read side of a finished gzip spill (stream decode, constant memory).
 pub struct GzipSpillReader {
-    sheet_name: String,
-    reader: GzipCellRecordReader,
+    inner: EngineSpillReader,
 }
 
 impl GzipSpillReader {
     /// Returns spill metadata after finish.
     #[must_use]
     pub fn snapshot(&self) -> GzipSpillSnapshot {
-        let snapshot = self.reader.snapshot();
-        GzipSpillSnapshot {
-            sheet_name: self.sheet_name.clone(),
-            path: snapshot.path,
-            is_gzip: snapshot.is_gzip,
-            compressed_len: snapshot.compressed_len,
-            uncompressed_len: snapshot.uncompressed_len,
-        }
+        self.inner.snapshot()
     }
 
     /// Decodes the next spilled row, or `None` at EOF.
@@ -142,7 +122,7 @@ impl GzipSpillReader {
     ///
     /// Returns a format or I/O error when the stream is corrupt.
     pub fn next_row(&mut self) -> Result<Option<Vec<CellValue>>> {
-        self.reader
+        self.inner
             .next_row()
             .map_err(ExcelError::from)?
             .map(|row| row.into_iter().map(from_spill_value).collect())
@@ -317,8 +297,7 @@ mod tests {
         let bad_path = directory.path().join("bad.gz");
         std::fs::write(&bad_path, b"not a gzip stream").expect("write");
         let mut reader = GzipSpillReader {
-            sheet_name: "Sheet1".to_owned(),
-            reader: GzipCellRecordReader::open_path(bad_path).expect("open"),
+            inner: EngineSpillReader::open_path(bad_path, "Sheet1").expect("open"),
         };
         let error = reader.next_row().expect_err("corrupt stream must fail");
         assert!(matches!(error, ExcelError::Io(_)));

@@ -71,7 +71,7 @@ flowchart LR
 | 格式识别、BOM、资源限制、RowSource/RowSink | `easyexcel-io` | `easyexcel::io` 显式重导出及 Java 枚举映射 |
 | Workbook/Sheet/Cell/Style 中立模型 | `easyexcel-model` | `easyexcel::model` 显式重导出 |
 | CSV 字符集、转码、CSV codec | `easyexcel-csv` | `easyexcel::csv` 与旧 Java 路径兼容重导出 |
-| 共享字符串内存/Moka/临时文件缓存 | `easyexcel-cache` | Java `ReadCache`、`Ehcache` 与 selector 契约适配 |
+| 共享字符串内存/Moka/临时文件缓存 | `easyexcel-cache` | Java `ReadCache` 与 selector 契约适配；`Ehcache` 只保留兼容名称 |
 | BIFF8 record、SST/Unicode、Ptg、RC4、OLE | `easyexcel-xls` | 错误类型与 listener 生命周期 adapter |
 | OOXML ZIP、流式行、RoundTrip、加解密 | `easyexcel-xlsx` | converter/handler 编排与 `rust_xlsxwriter` 生成 adapter |
 | 公式 AST/求值/重算 | `easyexcel-formula` | `easyexcel::formula` 重导出及 Java API 调用适配 |
@@ -93,22 +93,24 @@ flowchart LR
 | `write/template_write.rs` 的 ZIP 条目保留/重打包 | `easyexcel-xlsx::xlsx::ooxml_package` | 模板来源选择与 EasyExcel 写入编排 |
 | `write/template_write.rs` 的行 XML、列宽、合并、dimension | `easyexcel-xlsx::xlsx::template_xml` | `CellValue`、`MergeRange` 到中立输入的转换 |
 | `write/template_write.rs` 的 styles.xml 组件合并 | `easyexcel-xlsx::xlsx::template_styles` | `rust_xlsxwriter` 样式编译结果的调用编排 |
+| 模板目标工作表选择与 `First == Index(0)` 等价规则 | `easyexcel-xlsx::TemplateSheetSelector` | `TemplateSheet` 到引擎选择器的映射与 fill 生命周期 |
 | `rust_xlsxwriter::Workbook` 的 XLSX 序列化、落盘、流输出和加密 | `easyexcel-xlsx::xlsx::generation` | 工作簿生成流程与 Java handler/context 编排 |
 | XLSX 行列坐标上限 | `easyexcel-xlsx::xlsx::generation::{validate_row_index,validate_column_index}` | Java `WorkBookUtil` creator 生命周期适配 |
 | Excel 15 位有效数字数学上下文常量 | `easyexcel-format::EXCEL_MATH_CONTEXT_PRECISION` | Java `EasyExcelConstants` 路径重导出 |
 | `util/file_utils.rs`、`util/io_utils.rs` | `easyexcel-io::io::{file_utils,io_utils}` | Java 包路径和错误类型兼容代理 |
 | `util` 中与门面类型无关的集合、字符串、坐标和条件校验算法 | `easyexcel-utils::utils` | Java 工具类方法名和 `ExcelError` 映射 |
 | `write/gzip_spill.rs` 的临时文件/gzip/framing/单元格协议 | `easyexcel-io::io::{gzip_record,gzip_cell_record}` | EasyExcel `CellValue` 与中立 `GzipCellValue` 的映射 |
-| Java `ReadCacheSelector` 的阈值选择，以及 `Ehcache` 的活跃条目淘汰、写入/只读阶段切换和持久后备 | `easyexcel-cache::cache::{SharedStringCachePolicy,SharedStringCacheHandle,shared_string_cache}`（Moka + 临时文件） | selector 参数、`MokaCache` 的 `ReadCache` 适配；`Ehcache` 仅为 Java 兼容别名 |
+| Java `ReadCacheSelector` 的阈值选择，以及旧 `Ehcache` 语义对应的活跃条目淘汰、写入/只读阶段切换和持久后备 | `easyexcel-cache::cache::{SharedStringCachePolicy,SharedStringCacheHandle,shared_string_cache}`（Moka + 临时文件） | selector 参数、`MokaCache` 的 `ReadCache` 适配；内部入口使用 `moka()`，`Ehcache`/`ehcache()` 仅为弃用兼容名称 |
 | CSV 物理行列索引的有界转换 | `easyexcel-csv::csv::index` | `ExcelError` 映射与 listener 行调度 |
+| 路径扩展名与文件头 magic 的工作簿格式探测、未知格式默认 CSV | `easyexcel-io::Format::detect_path` | `Format` 到 Java `ExcelTypeEnum` 与 executor 的映射 |
 | 可克隆输出流的共享所有权、关闭与刷新 | `easyexcel-io::CloseableOutputStream` | `ExcelOutputStream` Java 兼容类型别名 |
 | 中立工作表持久化单元格/样式的稀疏边界扫描 | `easyexcel-model::Sheet::stored_range` | 按行映射为 EasyExcel `CellValue`、公式元数据并触发 listener |
 | 中立工作表持久化范围的逐行遍历与物理宽度 | `easyexcel-model::{StoredRow,Sheet::stored_rows}` | 把每行中立 `Cell` 映射为 EasyExcel metadata 并触发 listener |
 | 未选中工作表可跳过的 BIFF 事件记录分类 | `easyexcel-xls::biff8::record_sid::is_skippable_event_record` | 根据 `SheetSelector` 维护 Java handler 的启停状态与统计信息 |
 | 数据格式元数据有效值选择与 `General` 回退 | `easyexcel-model::DataFormatData::{resolve,general}` | 保留 Java `StyleUtil#buildDataFormat` 方法名与参数契约 |
 | XLS/XLSX 工作表不存在的强类型错误 | `easyexcel-io::Error::SheetNotFound` | 映射为 Java 风格 `ExcelError::SheetNotFound`，不再解析引擎错误字符串 |
-| 按首张、下标、名称或全部选择工作表 | `easyexcel-io::{SheetSelection,select_sheet_names}` | 把 Java 风格 `SheetSelector` 映射为中立选择请求，并进入 listener 生命周期 |
-| 零基闭区间读取行范围校验 | `easyexcel-io::validate_row_range` | 从 `ReadOptions` 取值并映射为 EasyExcel 公共错误 |
+| 按首张、下标、名称或全部选择工作表，以及事件流逐表命中判断 | `easyexcel-io::{SheetSelection,select_sheet_names}`、`SheetSelection::matches` | 把 Java 风格 `SheetSelector` 映射为中立选择请求，并进入 listener 生命周期 |
+| 零基闭区间读取行范围校验与表头保留筛选 | `easyexcel-io::{validate_row_range,row_is_selected}` | 从 `ReadOptions` 取值并映射为 EasyExcel 公共错误/回调决策 |
 | Java `String#trim` 兼容算法 | `easyexcel-utils::string_utils::java_trim` | 门面决定何时启用 `auto_trim`，基础函数执行字符边界规则 |
 | Java `FieldUtils.resolveCglibFieldName` 首字母规范化 | `easyexcel-utils::string_utils::resolve_cglib_field_name` | `FieldUtils` 兼容路径与 `ExcelRow::schema()` 字段查询 |
 

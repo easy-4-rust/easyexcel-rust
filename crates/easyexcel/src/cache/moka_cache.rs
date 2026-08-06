@@ -11,9 +11,13 @@ use super::read_cache::{ReadCache, SharedStringCacheAdapter};
 #[allow(dead_code)]
 pub const BATCH_COUNT: usize = easyexcel_cache::SHARED_STRING_CACHE_BATCH_SIZE as usize;
 
-/// Java `SimpleReadCacheSelector` 默认保留的活跃批次数。
-pub const DEFAULT_MAX_EHCACHE_ACTIVATE_BATCH_COUNT: i32 =
+/// Moka 活跃层默认保留的共享字符串批次数。
+pub const DEFAULT_MAX_MOKA_ACTIVE_BATCH_COUNT: i32 =
     easyexcel_cache::DEFAULT_MOKA_ACTIVE_BATCHES as i32;
+
+/// Java `Ehcache.DEFAULT_MAX_EHCACHE_ACTIVATE_BATCH_COUNT` 兼容常量。
+#[deprecated(note = "use DEFAULT_MAX_MOKA_ACTIVE_BATCH_COUNT")]
+pub const DEFAULT_MAX_EHCACHE_ACTIVATE_BATCH_COUNT: i32 = DEFAULT_MAX_MOKA_ACTIVE_BATCH_COUNT;
 
 /// Moka 活跃层与无损临时文件后备的 Java `ReadCache` 适配器。
 pub struct MokaCache {
@@ -31,7 +35,7 @@ impl MokaCache {
     /// 临时后备文件无法创建时返回 I/O 错误。
     pub fn new(max_cache_activate_batch_count: Option<i32>) -> Result<Self> {
         let batch_count = max_cache_activate_batch_count
-            .unwrap_or(DEFAULT_MAX_EHCACHE_ACTIVATE_BATCH_COUNT)
+            .unwrap_or(DEFAULT_MAX_MOKA_ACTIVE_BATCH_COUNT)
             .max(1);
         let active_batches = u64::try_from(batch_count).unwrap_or(1);
         Ok(Self {

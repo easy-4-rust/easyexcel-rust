@@ -25,7 +25,7 @@ mod xls_cache;
 
 pub use ehcache::Ehcache;
 pub use map_cache::MapCache;
-pub use moka_cache::MokaCache;
+pub use moka_cache::{DEFAULT_MAX_MOKA_ACTIVE_BATCH_COUNT, MokaCache};
 pub use read_cache::ReadCache;
 pub use selector::{EternalReadCacheSelector, ReadCacheSelector, SimpleReadCacheSelector};
 pub use xls_cache::XlsCache;

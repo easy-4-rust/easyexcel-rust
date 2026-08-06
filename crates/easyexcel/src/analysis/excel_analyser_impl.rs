@@ -332,18 +332,11 @@ impl ExcelAnalyser for ExcelAnalyserImpl {
 
 /// Resolves `ExcelTypeEnum` the way Java `ExcelTypeEnum.valueOf(ReadWorkbook)` does for files.
 fn detect_excel_type(path: &Path) -> Result<ExcelTypeEnum> {
-    match easyexcel_io::Format::from_path(path) {
-        Some(easyexcel_io::Format::Xlsx) => Ok(ExcelTypeEnum::Xlsx),
-        Some(easyexcel_io::Format::Xls) => Ok(ExcelTypeEnum::Xls),
-        Some(easyexcel_io::Format::Csv) => Ok(ExcelTypeEnum::Csv),
-        Some(_) => Err(ExcelError::Format("unsupported spreadsheet format".to_owned())),
-        None if path.extension().is_none() => Ok(ExcelTypeEnum::Csv),
-        None => Err(ExcelError::Format(format!(
-            "unsupported excel extension: .{}",
-            path.extension()
-                .and_then(|value| value.to_str())
-                .unwrap_or_default()
-        ))),
+    match easyexcel_io::Format::detect_path(path).map_err(ExcelError::from)? {
+        easyexcel_io::Format::Xlsx => Ok(ExcelTypeEnum::Xlsx),
+        easyexcel_io::Format::Xls => Ok(ExcelTypeEnum::Xls),
+        easyexcel_io::Format::Csv => Ok(ExcelTypeEnum::Csv),
+        _ => Err(ExcelError::Format("unsupported spreadsheet format".to_owned())),
     }
 }
 
@@ -500,8 +493,8 @@ mod tests_extra {
     }
 
     #[test]
-    fn analysis_without_path_and_unsupported_extension_fail() {
-        // 对应 Java：choiceExcelExecutor 需要路径；未知扩展名报错
+    fn analysis_without_path_fails_and_unknown_extension_uses_magic() {
+        // 对应 Java：choiceExcelExecutor 需要路径；未知扩展名回退文件头识别。
         let mut analyser = ExcelAnalyserImpl::new();
         let mut listener = ExtraListener::default();
         let error = analyser
@@ -513,10 +506,9 @@ mod tests_extra {
         let directory = tempfile::tempdir().expect("tempdir");
         let txt = directory.path().join("data.txt");
         std::fs::write(&txt, "x").expect("write");
-        let Err(error) = ExcelAnalyserImpl::from_path(&txt, ReadOptions::default()) else {
-            panic!("unsupported extension must fail");
-        };
-        assert!(error.to_string().contains("unsupported excel extension"));
+        let analyser = ExcelAnalyserImpl::from_path(&txt, ReadOptions::default())
+            .expect("plain text defaults to CSV");
+        assert_eq!(analyser.excel_type(), Some(ExcelTypeEnum::Csv));
     }
 
     #[test]

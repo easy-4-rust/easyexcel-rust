@@ -88,7 +88,7 @@ mod tests_extra {
         let eternal_map = StoredReadCacheSelector::Eternal(EternalReadCacheSelector::map_cache());
         assert_eq!(eternal_map.select_mode(10_000_000), ReadCacheMode::Memory);
 
-        let eternal_disk = StoredReadCacheSelector::Eternal(EternalReadCacheSelector::ehcache());
+        let eternal_disk = StoredReadCacheSelector::Eternal(EternalReadCacheSelector::moka());
         assert_eq!(eternal_disk.select_mode(100), ReadCacheMode::Disk);
     }
 }

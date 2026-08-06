@@ -32,4 +32,14 @@ impl TemplateSheet {
     pub fn name(name: impl Into<String>) -> Self {
         Self::Name(name.into())
     }
+
+    /// 映射为 XLSX 模板引擎选择器。
+    #[must_use]
+    pub(crate) fn as_engine_selector(&self) -> easyexcel_xlsx::TemplateSheetSelector<'_> {
+        match self {
+            Self::First => easyexcel_xlsx::TemplateSheetSelector::First,
+            Self::Index(index) => easyexcel_xlsx::TemplateSheetSelector::Index(*index),
+            Self::Name(name) => easyexcel_xlsx::TemplateSheetSelector::Name(name),
+        }
+    }
 }

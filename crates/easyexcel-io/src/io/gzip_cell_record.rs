@@ -9,6 +9,21 @@ use crate::{Error, Result};
 
 use super::gzip_record::{GzipRecordReader, GzipRecordSnapshot, GzipRecordWriter};
 
+/// 带逻辑工作表名称的 gzip spill 可观测状态。
+#[derive(Debug, Clone)]
+pub struct GzipCellSpillSnapshot {
+    /// spill 所属的逻辑工作表名称。
+    pub sheet_name: String,
+    /// gzip 临时文件路径。
+    pub path: PathBuf,
+    /// 文件是否包含 gzip 魔数。
+    pub is_gzip: bool,
+    /// 压缩后字节数。
+    pub compressed_len: u64,
+    /// 写入压缩器前的字节数。
+    pub uncompressed_len: u64,
+}
+
 /// 可写入 gzip spill 的中立单元格值。
 #[derive(Debug, Clone, PartialEq)]
 pub enum GzipCellValue {
@@ -93,6 +108,99 @@ impl GzipCellRecordWriter {
 /// 中立单元格行 gzip spill 读取器。
 pub struct GzipCellRecordReader {
     inner: GzipRecordReader,
+}
+
+/// 绑定逻辑工作表名称的中立 gzip 行 spill 写入器。
+pub struct GzipCellSpillWriter {
+    sheet_name: String,
+    inner: GzipCellRecordWriter,
+}
+
+impl GzipCellSpillWriter {
+    /// 在指定目录创建工作表 spill 文件。
+    pub fn create(
+        dir: &Path,
+        sheet_name: impl Into<String>,
+        prefix: &str,
+        suffix: &str,
+    ) -> Result<Self> {
+        Ok(Self {
+            sheet_name: sheet_name.into(),
+            inner: GzipCellRecordWriter::create(dir, prefix, suffix)?,
+        })
+    }
+
+    /// 创建自持有临时目录的工作表 spill 文件。
+    pub fn create_owned(
+        sheet_name: impl Into<String>,
+        prefix: &str,
+        suffix: &str,
+    ) -> Result<Self> {
+        Ok(Self {
+            sheet_name: sheet_name.into(),
+            inner: GzipCellRecordWriter::create_owned(prefix, suffix)?,
+        })
+    }
+
+    /// 写入一行中立单元格值。
+    pub fn write_row(&mut self, cells: &[GzipCellValue]) -> Result<()> {
+        self.inner.write_row(cells)
+    }
+
+    /// 刷新压缩输出。
+    pub fn flush(&mut self) -> Result<()> {
+        self.inner.flush()
+    }
+
+    /// 返回当前 spill 状态。
+    pub fn snapshot(&mut self) -> Result<GzipCellSpillSnapshot> {
+        Ok(spill_snapshot(self.sheet_name.clone(), self.inner.snapshot()?))
+    }
+
+    /// 完成压缩并切换到读取阶段。
+    pub fn finish(self) -> Result<GzipCellSpillReader> {
+        Ok(GzipCellSpillReader {
+            sheet_name: self.sheet_name,
+            inner: self.inner.finish()?,
+        })
+    }
+}
+
+/// 绑定逻辑工作表名称的中立 gzip 行 spill 读取器。
+pub struct GzipCellSpillReader {
+    sheet_name: String,
+    inner: GzipCellRecordReader,
+}
+
+impl GzipCellSpillReader {
+    /// 打开已有 spill 文件，主要用于恢复或损坏诊断。
+    pub fn open_path(path: impl Into<PathBuf>, sheet_name: impl Into<String>) -> Result<Self> {
+        Ok(Self {
+            sheet_name: sheet_name.into(),
+            inner: GzipCellRecordReader::open_path(path)?,
+        })
+    }
+
+    /// 返回完成后的 spill 状态。
+    #[must_use]
+    pub fn snapshot(&self) -> GzipCellSpillSnapshot {
+        spill_snapshot(self.sheet_name.clone(), self.inner.snapshot())
+    }
+
+    /// 读取下一行；到达 EOF 时返回 `None`。
+    pub fn next_row(&mut self) -> Result<Option<Vec<GzipCellValue>>> {
+        self.inner.next_row()
+    }
+}
+
+fn spill_snapshot(sheet_name: String, snapshot: GzipRecordSnapshot) -> GzipCellSpillSnapshot {
+    GzipCellSpillSnapshot {
+        sheet_name,
+        path: snapshot.path,
+        is_gzip: snapshot.is_gzip,
+        compressed_len: snapshot.compressed_len,
+        uncompressed_len: snapshot.uncompressed_len,
+    }
 }
 
 impl GzipCellRecordReader {
