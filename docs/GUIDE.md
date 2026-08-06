@@ -231,6 +231,73 @@ let config = FillConfig::new().force_new_row(true);
 // Each data row creates a new physical row (default reuses template row)
 ```
 
+## Markdown Projection
+
+Markdown conversion is exposed through the `easyexcel` facade. Do not add a direct application dependency on `easyexcel-markdown`.
+
+### Export XLS/XLSX/CSV to Markdown
+
+```rust
+use easyexcel::markdown::{
+    MarkdownConversionMode, MarkdownFormulaPolicy, MarkdownMergePolicy,
+};
+use easyexcel::EasyExcel;
+
+let report = EasyExcel::export_markdown("report.xlsx", "report.md")
+    .all_sheets()
+    .mode(MarkdownConversionMode::Auto)
+    .formula_policy(MarkdownFormulaPolicy::CachedValue)
+    .merge_policy(MarkdownMergePolicy::AnchorWithWarning)
+    .include_hidden(false)
+    .do_export()?;
+
+for warning in report.warnings {
+    eprintln!("{:?}: {}", warning.code, warning.message);
+}
+```
+
+`Auto` selects Event Mode for compatible XLSX/CSV projections and Workbook Mode when formulas, merges, encryption, or XLS require complete workbook metadata. An explicit incompatible `Event` request returns an error instead of silently switching modes.
+
+| Policy | Values | Default behavior |
+|:---|:---|:---|
+| Formula | `CachedValue`, `Expression`, `ExpressionAndCached` | Stable cached display value |
+| Merge | `AnchorWithWarning`, `RepeatAnchor`, `HtmlFallback`, `Error` | Anchor plus structured warning |
+| Sheet | all, first, index, name | All visible sheets |
+| Profile | `AgentStable`, `HumanReadable` | Deterministic `AgentStable` GFM |
+
+### Import Markdown to XLS/XLSX/CSV
+
+```rust
+use easyexcel::EasyExcel;
+
+let report = EasyExcel::import_markdown("tables.md", "generated.xlsx")
+    .conservative_types()
+    .apply_header_style(true)
+    .do_import()?;
+
+assert!(report.tables_processed > 0);
+```
+
+The conservative inference policy preserves leading-zero identifiers such as `007`, infers canonical numbers/booleans/errors, and never turns Markdown text beginning with `=` into a formula. Each table becomes one sheet. Select exactly one table when the target is CSV and the Markdown document contains multiple tables.
+
+### Apply Resource Limits
+
+```rust
+use easyexcel::io::ResourceLimits;
+use easyexcel::EasyExcel;
+
+let limits = ResourceLimits::new(64 * 1024 * 1024, 64, 500_000, 100_000)
+    .with_max_output_bytes(128 * 1024 * 1024)
+    .with_max_cell_chars(256 * 1024)
+    .with_max_columns(4_096);
+
+EasyExcel::export_markdown("report.xlsx", "report.md")
+    .limits(limits)
+    .do_export()?;
+```
+
+Markdown is a semantic projection. Preserve `MarkdownConversionReport` and its warnings whenever the caller needs to understand formula, merge, hidden-sheet, style, image, chart, comment, macro, or other representational loss.
+
 ## Converters
 
 ### Use Built-in Converter

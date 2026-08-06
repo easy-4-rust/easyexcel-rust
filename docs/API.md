@@ -63,3 +63,64 @@
 * `sheetName` 需要些的Sheet名称，默认同`sheetNo`
 #### WriteTable（就把excel的一个Sheet,一块区域看一个table）参数
 * `tableNo` 需要写入的编码。默认0
+
+## Markdown 语义投影
+
+Markdown API 不进入带 `T/L` 的 Java 风格读取 builder，而是由 `EasyExcel` 提供独立转换入口：
+
+```rust
+use easyexcel::markdown::{
+    MarkdownConversionMode, MarkdownFormulaPolicy, MarkdownMergePolicy,
+    MarkdownTypeInference,
+};
+use easyexcel::EasyExcel;
+
+let export_report = EasyExcel::export_markdown("report.xlsx", "report.md")
+    .mode(MarkdownConversionMode::Auto)
+    .formula_policy(MarkdownFormulaPolicy::CachedValue)
+    .merge_policy(MarkdownMergePolicy::AnchorWithWarning)
+    .do_export()?;
+
+let import_report = EasyExcel::import_markdown("tables.md", "report.xlsx")
+    .type_inference(MarkdownTypeInference::Conservative)
+    .apply_header_style(true)
+    .do_import()?;
+```
+
+### 导出参数
+
+| Builder 方法 | 类型 | 作用 |
+|:---|:---|:---|
+| `profile` | `MarkdownProfile` | 选择 `AgentStable` 或 `HumanReadable` 输出契约。 |
+| `mode` | `MarkdownConversionMode` | `Auto`、`Event`、`Workbook`；显式不兼容时返回错误。 |
+| `all_sheets/sheet_name/sheet_index` | — | 选择全部、按名称或按零基下标选择工作表。 |
+| `formula_policy` | `MarkdownFormulaPolicy` | 缓存值、表达式、表达式与缓存值。 |
+| `merge_policy` | `MarkdownMergePolicy` | 锚点 warning、重复锚点、HTML fallback 或遇到 merge 报错。 |
+| `include_hidden` | `bool` | 是否输出隐藏工作表；默认跳过并记录 warning。 |
+| `limits` | `ResourceLimits` | 文件、行、列、单元格字符、输出字节等资源上限。 |
+| `password` | `String` | 读取加密 XLSX；密码只保存在 builder 生命周期内。 |
+
+### 导入参数
+
+| Builder 方法 | 类型 | 作用 |
+|:---|:---|:---|
+| `table_name/table_index` | — | 选择一个 Markdown table；多表写 CSV 时必须选择。 |
+| `conservative_types` | — | 保留 `007`、电话号码等前导零标识符。 |
+| `type_inference` | `MarkdownTypeInference` | `Text`、`Conservative` 或 `Aggressive`。 |
+| `apply_header_style` | `bool` | 将 Markdown 表头映射为统一粗体表头样式。 |
+| `limits` | `ResourceLimits` | 限制输入文件、表格、行列和单元格大小。 |
+
+`MarkdownConversionReport` 返回实际模式、工作表/表格/行/单元格数量、输出字节和结构化 warnings。Markdown 不表达完整 Excel 对象，因此调用方不得把无 warning 当作无损 roundtrip 的普遍保证。
+
+## 基础组件统一命名空间
+
+普通 Rust 用户只依赖 `easyexcel`，通过门面命名空间使用内部基础能力：
+
+```rust
+use easyexcel::csv::{CsvReadOptions, CsvWriteOptions};
+use easyexcel::io::{Format, ResourceLimits};
+use easyexcel::markdown::{MarkdownExportOptions, MarkdownImportOptions};
+use easyexcel::model::{Cell, TabularDocument, Workbook};
+```
+
+`easyexcel::{csv, io, markdown, model, formula, tabular, xls, xlsx}` 是基础 crate 公共类型的直接重导出，不创建 `easyexcel_core` 第二入口。

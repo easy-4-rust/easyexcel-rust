@@ -1,8 +1,8 @@
 # easyexcel-rust
 
-[![Rust](https://img.shields.io/badge/rust-1.94+-blue.svg)](https://www.rust-lang.org)
-[![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
-[![tests](https://img.shields.io/badge/tests-2771+-green.svg)](https://github.com/easy-4-rust/easyexcel-rust)
+[![Rust](https://img.shields.io/badge/rust-1.88+-blue.svg)](https://www.rust-lang.org)
+[![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![CI](https://github.com/easy-4-rust/easyexcel-rust/actions/workflows/ci.yml/badge.svg)](https://github.com/easy-4-rust/easyexcel-rust/actions/workflows/ci.yml)
 
 **easyexcel-rust** is a native Rust port of Alibaba [EasyExcel](https://github.com/alibaba/easyexcel) 4.0.3.
 It delivers the Java EasyExcel programming model in idiomatic Rust: builders,
@@ -14,7 +14,7 @@ The workspace also exposes reusable format-neutral foundations (`easyexcel-model
 The independent `xls-cli` product owns its library-first command application layer;
 this facade no longer depends on the full `xls` fork.
 
-> 📖 [中文 README](README_CN.md) | [Architecture](docs/ARCHITECTURE.md) | [Usage Guide](docs/GUIDE.md) | [xls-cli integration](docs/xls-cli-integration-plan.md) | [Capability matrix](docs/xls-cli-capability-matrix.md)
+> 📖 [中文 README](README_CN.md) | [Usage Guide](docs/GUIDE.md) | [API reference](docs/API.md) | [Architecture](docs/ARCHITECTURE.md) | [xls-cli integration](docs/xls-cli-integration-plan.md) | [Capability matrix](docs/xls-cli-capability-matrix.md)
 
 ---
 
@@ -119,6 +119,35 @@ use easyexcel::model::{Cell, Workbook};
 These are direct re-exports of the foundation crate types, with no wrapper or
 conversion overhead.
 
+### Markdown Projection
+
+Use `easyexcel::markdown`, not an internal engine crate, to convert XLS/XLSX/CSV and GFM tables:
+
+```rust
+use easyexcel::markdown::{
+    MarkdownConversionMode, MarkdownFormulaPolicy, MarkdownMergePolicy,
+};
+use easyexcel::EasyExcel;
+
+let report = EasyExcel::export_markdown("report.xlsx", "report.md")
+    .all_sheets()
+    .mode(MarkdownConversionMode::Auto)
+    .formula_policy(MarkdownFormulaPolicy::CachedValue)
+    .merge_policy(MarkdownMergePolicy::AnchorWithWarning)
+    .do_export()?;
+
+for warning in report.warnings {
+    eprintln!("{:?}: {}", warning.code, warning.message);
+}
+
+EasyExcel::import_markdown("tables.md", "generated.xlsx")
+    .conservative_types()
+    .apply_header_style(true)
+    .do_import()?;
+```
+
+The default `AgentStable` profile emits deterministic UTF-8 GFM tables. XLSX and CSV can use Event Mode; XLS, expression output, and merge policies requiring full workbook metadata use Workbook Mode. Markdown is a semantic projection with a structured loss report, not a lossless round trip.
+
 ## Annotation Mapping (Java → Rust)
 
 | Java Annotation | Rust Attribute | Purpose |
@@ -141,8 +170,7 @@ conversion overhead.
 ## Write Handlers
 
 ```rust
-use easyexcel::WriteHandler;
-use easyexcel_core::{WriteSheetContext, Result};
+use easyexcel::{Result, WriteHandler, WriteSheetContext};
 
 struct LoggingHandler;
 
@@ -176,7 +204,7 @@ EasyExcel::write::<User>("output.xlsx")
 | `easyexcel-tabular` | Static HTML, JSON and generic text-format dispatch | Tabular interchange |
 | `easyexcel-web` | Framework-neutral streaming import/export, limits, cancellation and error protocol | Web execution kernel |
 
-基础 crates 是内部引擎层，普通 Rust 用户仍只依赖 `easyexcel`：
+Foundation crates are internal engine layers. Application code should depend only on `easyexcel`:
 
 ```rust
 use easyexcel::csv::{CsvCharset, CsvReadOptions, CsvWriteOptions};
@@ -187,7 +215,7 @@ use easyexcel::xls;
 use easyexcel::xlsx;
 ```
 
-`easyexcel::{csv, io, markdown, model, formula, tabular, xls, xlsx}` 均直接重导出对应基础 crate 的公共类型，不创建第二套模型。`EasyExcel`、builder、listener、converter、handler 与 `#[derive(ExcelRow)]` 继续由门面提供。
+`easyexcel::{csv, io, markdown, model, formula, tabular, xls, xlsx}` directly re-export the public engine types without creating a second model. The facade continues to own `EasyExcel`, builders, listeners, converters, handlers, and `#[derive(ExcelRow)]`.
 
 Markdown is a semantic projection with an explicit loss report, not a lossless
 Excel round trip. XLS uses Workbook Mode; XLSX and CSV also support real Event
@@ -204,14 +232,9 @@ EasyExcel::import_markdown("report.md", "report.xlsx")
     .do_import()?;
 ```
 
-Web 服务额外依赖 `easyexcel-web`，统一使用 `ExcelImport<T>`、`ExcelRows<T>`、
-`ExcelExport<T>`、`ExcelWebPolicy` 和应用级 `ExcelWebRuntime`。具体 Web 框架 crate 只承担原生 extractor /
-responder 的薄适配，不再各自实现文件缓存、资源限制和错误映射。
+Web services additionally depend on `easyexcel-web` and use `ExcelImport<T>`, `ExcelRows<T>`, `ExcelExport<T>`, `ExcelWebPolicy`, and an application-level `ExcelWebRuntime`. Framework crates provide only native extractor/responder adapters; shared buffering, limits, cancellation, cleanup, and error mapping stay in the web kernel.
 
-Axum、Actix Web、Hyper、Poem、Rocket、Salvo、Warp 均提供同语义的
-`ExcelRequest<T>` 与 `ExcelResponse<T>`。可运行示例位于 `examples/<framework>`，七框架共享契约
-位于 `tests/easyexcel-web-conformance`。上传使用原始请求体，并通过
-`x-excel-file-name`（或 `Content-Disposition`）与 `Content-Type` 提供格式信息。
+Axum, Actix Web, Hyper, Poem, Rocket, Salvo, and Warp expose equivalent `ExcelRequest<T>` and `ExcelResponse<T>` semantics. Runnable integrations live under `examples/<framework>` and share the conformance suite in `tests/easyexcel-web-conformance`.
 
 ## Java Compatibility
 

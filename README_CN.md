@@ -1,7 +1,8 @@
 # easyexcel-rust
 
-[![Rust](https://img.shields.io/badge/rust-1.94+-blue.svg)](https://www.rust-lang.org)
-[![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
+[![Rust](https://img.shields.io/badge/rust-1.88+-blue.svg)](https://www.rust-lang.org)
+[![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![CI](https://github.com/easy-4-rust/easyexcel-rust/actions/workflows/ci.yml/badge.svg)](https://github.com/easy-4-rust/easyexcel-rust/actions/workflows/ci.yml)
 
 **easyexcel-rust** 是阿里巴巴 [EasyExcel](https://github.com/alibaba/easyexcel) 的 Rust 原生移植版本。
 以惯用 Rust 方式提供 Java EasyExcel 编程模型：Builder 模式、类型化行映射、事件监听器、类型转换器、流式读取、常量内存写入、模板填充和写入处理器。
@@ -10,7 +11,7 @@ Workspace 同时提供 `easyexcel-model`、`easyexcel-formula`、`easyexcel-io`�
 XLS/XLSX/CSV 后端和表格转换。library-first 命令应用层由独立 `xls-cli`
 产品仓库自行维护；`easyexcel` 门面已不再依赖完整 `xls` fork。
 
-> [架构](docs/ARCHITECTURE.md) · [xls-cli 整合计划](docs/xls-cli-integration-plan.md) · [能力矩阵](docs/xls-cli-capability-matrix.md)
+> [English README](README.md) · [使用指南](docs/GUIDE.md) · [API 参数](docs/API.md) · [架构](docs/ARCHITECTURE.md) · [xls-cli 整合计划](docs/xls-cli-integration-plan.md) · [能力矩阵](docs/xls-cli-capability-matrix.md)
 
 ---
 
@@ -85,7 +86,7 @@ fn main() -> easyexcel::Result<()> {
 ### 模板填充
 
 ```rust
-use easyexcel::{EasyExcel, TemplateData};
+use easyexcel::{EasyExcel, FillConfig, FillWrapper, TemplateData};
 
 // 简单填充 {key}
 let data = TemplateData::new()
@@ -112,6 +113,35 @@ use easyexcel::model::{Cell, Workbook};
 ```
 
 这些类型是对应基础 crates 的直接重导出，不是包装类型，也没有额外转换成本。
+
+### Markdown 语义投影
+
+XLS/XLSX/CSV 与 GFM Markdown 互转统一使用 `easyexcel::markdown`，外部项目不直接依赖内部引擎 crate：
+
+```rust
+use easyexcel::markdown::{
+    MarkdownConversionMode, MarkdownFormulaPolicy, MarkdownMergePolicy,
+};
+use easyexcel::EasyExcel;
+
+let report = EasyExcel::export_markdown("report.xlsx", "report.md")
+    .all_sheets()
+    .mode(MarkdownConversionMode::Auto)
+    .formula_policy(MarkdownFormulaPolicy::CachedValue)
+    .merge_policy(MarkdownMergePolicy::AnchorWithWarning)
+    .do_export()?;
+
+for warning in report.warnings {
+    eprintln!("{:?}: {}", warning.code, warning.message);
+}
+
+EasyExcel::import_markdown("tables.md", "generated.xlsx")
+    .conservative_types()
+    .apply_header_style(true)
+    .do_import()?;
+```
+
+默认 `AgentStable` profile 输出确定性的 UTF-8 GFM 表格。XLSX 和 CSV 可使用 Event Mode；XLS、公式表达式输出以及依赖完整合并元数据的策略使用 Workbook Mode。Markdown 是带结构化损失报告的语义投影，不承诺无损往返。
 
 ---
 
@@ -159,8 +189,7 @@ use easyexcel::model::{Cell, Workbook};
 ## 写入处理器
 
 ```rust
-use easyexcel::WriteHandler;
-use easyexcel_core::{WriteSheetContext, Result, ExcelCellStyle};
+use easyexcel::{ExcelCellStyle, Result, WriteCellContext, WriteHandler, WriteSheetContext};
 
 struct MyStyleHandler;
 
@@ -172,7 +201,7 @@ impl WriteHandler for MyStyleHandler {
         Ok(())
     }
 
-    fn style_cell_style(&self, _ctx: &easyexcel_core::WriteCellContext) -> Option<ExcelCellStyle> {
+    fn style_cell_style(&self, _ctx: &WriteCellContext) -> Option<ExcelCellStyle> {
         // 自定义单元格样式
         None
     }
@@ -190,23 +219,26 @@ EasyExcel::write::<User>("output.xlsx")
 ## 自定义转换器
 
 ```rust
-use easyexcel_core::{Converter, ReadConverterContext, WriteConverterContext, CellValue, ExcelError};
+use easyexcel::{
+    CellDataType, CellValue, Converter, ExcelError, ReadConverterContext,
+    WriteCellData, WriteConverterContext,
+};
 
 struct YesNoConverter;
 
 impl Converter<String> for YesNoConverter {
-    fn support_excel_type(&self) -> easyexcel_core::CellDataType { easyexcel_core::CellDataType::String }
+    fn support_excel_type(&self) -> CellDataType { CellDataType::String }
     
     fn convert_to_rust_data(&self, ctx: &ReadConverterContext) -> Result<String, ExcelError> {
-        match ctx.raw_value() {
-            CellValue::String(s) if s == "是" => Ok("YES".into()),
-            CellValue::String(s) if s == "否" => Ok("NO".into()),
+        match ctx.cell() {
+            Some(CellValue::String(s)) if s == "是" => Ok("YES".into()),
+            Some(CellValue::String(s)) if s == "否" => Ok("NO".into()),
             other => Err(ExcelError::Format(format!("expected 是/否, got {other:?}")))
         }
     }
 
-    fn convert_to_excel_data(&self, ctx: &WriteConverterContext<String>) -> Result<easyexcel_core::WriteCellData, ExcelError> {
-        Ok(easyexcel_core::WriteCellData::from_string(
+    fn convert_to_excel_data(&self, ctx: &WriteConverterContext<'_, String>) -> Result<WriteCellData, ExcelError> {
+        Ok(WriteCellData::from_string(
             if ctx.value() == "YES" { "是" } else { "否" }
         ))
     }
