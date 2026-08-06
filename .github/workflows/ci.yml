@@ -26,8 +26,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           # 固定与本地验证一致的 1.97.1（rustup，与 CI 官方发行完全一致），
-          # 消除最新 stable 的规则漂移；1.97.1 满足 salvo 0.95.1 的 rustc 1.94
-          # 要求，高于 MSRV 1.94。
+          # 消除最新 stable 的规则漂移；1.97.1 满足 salvo 0.89.3 的 rustc 1.89
+          # 要求，高于 Salvo 适配器的独立 MSRV 1.89。
           toolchain: 1.97.1
           components: clippy,llvm-tools-preview,rustfmt
       - uses: taiki-e/install-action@cargo-llvm-cov
@@ -75,9 +75,13 @@ jobs:
         with:
           toolchain: 1.88
       - name: Check core workspace at Rust 1.88
-        run: cargo check --workspace --all-features --exclude easyexcel-salvo
+        run: >-
+          cargo check --workspace --all-features
+          --exclude easyexcel-salvo
+          --exclude easyexcel-demo-salvo
+          --exclude easyexcel-web-conformance
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.94
-      - name: Check Salvo adapter at Rust 1.94
+          toolchain: 1.89
+      - name: Check Salvo adapter at Rust 1.89
         run: cargo check -p easyexcel-salvo --all-features
