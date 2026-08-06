@@ -87,6 +87,7 @@ flowchart LR
 | `write/biff8/template.rs` 的 OLE/BIFF record-preserving 修改与 XLS 占位符解析/替换 | `easyexcel-xls::biff8::template` | `CellValue` 到中立文本或 `Biff8Cell` 的转换 |
 | `read/xls_display.rs` 的 FORMAT/XF/NUMBER/RK/MULRK 扫描 | `easyexcel-xls::biff8::numeric` | POI/EasyExcel 本地化显示格式选择 |
 | `analysis/v03` 的 BIFF SID、记录长度、CONTINUE 分段状态机与 BOF 子流类型码 | `easyexcel-xls::biff8::{record_sid,event_record,continuation_decoder}` | Java handler 名称、开关、状态与事件路由 |
+| BIFF8 OBJ `ftCmo` 子记录与批注对象编号解析 | `easyexcel-xls::biff8::event_record::decode_obj_common_data` | `ObjRecordHandler` 只保留 Java `tempObjectIndex` 状态 |
 | BIFF8 行列上限、冻结窗格、行高/列宽坐标与合并区域收窄 | `easyexcel-xls::biff8::workbook::{Biff8Sheet,Biff8Merge}` | `WriteOptions`、注解和 handler 结果到引擎参数的编排 |
 | `read/xlsx_rows.rs` 的 OPC 路径与关系解析 | `easyexcel-xlsx::xlsx::package` | listener、读取缓存、extra handler 与 Java 显示语义 |
 | `write/template_write.rs` 的 ZIP 条目保留/重打包 | `easyexcel-xlsx::xlsx::ooxml_package` | 模板来源选择与 EasyExcel 写入编排 |
@@ -102,12 +103,19 @@ flowchart LR
 | CSV 物理行列索引的有界转换 | `easyexcel-csv::csv::index` | `ExcelError` 映射与 listener 行调度 |
 | 可克隆输出流的共享所有权、关闭与刷新 | `easyexcel-io::CloseableOutputStream` | `ExcelOutputStream` Java 兼容类型别名 |
 | 中立工作表持久化单元格/样式的稀疏边界扫描 | `easyexcel-model::Sheet::stored_range` | 按行映射为 EasyExcel `CellValue`、公式元数据并触发 listener |
+| 中立工作表持久化范围的逐行遍历与物理宽度 | `easyexcel-model::{StoredRow,Sheet::stored_rows}` | 把每行中立 `Cell` 映射为 EasyExcel metadata 并触发 listener |
 | 未选中工作表可跳过的 BIFF 事件记录分类 | `easyexcel-xls::biff8::record_sid::is_skippable_event_record` | 根据 `SheetSelector` 维护 Java handler 的启停状态与统计信息 |
 | 数据格式元数据有效值选择与 `General` 回退 | `easyexcel-model::DataFormatData::{resolve,general}` | 保留 Java `StyleUtil#buildDataFormat` 方法名与参数契约 |
 | XLS/XLSX 工作表不存在的强类型错误 | `easyexcel-io::Error::SheetNotFound` | 映射为 Java 风格 `ExcelError::SheetNotFound`，不再解析引擎错误字符串 |
 | 按首张、下标、名称或全部选择工作表 | `easyexcel-io::{SheetSelection,select_sheet_names}` | 把 Java 风格 `SheetSelector` 映射为中立选择请求，并进入 listener 生命周期 |
 | 零基闭区间读取行范围校验 | `easyexcel-io::validate_row_range` | 从 `ReadOptions` 取值并映射为 EasyExcel 公共错误 |
 | Java `String#trim` 兼容算法 | `easyexcel-utils::string_utils::java_trim` | 门面决定何时启用 `auto_trim`，基础函数执行字符边界规则 |
+| Java `FieldUtils.resolveCglibFieldName` 首字母规范化 | `easyexcel-utils::string_utils::resolve_cglib_field_name` | `FieldUtils` 兼容路径与 `ExcelRow::schema()` 字段查询 |
+
+Java 反射不会以空壳 API 留在 Rust 门面：`ClassUtils`/`FieldUtils` 通过
+`#[derive(ExcelRow)]` 生成的静态 schema 提供真实字段与 `ExcelContentProperty` 查询。
+Java 中仅用于 JVM 反射可访问性修复的包级 `MemberUtils` 没有 Rust 对应行为，因此不
+暴露伪实现；未接入模块树的旧 `read/read.rs` 占位目录也已移除。
 
 `crates/easyexcel/src/analysis/v03` 中保留的同名文件只做 EasyExcel 错误和事件回调适配，不再实现底层格式算法。`read/xlsx_rows.rs` 与 `write/template_write.rs` 仍然较大，是因为它们承载 listener/cache/handler 和 Java 模板语义；其 ZIP、OPC、BIFF、gzip 与 XML 修改原语已经由基础 crate 提供。
 

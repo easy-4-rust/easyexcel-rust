@@ -18,7 +18,6 @@ pub mod int_utils;
 pub mod io_utils;
 pub mod list_utils;
 pub mod map_utils;
-pub mod member_utils;
 pub mod number_data_formatter_utils;
 pub mod number_utils;
 pub mod poi_utils;

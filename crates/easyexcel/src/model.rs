@@ -6,7 +6,7 @@
 pub use easyexcel_model::{
     Cell, CellAddress, CellError, CellRange, CellValue, ColInfo, DataFormatData, DateSystem,
     DefinedName, Error, ExcelDataFormat, FrozenPanes, Metadata, OpaquePart, Result, RowInfo, Sheet,
-    Spill, Table, Visibility, Workbook, addr, chrono_date_format, data_format_data,
+    Spill, StoredRow, Table, Visibility, Workbook, addr, chrono_date_format, data_format_data,
     date_to_excel_serial, dates, datetime_to_excel_serial, error, excel_data_format, numfmt, styles,
     value,
 };

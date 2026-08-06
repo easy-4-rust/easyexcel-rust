@@ -11,9 +11,11 @@ const FACADE_LIB: &str = "crates/easyexcel/src/lib.rs";
 const EHCACHE_COMPAT: &str = "crates/easyexcel/src/cache/ehcache.rs";
 const MOKA_ADAPTER: &str = "crates/easyexcel/src/cache/moka_cache.rs";
 const OUTPUT_STREAM_COMPAT: &str = "crates/easyexcel/src/write/excel_output_stream.rs";
-const MODEL_ROW_ADAPTER: &str = "crates/easyexcel/src/read/row_processing.rs";
+const MODEL_STORED_ROW_ENGINE: &str = "crates/easyexcel-model/src/model/stored_row.rs";
 const XLSX_FACADE: &str = "crates/easyexcel/src/xlsx.rs";
 const XLS_RECORD_DISPATCHER: &str = "crates/easyexcel/src/analysis/v03/xls_record_dispatcher.rs";
+const XLS_OBJ_HANDLER: &str =
+    "crates/easyexcel/src/analysis/v03/handlers/obj_record_handler.rs";
 const STYLE_UTIL_ADAPTER: &str = "crates/easyexcel/src/util/style_util.rs";
 const FACADE_ERROR: &str = "crates/easyexcel/src/support/excel_error.rs";
 const XLS_TEMPLATE_ADAPTER: &str = "crates/easyexcel/src/write/xls_adapter/template.rs";
@@ -23,6 +25,8 @@ const TEMPLATE_WRITE_ADAPTER: &str = "crates/easyexcel/src/write/template_write.
 const READ_HELPERS_ADAPTER: &str = "crates/easyexcel/src/read/read_helpers.rs";
 const EXCEL_WRITER_CORE: &str = "crates/easyexcel/src/write/excel_writer_core.rs";
 const STRING_UTILS_ENGINE: &str = "crates/easyexcel-utils/src/utils/string_utils.rs";
+const CLASS_UTILS_ADAPTER: &str = "crates/easyexcel/src/util/class_utils.rs";
+const FIELD_UTILS_ADAPTER: &str = "crates/easyexcel/src/util/field_utils.rs";
 
 const REQUIRED_ENGINE_DEPENDENCIES: &[&str] = &[
     "easyexcel-cache",
@@ -177,18 +181,12 @@ pub(crate) fn audit() -> TaskResult {
         "shared output implementation",
     )?;
 
-    let model_row_adapter = read(MODEL_ROW_ADAPTER)?;
+    let model_stored_row_engine = read(MODEL_STORED_ROW_ENGINE)?;
     require_contains(
-        MODEL_ROW_ADAPTER,
-        &model_row_adapter,
-        "sheet.stored_range()",
+        MODEL_STORED_ROW_ENGINE,
+        &model_stored_row_engine,
+        "self.stored_range()",
         "engine-owned sparse model bounds",
-    )?;
-    require_absent(
-        MODEL_ROW_ADAPTER,
-        &model_row_adapter,
-        "sheet.cells.keys().chain(sheet.styles.keys())",
-        "facade-owned sparse model bounds scan",
     )?;
 
     let xlsx_facade = read(XLSX_FACADE)?;
@@ -219,6 +217,20 @@ pub(crate) fn audit() -> TaskResult {
         &xls_record_dispatcher,
         "fn is_ignorable_sid",
         "facade-owned BIFF SID classification",
+    )?;
+
+    let xls_obj_handler = read(XLS_OBJ_HANDLER)?;
+    require_contains(
+        XLS_OBJ_HANDLER,
+        &xls_obj_handler,
+        "easyexcel_xls::biff8::event_record::decode_obj_common_data(data)",
+        "engine-owned BIFF OBJ decoding",
+    )?;
+    require_absent(
+        XLS_OBJ_HANDLER,
+        &xls_obj_handler,
+        "parse is deferred",
+        "deferred BIFF OBJ parsing stub",
     )?;
 
     let style_util_adapter = read(STYLE_UTIL_ADAPTER)?;
@@ -264,6 +276,18 @@ pub(crate) fn audit() -> TaskResult {
         &row_processing_adapter,
         "names.first()",
         "facade-owned first-sheet selection",
+    )?;
+    require_contains(
+        ROW_PROCESSING_ADAPTER,
+        &row_processing_adapter,
+        "sheet.stored_rows()",
+        "model-owned stored-row traversal",
+    )?;
+    require_absent(
+        ROW_PROCESSING_ADAPTER,
+        &row_processing_adapter,
+        ".cells\n            .range",
+        "facade-owned sparse model traversal",
     )?;
 
     let template_write_adapter = read(TEMPLATE_WRITE_ADAPTER)?;
@@ -315,6 +339,47 @@ pub(crate) fn audit() -> TaskResult {
         "Cow::Borrowed(java_trim(value))",
         "allocation-free Java-compatible optional trimming",
     )?;
+    require_contains(
+        STRING_UTILS_ENGINE,
+        &string_utils_engine,
+        "pub fn resolve_cglib_field_name(value: &str)",
+        "shared Java field-name normalization",
+    )?;
+
+    let class_utils_adapter = read(CLASS_UTILS_ADAPTER)?;
+    require_contains(
+        CLASS_UTILS_ADAPTER,
+        &class_utils_adapter,
+        "T::schema()",
+        "derive-owned field metadata",
+    )?;
+    require_absent(
+        CLASS_UTILS_ADAPTER,
+        &class_utils_adapter,
+        "placeholder",
+        "reflection placeholder API",
+    )?;
+
+    let field_utils_adapter = read(FIELD_UTILS_ADAPTER)?;
+    require_contains(
+        FIELD_UTILS_ADAPTER,
+        &field_utils_adapter,
+        "easyexcel_utils::string_utils::resolve_cglib_field_name(name)",
+        "foundation-owned field-name normalization",
+    )?;
+    require_contains(
+        FIELD_UTILS_ADAPTER,
+        &field_utils_adapter,
+        "T::schema().iter().find",
+        "derive-owned field lookup",
+    )?;
+    for obsolete in [
+        "crates/easyexcel/src/read/read.rs",
+        "crates/easyexcel/src/read/read/metadata.rs",
+        "crates/easyexcel/src/util/member_utils.rs",
+    ] {
+        require_path_absent(obsolete, "obsolete facade placeholder")?;
+    }
 
     println!(
         "facade-boundary-audit ok: {} engine dependencies, no low-level direct dependencies",
@@ -361,4 +426,11 @@ fn require_absent(path: &str, source: &str, needle: &str, purpose: &str) -> Task
         return Ok(());
     }
     Err(format!("{path} must not contain {needle:?} ({purpose})").into())
+}
+
+fn require_path_absent(path: &str, purpose: &str) -> TaskResult {
+    if !Path::new(path).exists() {
+        return Ok(());
+    }
+    Err(format!("{path} must not exist ({purpose})").into())
 }

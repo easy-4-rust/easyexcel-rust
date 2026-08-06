@@ -86,6 +86,18 @@ pub struct Biff8BoundSheetRecord {
     pub bof_position: u32,
 }
 
+/// BIFF8 OBJ 记录中的公共对象数据。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Biff8CommonObjectData {
+    /// 对象类型码，例如批注对象为 `0x0019`。
+    pub object_type: u16,
+    /// 工作表范围内的对象编号。
+    pub object_id: u32,
+}
+
+/// BIFF8 公共对象类型：批注。
+pub const BIFF8_OBJECT_TYPE_COMMENT: u16 = 0x0019;
+
 /// TxO/CONTINUE 记录解码片段。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Biff8TextObjectFragment {
@@ -128,6 +140,39 @@ pub fn decode_note_record_position(data: &[u8]) -> Option<(u32, usize)> {
         return None;
     }
     decode_cell_position(data)
+}
+
+/// 解码 OBJ 记录的 `ftCmo`（Common Object Data）子记录。
+///
+/// OBJ 由一组 `ft|cb|payload` 子记录组成；本函数逐段校验长度，并从
+/// `ftCmo(0x0015)` 载荷读取对象类型与对象编号。
+#[must_use]
+pub fn decode_obj_common_data(data: &[u8]) -> Option<Biff8CommonObjectData> {
+    let mut offset = 0usize;
+    while offset.checked_add(4)? <= data.len() {
+        let subrecord_type = u16::from_le_bytes(data.get(offset..offset + 2)?.try_into().ok()?);
+        let payload_len = usize::from(u16::from_le_bytes(
+            data.get(offset + 2..offset + 4)?.try_into().ok()?,
+        ));
+        let payload_start = offset.checked_add(4)?;
+        let payload_end = payload_start.checked_add(payload_len)?;
+        let payload = data.get(payload_start..payload_end)?;
+        if subrecord_type == 0x0015 {
+            let object_type = u16::from_le_bytes(payload.get(0..2)?.try_into().ok()?);
+            let object_id = u32::from(u16::from_le_bytes(
+                payload.get(2..4)?.try_into().ok()?,
+            ));
+            return Some(Biff8CommonObjectData {
+                object_type,
+                object_id,
+            });
+        }
+        if subrecord_type == 0 {
+            return None;
+        }
+        offset = payload_end;
+    }
+    None
 }
 
 /// 解码带有 `row|column|xf` 的单元格公共头。

@@ -25,6 +25,34 @@ pub fn maybe_trim(value: &str, enabled: bool) -> Cow<'_, str> {
     }
 }
 
+/// 按 Java EasyExcel `FieldUtils.resolveCglibFieldName` 规则规范字段名。
+///
+/// 长度小于两个字符，或前两个字符同为大写/同为非大写时保持不变；否则切换
+/// 首字符大小写。未发生变化时返回借用，避免分配。
+#[must_use]
+pub fn resolve_cglib_field_name(value: &str) -> Cow<'_, str> {
+    let mut characters = value.char_indices();
+    let Some((_, first)) = characters.next() else {
+        return Cow::Borrowed(value);
+    };
+    let Some((second_index, second)) = characters.next() else {
+        return Cow::Borrowed(value);
+    };
+    if first.is_uppercase() == second.is_uppercase() {
+        return Cow::Borrowed(value);
+    }
+
+    let replacement = if first.is_uppercase() {
+        first.to_lowercase().next().unwrap_or(first)
+    } else {
+        first.to_uppercase().next().unwrap_or(first)
+    };
+    let mut resolved = String::with_capacity(value.len());
+    resolved.push(replacement);
+    resolved.push_str(&value[second_index..]);
+    Cow::Owned(resolved)
+}
+
 /// 按 Java `String#trim` 语义移除两端不大于 U+0020 的字符。
 ///
 /// Rust `str::trim` 会处理更多 Unicode 空白；Excel sheet 名、表头和兼容

@@ -6,6 +6,7 @@ pub mod data_format_data;
 pub mod error;
 pub mod excel_data_format;
 pub mod numfmt;
+mod stored_row;
 pub mod styles;
 pub mod value;
 mod workbook;
@@ -17,6 +18,7 @@ pub use dates::{
 pub use data_format_data::DataFormatData;
 pub use error::{CellError, Error, Result};
 pub use excel_data_format::ExcelDataFormat;
+pub use stored_row::StoredRow;
 pub use value::CellValue;
 pub use workbook::{
     Cell, ColInfo, DefinedName, FrozenPanes, Metadata, OpaquePart, RowInfo, Sheet, Spill, Table,

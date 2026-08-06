@@ -296,29 +296,24 @@ pub(crate) fn read_model_sheet(
     sheet_displays: &HashMap<(u32, usize), String>,
     consumer: &mut dyn RowConsumer,
 ) -> Result<ReadFlow> {
-    let Some(stored_range) = sheet.stored_range() else {
+    let mut stored_rows = sheet.stored_rows().peekable();
+    if stored_rows.peek().is_none() {
         consumer.after(&analysis_context(sheet_name, sheet_no, 0, options))?;
         return Ok(ReadFlow::Continue);
-    };
-    let min_row = stored_range.start.row;
-    let min_column = stored_range.start.col;
-    let max_row = stored_range.end.row;
-    let max_column = stored_range.end.col;
-
-    let width = usize::try_from(max_column)
-        .map_err(|_| ExcelError::Format("XLS column index exceeds usize".to_owned()))?
-        .saturating_add(1);
+    }
     let mut headers = Arc::new(HashMap::new());
-    for row_index in min_row..=max_row {
+    let mut final_row = 0;
+    for stored_row in stored_rows {
+        let row_index = stored_row.index();
+        final_row = row_index;
+        let width = usize::try_from(stored_row.physical_width())
+            .map_err(|_| ExcelError::Format("XLS column width exceeds usize".to_owned()))?;
         let mut cells = vec![CellValue::Empty; width];
         let mut formulas = HashMap::new();
         let mut present_columns = HashSet::new();
         let mut display_values = HashMap::new();
 
-        for (&(_, column), cell) in sheet
-            .cells
-            .range((row_index, min_column)..=(row_index, max_column))
-        {
+        for (column, cell) in stored_row.cells() {
             let column = usize::try_from(column)
                 .map_err(|_| ExcelError::Format("XLS column index exceeds usize".to_owned()))?;
             let (value, formula) = from_model_cell(cell);
@@ -353,7 +348,7 @@ pub(crate) fn read_model_sheet(
             return Ok(ReadFlow::Stop);
         }
     }
-    consumer.after(&analysis_context(sheet_name, sheet_no, max_row, options))?;
+    consumer.after(&analysis_context(sheet_name, sheet_no, final_row, options))?;
     Ok(ReadFlow::Continue)
 }
 

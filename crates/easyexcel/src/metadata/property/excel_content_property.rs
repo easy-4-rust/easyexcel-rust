@@ -16,7 +16,7 @@ use super::number_format_property::NumberFormatProperty;
 /// collapses the format/style/font into the existing `ExcelCellStyle` /
 /// `ExcelFontStyle` types and drops the reflection fields because the
 /// derive macro handles them at compile time.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct ExcelContentProperty {
     /// Content cell style. (Java `contentStyleProperty`)
     pub content_style_property: Option<ExcelCellStyle>,

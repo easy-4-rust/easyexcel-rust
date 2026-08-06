@@ -29,10 +29,15 @@ pub use easyexcel_xls::biff8::record_sid::OBJ_SID;
 
 impl XlsRecordHandler for ObjRecordHandler {
     /// Java `ObjRecordHandler.processRecord` — sid gate; object id via [`Self::process_obj`].
-    fn process_record(&mut self, record_sid: u16, _data: &[u8]) {
-        if record_sid == OBJ_SID {
-            // Full CommonObjectDataSubRecord parse is deferred; keep last index.
-            let _ = self.temp_object_index;
+    fn process_record(&mut self, record_sid: u16, data: &[u8]) {
+        if record_sid != OBJ_SID {
+            return;
+        }
+        if let Some(common) = easyexcel_xls::biff8::event_record::decode_obj_common_data(data)
+            && common.object_type
+                == easyexcel_xls::biff8::event_record::BIFF8_OBJECT_TYPE_COMMENT
+        {
+            self.process_obj(common.object_id);
         }
     }
 }
