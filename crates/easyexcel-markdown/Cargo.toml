@@ -1,5 +1,6 @@
 [package]
 name = "easyexcel-markdown"
+readme = "README.md"
 description = "Production-grade Markdown projection for EasyExcel workbooks and row streams"
 version.workspace = true
 edition.workspace = true

@@ -1,5 +1,6 @@
 [package]
 name = "easyexcel-xls"
+readme = "README.md"
 description = "BIFF8 XLS reader and writer for easyexcel-rust"
 version.workspace = true
 edition.workspace = true

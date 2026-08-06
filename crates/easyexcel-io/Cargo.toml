@@ -1,5 +1,6 @@
 [package]
 name = "easyexcel-io"
+readme = "README.md"
 description = "Spreadsheet format detection, streaming contracts, modes, limits, and I/O errors"
 version.workspace = true
 edition.workspace = true

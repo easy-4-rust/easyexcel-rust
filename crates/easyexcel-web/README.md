@@ -1,43 +1,52 @@
 # easyexcel-web
 
-`easyexcel-web` 是 EasyExcel-Rust 唯一的框架中立 Web 执行内核。它不依赖
-Axum、Actix Web、Poem、Rocket、Salvo 或 Warp；各框架 crate 只负责把原生
-request body、extractor 和 response 类型桥接到这里。
+[简体中文](README.zh-CN.md)
 
-```mermaid
-flowchart LR
-    Body["框架请求体流"] --> Import["ExcelImport<T>"]
-    Import --> Temp["受控临时文件"]
-    Temp --> Rows["ExcelRows<T><br/>有界通道背压"]
-    Iterator["Iterator<Item = T>"] --> Export["ExcelExport<T>"]
-    Export --> File["异步文件响应流"]
-    Policy["ExcelWebPolicy"] --> Import
-    Policy --> Rows
-    Policy --> Export
-    Context["WebExecutionContext<br/>tracing / cancel / timeout"] --> Import
-    Context --> Rows
-    Context --> Export
+Framework-neutral Web import/export runtime for EasyExcel-Rust.
+
+> Release line: 0.1.1 · Rust 1.88+ · Edition 2024 · Apache-2.0
+
+## Responsibilities
+
+- Provides bounded uploads, temporary-file lifecycle, typed row streams and streaming downloads.
+- Centralizes resource limits, backpressure, cancellation, timeout, tracing and stable problem details.
+
+## Architecture
+
+```text
+HTTP body -> ExcelImport -> bounded rows -> application -> ExcelExport -> HTTP body
 ```
 
-公共 API：
+Main public surface: `ExcelImport, ExcelRows, ExcelExport, ExcelWebPolicy, ExcelWebRuntime, ExcelProblemDetails`.
 
-- `ExcelImport<T>`：分块接收 XLSX、XLS、CSV，并增量落入自动清理的临时文件；
-- `ExcelRows<T>`：Event Mode 类型化行流，通过有界通道提供真实背压；
-- `ExcelExport<T>`：恒定内存生成文件，并实现 Tokio `AsyncRead` 供响应体流式发送；
-- `ExcelWebPolicy`：复用 `easyexcel::io::ResourceLimits`，统一字节数、行数、超时和缓冲；
-- `ExcelWebRuntime`：应用级共享并发许可池，限制解析和生成任务总数；
-- `WebExecutionContext`：传递请求标识和取消令牌；
-- `ExcelWebError` / `ExcelProblemDetails`：提供稳定错误码和 RFC 9457 风格响应。
+## Installation and usage
 
-七个框架适配器统一公开 `ExcelRequest<T>` 与 `ExcelResponse<T>`，但保留各框架原生
-extractor/responder 机制。上传契约为原始请求体，格式由 `x-excel-file-name`、
-`Content-Disposition` 或 `Content-Type` 解析；`x-request-id` 会进入 tracing 与稳定错误响应。
-可运行服务见 `examples/{axum,actix,hyper,poem,rocket,salvo,warp}`，同一组上传、下载、
-响应头和 OOXML 断言位于 `tests/easyexcel-web-conformance`。
+```toml
+[dependencies]
+easyexcel-web = "0.1.1"
+```
 
-XLSX 和旧 XLS 解析器需要随机访问完整容器，所以“流式上传”指请求体按块落盘，
-而不是把整个文件缓存为 `Vec<u8>`；上传完成后，行解析才以有界流向业务代码输出。
-这同时保证恒定内存、背压、格式可靠性和失败前不发送不完整下载响应。
+```rust
+use easyexcel_web::{ExcelExport, ExcelImport, ExcelWebPolicy, ExcelWebRuntime};
+```
 
-V1 已强制执行文件字节数和总行数限制。`ResourceLimits` 中的工作表数量和公式
-单元格数量，将在相应解析引擎提供统一计数钩子后执行；在此之前不得声明为已强制。
+## Compatibility and limits
+
+This crate does not expose a framework extractor or responder. Select one of the dedicated framework adapters.
+
+The authoritative capability boundaries are maintained in the [workspace compatibility matrix](../../docs/compatibility.md). Unsupported behavior must return an explicit error or warning rather than silently downgrade.
+
+## Streaming and framework contract
+
+All seven adapters expose `ExcelRequest<T>` and `ExcelResponse<T>` while retaining their framework-native extraction and response mechanisms. Upload metadata is resolved from `x-excel-file-name`, `Content-Disposition` or `Content-Type`; `x-request-id` is propagated into tracing and stable error responses.
+
+XLSX and legacy XLS parsers require random access to a complete container. Therefore streaming upload means chunked request-body spooling to an automatically cleaned temporary file, followed by bounded row delivery; it does not mean buffering the entire file in a `Vec<u8>`. Downloads are generated before response streaming begins so failures do not emit a partially valid spreadsheet.
+
+V1 enforces file-byte and total-row limits. Worksheet-count and formula-cell limits remain dependent on uniform counting hooks in the format engines and are not claimed as enforced until those hooks are connected. Runnable adapters live under `examples/{axum,actix,hyper,poem,rocket,salvo,warp}` and share `tests/easyexcel-web-conformance`.
+
+## Project links
+
+- [EasyExcel-Rust](https://github.com/easy-4-rust/easyexcel-rust)
+- [API documentation](https://docs.rs/easyexcel-web)
+- [Changelog](../../CHANGELOG.md)
+- [Chinese README](README.zh-CN.md)

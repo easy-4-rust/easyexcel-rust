@@ -1,5 +1,6 @@
 [package]
 name = "easyexcel"
+readme = "README.md"
 description = "A Rust implementation of the Alibaba EasyExcel programming model"
 version.workspace = true
 edition.workspace = true

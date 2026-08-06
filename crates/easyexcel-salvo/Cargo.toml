@@ -1,5 +1,6 @@
 [package]
 name = "easyexcel-salvo"
+readme = "README.md"
 version.workspace = true
 edition.workspace = true
 rust-version = "1.89"

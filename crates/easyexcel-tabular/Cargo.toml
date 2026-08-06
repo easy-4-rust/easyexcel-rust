@@ -1,5 +1,6 @@
 [package]
 name = "easyexcel-tabular"
+readme = "README.md"
 description = "Safe Markdown, HTML and JSON table conversion for easyexcel-rust"
 version.workspace = true
 edition.workspace = true

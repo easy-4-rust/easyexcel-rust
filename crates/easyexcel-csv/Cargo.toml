@@ -1,5 +1,6 @@
 [package]
 name = "easyexcel-csv"
+readme = "README.md"
 description = "CSV and TSV reader, writer, inference, and encoding support for easyexcel-rust"
 version.workspace = true
 edition.workspace = true

@@ -2,6 +2,24 @@
 
 本文件记录 easyexcel-rust 各版本变更。格式参照 [Keep a Changelog](https://keepachangelog.com/)。
 
+## [0.1.1] - 2026-08-07
+
+文档与发布元数据修订版。
+
+### 文档
+
+- 为 `crates/` 下全部 21 个正式发布 crate 增加结构对等的英文 `README.md`
+  与中文 `README.zh-CN.md`。
+- 每份 README 明确模块定位、职责边界、数据流、主要公共 API、安装方式、
+  MSRV 和已知能力边界。
+- 在每个 crate 的 Cargo 发布元数据中显式声明 `readme = "README.md"`，确保
+  crates.io 包页面展示对应模块文档；中文 README 同步包含在发布包中。
+
+### 兼容性
+
+- 本版本不修改公开 Rust API 或文件格式行为。
+- 全部工作区 crate 与内部路径依赖统一升级到 `0.1.1`。
+
 ## [0.1.0] - 2026-08-07
 
 首个生产就绪正式版本。该版本把 Java EasyExcel 风格门面与可复用的 XLS、

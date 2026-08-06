@@ -1,5 +1,6 @@
 [package]
 name = "easyexcel-formula"
+readme = "README.md"
 description = "Excel-compatible formula parser and calculation engine for easyexcel-rust"
 version.workspace = true
 edition.workspace = true

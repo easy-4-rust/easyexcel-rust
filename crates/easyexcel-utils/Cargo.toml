@@ -1,5 +1,6 @@
 [package]
 name = "easyexcel-utils"
+readme = "README.md"
 description = "Reusable Java-compatible utility algorithms for easyexcel-rust"
 version.workspace = true
 edition.workspace = true

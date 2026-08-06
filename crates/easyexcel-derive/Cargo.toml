@@ -1,5 +1,6 @@
 [package]
 name = "easyexcel-derive"
+readme = "README.md"
 description = "Derive macros for typed EasyExcel row mapping"
 version.workspace = true
 edition.workspace = true

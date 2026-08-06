@@ -1,5 +1,6 @@
 [package]
 name = "easyexcel-xlsx"
+readme = "README.md"
 description = "OOXML XLSX reader, writer, streaming reader, and round-trip support"
 version.workspace = true
 edition.workspace = true

@@ -1,5 +1,6 @@
 [package]
 name = "easyexcel-cache"
+readme = "README.md"
 description = "Reusable shared-string cache engines for easyexcel-rust"
 version.workspace = true
 edition.workspace = true

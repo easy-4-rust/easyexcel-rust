@@ -1,5 +1,6 @@
 [package]
 name = "easyexcel-model"
+readme = "README.md"
 description = "Format-neutral spreadsheet workbook model for easyexcel-rust"
 version.workspace = true
 edition.workspace = true

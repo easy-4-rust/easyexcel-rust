@@ -1,5 +1,6 @@
 [package]
 name = "easyexcel-format"
+readme = "README.md"
 description = "Reusable Java-compatible number and spreadsheet display formatting for easyexcel-rust"
 version.workspace = true
 edition.workspace = true
