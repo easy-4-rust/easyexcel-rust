@@ -15,7 +15,8 @@ easyexcel-rust/                       (workspace root)
 │   ├── easyexcel-xls/               ← BIFF8/OLE2 backend
 │   ├── easyexcel-xlsx/              ← OOXML + event stream backend
 │   ├── easyexcel-csv/               ← CSV/TSV codec
-│   ├── easyexcel-tabular/           ← Markdown/HTML/JSON conversion
+│   ├── easyexcel-markdown/          ← GFM codec/policy/report/streaming
+│   ├── easyexcel-tabular/           ← static HTML/JSON/generic dispatch
 │   ├── easyexcel-derive/            ← internal `#[derive(ExcelRow)]` proc macro
 │   ├── easyexcel/                    ← user-facing EasyExcel facade
 │   ├── easyexcel-web/                ← framework-neutral Web execution kernel
@@ -38,11 +39,11 @@ flowchart LR
     Facade["easyexcel facade"] --> Foundation["foundation crates"]
     Web["easyexcel-web<br/>streaming / limits / errors"] --> Facade
     Adapter["framework adapters"] --> Web
-    Product["xls-cli library + binary product"] --> Foundation
+    Product["xls-cli CLI/TUI + binary product"] --> Facade
     Fork["xls fork"] -. "feature-tested source migration" .-> Foundation
 ```
 
-`easyexcel` 与独立 `xls-cli` 是并列消费者；门面不依赖命令层，`xls-cli` 的 library/application、CLI、TUI、npm 和 Skills 位于同一产品仓库，且不依赖旧 fork。
+`xls-cli` 只依赖 `easyexcel` 门面；门面不依赖命令层。`xls-cli` 的 application、CLI、TUI、npm 和 Skills 位于同一产品仓库，且不依赖旧 fork或任何 `easyexcel-*` 基础 crate。
 
 `easyexcel-web` 是唯一 Web 执行内核。它依赖 `easyexcel` 门面完成 Java EasyExcel
 风格的行映射与用例编排；各框架适配器只能把原生请求体转换为 `ExcelImport<T>`，
@@ -73,7 +74,7 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    User["use easyexcel::EasyExcel / easyexcel::{csv,io,model,xls,xlsx}"]
+    User["use easyexcel::EasyExcel / easyexcel::{csv,io,markdown,model,xls,xlsx}"]
     Facade["crates/easyexcel/src\nJava API + orchestration + adapters"]
     IO["easyexcel-io\nformat, stream contracts, limits"]
     Model["easyexcel-model\nWorkbook / Sheet / Cell"]
@@ -81,7 +82,8 @@ flowchart LR
     XLS["easyexcel-xls\nBIFF8/OLE + record/string/Ptg/RC4"]
     XLSX["easyexcel-xlsx\nOOXML/ZIP + stream + crypto"]
     Formula["easyexcel-formula"]
-    Tabular["easyexcel-tabular"]
+    Markdown["easyexcel-markdown<br/>GFM / policy / report"]
+    Tabular["easyexcel-tabular<br/>HTML / JSON / dispatch"]
 
     User --> Facade
     Facade --> IO
@@ -90,19 +92,21 @@ flowchart LR
     Facade --> XLS
     Facade --> XLSX
     Facade --> Formula
+    Facade --> Markdown
     Facade --> Tabular
 ```
 
 | 代码类型 | 唯一归属 | `crates/easyexcel/src` 中允许的形态 |
 |---|---|---|
 | 格式识别、BOM、资源限制、RowSource/RowSink | `easyexcel-io` | `easyexcel::io` 显式重导出及 Java 枚举映射 |
-| Workbook/Sheet/Cell/Style 中立模型 | `easyexcel-model` | `easyexcel::model` 显式重导出 |
+| Workbook/Sheet/Cell/Style/TabularDocument 中立模型 | `easyexcel-model` | `easyexcel::model` 显式重导出 |
 | CSV 字符集、转码、CSV codec | `easyexcel-csv` | `easyexcel::csv` 与旧 Java 路径兼容重导出 |
 | 共享字符串内存/Moka/临时文件缓存 | `easyexcel-cache` | `ReadCache` 与 selector 契约适配；Moka 和文件缓存是彼此独立的后端 |
 | BIFF8 record、SST/Unicode、Ptg、RC4、OLE | `easyexcel-xls` | 错误类型与 listener 生命周期 adapter |
 | OOXML ZIP、流式行、RoundTrip、加解密 | `easyexcel-xlsx` | converter/handler 编排与 `rust_xlsxwriter` 生成 adapter |
 | 公式 AST/求值/重算 | `easyexcel-formula` | `easyexcel::formula` 重导出及 Java API 调用适配 |
-| Markdown/HTML/JSON 表格转换 | `easyexcel-tabular` | `easyexcel::tabular` 重导出 |
+| GFM 解析、Event/Workbook 输出、公式/合并策略和损失报告 | `easyexcel-markdown` | `easyexcel::markdown` 重导出与 builder 编排 |
+| 静态 HTML、JSON 和通用格式分派 | `easyexcel-tabular` | `easyexcel::tabular` 重导出；Markdown 分派委托投影层 |
 | builder/listener/converter/handler/annotation | `easyexcel` | 真实实现，不下沉 |
 
 当前已经消除的重复实现包括 CSV 字符集与增量转码、BIFF8 record framing、SST/Unicode 解码、公式 Ptg 编码、BIFF8 RC4、OOXML Agile 加密写入，以及以下原先仍位于门面中的底层实现：

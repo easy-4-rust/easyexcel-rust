@@ -14,61 +14,14 @@ use super::{TabularCell, TabularDocument, TabularFormat, TabularTable};
 /// 输入不符合指定格式，或文档中不存在可用表格时返回错误。
 pub fn parse_document(input: &str, format: TabularFormat) -> Result<TabularDocument> {
     match format {
-        TabularFormat::Markdown => parse_markdown(input),
+        TabularFormat::Markdown => easyexcel_markdown::read_markdown(
+            input.as_bytes(),
+            &easyexcel_markdown::MarkdownImportOptions::default(),
+        )
+        .map(|result| result.document),
         TabularFormat::Html => parse_html(input),
         TabularFormat::Json => parse_json(input),
     }
-}
-
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析一个或多个 GitHub Flavored Markdown 表格。
-///
-/// # Errors
-///
-/// 输入中不存在合法 Markdown 表格时返回错误。
-pub fn parse_markdown(input: &str) -> Result<TabularDocument> {
-    let lines: Vec<&str> = input.lines().collect();
-    let mut tables = Vec::new();
-    let mut index = 0usize;
-    while index + 1 < lines.len() {
-        let header = split_markdown_row(lines[index]);
-        let separator = split_markdown_row(lines[index + 1]);
-        if header.is_empty()
-            || separator.len() != header.len()
-            || !separator.iter().all(|cell| is_markdown_separator(cell))
-        {
-            index += 1;
-            continue;
-        }
-
-        let mut table = TabularTable::new(format!("Table{}", tables.len() + 1));
-        table.push_row(
-            header
-                .into_iter()
-                .map(|cell| TabularCell::header(infer_text_cell(&cell)))
-                .collect(),
-        );
-        index += 2;
-        while index < lines.len() {
-            let cells = split_markdown_row(lines[index]);
-            if cells.is_empty() {
-                break;
-            }
-            let mut row: Vec<TabularCell> = cells
-                .into_iter()
-                .map(|cell| TabularCell::new(infer_text_cell(&cell)))
-                .collect();
-            while row.len() < separator.len() {
-                row.push(TabularCell::new(CellValue::Empty));
-            }
-            table.push_row(row);
-            index += 1;
-        }
-        tables.push(table);
-    }
-    if tables.is_empty() {
-        return Err(Error::Other("no Markdown table found".to_owned()));
-    }
-    Ok(TabularDocument::from_tables(tables))
 }
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 解析静态 HTML 中的所有 `<table>`，并转换 rowspan/colspan 为合并区域。
@@ -286,37 +239,6 @@ fn infer_text_cell(value: &str) -> CellValue {
     }
 }
 
-fn split_markdown_row(line: &str) -> Vec<String> {
-    let trimmed = line.trim();
-    if !trimmed.contains('|') {
-        return Vec::new();
-    }
-    let content = trimmed.trim_matches('|');
-    let mut cells = Vec::new();
-    let mut current = String::new();
-    let mut escaped = false;
-    for character in content.chars() {
-        if escaped {
-            current.push(character);
-            escaped = false;
-        } else if character == '\\' {
-            escaped = true;
-        } else if character == '|' {
-            cells.push(current.trim().to_owned());
-            current.clear();
-        } else {
-            current.push(character);
-        }
-    }
-    cells.push(current.trim().to_owned());
-    cells
-}
-
-fn is_markdown_separator(value: &str) -> bool {
-    let trimmed = value.trim().trim_matches(':');
-    trimmed.len() >= 3 && trimmed.chars().all(|character| character == '-')
-}
-
 fn parse_selector(selector: &str) -> Result<Selector> {
     Selector::parse(selector)
         .map_err(|error| Error::Other(format!("invalid internal HTML selector: {error:?}")))
@@ -348,19 +270,6 @@ fn ensure_grid_cell(grid: &mut Vec<Vec<TabularCell>>, row: usize, column: usize)
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn parses_markdown_types_and_multiple_tables() {
-        let document = parse_markdown(
-            "| name | amount | ok |\n|---|---:|:---:|\n| A | 1,200 | true |\n\n|x|\n|---|\n|2|",
-        )
-        .expect("Markdown tables");
-        assert_eq!(document.tables().len(), 2);
-        assert_eq!(
-            document.tables()[0].rows()[1][1].value(),
-            &CellValue::Number(1200.0)
-        );
-    }
 
     #[test]
     fn parses_html_spans_without_executing_content() {

@@ -38,6 +38,9 @@ pub enum ExcelError {
     /// The requested operation is not supported by the selected engine. (Java `ExcelCommonException`)
     #[error("unsupported operation: {0}")]
     Unsupported(String),
+    /// 输入、输出或计算超过配置的资源上限。
+    #[error("resource limit exceeded: {0}")]
+    ResourceLimit(String),
     /// An I/O operation failed. (Java `ExcelCommonException` wrapping `IOException`)
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -64,6 +67,7 @@ impl Clone for ExcelError {
             Self::SheetNotFound(s) => Self::SheetNotFound(s.clone()),
             Self::Format(s) => Self::Format(s.clone()),
             Self::Unsupported(s) => Self::Unsupported(s.clone()),
+            Self::ResourceLimit(s) => Self::ResourceLimit(s.clone()),
             Self::Io(e) => Self::Io(std::io::Error::new(e.kind(), e.to_string())),
         }
     }
@@ -93,7 +97,8 @@ impl PartialEq for ExcelError {
             // 三个携带 String 负载的变体比较内容是否一致（合并同体分支）
             (Self::SheetNotFound(a), Self::SheetNotFound(b))
             | (Self::Format(a), Self::Format(b))
-            | (Self::Unsupported(a), Self::Unsupported(b)) => a == b,
+            | (Self::Unsupported(a), Self::Unsupported(b))
+            | (Self::ResourceLimit(a), Self::ResourceLimit(b)) => a == b,
             (Self::Io(a), Self::Io(b)) => a.kind() == b.kind() && a.to_string() == b.to_string(),
             _ => false,
         }
@@ -108,6 +113,13 @@ impl From<easyexcel_io::Error> for ExcelError {
             easyexcel_io::Error::Io(error) => Self::Io(error),
             easyexcel_io::Error::SheetNotFound(sheet) => Self::SheetNotFound(sheet),
             easyexcel_io::Error::Unsupported(message) => Self::Unsupported(message),
+            easyexcel_io::Error::ResourceLimit {
+                resource,
+                limit,
+                actual,
+            } => Self::ResourceLimit(format!(
+                "resource limit exceeded: {resource} limit={limit} actual={actual}"
+            )),
             other => Self::Format(other.to_string()),
         }
     }

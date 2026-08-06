@@ -12,6 +12,7 @@ categories.workspace = true
 
 [dependencies]
 easyexcel-io.workspace = true
+easyexcel-markdown.workspace = true
 easyexcel-model.workspace = true
 scraper.workspace = true
 serde_json.workspace = true

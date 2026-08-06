@@ -10,6 +10,7 @@ members = [
     "crates/easyexcel-xlsx",
     "crates/easyexcel-csv",
     "crates/easyexcel-tabular",
+    "crates/easyexcel-markdown",
     "crates/easyexcel-derive",
     "xtask",
     "crates/easyexcel",
@@ -67,6 +68,7 @@ easyexcel-xls = { path = "crates/easyexcel-xls", version = "0.1.0-alpha.1" }
 easyexcel-xlsx = { path = "crates/easyexcel-xlsx", version = "0.1.0-alpha.1" }
 easyexcel-csv = { path = "crates/easyexcel-csv", version = "0.1.0-alpha.1" }
 easyexcel-tabular = { path = "crates/easyexcel-tabular", version = "0.1.0-alpha.1" }
+easyexcel-markdown = { path = "crates/easyexcel-markdown", version = "0.1.0-alpha.1" }
 easyexcel-derive = { path = "crates/easyexcel-derive", version = "0.1.0-alpha.1" }
 easyexcel-web = { path = "crates/easyexcel-web", version = "0.1.0-alpha.1" }
 anyhow = "1.0.102"
@@ -102,6 +104,7 @@ num-bigint = "0.4.8"  # bigdecimal 0.4.10 支持的最高 num-bigint 线
 proc-macro-crate = "3.5.0"
 proc-macro2 = "1.0.107"
 pure-rust-locales = "0.8.2"
+pulldown-cmark = { version = "0.13.4", default-features = false }
 quick-xml = "0.41.0"
 quote = "1.0.47"
 rand = "0.9.5"  # ms-offcrypto-writer 1.0.7 支持的最高 rand 线

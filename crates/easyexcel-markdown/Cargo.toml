@@ -1,0 +1,21 @@
+[package]
+name = "easyexcel-markdown"
+description = "Production-grade Markdown projection for EasyExcel workbooks and row streams"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+easyexcel-io.workspace = true
+easyexcel-model.workspace = true
+pulldown-cmark.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

@@ -22,12 +22,31 @@ use crate::write::{
 // 显式引用 builder 模块，便于 facade 方法的类型解析。
 use crate::excel_reader_builder::ExcelReaderBuilder;
 use crate::excel_sync_reader_builder::ExcelSyncReaderBuilder;
+use crate::markdown::{MarkdownExportBuilder, MarkdownImportBuilder};
 use crate::write::builder::excel_writer_builder::ExcelWriterBuilder;
 
 /// 对应 Java：com.alibaba.excel.EasyExcel。 Static factory matching Java `EasyExcel`'s entry point.
 pub struct EasyExcel;
 
 impl EasyExcel {
+    /// 创建 XLS、XLSX 或 CSV 到 Markdown 的语义投影 builder。
+    #[must_use]
+    pub fn export_markdown(
+        input: impl Into<PathBuf>,
+        output: impl Into<PathBuf>,
+    ) -> MarkdownExportBuilder {
+        MarkdownExportBuilder::new(input.into(), output.into())
+    }
+
+    /// 创建 Markdown 到 XLS、XLSX 或 CSV 的导入 builder。
+    #[must_use]
+    pub fn import_markdown(
+        input: impl Into<PathBuf>,
+        output: impl Into<PathBuf>,
+    ) -> MarkdownImportBuilder {
+        MarkdownImportBuilder::new(input.into(), output.into())
+    }
+
     /// 对应 Java：com.alibaba.excel.EasyExcel。 Starts Java's path-independent `read()` builder.
     #[must_use]
     pub fn reader() -> CompatibleExcelReaderBuilder {

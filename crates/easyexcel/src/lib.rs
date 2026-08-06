@@ -18,6 +18,7 @@ pub mod exception;
 pub mod format;
 pub mod formula;
 pub mod io;
+pub mod markdown;
 pub mod metadata;
 pub mod model;
 pub mod read;

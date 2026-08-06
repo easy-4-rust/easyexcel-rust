@@ -172,7 +172,8 @@ EasyExcel::write::<User>("output.xlsx")
 | `easyexcel-xls` | BIFF8 parsing, encoding, encryption and formula tokens | XLS backend |
 | `easyexcel-xlsx` | OOXML streaming, package handling and encryption | XLSX backend |
 | `easyexcel-formula` | Formula AST, parser and evaluator | Formula engine |
-| `easyexcel-tabular` | Markdown, HTML and JSON table conversion | Tabular interchange |
+| `easyexcel-markdown` | GFM parsing, streaming export, projection policy and loss reports | Markdown projection |
+| `easyexcel-tabular` | Static HTML, JSON and generic text-format dispatch | Tabular interchange |
 | `easyexcel-web` | Framework-neutral streaming import/export, limits, cancellation and error protocol | Web execution kernel |
 
 基础 crates 是内部引擎层，普通 Rust 用户仍只依赖 `easyexcel`：
@@ -181,11 +182,27 @@ EasyExcel::write::<User>("output.xlsx")
 use easyexcel::csv::{CsvCharset, CsvReadOptions, CsvWriteOptions};
 use easyexcel::io::{Format, ResourceLimits};
 use easyexcel::model::{Cell, Workbook};
+use easyexcel::markdown::{MarkdownConversionMode, MarkdownFormulaPolicy};
 use easyexcel::xls;
 use easyexcel::xlsx;
 ```
 
-`easyexcel::{csv, io, model, formula, tabular, xls, xlsx}` 均直接重导出对应基础 crate 的公共类型，不创建第二套模型。`EasyExcel`、builder、listener、converter、handler 与 `#[derive(ExcelRow)]` 继续由门面提供。
+`easyexcel::{csv, io, markdown, model, formula, tabular, xls, xlsx}` 均直接重导出对应基础 crate 的公共类型，不创建第二套模型。`EasyExcel`、builder、listener、converter、handler 与 `#[derive(ExcelRow)]` 继续由门面提供。
+
+Markdown is a semantic projection with an explicit loss report, not a lossless
+Excel round trip. XLS uses Workbook Mode; XLSX and CSV also support real Event
+Mode. Rust users only need the facade:
+
+```rust
+let report = EasyExcel::export_markdown("report.xlsx", "report.md")
+    .mode(MarkdownConversionMode::Auto)
+    .formula_policy(MarkdownFormulaPolicy::CachedValue)
+    .do_export()?;
+
+EasyExcel::import_markdown("report.md", "report.xlsx")
+    .conservative_types()
+    .do_import()?;
+```
 
 Web 服务额外依赖 `easyexcel-web`，统一使用 `ExcelImport<T>`、`ExcelRows<T>`、
 `ExcelExport<T>`、`ExcelWebPolicy` 和应用级 `ExcelWebRuntime`。具体 Web 框架 crate 只承担原生 extractor /

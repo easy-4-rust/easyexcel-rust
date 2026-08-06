@@ -4,35 +4,29 @@ use std::fmt::Write as _;
 use easyexcel_model::{CellRange, CellValue};
 use serde_json::{Map, Value as JsonValue, json};
 
-use super::TabularDocument;
+use super::{TabularDocument, TabularFormat};
 
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 将中立表格文档渲染为 Markdown。
-#[must_use]
-pub fn render_markdown(document: &TabularDocument) -> String {
-    let mut output = String::new();
-    for (table_index, table) in document.tables().iter().enumerate() {
-        if table_index > 0 {
-            output.push_str("\n\n");
+/// 按指定文本格式渲染中立表格文档。
+///
+/// # Errors
+///
+/// Markdown 输出超过资源限制、写入失败或结果不是 UTF-8 时返回错误。
+pub fn render_document(
+    document: &TabularDocument,
+    format: TabularFormat,
+) -> easyexcel_io::Result<String> {
+    match format {
+        TabularFormat::Markdown => {
+            let (bytes, _) = easyexcel_markdown::write_document(
+                document,
+                Vec::new(),
+                &easyexcel_markdown::MarkdownExportOptions::default(),
+            )?;
+            String::from_utf8(bytes).map_err(|error| easyexcel_io::Error::Other(error.to_string()))
         }
-        output.push_str("## ");
-        output.push_str(table.name());
-        output.push_str("\n\n");
-        let column_count = table.rows().iter().map(Vec::len).max().unwrap_or(0);
-        if column_count == 0 {
-            continue;
-        }
-        let first_row = table.rows().first();
-        write_markdown_row(&mut output, first_row, column_count);
-        output.push('|');
-        for _ in 0..column_count {
-            output.push_str(" --- |");
-        }
-        output.push('\n');
-        for row in table.rows().iter().skip(1) {
-            write_markdown_row(&mut output, Some(row), column_count);
-        }
+        TabularFormat::Html => Ok(render_html(document)),
+        TabularFormat::Json => Ok(render_json(document)),
     }
-    output.trim_end().to_owned()
 }
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 将中立表格文档渲染为静态 HTML；不生成脚本、外链或样式资源。
@@ -118,24 +112,6 @@ pub fn render_json(document: &TabularDocument) -> String {
     .to_string()
 }
 
-fn write_markdown_row(
-    output: &mut String,
-    row: Option<&Vec<crate::TabularCell>>,
-    column_count: usize,
-) {
-    output.push('|');
-    for column_index in 0..column_count {
-        output.push(' ');
-        let text = row
-            .and_then(|cells| cells.get(column_index))
-            .map(|cell| escape_markdown(&cell.value().to_display_string()))
-            .unwrap_or_default();
-        output.push_str(&text);
-        output.push_str(" |");
-    }
-    output.push('\n');
-}
-
 fn json_cell(value: &CellValue) -> JsonValue {
     match value {
         CellValue::Empty => JsonValue::Null,
@@ -163,13 +139,6 @@ fn covered_cells(ranges: &[CellRange]) -> BTreeSet<(u32, u32)> {
         }
     }
     cells
-}
-
-fn escape_markdown(value: &str) -> String {
-    value
-        .replace('\\', "\\\\")
-        .replace('|', "\\|")
-        .replace(['\r', '\n'], " ")
 }
 
 fn escape_html(value: &str) -> String {

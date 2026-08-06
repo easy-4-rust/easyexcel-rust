@@ -105,9 +105,10 @@ xls-cli -> 旧 xls fork
 | `easyexcel-io` | Format、ReadMode、WriteMode、RowSource/RowSink、ResourceLimits、统一错误、临时文件、流复制、gzip record spill | 已实现；Java util 路径为薄代理 |
 | `easyexcel-xls` | BIFF8/OLE2 读取、生成、record/string/Ptg/RC4、工作簿生成、模板 roundtrip、公式缓存与数字记录扫描 | 已迁入；门面仅保留 CellValue/样式/事件/错误适配 |
 | `easyexcel-xlsx` | OOXML 读取、事件流读取、生成、Agile 加密、opaque part/table roundtrip、OPC 关系、ZIP 保留包、模板 XML 与样式合并 | 已迁入；门面保留 listener/cache/handler/converter 编排 |
-| `easyexcel-csv` | 编码、字符集、增量转码、分隔符识别、类型推断、读写 | 已迁入；旧 Java 路径为兼容重导出 |
-| `easyexcel-tabular` | Markdown、静态 HTML、JSON 与中立表格模型转换 | 已实现，5 项 crate 测试 |
-| `xls-cli` library/application | 请求、执行器、稳定结果/错误、capabilities、schema、文件安全策略 | 已迁入产品仓库，15 项单元测试 |
+| `easyexcel-csv` | 编码、字符集、增量转码、分隔符识别、类型推断、读写、`CsvRowSource` | 已迁入；CSV Markdown 导出为真实 Event Mode |
+| `easyexcel-markdown` | GFM 解析、Event/Workbook 输出、策略、资源限制和结构化损失报告 | 已实现，9 项专项契约测试 |
+| `easyexcel-tabular` | 静态 HTML、JSON 与通用文本格式分派 | Markdown 实现已移除，分派时委托 `easyexcel-markdown` |
+| `xls-cli` application/CLI/TUI | 请求、执行器、稳定结果/错误、capabilities、schema、文件安全策略 | 只依赖 `easyexcel`；104 项单元测试与 3 项进程协议测试通过 |
 | `easyexcel` | EasyExcel 风格公共门面与现有工程体验 | 保持原路径与公共 API |
 
 读取保留两条路径：

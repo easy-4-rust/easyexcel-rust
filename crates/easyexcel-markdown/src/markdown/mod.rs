@@ -1,0 +1,42 @@
+//! Markdown 投影对象、解析器和写入器。
+
+mod gfm_escape;
+mod markdown_conversion_mode;
+mod markdown_conversion_report;
+mod markdown_export_options;
+mod markdown_formula_policy;
+mod markdown_header_policy;
+mod markdown_import_options;
+mod markdown_merge_policy;
+mod markdown_output_guard;
+mod markdown_parser_state;
+mod markdown_profile;
+mod markdown_read_result;
+mod markdown_reader;
+mod markdown_sheet_selection;
+mod markdown_table_selection;
+mod markdown_type_inference;
+mod markdown_value_policy;
+mod markdown_warning;
+mod markdown_warning_code;
+mod markdown_workbook_writer;
+mod markdown_writer;
+
+pub use markdown_conversion_mode::MarkdownConversionMode;
+pub use markdown_conversion_report::MarkdownConversionReport;
+pub use markdown_export_options::MarkdownExportOptions;
+pub use markdown_formula_policy::MarkdownFormulaPolicy;
+pub use markdown_header_policy::MarkdownHeaderPolicy;
+pub use markdown_import_options::MarkdownImportOptions;
+pub use markdown_merge_policy::MarkdownMergePolicy;
+pub use markdown_profile::MarkdownProfile;
+pub use markdown_read_result::MarkdownReadResult;
+pub use markdown_reader::{MarkdownReader, read_markdown};
+pub use markdown_sheet_selection::MarkdownSheetSelection;
+pub use markdown_table_selection::MarkdownTableSelection;
+pub use markdown_type_inference::MarkdownTypeInference;
+pub use markdown_value_policy::MarkdownValuePolicy;
+pub use markdown_warning::MarkdownWarning;
+pub use markdown_warning_code::MarkdownWarningCode;
+pub use markdown_workbook_writer::{MarkdownWorkbookWriter, write_workbook};
+pub use markdown_writer::{MarkdownWriter, write_document};

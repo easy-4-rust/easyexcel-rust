@@ -8,6 +8,7 @@ pub mod excel_data_format;
 pub mod numfmt;
 mod stored_row;
 pub mod styles;
+pub mod tabular;
 pub mod value;
 mod workbook;
 
@@ -17,6 +18,7 @@ pub use dates::{DateSystem, chrono_date_format, date_to_excel_serial, datetime_t
 pub use error::{CellError, Error, Result};
 pub use excel_data_format::ExcelDataFormat;
 pub use stored_row::StoredRow;
+pub use tabular::{TabularCell, TabularDocument, TabularTable};
 pub use value::CellValue;
 pub use workbook::{
     Cell, ColInfo, DefinedName, FrozenPanes, Metadata, OpaquePart, RowInfo, Sheet, Spill, Table,

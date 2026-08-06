@@ -1115,6 +1115,7 @@ dependencies = [
  "easyexcel-format",
  "easyexcel-formula",
  "easyexcel-io",
+ "easyexcel-markdown",
  "easyexcel-model",
  "easyexcel-tabular",
  "easyexcel-utils",
@@ -1370,10 +1371,22 @@ dependencies = [
  "easyexcel-utils",
  "flate2",
  "quick-xml",
+ "serde",
  "tempfile",
  "thiserror",
  "ureq",
  "zip",
+]
+
+[[package]]
+name = "easyexcel-markdown"
+version = "0.1.0-alpha.1"
+dependencies = [
+ "easyexcel-io",
+ "easyexcel-model",
+ "pulldown-cmark",
+ "serde",
+ "thiserror",
 ]
 
 [[package]]
@@ -1433,6 +1446,7 @@ name = "easyexcel-tabular"
 version = "0.1.0-alpha.1"
 dependencies = [
  "easyexcel-io",
+ "easyexcel-markdown",
  "easyexcel-model",
  "scraper",
  "serde_json",
@@ -3274,6 +3288,17 @@ dependencies = [
  "syn 2.0.119",
  "version_check",
  "yansi",
+]
+
+[[package]]
+name = "pulldown-cmark"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9f068eba8e7071c5f9511831b44f32c740d5adf574e990f946ddb53db2f314e"
+dependencies = [
+ "bitflags",
+ "memchr",
+ "unicase",
 ]
 
 [[package]]

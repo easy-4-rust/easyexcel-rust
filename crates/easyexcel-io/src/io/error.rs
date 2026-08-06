@@ -40,6 +40,24 @@ pub enum Error {
     /// 公式解析错误。
     #[error("formula parse error: {0}")]
     FormulaParse(String),
+    /// Markdown 语法或投影错误。
+    #[error("invalid Markdown at line {line:?}: {message}")]
+    Markdown {
+        /// 可用时提供一基行号。
+        line: Option<usize>,
+        /// 稳定的人类可读诊断。
+        message: String,
+    },
+    /// 输入、输出或计算超过资源限制。
+    #[error("resource limit exceeded for {resource}: limit={limit}, actual={actual}")]
+    ResourceLimit {
+        /// 资源维度名称。
+        resource: &'static str,
+        /// 配置上限。
+        limit: u64,
+        /// 实际观测值。
+        actual: u64,
+    },
     /// 其他带上下文的错误。
     #[error("{0}")]
     Other(String),

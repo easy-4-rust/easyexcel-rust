@@ -203,6 +203,37 @@ pub fn stream<R: Read + Seek, S: RowSink>(
     Ok(())
 }
 
+/// 只读取 OOXML 工作簿索引并返回有序工作表名称，不物化工作表正文。
+///
+/// # Errors
+///
+/// ZIP 或 `workbook.xml` 无效时返回格式错误。
+pub fn stream_sheet_names<R: Read + Seek>(reader: R) -> Result<Vec<String>> {
+    Ok(stream_sheet_entries(reader)?
+        .into_iter()
+        .map(|(name, _)| name)
+        .collect())
+}
+
+/// 只读取有序工作表名称和可见性。
+///
+/// # Errors
+///
+/// ZIP 或 `workbook.xml` 无效时返回格式错误。
+pub fn stream_sheet_entries<R: Read + Seek>(
+    reader: R,
+) -> Result<Vec<(String, easyexcel_model::Visibility)>> {
+    let mut archive =
+        zip::ZipArchive::new(reader).map_err(|error| Error::Zip(error.to_string()))?;
+    let workbook_xml = read_entry(&mut archive, "xl/workbook.xml")
+        .ok_or_else(|| Error::Xlsx("missing xl/workbook.xml".to_owned()))?;
+    Ok(parse_workbook(&workbook_xml)?
+        .sheets
+        .into_iter()
+        .map(|sheet| (sheet.name, sheet.visibility))
+        .collect())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

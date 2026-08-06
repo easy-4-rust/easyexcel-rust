@@ -220,11 +220,35 @@ impl Converter<String> for YesNoConverter {
 | Crate | 功能 | Java 对应 |
 |-------|------|-----------|
 | `easyexcel` | 用户入口 Facade | `EasyExcel` / `EasyExcelFactory` |
-| `easyexcel-core` | 核心 trait / 数据模型 / 错误类型 | `com.alibaba.excel.*` |
 | `easyexcel-derive` | `#[derive(ExcelRow)]` 过程宏 | `@ExcelProperty` 注解处理 |
-| `easyexcel-reader` | XLSX/XLS/CSV 读取引擎 | `analysis/` + `read/` |
-| `easyexcel-writer` | XLSX/XLS/CSV 写入引擎 | `write/` |
-| `easyexcel-template` | 模板填充引擎 | `write/metadata/fill/` |
+| `easyexcel-model` | Workbook、Sheet、Cell 与中立表格模型 | 核心数据模型 |
+| `easyexcel-io` | 格式识别、流接口与资源限制 | 读写基础设施 |
+| `easyexcel-csv` | CSV 编解码、字符集与流式行源 | CSV 后端 |
+| `easyexcel-xls` | BIFF8/OLE2 读写与公式 token | XLS 后端 |
+| `easyexcel-xlsx` | OOXML 读写、事件流、模板包与加密 | XLSX 后端 |
+| `easyexcel-formula` | 公式 AST、解析、计算与重算 | 公式引擎 |
+| `easyexcel-markdown` | GFM 解析、流式输出、策略与损失报告 | Markdown 语义投影 |
+| `easyexcel-tabular` | 静态 HTML、JSON 与通用文本格式分派 | 表格交换 |
+| `easyexcel-web` | 统一流式 Web 导入导出、限制与错误协议 | Web 执行内核 |
+
+普通用户仍只依赖 `easyexcel`，不直接依赖内部引擎 crate：
+
+```rust
+use easyexcel::markdown::{MarkdownConversionMode, MarkdownFormulaPolicy};
+use easyexcel::EasyExcel;
+
+let report = EasyExcel::export_markdown("report.xlsx", "report.md")
+    .mode(MarkdownConversionMode::Auto)
+    .formula_policy(MarkdownFormulaPolicy::CachedValue)
+    .do_export()?;
+
+EasyExcel::import_markdown("report.md", "report.xlsx")
+    .conservative_types()
+    .do_import()?;
+```
+
+Markdown 是带结构化损失报告的语义投影，不承诺与 Excel 无损 roundtrip。XLS
+使用 Workbook Mode；XLSX 和 CSV 同时支持真实 Event Mode。
 
 ---
 

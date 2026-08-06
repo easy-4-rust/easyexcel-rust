@@ -15,8 +15,8 @@ pub use easyexcel_xlsx::{
     read_with_password, render_typed_cell, replace_collection_fills_in_sheet, replace_scalar_cells,
     replace_scalar_cells_in_sheet, replace_scalar_cells_in_xml, resolve_image_anchor,
     resolve_sheet_target, seed_legacy_template_workbook, segment_utf16_text, stream,
-    validate_xlsx_template_source, workbook_sheets, worksheet_path, write, write_path,
-    xml_elements,
+    stream_sheet_entries, stream_sheet_names, validate_xlsx_template_source, workbook_sheets,
+    worksheet_path, write, write_path, xml_elements,
 };
 
 pub use easyexcel_xlsx::xlsx::{

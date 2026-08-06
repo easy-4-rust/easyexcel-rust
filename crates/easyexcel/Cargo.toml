@@ -30,6 +30,7 @@ easyexcel-utils.workspace = true
 easyexcel-io.workspace = true
 easyexcel-model.workspace = true
 easyexcel-formula.workspace = true
+easyexcel-markdown.workspace = true
 easyexcel-xls.workspace = true
 easyexcel-xlsx.workspace = true
 easyexcel-tabular.workspace = true

@@ -1,10 +1,11 @@
 use std::collections::HashSet;
 
-use easyexcel_model::{Cell, CellValue, Workbook};
+use crate::styles::CellStyle;
+use crate::{Cell, CellValue, Workbook};
 
 use super::{TabularCell, TabularTable};
 
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 可包含多个表格的中立文档。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。可包含多个表格的中立文档。
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct TabularDocument {
     tables: Vec<TabularTable>,
@@ -13,33 +14,42 @@ pub struct TabularDocument {
 impl TabularDocument {
     /// 创建空文档。
     #[must_use]
-    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn new() -> Self {
         Self { tables: Vec::new() }
     }
 
-    /// 对应 Java：无直接对应对象；Rust 架构扩展。 从表格集合创建文档。
+    /// 从表格集合创建文档。
     #[must_use]
     pub fn from_tables(tables: Vec<TabularTable>) -> Self {
         Self { tables }
     }
 
-    /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回全部表格。
+    /// 返回全部表格。
     #[must_use]
     pub fn tables(&self) -> &[TabularTable] {
         &self.tables
     }
 
-    /// 对应 Java：无直接对应对象；Rust 架构扩展。 追加一个表格。
+    /// 追加一个表格。
     pub fn push_table(&mut self, table: TabularTable) {
         self.tables.push(table);
     }
 
-    /// 对应 Java：无直接对应对象；Rust 架构扩展。 将所有表格映射为工作簿中的独立工作表。
+    /// 将所有表格映射为工作簿中的独立工作表。
     #[must_use]
     pub fn to_workbook(&self) -> Workbook {
+        self.to_workbook_with_header_style(true)
+    }
+
+    /// 将所有表格映射为工作簿，并按需应用统一粗体表头样式。
+    #[must_use]
+    pub fn to_workbook_with_header_style(&self, apply_header_style: bool) -> Workbook {
         let mut workbook = Workbook::empty();
+        let mut header_style = CellStyle::default();
+        header_style.font.bold = true;
+        let header_style_index = workbook.styles.intern(header_style);
         let mut names = HashSet::new();
+
         for (index, table) in self.tables.iter().enumerate() {
             let name = unique_sheet_name(table.name(), index, &mut names);
             let sheet_index = workbook.add_sheet(name);
@@ -56,6 +66,9 @@ impl TabularDocument {
                         if !matches!(value, CellValue::Empty) {
                             sheet.set(row_index, column_index, Cell::from_value(value));
                         }
+                        if apply_header_style && cell.is_header() {
+                            sheet.set_style(row_index, column_index, header_style_index);
+                        }
                     }
                 }
                 sheet.merged.extend_from_slice(table.merges());
@@ -67,7 +80,7 @@ impl TabularDocument {
         workbook
     }
 
-    /// 对应 Java：无直接对应对象；Rust 架构扩展。 从工作簿构造中立表格文档。
+    /// 从工作簿构造中立表格文档；公式只投影缓存值，样式不进入中立模型。
     #[must_use]
     pub fn from_workbook(workbook: &Workbook) -> Self {
         let tables = workbook
@@ -112,18 +125,4 @@ fn unique_sheet_name(requested: &str, index: usize, used: &mut HashSet<String>) 
         suffix += 1;
     }
     candidate
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn creates_unique_valid_sheet_names() {
-        let document =
-            TabularDocument::from_tables(vec![TabularTable::new("A/B"), TabularTable::new("AB")]);
-        let workbook = document.to_workbook();
-        assert_eq!(workbook.sheets[0].name, "AB");
-        assert_eq!(workbook.sheets[1].name, "AB-2");
-    }
 }

@@ -55,7 +55,7 @@ pub use rich_text_segment::{RichTextSegment, segment_utf16_text};
 pub use source::{
     XlsxInput, XlsxSource, excel_input_suffix, is_compound_document, materialize_excel_input,
 };
-pub use stream::stream;
+pub use stream::{stream, stream_sheet_entries, stream_sheet_names};
 pub use template_fill::{
     TemplateCollectionFill, TemplateFillData, TemplateFillDirection, append_rows_to_sheet,
     append_rows_to_xml, collection_column_style_indexes, render_typed_cell,
