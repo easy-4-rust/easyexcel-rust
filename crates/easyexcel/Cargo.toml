@@ -48,6 +48,7 @@ tempfile.workspace = true
 zip.workspace = true
 # 读取/写入管线的回调契约测试（MockReadListener 断言调用次数/顺序/参数）
 mockall = "0.15"
+trybuild = "1"
 
 [lints]
 workspace = true

@@ -2,6 +2,33 @@
 
 本文件记录 easyexcel-rust 各版本变更。格式参照 [Keep a Changelog](https://keepachangelog.com/)。
 
+## [0.1.0] - 2026-08-07
+
+首个生产就绪正式版本。该版本把 Java EasyExcel 风格门面与可复用的 XLS、
+XLSX、CSV、公式、Markdown、缓存和 Web 流式引擎收敛为同一版本线。
+
+### 正式版能力
+
+- Rust 用户统一通过 `easyexcel` 门面及 `easyexcel::{model, io, csv, xls,
+  xlsx, formula, markdown, tabular}` 模块使用能力。
+- 支持 XLSX、XLS、CSV 的读取与写入，XLSX/CSV 事件流读取，以及带明确损失
+  报告的 XLS/XLSX/CSV 与 Markdown 双向转换。
+- 提供 Java EasyExcel 风格 builder、listener、converter、handler、annotation
+  derive、模板填充和加密 XLSX 读写。
+- 提供框架中立 `easyexcel-web` 内核，以及 Axum、Actix Web、Hyper、Poem、
+  Rocket、Salvo、Warp 七个适配器和共享 conformance suite。
+- 在发布候选提交上通过全 workspace 测试、Java parity/golden、大文件、文档、
+  Clippy、RustSec、cargo-deny、MSRV 和 facade boundary 门禁。
+
+### 明确边界
+
+- XLS Event Mode、旧 XLS 密码保护与 XLS 占位符填充尚不支持，并返回类型化
+  `Unsupported` 错误。
+- 公式引擎不承诺覆盖 Excel 的全部函数；Cube/Web/RTD 等外部数据函数和少量
+  复杂工程、金融函数保持明确的未支持状态。
+- XLSX round-trip 会尽可能保留未知 OOXML 部件，但不承诺宏、图表等所有高级
+  对象的无损编辑；具体能力以 `docs/compatibility.md` 为准。
+
 ## [0.1.0-alpha.1] - 2026-08-03
 
 首个公开预发布版本：Alibaba EasyExcel 4.0.3 的 Rust 高保真迁移。

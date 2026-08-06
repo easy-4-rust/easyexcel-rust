@@ -3,6 +3,6 @@
 #[test]
 fn excel_row_ui_contracts() {
     let cases = trybuild::TestCases::new();
-    cases.pass("tests/ui/pass/*.rs");
-    cases.compile_fail("tests/ui/fail/*.rs");
+    cases.pass("tests/derive_ui/pass/*.rs");
+    cases.compile_fail("tests/derive_ui/fail/*.rs");
 }

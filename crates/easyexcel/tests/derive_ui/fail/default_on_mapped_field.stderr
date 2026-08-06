@@ -1,5 +1,5 @@
 error: default is only valid for ignored fields
- --> tests/ui/fail/default_on_mapped_field.rs:5:33
+ --> tests/derive_ui/fail/default_on_mapped_field.rs:5:33
   |
 5 |     #[excel(property, default = String::new())]
   |                                 ^^^^^^^^^^^^^

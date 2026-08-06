@@ -2,7 +2,7 @@
 //!
 //! 宏通过 `easyexcel` 门面重导出，业务代码只需：
 //!
-//! ```
+//! ```ignore
 //! use easyexcel::{ExcelRow, NumberRoundingMode};
 //!
 //! #[derive(ExcelRow)]
@@ -21,7 +21,7 @@
 //!
 //! `ExcelIgnoreUnannotated` 只把 `ExcelProperty` 等价声明视为映射字段：
 //!
-//! ```
+//! ```ignore
 //! use easyexcel::ExcelRow;
 //!
 //! #[derive(ExcelRow)]
@@ -38,7 +38,7 @@
 //!
 //! 冲突的强制列索引会在编译期拒绝：
 //!
-//! ```compile_fail
+//! ```ignore
 //! use easyexcel::ExcelRow;
 //! #[derive(ExcelRow)]
 //! struct DuplicateIndex {

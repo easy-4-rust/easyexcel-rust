@@ -28,11 +28,17 @@ fn main() {
     assert_eq!(column.date_time_format, Some("%Y-%m-%d"));
     assert_eq!(column.number_format, Some("0.00"));
     assert_eq!(column.column_width, None);
-    assert_eq!(SignedDefaultsAndFormats::write_metadata().column_width, None);
-    assert_eq!(SignedDefaultsAndFormats::write_metadata()
-        .once_absolute_merge
-        .expect("merge defaults")
-        .first_row_index, -1);
+    assert_eq!(
+        SignedDefaultsAndFormats::write_metadata().column_width,
+        None
+    );
+    assert_eq!(
+        SignedDefaultsAndFormats::write_metadata()
+            .once_absolute_merge
+            .expect("merge defaults")
+            .first_row_index,
+        -1
+    );
 
     let value = SignedDefaultsAndFormats {
         value: String::new(),

@@ -16,9 +16,5 @@ proc-macro2.workspace = true
 quote.workspace = true
 syn.workspace = true
 
-[dev-dependencies]
-easyexcel.workspace = true
-trybuild = "1"
-
 [lints]
 workspace = true
