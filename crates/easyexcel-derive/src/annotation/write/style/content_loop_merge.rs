@@ -7,7 +7,7 @@ use syn::{LitInt, meta::ParseNestedMeta};
 use crate::annotation::field_options::FieldOptions;
 use crate::annotation::integer::parse_unsigned_integer;
 
-/// 解析循环合并的行周期和横向扩展列数。
+/// 对应 Java：com.alibaba.excel.annotation.write.style.ContentLoopMerge。 解析循环合并的行周期和横向扩展列数。
 pub(crate) fn parse(
     meta: &ParseNestedMeta<'_>,
     options: &mut FieldOptions,

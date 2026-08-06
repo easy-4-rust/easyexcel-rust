@@ -6,7 +6,7 @@ use syn::{Expr, ExprArray, ExprLit, Lit, LitStr};
 use super::field_options::FieldOptions;
 use super::integer::parse_signed_i32;
 
-/// 解析 `name`、`head/value`、`index`、`order` 与 `converter`。
+/// 对应 Java：com.alibaba.excel.annotation.ExcelProperty。 解析 `name`、`head/value`、`index`、`order` 与 `converter`。
 pub(crate) fn parse(meta: &ParseNestedMeta<'_>, options: &mut FieldOptions) -> syn::Result<bool> {
     if meta.path.is_ident("property") {
         options.property_annotated = true;

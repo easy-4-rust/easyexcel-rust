@@ -26,11 +26,11 @@ impl DefaultXlsReadContext {
         }
     }
 
-    /// Selects the current sheet and materializes the typed XLS holder.
+    /// 对应 Java：com.alibaba.excel.context.xls.DefaultXlsReadContext。 Selects the current sheet and materializes the typed XLS holder.
     ///
     /// # Errors
     ///
-    /// 当 `read_sheet.sheet_no()` 超出 `i32` 范围时返回 [`ExcelError::Format`]。
+    /// 当 `read_sheet.sheet_no()` 超出 `i32` 范围时返回 `ExcelError::Format`。
     pub fn current_sheet(&mut self, read_sheet: &ReadSheet) -> crate::core::Result<()> {
         self.inner.current_sheet(read_sheet)?;
         let sheet_no = i32::try_from(read_sheet.sheet_no()).map_err(|_| {
@@ -42,6 +42,7 @@ impl DefaultXlsReadContext {
     }
 
     /// Returns mutable XLS workbook state for record listeners.
+    /// 对应 Java：com.alibaba.excel.context.xls.DefaultXlsReadContext。
     pub const fn xls_read_workbook_holder_mut(&mut self) -> &mut XlsReadWorkbookHolder {
         &mut self.xls_read_workbook_holder
     }

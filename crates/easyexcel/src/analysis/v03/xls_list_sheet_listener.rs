@@ -41,7 +41,7 @@ impl<'a> XlsListSheetListener<'a> {
         }
     }
 
-    /// Executes the real XLS metadata scan and stores discovered sheets.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.XlsListSheetListener。 Executes the real XLS metadata scan and stores discovered sheets.
     ///
     /// # Errors
     ///
@@ -58,13 +58,13 @@ impl<'a> XlsListSheetListener<'a> {
         Ok(&self.sheet_list)
     }
 
-    /// Returns the bound XLS path.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.XlsListSheetListener。 Returns the bound XLS path.
     #[must_use]
     pub fn path(&self) -> &Path {
         &self.path
     }
 
-    /// Returns the last successfully discovered sheet list.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.XlsListSheetListener。 Returns the last successfully discovered sheet list.
     #[must_use]
     pub fn sheet_list(&self) -> &[ReadSheet] {
         &self.sheet_list

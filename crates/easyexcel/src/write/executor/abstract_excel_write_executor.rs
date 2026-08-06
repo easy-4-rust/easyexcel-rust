@@ -16,6 +16,7 @@ pub struct AbstractExcelWriteExecutor<'a> {
 impl<'a> AbstractExcelWriteExecutor<'a> {
     /// Creates the executor. (Java `AbstractExcelWriteExecutor(WriteContext)`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.executor.AbstractExcelWriteExecutor。
     pub const fn new(write_context: &'a dyn WriteContext) -> Self {
         Self { write_context }
     }

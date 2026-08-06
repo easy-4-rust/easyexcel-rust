@@ -15,24 +15,24 @@ pub struct SstRecordHandler {
 }
 
 impl SstRecordHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.SstRecordHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Java `SstRecordHandler.processRecord` — bookkeeping only (cache filled elsewhere).
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.SstRecordHandler。 Java `SstRecordHandler.processRecord` — bookkeeping only (cache filled elsewhere).
     pub fn process_sst(&mut self, unique_string_count: u32) {
         self.unique_string_count = Some(unique_string_count);
     }
 
-    /// Installs a fully decoded SST after CONTINUE records have been assembled.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.SstRecordHandler。 Installs a fully decoded SST after CONTINUE records have been assembled.
     pub fn process_decoded_sst(&mut self, unique_string_count: u32, strings: Vec<String>) {
         self.unique_string_count = Some(unique_string_count);
         self.strings = strings;
     }
 
-    /// Resolves one SST index.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.SstRecordHandler。 Resolves one SST index.
     #[must_use]
     pub fn get(&self, index: usize) -> Option<&str> {
         self.strings.get(index).map(String::as_str)

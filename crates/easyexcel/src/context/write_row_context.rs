@@ -25,11 +25,12 @@ pub struct WriteRowContext {
 impl WriteRowContext {
     /// Returns the mutable logical row handle.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.context.RowWriteHandlerContext。
     pub const fn row(&self) -> &WriteRowHandle {
         &self.row
     }
 
-    /// Creates a row handler context.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.RowWriteHandlerContext。 Creates a row handler context.
     #[must_use]
     pub fn new(
         sheet_name: impl Into<String>,
@@ -49,7 +50,7 @@ impl WriteRowContext {
         }
     }
 
-    /// Attaches the real writer holder state visible for this row callback.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.RowWriteHandlerContext。 Attaches the real writer holder state visible for this row callback.
     #[must_use]
     pub fn with_holder_context(
         mut self,
@@ -74,7 +75,7 @@ impl WriteRowContext {
         self
     }
 
-    /// Replaces compatibility holder data with a live-context snapshot.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.RowWriteHandlerContext。 Replaces compatibility holder data with a live-context snapshot.
     #[must_use]
     pub fn with_write_context(mut self, context: &dyn WriteContext) -> Self {
         self.holders = WriteHolderContext::from_write_context(context)
@@ -82,7 +83,7 @@ impl WriteRowContext {
         self
     }
 
-    /// Attaches all holder views and the resolved Java `currentWriteHolder()` state.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.RowWriteHandlerContext。 Attaches all holder views and the resolved Java `currentWriteHolder()` state.
     #[must_use]
     pub fn with_resolved_holder_context(
         mut self,
@@ -108,11 +109,12 @@ impl WriteRowContext {
 
     /// Returns the active workbook holder view, when supplied by the writer.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.context.RowWriteHandlerContext。
     pub const fn write_workbook_holder(&self) -> Option<&WriteWorkbookHolderView> {
         self.holders.workbook()
     }
 
-    /// Returns the active sheet holder view.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.RowWriteHandlerContext。 Returns the active sheet holder view.
     ///
     /// # Panics
     ///
@@ -127,12 +129,14 @@ impl WriteRowContext {
 
     /// Returns the active table holder view for table callbacks.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.context.RowWriteHandlerContext。
     pub const fn write_table_holder(&self) -> Option<&WriteTableHolderView> {
         self.holders.table()
     }
 
     /// Returns all holder views captured for this callback.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.context.RowWriteHandlerContext。
     pub const fn write_context(&self) -> &WriteHolderContext {
         &self.holders
     }

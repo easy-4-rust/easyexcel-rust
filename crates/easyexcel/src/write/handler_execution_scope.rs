@@ -19,7 +19,7 @@ use crate::write::style::column::simple_column_width_style_strategy::SimpleColum
 use crate::write::style::row::simple_row_height_style_strategy::SimpleRowHeightStyleStrategy;
 use crate::write::write_options::WriteOptions;
 
-/// Java `AbstractWriteHolder`'s own/effective execution-chain pair.
+/// 对应 Java：com.alibaba.excel.write.handler。 Java `AbstractWriteHolder`'s own/effective execution-chain pair.
 ///
 /// Workbook and sheet callbacks can select `own`, while row/cell callbacks
 /// always select `effective`. Child candidates are placed before the already
@@ -32,6 +32,7 @@ pub(crate) struct HandlerExecutionScope {
 }
 
 impl HandlerExecutionScope {
+    /// 对应 Java：com.alibaba.excel.write.handler。
     pub(crate) fn root(handlers: &[SharedWriteHandler]) -> Self {
         let own = normalized_shared_handlers(handlers.to_vec());
         Self {
@@ -39,7 +40,7 @@ impl HandlerExecutionScope {
             own,
         }
     }
-
+    /// 对应 Java：com.alibaba.excel.write.handler。
     pub(crate) fn child(own_handlers: &[SharedWriteHandler], parent: &Self) -> Self {
         let own_candidates = own_handlers.to_vec();
         let own = normalized_shared_handlers(own_candidates.clone());
@@ -50,11 +51,11 @@ impl HandlerExecutionScope {
             effective: normalized_shared_handlers(effective_candidates),
         }
     }
-
+    /// 对应 Java：com.alibaba.excel.write.handler。
     pub(crate) fn own_boxed(&self) -> Vec<Box<dyn WriteHandler>> {
         boxed_handlers(&self.own)
     }
-
+    /// 对应 Java：com.alibaba.excel.write.handler。
     pub(crate) fn effective_boxed(&self) -> Vec<Box<dyn WriteHandler>> {
         boxed_handlers(&self.effective)
     }
@@ -99,7 +100,7 @@ impl WriteHandler for AnnotationCellStyleHandler {
         (cell != ExcelCellStyle::default()).then_some(cell)
     }
 }
-
+/// 对应 Java：com.alibaba.excel.write.handler。
 pub(crate) fn load_annotation_handlers<T>(
     options: &WriteOptions,
 ) -> Result<Vec<Box<dyn WriteHandler>>>
@@ -154,7 +155,7 @@ where
     Ok(handlers)
 }
 
-/// Ensures a gzip spill writer exists for `sheet_name` when compress is on.
+/// 对应 Java：com.alibaba.excel.write.handler。 Ensures a gzip spill writer exists for `sheet_name` when compress is on.
 pub(crate) fn ensure_gzip_spill<'a>(
     spills: &'a mut HashMap<String, crate::write::gzip_spill::GzipSheetDataWriter>,
     sheet_name: &str,

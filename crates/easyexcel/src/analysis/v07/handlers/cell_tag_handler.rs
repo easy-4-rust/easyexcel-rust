@@ -1,7 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.analysis.v07.handlers.CellTagHandler`.
 //!
 //! `quick_xml` 事件循环、A1 引用和索引解析由 `easyexcel-xlsx` 负责；本处理器只
-//! 保留 Java `CellTagHandler` 的临时状态与 EasyExcel `CellDataType` 映射。
+//! 保留 Java `CellTagHandler` 的临时状态与 `EasyExcel` `CellDataType` 映射。
 
 use std::collections::HashMap;
 
@@ -14,18 +14,7 @@ use super::xlsx_tag_handler::XlsxTagHandler;
 /// Java `CellTagHandler.DEFAULT_FORMAT_INDEX`.
 const DEFAULT_FORMAT_INDEX: usize = 0;
 
-/// Parsed `<c>` start attributes — used by both the handler and `xlsx_rows`.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CellStartAttrs {
-    /// Zero-based `(row, column)` from `r` or the fallback cursor.
-    pub position: (u32, usize),
-    /// Zero-based style index from `s` (default 0).
-    pub style_index: usize,
-    /// Raw OOXML `t` attribute (`s` / `n` / `b` / …).
-    pub cell_type: Option<String>,
-    /// Logical type from Java `CellDataTypeEnum.buildFromCellType`.
-    pub data_type: CellDataType,
-}
+include!("cell_tag_handler/cell_start_attrs.rs");
 
 /// 对应 Java：`CellTagHandler`.
 ///
@@ -46,13 +35,13 @@ pub struct CellTagHandler {
 }
 
 impl CellTagHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.CellTagHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Java `CellTagHandler.startElement(XlsxReadContext, String, Attributes)`.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.CellTagHandler。 Java `CellTagHandler.startElement(XlsxReadContext, String, Attributes)`.
     ///
     /// Parses `r` / `t` / `s` and resets `temp_data`.
     ///
@@ -74,7 +63,7 @@ impl CellTagHandler {
         Ok(parsed)
     }
 
-    /// 不修改处理器状态地解析 Java handler 所需属性。
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.CellTagHandler。 不修改处理器状态地解析 Java handler 所需属性。
     ///
     /// Corresponds to the attribute-reading portion of Java `startElement`.
     ///
@@ -114,13 +103,13 @@ impl CellTagHandler {
         })
     }
 
-    /// Java `AbstractCellValueTagHandler.characters` path when this handler
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.CellTagHandler。 Java `AbstractCellValueTagHandler.characters` path when this handler
     /// owns the temp buffer (also used when `<v>` text arrives).
     pub fn append_characters(&mut self, ch: &str) {
         self.temp_data.push_str(ch);
     }
 
-    /// Clears per-cell state after `endElement`. (Java puts cell into `cellMap`)
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.CellTagHandler。 Clears per-cell state after `endElement`. (Java puts cell into `cellMap`)
     pub fn reset_temp(&mut self) {
         self.temp_data.clear();
         self.cell_type = None;

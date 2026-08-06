@@ -1,6 +1,6 @@
 //! 与具体表格格式和门面错误类型无关的条件校验。
 
-/// 要求 `expression` 为真，否则返回调用方提供的错误值。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 要求 `expression` 为真，否则返回调用方提供的错误值。
 ///
 /// 门面层可用该原语映射 Java `Validate.isTrue` 的具体异常类型，基础 crate
 /// 不依赖 `easyexcel::ExcelError`。

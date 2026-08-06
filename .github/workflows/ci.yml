@@ -15,6 +15,7 @@ jobs:
     env:
       LANG: zh_CN.UTF-8
       LC_ALL: zh_CN.UTF-8
+      RUSTDOCFLAGS: -D warnings
     steps:
       - uses: actions/checkout@v4
       - name: Install zh_CN locale and zlib dev
@@ -31,7 +32,9 @@ jobs:
           components: clippy,llvm-tools-preview,rustfmt
       - uses: taiki-e/install-action@cargo-llvm-cov
       - uses: taiki-e/install-action@cargo-audit
+      - uses: taiki-e/install-action@cargo-deny
       - run: cargo audit
+      - run: cargo deny check advisories bans licenses sources
       - run: cargo fmt --all -- --check
       - run: cargo doc --workspace --all-features --no-deps
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -60,13 +63,17 @@ jobs:
       - run: ./scripts/coverage.sh
 
   msrv:
-    # MSRV 实测为 1.94：salvo 0.95.1（及其依赖 multra、salvo-serde-util 等）
-    # 要求 rustc >= 1.94，与 root Cargo.toml 的 rust-version = "1.94" 一致。
+    # 核心与 Salvo 适配器分别验证各自 MSRV；质量工具链仍固定为 1.97.1。
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: 1.88
+      - name: Check core workspace at Rust 1.88
+        run: cargo check --workspace --all-features --exclude easyexcel-salvo
+      - uses: dtolnay/rust-toolchain@master
+        with:
           toolchain: 1.94
-      - run: cargo check --workspace --all-features
-
+      - name: Check Salvo adapter at Rust 1.94
+        run: cargo check -p easyexcel-salvo --all-features

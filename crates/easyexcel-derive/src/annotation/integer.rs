@@ -5,7 +5,7 @@ use quote::quote;
 use syn::spanned::Spanned;
 use syn::{Expr, ExprLit, ExprUnary, Lit, LitInt, UnOp, meta::ParseNestedMeta};
 
-/// 已校验的 Java `int` 值及其 Rust 表达式。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 已校验的 Java `int` 值及其 Rust 表达式。
 #[derive(Clone)]
 pub(crate) struct SignedInteger {
     value: i32,
@@ -13,7 +13,7 @@ pub(crate) struct SignedInteger {
 }
 
 impl SignedInteger {
-    /// 使用指定值和跨度构造可安全生成的一元整数表达式。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 使用指定值和跨度构造可安全生成的一元整数表达式。
     pub(crate) fn new(value: i32, span: Span) -> Self {
         let magnitude = LitInt::new(&i64::from(value).unsigned_abs().to_string(), span);
         let expression = if value < 0 {
@@ -25,17 +25,18 @@ impl SignedInteger {
     }
 
     /// 返回解析后的 `i32` 值。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub(crate) const fn value(&self) -> i32 {
         self.value
     }
 
-    /// 返回用于代码生成的 Rust 表达式。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回用于代码生成的 Rust 表达式。
     pub(crate) fn tokens(&self) -> proc_macro2::TokenStream {
         let expression = &self.expression;
         quote!(#expression)
     }
 
-    /// 返回输入表达式的跨度。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回输入表达式的跨度。
     pub(crate) fn span(&self) -> Span {
         match &self.expression {
             Expr::Lit(value) => value.lit.span(),
@@ -45,14 +46,14 @@ impl SignedInteger {
     }
 }
 
-/// 解析并校验 Java `int`，支持一元负号且不在过程宏中 panic。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析并校验 Java `int`，支持一元负号且不在过程宏中 panic。
 pub(crate) fn parse_signed_i32(meta: &ParseNestedMeta<'_>) -> syn::Result<SignedInteger> {
     let expression: Expr = meta.value()?.parse()?;
     let value = expression_value(&expression)?;
     Ok(SignedInteger { value, expression })
 }
 
-/// 解析并校验无符号整数字面量。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析并校验无符号整数字面量。
 pub(crate) fn parse_unsigned_integer<T>(meta: &ParseNestedMeta<'_>) -> syn::Result<LitInt>
 where
     T: std::str::FromStr,

@@ -7,7 +7,7 @@ use crate::write::builder::excel_writer_table_builder::ExcelWriterTableBuilder;
 use crate::write::metadata::write_sheet::WriteSheet as WriteSheetMetadata;
 use crate::{ExcelWriter, WriteOptions, WriteSheet};
 
-/// A sheet builder optionally owning the writer that will execute it.
+/// 对应 Java：`ExcelWriterSheetBuilder.table()`。 A sheet builder optionally owning the writer that will execute it.
 pub struct ExcelWriterSheetBuilder {
     excel_writer: Option<ExcelWriter>,
     write_sheet: WriteSheetMetadata,
@@ -15,7 +15,7 @@ pub struct ExcelWriterSheetBuilder {
 }
 
 impl ExcelWriterSheetBuilder {
-    /// Creates an unbound metadata builder.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Creates an unbound metadata builder.
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -25,7 +25,7 @@ impl ExcelWriterSheetBuilder {
         }
     }
 
-    /// Creates a sheet builder owning its stateful writer.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Creates a sheet builder owning its stateful writer.
     #[must_use]
     pub fn with_excel_writer(excel_writer: ExcelWriter) -> Self {
         Self {
@@ -35,7 +35,7 @@ impl ExcelWriterSheetBuilder {
         }
     }
 
-    /// Creates a sheet builder with effective workbook options already
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Creates a sheet builder with effective workbook options already
     /// inherited, while retaining nullable sheet-level overrides separately.
     #[must_use]
     pub fn with_excel_writer_and_options(
@@ -59,7 +59,7 @@ impl ExcelWriterSheetBuilder {
         }
     }
 
-    /// Sets the zero-based sheet number.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Sets the zero-based sheet number.
     #[must_use]
     pub fn sheet_no(mut self, sheet_no: i32) -> Self {
         self.write_sheet.set_sheet_no(sheet_no);
@@ -70,7 +70,7 @@ impl ExcelWriterSheetBuilder {
         self
     }
 
-    /// Sets the sheet name.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Sets the sheet name.
     #[must_use]
     pub fn sheet_name(mut self, sheet_name: impl Into<String>) -> Self {
         let sheet_name = sheet_name.into();
@@ -79,7 +79,7 @@ impl ExcelWriterSheetBuilder {
         self
     }
 
-    /// Sets the number of rows before the header.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Sets the number of rows before the header.
     #[must_use]
     pub fn relative_head_row_index(mut self, index: i32) -> Self {
         self.write_sheet.parameter.relative_head_row_index = Some(index);
@@ -87,7 +87,7 @@ impl ExcelWriterSheetBuilder {
         self
     }
 
-    /// Controls header output.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Controls header output.
     #[must_use]
     pub fn need_head(mut self, enabled: bool) -> Self {
         self.write_sheet.parameter.need_head = Some(enabled);
@@ -95,7 +95,7 @@ impl ExcelWriterSheetBuilder {
         self
     }
 
-    /// Enables or disables Java's default bold header style.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Enables or disables Java's default bold header style.
     #[must_use]
     pub fn use_default_style(mut self, enabled: bool) -> Self {
         self.write_sheet.parameter.use_default_style = Some(enabled);
@@ -108,7 +108,7 @@ impl ExcelWriterSheetBuilder {
         self
     }
 
-    /// Controls automatic multi-level header merging.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Controls automatic multi-level header merging.
     #[must_use]
     pub fn automatic_merge_head(mut self, enabled: bool) -> Self {
         self.write_sheet.parameter.automatic_merge_head = Some(enabled);
@@ -116,7 +116,7 @@ impl ExcelWriterSheetBuilder {
         self
     }
 
-    /// Includes only the supplied physical columns.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Includes only the supplied physical columns.
     #[must_use]
     pub fn include_column_indexes(mut self, indexes: impl IntoIterator<Item = usize>) -> Self {
         let indexes = indexes.into_iter().collect::<Vec<_>>();
@@ -125,7 +125,7 @@ impl ExcelWriterSheetBuilder {
         self
     }
 
-    /// Includes only the supplied Rust field names.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Includes only the supplied Rust field names.
     #[must_use]
     pub fn include_column_field_names<S>(mut self, names: impl IntoIterator<Item = S>) -> Self
     where
@@ -137,7 +137,7 @@ impl ExcelWriterSheetBuilder {
         self
     }
 
-    /// Excludes physical columns.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Excludes physical columns.
     #[must_use]
     pub fn exclude_column_indexes(mut self, indexes: impl IntoIterator<Item = usize>) -> Self {
         let indexes = indexes.into_iter().collect::<Vec<_>>();
@@ -146,7 +146,7 @@ impl ExcelWriterSheetBuilder {
         self
     }
 
-    /// Excludes Rust field names.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Excludes Rust field names.
     #[must_use]
     pub fn exclude_column_field_names<S>(mut self, names: impl IntoIterator<Item = S>) -> Self
     where
@@ -158,7 +158,7 @@ impl ExcelWriterSheetBuilder {
         self
     }
 
-    /// Orders output by the include-list order.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Orders output by the include-list order.
     #[must_use]
     pub fn order_by_include_column(mut self, enabled: bool) -> Self {
         self.write_sheet.parameter.order_by_include_column = Some(enabled);
@@ -166,20 +166,20 @@ impl ExcelWriterSheetBuilder {
         self
     }
 
-    /// Stores a handler owned by the sheet holder.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Stores a handler owned by the sheet holder.
     #[must_use]
     pub fn register_write_handler(mut self, handler: impl WriteHandler + 'static) -> Self {
         self.handlers.push(Box::new(handler));
         self
     }
 
-    /// Builds the untyped Java-compatible sheet metadata.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Builds the untyped Java-compatible sheet metadata.
     #[must_use]
     pub fn build(&self) -> WriteSheetMetadata {
         self.write_sheet.clone()
     }
 
-    /// Writes the supplied rows and finishes the owned writer.
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Writes the supplied rows and finishes the owned writer.
     ///
     /// This mirrors Java `ExcelWriterSheetBuilder.doWrite(Collection)`.
     ///
@@ -200,7 +200,7 @@ impl ExcelWriterSheetBuilder {
         writer.finish()
     }
 
-    /// Resolves rows lazily, then delegates to [`Self::do_write`].
+    /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 Resolves rows lazily, then delegates to [`Self::do_write`].
     ///
     /// # Errors
     ///

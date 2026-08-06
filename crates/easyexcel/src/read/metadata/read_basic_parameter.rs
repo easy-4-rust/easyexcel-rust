@@ -18,13 +18,13 @@ pub struct ReadBasicParameter {
 }
 
 impl ReadBasicParameter {
-    /// 创建默认参数。
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadBasicParameter。 创建默认参数。
     #[must_use]
     pub fn new() -> Self {
         Self { head_row_number: 1 }
     }
 
-    /// 从 `ReadOptions` 构造。
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadBasicParameter。 从 `ReadOptions` 构造。
     #[must_use]
     pub fn from_options(options: &ReadOptions) -> Self {
         Self {

@@ -6,14 +6,7 @@
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
-/// Decoded blank-cell placement produced by [`BlankRecordHandler`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct BlankCell {
-    /// Zero-based row. (Java `BlankRecord.getRow`)
-    pub row: u32,
-    /// Zero-based column. (Java `BlankRecord.getColumn`)
-    pub column: usize,
-}
+include!("blank_record_handler/blank_cell.rs");
 
 /// 对应 Java：`BlankRecordHandler`.
 #[derive(Debug, Default)]
@@ -23,13 +16,13 @@ pub struct BlankRecordHandler {
 }
 
 impl BlankRecordHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.BlankRecordHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Java `BlankRecordHandler.processRecord` — emit an empty cell at `(row, column)`.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.BlankRecordHandler。 Java `BlankRecordHandler.processRecord` — emit an empty cell at `(row, column)`.
     #[must_use]
     pub fn process_blank(row: u32, column: usize) -> BlankCell {
         BlankCell { row, column }

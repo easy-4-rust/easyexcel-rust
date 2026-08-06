@@ -5,7 +5,7 @@ use crate::core::excel_color::ExcelColor;
 use crate::core::excel_font_script::ExcelFontScript;
 use crate::core::excel_underline::ExcelUnderline;
 
-/// Font properties generated from `HeadFontStyle` or `ContentFontStyle` equivalents.
+/// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。 Font properties generated from `HeadFontStyle` or `ContentFontStyle` equivalents.
 ///
 /// All nine fields correspond one-for-one to Java's `WriteFont`. `font_name`
 /// is constrained to `&'static str` so the struct can stay `Copy`.
@@ -34,6 +34,7 @@ pub struct ExcelFontStyle {
 impl ExcelFontStyle {
     /// Creates an annotation font style with every property unspecified. (Java `WriteFont()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn new() -> Self {
         Self {
             font_name: None,

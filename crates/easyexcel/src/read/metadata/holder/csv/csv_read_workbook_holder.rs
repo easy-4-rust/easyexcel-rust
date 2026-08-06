@@ -17,7 +17,7 @@ impl CsvReadWorkbookHolder {
         }
     }
 
-    /// Creates the format-specific holder from resolved workbook options.
+    /// 对应 Java：com.alibaba.excel.read.metadata.holder.csv.CsvReadWorkbookHolder。 Creates the format-specific holder from resolved workbook options.
     #[must_use]
     pub fn from_options(options: &crate::ReadOptions) -> Self {
         Self {
@@ -27,6 +27,7 @@ impl CsvReadWorkbookHolder {
 
     /// Returns the inner holder.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.read.metadata.holder.csv.CsvReadWorkbookHolder。
     pub const fn inner(&self) -> &ReadWorkbookHolder {
         &self.inner
     }

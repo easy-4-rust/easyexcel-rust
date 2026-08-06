@@ -22,14 +22,14 @@ use crate::MergeRange;
 /// Legacy value-replay snapshot owned by the XLSX engine.
 pub(crate) use easyexcel_xlsx::LegacyTemplateSheet as TemplateSheetData;
 
-/// In-memory XLSX template package used by the ZIP preserve write path.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 In-memory XLSX template package used by the ZIP preserve write path.
 #[derive(Debug, Clone)]
 pub(crate) struct TemplatePackage {
     entries: OoxmlTemplatePackage,
 }
 
 impl TemplatePackage {
-    /// Loads an XLSX template package from bytes.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Loads an XLSX template package from bytes.
     ///
     /// # Errors
     ///
@@ -40,7 +40,7 @@ impl TemplatePackage {
             .map_err(ExcelError::from)
     }
 
-    /// Returns worksheet names in workbook order.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Returns worksheet names in workbook order.
     ///
     /// # Errors
     ///
@@ -49,7 +49,7 @@ impl TemplatePackage {
         self.entries.sheet_names().map_err(ExcelError::from)
     }
 
-    /// Returns the next zero-based append row for a worksheet name.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Returns the next zero-based append row for a worksheet name.
     ///
     /// # Errors
     ///
@@ -74,7 +74,7 @@ impl TemplatePackage {
             .map_err(ExcelError::from)
     }
 
-    /// Appends typed rows into a worksheet's `sheetData`.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Appends typed rows into a worksheet's `sheetData`.
     ///
     /// # Errors
     ///
@@ -88,7 +88,7 @@ impl TemplatePackage {
         self.append_rows_with_heights(sheet_name, rows, &[])
     }
 
-    /// Appends rows and applies optional per-row heights to the newly created
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Appends rows and applies optional per-row heights to the newly created
     /// row elements.
     #[allow(dead_code)]
     pub(crate) fn append_rows_with_heights(
@@ -100,7 +100,7 @@ impl TemplatePackage {
         self.append_rows_with_layout(sheet_name, rows, row_heights, &[])
     }
 
-    /// Appends rows with optional row heights and per-cell workbook style indexes.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Appends rows with optional row heights and per-cell workbook style indexes.
     #[allow(dead_code)]
     pub(crate) fn append_rows_with_layout(
         &mut self,
@@ -112,7 +112,7 @@ impl TemplatePackage {
         self.append_rows_with_layout_and_absent(sheet_name, rows, row_heights, cell_styles, &[])
     }
 
-    /// Appends rows while preserving Java `null` row gaps without creating
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Appends rows while preserving Java `null` row gaps without creating
     /// empty OOXML `<row>` elements for those positions.
     pub(crate) fn append_rows_with_layout_and_absent(
         &mut self,
@@ -135,7 +135,7 @@ impl TemplatePackage {
             .map_err(ExcelError::from)
     }
 
-    /// Applies column widths and absolute merged regions to one preserved
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Applies column widths and absolute merged regions to one preserved
     /// worksheet part.
     ///
     /// This is the OOXML equivalent of Java annotation-generated
@@ -162,7 +162,7 @@ impl TemplatePackage {
             .map_err(ExcelError::from)
     }
 
-    /// Imports styles compiled by `rust_xlsxwriter` into the preserved
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Imports styles compiled by `rust_xlsxwriter` into the preserved
     /// template style table and returns the destination style index for each
     /// compiler worksheet row.
     pub(crate) fn import_compiled_styles(
@@ -175,7 +175,7 @@ impl TemplatePackage {
             .map_err(ExcelError::from)
     }
 
-    /// Serializes the package to owned XLSX bytes.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Serializes the package to owned XLSX bytes.
     ///
     /// # Errors
     ///
@@ -184,7 +184,7 @@ impl TemplatePackage {
         self.entries.to_bytes().map_err(ExcelError::from)
     }
 
-    /// Writes the package to a filesystem path.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Writes the package to a filesystem path.
     ///
     /// # Errors
     ///
@@ -194,7 +194,7 @@ impl TemplatePackage {
         self.entries.save_to_path(path).map_err(ExcelError::from)
     }
 
-    /// Writes the package to an arbitrary writer.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Writes the package to an arbitrary writer.
     ///
     /// # Errors
     ///
@@ -207,7 +207,7 @@ impl TemplatePackage {
     }
 }
 
-/// Returns whether [`crate::WriteOptions`] carries a template source.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Returns whether [`crate::WriteOptions`] carries a template source.
 ///
 /// Corresponds to Java `WriteWorkbook.templateFile` / `templateInputStream`
 /// being non-null.
@@ -216,7 +216,7 @@ pub(crate) fn has_template(template_file: Option<&Path>, template_bytes: Option<
     easyexcel_xlsx::has_template(template_file, template_bytes)
 }
 
-/// Loads template bytes from a file path or an in-memory copy.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Loads template bytes from a file path or an in-memory copy.
 ///
 /// # Errors
 ///
@@ -229,7 +229,7 @@ pub(crate) fn load_template_bytes(
     easyexcel_xlsx::load_template_bytes(template_file, template_bytes).map_err(ExcelError::from)
 }
 
-/// Rejects template types that Java also rejects for the XLSX ZIP path.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Rejects template types that Java also rejects for the XLSX ZIP path.
 ///
 /// # Errors
 ///
@@ -244,7 +244,7 @@ pub(crate) fn validate_template_source(
         .map_err(ExcelError::from)
 }
 
-/// Parses an XLSX template into ordered sheet snapshots.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Parses an XLSX template into ordered sheet snapshots.
 ///
 /// Used only by the explicit legacy value-replay path
 /// ([`crate::WriteOptions::use_legacy_template_seed`]).
@@ -271,7 +271,7 @@ pub(crate) fn resolve_template_target(
     easyexcel_xlsx::resolve_sheet_target(&names, sheet_index, sheet_name)
 }
 
-/// Resolves a template target against a ZIP package sheet list.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Resolves a template target against a ZIP package sheet list.
 #[must_use]
 pub(crate) fn resolve_package_target(
     sheet_names: &[String],

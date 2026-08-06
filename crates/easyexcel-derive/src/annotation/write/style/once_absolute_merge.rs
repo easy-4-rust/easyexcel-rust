@@ -8,7 +8,7 @@ use syn::token::Paren;
 use crate::annotation::integer::{SignedInteger, parse_signed_i32};
 use crate::annotation::struct_options::StructOptions;
 
-/// 解析一次性绝对合并区域。
+/// 对应 Java：com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge。 解析一次性绝对合并区域。
 pub(crate) fn parse(
     meta: &ParseNestedMeta<'_>,
     options: &mut StructOptions,

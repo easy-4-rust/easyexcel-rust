@@ -9,7 +9,7 @@ use crate::read::sheet_selector::SheetSelector;
 use crate::read::stored_read_cache_selector::StoredReadCacheSelector;
 use std::collections::{HashMap, HashSet};
 
-/// Workbook read configuration shared by XLSX, XLS, and CSV engines.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Workbook read configuration shared by XLSX, XLS, and CSV engines.
 #[derive(Debug, Clone)]
 pub struct ReadOptions {
     /// Sheet selection.
@@ -39,7 +39,7 @@ pub struct ReadOptions {
     /// Keys are workbook header names and values are names exposed to row mapping
     /// and `ReadListener::invoke_head`.
     pub header_aliases: HashMap<String, String>,
-    /// User value exposed through every [`AnalysisContext`].
+    /// User value exposed through every `AnalysisContext`.
     pub custom_object: Option<CustomReadObject>,
     /// Value mode used by Java-compatible no-model [`crate::core::DynamicRow`] reads.
     pub read_default_return: ReadDefaultReturn,

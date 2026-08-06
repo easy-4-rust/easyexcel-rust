@@ -1,6 +1,6 @@
 //! Sheet selection for workbook reads.
 
-/// Selects a worksheet by index, name, or all sheets.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Selects a worksheet by index, name, or all sheets.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum SheetSelector {
     /// The first worksheet.
@@ -15,7 +15,7 @@ pub enum SheetSelector {
 }
 
 impl SheetSelector {
-    /// 映射为格式无关的引擎选择请求。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 映射为格式无关的引擎选择请求。
     #[must_use]
     pub(crate) fn as_engine_selection(&self) -> easyexcel_io::SheetSelection<'_> {
         match self {

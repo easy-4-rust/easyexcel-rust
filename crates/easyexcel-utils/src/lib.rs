@@ -1,4 +1,4 @@
-//! EasyExcel 可复用字符串、集合、布尔与整数工具算法。
+//! `EasyExcel` 可复用字符串、集合、布尔与整数工具算法。
 
 pub mod utils;
 

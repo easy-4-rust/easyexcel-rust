@@ -3,12 +3,14 @@
 use easyexcel_io::{Error, Result};
 
 /// XLSX 工作表允许的最大行数。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const MAX_XLSX_ROW_NUMBER: u32 = 1_048_576;
 
 /// XLSX 工作表允许的最大列数。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const MAX_XLSX_COLUMN_NUMBER: usize = 16_384;
 
-/// 解析 XLSX XML 中的一基行号并返回零基坐标。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析 XLSX XML 中的一基行号并返回零基坐标。
 ///
 /// # Errors
 ///
@@ -25,7 +27,7 @@ pub fn parse_xlsx_row_number(value: &str) -> Result<u32> {
     Ok(one_based - 1)
 }
 
-/// 解析 OOXML 中用于样式、共享字符串等表索引的无符号整数。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析 OOXML 中用于样式、共享字符串等表索引的无符号整数。
 ///
 /// # Errors
 ///
@@ -36,7 +38,7 @@ pub fn parse_xlsx_index(value: &str, attribute: &str) -> Result<usize> {
         .map_err(|error| Error::Xlsx(format!("invalid XLSX {attribute} index {value:?}: {error}")))
 }
 
-/// 解析 A1 单元格引用，返回零基行列坐标。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析 A1 单元格引用，返回零基行列坐标。
 ///
 /// 支持绝对引用中的 `$` 前缀，并校验 XLSX 行列上限。
 ///
@@ -72,7 +74,7 @@ pub fn parse_a1_cell_reference(reference: &str) -> Result<(u32, usize)> {
     Ok((parse_xlsx_row_number(row)?, one_based_column - 1))
 }
 
-/// 解析 A1 或 A1:B2 区域，返回零基首尾行列坐标。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析 A1 或 A1:B2 区域，返回零基首尾行列坐标。
 ///
 /// # Errors
 ///
@@ -91,7 +93,7 @@ pub fn parse_a1_cell_range(reference: &str) -> Result<(u32, u32, usize, usize)> 
     Ok((first_row, last_row, first_column, last_column))
 }
 
-/// 返回工作表 dimension 引用中的最后一行（零基）。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 返回工作表 dimension 引用中的最后一行（零基）。
 ///
 /// # Errors
 ///

@@ -30,13 +30,13 @@ pub struct ExcelReaderBuilder {
 }
 
 impl ExcelReaderBuilder {
-    /// Creates a builder. (Java `new ExcelReaderBuilder()`)
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Creates a builder. (Java `new ExcelReaderBuilder()`)
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Sets the file path. (Java `file(String pathName)`)
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Sets the file path. (Java `file(String pathName)`)
     #[must_use]
     pub fn file(mut self, path: impl Into<PathBuf>) -> Self {
         self.file = Some(path.into());
@@ -44,7 +44,7 @@ impl ExcelReaderBuilder {
         self
     }
 
-    /// Materialises a caller-supplied input stream into an automatically
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Materialises a caller-supplied input stream into an automatically
     /// deleted file and selects the existing XLSX/XLS/CSV parsing engine.
     ///
     /// Java accepts a non-seekable `InputStream`, while XLSX and XLS readers
@@ -53,7 +53,7 @@ impl ExcelReaderBuilder {
     ///
     /// # Errors
     ///
-    /// 当输入流读取失败或临时文件创建/写入失败时返回 [`ExcelError`]。
+    /// 当输入流读取失败或临时文件创建/写入失败时返回 `ExcelError`。
     pub fn input_stream<R>(mut self, input: R) -> Result<Self>
     where
         R: Read,
@@ -64,14 +64,14 @@ impl ExcelReaderBuilder {
         Ok(self)
     }
 
-    /// Selects a worksheet by zero-based index. (Java `sheet(Integer)`)
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Selects a worksheet by zero-based index. (Java `sheet(Integer)`)
     #[must_use]
     pub fn sheet(mut self, index: usize) -> Self {
         self.options.sheet = SheetSelector::Index(index);
         self
     }
 
-    /// Selects a worksheet by name. (Java `sheet(String)`)
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Selects a worksheet by name. (Java `sheet(String)`)
     #[must_use]
     pub fn sheet_name(mut self, name: impl Into<String>) -> Self {
         self.options.sheet = SheetSelector::Name(name.into());
@@ -80,12 +80,13 @@ impl ExcelReaderBuilder {
 
     /// Sets the number of header rows. (Java `headRowNumber(Integer)`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。
     pub const fn head_row_number(mut self, rows: u32) -> Self {
         self.options.head_row_number = rows;
         self
     }
 
-    /// Sets the character encoding used for CSV input. (Java `charset(Charset)`)
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Sets the character encoding used for CSV input. (Java `charset(Charset)`)
     #[must_use]
     pub fn charset(mut self, charset: impl Into<CsvCharset>) -> Self {
         self.options.charset = charset.into();
@@ -95,12 +96,13 @@ impl ExcelReaderBuilder {
     /// Controls whether physically empty rows are skipped.
     /// (Java `ignoreEmptyRow(Boolean)`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。
     pub const fn ignore_empty_row(mut self, ignore: bool) -> Self {
         self.options.ignore_empty_row = ignore;
         self
     }
 
-    /// Stores a value exposed through [`AnalysisContext::custom_object`].
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Stores a value exposed through [`AnalysisContext::custom_object`].
     /// (Java `customObject(Object)`)
     #[must_use]
     pub fn custom_object<C>(mut self, custom_object: C) -> Self
@@ -111,7 +113,7 @@ impl ExcelReaderBuilder {
         self
     }
 
-    /// Sets the workbook password used by encrypted OOXML input.
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Sets the workbook password used by encrypted OOXML input.
     /// (Java `password(String)`)
     #[must_use]
     pub fn password(mut self, password: impl Into<String>) -> Self {
@@ -119,7 +121,7 @@ impl ExcelReaderBuilder {
         self
     }
 
-    /// Enables one additional metadata category.
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Enables one additional metadata category.
     /// (Java `extraRead(CellExtraTypeEnum)`)
     #[must_use]
     pub fn extra_read(mut self, extra_type: CellExtraType) -> Self {
@@ -130,12 +132,13 @@ impl ExcelReaderBuilder {
     /// Selects the no-model value representation.
     /// (Java `readDefaultReturn(ReadDefaultReturnEnum)`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。
     pub const fn read_default_return(mut self, mode: ReadDefaultReturn) -> Self {
         self.options.read_default_return = mode;
         self
     }
 
-    /// Controls scientific formatting.
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Controls scientific formatting.
     #[must_use]
     pub fn use_scientific_format(mut self, enabled: bool) -> Self {
         self.options.scientific_format = if enabled {
@@ -146,7 +149,7 @@ impl ExcelReaderBuilder {
         self
     }
 
-    /// Sets the shared-string cache mode directly. (Java `readCache(ReadCache)`)
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Sets the shared-string cache mode directly. (Java `readCache(ReadCache)`)
     #[must_use]
     pub fn read_cache(mut self, mode: ReadCacheMode) -> Self {
         self.options.read_cache = mode;
@@ -154,20 +157,20 @@ impl ExcelReaderBuilder {
         self
     }
 
-    /// Installs a cache selector. (Java `readCacheSelector(ReadCacheSelector)`)
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Installs a cache selector. (Java `readCacheSelector(ReadCacheSelector)`)
     #[must_use]
     pub fn read_cache_selector(mut self, selector: StoredReadCacheSelector) -> Self {
         self.options.read_cache_selector = Some(selector);
         self
     }
 
-    /// Installs Java's default simple selector.
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Installs Java's default simple selector.
     #[must_use]
     pub fn simple_read_cache_selector(self, selector: SimpleReadCacheSelector) -> Self {
         self.read_cache_selector(StoredReadCacheSelector::Simple(selector))
     }
 
-    /// Registers the first typed listener and returns a builder that owns it.
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Registers the first typed listener and returns a builder that owns it.
     ///
     /// This is the Rust equivalent of Java
     /// `ExcelReaderBuilder.registerReadListener(...)`: the listener becomes
@@ -190,7 +193,7 @@ impl ExcelReaderBuilder {
     ///
     /// # Errors
     ///
-    /// 当未设置 `file`（对应 Java 抛异常）或工作簿打开失败时返回 [`ExcelError`]。
+    /// 当未设置 `file`（对应 Java 抛异常）或工作簿打开失败时返回 `ExcelError`。
     pub fn build<T, L>(self, listener: L) -> Result<ExcelReader<T, L>>
     where
         T: ExcelRow,
@@ -209,11 +212,11 @@ impl ExcelReaderBuilder {
         }
     }
 
-    /// Builds and immediately reads all configured sheets. (Java `doReadAll()`)
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Builds and immediately reads all configured sheets. (Java `doReadAll()`)
     ///
     /// # Errors
     ///
-    /// 当构建失败（未设置 `file`）或任一工作表解析失败时返回 [`ExcelError`]。
+    /// 当构建失败（未设置 `file`）或任一工作表解析失败时返回 `ExcelError`。
     pub fn do_read_all<T, L>(self, listener: L) -> Result<()>
     where
         T: ExcelRow,
@@ -223,12 +226,12 @@ impl ExcelReaderBuilder {
         reader.read_all()
     }
 
-    /// Reads synchronously and returns all converted rows.
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Reads synchronously and returns all converted rows.
     /// (Java `doReadAllSync()`)
     ///
     /// # Errors
     ///
-    /// 当构建失败（未设置 `file`）或任一工作表解析失败时返回 [`ExcelError`]。
+    /// 当构建失败（未设置 `file`）或任一工作表解析失败时返回 `ExcelError`。
     pub fn do_read_all_sync<T>(self) -> Result<Vec<T>>
     where
         T: ExcelRow,
@@ -244,183 +247,13 @@ impl ExcelReaderBuilder {
     }
 }
 
+include!("excel_reader_builder/registered_excel_reader_builder.rs");
+
+include!("excel_reader_builder/shared_collect_listener.rs");
+
 #[cfg(test)]
 fn input_suffix(bytes: &[u8]) -> &'static str {
     easyexcel_xlsx::excel_input_suffix(bytes)
-}
-
-/// An [`ExcelReaderBuilder`] carrying its registered listener.
-///
-/// Java stores listeners inside `ReadWorkbook`; this wrapper provides the
-/// same lifecycle without erasing the Rust row or listener types.
-pub struct RegisteredExcelReaderBuilder<T> {
-    builder: ExcelReaderBuilder,
-    listeners: ReadListenerList<T>,
-}
-
-impl<T> RegisteredExcelReaderBuilder<T>
-where
-    T: ExcelRow + Clone,
-{
-    /// Sets the file path.
-    #[must_use]
-    pub fn file(mut self, path: impl Into<PathBuf>) -> Self {
-        self.builder = self.builder.file(path);
-        self
-    }
-
-    /// Selects a worksheet by zero-based index.
-    #[must_use]
-    pub fn sheet(mut self, index: usize) -> Self {
-        self.builder = self.builder.sheet(index);
-        self
-    }
-
-    /// Selects a worksheet by name.
-    #[must_use]
-    pub fn sheet_name(mut self, name: impl Into<String>) -> Self {
-        self.builder = self.builder.sheet_name(name);
-        self
-    }
-
-    /// Sets the number of header rows.
-    #[must_use]
-    pub fn head_row_number(mut self, rows: u32) -> Self {
-        self.builder = self.builder.head_row_number(rows);
-        self
-    }
-
-    /// Sets the CSV character encoding.
-    #[must_use]
-    pub fn charset(mut self, charset: impl Into<CsvCharset>) -> Self {
-        self.builder = self.builder.charset(charset);
-        self
-    }
-
-    /// Controls whether empty rows are skipped.
-    #[must_use]
-    pub fn ignore_empty_row(mut self, ignore: bool) -> Self {
-        self.builder = self.builder.ignore_empty_row(ignore);
-        self
-    }
-
-    /// Stores a custom context value.
-    #[must_use]
-    pub fn custom_object<C>(mut self, custom_object: C) -> Self
-    where
-        C: std::any::Any + Send + Sync,
-    {
-        self.builder = self.builder.custom_object(custom_object);
-        self
-    }
-
-    /// Sets the encrypted OOXML password.
-    #[must_use]
-    pub fn password(mut self, password: impl Into<String>) -> Self {
-        self.builder = self.builder.password(password);
-        self
-    }
-
-    /// Enables an extra metadata category.
-    #[must_use]
-    pub fn extra_read(mut self, extra_type: CellExtraType) -> Self {
-        self.builder = self.builder.extra_read(extra_type);
-        self
-    }
-
-    /// Selects the no-model value representation.
-    #[must_use]
-    pub fn read_default_return(mut self, mode: ReadDefaultReturn) -> Self {
-        self.builder = self.builder.read_default_return(mode);
-        self
-    }
-
-    /// Controls scientific formatting.
-    #[must_use]
-    pub fn use_scientific_format(mut self, enabled: bool) -> Self {
-        self.builder = self.builder.use_scientific_format(enabled);
-        self
-    }
-
-    /// Registers another listener after all listeners already present.
-    #[must_use]
-    pub fn register_read_listener<Next>(mut self, listener: Next) -> Self
-    where
-        Next: ReadListener<T> + 'static,
-    {
-        self.listeners.push(listener);
-        self
-    }
-
-    /// Builds an event-driven reader using the registered listener chain.
-    ///
-    /// # Errors
-    ///
-    /// 当未设置 `file`（对应 Java 抛异常）或工作簿打开失败时返回 [`ExcelError`]。
-    pub fn build(self) -> Result<ExcelReader<T, ReadListenerList<T>>> {
-        self.builder.build(self.listeners)
-    }
-
-    /// Builds, reads, and finishes all configured sheets.
-    ///
-    /// # Errors
-    ///
-    /// 当构建失败（未设置 `file`）或任一工作表解析失败时返回 [`ExcelError`]。
-    pub fn do_read_all(self) -> Result<()> {
-        self.builder.do_read_all(self.listeners)
-    }
-
-    /// Reads synchronously while retaining all previously registered listeners.
-    ///
-    /// # Errors
-    ///
-    /// 当构建失败（未设置 `file`）或任一工作表解析失败时返回 [`ExcelError`]。
-    pub fn do_read_all_sync(self) -> Result<Vec<T>> {
-        let rows = Rc::new(RefCell::new(Vec::new()));
-        let mut collector = SharedCollectListener(Rc::clone(&rows));
-        let mut reader = self.build()?;
-        reader.read_all_with_additional_listener(&mut collector)?;
-        reader.finish();
-        drop(reader);
-        let collected = std::mem::take(&mut *rows.borrow_mut());
-        Ok(collected)
-    }
-}
-
-struct SharedCollectListener<T>(Rc<RefCell<Vec<T>>>);
-
-impl<T> ReadListener<T> for SharedCollectListener<T> {
-    fn invoke(&mut self, data: T, _context: &AnalysisContext) -> Result<()> {
-        self.0.borrow_mut().push(data);
-        Ok(())
-    }
-}
-
-impl<T> AbstractExcelReaderParameterBuilder<T> for RegisteredExcelReaderBuilder<T>
-where
-    T: ExcelRow + Clone,
-{
-    // 对应 Java：`Math.max(headRowNumber, 0)` 保证非负后再存入 u32 字段，
-    // 符号位必然为 0，`as u32` 不会丢失符号。
-    #[allow(clippy::cast_sign_loss)]
-    fn head_row_number(&mut self, head_row_number: i32) -> &mut Self {
-        self.builder.options.head_row_number = head_row_number.max(0) as u32;
-        self
-    }
-
-    fn use_scientific_format(&mut self, enabled: bool) -> &mut Self {
-        self.builder.options.scientific_format = if enabled {
-            crate::ScientificFormatMode::Scientific
-        } else {
-            crate::ScientificFormatMode::Plain
-        };
-        self
-    }
-
-    fn register_read_listener(&mut self, listener: Box<dyn ReadListener<T>>) -> &mut Self {
-        self.listeners.push_boxed(listener);
-        self
-    }
 }
 
 #[cfg(test)]

@@ -21,7 +21,7 @@ pub struct WriteWorkbook {
 }
 
 impl WriteWorkbook {
-    /// Creates a new `WriteWorkbook` with default options.
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Creates a new `WriteWorkbook` with default options.
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -33,43 +33,44 @@ impl WriteWorkbook {
 
     /// Returns the effective write options.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。
     pub const fn options(&self) -> &WriteOptions {
         &self.options
     }
 
-    /// Returns the Excel file type. (Java `getExcelType()`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Returns the Excel file type. (Java `getExcelType()`)
     #[must_use]
     pub fn excel_type(&self) -> crate::support::ExcelTypeEnum {
         self.excel_type
     }
 
-    /// Sets the Excel file type. (Java `setExcelType(ExcelTypeEnum)`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Sets the Excel file type. (Java `setExcelType(ExcelTypeEnum)`)
     pub fn set_excel_type(&mut self, excel_type: crate::support::ExcelTypeEnum) -> &mut Self {
         self.excel_type = excel_type;
         self.options.excel_type = Some(excel_type);
         self
     }
 
-    /// Returns the output file path. (Java `getFile()`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Returns the output file path. (Java `getFile()`)
     ///
     #[must_use]
     pub fn file(&self) -> Option<&std::path::Path> {
         self.output_file.as_deref()
     }
 
-    /// Sets the output file path. (Java `setFile(File)`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Sets the output file path. (Java `setFile(File)`)
     pub fn set_file(&mut self, file: impl Into<std::path::PathBuf>) -> &mut Self {
         self.output_file = Some(file.into());
         self
     }
 
-    /// Returns the template file path. (Java `getTemplateFile()`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Returns the template file path. (Java `getTemplateFile()`)
     #[must_use]
     pub fn template_file(&self) -> Option<&std::path::Path> {
         self.options.template_file.as_deref()
     }
 
-    /// Sets the template file and clears an input-stream template.
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Sets the template file and clears an input-stream template.
     /// (Java `setTemplateFile(File)`)
     pub fn set_template_file(&mut self, template_file: impl Into<std::path::PathBuf>) -> &mut Self {
         self.options.template_file = Some(template_file.into());
@@ -77,7 +78,7 @@ impl WriteWorkbook {
         self
     }
 
-    /// Sets an already-buffered input-stream template and clears the file.
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Sets an already-buffered input-stream template and clears the file.
     /// (Java `setTemplateInputStream(InputStream)`)
     pub fn set_template_bytes(&mut self, template_bytes: impl Into<Vec<u8>>) -> &mut Self {
         self.options.template_bytes = Some(template_bytes.into());
@@ -85,13 +86,13 @@ impl WriteWorkbook {
         self
     }
 
-    /// Returns the charset. (Java `getCharset()`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Returns the charset. (Java `getCharset()`)
     #[must_use]
     pub fn charset(&self) -> &CsvCharset {
         &self.options.charset
     }
 
-    /// Sets the charset. (Java `setCharset(Charset)`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Sets the charset. (Java `setCharset(Charset)`)
     pub fn set_charset(&mut self, charset: CsvCharset) -> &mut Self {
         self.options.charset = charset;
         self
@@ -99,23 +100,24 @@ impl WriteWorkbook {
 
     /// Returns the BOM flag. (Java `getWithBom()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。
     pub const fn with_bom(&self) -> bool {
         self.options.with_bom
     }
 
-    /// Sets the BOM flag. (Java `setWithBom(Boolean)`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Sets the BOM flag. (Java `setWithBom(Boolean)`)
     pub fn set_with_bom(&mut self, with_bom: bool) -> &mut Self {
         self.options.with_bom = with_bom;
         self
     }
 
-    /// Returns the password, if any. (Java `getPassword()`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Returns the password, if any. (Java `getPassword()`)
     #[must_use]
     pub fn password(&self) -> Option<&str> {
         self.options.password.as_deref()
     }
 
-    /// Sets the password. (Java `setPassword(String)`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Sets the password. (Java `setPassword(String)`)
     pub fn set_password(&mut self, password: impl Into<String>) -> &mut Self {
         self.options.password = Some(password.into());
         self
@@ -123,11 +125,12 @@ impl WriteWorkbook {
 
     /// Returns the in-memory flag. (Java `getInMemory()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。
     pub const fn in_memory(&self) -> bool {
         !self.options.constant_memory
     }
 
-    /// Sets the in-memory flag. (Java `setInMemory(boolean)`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Sets the in-memory flag. (Java `setInMemory(boolean)`)
     pub fn set_in_memory(&mut self, in_memory: bool) -> &mut Self {
         self.options.constant_memory = !in_memory;
         self
@@ -135,11 +138,12 @@ impl WriteWorkbook {
 
     /// Returns the write-on-exception flag. (Java `getWriteExcelOnException()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。
     pub const fn write_excel_on_exception(&self) -> bool {
         self.options.write_excel_on_exception
     }
 
-    /// Sets the write-on-exception flag. (Java `setWriteExcelOnException(boolean)`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Sets the write-on-exception flag. (Java `setWriteExcelOnException(boolean)`)
     pub fn set_write_excel_on_exception(&mut self, value: bool) -> &mut Self {
         self.options.write_excel_on_exception = value;
         self
@@ -147,11 +151,12 @@ impl WriteWorkbook {
 
     /// Returns the auto-close-stream flag. (Java `getAutoCloseStream()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。
     pub const fn auto_close_stream(&self) -> bool {
         self.options.auto_close_stream
     }
 
-    /// Sets the auto-close-stream flag. (Java `setAutoCloseStream(boolean)`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Sets the auto-close-stream flag. (Java `setAutoCloseStream(boolean)`)
     pub fn set_auto_close_stream(&mut self, value: bool) -> &mut Self {
         self.options.auto_close_stream = value;
         self

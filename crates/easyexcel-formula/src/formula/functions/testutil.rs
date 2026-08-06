@@ -7,7 +7,7 @@ use crate::formula::context::{CellRef, Context};
 use crate::formula::value::Value;
 use easyexcel_model::dates::DateSystem;
 
-/// A mock evaluation context. By default it is an empty single-sheet workbook;
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 A mock evaluation context. By default it is an empty single-sheet workbook;
 /// use [`TestCtx::with_cells`] to seed cell values for range-based functions.
 pub struct TestCtx {
     cells: HashMap<(usize, u32, u32), Value>,
@@ -18,6 +18,8 @@ pub struct TestCtx {
 }
 
 impl TestCtx {
+    #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub fn new() -> Self {
         TestCtx {
             cells: HashMap::new(),
@@ -32,7 +34,8 @@ impl TestCtx {
         }
     }
 
-    /// Seed cells on sheet 0 from `(row, col, value)` triples.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Seed cells on sheet 0 from `(row, col, value)` triples.
+    #[must_use]
     pub fn with_cells(cells: &[(u32, u32, Value)]) -> Self {
         let mut c = TestCtx::new();
         for (r, col, v) in cells {
@@ -40,11 +43,11 @@ impl TestCtx {
         }
         c
     }
-
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub fn set(&mut self, row: u32, col: u32, v: Value) {
         self.cells.insert((0, row, col), v);
     }
-
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub fn set_current(&mut self, row: u32, col: u32) {
         self.current = CellRef { sheet: 0, row, col };
     }
@@ -88,7 +91,8 @@ impl Context for TestCtx {
     }
 }
 
-/// Helper to build a [`Value::Ref`] over sheet 0 for tests.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Helper to build a [`Value::Ref`] over sheet 0 for tests.
+#[must_use]
 pub fn rng(r0: u32, c0: u32, r1: u32, c1: u32) -> Value {
     Value::Ref(crate::formula::value::RefRange {
         sheet: 0,

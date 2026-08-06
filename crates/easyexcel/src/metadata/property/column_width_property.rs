@@ -10,11 +10,13 @@ pub struct ColumnWidthProperty {
 impl ColumnWidthProperty {
     /// Creates a `ColumnWidthProperty`. (Java constructor)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ColumnWidthProperty。
     pub const fn new(width: u16) -> Self {
         Self { width }
     }
     /// Returns the width. (Java `getWidth()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ColumnWidthProperty。
     pub const fn width(&self) -> u16 {
         self.width
     }

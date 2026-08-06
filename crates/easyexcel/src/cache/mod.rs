@@ -13,7 +13,7 @@
 //! | `ReadCache` | [`ReadCache`] | Shared-string put/get contract |
 //!
 //! XLSX SAX uses [`crate::read::read_cache::ReadCacheMode`] (`Auto` / `Memory` / `Moka` / `File`) wired
-//! through [`ReadOptions::read_cache`] and optional [`ReadOptions::read_cache_selector`].
+//! through `ReadOptions::read_cache` and optional `ReadOptions::read_cache_selector`.
 //! Legacy XLS reads use the `easyexcel-xls` BIFF engine and do not consult these selectors.
 
 mod file_cache;

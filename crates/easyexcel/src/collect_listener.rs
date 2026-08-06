@@ -5,7 +5,7 @@
 
 use crate::core::{AnalysisContext, ReadListener, Result};
 
-/// 同步读取内部使用的收集型监听器。
+/// 对应 Java：`EasyExcel.readSync(...)`。 同步读取内部使用的收集型监听器。
 ///
 /// 字段对 crate 内可见以便单元测试直接构造与断言。
 pub(crate) struct CollectListener<T>(pub(crate) Vec<T>);
@@ -17,12 +17,12 @@ impl<T> ReadListener<T> for CollectListener<T> {
     }
 }
 
-/// 暴露给 [`crate::ExcelSyncReaderBuilder`] 使用的收集入口。
+/// 对应 Java：`EasyExcel.readSync(...)`。 暴露给 [`crate::ExcelSyncReaderBuilder`] 使用的收集入口。
 pub(crate) fn collect_listener<T>() -> CollectListener<T> {
     CollectListener(Vec::new())
 }
 
-/// 取出监听器内部已收集的行。
+/// 对应 Java：`EasyExcel.readSync(...)`。 取出监听器内部已收集的行。
 pub(crate) fn drain_listener<T>(listener: CollectListener<T>) -> Vec<T> {
     listener.0
 }

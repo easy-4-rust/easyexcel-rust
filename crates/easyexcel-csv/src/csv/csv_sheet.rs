@@ -7,7 +7,7 @@ use easyexcel_model::CellValue as ModelCellValue;
 
 use super::{CsvCellValue, CsvRow};
 
-/// 单工作表、有序行的 CSV 模型。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 单工作表、有序行的 CSV 模型。
 #[derive(Debug, Clone, PartialEq)]
 pub struct CsvSheet<V: CsvCellValue = ModelCellValue> {
     name: String,
@@ -17,7 +17,7 @@ pub struct CsvSheet<V: CsvCellValue = ModelCellValue> {
 }
 
 impl<V: CsvCellValue> CsvSheet<V> {
-    /// 使用 Java 默认的一百行缓存创建工作表。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 使用 Java 默认的一百行缓存创建工作表。
     #[must_use]
     pub fn new(name: impl Into<String>) -> Self {
         Self {
@@ -28,24 +28,25 @@ impl<V: CsvCellValue> CsvSheet<V> {
         }
     }
 
-    /// 返回逻辑工作表名。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回逻辑工作表名。
     #[must_use]
     pub fn name(&self) -> &str {
         &self.name
     }
 
-    /// 设置有状态追加期望的首行位置。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 设置有状态追加期望的首行位置。
     pub fn set_next_row_index(&mut self, next_row_index: u32) {
         self.last_row_index = next_row_index.checked_sub(1);
     }
 
     /// 返回最后创建的行号。
     #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn last_row_index(&self) -> Option<u32> {
         self.last_row_index
     }
 
-    /// 查询仍处于缓存中的行。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 查询仍处于缓存中的行。
     ///
     /// # Errors
     ///
@@ -59,18 +60,18 @@ impl<V: CsvCellValue> CsvSheet<V> {
             })
     }
 
-    /// 移除并返回最近创建的行。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 移除并返回最近创建的行。
     pub fn take_last_row(&mut self) -> Option<CsvRow<V>> {
         self.row_cache.pop_back()
     }
 
-    /// 返回超过缓存上限、可以冲刷的旧行。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回超过缓存上限、可以冲刷的旧行。
     pub fn drain_flushable_rows(&mut self) -> Vec<CsvRow<V>> {
         let count = self.row_cache.len().saturating_sub(self.row_cache_count);
         self.row_cache.drain(..count).collect()
     }
 
-    /// 按严格递增顺序创建一行。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 按严格递增顺序创建一行。
     ///
     /// # Errors
     ///
@@ -86,6 +87,8 @@ impl<V: CsvCellValue> CsvSheet<V> {
         }
         self.last_row_index = Some(row_index);
         self.row_cache.push_back(CsvRow::new(row_index));
-        Ok(self.row_cache.back_mut().expect("row was just appended"))
+        self.row_cache
+            .back_mut()
+            .ok_or_else(|| Error::Csv("CSV row append produced no row".to_owned()))
     }
 }

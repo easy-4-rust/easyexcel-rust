@@ -5,6 +5,7 @@
 /// Java retains POI `FillPatternType` codes; Rust strips them. Variant names
 /// mirror the POI enum.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.enums.poi.FillPatternTypeEnum。
 pub enum ExcelFillPattern {
     /// No fill.
     None,

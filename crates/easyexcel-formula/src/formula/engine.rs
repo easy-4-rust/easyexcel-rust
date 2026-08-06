@@ -15,8 +15,7 @@ use easyexcel_model::error::CellError;
 use easyexcel_model::model::{Cell, Spill, Workbook};
 use easyexcel_model::value::CellValue;
 
-/// A cell coordinate including its sheet.
-pub type Coord = (usize, u32, u32);
+include!("engine/coord.rs");
 
 /// A within-sheet (row, col) coordinate.
 type Coord2 = (u32, u32);
@@ -37,7 +36,7 @@ impl RangeDep {
     }
 }
 
-/// The persistent calculation engine for a workbook. Holds the function
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 The persistent calculation engine for a workbook. Holds the function
 /// registry and a cache of parsed ASTs keyed by formula text.
 pub struct Engine {
     pub registry: Registry,
@@ -50,16 +49,11 @@ impl Default for Engine {
     }
 }
 
-/// The outcome of a recalculation pass.
-#[derive(Debug, Default)]
-pub struct RecalcReport {
-    /// Formula cells that participate in a circular reference.
-    pub circular: Vec<Coord>,
-    /// Number of formula cells evaluated.
-    pub evaluated: usize,
-}
+include!("engine/recalc_report.rs");
 
 impl Engine {
+    #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub fn new() -> Self {
         Engine {
             registry: Registry::standard(),
@@ -77,7 +71,7 @@ impl Engine {
         Ok(rc)
     }
 
-    /// Evaluate a single standalone formula string against the workbook, as if it
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Evaluate a single standalone formula string against the workbook, as if it
     /// were entered at `at`. Used by the `eval` CLI subcommand.
     pub fn eval_formula(&mut self, wb: &Workbook, at: CellRef, formula: &str) -> Value {
         let text = formula.strip_prefix('=').unwrap_or(formula);
@@ -90,7 +84,7 @@ impl Engine {
         ev.eval(&expr)
     }
 
-    /// Full recalculation: re-evaluate every formula cell in dependency order and
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Full recalculation: re-evaluate every formula cell in dependency order and
     /// store cached values back into the workbook.
     pub fn recalc(&mut self, wb: &mut Workbook) -> RecalcReport {
         // 1. Collect all formula cells with parsed ASTs.
@@ -136,7 +130,7 @@ impl Engine {
         for (dependent, rngs) in ranges.iter().enumerate() {
             let mut precedents: HashSet<usize> = HashSet::new();
             for rg in rngs {
-                let area = (rg.r1 - rg.r0 + 1) as u64 * (rg.c1 - rg.c0 + 1) as u64;
+                let area = u64::from(rg.r1 - rg.r0 + 1) * u64::from(rg.c1 - rg.c0 + 1);
                 if area <= ENUM_THRESHOLD {
                     for r in rg.r0..=rg.r1 {
                         for c in rg.c0..=rg.c1 {
@@ -307,7 +301,11 @@ fn as_spill_payload(value: &Value) -> Option<(u32, u32)> {
 /// Materialize a dynamic-array result into row-major scalar cell values.
 fn spill_values(wb: &Workbook, value: &Value, rows: u32, cols: u32) -> Vec<CellValue> {
     match value {
-        Value::Array(a) => a.data.iter().map(|v| v.to_cell_value()).collect(),
+        Value::Array(a) => a
+            .data
+            .iter()
+            .map(super::value::Value::to_cell_value)
+            .collect(),
         Value::Ref(r) => {
             let mut out = Vec::with_capacity((rows as usize) * (cols as usize));
             for (rr, cc) in r.iter() {
@@ -336,7 +334,7 @@ fn spill_fits(
     cols: u32,
     pass_spills: &std::collections::BTreeMap<Coord2, Spill>,
 ) -> bool {
-    if (rows as u64) * (cols as u64) > 1_048_576 {
+    if u64::from(rows) * u64::from(cols) > 1_048_576 {
         return false;
     }
     let Some(sheet) = wb.sheets.get(si) else {

@@ -6,6 +6,7 @@
 /// to match project conventions while preserving Java semantics.
 ///
 /// Rust port of Java `Cell`.
+/// 对应 Java：com.alibaba.excel.metadata.Cell。
 pub trait Cell {
     /// Returns the zero-based row index. (Java `getRowIndex()`)
     fn row_index(&self) -> Option<i32>;

@@ -18,13 +18,13 @@ pub struct CountTagHandler {
 }
 
 impl CountTagHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.CountTagHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Java `CountTagHandler.startElement`.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.CountTagHandler。 Java `CountTagHandler.startElement`.
     ///
     /// # Errors
     ///
@@ -34,7 +34,7 @@ impl CountTagHandler {
         Ok(row.saturating_add(1))
     }
 
-    /// Applies dimension attributes onto this handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.CountTagHandler。 Applies dimension attributes onto this handler.
     ///
     /// # Errors
     ///
@@ -47,8 +47,8 @@ impl CountTagHandler {
         Ok(())
     }
 
-    /// Converts Java `approximateTotalRowNumber` into a zero-based last row index
-    /// for [`crate::read::xlsx_rows`] `last_explicit_row` (OOXML `r` is 1-based).
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.CountTagHandler。 Converts Java `approximateTotalRowNumber` into a zero-based last row index
+    /// for the XLSX row reader's `last_explicit_row` (OOXML `r` is 1-based).
     ///
     /// `None` when the dimension tag was never seen or parsed as empty.
     #[must_use]

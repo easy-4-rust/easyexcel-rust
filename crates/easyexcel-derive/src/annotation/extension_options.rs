@@ -9,7 +9,7 @@ use syn::{Expr, LitStr, meta::ParseNestedMeta};
 use super::conditional_parser::parse_conditional;
 use super::data_validation_parser::parse_data_validation;
 
-/// EasyExcel-Rust 在 Java 注解语义之外提供的字段能力。
+/// 对应 Java：com.alibaba.excel.annotation。 EasyExcel-Rust 在 Java 注解语义之外提供的字段能力。
 #[derive(Default)]
 pub(crate) struct ExtensionOptions {
     pub(crate) image: Option<LitStr>,
@@ -22,7 +22,7 @@ pub(crate) struct ExtensionOptions {
     pub(crate) default: Option<Expr>,
 }
 
-/// 尝试解析一个 EasyExcel-Rust 字段扩展属性。
+/// 对应 Java：com.alibaba.excel.annotation。 尝试解析一个 EasyExcel-Rust 字段扩展属性。
 pub(crate) fn parse(
     meta: &ParseNestedMeta<'_>,
     options: &mut ExtensionOptions,

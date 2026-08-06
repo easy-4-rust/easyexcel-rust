@@ -24,6 +24,7 @@ pub enum BooleanEnum {
 impl BooleanEnum {
     /// Resolves to a nullable `bool`.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.enums.BooleanEnum。
     pub const fn value(self) -> Option<bool> {
         match self {
             Self::Default => None,

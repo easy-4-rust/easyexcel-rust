@@ -15,7 +15,7 @@ pub struct LoopMergeStrategy {
 }
 
 impl LoopMergeStrategy {
-    /// Creates a `LoopMergeStrategy` with the given dimensions. (Java
+    /// 对应 Java：com.alibaba.excel.write.merge.LoopMergeStrategy。 Creates a `LoopMergeStrategy` with the given dimensions. (Java
     /// `LoopMergeStrategy(int eachRow, int columnExtend, int columnIndex)`)
     ///
     /// # Errors
@@ -52,18 +52,21 @@ impl LoopMergeStrategy {
 
     /// Returns the per-group row count. (Java `getEachRow()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.merge.LoopMergeStrategy。
     pub const fn each_rows(self) -> u32 {
         self.each_rows
     }
 
     /// Returns the per-group column count. (Java `getColumnExtend()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.merge.LoopMergeStrategy。
     pub const fn column_extend(self) -> u16 {
         self.column_extend
     }
 
     /// Returns the zero-based column index. (Java `getColumnIndex()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.merge.LoopMergeStrategy。
     pub const fn column_index(self) -> u16 {
         self.column_index
     }

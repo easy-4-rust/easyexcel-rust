@@ -7,6 +7,7 @@
 /// Rust port of Java `CellExtraTypeEnum`. Variant names are normalised to
 /// `PascalCase` to match `CellExtra` callers while preserving semantics.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+/// 对应 Java：com.alibaba.excel.enums.CellExtraTypeEnum。
 pub enum CellExtraTypeEnum {
     /// A cell comment/note.                  (Java `COMMENT`)
     Comment,

@@ -59,7 +59,7 @@ impl XlsxSaxAnalyser {
         })
     }
 
-    /// Convenience constructor mirroring Java `ExcelAnalyserImpl` wiring.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.XlsxSaxAnalyser。 Convenience constructor mirroring Java `ExcelAnalyserImpl` wiring.
     ///
     /// # Errors
     ///
@@ -69,13 +69,13 @@ impl XlsxSaxAnalyser {
         Self::new(context, path, options)
     }
 
-    /// Returns the bound workbook path.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.XlsxSaxAnalyser。 Returns the bound workbook path.
     #[must_use]
     pub fn path(&self) -> &Path {
         &self.path
     }
 
-    /// Returns the XLSX read context. (Java `xlsxReadContext` field)
+    /// 对应 Java：com.alibaba.excel.analysis.v07.XlsxSaxAnalyser。 Returns the XLSX read context. (Java `xlsxReadContext` field)
     #[must_use]
     pub fn xlsx_read_context(&self) -> &DefaultXlsxReadContext {
         &self.xlsx_read_context
@@ -83,6 +83,7 @@ impl XlsxSaxAnalyser {
 
     /// Returns the last error recorded by the void [`ExcelReadExecutor::execute`] entry.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.analysis.v07.XlsxSaxAnalyser。
     pub const fn last_error(&self) -> Option<&ExcelError> {
         self.last_error.as_ref()
     }
@@ -111,7 +112,7 @@ impl XlsxSaxAnalyser {
         ))
     }
 
-    /// Typed execute path. (Java `execute()` + listener on `ReadWorkbook`)
+    /// 对应 Java：com.alibaba.excel.analysis.v07.XlsxSaxAnalyser。 Typed execute path. (Java `execute()` + listener on `ReadWorkbook`)
     ///
     /// # Errors
     ///
@@ -143,7 +144,7 @@ impl XlsxSaxAnalyser {
         }
     }
 
-    /// Returns the listener callback context from the embedded read context.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.XlsxSaxAnalyser。 Returns the listener callback context from the embedded read context.
     #[must_use]
     pub fn analysis_context(&self) -> &AnalysisContext {
         self.xlsx_read_context

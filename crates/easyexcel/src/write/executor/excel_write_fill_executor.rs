@@ -21,6 +21,7 @@ pub struct ExcelWriteFillExecutor<'a> {
 impl<'a> ExcelWriteFillExecutor<'a> {
     /// Creates the executor. (Java `ExcelWriteFillExecutor(WriteContext)`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteFillExecutor。
     pub const fn new(write_context: &'a dyn WriteContext) -> Self {
         Self {
             inner: AbstractExcelWriteExecutor::new(write_context),
@@ -28,7 +29,7 @@ impl<'a> ExcelWriteFillExecutor<'a> {
         }
     }
 
-    /// Creates an executor backed by a real stateful template engine.
+    /// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteFillExecutor。 Creates an executor backed by a real stateful template engine.
     ///
     /// Java constructs the engine directly from `WriteContext`; Rust injects
     /// it to avoid a dependency cycle between `easyexcel-writer` and
@@ -46,6 +47,7 @@ impl<'a> ExcelWriteFillExecutor<'a> {
 
     /// Returns the inner `WriteContext`. (Java `getWriteContext()` step)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteFillExecutor。
     pub const fn write_context(&self) -> &dyn WriteContext {
         self.inner.write_context
     }
@@ -72,7 +74,7 @@ impl<'a> ExcelWriteFillExecutor<'a> {
             .fill(data, fill_config, sheet)
     }
 
-    /// Persists the accumulated template session.
+    /// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteFillExecutor。 Persists the accumulated template session.
     ///
     /// Mirrors completion through Java `WriteContext.finish(onException)`.
     ///

@@ -5,18 +5,7 @@
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
-/// Decoded number cell produced by [`NumberRecordHandler`].
-#[derive(Debug, Clone, PartialEq)]
-pub struct NumberCell {
-    /// Zero-based row. (Java `NumberRecord.getRow`)
-    pub row: u32,
-    /// Zero-based column. (Java `NumberRecord.getColumn`)
-    pub column: usize,
-    /// Raw IEEE value. (Java `NumberRecord.getValue`)
-    pub value: f64,
-    /// Format index from the format-tracking listener (may be 0 when unknown).
-    pub format_index: u16,
-}
+include!("number_record_handler/number_cell.rs");
 
 /// 对应 Java：`NumberRecordHandler`.
 #[derive(Debug, Default)]
@@ -26,13 +15,13 @@ pub struct NumberRecordHandler {
 }
 
 impl NumberRecordHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.NumberRecordHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Java `NumberRecordHandler.processRecord` (without `BuiltinFormats` lookup).
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.NumberRecordHandler。 Java `NumberRecordHandler.processRecord` (without `BuiltinFormats` lookup).
     #[must_use]
     pub fn process_number(row: u32, column: usize, value: f64, format_index: u16) -> NumberCell {
         NumberCell {

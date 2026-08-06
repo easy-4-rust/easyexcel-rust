@@ -2,8 +2,7 @@
 
 use crate::core::ExcelFontStyle;
 
-/// 对应 Java：`WriteCellStyle`'s font side.
-pub type WriteCellFont = WriteFont;
+include!("write_font/write_cell_font.rs");
 
 /// 对应 Java：`WriteFont.merge(WriteFont source, WriteFont target)`.
 ///
@@ -47,7 +46,7 @@ pub fn merge_write_font(source: &WriteFont, mut target: WriteFont) -> WriteFont 
     target
 }
 
-/// Merges annotation/strategy fonts. (Java `WriteFont.merge` over `ExcelFontStyle`)
+/// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。 Merges annotation/strategy fonts. (Java `WriteFont.merge` over `ExcelFontStyle`)
 ///
 /// Copies every non-`None` field from `source` onto `target`, matching the
 /// Java `WriteFont.merge` null-skip semantics used when nesting fonts inside
@@ -87,7 +86,7 @@ pub fn merge_excel_font_style(
     target
 }
 
-/// Converts runtime [`WriteFont`] into Copy [`ExcelFontStyle`] for strategy styles.
+/// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。 Converts runtime [`WriteFont`] into Copy [`ExcelFontStyle`] for strategy styles.
 ///
 /// Mirrors nesting Java `WriteFont` into `WriteCellStyle.writeFont`. Owned
 /// `font_name` strings cannot become `&'static str`; pass name via
@@ -113,7 +112,7 @@ use crate::core::excel_color::ExcelColor;
 use crate::core::excel_font_script::ExcelFontScript;
 use crate::core::excel_underline::ExcelUnderline;
 
-/// Runtime font metadata equivalent to Java `WriteFont`.
+/// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。 Runtime font metadata equivalent to Java `WriteFont`.
 ///
 /// Java uses boxed `Boolean`/`Short`/`Byte`/`Integer`; Rust uses `Option`
 /// to express "unset" with zero overhead. All nine fields preserve the Java
@@ -134,6 +133,7 @@ pub struct WriteFont {
 impl WriteFont {
     /// Creates font metadata with every property unspecified.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn new() -> Self {
         Self {
             font_name: None,
@@ -148,7 +148,7 @@ impl WriteFont {
         }
     }
 
-    /// Sets the font family name. (Java `setFontName(String)`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。 Sets the font family name. (Java `setFontName(String)`)
     #[must_use]
     pub fn font_name(mut self, value: impl Into<String>) -> Self {
         self.font_name = Some(value.into());
@@ -157,6 +157,7 @@ impl WriteFont {
 
     /// Sets the font size in points. (Java `setFontHeightInPoints(Short)`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn font_height_in_points(mut self, value: f64) -> Self {
         self.font_height_in_points = Some(value);
         self
@@ -164,6 +165,7 @@ impl WriteFont {
 
     /// Sets italic rendering. (Java `setItalic(Boolean)`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn italic(mut self, value: bool) -> Self {
         self.italic = Some(value);
         self
@@ -171,6 +173,7 @@ impl WriteFont {
 
     /// Sets strike-through rendering. (Java `setStrikeout(Boolean)`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn strikeout(mut self, value: bool) -> Self {
         self.strikeout = Some(value);
         self
@@ -178,6 +181,7 @@ impl WriteFont {
 
     /// Sets an indexed or RGB font color. (Java `setColor(Short)`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn color(mut self, value: ExcelColor) -> Self {
         self.color = Some(value);
         self
@@ -185,6 +189,7 @@ impl WriteFont {
 
     /// Sets superscript or subscript rendering. (Java `setTypeOffset(Short)`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn type_offset(mut self, value: ExcelFontScript) -> Self {
         self.type_offset = Some(value);
         self
@@ -192,6 +197,7 @@ impl WriteFont {
 
     /// Sets underline rendering. (Java `setUnderline(Byte)`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn underline(mut self, value: ExcelUnderline) -> Self {
         self.underline = Some(value);
         self
@@ -199,6 +205,7 @@ impl WriteFont {
 
     /// Sets the font character set. (Java `setCharset(Integer)`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn charset(mut self, value: u8) -> Self {
         self.charset = Some(value);
         self
@@ -206,12 +213,13 @@ impl WriteFont {
 
     /// Sets bold rendering. (Java `setBold(Boolean)`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn bold(mut self, value: bool) -> Self {
         self.bold = Some(value);
         self
     }
 
-    /// Returns the optional font family name. (Java `getFontName()`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。 Returns the optional font family name. (Java `getFontName()`)
     #[must_use]
     pub fn get_font_name(&self) -> Option<&str> {
         self.font_name.as_deref()
@@ -219,48 +227,56 @@ impl WriteFont {
 
     /// Returns the optional font size. (Java `getFontHeightInPoints()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn get_font_height_in_points(&self) -> Option<f64> {
         self.font_height_in_points
     }
 
     /// Returns the optional italic flag. (Java `getItalic()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn get_italic(&self) -> Option<bool> {
         self.italic
     }
 
     /// Returns the optional strike-through flag. (Java `getStrikeout()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn get_strikeout(&self) -> Option<bool> {
         self.strikeout
     }
 
     /// Returns the optional font color. (Java `getColor()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn get_color(&self) -> Option<ExcelColor> {
         self.color
     }
 
     /// Returns the optional superscript/subscript mode. (Java `getTypeOffset()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn get_type_offset(&self) -> Option<ExcelFontScript> {
         self.type_offset
     }
 
     /// Returns the optional underline mode. (Java `getUnderline()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn get_underline(&self) -> Option<ExcelUnderline> {
         self.underline
     }
 
     /// Returns the optional character set. (Java `getCharset()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn get_charset(&self) -> Option<u8> {
         self.charset
     }
 
     /// Returns the optional bold flag. (Java `getBold()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn get_bold(&self) -> Option<bool> {
         self.bold
     }

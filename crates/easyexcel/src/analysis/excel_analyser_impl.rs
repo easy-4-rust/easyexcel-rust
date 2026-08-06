@@ -70,7 +70,7 @@ where
 /// [`choiceExcelExecutor`](ExcelAnalyserImpl::choice_excel_executor) selects
 /// `XlsxSaxAnalyser` / `XlsSaxAnalyser` / `CsvExcelReadExecutor` by
 /// `ExcelTypeEnum`. Rust keeps the same dispatch table but delegates the
-/// actual parse to [`read_xlsx`] / [`read_xls`] / [`read_csv`].
+/// actual parse to `read_xlsx` / `read_xls` / `read_csv`.
 pub struct ExcelAnalyserImpl {
     /// Workbook path. (Java `ReadWorkbook.file`)
     path: Option<PathBuf>,
@@ -98,7 +98,7 @@ impl Default for ExcelAnalyserImpl {
 }
 
 impl ExcelAnalyserImpl {
-    /// Creates an idle analyser.
+    /// 对应 Java：com.alibaba.excel.analysis.ExcelAnalyserImpl。 Creates an idle analyser.
     ///
     /// Prefer [`from_path`](Self::from_path) for the Java
     /// `ExcelAnalyserImpl(ReadWorkbook)` hot path.
@@ -118,7 +118,7 @@ impl ExcelAnalyserImpl {
         }
     }
 
-    /// Java `ExcelAnalyserImpl(ReadWorkbook)` — binds a path and chooses the executor.
+    /// 对应 Java：com.alibaba.excel.analysis.ExcelAnalyserImpl。 Java `ExcelAnalyserImpl(ReadWorkbook)` — binds a path and chooses the executor.
     ///
     /// # Errors
     ///
@@ -138,7 +138,7 @@ impl ExcelAnalyserImpl {
         Ok(analyser)
     }
 
-    /// Creates an analyser whose workbook path is owned by a temporary-file guard.
+    /// 对应 Java：com.alibaba.excel.analysis.ExcelAnalyserImpl。 Creates an analyser whose workbook path is owned by a temporary-file guard.
     ///
     /// Java accepts non-seekable `InputStream` values and deletes the
     /// materialised file from `finish()`. Keeping the guard in the analyser
@@ -153,48 +153,53 @@ impl ExcelAnalyserImpl {
         Ok(analyser)
     }
 
-    /// Returns the bound workbook path, if any.
+    /// 对应 Java：com.alibaba.excel.analysis.ExcelAnalyserImpl。 Returns the bound workbook path, if any.
     #[must_use]
     pub fn path(&self) -> Option<&Path> {
         self.path.as_deref()
     }
 
-    /// Returns the resolved Excel type after [`choice_excel_executor`].
+    /// Returns the resolved Excel type after `choice_excel_executor`.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.analysis.ExcelAnalyserImpl。
     pub const fn excel_type(&self) -> Option<ExcelTypeEnum> {
         self.excel_type
     }
 
     /// Returns the last error recorded by the void [`ExcelAnalyser::analysis`] entry.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.analysis.ExcelAnalyserImpl。
     pub const fn last_error(&self) -> Option<&ExcelError> {
         self.last_error.as_ref()
     }
 
     /// Returns whether [`finish`](ExcelAnalyser::finish) has run.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.analysis.ExcelAnalyserImpl。
     pub const fn is_finished(&self) -> bool {
         self.finished
     }
 
     /// Returns whether this analyser owns a materialised input stream.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.analysis.ExcelAnalyserImpl。
     pub const fn has_temporary_input(&self) -> bool {
         self.temporary_input.is_some()
     }
 
     /// Returns the bound read options.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.analysis.ExcelAnalyserImpl。
     pub const fn options(&self) -> &ReadOptions {
         &self.options
     }
 
-    /// Returns mutable read options for sheet-scoped reads.
+    /// 对应 Java：com.alibaba.excel.analysis.ExcelAnalyserImpl。 Returns mutable read options for sheet-scoped reads.
     pub fn options_mut(&mut self) -> &mut ReadOptions {
         &mut self.options
     }
 
-    /// Updates the active sheet selector before analysis.
+    /// 对应 Java：com.alibaba.excel.analysis.ExcelAnalyserImpl。 Updates the active sheet selector before analysis.
     pub fn set_sheet_selector(&mut self, sheet: SheetSelector) {
         self.options.sheet = sheet;
     }
@@ -232,10 +237,10 @@ impl ExcelAnalyserImpl {
         Ok(())
     }
 
-    /// Java `analysis(List<ReadSheet>, Boolean)` typed hot path.
+    /// 对应 Java：com.alibaba.excel.analysis.ExcelAnalyserImpl。 Java `analysis(List<ReadSheet>, Boolean)` typed hot path.
     ///
-    /// Delegates to [`read_xlsx`] / [`read_xls`] / [`read_csv`] based on the
-    /// executor chosen by [`choice_excel_executor`]. Sheet selection follows
+    /// Delegates to `read_xlsx` / `read_xls` / `read_csv` based on the
+    /// executor chosen by `choice_excel_executor`. Sheet selection follows
     /// [`ReadOptions::sheet`] (Java `readAll` / `parameterSheetDataList`).
     ///
     /// # Errors

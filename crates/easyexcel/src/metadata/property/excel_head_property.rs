@@ -7,7 +7,7 @@ use crate::HeadKind;
 use super::super::configuration_holder::ConfigurationHolder;
 use super::super::head::Head;
 
-/// Header metadata for one sheet or table.
+/// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。 Header metadata for one sheet or table.
 ///
 /// Rust port of Java `ExcelHeadProperty`.
 #[derive(Debug, Clone, PartialEq)]
@@ -29,7 +29,7 @@ impl Default for ExcelHeadProperty {
 }
 
 impl ExcelHeadProperty {
-    /// Initializes header metadata from holder configuration. (Java constructor)
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。 Initializes header metadata from holder configuration. (Java constructor)
     ///
     /// # Panics
     ///
@@ -61,7 +61,7 @@ impl ExcelHeadProperty {
         property
     }
 
-    /// Initializes header metadata for a typed model class. (Java `initColumnProperties`)
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。 Initializes header metadata for a typed model class. (Java `initColumnProperties`)
     #[must_use]
     pub fn for_class(
         configuration_holder: Option<&dyn ConfigurationHolder>,
@@ -76,7 +76,7 @@ impl ExcelHeadProperty {
         property
     }
 
-    /// Creates a fully resolved property from an indexed head map.
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。 Creates a fully resolved property from an indexed head map.
     ///
     /// This is the Rust equivalent of Java constructing the inherited
     /// `headMap` through `initColumnProperties`. Uneven paths are normalized by
@@ -122,13 +122,13 @@ impl ExcelHeadProperty {
         }
     }
 
-    /// Returns whether any header is configured. (Java `hasHead()`)
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。 Returns whether any header is configured. (Java `hasHead()`)
     #[must_use]
     pub fn has_head(&self) -> bool {
         self.head_kind != HeadKind::None
     }
 
-    /// Returns the model type name. (Java `getHeadClazz()`)
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。 Returns the model type name. (Java `getHeadClazz()`)
     #[must_use]
     pub fn head_clazz(&self) -> Option<&str> {
         self.head_clazz.as_deref()
@@ -136,17 +136,19 @@ impl ExcelHeadProperty {
 
     /// Returns the header kind. (Java `getHeadKind()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn head_kind(&self) -> HeadKind {
         self.head_kind
     }
 
     /// Returns the header row count. (Java `getHeadRowNumber()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn head_row_number(&self) -> i32 {
         self.head_row_number
     }
 
-    /// Returns the header map. (Java `getHeadMap()`)
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。 Returns the header map. (Java `getHeadMap()`)
     #[must_use]
     pub fn head_map(&self) -> &BTreeMap<i32, Head> {
         &self.head_map

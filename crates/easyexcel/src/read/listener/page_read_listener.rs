@@ -5,8 +5,8 @@ use crate::core::read_listener::ReadListener;
 
 /// A listener that buffers rows and invokes a callback page by page.
 ///
-/// 对应 Java：`PageReadListener<T>(Consumer<List<T>> consumer, int
-/// batchCount)` with `BATCH_COUNT = 100`.
+/// 对应 Java：`PageReadListener<T>(Consumer<List<T>> consumer, int batchCount)`
+/// with `BATCH_COUNT = 100`.
 pub struct PageReadListener<T> {
     batch_size: usize,
     batch_index: usize,
@@ -18,7 +18,7 @@ pub struct PageReadListener<T> {
 type PageCallback<T> = dyn FnMut(Vec<T>, &AnalysisContext) -> Result<()>;
 
 impl<T> PageReadListener<T> {
-    /// Creates a paged listener. A zero size is normalized to one row. (Java `PageReadListener(Consumer, int)`)
+    /// 对应 Java：com.alibaba.excel.read.listener.`PageReadListener<T>`。 Creates a paged listener. A zero size is normalized to one row. (Java `PageReadListener(Consumer, int)`)
     #[must_use]
     pub fn new(
         batch_size: usize,

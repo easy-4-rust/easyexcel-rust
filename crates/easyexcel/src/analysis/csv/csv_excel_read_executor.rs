@@ -21,7 +21,7 @@ pub struct CsvExcelReadExecutor {
 }
 
 impl CsvExcelReadExecutor {
-    /// Creates a new executor with the default CSV sheet.
+    /// 对应 Java：com.alibaba.excel.analysis.csv.CsvExcelReadExecutor。 Creates a new executor with the default CSV sheet.
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -30,7 +30,7 @@ impl CsvExcelReadExecutor {
         }
     }
 
-    /// Creates an executor bound to a real CSV input.
+    /// 对应 Java：com.alibaba.excel.analysis.csv.CsvExcelReadExecutor。 Creates an executor bound to a real CSV input.
     #[must_use]
     pub fn from_path(path: impl Into<PathBuf>) -> Self {
         Self {

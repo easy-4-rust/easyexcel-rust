@@ -18,7 +18,7 @@ pub struct MapCache {
 }
 
 impl MapCache {
-    /// Creates an empty map-backed cache. (Java `new MapCache()`)
+    /// 对应 Java：com.alibaba.excel.cache.MapCache。 Creates an empty map-backed cache. (Java `new MapCache()`)
     #[must_use]
     pub fn new() -> Self {
         Self {

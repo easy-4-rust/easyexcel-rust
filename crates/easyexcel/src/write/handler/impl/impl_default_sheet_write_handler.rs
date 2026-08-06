@@ -15,12 +15,14 @@ pub struct DefaultWriteSheetHandler {
 impl DefaultWriteSheetHandler {
     /// Creates the handler. (Java `DefaultWriteSheetHandler()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.impl.DefaultWriteSheetHandler。
     pub const fn new() -> Self {
         Self { initialized: false }
     }
 
     /// Returns whether the sheet has been initialized.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.impl.DefaultWriteSheetHandler。
     pub const fn initialized(&self) -> bool {
         self.initialized
     }

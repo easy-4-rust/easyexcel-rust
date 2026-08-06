@@ -5,7 +5,7 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::Path;
 
-/// 返回支持依赖重命名的 `EasyExcel` 公共门面路径。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 返回支持依赖重命名的 `EasyExcel` 公共门面路径。
 pub(crate) fn easyexcel_path() -> TokenStream {
     let found = ["easyexcel", "easyexcel-core"]
         .into_iter()
@@ -13,7 +13,7 @@ pub(crate) fn easyexcel_path() -> TokenStream {
     resolve_easyexcel_path(found)
 }
 
-/// 将 Cargo 包解析结果转换为可生成的 Rust 路径。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将 Cargo 包解析结果转换为可生成的 Rust 路径。
 pub(crate) fn resolve_easyexcel_path(found: Option<FoundCrate>) -> TokenStream {
     found.map_or_else(
         || {
@@ -23,7 +23,7 @@ pub(crate) fn resolve_easyexcel_path(found: Option<FoundCrate>) -> TokenStream {
         found_crate_path,
     )
 }
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn found_crate_path(found: FoundCrate) -> TokenStream {
     match found {
         FoundCrate::Itself => quote!(crate),

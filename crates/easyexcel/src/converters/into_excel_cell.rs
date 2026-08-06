@@ -4,7 +4,7 @@ use crate::core::cell_value::CellValue;
 use crate::core::convert_context::ConvertContext;
 use crate::core::excel_error::ExcelError;
 
-/// Converts a Rust value into a backend-neutral cell.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Converts a Rust value into a backend-neutral cell.
 ///
 /// Java-side counterpart: `Converter<T>.convertToExcelData(...)`.
 pub trait IntoExcelCell {

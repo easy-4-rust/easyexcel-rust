@@ -1,5 +1,12 @@
 # Streaming benchmark baseline
 
+> **Historical observation only.** The measurements below used different Java
+> and Rust row shapes, batching, warm-up, process boundaries, and sampling
+> rules. They must not be used as a formal cross-language acceptance result,
+> including the former “44x less memory” statement. New performance evidence is
+> governed by [`../benchmarks/README.md`](../benchmarks/README.md) and
+> `benchmarks/spec/benchmark-suite-v1.json`.
+
 The benchmark uses the public `EasyExcel` facade for both directions. It writes
 typed rows with `constant_memory(true)`, then reads them through a listener that
 counts and releases each row. The executable fails if the read count differs

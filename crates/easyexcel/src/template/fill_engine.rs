@@ -1,4 +1,4 @@
-//! Java EasyExcel 模板元数据到中立 XLSX 填充引擎的适配层。
+//! Java `EasyExcel` 模板元数据到中立 XLSX 填充引擎的适配层。
 //!
 //! 集合游标、标量替换、XML 渲染、行追加和引用平移均由
 //! `easyexcel-xlsx` 实现；本模块只保留门面值与错误契约转换。
@@ -21,6 +21,7 @@ pub(crate) use easyexcel_xlsx::xlsx::template_xml::{
 };
 
 /// 执行指定工作表的集合模板填充。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn replace_collection_fills_in_sheet(
     entries: &mut [TemplateEntry],
     worksheet: &str,
@@ -35,6 +36,7 @@ pub(crate) fn replace_collection_fills_in_sheet(
 }
 
 /// 执行指定工作表的标量模板填充。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn replace_scalar_cells_in_sheet(
     entries: &mut [TemplateEntry],
     worksheet: &str,
@@ -46,6 +48,7 @@ pub(crate) fn replace_scalar_cells_in_sheet(
 }
 
 /// 向指定模板工作表追加普通行。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn append_rows_to_sheet(
     entries: &mut [TemplateEntry],
     worksheet: &str,
@@ -69,6 +72,7 @@ fn template_collection_fill(fill: &PendingCollectionFill) -> TemplateCollectionF
         force_new_row: fill.config.get_force_new_row(),
         auto_style: fill.config.get_auto_style(),
         order: fill.order,
+        column_styles: fill.column_styles.clone(),
     }
 }
 
@@ -100,7 +104,7 @@ fn template_cell_value(value: &CellValue) -> TemplateCellValue {
         CellValue::Error(value) => TemplateCellValue::Error(value.clone()),
         CellValue::Formula(value) => TemplateCellValue::Formula(value.clone()),
         CellValue::Comment { value, .. } | CellValue::Images { value, .. } => {
-            return template_cell_value(value);
+            template_cell_value(value)
         }
     }
 }

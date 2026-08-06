@@ -7,23 +7,14 @@ use encoding_rs::{CoderResult, Encoding, UTF_8, UTF_16BE, UTF_16LE};
 
 use super::CsvCharset;
 
-/// UTF-8 到目标 CSV 字符集的增量转码器。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 UTF-8 到目标 CSV 字符集的增量转码器。
 pub struct CsvEncodingWriter {
     output: Box<dyn Write + Send>,
     encoder: CsvEncoder,
     pending_utf8: Vec<u8>,
 }
 
-/// 已解析的 CSV 编码类型。
-#[derive(Clone, Copy)]
-pub enum CsvEncoding {
-    /// `encoding_rs` 支持的标准编码。
-    Standard(&'static Encoding),
-    /// UTF-16 小端编码。
-    Utf16Le,
-    /// UTF-16 大端编码。
-    Utf16Be,
-}
+include!("csv_encoding_writer/csv_encoding.rs");
 
 enum CsvEncoder {
     Standard(encoding_rs::Encoder),
@@ -32,7 +23,7 @@ enum CsvEncoder {
 }
 
 impl CsvEncodingWriter {
-    /// 使用 Java 风格字符集名称创建转码器。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 使用 Java 风格字符集名称创建转码器。
     ///
     /// # Errors
     ///
@@ -44,7 +35,7 @@ impl CsvEncodingWriter {
         Ok(Self::new(Box::new(output), csv_encoding(charset)?))
     }
 
-    /// 使用已经解析的编码创建转码器。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 使用已经解析的编码创建转码器。
     #[must_use]
     pub fn new(output: Box<dyn Write + Send>, encoding: CsvEncoding) -> Self {
         Self {
@@ -85,7 +76,7 @@ impl CsvEncodingWriter {
         }
     }
 
-    /// 将 UTF-16 码元按指定字节序写入输出。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 将 UTF-16 码元按指定字节序写入输出。
     ///
     /// # Errors
     ///
@@ -110,7 +101,7 @@ impl CsvEncodingWriter {
         output.write_all(&encoded[..length])
     }
 
-    /// 终结编码器并刷新底层输出。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 终结编码器并刷新底层输出。
     ///
     /// # Errors
     ///
@@ -147,7 +138,7 @@ impl Write for CsvEncodingWriter {
     }
 }
 
-/// 将字符集名称解析为具体编码。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将字符集名称解析为具体编码。
 ///
 /// # Errors
 ///
@@ -165,7 +156,7 @@ pub fn csv_encoding(charset: &CsvCharset) -> Result<CsvEncoding> {
     })
 }
 
-/// 返回编码对应的字节顺序标记。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 返回编码对应的字节顺序标记。
 #[must_use]
 pub fn csv_bom(encoding: CsvEncoding) -> &'static [u8] {
     match encoding {

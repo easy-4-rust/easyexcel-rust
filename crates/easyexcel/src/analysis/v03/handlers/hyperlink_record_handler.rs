@@ -14,7 +14,7 @@ pub struct HyperlinkRecordHandler {
 }
 
 impl HyperlinkRecordHandler {
-    /// Creates a handler; `enabled` mirrors Java `support(XlsReadContext)`.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler。 Creates a handler; `enabled` mirrors Java `support(XlsReadContext)`.
     #[must_use]
     pub fn new(enabled: bool) -> Self {
         Self {
@@ -23,7 +23,7 @@ impl HyperlinkRecordHandler {
         }
     }
 
-    /// Java `HyperlinkRecordHandler.processRecord`.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler。 Java `HyperlinkRecordHandler.processRecord`.
     pub fn process_hyperlink(
         &mut self,
         address: Option<String>,

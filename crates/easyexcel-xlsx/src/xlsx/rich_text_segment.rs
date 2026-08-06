@@ -2,7 +2,7 @@
 
 use easyexcel_io::{Error, Result};
 
-/// 一个经过 UTF-16 边界校验的富文本片段。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 一个经过 UTF-16 边界校验的富文本片段。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RichTextSegment {
     /// 片段文本。
@@ -11,7 +11,7 @@ pub struct RichTextSegment {
     pub interval_index: Option<usize>,
 }
 
-/// 按 UTF-16 区间切分富文本，并拒绝拆开代理对的边界。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 按 UTF-16 区间切分富文本，并拒绝拆开代理对的边界。
 ///
 /// 区间使用 Java 字符串一致的 UTF-16 单元下标；区间重叠时，后声明的
 /// 区间覆盖先声明的区间。

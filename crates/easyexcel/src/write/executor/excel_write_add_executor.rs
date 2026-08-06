@@ -46,6 +46,7 @@ pub struct ExcelWriteAddExecutor<'a> {
 impl<'a> ExcelWriteAddExecutor<'a> {
     /// Creates the executor. (Java `ExcelWriteAddExecutor(WriteContext)`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteAddExecutor。
     pub const fn new(write_context: &'a dyn WriteContext) -> Self {
         Self {
             inner: AbstractExcelWriteExecutor::new(write_context),
@@ -54,11 +55,12 @@ impl<'a> ExcelWriteAddExecutor<'a> {
 
     /// Returns the inner `WriteContext`. (Java `getWriteContext()` step)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteAddExecutor。
     pub const fn write_context(&self) -> &dyn WriteContext {
         self.inner.write_context
     }
 
-    /// Adds a collection of rows to the workbook path carried by [`WriteContext`].
+    /// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteAddExecutor。 Adds a collection of rows to the workbook path carried by [`WriteContext`].
     ///
     /// Corresponds to Java
     /// `ExcelWriteAddExecutor.add(Collection<?> data)` in
@@ -84,7 +86,7 @@ impl<'a> ExcelWriteAddExecutor<'a> {
         write_xlsx(path, options, data)
     }
 
-    /// Adds a collection of rows onto an existing worksheet.
+    /// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteAddExecutor。 Adds a collection of rows onto an existing worksheet.
     ///
     /// Same Java method as [`Self::add`], but for the stateful writer path that
     /// already owns a `Worksheet` (mirrors the loop body that repeatedly calls
@@ -116,7 +118,7 @@ impl<'a> ExcelWriteAddExecutor<'a> {
         )
     }
 
-    /// Writes a single data row.
+    /// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteAddExecutor。 Writes a single data row.
     ///
     /// Corresponds to Java private
     /// `addOneRowOfDataToExcel(Object oneRowData, int rowIndex, int relativeRowIndex)`.
@@ -162,7 +164,7 @@ impl<'a> ExcelWriteAddExecutor<'a> {
         )
     }
 
-    /// Writes a no-model / basic-type row from a list of cell values.
+    /// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteAddExecutor。 Writes a no-model / basic-type row from a list of cell values.
     ///
     /// Corresponds to Java private
     /// `addBasicTypeToExcel(RowData oneRowData, Row row, int rowIndex, int relativeRowIndex)`
@@ -206,7 +208,7 @@ impl<'a> ExcelWriteAddExecutor<'a> {
         )
     }
 
-    /// Writes a no-model / basic-type row from a column-indexed map.
+    /// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteAddExecutor。 Writes a no-model / basic-type row from a column-indexed map.
     ///
     /// Corresponds to the Java `Map` branch of
     /// `addBasicTypeToExcel` / `addOneRowOfDataToExcel` (`MapRowData`).
@@ -244,7 +246,7 @@ impl<'a> ExcelWriteAddExecutor<'a> {
         )
     }
 
-    /// Writes a single basic-type cell into a new row at the given column.
+    /// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteAddExecutor。 Writes a single basic-type cell into a new row at the given column.
     ///
     /// Corresponds to Java private
     /// `doAddBasicTypeToExcel(RowData, Head, Row, int, int, int, int)`.
@@ -284,7 +286,7 @@ impl<'a> ExcelWriteAddExecutor<'a> {
         )
     }
 
-    /// Writes a typed JavaBean-equivalent row (`ExcelRow` derive / impl).
+    /// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteAddExecutor。 Writes a typed JavaBean-equivalent row (`ExcelRow` derive / impl).
     ///
     /// Corresponds to Java private
     /// `addJavaObjectToExcel(Object oneRowData, Row row, int rowIndex, int relativeRowIndex)`.
@@ -322,7 +324,7 @@ impl<'a> ExcelWriteAddExecutor<'a> {
         )
     }
 
-    /// Convenience used by tests / callers that already have an explicit path
+    /// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteAddExecutor。 Convenience used by tests / callers that already have an explicit path
     /// rather than a [`WriteContext`] holder path.
     ///
     /// Same write engine as [`Self::add`]; does not replace it.

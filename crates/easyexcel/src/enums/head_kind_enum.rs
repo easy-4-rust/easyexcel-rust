@@ -5,6 +5,7 @@
 /// Rust port of Java `HeadKindEnum`. Distinguishes no-header, class-driven
 /// headers, and ad-hoc string-list headers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.enums.HeadKindEnum。
 pub enum HeadKindEnum {
     /// No header configured.
     None,

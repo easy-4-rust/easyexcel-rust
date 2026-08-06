@@ -15,9 +15,10 @@ use easyexcel_model::styles::{
 use super::xmlutil::{attr, local_name, local_name_end};
 
 /// First custom number-format id Excel permits.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const FIRST_CUSTOM_NUMFMT_ID: u16 = 164;
 
-/// Parse styles.xml. Returns the list of `CellStyle`s, one per `<xf>` in
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Parse styles.xml. Returns the list of `CellStyle`s, one per `<xf>` in
 /// `<cellXfs>` (indexed by the `s=` attribute used on cells).
 pub fn parse_styles(xml: &[u8]) -> Result<Vec<CellStyle>> {
     let mut reader = Reader::from_reader(xml);
@@ -65,6 +66,21 @@ pub fn parse_styles(xml: &[u8]) -> Result<Vec<CellStyle>> {
                         }
                     }
                     "xf" if in_cell_xfs => cur_xf = Some(parse_xf(&e)),
+                    "patternFill" if cur_fill.is_some() => {
+                        if let Some(fill) = cur_fill.as_mut() {
+                            apply_pattern_fill_empty(fill, &e);
+                        }
+                    }
+                    "fgColor" if cur_fill.is_some() => {
+                        if let Some(fill) = cur_fill.as_mut() {
+                            fill.fg = parse_color(&e);
+                        }
+                    }
+                    "bgColor" if cur_fill.is_some() => {
+                        if let Some(fill) = cur_fill.as_mut() {
+                            fill.bg = parse_color(&e);
+                        }
+                    }
                     "alignment" => {
                         if let Some(xf) = cur_xf.as_mut() {
                             apply_alignment(xf, &e);
@@ -118,6 +134,16 @@ pub fn parse_styles(xml: &[u8]) -> Result<Vec<CellStyle>> {
                     "patternFill" => {
                         if let Some(fl) = cur_fill.as_mut() {
                             apply_pattern_fill_empty(fl, &e);
+                        }
+                    }
+                    "fgColor" => {
+                        if let Some(fill) = cur_fill.as_mut() {
+                            fill.fg = parse_color(&e);
+                        }
+                    }
+                    "bgColor" => {
+                        if let Some(fill) = cur_fill.as_mut() {
+                            fill.bg = parse_color(&e);
                         }
                     }
                     _ => {
@@ -187,7 +213,7 @@ pub fn parse_styles(xml: &[u8]) -> Result<Vec<CellStyle>> {
         style.number_format = num_fmts
             .get(&nfid)
             .cloned()
-            .or_else(|| builtin_format_code(nfid).map(|s| s.to_string()))
+            .or_else(|| builtin_format_code(nfid).map(std::string::ToString::to_string))
             .unwrap_or_default();
         if style.number_format.eq_ignore_ascii_case("general") {
             style.number_format.clear();
@@ -305,9 +331,7 @@ fn edge_tag(name: &str) -> &'static str {
 }
 
 fn apply_border_edge(b: &mut Borders, edge: &str, e: &BytesStart) {
-    let style = attr(e, "style")
-        .map(|s| parse_border_style(&s))
-        .unwrap_or(BorderStyle::None);
+    let style = attr(e, "style").map_or(BorderStyle::None, |s| parse_border_style(&s));
     let target = match edge {
         "left" => &mut b.left,
         "right" => &mut b.right,
@@ -330,7 +354,6 @@ fn set_edge_color(b: &mut Borders, edge: &str, e: &BytesStart) {
 
 fn parse_border_style(s: &str) -> BorderStyle {
     match s {
-        "thin" => BorderStyle::Thin,
         "medium" => BorderStyle::Medium,
         "thick" => BorderStyle::Thick,
         "dashed" => BorderStyle::Dashed,
@@ -361,7 +384,7 @@ fn parse_pattern(s: &str) -> FillPattern {
 // Writing
 // ----------------------------------------------------------------------------
 
-/// Serialize a `StyleTable` to a styles.xml byte buffer. Returns the bytes plus
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Serialize a `StyleTable` to a styles.xml byte buffer. Returns the bytes plus
 /// a map from style-table index → cellXfs index (they are 1:1 here, but the
 /// default xf at index 0 stays index 0).
 pub fn write_styles(table: &StyleTable) -> Vec<u8> {
@@ -566,7 +589,7 @@ fn write_font(s: &mut String, f: &Font) {
     }
     let _ = write!(s, r#"<sz val="{}"/>"#, fmt_f64(f.size));
     if let Some(argb) = f.color.0 {
-        let _ = write!(s, r#"<color rgb="{:08X}"/>"#, argb);
+        let _ = write!(s, r#"<color rgb="{argb:08X}"/>"#);
     }
     let _ = write!(s, r#"<name val="{}"/>"#, escape(&f.name));
     s.push_str("</font>");
@@ -575,19 +598,17 @@ fn write_font(s: &mut String, f: &Font) {
 fn write_fill(s: &mut String, f: &Fill) {
     use std::fmt::Write as _;
     let pt = match f.pattern {
-        FillPattern::None => "none",
+        FillPattern::None | FillPattern::Other(_) => "none",
         FillPattern::Solid => "solid",
         FillPattern::Gray125 => "gray125",
-        FillPattern::Other(_) => "none",
     };
     if let (true, Some(fg)) = (matches!(f.pattern, FillPattern::Solid), f.fg.0) {
         let _ = write!(
             s,
-            r#"<fill><patternFill patternType="solid"><fgColor rgb="{:08X}"/></patternFill></fill>"#,
-            fg
+            r#"<fill><patternFill patternType="solid"><fgColor rgb="{fg:08X}"/></patternFill></fill>"#
         );
     } else {
-        let _ = write!(s, r#"<fill><patternFill patternType="{}"/></fill>"#, pt);
+        let _ = write!(s, r#"<fill><patternFill patternType="{pt}"/></fill>"#);
     }
 }
 
@@ -605,7 +626,7 @@ fn write_edge(s: &mut String, tag: &str, edge: &BorderEdge) {
     use std::fmt::Write as _;
     let style = match edge.style {
         BorderStyle::None => {
-            let _ = write!(s, "<{}/>", tag);
+            let _ = write!(s, "<{tag}/>");
             return;
         }
         BorderStyle::Thin => "thin",
@@ -616,11 +637,11 @@ fn write_edge(s: &mut String, tag: &str, edge: &BorderEdge) {
         BorderStyle::Double => "double",
         BorderStyle::Hair => "hair",
     };
-    let _ = write!(s, r#"<{} style="{}">"#, tag, style);
+    let _ = write!(s, r#"<{tag} style="{style}">"#);
     if let Some(argb) = edge.color.0 {
-        let _ = write!(s, r#"<color rgb="{:08X}"/>"#, argb);
+        let _ = write!(s, r#"<color rgb="{argb:08X}"/>"#);
     }
-    let _ = write!(s, "</{}>", tag);
+    let _ = write!(s, "</{tag}>");
 }
 
 fn halign_str(h: HAlign) -> &'static str {
@@ -646,11 +667,13 @@ fn valign_str(v: VAlign) -> &'static str {
     }
 }
 
+// XML 数字格式要求无小数部分的有限值按整数文本输出；边界判断保证转换可表示。
+#[allow(clippy::cast_possible_truncation)]
 fn fmt_f64(v: f64) -> String {
-    if v.fract() == 0.0 {
+    if v.is_finite() && v.fract() == 0.0 && v.abs() < 9e15 {
         format!("{}", v as i64)
     } else {
-        format!("{}", v)
+        format!("{v}")
     }
 }
 

@@ -5,7 +5,7 @@ use crate::formula::coerce::{to_number, to_text};
 use crate::formula::context::Context;
 use crate::formula::value::Value;
 use easyexcel_model::error::CellError;
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub fn register(r: &mut Registry) {
     r.add("ISBLANK", 1, 1, false, isblank_fn);
     r.add("ISERROR", 1, 1, false, iserror_fn);
@@ -119,7 +119,7 @@ fn type_fn(_ctx: &mut dyn Context, args: &[Value]) -> Value {
         Value::Ref(_) => 8, // PARITY: ref → treat as 8 (formula result)
         Value::Lambda(_) => 128,
     };
-    Value::Number(code as f64)
+    Value::Number(f64::from(code))
 }
 
 // ---------------------------------------------------------------------------
@@ -141,7 +141,7 @@ fn error_type_fn(_ctx: &mut dyn Context, args: &[Value]) -> Value {
                 CellError::Spill => 9,
                 CellError::Calc => 14,
             };
-            Value::Number(code as f64)
+            Value::Number(f64::from(code))
         }
         _ => Value::Error(CellError::NA),
     }
@@ -195,8 +195,8 @@ fn cell_fn(ctx: &mut dyn Context, args: &[Value]) -> Value {
     };
 
     match info_type.as_str() {
-        "row" => Value::Number((row + 1) as f64),
-        "col" | "column" => Value::Number((col + 1) as f64),
+        "row" => Value::Number(f64::from(row + 1)),
+        "col" | "column" => Value::Number(f64::from(col + 1)),
         "address" => {
             let col_letters = easyexcel_model::addr::col_index_to_letters(col);
             Value::Text(format!("${}${}", col_letters, row + 1))

@@ -7,7 +7,7 @@ use std::path::Path;
 use cfb::CompoundFile;
 use easyexcel_io::{Error as ExcelError, Result};
 
-/// Reads the BIFF workbook stream from an OLE2 `.xls` compound document.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Reads the BIFF workbook stream from an OLE2 `.xls` compound document.
 ///
 /// # Errors
 ///
@@ -27,7 +27,7 @@ pub fn read_workbook_stream(path: &Path) -> Result<Vec<u8>> {
     Ok(workbook)
 }
 
-/// Walks every physical BIFF record in a workbook stream.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Walks every physical BIFF record in a workbook stream.
 ///
 /// Unlike the former display-only parser, this reports truncated headers and
 /// payloads instead of silently accepting a damaged stream.

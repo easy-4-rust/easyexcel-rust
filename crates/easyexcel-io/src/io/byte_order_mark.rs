@@ -1,6 +1,6 @@
 //! Unicode 字节顺序标记（BOM）协议表。
 
-/// Unicode 文本流可识别的字节顺序标记。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Unicode 文本流可识别的字节顺序标记。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ByteOrderMark {
     /// UTF-8 BOM。
@@ -18,6 +18,7 @@ pub enum ByteOrderMark {
 impl ByteOrderMark {
     /// 返回该标记的原始协议字节。
     #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn bytes(self) -> &'static [u8] {
         match self {
             Self::Utf8 => &[0xEF, 0xBB, 0xBF],
@@ -30,6 +31,7 @@ impl ByteOrderMark {
 
     /// 返回与该标记对应的规范字符集名称。
     #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn charset_name(self) -> &'static str {
         match self {
             Self::Utf8 => "UTF-8",
@@ -40,7 +42,7 @@ impl ByteOrderMark {
         }
     }
 
-    /// 根据常见 Java 字符集名称解析字节顺序标记。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 根据常见 Java 字符集名称解析字节顺序标记。
     #[must_use]
     pub fn from_charset_name(name: &str) -> Option<Self> {
         if name.eq_ignore_ascii_case("UTF-8") || name.eq_ignore_ascii_case("UTF8") {

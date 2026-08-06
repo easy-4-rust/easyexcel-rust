@@ -11,7 +11,7 @@ use crate::core::into_excel_cell::IntoExcelCell;
 use crate::core::write_converter_context::WriteConverterContext;
 use crate::write::write_cell_data::WriteCellData;
 
-/// Java `InputStreamImageConverter` equivalent for annotation-selected stream fields.
+/// 对应 Java：com.alibaba.excel.converters.inputstream.InputStreamImageConverter。 Java `InputStreamImageConverter` equivalent for annotation-selected stream fields.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct InputStreamImageConverter;
 

@@ -4,13 +4,16 @@
 
 use super::dates::DateSystem;
 use chrono::{Datelike, Timelike};
+use std::fmt::Write as _;
 
 /// Built-in number format IDs that always denote dates/times (no FORMAT record
 /// needed). Per ECMA-376 / MS-XLS.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const BUILTIN_DATE_IDS: &[u16] = &[14, 15, 16, 17, 18, 19, 20, 21, 22, 45, 46, 47];
 
-/// The built-in format code for a given numFmtId, if it is one of the reserved
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 The built-in format code for a given numFmtId, if it is one of the reserved
 /// IDs (0–49). Returns `None` for custom IDs (>= 164) and unknown ones.
+#[must_use]
 pub fn builtin_format_code(id: u16) -> Option<&'static str> {
     Some(match id {
         0 => "General",
@@ -45,8 +48,9 @@ pub fn builtin_format_code(id: u16) -> Option<&'static str> {
     })
 }
 
-/// Heuristic: does this format code represent a date/time? Looks for unescaped
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Heuristic: does this format code represent a date/time? Looks for unescaped
 /// date/time tokens (`y`, `m`, `d`, `h`, `s`) outside of literal/quoted spans.
+#[must_use]
 pub fn is_date_format(code: &str) -> bool {
     let lower = code.to_ascii_lowercase();
     let bytes = lower.as_bytes();
@@ -63,8 +67,7 @@ pub fn is_date_format(code: &str) -> bool {
                 i += 2;
                 continue;
             }
-            b'y' | b'd' | b'h' | b's' if !in_quote && !in_bracket => return true,
-            b'm' if !in_quote && !in_bracket => return true,
+            b'y' | b'd' | b'h' | b's' | b'm' if !in_quote && !in_bracket => return true,
             _ => {}
         }
         i += 1;
@@ -72,7 +75,8 @@ pub fn is_date_format(code: &str) -> bool {
     false
 }
 
-/// True for IDs that are date formats (covers built-in IDs cheaply).
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 True for IDs that are date formats (covers built-in IDs cheaply).
+#[must_use]
 pub fn is_date_format_id(id: u16, custom_code: Option<&str>) -> bool {
     if BUILTIN_DATE_IDS.contains(&id) {
         return true;
@@ -83,7 +87,7 @@ pub fn is_date_format_id(id: u16, custom_code: Option<&str>) -> bool {
     }
 }
 
-/// 按格式代码中小数点后的连续 `0` 数量进行定点格式化。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 按格式代码中小数点后的连续 `0` 数量进行定点格式化。
 #[must_use]
 pub fn format_fixed_decimal(value: f64, pattern: &str) -> String {
     let scale = pattern.split('.').nth(1).map_or(0, |fraction| {
@@ -92,11 +96,12 @@ pub fn format_fixed_decimal(value: f64, pattern: &str) -> String {
     format!("{value:.scale$}")
 }
 
-/// Apply a number-format code to a numeric value, producing display text.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Apply a number-format code to a numeric value, producing display text.
 ///
 /// Supports General, the common date/time tokens, percent, thousands grouping,
 /// fixed decimals, and a leading text section. Falls back to General rendering
 /// for anything not understood — never panics.
+#[must_use]
 pub fn format_value(value: f64, code: &str, system: DateSystem) -> String {
     let sections = split_sections(code);
     let has_neg_section = sections.len() > 1;
@@ -152,6 +157,9 @@ fn split_sections(code: &str) -> Vec<&str> {
     out
 }
 
+// 单次遍历必须同时维护引号、转义、elapsed token 和日期/时间歧义状态；
+// 拆成多个状态机反而会复制索引推进规则，因此保留为一个内聚函数。
+#[allow(clippy::too_many_lines, clippy::cast_possible_truncation)]
 fn format_datetime(value: f64, code: &str, system: DateSystem) -> String {
     let Some(dt) = system.serial_to_datetime(value) else {
         return super::value::format_number_general(value);
@@ -201,9 +209,9 @@ fn format_datetime(value: f64, code: &str, system: DateSystem) -> String {
             b'y' => {
                 let n = run_len(lb, i, b'y');
                 if n >= 4 {
-                    out.push_str(&format!("{:04}", dt.year()));
+                    let _ = write!(out, "{:04}", dt.year());
                 } else {
-                    out.push_str(&format!("{:02}", dt.year() % 100));
+                    let _ = write!(out, "{:02}", dt.year() % 100);
                 }
                 i += n;
             }
@@ -212,11 +220,13 @@ fn format_datetime(value: f64, code: &str, system: DateSystem) -> String {
                 // Disambiguate minutes vs months: if adjacent to h/s it's minutes.
                 let minutes = near_time_context(lb, i);
                 if minutes {
-                    out.push_str(&fmt_pad(dt.minute() as i64, n));
+                    out.push_str(&fmt_pad(i64::from(dt.minute()), n));
                 } else {
                     match n {
                         1 => out.push_str(&dt.month().to_string()),
-                        2 => out.push_str(&format!("{:02}", dt.month())),
+                        2 => {
+                            let _ = write!(out, "{:02}", dt.month());
+                        }
                         3 => out.push_str(MONTHS_ABBR[(dt.month() - 1) as usize]),
                         _ => out.push_str(MONTHS_FULL[(dt.month() - 1) as usize]),
                     }
@@ -227,7 +237,9 @@ fn format_datetime(value: f64, code: &str, system: DateSystem) -> String {
                 let n = run_len(lb, i, b'd');
                 match n {
                     1 => out.push_str(&dt.day().to_string()),
-                    2 => out.push_str(&format!("{:02}", dt.day())),
+                    2 => {
+                        let _ = write!(out, "{:02}", dt.day());
+                    }
                     3 => out.push_str(WEEKDAYS_ABBR[dt.weekday().num_days_from_sunday() as usize]),
                     _ => out.push_str(WEEKDAYS_FULL[dt.weekday().num_days_from_sunday() as usize]),
                 }
@@ -235,7 +247,7 @@ fn format_datetime(value: f64, code: &str, system: DateSystem) -> String {
             }
             b'h' => {
                 let n = run_len(lb, i, b'h');
-                let mut h = dt.hour() as i64;
+                let mut h = i64::from(dt.hour());
                 if has_ampm {
                     h %= 12;
                     if h == 0 {
@@ -247,7 +259,7 @@ fn format_datetime(value: f64, code: &str, system: DateSystem) -> String {
             }
             b's' => {
                 let n = run_len(lb, i, b's');
-                out.push_str(&fmt_pad(dt.second() as i64, n));
+                out.push_str(&fmt_pad(i64::from(dt.second()), n));
                 i += n;
             }
             b'a' if lower[i..].starts_with("am/pm") => {
@@ -291,7 +303,7 @@ fn near_time_context(b: &[u8], pos: usize) -> bool {
     while i > 0 {
         i -= 1;
         match b[i] {
-            b'm' | b':' | b' ' => continue,
+            b'm' | b':' | b' ' => {}
             b'h' => return true,
             _ => break,
         }

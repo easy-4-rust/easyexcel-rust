@@ -1,4 +1,4 @@
-//! EasyExcel 可复用缓存引擎。
+//! `EasyExcel` 可复用缓存引擎。
 
 pub mod cache;
 

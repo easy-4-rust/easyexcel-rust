@@ -25,6 +25,7 @@ impl HorizontalCellStyleStrategy {
     /// Creates a strategy with content styles only (empty head style).
     /// (Java `HorizontalCellStyleStrategy(List<WriteCellStyle>)` subset)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。
     pub const fn new(content_styles: Vec<ExcelCellStyle>) -> Self {
         Self {
             head_style: ExcelCellStyle::new(),
@@ -32,7 +33,7 @@ impl HorizontalCellStyleStrategy {
         }
     }
 
-    /// Creates a strategy with one head style and one content style.
+    /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。 Creates a strategy with one head style and one content style.
     /// (Java `HorizontalCellStyleStrategy(WriteCellStyle, WriteCellStyle)`)
     #[must_use]
     pub fn with_head_and_content(
@@ -48,6 +49,7 @@ impl HorizontalCellStyleStrategy {
     /// Creates a strategy with one head style and a content-style cycle.
     /// (Java `HorizontalCellStyleStrategy(WriteCellStyle, List<WriteCellStyle>)`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。
     pub const fn with_head_and_contents(
         head_style: ExcelCellStyle,
         content_styles: Vec<ExcelCellStyle>,
@@ -60,12 +62,13 @@ impl HorizontalCellStyleStrategy {
 
     /// Attaches a head font (Java `headWriteCellStyle.setWriteFont`).
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。
     pub const fn with_head_font(mut self, font: ExcelFontStyle) -> Self {
         self.head_style.font = Some(font);
         self
     }
 
-    /// Attaches a head font from runtime [`WriteFont`]
+    /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。 Attaches a head font from runtime [`WriteFont`]
     /// (Java `WriteCellStyle.setWriteFont(WriteFont)`).
     ///
     /// Owned font names are not copied into [`ExcelFontStyle`]; set
@@ -76,7 +79,7 @@ impl HorizontalCellStyleStrategy {
         self
     }
 
-    /// Attaches one content font to every configured content style
+    /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。 Attaches one content font to every configured content style
     /// (Java each `contentWriteCellStyle.setWriteFont`).
     #[must_use]
     pub fn with_content_font(mut self, font: ExcelFontStyle) -> Self {
@@ -86,7 +89,7 @@ impl HorizontalCellStyleStrategy {
         self
     }
 
-    /// Attaches a content font from runtime [`WriteFont`].
+    /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。 Attaches a content font from runtime [`WriteFont`].
     #[must_use]
     pub fn with_content_write_font(mut self, font: &WriteFont) -> Self {
         let converted = excel_font_style_from_write_font(font);
@@ -98,11 +101,12 @@ impl HorizontalCellStyleStrategy {
 
     /// Returns the configured head style. (Java `getHeadWriteCellStyle()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。
     pub const fn head_style(&self) -> ExcelCellStyle {
         self.head_style
     }
 
-    /// Returns the configured content styles. (Java `getContentWriteCellStyleList()`)
+    /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。 Returns the configured content styles. (Java `getContentWriteCellStyleList()`)
     #[must_use]
     pub fn content_styles(&self) -> &[ExcelCellStyle] {
         &self.content_styles

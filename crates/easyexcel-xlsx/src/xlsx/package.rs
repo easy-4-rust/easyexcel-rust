@@ -1,9 +1,10 @@
 //! OOXML ZIP 包路径与关系解析原语。
 //!
-//! 这些操作不包含 EasyExcel listener、缓存或显示格式语义，可被 Workbook
-//! 读取、Event Mode 读取和 RoundTrip 模板处理共同使用。
+//! 这些操作不包含 `EasyExcel` listener、缓存或显示格式语义，可被 Workbook
+//! 读取、Event Mode 读取和 `RoundTrip` 模板处理共同使用。
 
 use std::collections::HashMap;
+use std::hash::BuildHasher;
 use std::io::{BufReader, Read, Seek};
 
 use easyexcel_io::{Error, Result};
@@ -12,12 +13,12 @@ use quick_xml::events::Event;
 use zip::ZipArchive;
 
 /// 仅包含包内关系的映射：`Id -> (Target, Type)`。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub type Relationships = HashMap<String, (String, String)>;
 
-/// 包含外部标记的关系映射：`Id -> (Target, Type, External)`。
-pub type RawRelationships = HashMap<String, (String, String, bool)>;
+include!("package/raw_relationships.rs");
 
-/// 建立大小写不敏感的 ZIP part 路径缓存。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 建立大小写不敏感的 ZIP part 路径缓存。
 #[must_use]
 pub fn path_cache<R: Read + Seek>(archive: &ZipArchive<R>) -> HashMap<String, String> {
     let mut paths = HashMap::with_capacity(archive.len());
@@ -27,18 +28,25 @@ pub fn path_cache<R: Read + Seek>(archive: &ZipArchive<R>) -> HashMap<String, St
     paths
 }
 
-/// 按大小写不敏感缓存解析实际 ZIP part 名称。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 按大小写不敏感缓存解析实际 ZIP part 名称。
 #[must_use]
-pub fn cached_path<'a>(cache: &'a HashMap<String, String>, path: &'a str) -> &'a str {
+pub fn cached_path<'a, S: BuildHasher>(
+    cache: &'a HashMap<String, String, S>,
+    path: &'a str,
+) -> &'a str {
     cache
         .get(&path.to_ascii_lowercase())
         .map_or(path, String::as_str)
 }
 
-/// 从 ZIP 包读取内部关系，过滤 `TargetMode="External"`。
-pub fn read_relationships<R: Read + Seek>(
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 从 ZIP 包读取内部关系，过滤 `TargetMode="External"`。
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
+pub fn read_relationships<R: Read + Seek, S: BuildHasher>(
     archive: &mut ZipArchive<R>,
-    cache: &HashMap<String, String>,
+    cache: &HashMap<String, String, S>,
     path: &str,
 ) -> Result<Relationships> {
     Ok(read_raw_relationships(archive, cache, path)?
@@ -49,10 +57,14 @@ pub fn read_relationships<R: Read + Seek>(
         .collect())
 }
 
-/// 从 ZIP 包读取完整关系表。
-pub fn read_raw_relationships<R: Read + Seek>(
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 从 ZIP 包读取完整关系表。
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
+pub fn read_raw_relationships<R: Read + Seek, S: BuildHasher>(
     archive: &mut ZipArchive<R>,
-    cache: &HashMap<String, String>,
+    cache: &HashMap<String, String, S>,
     path: &str,
 ) -> Result<RawRelationships> {
     let actual = cached_path(cache, path);
@@ -102,7 +114,7 @@ pub fn read_raw_relationships<R: Read + Seek>(
     Ok(relationships)
 }
 
-/// 返回某个 part 对应的 `.rels` part 路径。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 返回某个 part 对应的 `.rels` part 路径。
 #[must_use]
 pub fn relationship_part_name(path: &str) -> String {
     path.rsplit_once('/').map_or_else(
@@ -111,7 +123,11 @@ pub fn relationship_part_name(path: &str) -> String {
     )
 }
 
-/// 按 OOXML OPC 规则解析关系目标。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 按 OOXML OPC 规则解析关系目标。
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn resolve_target(base_part: &str, target: &str) -> Result<String> {
     let candidate = if let Some(absolute) = target.strip_prefix('/') {
         absolute.to_owned()
@@ -123,7 +139,11 @@ pub fn resolve_target(base_part: &str, target: &str) -> Result<String> {
     normalize_path(&candidate)
 }
 
-/// 规范化包内路径并阻止 `..` 逃逸 ZIP 根目录。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 规范化包内路径并阻止 `..` 逃逸 ZIP 根目录。
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn normalize_path(path: &str) -> Result<String> {
     let mut components = Vec::new();
     for component in path.split('/') {

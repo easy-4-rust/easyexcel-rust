@@ -6,20 +6,14 @@
 use super::value::{Array, RefRange, Value};
 use easyexcel_model::dates::DateSystem;
 
-/// The cell currently being evaluated.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct CellRef {
-    pub sheet: usize,
-    pub row: u32,
-    pub col: u32,
-}
+include!("context/cell_ref.rs");
 
-/// Interface functions use to query the workbook during evaluation.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Interface functions use to query the workbook during evaluation.
 pub trait Context {
     /// The workbook's date system (1900 / 1904).
     fn date_system(&self) -> DateSystem;
 
-    /// The cell whose formula is being evaluated (for relative refs, ROW(), …).
+    /// The cell whose formula is being evaluated (for relative refs, `ROW()`, …).
     fn current(&self) -> CellRef;
 
     fn sheet_count(&self) -> usize;

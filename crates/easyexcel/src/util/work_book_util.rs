@@ -8,65 +8,15 @@
 use crate::core::excel_error::ExcelError;
 use crate::write::write_cell_data::WriteCellData;
 
-/// Backend factory used by [`create_work_book`].
-pub trait WorkBookCreator {
-    /// Concrete workbook produced by this backend.
-    type WorkBook;
+include!("work_book_util/work_book_creator.rs");
 
-    /// Creates or opens the workbook.
-    ///
-    /// # Errors
-    ///
-    /// Returns an I/O, format or unsupported-operation error from the backend.
-    fn create_work_book(self) -> Result<Self::WorkBook, ExcelError>;
-}
+include!("work_book_util/sheet_creator.rs");
 
-/// Backend workbook capable of creating a sheet.
-pub trait SheetCreator {
-    /// Concrete sheet handle returned by this backend.
-    type Sheet<'a>
-    where
-        Self: 'a;
+include!("work_book_util/row_creator.rs");
 
-    /// Creates a sheet with the supplied name.
-    ///
-    /// # Errors
-    ///
-    /// Returns a format error for an invalid or duplicate sheet name.
-    fn create_sheet(&mut self, sheet_name: &str) -> Result<Self::Sheet<'_>, ExcelError>;
-}
+include!("work_book_util/cell_creator.rs");
 
-/// Backend sheet capable of creating a logical row.
-pub trait RowCreator {
-    /// Concrete row handle returned by this backend.
-    type Row<'a>
-    where
-        Self: 'a;
-
-    /// Creates a row at a zero-based index.
-    ///
-    /// # Errors
-    ///
-    /// Returns a format error when the row is outside the backend limit.
-    fn create_row(&mut self, row_index: u32) -> Result<Self::Row<'_>, ExcelError>;
-}
-
-/// Backend row capable of creating a logical cell.
-pub trait CellCreator {
-    /// Concrete cell handle returned by this backend.
-    type Cell<'a>
-    where
-        Self: 'a;
-
-    /// Creates a cell at a zero-based column index.
-    ///
-    /// # Errors
-    ///
-    /// Returns a format error when the column is outside the backend limit.
-    fn create_cell(&mut self, column_index: u16) -> Result<Self::Cell<'_>, ExcelError>;
-}
-
-/// Mirrors `com.alibaba.excel.util.WorkBookUtil#createWorkBook`.
+/// 对应 Java：com.alibaba.excel.util.WorkBookUtil。 Mirrors `com.alibaba.excel.util.WorkBookUtil#createWorkBook`.
 ///
 /// # Errors
 ///
@@ -75,7 +25,7 @@ pub fn create_work_book<C: WorkBookCreator>(creator: C) -> Result<C::WorkBook, E
     creator.create_work_book()
 }
 
-/// Mirrors `com.alibaba.excel.util.WorkBookUtil#createSheet`.
+/// 对应 Java：com.alibaba.excel.util.WorkBookUtil。 Mirrors `com.alibaba.excel.util.WorkBookUtil#createSheet`.
 ///
 /// # Errors
 ///
@@ -87,7 +37,7 @@ pub fn create_sheet<'a, C: SheetCreator>(
     workbook.create_sheet(sheet_name)
 }
 
-/// Mirrors `com.alibaba.excel.util.WorkBookUtil#createRow`.
+/// 对应 Java：com.alibaba.excel.util.WorkBookUtil。 Mirrors `com.alibaba.excel.util.WorkBookUtil#createRow`.
 ///
 /// # Errors
 ///
@@ -96,7 +46,7 @@ pub fn create_row<C: RowCreator>(sheet: &mut C, row_index: u32) -> Result<C::Row
     sheet.create_row(row_index)
 }
 
-/// Mirrors `com.alibaba.excel.util.WorkBookUtil#createCell`.
+/// 对应 Java：com.alibaba.excel.util.WorkBookUtil。 Mirrors `com.alibaba.excel.util.WorkBookUtil#createCell`.
 ///
 /// # Errors
 ///
@@ -108,7 +58,7 @@ pub fn create_cell<C: CellCreator>(
     row.create_cell(column_index)
 }
 
-/// Mirrors `com.alibaba.excel.util.WorkBookUtil#fillDataFormat`.
+/// 对应 Java：com.alibaba.excel.util.WorkBookUtil。 Mirrors `com.alibaba.excel.util.WorkBookUtil#fillDataFormat`.
 ///
 /// Java creates the missing `WriteCellStyle` and `DataFormatData` containers,
 /// then sets the requested format only when no format was already assigned.

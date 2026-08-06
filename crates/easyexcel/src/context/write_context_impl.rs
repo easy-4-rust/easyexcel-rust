@@ -28,7 +28,7 @@ pub struct WriteContextImpl {
     current_holder_state: WriteContextHolderState,
 }
 impl WriteContextImpl {
-    /// Creates a write context bound to an output path.
+    /// 对应 Java：com.alibaba.excel.context.WriteContextImpl。 Creates a write context bound to an output path.
     #[must_use]
     pub fn new(path: impl Into<PathBuf>) -> Self {
         let path = path.into();
@@ -41,19 +41,19 @@ impl WriteContextImpl {
         }
     }
 
-    /// Returns the output path. (Java `WriteWorkbookHolder.getFile()`)
+    /// 对应 Java：com.alibaba.excel.context.WriteContextImpl。 Returns the output path. (Java `WriteWorkbookHolder.getFile()`)
     #[must_use]
     pub fn path(&self) -> &Path {
         &self.path
     }
 
-    /// Returns the workbook-level handler context.
+    /// 对应 Java：com.alibaba.excel.context.WriteContextImpl。 Returns the workbook-level handler context.
     #[must_use]
     pub fn workbook_context(&self) -> &WriteWorkbookContext {
         &self.workbook_context
     }
 
-    /// Returns the active sheet handler context, if any.
+    /// 对应 Java：com.alibaba.excel.context.WriteContextImpl。 Returns the active sheet handler context, if any.
     #[must_use]
     pub fn sheet_context(&self) -> Option<&WriteSheetContext> {
         self.sheet_context.as_ref()
@@ -61,28 +61,31 @@ impl WriteContextImpl {
 
     /// Returns the active table index, if any.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.context.WriteContextImpl。
     pub const fn table_no(&self) -> Option<i32> {
         self.table_no
     }
 
     /// Returns the resolved current holder state.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.context.WriteContextImpl。
     pub const fn current_holder_state(&self) -> &WriteContextHolderState {
         &self.current_holder_state
     }
 
-    /// Replaces the resolved current holder state.
+    /// 对应 Java：com.alibaba.excel.context.WriteContextImpl。 Replaces the resolved current holder state.
     pub fn set_current_holder_state(&mut self, state: WriteContextHolderState) {
         self.current_holder_state = state;
     }
 
-    /// Updates the active sheet context. (Java `WriteContextImpl` sheet switch)
+    /// 对应 Java：com.alibaba.excel.context.WriteContextImpl。 Updates the active sheet context. (Java `WriteContextImpl` sheet switch)
     pub fn set_sheet_context(&mut self, sheet_name: impl Into<String>) {
         self.sheet_context = Some(WriteSheetContext::new(sheet_name));
         self.current_holder_state.holder_type = Holder::Sheet;
     }
 
     /// Updates the active table index. (Java `WriteContextImpl` table switch)
+    /// 对应 Java：com.alibaba.excel.context.WriteContextImpl。
     pub const fn set_table_no(&mut self, table_no: Option<i32>) {
         self.table_no = table_no;
         self.current_holder_state.holder_type = if table_no.is_some() {

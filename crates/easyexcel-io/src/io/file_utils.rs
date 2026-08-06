@@ -19,14 +19,14 @@ static TEMP_FILE_PREFIX: OnceLock<RwLock<PathBuf>> = OnceLock::new();
 static POI_FILES_PATH: OnceLock<RwLock<PathBuf>> = OnceLock::new();
 static CACHE_PATH: OnceLock<RwLock<PathBuf>> = OnceLock::new();
 
-/// 将非随机访问输入流物化为自动删除文件的所有权守卫。
+/// 对应 Java：com.alibaba.excel.util.FileUtils。 将非随机访问输入流物化为自动删除文件的所有权守卫。
 #[derive(Debug)]
 pub struct TemporaryInput {
     path: TempPath,
 }
 
 impl TemporaryInput {
-    /// 读取完整输入流并使用指定后缀创建临时文件。
+    /// 对应 Java：com.alibaba.excel.util.FileUtils。 读取完整输入流并使用指定后缀创建临时文件。
     ///
     /// # Errors
     ///
@@ -46,7 +46,7 @@ impl TemporaryInput {
         })
     }
 
-    /// 将完整字节内容写入指定后缀的自动删除文件。
+    /// 对应 Java：com.alibaba.excel.util.FileUtils。 将完整字节内容写入指定后缀的自动删除文件。
     ///
     /// # Errors
     ///
@@ -55,7 +55,7 @@ impl TemporaryInput {
         Self::from_reader(bytes, suffix)
     }
 
-    /// 返回物化文件路径。
+    /// 对应 Java：com.alibaba.excel.util.FileUtils。 返回物化文件路径。
     #[must_use]
     pub fn path(&self) -> &Path {
         self.path.as_ref()
@@ -97,7 +97,7 @@ fn replace_configured_path(lock: &RwLock<PathBuf>, path: PathBuf) {
         .unwrap_or_else(std::sync::PoisonError::into_inner) = path;
 }
 
-/// Mirrors `org.apache.commons.io.FileUtils#openInputStream`.
+/// 对应 Java：com.alibaba.excel.util.FileUtils。 Mirrors `org.apache.commons.io.FileUtils#openInputStream`.
 ///
 /// # Errors
 ///
@@ -106,7 +106,7 @@ pub fn open_input_stream(path: &Path) -> io::Result<std::fs::File> {
     fs::File::open(path)
 }
 
-/// 创建并截断输出文件。
+/// 对应 Java：com.alibaba.excel.util.FileUtils。 创建并截断输出文件。
 ///
 /// # Errors
 ///
@@ -115,12 +115,16 @@ pub fn open_output_stream(path: &Path) -> io::Result<std::fs::File> {
     fs::File::create(path)
 }
 
-/// 读取文件的全部字节。
+/// 对应 Java：com.alibaba.excel.util.FileUtils。 读取文件的全部字节。
+///
+/// # Errors
+///
+/// 路径无法读取时返回 [`ExcelError::Io`]。
 pub fn read_file(path: &Path) -> Result<Vec<u8>, ExcelError> {
     Ok(fs::read(path)?)
 }
 
-/// Mirrors `com.alibaba.excel.util.FileUtils#writeToFile`.
+/// 对应 Java：com.alibaba.excel.util.FileUtils。 Mirrors `com.alibaba.excel.util.FileUtils#writeToFile`.
 ///
 /// # Errors
 ///
@@ -131,7 +135,7 @@ pub fn write_to_file(path: &Path, data: &[u8]) -> Result<(), ExcelError> {
     Ok(())
 }
 
-/// Mirrors `com.alibaba.excel.util.FileUtils#createCacheTmpFile`.
+/// 对应 Java：com.alibaba.excel.util.FileUtils。 Mirrors `com.alibaba.excel.util.FileUtils#createCacheTmpFile`.
 ///
 /// Creates the file under the currently configured cache directory.
 ///
@@ -146,19 +150,27 @@ pub fn create_cache_tmp_file() -> io::Result<NamedTempFile> {
         .tempfile_in(cache_path)
 }
 
-/// 创建由 RAII 管理的通用临时文件。
+/// 对应 Java：com.alibaba.excel.util.FileUtils。 创建由 RAII 管理的通用临时文件。
+///
+/// # Errors
+///
+/// 操作系统无法创建临时文件时返回 I/O 错误。
 pub fn create_temp_file() -> io::Result<NamedTempFile> {
     NamedTempFile::new()
 }
 
-/// 创建由 RAII 管理的通用临时目录，并返回其路径副本。
+/// 对应 Java：com.alibaba.excel.util.FileUtils。 创建由 RAII 管理的通用临时目录，并返回其路径副本。
+///
+/// # Errors
+///
+/// 操作系统无法创建临时目录时返回 I/O 错误。
 pub fn create_temp_directory() -> io::Result<(TempDir, PathBuf)> {
     let directory = TempDir::new()?;
     let path = directory.path().to_path_buf();
     Ok((directory, path))
 }
 
-/// Mirrors `com.alibaba.excel.util.FileUtils#createPoiFilesDirectory`.
+/// 对应 Java：com.alibaba.excel.util.FileUtils。 Mirrors `com.alibaba.excel.util.FileUtils#createPoiFilesDirectory`.
 ///
 /// The directory remains in place after this call, matching Java's process-wide
 /// POI temp-file strategy instead of returning a short-lived `TempDir`.
@@ -172,7 +184,7 @@ pub fn create_poi_files_directory() -> io::Result<PathBuf> {
     Ok(path)
 }
 
-/// Mirrors `org.apache.commons.io.FileUtils#forceMkdir` / `createDirectory`.
+/// 对应 Java：com.alibaba.excel.util.FileUtils。 Mirrors `org.apache.commons.io.FileUtils#forceMkdir` / `createDirectory`.
 ///
 /// # Errors
 ///
@@ -182,7 +194,7 @@ pub fn create_directory(path: &Path) -> Result<(), ExcelError> {
     Ok(())
 }
 
-/// Mirrors `org.apache.commons.io.FileUtils#deleteQuietly` / `delete`.
+/// 对应 Java：com.alibaba.excel.util.FileUtils。 Mirrors `org.apache.commons.io.FileUtils#deleteQuietly` / `delete`.
 ///
 /// # Errors
 ///
@@ -196,35 +208,35 @@ pub fn delete(path: &Path) -> Result<(), ExcelError> {
     Ok(())
 }
 
-/// Mirrors `com.alibaba.excel.util.FileUtils#getTempFilePrefix`.
+/// 对应 Java：com.alibaba.excel.util.FileUtils。 Mirrors `com.alibaba.excel.util.FileUtils#getTempFilePrefix`.
 #[must_use]
 pub fn get_temp_file_prefix() -> PathBuf {
     read_configured_path(temp_file_prefix_lock())
 }
 
-/// Mirrors `com.alibaba.excel.util.FileUtils#setTempFilePrefix`.
+/// 对应 Java：com.alibaba.excel.util.FileUtils。 Mirrors `com.alibaba.excel.util.FileUtils#setTempFilePrefix`.
 pub fn set_temp_file_prefix(prefix: impl Into<PathBuf>) {
     replace_configured_path(temp_file_prefix_lock(), prefix.into());
 }
 
-/// Mirrors `com.alibaba.excel.util.FileUtils#getPoiFilesPath`.
+/// 对应 Java：com.alibaba.excel.util.FileUtils。 Mirrors `com.alibaba.excel.util.FileUtils#getPoiFilesPath`.
 #[must_use]
 pub fn get_poi_files_path() -> PathBuf {
     read_configured_path(poi_files_path_lock())
 }
 
-/// Mirrors `com.alibaba.excel.util.FileUtils#setPoiFilesPath`.
+/// 对应 Java：com.alibaba.excel.util.FileUtils。 Mirrors `com.alibaba.excel.util.FileUtils#setPoiFilesPath`.
 pub fn set_poi_files_path(path: impl Into<PathBuf>) {
     replace_configured_path(poi_files_path_lock(), path.into());
 }
 
-/// Mirrors `com.alibaba.excel.util.FileUtils#getCachePath`.
+/// 对应 Java：com.alibaba.excel.util.FileUtils。 Mirrors `com.alibaba.excel.util.FileUtils#getCachePath`.
 #[must_use]
 pub fn get_cache_path() -> PathBuf {
     read_configured_path(cache_path_lock())
 }
 
-/// Mirrors `com.alibaba.excel.util.FileUtils#setCachePath`.
+/// 对应 Java：com.alibaba.excel.util.FileUtils。 Mirrors `com.alibaba.excel.util.FileUtils#setCachePath`.
 pub fn set_cache_path(path: impl Into<PathBuf>) {
     replace_configured_path(cache_path_lock(), path.into());
 }

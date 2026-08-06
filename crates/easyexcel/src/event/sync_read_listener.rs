@@ -3,7 +3,7 @@
 use crate::core::analysis_context::AnalysisContext;
 use crate::core::read_listener::ReadListener;
 
-/// Synchronous data reading.
+/// 对应 Java：com.alibaba.excel.event.SyncReadListener。 Synchronous data reading.
 ///
 /// Rust port of Java `SyncReadListener extends AnalysisEventListener<Object>`.
 /// Java collects every row into a `List<Object>`. The Rust port mirrors
@@ -15,17 +15,18 @@ pub struct SyncReadListener {
 impl SyncReadListener {
     /// Creates an empty listener.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.event.SyncReadListener。
     pub const fn new() -> Self {
         Self { list: Vec::new() }
     }
 
-    /// Returns the collected list. (Java `getList()`)
+    /// 对应 Java：com.alibaba.excel.event.SyncReadListener。 Returns the collected list. (Java `getList()`)
     #[must_use]
     pub fn list(&self) -> &[crate::CellValue] {
         &self.list
     }
 
-    /// Sets the list. (Java `setList(List)`)
+    /// 对应 Java：com.alibaba.excel.event.SyncReadListener。 Sets the list. (Java `setList(List)`)
     pub fn set_list(&mut self, list: Vec<crate::CellValue>) {
         self.list = list;
     }

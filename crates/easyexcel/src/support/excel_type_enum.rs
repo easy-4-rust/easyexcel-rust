@@ -19,6 +19,7 @@ pub enum ExcelTypeEnum {
 impl ExcelTypeEnum {
     /// Returns the file extension. (Java `getValue()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.support.ExcelTypeEnum。
     pub const fn value(self) -> &'static str {
         match self {
             Self::Csv => ".csv",
@@ -27,18 +28,17 @@ impl ExcelTypeEnum {
         }
     }
 
-    /// Sniffs the type from magic bytes. (Java `recognitionExcelType(InputStream)`)
+    /// 对应 Java：com.alibaba.excel.support.ExcelTypeEnum。 Sniffs the type from magic bytes. (Java `recognitionExcelType(InputStream)`)
     #[must_use]
     pub fn from_magic(bytes: &[u8]) -> Self {
         match easyexcel_io::Format::from_magic(bytes) {
-            easyexcel_io::Format::Csv => Self::Csv,
             easyexcel_io::Format::Xls => Self::Xls,
             easyexcel_io::Format::Xlsx => Self::Xlsx,
             _ => Self::Csv,
         }
     }
 
-    /// Sniffs the type from a file extension.
+    /// 对应 Java：com.alibaba.excel.support.ExcelTypeEnum。 Sniffs the type from a file extension.
     #[must_use]
     pub fn from_extension(extension: &str) -> Option<Self> {
         match easyexcel_io::Format::from_extension(extension) {

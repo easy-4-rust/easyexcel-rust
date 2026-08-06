@@ -19,6 +19,7 @@ use crate::headers::excel_xlsx_attachment_headers;
 /// hyper 1.11 中 `hyper::body::Body` 是 `http_body::Body` trait（非具体类型），
 /// 构造响应需用 `http-body-util` 的 [`Full<Bytes>`](http_body_util::Full)
 /// 承载内存字节，对应 axum 适配器的 `Body::from(Vec<u8>)`。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub type ResponseBody = Full<bytes::Bytes>;
 
 /// 将 [`ExcelRow`] 行序列化为 XLSX 字节数组。

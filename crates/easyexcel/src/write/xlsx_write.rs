@@ -8,12 +8,13 @@ use std::path::Path;
 
 use crate::core::{ExcelRow, Result, WriteHandler, WriteWorkbookContext};
 use crate::write::excel_writer_core::{
-    HandlerHolderScope, after_workbook, after_workbook_create, before_workbook, save_workbook,
-    save_workbook_to_writer, sort_handlers, validate_excel_row_schema,
-    with_default_write_converters, write_sheet_to_workbook, write_xlsx_onto_template_package,
+    HandlerHolderScope, after_workbook, after_workbook_create, apply_xlsx_mutations,
+    before_workbook, save_workbook, save_workbook_to_writer, sort_handlers,
+    validate_excel_row_schema, with_default_write_converters, write_sheet_to_workbook,
+    write_xlsx_onto_template_package,
 };
 use crate::write::write_options::WriteOptions;
-/// 将类型化行写入 XLSX 文件。
+/// 对应 Java：com.alibaba.excel.ExcelWriter。 将类型化行写入 XLSX 文件。
 ///
 /// # Errors
 ///
@@ -26,7 +27,7 @@ where
     write_xlsx_with_handlers(path, options, rows, &mut [])
 }
 
-/// Writes typed rows while invoking ordered write handlers.
+/// 对应 Java：com.alibaba.excel.ExcelWriter。 Writes typed rows while invoking ordered write handlers.
 ///
 /// # Errors
 ///
@@ -54,28 +55,30 @@ where
         options.template_bytes.as_deref(),
     ) {
         write_xlsx_onto_template_package::<T, I>(path, None, options, rows, handlers)?;
-    } else {
-        let mut workbook = easyexcel_xlsx::xlsx::generation::new_workbook();
-        let holder_scope = HandlerHolderScope::new_resolved::<T>(
-            path,
-            i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX),
-            None,
-            options,
-        )?;
-        write_sheet_to_workbook::<T, I>(
-            &mut workbook,
-            options,
-            rows,
-            handlers,
-            Some(&holder_scope),
-        )?;
-        save_workbook(&mut workbook, path, options.password.as_deref())?;
+        after_workbook(handlers, &workbook_context)?;
+        if !workbook_context.mutation_plan().is_empty()? {
+            return Err(crate::ExcelError::Unsupported(
+                "workbook handler mutations on with_template output are not supported".to_owned(),
+            ));
+        }
+        return Ok(());
     }
+    let mut workbook = easyexcel_xlsx::xlsx::generation::new_workbook();
+    let holder_scope = HandlerHolderScope::new_resolved_with_plan::<T>(
+        path,
+        i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX),
+        None,
+        options,
+        workbook_context.mutation_plan().clone(),
+    )?;
+    write_sheet_to_workbook::<T, I>(&mut workbook, options, rows, handlers, Some(&holder_scope))?;
     after_workbook(handlers, &workbook_context)?;
+    apply_xlsx_mutations(&mut workbook, workbook_context.mutation_plan())?;
+    save_workbook(&mut workbook, path, options.password.as_deref())?;
     Ok(())
 }
 
-/// Writes typed rows to an arbitrary XLSX byte stream.
+/// 对应 Java：com.alibaba.excel.ExcelWriter。 Writes typed rows to an arbitrary XLSX byte stream.
 ///
 /// `logical_path` is used only by write-handler contexts. Unlike the path
 /// entry point this function writes the OOXML package to `output` itself, so
@@ -111,24 +114,27 @@ where
     ) {
         #[rustfmt::skip]
         write_xlsx_onto_template_package::<T, I>(logical_path, Some(&mut output), options, rows, handlers)?;
-    } else {
-        let mut workbook = easyexcel_xlsx::xlsx::generation::new_workbook();
-        let holder_scope = HandlerHolderScope::new_resolved::<T>(
-            logical_path,
-            i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX),
-            None,
-            options,
-        )?;
-        write_sheet_to_workbook::<T, I>(
-            &mut workbook,
-            options,
-            rows,
-            handlers,
-            Some(&holder_scope),
-        )?;
-        save_workbook_to_writer(&mut workbook, &mut output, options.password.as_deref())?;
+        after_workbook(handlers, &workbook_context)?;
+        if !workbook_context.mutation_plan().is_empty()? {
+            return Err(crate::ExcelError::Unsupported(
+                "workbook handler mutations on with_template output are not supported".to_owned(),
+            ));
+        }
+        return Ok(());
     }
-    after_workbook(handlers, &workbook_context)
+    let mut workbook = easyexcel_xlsx::xlsx::generation::new_workbook();
+    let holder_scope = HandlerHolderScope::new_resolved_with_plan::<T>(
+        logical_path,
+        i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX),
+        None,
+        options,
+        workbook_context.mutation_plan().clone(),
+    )?;
+    write_sheet_to_workbook::<T, I>(&mut workbook, options, rows, handlers, Some(&holder_scope))?;
+    after_workbook(handlers, &workbook_context)?;
+    apply_xlsx_mutations(&mut workbook, workbook_context.mutation_plan())?;
+    save_workbook_to_writer(&mut workbook, &mut output, options.password.as_deref())?;
+    Ok(())
 }
 
 #[cfg(test)]

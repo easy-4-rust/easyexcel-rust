@@ -12,7 +12,7 @@ use crate::write::{
 };
 use crate::write_type_helpers::{effective_write_type, is_csv_write, is_xls_write};
 
-/// Caller-owned XLSX output stream builder.
+/// 对应 Java：ExcelWriterBuilder。 Caller-owned XLSX output stream builder.
 pub struct ExcelOutputStreamBuilder<'a, T, W> {
     pub(crate) builder: ExcelWriterBuilder<T>,
     pub(crate) output: &'a mut W,
@@ -23,7 +23,7 @@ where
     T: ExcelRow,
     W: Write + Send,
 {
-    /// Writes a complete OOXML package to the borrowed stream and flushes it.
+    /// 对应 Java：ExcelWriterBuilder。 Writes a complete OOXML package to the borrowed stream and flushes it.
     ///
     /// # Errors
     ///

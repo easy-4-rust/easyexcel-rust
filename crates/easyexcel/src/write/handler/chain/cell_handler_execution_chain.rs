@@ -11,6 +11,7 @@ pub struct CellHandlerExecutionChain {
 impl CellHandlerExecutionChain {
     /// Creates the head of an empty chain.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.CellHandlerExecutionChain。
     pub const fn new() -> Self {
         Self {
             handler: None,
@@ -18,7 +19,7 @@ impl CellHandlerExecutionChain {
         }
     }
 
-    /// Creates a chain whose head contains `handler`. (Java constructor)
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.CellHandlerExecutionChain。 Creates a chain whose head contains `handler`. (Java constructor)
     #[must_use]
     pub fn with_handler(handler: Box<dyn crate::core::WriteHandler>) -> Self {
         Self {
@@ -27,7 +28,7 @@ impl CellHandlerExecutionChain {
         }
     }
 
-    /// Appends a handler. (Java `addLast(WriteHandler)`)
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.CellHandlerExecutionChain。 Appends a handler. (Java `addLast(WriteHandler)`)
     pub fn add_last(&mut self, handler: Box<dyn crate::core::WriteHandler>) {
         match self.next.as_mut() {
             Some(next) => next.add_last(handler),
@@ -40,7 +41,7 @@ impl CellHandlerExecutionChain {
         }
     }
 
-    /// Runs the chain's cell lifecycle. (Java `beforeCellCreate`)
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.CellHandlerExecutionChain。 Runs the chain's cell lifecycle. (Java `beforeCellCreate`)
     /// # Errors
     ///
     /// Propagates errors from the registered handlers (chain stops at the
@@ -58,7 +59,7 @@ impl CellHandlerExecutionChain {
         Ok(())
     }
 
-    /// Runs Java `afterCellCreate` in chain order.
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.CellHandlerExecutionChain。 Runs Java `afterCellCreate` in chain order.
     /// # Errors
     ///
     /// Propagates errors from the registered handlers (chain stops at the
@@ -73,7 +74,7 @@ impl CellHandlerExecutionChain {
         Ok(())
     }
 
-    /// Runs Java `afterCellDataConverted` in chain order.
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.CellHandlerExecutionChain。 Runs Java `afterCellDataConverted` in chain order.
     /// # Errors
     ///
     /// Propagates errors from the registered handlers (chain stops at the
@@ -91,7 +92,7 @@ impl CellHandlerExecutionChain {
         Ok(())
     }
 
-    /// Runs Java `afterCellDispose` in chain order.
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.CellHandlerExecutionChain。 Runs Java `afterCellDispose` in chain order.
     /// # Errors
     ///
     /// Propagates errors from the registered handlers (chain stops at the

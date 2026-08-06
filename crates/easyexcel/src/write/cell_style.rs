@@ -33,6 +33,7 @@ pub struct CellStyle {
 impl CellStyle {
     /// 创建空样式。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteCellStyle。
     pub const fn new() -> Self {
         Self {
             bold: false,
@@ -48,6 +49,7 @@ impl CellStyle {
 
     /// 设置粗体字体。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteCellStyle。
     pub const fn bold(mut self, enabled: bool) -> Self {
         self.bold = enabled;
         self
@@ -55,6 +57,7 @@ impl CellStyle {
 
     /// 设置斜体字体。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteCellStyle。
     pub const fn italic(mut self, enabled: bool) -> Self {
         self.italic = enabled;
         self
@@ -62,6 +65,7 @@ impl CellStyle {
 
     /// 设置 RGB 字体颜色。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteCellStyle。
     pub const fn font_color(mut self, color: u32) -> Self {
         self.font_color = Some(color);
         self
@@ -69,6 +73,7 @@ impl CellStyle {
 
     /// 设置实心 RGB 背景颜色。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteCellStyle。
     pub const fn background_color(mut self, color: u32) -> Self {
         self.background_color = Some(color);
         self
@@ -76,6 +81,7 @@ impl CellStyle {
 
     /// 设置水平对齐。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteCellStyle。
     pub const fn horizontal_alignment(mut self, alignment: HorizontalAlignment) -> Self {
         self.horizontal_alignment = Some(alignment);
         self
@@ -83,6 +89,7 @@ impl CellStyle {
 
     /// 设置垂直对齐。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteCellStyle。
     pub const fn vertical_alignment(mut self, alignment: VerticalAlignment) -> Self {
         self.vertical_alignment = Some(alignment);
         self
@@ -90,12 +97,13 @@ impl CellStyle {
 
     /// 启用或禁用文本换行。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteCellStyle。
     pub const fn wrap_text(mut self, enabled: bool) -> Self {
         self.wrap_text = enabled;
         self
     }
 
-    /// 设置 Excel 数字格式字符串。
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteCellStyle。 设置 Excel 数字格式字符串。
     #[must_use]
     pub fn number_format(mut self, format: impl Into<String>) -> Self {
         self.number_format = Some(format.into());

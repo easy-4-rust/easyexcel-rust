@@ -1,6 +1,6 @@
 use easyexcel_model::{CellValue, DateSystem};
 
-/// 流式读取产生的一个非空单元格。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 流式读取产生的一个非空单元格。
 #[derive(Debug, Clone, PartialEq)]
 pub struct StreamCell {
     /// 从零开始的列索引。
@@ -12,7 +12,7 @@ pub struct StreamCell {
 }
 
 impl StreamCell {
-    /// 按工作簿日期系统和数字格式渲染显示值。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 按工作簿日期系统和数字格式渲染显示值。
     #[must_use]
     pub fn display(&self, date_system: DateSystem) -> String {
         match &self.value {

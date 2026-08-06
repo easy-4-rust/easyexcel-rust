@@ -1,6 +1,6 @@
 //! BIFF8 内建数字格式码表。
 
-/// 根据格式代码返回 BIFF8 内建 `ifmt`。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 根据格式代码返回 BIFF8 内建 `ifmt`。
 #[must_use]
 pub(crate) fn builtin_format_id(code: &str) -> Option<u16> {
     BUILTIN_FORMATS
@@ -8,7 +8,7 @@ pub(crate) fn builtin_format_id(code: &str) -> Option<u16> {
         .find_map(|(id, value)| (*value == code).then_some(*id))
 }
 
-/// 根据 BIFF8 内建 `ifmt` 返回格式代码。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 根据 BIFF8 内建 `ifmt` 返回格式代码。
 #[must_use]
 pub(crate) fn builtin_format_code(id: u16) -> Option<&'static str> {
     BUILTIN_FORMATS

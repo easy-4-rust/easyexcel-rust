@@ -20,7 +20,7 @@ pub struct ReadCellData {
 }
 
 impl ReadCellData {
-    /// Internal constructor mirroring Java's `ReadCellData(type, stringValue)`.
+    /// 对应 Java：com.alibaba.excel.metadata.data.ReadCellData。 Internal constructor mirroring Java's `ReadCellData(type, stringValue)`.
     /// Not part of the public API.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
@@ -43,29 +43,33 @@ impl ReadCellData {
 
     /// Returns the physical zero-based row index. (Java `getRowIndex()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ReadCellData。
     pub const fn row_index(&self) -> u32 {
         self.row_index
     }
 
     /// Returns the physical zero-based column index. (Java `getColumnIndex()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ReadCellData。
     pub const fn column_index(&self) -> usize {
         self.column_index
     }
 
     /// Returns the original backend-neutral cell value. (Java `CellData.getData()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ReadCellData。
     pub const fn raw_value(&self) -> &CellValue {
         &self.raw_value
     }
 
     /// Returns the Java `ACTUAL_DATA`-equivalent value. (Java `getData()` for non-string)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ReadCellData。
     pub const fn data(&self) -> &CellValue {
         &self.data
     }
 
-    /// Returns the Java-compatible formatted display text. (Java `getStringValue()`)
+    /// 对应 Java：com.alibaba.excel.metadata.data.ReadCellData。 Returns the Java-compatible formatted display text. (Java `getStringValue()`)
     #[must_use]
     pub fn display_value(&self) -> &str {
         &self.display_value
@@ -73,6 +77,7 @@ impl ReadCellData {
 
     /// Returns formula metadata when the cell contains a formula. (Java `getFormulaData()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ReadCellData。
     pub const fn formula(&self) -> Option<&FormulaData> {
         self.formula.as_ref()
     }

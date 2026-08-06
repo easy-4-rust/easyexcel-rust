@@ -18,7 +18,7 @@ pub struct HyperlinkTagHandler {
 }
 
 impl HyperlinkTagHandler {
-    /// Creates a handler; `enabled` mirrors Java `support(XlsxReadContext)`.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.HyperlinkTagHandler。 Creates a handler; `enabled` mirrors Java `support(XlsxReadContext)`.
     #[must_use]
     pub fn new(enabled: bool) -> Self {
         Self {
@@ -27,7 +27,7 @@ impl HyperlinkTagHandler {
         }
     }
 
-    /// Java `HyperlinkTagHandler.startElement`.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.HyperlinkTagHandler。 Java `HyperlinkTagHandler.startElement`.
     ///
     /// `resolve_r_id` maps `r:id` → target URI (Java `PackageRelationshipCollection`).
     ///
@@ -74,7 +74,7 @@ impl HyperlinkTagHandler {
         Ok(())
     }
 
-    /// Strict variant used by `xlsx_rows::parse_worksheet_extras`.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.HyperlinkTagHandler。 Strict variant used by `xlsx_rows::parse_worksheet_extras`.
     ///
     /// Missing / empty `ref`, missing `id`/`location`, and unresolved
     /// relationships all return [`ExcelError`] (historical Rust reader behaviour).

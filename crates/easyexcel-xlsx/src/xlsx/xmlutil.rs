@@ -7,13 +7,13 @@ use quick_xml::escape::resolve_predefined_entity;
 use quick_xml::events::{BytesEnd, BytesRef, BytesStart, BytesText};
 use quick_xml::name::QName;
 
-/// 返回去除命名空间前缀后的 XML 标签名。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 返回去除命名空间前缀后的 XML 标签名。
 #[must_use]
 pub fn local_tag_name(name: &str) -> &str {
     name.rsplit(':').next().unwrap_or(name)
 }
 
-/// 解析 EasyExcel SAX 兼容层使用的空白分隔 `key=value` 属性袋。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析 `EasyExcel` SAX 兼容层使用的空白分隔 `key=value` 属性袋。
 ///
 /// 真正的 OOXML 事件读取由 `quick-xml` 完成；该格式用于把已解码属性传给
 /// Java 风格 `XlsxTagHandler`，因此统一放在 XLSX 引擎层，避免各 handler
@@ -27,7 +27,7 @@ pub fn parse_attribute_pairs(attributes: &str) -> HashMap<String, String> {
         .collect()
 }
 
-/// 解码 OOXML 文本中的 `_xHHHH_` 转义序列。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 OOXML 文本中的 `_xHHHH_` 转义序列。
 #[must_use]
 pub fn decode_ooxml_escape(value: &str) -> String {
     if !value.contains("_x") {
@@ -57,13 +57,13 @@ pub fn decode_ooxml_escape(value: &str) -> String {
     output
 }
 
-/// The local (namespace-stripped) name of a start element. Keeps original case
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 The local (namespace-stripped) name of a start element. Keeps original case
 /// but strips any `prefix:` so Strict and Transitional namespaces both match.
 pub fn local_name(e: &BytesStart) -> String {
     local_of(e.name())
 }
 
-/// Same as [`local_name`] but for end elements.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Same as [`local_name`] but for end elements.
 pub fn local_name_end(e: &BytesEnd) -> String {
     local_of(e.name())
 }
@@ -77,7 +77,7 @@ fn local_of(name: QName<'_>) -> String {
     String::from_utf8_lossy(local).into_owned()
 }
 
-/// Fetch an attribute value by local name (ignoring any namespace prefix),
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Fetch an attribute value by local name (ignoring any namespace prefix),
 /// decoding entities.
 pub fn attr(e: &BytesStart, name: &str) -> Option<String> {
     for a in e.attributes().with_checks(false).flatten() {
@@ -89,23 +89,26 @@ pub fn attr(e: &BytesStart, name: &str) -> Option<String> {
         if local == name.as_bytes() {
             return Some(
                 a.decoded_and_normalized_value(XmlVersion::Implicit1_0, e.decoder())
-                    .map(|c| c.into_owned())
-                    .unwrap_or_else(|_| String::from_utf8_lossy(&a.value).into_owned()),
+                    .map_or_else(
+                        |_| String::from_utf8_lossy(&a.value).into_owned(),
+                        std::borrow::Cow::into_owned,
+                    ),
             );
         }
     }
     None
 }
 
-/// 解码并展开文本节点中的 XML 预定义实体。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码并展开文本节点中的 XML 预定义实体。
 pub fn text(e: &BytesText<'_>) -> String {
     let decoded = e.xml_content(XmlVersion::Implicit1_0).unwrap_or_default();
-    quick_xml::escape::unescape(&decoded)
-        .map(|value| value.into_owned())
-        .unwrap_or_else(|_| decoded.into_owned())
+    match quick_xml::escape::unescape(&decoded) {
+        Ok(value) => value.into_owned(),
+        Err(_) => decoded.into_owned(),
+    }
 }
 
-/// 解码 XML 字符引用或预定义实体引用。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 XML 字符引用或预定义实体引用。
 ///
 /// quick-xml 0.41 会把 `&amp;`、`&quot;` 和 `&#...;` 作为独立的
 /// `GeneralRef` 事件返回，因此读取公式、共享字符串等文本时必须把该事件
@@ -116,12 +119,10 @@ pub fn general_ref(e: &BytesRef<'_>) -> String {
     }
 
     let name = e.xml_content(XmlVersion::Implicit1_0).unwrap_or_default();
-    resolve_predefined_entity(&name)
-        .map(str::to_owned)
-        .unwrap_or_else(|| format!("&{name};"))
+    resolve_predefined_entity(&name).map_or_else(|| format!("&{name};"), str::to_owned)
 }
 
-/// XML-escape text content (`&`, `<`, `>`, `"`).
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 XML-escape text content (`&`, `<`, `>`, `"`).
 pub fn xml_escape(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     for c in s.chars() {
@@ -137,7 +138,7 @@ pub fn xml_escape(s: &str) -> String {
     out
 }
 
-/// Does the string have leading or trailing whitespace requiring
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Does the string have leading or trailing whitespace requiring
 /// `xml:space="preserve"`?
 pub fn needs_preserve(s: &str) -> bool {
     s.starts_with([' ', '\t', '\n', '\r']) || s.ends_with([' ', '\t', '\n', '\r'])

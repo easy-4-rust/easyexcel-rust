@@ -6,6 +6,7 @@
 ///
 /// Rust port of Java `RowTypeEnum`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.enums.RowTypeEnum。
 pub enum RowTypeEnum {
     /// Data row.                  (Java `DATA`)
     Data,

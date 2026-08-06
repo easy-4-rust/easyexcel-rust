@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-/// A single cell address. Row and column are 0-based internally.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 A single cell address. Row and column are 0-based internally.
 ///
 /// `abs_row` / `abs_col` record whether the original A1 reference pinned that
 /// component with `$` (needed for round-trip fidelity and shared-formula offset
@@ -16,6 +16,8 @@ pub struct CellAddress {
 }
 
 impl CellAddress {
+    #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn new(row: u32, col: u32) -> Self {
         CellAddress {
             row,
@@ -25,6 +27,8 @@ impl CellAddress {
         }
     }
 
+    #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn absolute(row: u32, col: u32) -> Self {
         CellAddress {
             row,
@@ -34,9 +38,10 @@ impl CellAddress {
         }
     }
 
-    /// Parse an A1-style reference such as `A1`, `$A$1`, `B$10`.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Parse an A1-style reference such as `A1`, `$A$1`, `B$10`.
     ///
     /// Returns `None` if the string is not a valid single-cell reference.
+    #[must_use]
     pub fn parse_a1(s: &str) -> Option<CellAddress> {
         let bytes = s.as_bytes();
         let mut i = 0;
@@ -76,7 +81,8 @@ impl CellAddress {
         })
     }
 
-    /// Render as A1, honoring the absolute flags (`$A$1`).
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Render as A1, honoring the absolute flags (`$A$1`).
+    #[must_use]
     pub fn to_a1(self) -> String {
         let mut out = String::new();
         if self.abs_col {
@@ -90,22 +96,25 @@ impl CellAddress {
         out
     }
 
-    /// Render as plain A1 ignoring absolute flags.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Render as plain A1 ignoring absolute flags.
+    #[must_use]
     pub fn to_a1_relative(self) -> String {
         format!("{}{}", col_index_to_letters(self.col), self.row + 1)
     }
 
-    /// Render in R1C1 absolute notation, e.g. `R1C1`.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Render in R1C1 absolute notation, e.g. `R1C1`.
+    #[must_use]
     pub fn to_r1c1(self) -> String {
         format!("R{}C{}", self.row + 1, self.col + 1)
     }
 
-    /// Render in R1C1 notation relative to a base cell, e.g. `R[-1]C[2]`.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Render in R1C1 notation relative to a base cell, e.g. `R[-1]C[2]`.
+    #[must_use]
     pub fn to_r1c1_relative(self, base: CellAddress) -> String {
         let r = if self.abs_row {
             format!("R{}", self.row + 1)
         } else {
-            let d = self.row as i64 - base.row as i64;
+            let d = i64::from(self.row) - i64::from(base.row);
             if d == 0 {
                 "R".to_string()
             } else {
@@ -115,7 +124,7 @@ impl CellAddress {
         let c = if self.abs_col {
             format!("C{}", self.col + 1)
         } else {
-            let d = self.col as i64 - base.col as i64;
+            let d = i64::from(self.col) - i64::from(base.col);
             if d == 0 {
                 "C".to_string()
             } else {
@@ -125,9 +134,10 @@ impl CellAddress {
         format!("{r}{c}")
     }
 
-    /// Parse an R1C1 reference, optionally relative to `base`.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Parse an R1C1 reference, optionally relative to `base`.
     ///
     /// Supports `R1C1`, `R[-1]C[2]`, `RC`, `R[1]C` forms.
+    #[must_use]
     pub fn parse_r1c1(s: &str, base: CellAddress) -> Option<CellAddress> {
         let bytes = s.as_bytes();
         if bytes.first() != Some(&b'R') && bytes.first() != Some(&b'r') {
@@ -172,11 +182,8 @@ fn parse_r1c1_component(bytes: &[u8], i: &mut usize, base: u32) -> Option<(u32, 
             return None;
         }
         *i += 1;
-        let v = base as i64 + num;
-        if v < 0 {
-            return None;
-        }
-        Some((v as u32, false))
+        let value = i64::from(base).checked_add(num)?;
+        Some((u32::try_from(value).ok()?, false))
     } else if bytes[*i].is_ascii_digit() {
         let start = *i;
         while *i < bytes.len() && bytes[*i].is_ascii_digit() {
@@ -198,87 +205,10 @@ impl fmt::Display for CellAddress {
     }
 }
 
-/// A rectangular range of cells, e.g. `A1:B10`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct CellRange {
-    pub start: CellAddress,
-    pub end: CellAddress,
-}
+include!("addr/cell_range.rs");
 
-impl CellRange {
-    pub fn new(start: CellAddress, end: CellAddress) -> Self {
-        // Normalize so start is top-left, end is bottom-right (preserving abs flags).
-        let (r0, r1) = (start.row.min(end.row), start.row.max(end.row));
-        let (c0, c1) = (start.col.min(end.col), start.col.max(end.col));
-        CellRange {
-            start: CellAddress {
-                row: r0,
-                col: c0,
-                abs_row: start.abs_row,
-                abs_col: start.abs_col,
-            },
-            end: CellAddress {
-                row: r1,
-                col: c1,
-                abs_row: end.abs_row,
-                abs_col: end.abs_col,
-            },
-        }
-    }
-
-    pub fn single(addr: CellAddress) -> Self {
-        CellRange {
-            start: addr,
-            end: addr,
-        }
-    }
-
-    /// Parse `A1:B10` (or a single `A1`).
-    pub fn parse_a1(s: &str) -> Option<CellRange> {
-        if let Some((a, b)) = s.split_once(':') {
-            Some(CellRange::new(
-                CellAddress::parse_a1(a)?,
-                CellAddress::parse_a1(b)?,
-            ))
-        } else {
-            Some(CellRange::single(CellAddress::parse_a1(s)?))
-        }
-    }
-
-    pub fn to_a1(self) -> String {
-        if self.start == self.end {
-            self.start.to_a1()
-        } else {
-            format!("{}:{}", self.start.to_a1(), self.end.to_a1())
-        }
-    }
-
-    pub fn rows(self) -> u32 {
-        self.end.row - self.start.row + 1
-    }
-
-    pub fn cols(self) -> u32 {
-        self.end.col - self.start.col + 1
-    }
-
-    pub fn contains(self, row: u32, col: u32) -> bool {
-        row >= self.start.row && row <= self.end.row && col >= self.start.col && col <= self.end.col
-    }
-
-    /// Iterate (row, col) pairs in row-major order.
-    pub fn iter_cells(self) -> impl Iterator<Item = (u32, u32)> {
-        let (r0, r1, c0, c1) = (self.start.row, self.end.row, self.start.col, self.end.col);
-        (r0..=r1).flat_map(move |r| (c0..=c1).map(move |c| (r, c)))
-    }
-}
-
-impl fmt::Display for CellRange {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.to_a1())
-    }
-}
-
-/// Convert a column letter string (`A`, `Z`, `AA`, `XFD`) to a 0-based index.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Convert a column letter string (`A`, `Z`, `AA`, `XFD`) to a 0-based index.
+#[must_use]
 pub fn col_letters_to_index(letters: &str) -> Option<u32> {
     if letters.is_empty() {
         return None;
@@ -296,7 +226,8 @@ pub fn col_letters_to_index(letters: &str) -> Option<u32> {
     Some(idx - 1)
 }
 
-/// Convert a 0-based column index to letters (`0 → A`, `26 → AA`).
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Convert a 0-based column index to letters (`0 → A`, `26 → AA`).
+#[must_use]
 pub fn col_index_to_letters(mut index: u32) -> String {
     let mut buf = Vec::new();
     loop {
@@ -308,10 +239,10 @@ pub fn col_index_to_letters(mut index: u32) -> String {
         index = index / 26 - 1;
     }
     buf.reverse();
-    String::from_utf8(buf).unwrap()
+    buf.into_iter().map(char::from).collect()
 }
 
-/// 从 A1 单元格引用读取零基行号；无效输入返回 `0`。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 从 A1 单元格引用读取零基行号；无效输入返回 `0`。
 #[must_use]
 pub fn row_from_a1(reference: &str) -> u32 {
     reference
@@ -322,7 +253,7 @@ pub fn row_from_a1(reference: &str) -> u32 {
         .map_or(0, |row| row.saturating_sub(1))
 }
 
-/// 从 A1 单元格引用读取零基列号；无效输入返回 `0`。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 从 A1 单元格引用读取零基列号；无效输入返回 `0`。
 #[must_use]
 pub fn column_from_a1(reference: &str) -> u32 {
     let letters = reference
@@ -397,5 +328,13 @@ mod tests {
         let c = CellAddress::parse_r1c1("RC", base).unwrap();
         assert_eq!((c.row, c.col), (5, 5));
         assert_eq!(a.to_r1c1_relative(base), "R[-1]C[2]");
+    }
+
+    #[test]
+    fn r1c1_relative_offsets_reject_u32_overflow() {
+        let base = CellAddress::new(u32::MAX, u32::MAX);
+        assert!(CellAddress::parse_r1c1("R[1]C", base).is_none());
+        assert!(CellAddress::parse_r1c1("RC[1]", base).is_none());
+        assert!(CellAddress::parse_r1c1("R[4294967296]C", CellAddress::new(0, 0)).is_none());
     }
 }

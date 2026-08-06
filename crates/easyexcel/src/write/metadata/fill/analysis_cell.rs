@@ -2,7 +2,7 @@
 
 use crate::WriteTemplateAnalysisCellType;
 
-/// Template placeholder discovered while filling data.
+/// 对应 Java：com.alibaba.excel.write.metadata.fill.AnalysisCell。 Template placeholder discovered while filling data.
 ///
 /// Rust port of Java `AnalysisCell`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -26,7 +26,7 @@ pub struct AnalysisCell {
 }
 
 impl AnalysisCell {
-    /// Creates a common template cell. (Java `initAnalysisCell`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.fill.AnalysisCell。 Creates a common template cell. (Java `initAnalysisCell`)
     #[must_use]
     pub fn new(row_index: i32, column_index: i32) -> Self {
         Self {
@@ -43,18 +43,21 @@ impl AnalysisCell {
 
     /// Returns the column index. (Java `getColumnIndex()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.fill.AnalysisCell。
     pub const fn column_index(&self) -> i32 {
         self.column_index
     }
 
     /// Returns the row index. (Java `getRowIndex()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.fill.AnalysisCell。
     pub const fn row_index(&self) -> i32 {
         self.row_index
     }
 
     /// Returns the template cell kind. (Java `getCellType()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.fill.AnalysisCell。
     pub const fn cell_type(&self) -> WriteTemplateAnalysisCellType {
         self.cell_type
     }

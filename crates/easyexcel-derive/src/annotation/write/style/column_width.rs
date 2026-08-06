@@ -6,7 +6,7 @@ use crate::annotation::field_options::FieldOptions;
 use crate::annotation::struct_options::StructOptions;
 use crate::annotation::style_parser::parse_dimension;
 
-/// 解析字段级列宽。
+/// 对应 Java：com.alibaba.excel.annotation.write.style.ColumnWidth。 解析字段级列宽。
 pub(crate) fn parse_field(
     meta: &ParseNestedMeta<'_>,
     options: &mut FieldOptions,
@@ -18,7 +18,7 @@ pub(crate) fn parse_field(
     Ok(true)
 }
 
-/// 解析类型级默认列宽。
+/// 对应 Java：com.alibaba.excel.annotation.write.style.ColumnWidth。 解析类型级默认列宽。
 pub(crate) fn parse_struct(
     meta: &ParseNestedMeta<'_>,
     options: &mut StructOptions,

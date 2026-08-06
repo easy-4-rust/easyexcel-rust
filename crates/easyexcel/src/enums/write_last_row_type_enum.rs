@@ -7,6 +7,7 @@
 ///
 /// Rust port of Java `WriteLastRowTypeEnum`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.enums.WriteLastRowTypeEnum。
 pub enum WriteLastRowTypeEnum {
     /// Excel created without a template and nothing has been written.
     CommonEmpty,

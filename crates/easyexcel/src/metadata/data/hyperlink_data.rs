@@ -2,25 +2,9 @@
 
 use crate::core::coordinate_data::CoordinateData;
 
-/// Hyperlink type matching Java `HyperlinkData.HyperlinkType`.
-///
-/// Values mirror Apache POI `HyperlinkType` as used by `EasyExcel` 4.0.3.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub enum HyperlinkType {
-    /// Not a hyperlink. (Java `NONE`)
-    #[default]
-    None,
-    /// Link to an existing file or web page. (Java `URL`)
-    Url,
-    /// Link to a place in this document. (Java `DOCUMENT`)
-    Document,
-    /// Link to an e-mail address. (Java `EMAIL`)
-    Email,
-    /// Link to a file. (Java `FILE`)
-    File,
-}
+include!("hyperlink_data/hyperlink_type.rs");
 
-/// Hyperlink metadata matching Java `HyperlinkData extends CoordinateData`.
+/// 对应 Java：com.alibaba.excel.metadata.data.HyperlinkData。 Hyperlink metadata matching Java `HyperlinkData extends CoordinateData`.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct HyperlinkData {
     address: Option<String>,
@@ -31,6 +15,7 @@ pub struct HyperlinkData {
 impl HyperlinkData {
     /// Creates an empty hyperlink. (Java default constructor)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.HyperlinkData。
     pub const fn new() -> Self {
         Self {
             address: None,
@@ -39,7 +24,7 @@ impl HyperlinkData {
         }
     }
 
-    /// Sets the link target. (Java `setAddress(String)`)
+    /// 对应 Java：com.alibaba.excel.metadata.data.HyperlinkData。 Sets the link target. (Java `setAddress(String)`)
     #[must_use]
     pub fn address(mut self, address: impl Into<String>) -> Self {
         self.address = Some(address.into());
@@ -48,6 +33,7 @@ impl HyperlinkData {
 
     /// Sets the hyperlink type. (Java `setHyperlinkType(HyperlinkType)`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.HyperlinkData。
     pub const fn hyperlink_type(mut self, value: HyperlinkType) -> Self {
         self.hyperlink_type = value;
         self
@@ -55,12 +41,13 @@ impl HyperlinkData {
 
     /// Sets coordinates. (Java inherited `CoordinateData` fields)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.HyperlinkData。
     pub const fn coordinates(mut self, value: CoordinateData) -> Self {
         self.coordinates = value;
         self
     }
 
-    /// Returns the address. (Java `getAddress()`)
+    /// 对应 Java：com.alibaba.excel.metadata.data.HyperlinkData。 Returns the address. (Java `getAddress()`)
     #[must_use]
     pub fn get_address(&self) -> Option<&str> {
         self.address.as_deref()
@@ -68,12 +55,14 @@ impl HyperlinkData {
 
     /// Returns the hyperlink type. (Java `getHyperlinkType()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.HyperlinkData。
     pub const fn get_hyperlink_type(&self) -> HyperlinkType {
         self.hyperlink_type
     }
 
     /// Returns the coordinates.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.HyperlinkData。
     pub const fn get_coordinates(&self) -> CoordinateData {
         self.coordinates
     }

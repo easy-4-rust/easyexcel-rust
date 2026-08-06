@@ -23,7 +23,7 @@ pub struct WriteSheetHolder<'a> {
 }
 
 impl<'a> WriteSheetHolder<'a> {
-    /// Creates a sheet holder matching the Java `WriteSheetHolder(WriteSheet, WriteWorkbookHolder)` initialiser.
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteSheetHolder。 Creates a sheet holder matching the Java `WriteSheetHolder(WriteSheet, WriteWorkbookHolder)` initialiser.
     #[must_use]
     pub fn new(sheet_name: impl Into<String>, sheet_no: i32) -> Self {
         Self {
@@ -36,7 +36,7 @@ impl<'a> WriteSheetHolder<'a> {
         }
     }
 
-    /// Creates a sheet holder and resolves nullable values against its parent.
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteSheetHolder。 Creates a sheet holder and resolves nullable values against its parent.
     #[must_use]
     pub fn from_parameter(
         sheet_name: impl Into<String>,
@@ -51,16 +51,18 @@ impl<'a> WriteSheetHolder<'a> {
 
     /// Returns the inherited write-holder state.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteSheetHolder。
     pub const fn abstract_holder(&self) -> &AbstractWriteHolder {
         &self.abstract_holder
     }
 
     /// Returns mutable inherited write-holder state.
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteSheetHolder。
     pub const fn abstract_holder_mut(&mut self) -> &mut AbstractWriteHolder {
         &mut self.abstract_holder
     }
 
-    /// Returns the sheet name. (Java `getSheetName()`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteSheetHolder。 Returns the sheet name. (Java `getSheetName()`)
     #[must_use]
     pub fn sheet_name(&self) -> &str {
         &self.sheet_name
@@ -68,34 +70,37 @@ impl<'a> WriteSheetHolder<'a> {
 
     /// Returns the zero-based sheet index. (Java `getSheetNo()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteSheetHolder。
     pub const fn sheet_no(&self) -> i32 {
         self.sheet_no
     }
 
-    /// Returns the per-table holders. (Java `getHasBeenInitializedTable()`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteSheetHolder。 Returns the per-table holders. (Java `getHasBeenInitializedTable()`)
     #[must_use]
     pub fn tables(&self) -> &[WriteTableHolder<'a>] {
         &self.tables
     }
 
-    /// Returns a mutable handle on the per-table holders.
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteSheetHolder。 Returns a mutable handle on the per-table holders.
     pub fn tables_mut(&mut self) -> &mut Vec<WriteTableHolder<'a>> {
         &mut self.tables
     }
 
     /// Returns the last row index. (Java `getLastRowIndex()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteSheetHolder。
     pub const fn last_row_index(&self) -> i32 {
         self.last_row_index
     }
 
     /// Returns whether at least one row has been written. (Java `getHasData()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteSheetHolder。
     pub const fn has_data(&self) -> bool {
         self.has_data
     }
 
-    /// Records the next row index. (Java `getNewRowIndexAndStartDoWrite()` step)
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteSheetHolder。 Records the next row index. (Java `getNewRowIndexAndStartDoWrite()` step)
     pub fn advance_row(&mut self) -> i32 {
         self.has_data = true;
         self.last_row_index += 1;

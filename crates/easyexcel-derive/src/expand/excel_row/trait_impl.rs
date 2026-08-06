@@ -9,7 +9,7 @@ use crate::annotation::StructOptions;
 use super::field_expansion::FieldExpansion;
 use super::metadata::write_metadata_tokens;
 
-/// 结构体全部有效字段的展开片段。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 结构体全部有效字段的展开片段。
 #[derive(Default)]
 pub(super) struct ExpansionParts {
     pub(super) columns: Vec<TokenStream>,
@@ -24,7 +24,7 @@ pub(super) struct ExpansionParts {
 }
 
 impl ExpansionParts {
-    /// 追加单字段展开结果；忽略字段只参与读取默认值初始化。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 追加单字段展开结果；忽略字段只参与读取默认值初始化。
     pub(super) fn push(&mut self, field: FieldExpansion) {
         self.readers.push(field.readers);
         self.registered_readers.push(field.registered_readers);
@@ -52,7 +52,7 @@ impl ExpansionParts {
     }
 }
 
-/// 生成静态 schema、类型级元数据与双向行转换实现。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 生成静态 schema、类型级元数据与双向行转换实现。
 pub(super) fn render_trait_impl(
     name: &Ident,
     generics: &Generics,

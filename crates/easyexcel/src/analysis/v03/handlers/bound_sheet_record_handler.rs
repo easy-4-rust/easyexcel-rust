@@ -2,14 +2,7 @@
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
-/// Collected bound-sheet entry (name + BOF position).
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BoundSheetEntry {
-    /// Sheet display name. (Java `BoundSheetRecord.getSheetname`)
-    pub name: String,
-    /// Absolute BOF file position used for ordering.
-    pub bof_position: u32,
-}
+include!("bound_sheet_record_handler/bound_sheet_entry.rs");
 
 /// 对应 Java：`BoundSheetRecordHandler`.
 #[derive(Debug, Default)]
@@ -19,18 +12,18 @@ pub struct BoundSheetRecordHandler {
 }
 
 impl BoundSheetRecordHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.BoundSheetRecordHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Java `BoundSheetRecordHandler.processRecord`.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.BoundSheetRecordHandler。 Java `BoundSheetRecordHandler.processRecord`.
     pub fn process_bound_sheet(&mut self, name: String, bof_position: u32) {
         self.sheets.push(BoundSheetEntry { name, bof_position });
     }
 
-    /// Java `BoundSheetRecord.orderByBofPosition` — sort by BOF offset ascending.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.BoundSheetRecordHandler。 Java `BoundSheetRecord.orderByBofPosition` — sort by BOF offset ascending.
     #[must_use]
     pub fn ordered_sheets(&self) -> Vec<BoundSheetEntry> {
         let mut sheets = self.sheets.clone();

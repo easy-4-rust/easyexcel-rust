@@ -2,7 +2,7 @@
 
 use easyexcel_io::{Error, Result};
 
-/// 将平台相关的行下标转换为 CSV 工作簿使用的 `u32` 行号。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将平台相关的行下标转换为 CSV 工作簿使用的 `u32` 行号。
 ///
 /// # Errors
 ///
@@ -11,7 +11,7 @@ pub fn checked_row_index(index: usize) -> Result<u32> {
     u32::try_from(index).map_err(|_| Error::Csv("CSV row index exceeds u32".to_owned()))
 }
 
-/// 将平台相关的列下标转换为 CSV 工作簿使用的 `u32` 列号。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将平台相关的列下标转换为 CSV 工作簿使用的 `u32` 列号。
 ///
 /// # Errors
 ///

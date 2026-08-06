@@ -4,7 +4,7 @@
 
 use easyexcel_model::DataFormatData;
 
-/// CSV 单元格样式；仅保留格式索引与格式文本。
+/// 对应 Java：com.alibaba.excel.metadata.csv.CsvCellStyle。 CSV 单元格样式；仅保留格式索引与格式文本。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CsvCellStyle {
     index: i16,
@@ -14,6 +14,7 @@ pub struct CsvCellStyle {
 impl CsvCellStyle {
     /// 按工作簿局部索引创建样式。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.csv.CsvCellStyle。
     pub const fn new(index: i16) -> Self {
         Self {
             index,
@@ -23,18 +24,19 @@ impl CsvCellStyle {
 
     /// 返回工作簿局部样式索引。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.csv.CsvCellStyle。
     pub const fn index(&self) -> i16 {
         self.index
     }
 
-    /// 设置数字格式索引。
+    /// 对应 Java：com.alibaba.excel.metadata.csv.CsvCellStyle。 设置数字格式索引。
     pub fn set_data_format(&mut self, format: i16) {
         self.data_format_data
             .get_or_insert_with(DataFormatData::default)
             .index = Some(format);
     }
 
-    /// 设置自定义数据格式文本。
+    /// 对应 Java：com.alibaba.excel.metadata.csv.CsvCellStyle。 设置自定义数据格式文本。
     pub fn set_data_format_string(&mut self, format: impl Into<String>) {
         self.data_format_data
             .get_or_insert_with(DataFormatData::default)
@@ -43,6 +45,7 @@ impl CsvCellStyle {
 
     /// 返回数据格式元数据。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.csv.CsvCellStyle。
     pub const fn data_format_data(&self) -> Option<&DataFormatData> {
         self.data_format_data.as_ref()
     }

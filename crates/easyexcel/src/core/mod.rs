@@ -8,11 +8,55 @@
 #![deny(unsafe_code)]
 
 // 从新顶级模块重导出（保持 crate::core::Type 路径兼容）
-pub use crate::converters::*;
-pub use crate::enums::*;
-pub use crate::event::*;
-pub use crate::metadata::*;
-pub use crate::support::*;
+pub use crate::converters::{
+    ConvertContext, Converter, FromExcelCell, ImageInputStream, InputStreamImageConverter,
+    IntoExcelCell, StringImageConverter, UrlImageConverter, auto_converter, bigdecimal, biginteger,
+    booleanconverter, bytearray, byteconverter, convert_context, converter, converter_key_build,
+    converter_registry, custom_read_object, date, default_converter_loader, doubleconverter, file,
+    floatconverter, from_excel_cell, from_into_impls, image_input_stream,
+    input_stream_image_converter, inputstream, integer, into_excel_cell, localdate, localdatetime,
+    longconverter, nullable_object_converter, read_converter_context, shortconverter, string, url,
+    url_image_converter, write_converter_context,
+};
+pub use crate::enums::{
+    BooleanEnum, ByteOrderMark, CellDataType, HeadKind, NumericCellType, RowType, WriteDirection,
+    WriteLastRow, WriteLastRowTypeEnum, WriteTemplateAnalysisCellType, WriteType, boolean_enum,
+    byte_order_mark_enum, cache_location_enum, cell_data_type_enum, cell_extra_type_enum,
+    enum_boolean, enum_byte_order_mark, enum_cache_location, enum_cell_data_type,
+    enum_cell_extra_type, enum_head_kind, enum_holder, enum_numeric_cell_type,
+    enum_read_default_return, enum_row_type, enum_write_direction, enum_write_last_row,
+    enum_write_template_analysis_cell_type, enum_write_type, head_kind_enum, holder_enum,
+    numeric_cell_type_enum, poi, read_default_return_enum, row_type_enum, write_direction_enum,
+    write_last_row_type_enum, write_template_analysis_cell_type_enum, write_type_enum,
+};
+pub use crate::event::{
+    AbstractIgnoreExceptionReadListener, AnalysisEventListener, CompositeReadListener, ErrorAction,
+    Handler, Listener, NotRepeatExecutor, Order, PageReadListener, ReadListenerList,
+    SyncReadListener, abstract_ignore_exception_read_listener, analysis_event_listener, handler,
+    listener, not_repeat_executor, order, page_read_listener, sync_read_listener,
+};
+pub use crate::metadata::{
+    AbstractCell, AbstractHolder, AbstractParameterBuilder, AnalysisCell, AnchorType,
+    BasicParameter, BasicParameterBuilder, Cell, CellData, CellRange, ClientAnchorData,
+    ColumnWidthProperty, CommentData, ConfigurationHolder, CoordinateData, DataFormatData,
+    DateTimeFormatProperty, DynamicRow, DynamicValue, ExcelBorderStyle, ExcelColor,
+    ExcelContentProperty, ExcelDataFormat, ExcelFillPattern, ExcelFontScript, ExcelHeadProperty,
+    ExcelHorizontalAlignment, ExcelReadHeadProperty, ExcelUnderline, ExcelVerticalAlignment,
+    ExcelWriteHeadProperty, FieldCache, FieldWrapper, Font, FontProperty, FormulaData,
+    GlobalConfiguration, Head, HyperlinkData, HyperlinkType, ImageData, ImageType, IntervalFont,
+    MetadataHolder, NullObject, NumberFormatProperty, ReadCellData, RichTextStringData, RowData,
+    RowHeightProperty, StyleProperty, abstract_cell, abstract_holder, abstract_parameter_builder,
+    basic_parameter, cell, cell_extra, cell_range, configuration_holder, csv, data,
+    excel_border_style, excel_cell_style, excel_color, excel_column, excel_data_format,
+    excel_fill_pattern, excel_font_script, excel_font_style, excel_horizontal_alignment, excel_row,
+    excel_underline, excel_vertical_alignment, excel_write_head_property, excel_write_metadata,
+    field_cache, field_wrapper, fill, font, format, global_configuration, head, holder,
+    null_object, property,
+};
+pub use crate::support::{
+    ExcelDownloadErrorBody, ExcelTypeEnum, csv_charset, empty, excel_download_error_body,
+    excel_error, excel_type_enum,
+};
 
 // 模块路径重导出（保持 crate::core::<module>::Type 路径兼容）
 pub use crate::context::analysis_context;
@@ -29,13 +73,22 @@ pub use crate::read::listener::read_listener;
 
 // Result 类型别名
 /// `Result` 类型别名，错误类型为 `ExcelError`。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub type Result<T> = std::result::Result<T, crate::support::excel_error::ExcelError>;
 
 // write/ 相关类型
-pub use crate::write::write_backend_handle::*;
-pub use crate::write::write_context::*;
-pub use crate::write::write_fill_executor::*;
-pub use crate::write::write_holder_context::*;
+pub use crate::write::write_backend_handle::{WriteCellHandle, WriteRowHandle};
+pub use crate::write::write_context::{
+    WriteContext, WriteContextHolder, WriteContextHolderState, WriteContextImpl,
+    WriteContextLifecycle, finish_write_context,
+};
+pub use crate::write::write_fill_executor::{
+    WriteFillConfig, WriteFillExecutor, WriteFillSheet, csv_fill_unsupported_error,
+    fill_requires_template_error,
+};
+pub use crate::write::write_holder_context::{
+    WriteHolderContext, WriteSheetHolderView, WriteTableHolderView, WriteWorkbookHolderView,
+};
 
 // metadata 子包重导出
 pub use crate::metadata::property::{

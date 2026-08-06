@@ -15,18 +15,18 @@ pub struct AbstractCellValueTagHandler {
 }
 
 impl AbstractCellValueTagHandler {
-    /// Creates an idle accumulator.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler。 Creates an idle accumulator.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Java `AbstractCellValueTagHandler.characters`.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler。 Java `AbstractCellValueTagHandler.characters`.
     pub fn append(&mut self, ch: &str) {
         self.temp_data.push_str(ch);
     }
 
-    /// Takes and clears the accumulated text.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler。 Takes and clears the accumulated text.
     pub fn take(&mut self) -> String {
         std::mem::take(&mut self.temp_data)
     }
@@ -39,9 +39,7 @@ impl XlsxTagHandler for AbstractCellValueTagHandler {
     }
 }
 
-/// Marker that concrete value handlers extend the abstract base (Java inheritance).
-#[allow(dead_code)]
-pub type AbstractCellValueBase = AbstractXlsxTagHandler;
+include!("abstract_cell_value_tag_handler/abstract_cell_value_base.rs");
 
 #[cfg(test)]
 mod tests {

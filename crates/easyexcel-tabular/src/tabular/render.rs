@@ -1,11 +1,12 @@
 use std::collections::BTreeSet;
+use std::fmt::Write as _;
 
 use easyexcel_model::{CellRange, CellValue};
 use serde_json::{Map, Value as JsonValue, json};
 
 use super::TabularDocument;
 
-/// 将中立表格文档渲染为 Markdown。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将中立表格文档渲染为 Markdown。
 #[must_use]
 pub fn render_markdown(document: &TabularDocument) -> String {
     let mut output = String::new();
@@ -34,7 +35,7 @@ pub fn render_markdown(document: &TabularDocument) -> String {
     output.trim_end().to_owned()
 }
 
-/// 将中立表格文档渲染为静态 HTML；不生成脚本、外链或样式资源。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将中立表格文档渲染为静态 HTML；不生成脚本、外链或样式资源。
 #[must_use]
 pub fn render_html(document: &TabularDocument) -> String {
     let mut output = String::from(
@@ -48,19 +49,23 @@ pub fn render_html(document: &TabularDocument) -> String {
         for (row_index, row) in table.rows().iter().enumerate() {
             output.push_str("<tr>");
             for (column_index, cell) in row.iter().enumerate() {
-                if covered.contains(&(row_index as u32, column_index as u32)) {
+                let coordinate = u32::try_from(row_index)
+                    .ok()
+                    .zip(u32::try_from(column_index).ok());
+                if coordinate.is_some_and(|coordinate| covered.contains(&coordinate)) {
                     continue;
                 }
                 let tag = if cell.is_header() { "th" } else { "td" };
                 output.push('<');
                 output.push_str(tag);
-                if let Some(range) = merge_at(table.merges(), row_index as u32, column_index as u32)
-                {
+                if let Some(range) = coordinate.and_then(|(row_index, column_index)| {
+                    merge_at(table.merges(), row_index, column_index)
+                }) {
                     if range.rows() > 1 {
-                        output.push_str(&format!(" rowspan=\"{}\"", range.rows()));
+                        let _ = write!(output, " rowspan=\"{}\"", range.rows());
                     }
                     if range.cols() > 1 {
-                        output.push_str(&format!(" colspan=\"{}\"", range.cols()));
+                        let _ = write!(output, " colspan=\"{}\"", range.cols());
                     }
                 }
                 output.push('>');
@@ -77,7 +82,7 @@ pub fn render_html(document: &TabularDocument) -> String {
     output
 }
 
-/// 将中立表格文档渲染为稳定的 JSON tables 协议。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将中立表格文档渲染为稳定的 JSON tables 协议。
 #[must_use]
 pub fn render_json(document: &TabularDocument) -> String {
     let tables: Vec<JsonValue> = document

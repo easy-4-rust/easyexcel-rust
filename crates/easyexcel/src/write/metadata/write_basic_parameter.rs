@@ -8,7 +8,7 @@ use crate::core::ConverterRegistry;
 /// `customWriteHandlerList`, `useDefaultStyle`, `automaticMergeHead`,
 /// `excludeColumnIndexes`, `excludeColumnFieldNames`,
 /// `includeColumnIndexes`, `includeColumnFieldNames`,
-/// `orderByIncludeColumn`). Rust reuses [`WriteOptions`] for the same
+/// `orderByIncludeColumn`). Rust reuses `WriteOptions` for the same
 /// data, and uses this struct as a thin handle so the 1:1 API name is
 /// preserved.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -38,30 +38,35 @@ pub struct WriteBasicParameter {
 impl WriteBasicParameter {
     /// Returns whether a header row is required. (Java `getNeedHead()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteBasicParameter。
     pub const fn get_need_head(&self) -> Option<bool> {
         self.need_head
     }
 
     /// Returns the relative head row index. (Java `getRelativeHeadRowIndex()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteBasicParameter。
     pub const fn get_relative_head_row_index(&self) -> Option<i32> {
         self.relative_head_row_index
     }
 
     /// Returns whether headers are auto-merged. (Java `getAutomaticMergeHead()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteBasicParameter。
     pub const fn get_automatic_merge_head(&self) -> Option<bool> {
         self.automatic_merge_head
     }
 
     /// Returns whether to use default style. (Java `getUseDefaultStyle()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteBasicParameter。
     pub const fn get_use_default_style(&self) -> Option<bool> {
         self.use_default_style
     }
 
     /// Returns whether to order by include column. (Java `getOrderByIncludeColumn()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteBasicParameter。
     pub const fn get_order_by_include_column(&self) -> Option<bool> {
         self.order_by_include_column
     }

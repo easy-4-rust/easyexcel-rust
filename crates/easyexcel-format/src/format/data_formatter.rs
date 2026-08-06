@@ -11,9 +11,9 @@ use ssfmt::{DateSystem, FormatOptions, Locale, NumberFormat, format};
 /// `ssfmt` 使用的区域设置类型。
 pub use ssfmt::Locale as SpreadsheetLocale;
 
-/// 按 EasyExcel 优先级解析内建数字格式代码。
+/// 对应 Java：com.alibaba.excel.metadata.format.DataFormatter。 按 `EasyExcel` 优先级解析内建数字格式代码。
 ///
-/// 先使用 EasyExcel/POI 兼容表，再回退到 ECMA-376 内建表。
+/// 先使用 `EasyExcel`/POI 兼容表，再回退到 ECMA-376 内建表。
 #[must_use]
 pub fn resolve_builtin_format_code(id: u32) -> Option<&'static str> {
     u16::try_from(id)
@@ -22,7 +22,7 @@ pub fn resolve_builtin_format_code(id: u32) -> Option<&'static str> {
         .or_else(|| ssfmt::format_code_from_id(id))
 }
 
-/// 判断 Excel 数字格式代码是否表示日期或日期时间。
+/// 对应 Java：com.alibaba.excel.metadata.format.DataFormatter。 判断 Excel 数字格式代码是否表示日期或日期时间。
 #[must_use]
 pub fn is_date_format_code(code: &str) -> bool {
     NumberFormat::parse(code)
@@ -30,7 +30,7 @@ pub fn is_date_format_code(code: &str) -> bool {
         .is_some_and(|format| format.is_date_format())
 }
 
-/// Strip orphan decimal points left by optional `#` fraction digits.
+/// 对应 Java：com.alibaba.excel.metadata.format.DataFormatter。 Strip orphan decimal points left by optional `#` fraction digits.
 ///
 /// ssfmt/SSF keeps a trailing `.` for `#.##` / `#.##%` when the fractional
 /// part is empty (`9999.%`). POI / `EasyExcel` STRING mode drops it (`9999%`).
@@ -50,7 +50,7 @@ pub fn java_compat_display(value: &str) -> String {
     out
 }
 
-/// Rewrite Excel date format codes so ssfmt matches POI / `EasyExcel` STRING.
+/// 对应 Java：com.alibaba.excel.metadata.format.DataFormatter。 Rewrite Excel date format codes so ssfmt matches POI / `EasyExcel` STRING.
 ///
 /// - CN literal `上午/下午` → `AM/PM` token (locale supplies `上午`/`下午`).
 /// - `mmmmm` (first-letter month) → POI private-use wrap around short month:
@@ -68,7 +68,7 @@ pub fn java_compat_date_format_code(format_str: &str) -> String {
     with_ampm.replace("mmmmm", "\"\u{E001}\"mmm\"\u{E002}\"")
 }
 
-/// Clean a numeric format code the way `EasyExcel`
+/// 对应 Java：com.alibaba.excel.metadata.format.DataFormatter。 Clean a numeric format code the way `EasyExcel`
 /// `DataFormatter.cleanFormatForNumber` does before `DecimalFormat`.
 ///
 /// - Drop `_X` / `*X` alignment pads (ssfmt would otherwise emit a space;
@@ -114,7 +114,7 @@ pub fn java_compat_format_code(format_str: &str) -> String {
     sb.into_iter().collect()
 }
 
-/// 使用 Excel 格式代码和 locale 渲染数字，并应用 POI/EasyExcel 兼容清理。
+/// 对应 Java：com.alibaba.excel.metadata.format.DataFormatter。 使用 Excel 格式代码和 locale 渲染数字，并应用 POI/EasyExcel 兼容清理。
 #[must_use]
 pub fn format_with_code(
     value: f64,
@@ -143,7 +143,7 @@ pub fn format_with_code(
         .map(|formatted| java_compat_display(&formatted))
 }
 
-/// 将浮点值约束为 Excel 显示使用的 14 位有效精度。
+/// 对应 Java：com.alibaba.excel.metadata.format.DataFormatter。 将浮点值约束为 Excel 显示使用的 14 位有效精度。
 #[must_use]
 pub fn excel_display_number(value: f64) -> f64 {
     if value == 0.0 || !value.is_finite() {
@@ -152,14 +152,14 @@ pub fn excel_display_number(value: f64) -> f64 {
     format!("{value:.14e}").parse().unwrap_or(value)
 }
 
-/// 判断 General 格式是否进入 Java EasyExcel 的极值科学计数分支。
+/// 对应 Java：com.alibaba.excel.metadata.format.DataFormatter。 判断 General 格式是否进入 Java `EasyExcel` 的极值科学计数分支。
 #[must_use]
 pub fn is_scientific_magnitude(value: f64) -> bool {
     let absolute = value.abs();
     absolute >= 1E11 || (absolute <= 1E-10 && absolute > 0.0)
 }
 
-/// Java General 在禁用科学计数时对极值的整数显示。
+/// 对应 Java：com.alibaba.excel.metadata.format.DataFormatter。 Java General 在禁用科学计数时对极值的整数显示。
 #[must_use]
 pub fn java_plain_extreme_format(value: f64) -> String {
     let rounded = value.round();
@@ -170,17 +170,17 @@ pub fn java_plain_extreme_format(value: f64) -> String {
     }
 }
 
-/// Java General 科学计数显示，保留 locale 小数分隔符。
+/// 对应 Java：com.alibaba.excel.metadata.format.DataFormatter。 Java General 科学计数显示，保留 locale 小数分隔符。
 #[must_use]
 pub fn java_scientific_format(value: f64, decimal_separator: char) -> String {
     let formatted = format!("{value:.5e}");
-    let (mantissa, exponent) = formatted
-        .split_once('e')
-        .expect("Rust scientific formatting always contains an exponent");
+    let Some((mantissa, exponent)) = formatted.split_once('e') else {
+        return formatted;
+    };
     let mantissa = mantissa.trim_end_matches('0').trim_end_matches('.');
-    let exponent = exponent
-        .parse::<i32>()
-        .expect("Rust scientific formatting always emits a numeric exponent");
+    let Ok(exponent) = exponent.parse::<i32>() else {
+        return formatted;
+    };
     let mantissa = if decimal_separator == '.' {
         mantissa.to_owned()
     } else {
@@ -189,7 +189,7 @@ pub fn java_scientific_format(value: f64, decimal_separator: char) -> String {
     format!("{mantissa}E{exponent}")
 }
 
-/// Formats a numeric value using a built-in or custom Excel format
+/// 对应 Java：com.alibaba.excel.metadata.format.DataFormatter。 Formats a numeric value using a built-in or custom Excel format
 /// code. (Java `DataFormatter.formatRawCellContents(...)`)
 ///
 /// The real formatting happens in `easyexcel-reader` via `ssfmt`; this

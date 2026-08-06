@@ -1,4 +1,4 @@
-//! XLSX (OOXML SpreadsheetML) writer.
+//! XLSX (OOXML `SpreadsheetML`) writer.
 
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write as _;
@@ -48,7 +48,7 @@ fn parse_rels_triples(xml: &[u8]) -> Vec<(String, String, String)> {
     loop {
         match reader.read_event_into(&mut buf) {
             Ok(Event::Eof) | Err(_) => break,
-            Ok(Event::Empty(e)) | Ok(Event::Start(e)) if local_name(&e) == "Relationship" => {
+            Ok(Event::Empty(e) | Event::Start(e)) if local_name(&e) == "Relationship" => {
                 if let (Some(id), Some(ty), Some(tgt)) =
                     (attr(&e, "Id"), attr(&e, "Type"), attr(&e, "Target"))
                 {
@@ -151,7 +151,11 @@ fn plan_tables(wb: &Workbook) -> TablePlan {
     plan
 }
 
-/// Write a workbook as XLSX to any seekable writer.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Write a workbook as XLSX to any seekable writer.
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn write<W: Write + Seek>(wb: &Workbook, writer: W) -> Result<()> {
     let mut zip = ZipWriter::new(writer);
     let opts = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
@@ -194,8 +198,7 @@ pub fn write<W: Write + Seek>(wb: &Workbook, writer: W) -> Result<()> {
         let table_rids = table_plan
             .sheet_rids
             .get(i)
-            .map(|v| v.as_slice())
-            .unwrap_or(&[]);
+            .map_or(&[][..], std::vec::Vec::as_slice);
         let xml = build_worksheet_xml(wb, sheet, &sst_index, table_rids);
         zip.write_all(xml.as_bytes())?;
     }
@@ -376,7 +379,7 @@ fn build_workbook_xml(wb: &Workbook) -> String {
             s.push_str("<definedName");
             let _ = write!(s, r#" name="{}""#, xml_escape(&dn.name));
             if let Some(scope) = dn.scope {
-                let _ = write!(s, r#" localSheetId="{}""#, scope);
+                let _ = write!(s, r#" localSheetId="{scope}""#);
             }
             if dn.hidden {
                 s.push_str(r#" hidden="1""#);
@@ -433,7 +436,7 @@ fn build_worksheet_xml(
     if max_row > 0 && max_col > 0 {
         let start = CellAddress::new(0, 0).to_a1_relative();
         let end = CellAddress::new(max_row - 1, max_col - 1).to_a1_relative();
-        let _ = write!(s, r#"<dimension ref="{}:{}"/>"#, start, end);
+        let _ = write!(s, r#"<dimension ref="{start}:{end}"/>"#);
     } else {
         s.push_str(r#"<dimension ref="A1"/>"#);
     }
@@ -456,7 +459,7 @@ fn build_worksheet_xml(
         for (col, info) in &sheet.columns {
             let _ = write!(s, r#"<col min="{}" max="{}""#, col + 1, col + 1);
             if let Some(w) = info.width {
-                let _ = write!(s, r#" width="{}" customWidth="1""#, w);
+                let _ = write!(s, r#" width="{w}" customWidth="1""#);
             }
             if info.hidden {
                 s.push_str(r#" hidden="1""#);
@@ -508,7 +511,7 @@ fn build_worksheet_xml(
         let _ = write!(s, r#"<row r="{}""#, r + 1);
         if let Some(info) = sheet.rows.get(&r) {
             if let Some(h) = info.height {
-                let _ = write!(s, r#" ht="{}" customHeight="1""#, h);
+                let _ = write!(s, r#" ht="{h}" customHeight="1""#);
             }
             if info.hidden {
                 s.push_str(r#" hidden="1""#);
@@ -545,7 +548,7 @@ fn build_worksheet_xml(
         for m in &sheet.merged {
             let a = m.start.to_a1_relative();
             let b = m.end.to_a1_relative();
-            let _ = write!(s, r#"<mergeCell ref="{}:{}"/>"#, a, b);
+            let _ = write!(s, r#"<mergeCell ref="{a}:{b}"/>"#);
         }
         s.push_str("</mergeCells>");
     }
@@ -563,6 +566,8 @@ fn build_worksheet_xml(
     s
 }
 
+// CellValue 来自 non_exhaustive 的外部模型；通配分支必须作为未来变体的安全回退。
+#[allow(clippy::match_wildcard_for_single_variants)]
 fn write_cell(
     s: &mut String,
     _wb: &Workbook,
@@ -576,9 +581,9 @@ fn write_cell(
     let cell = sheet.get(r, c);
 
     // Open <c>.
-    let _ = write!(s, r#"<c r="{}""#, ref_a1);
+    let _ = write!(s, r#"<c r="{ref_a1}""#);
     if let Some(si) = style {
-        let _ = write!(s, r#" s="{}""#, si);
+        let _ = write!(s, r#" s="{si}""#);
     }
 
     match cell {
@@ -591,14 +596,14 @@ fn write_cell(
                         let _ = write!(s, "><v>{}</v></c>", fmt_num(*n));
                     }
                     CellValue::Bool(b) => {
-                        let _ = write!(s, r#" t="b"><v>{}</v></c>"#, if *b { 1 } else { 0 });
+                        let _ = write!(s, r#" t="b"><v>{}</v></c>"#, i32::from(*b));
                     }
                     CellValue::Error(e) => {
                         let _ = write!(s, r#" t="e"><v>{}</v></c>"#, xml_escape(e.as_str()));
                     }
                     CellValue::Text(text) => {
                         let idx = sst.get(text).copied().unwrap_or(0);
-                        let _ = write!(s, r#" t="s"><v>{}</v></c>"#, idx);
+                        let _ = write!(s, r#" t="s"><v>{idx}</v></c>"#);
                     }
                     _ => {
                         // 嵌套数组/引用等非常规值：无标量缓存可写
@@ -614,14 +619,14 @@ fn write_cell(
             let _ = write!(s, "><v>{}</v></c>", fmt_num(*n));
         }
         Some(Cell::Bool(b)) => {
-            let _ = write!(s, r#" t="b"><v>{}</v></c>"#, if *b { 1 } else { 0 });
+            let _ = write!(s, r#" t="b"><v>{}</v></c>"#, i32::from(*b));
         }
         Some(Cell::Error(e)) => {
             let _ = write!(s, r#" t="e"><v>{}</v></c>"#, xml_escape(e.as_str()));
         }
         Some(Cell::Text(text)) => {
             let idx = sst.get(text).copied().unwrap_or(0);
-            let _ = write!(s, r#" t="s"><v>{}</v></c>"#, idx);
+            let _ = write!(s, r#" t="s"><v>{idx}</v></c>"#);
         }
         Some(Cell::Formula { expr, cached }) => {
             write_formula_cell(s, expr, cached);
@@ -646,7 +651,7 @@ fn write_formula_cell(s: &mut String, expr: &str, cached: &CellValue) {
                 s,
                 r#" t="b"><f>{}</f><v>{}</v></c>"#,
                 xml_escape(expr_clean),
-                if *b { 1 } else { 0 }
+                i32::from(*b)
             );
         }
         CellValue::Error(e) => {
@@ -671,6 +676,8 @@ fn write_formula_cell(s: &mut String, expr: &str, cached: &CellValue) {
     }
 }
 
+// 已验证为有限且在精确展示阈值内的整数值才执行该转换。
+#[allow(clippy::cast_possible_truncation)]
 fn fmt_num(n: f64) -> String {
     if n == 0.0 {
         return "0".to_string();
@@ -678,7 +685,7 @@ fn fmt_num(n: f64) -> String {
     if n.fract() == 0.0 && n.abs() < 1e15 {
         return format!("{}", n as i64);
     }
-    format!("{}", n)
+    format!("{n}")
 }
 
 fn build_core_props(wb: &Workbook) -> String {

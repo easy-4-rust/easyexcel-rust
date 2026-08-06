@@ -11,42 +11,41 @@ use zip::CompressionMethod;
 use zip::read::ZipArchive;
 use zip::write::{SimpleFileOptions, ZipWriter};
 
-/// 一个需要原样保留的 OOXML ZIP 条目。
-#[derive(Debug, Clone)]
-pub struct OoxmlZipEntry {
-    /// ZIP 内路径。
-    pub name: String,
-    /// 是否为目录标记。
-    pub is_dir: bool,
-    /// 原压缩方式。
-    pub compression: CompressionMethod,
-    /// 可选 UNIX 权限位。
-    pub unix_mode: Option<u32>,
-    /// 条目原始内容。
-    pub bytes: Vec<u8>,
-}
+include!("ooxml_package/ooxml_zip_entry.rs");
 
-/// 保持条目顺序与元数据的 OOXML ZIP 包。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 保持条目顺序与元数据的 OOXML ZIP 包。
 #[derive(Debug, Clone, Default)]
 pub struct OoxmlPackage {
     entries: Vec<OoxmlZipEntry>,
 }
 
 impl OoxmlPackage {
-    /// 从文件路径载入 ZIP/OOXML 包。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 从文件路径载入 ZIP/OOXML 包。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn from_path(path: &Path) -> Result<Self> {
         Self::from_reader(std::fs::File::open(path)?)
     }
 
-    /// 从 ZIP/OOXML 字节载入全部条目。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 从 ZIP/OOXML 字节载入全部条目。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         Self::from_reader(Cursor::new(bytes))
     }
 
-    /// 从仅实现 [`Read`] 的输入流载入 ZIP/OOXML 包。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 从仅实现 [`Read`] 的输入流载入 ZIP/OOXML 包。
     ///
     /// ZIP 中央目录要求可定位输入，因此该入口在引擎内部完成一次字节物化，
     /// 避免调用方重复实现 `read_to_end` 与 `Cursor` 适配。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn from_stream<R>(mut reader: R) -> Result<Self>
     where
         R: Read,
@@ -56,7 +55,11 @@ impl OoxmlPackage {
         Self::from_bytes(&bytes)
     }
 
-    /// 从可定位输入流载入全部 ZIP/OOXML 条目。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 从可定位输入流载入全部 ZIP/OOXML 条目。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn from_reader<R>(reader: R) -> Result<Self>
     where
         R: Read + Seek,
@@ -80,24 +83,32 @@ impl OoxmlPackage {
         Ok(Self { entries })
     }
 
-    /// 使用现有条目构建包。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 使用现有条目构建包。
     #[must_use]
     pub fn from_entries(entries: Vec<OoxmlZipEntry>) -> Self {
         Self { entries }
     }
 
-    /// 取出保持原顺序的全部 ZIP 条目。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 取出保持原顺序的全部 ZIP 条目。
     #[must_use]
     pub fn into_entries(self) -> Vec<OoxmlZipEntry> {
         self.entries
     }
 
-    /// 重新打包为 XLSX ZIP 字节。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 重新打包为 XLSX ZIP 字节。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn to_bytes(&self) -> Result<Vec<u8>> {
         Ok(self.write_to(Cursor::new(Vec::new()))?.into_inner())
     }
 
-    /// 将 OOXML 包写入可定位输出流，并返回完成后的原输出流。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 将 OOXML 包写入可定位输出流，并返回完成后的原输出流。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn write_to<W>(&self, writer: W) -> Result<W>
     where
         W: Write + Seek,
@@ -118,13 +129,21 @@ impl OoxmlPackage {
         Ok(zip.finish()?)
     }
 
-    /// 保存 ZIP 包到文件。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 保存 ZIP 包到文件。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn save_to_path(&self, path: &Path) -> Result<()> {
         std::fs::write(path, self.to_bytes()?)?;
         Ok(())
     }
 
-    /// 保存 ZIP 包到输出流。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 保存 ZIP 包到输出流。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn save_to_writer(&self, output: &mut dyn Write) -> Result<()> {
         output.write_all(&self.to_bytes()?)?;
         output.flush()?;

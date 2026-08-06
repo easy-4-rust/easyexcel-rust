@@ -6,7 +6,7 @@ use crate::core::excel_cell_style::ExcelCellStyle;
 use crate::core::excel_font_style::ExcelFontStyle;
 use crate::metadata::property::OnceAbsoluteMergeProperty;
 
-/// Type-level dimensions derived from Java-style write annotations.
+/// 对应 Java：com.alibaba.excel.metadata.AbstractHolder。 Type-level dimensions derived from Java-style write annotations.
 ///
 /// Java stores these fields on `AbstractWriteHolder` / `ExcelWriteHeadProperty`.
 /// Rust emits a single `Copy` struct from `#[derive(ExcelRow)]`.
@@ -33,6 +33,7 @@ pub struct ExcelWriteMetadata {
 impl ExcelWriteMetadata {
     /// Creates empty write metadata.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.AbstractHolder。
     pub const fn new() -> Self {
         Self {
             column_width: None,
@@ -48,6 +49,7 @@ impl ExcelWriteMetadata {
 
     /// Sets the type-level default column width. (Java `AbstractWriteHolder.columnWidth`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.AbstractHolder。
     pub const fn column_width(mut self, width: u16) -> Self {
         self.column_width = Some(width);
         self
@@ -55,6 +57,7 @@ impl ExcelWriteMetadata {
 
     /// Sets the generated header-row height. (Java `AbstractWriteHolder.headRowHeight`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.AbstractHolder。
     pub const fn head_row_height(mut self, height: u16) -> Self {
         self.head_row_height = Some(height);
         self
@@ -62,6 +65,7 @@ impl ExcelWriteMetadata {
 
     /// Sets the generated content-row height. (Java `AbstractWriteHolder.contentRowHeight`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.AbstractHolder。
     pub const fn content_row_height(mut self, height: u16) -> Self {
         self.content_row_height = Some(height);
         self
@@ -69,6 +73,7 @@ impl ExcelWriteMetadata {
 
     /// Adds a type-level header cell style. (Java `AbstractWriteHolder.headStyle`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.AbstractHolder。
     pub const fn head_style(mut self, style: ExcelCellStyle) -> Self {
         self.head_style = Some(style);
         self
@@ -76,6 +81,7 @@ impl ExcelWriteMetadata {
 
     /// Adds a type-level content cell style. (Java `AbstractWriteHolder.contentStyle`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.AbstractHolder。
     pub const fn content_style(mut self, style: ExcelCellStyle) -> Self {
         self.content_style = Some(style);
         self
@@ -83,6 +89,7 @@ impl ExcelWriteMetadata {
 
     /// Adds a type-level header font style. (Java `AbstractWriteHolder.headFontStyle`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.AbstractHolder。
     pub const fn head_font_style(mut self, style: ExcelFontStyle) -> Self {
         self.head_font_style = Some(style);
         self
@@ -90,6 +97,7 @@ impl ExcelWriteMetadata {
 
     /// Adds a type-level content font style. (Java `AbstractWriteHolder.contentFontStyle`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.AbstractHolder。
     pub const fn content_font_style(mut self, style: ExcelFontStyle) -> Self {
         self.content_font_style = Some(style);
         self
@@ -97,6 +105,7 @@ impl ExcelWriteMetadata {
 
     /// Adds a type-level absolute merge region. (Java `@OnceAbsoluteMerge`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.AbstractHolder。
     pub const fn once_absolute_merge(mut self, property: OnceAbsoluteMergeProperty) -> Self {
         self.once_absolute_merge = Some(property);
         self

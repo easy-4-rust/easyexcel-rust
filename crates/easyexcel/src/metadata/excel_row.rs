@@ -7,12 +7,12 @@ use crate::core::excel_write_metadata::ExcelWriteMetadata;
 use crate::core::row_data::RowData;
 use crate::{CellValue, WriteCellData};
 
-/// Compile-time mapping implemented by `#[derive(ExcelRow)]`.
+/// 对应 Java：com.alibaba.excel.metadata.ModelBuildEventListener。 Compile-time mapping implemented by `#[derive(ExcelRow)]`.
 ///
 /// Java exposes the same five entry points on the
 /// `com.alibaba.excel.metadata.ModelBuildEventListener` /
 /// `AbstractHolder` runtime reflection path. Rust moves all five to the
-/// `ExcelRow` trait so the [`easyexcel-derive`] macro can generate the impl
+/// `ExcelRow` trait so the `easyexcel-derive` macro can generate the impl
 /// at compile time.
 pub trait ExcelRow: Sized {
     /// Returns static column metadata. (Java `ExcelHeadProperty.getHeadMap().values()`)
@@ -103,7 +103,7 @@ pub trait ExcelRow: Sized {
     ///
     /// # Errors
     ///
-    /// Propagates the error from [`IntoExcelCell::to_excel_write_row`] when
+    /// Propagates the error from `IntoExcelCell::to_excel_write_row` when
     /// the underlying conversion fails.
     fn to_excel_write_row_selected(
         &self,

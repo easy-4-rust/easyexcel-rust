@@ -8,14 +8,14 @@ use zip::ZipArchive;
 
 use super::package::{RawRelationships, Relationships};
 
-/// Owns ZIP access and hides ZIP implementation types from facade/event layers.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Owns ZIP access and hides ZIP implementation types from facade/event layers.
 pub struct XlsxPackageReader<R: Read + Seek> {
     archive: ZipArchive<R>,
     path_cache: HashMap<String, String>,
 }
 
 impl<R: Read + Seek> XlsxPackageReader<R> {
-    /// Open a seekable OOXML ZIP stream.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Open a seekable OOXML ZIP stream.
     ///
     /// # Errors
     ///
@@ -29,13 +29,13 @@ impl<R: Read + Seek> XlsxPackageReader<R> {
         })
     }
 
-    /// Return whether a part exists, using case-insensitive OPC lookup.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Return whether a part exists, using case-insensitive OPC lookup.
     #[must_use]
     pub fn contains(&self, path: &str) -> bool {
         self.path_cache.contains_key(&path.to_ascii_lowercase())
     }
 
-    /// Open one package part as an opaque byte reader.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Open one package part as an opaque byte reader.
     ///
     /// # Errors
     ///
@@ -50,7 +50,11 @@ impl<R: Read + Seek> XlsxPackageReader<R> {
         Ok(Box::new(file))
     }
 
-    /// Return the uncompressed size of one package part.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Return the uncompressed size of one package part.
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn part_size(&mut self, path: &str) -> Result<u64> {
         let actual = self
             .path_cache
@@ -61,12 +65,20 @@ impl<R: Read + Seek> XlsxPackageReader<R> {
         Ok(file.size())
     }
 
-    /// Read internal relationships and omit external targets.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Read internal relationships and omit external targets.
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn relationships(&mut self, path: &str) -> Result<Relationships> {
         super::package::read_relationships(&mut self.archive, &self.path_cache, path)
     }
 
-    /// Read all relationships, retaining `TargetMode=External`.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Read all relationships, retaining `TargetMode=External`.
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn raw_relationships(&mut self, path: &str) -> Result<RawRelationships> {
         super::package::read_raw_relationships(&mut self.archive, &self.path_cache, path)
     }

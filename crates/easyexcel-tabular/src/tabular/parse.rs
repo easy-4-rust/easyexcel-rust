@@ -7,7 +7,11 @@ use serde_json::Value as JsonValue;
 
 use super::{TabularCell, TabularDocument, TabularFormat, TabularTable};
 
-/// 按指定格式解析中立表格文档。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 按指定格式解析中立表格文档。
+///
+/// # Errors
+///
+/// 输入不符合指定格式，或文档中不存在可用表格时返回错误。
 pub fn parse_document(input: &str, format: TabularFormat) -> Result<TabularDocument> {
     match format {
         TabularFormat::Markdown => parse_markdown(input),
@@ -16,7 +20,11 @@ pub fn parse_document(input: &str, format: TabularFormat) -> Result<TabularDocum
     }
 }
 
-/// 解析一个或多个 GitHub Flavored Markdown 表格。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析一个或多个 GitHub Flavored Markdown 表格。
+///
+/// # Errors
+///
+/// 输入中不存在合法 Markdown 表格时返回错误。
 pub fn parse_markdown(input: &str) -> Result<TabularDocument> {
     let lines: Vec<&str> = input.lines().collect();
     let mut tables = Vec::new();
@@ -63,7 +71,11 @@ pub fn parse_markdown(input: &str) -> Result<TabularDocument> {
     Ok(TabularDocument::from_tables(tables))
 }
 
-/// 解析静态 HTML 中的所有 `<table>`，并转换 rowspan/colspan 为合并区域。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析静态 HTML 中的所有 `<table>`，并转换 rowspan/colspan 为合并区域。
+///
+/// # Errors
+///
+/// CSS 选择器无法构造、HTML 中没有表格或合并区域超出 `u32` 坐标范围时返回错误。
 pub fn parse_html(input: &str) -> Result<TabularDocument> {
     let document = Html::parse_document(input);
     let table_selector = parse_selector("table")?;
@@ -110,11 +122,28 @@ pub fn parse_html(input: &str) -> Result<TabularDocument> {
                     TabularCell::new(value)
                 };
                 if row_span > 1 || column_span > 1 {
+                    let end_row = row_index
+                        .checked_add(row_span - 1)
+                        .ok_or_else(|| Error::Other("HTML rowspan overflow".to_owned()))?;
+                    let end_column = column_index
+                        .checked_add(column_span - 1)
+                        .ok_or_else(|| Error::Other("HTML colspan overflow".to_owned()))?;
                     table.push_merge(CellRange::new(
-                        CellAddress::new(row_index as u32, column_index as u32),
                         CellAddress::new(
-                            (row_index + row_span - 1) as u32,
-                            (column_index + column_span - 1) as u32,
+                            u32::try_from(row_index).map_err(|_| {
+                                Error::Other("HTML row index exceeds u32".to_owned())
+                            })?,
+                            u32::try_from(column_index).map_err(|_| {
+                                Error::Other("HTML column index exceeds u32".to_owned())
+                            })?,
+                        ),
+                        CellAddress::new(
+                            u32::try_from(end_row).map_err(|_| {
+                                Error::Other("HTML merged row exceeds u32".to_owned())
+                            })?,
+                            u32::try_from(end_column).map_err(|_| {
+                                Error::Other("HTML merged column exceeds u32".to_owned())
+                            })?,
                         ),
                     ));
                 }
@@ -135,7 +164,11 @@ pub fn parse_html(input: &str) -> Result<TabularDocument> {
     Ok(TabularDocument::from_tables(tables))
 }
 
-/// 解析 JSON 数组、对象数组或 `{ "tables": [...] }` 文档。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析 JSON 数组、对象数组或 `{ "tables": [...] }` 文档。
+///
+/// # Errors
+///
+/// JSON 语法错误、tables/rows 结构错误或单元格值无法映射时返回错误。
 pub fn parse_json(input: &str) -> Result<TabularDocument> {
     let value: JsonValue = serde_json::from_str(input)
         .map_err(|error| Error::Other(format!("invalid JSON table: {error}")))?;

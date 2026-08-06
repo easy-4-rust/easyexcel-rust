@@ -11,6 +11,7 @@ pub struct SheetHandlerExecutionChain {
 impl SheetHandlerExecutionChain {
     /// Creates an empty chain head.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.SheetHandlerExecutionChain。
     pub const fn new() -> Self {
         Self {
             handler: None,
@@ -18,7 +19,7 @@ impl SheetHandlerExecutionChain {
         }
     }
 
-    /// Creates a chain whose head contains `handler`. (Java constructor)
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.SheetHandlerExecutionChain。 Creates a chain whose head contains `handler`. (Java constructor)
     #[must_use]
     pub fn with_handler(handler: Box<dyn crate::core::WriteHandler>) -> Self {
         Self {
@@ -27,7 +28,7 @@ impl SheetHandlerExecutionChain {
         }
     }
 
-    /// Appends a handler. (Java `addLast`)
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.SheetHandlerExecutionChain。 Appends a handler. (Java `addLast`)
     pub fn add_last(&mut self, handler: Box<dyn crate::core::WriteHandler>) {
         match self.next.as_mut() {
             Some(next) => next.add_last(handler),
@@ -40,7 +41,7 @@ impl SheetHandlerExecutionChain {
         }
     }
 
-    /// Runs Java `beforeSheetCreate` in chain order.
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.SheetHandlerExecutionChain。 Runs Java `beforeSheetCreate` in chain order.
     /// # Errors
     ///
     /// Propagates errors from the registered handlers (chain stops at the
@@ -55,7 +56,7 @@ impl SheetHandlerExecutionChain {
         Ok(())
     }
 
-    /// Runs Java `afterSheetCreate` in chain order.
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.SheetHandlerExecutionChain。 Runs Java `afterSheetCreate` in chain order.
     /// # Errors
     ///
     /// Propagates errors from the registered handlers (chain stops at the

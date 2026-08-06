@@ -5,6 +5,7 @@
 /// Java uses POI `FontUnderline` codes (0..=5); Rust drops them. Variant names
 /// follow the POI enum names.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.enums.poi.FontUnderline。
 pub enum ExcelUnderline {
     /// No underline.
     None,

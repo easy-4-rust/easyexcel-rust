@@ -4,7 +4,7 @@
 use easyexcel_model::addr::CellAddress;
 use easyexcel_model::error::CellError;
 
-/// A parsed formula expression.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 A parsed formula expression.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     /// A numeric literal.
@@ -33,103 +33,10 @@ pub enum Expr {
     Array(Vec<Vec<Expr>>),
 }
 
-/// How the referenced sheet(s) are specified.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SheetSpec {
-    /// No sheet qualifier — resolves to the formula's own sheet.
-    Current,
-    /// `SheetName!` qualifier.
-    Name(String),
-    /// 3D span `First:Last!` qualifier.
-    Span(String, String),
-}
+include!("ast/sheet_spec.rs");
 
-/// A cell or rectangular range reference.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Reference {
-    pub sheet: SheetSpec,
-    pub start: CellAddress,
-    /// `None` for a single cell; `Some` for an `A1:B2` range.
-    pub end: Option<CellAddress>,
-}
+include!("ast/reference.rs");
 
-impl Reference {
-    pub fn cell(sheet: SheetSpec, addr: CellAddress) -> Reference {
-        Reference {
-            sheet,
-            start: addr,
-            end: None,
-        }
-    }
-    pub fn range(sheet: SheetSpec, start: CellAddress, end: CellAddress) -> Reference {
-        Reference {
-            sheet,
-            start,
-            end: Some(end),
-        }
-    }
-    pub fn is_range(&self) -> bool {
-        self.end.is_some()
-    }
-}
+include!("ast/unary_op.rs");
 
-/// Unary operators.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum UnaryOp {
-    /// Negation `-x`.
-    Neg,
-    /// Unary plus `+x` (a no-op kept for round-trip).
-    Plus,
-    /// Postfix percent `x%` (divides by 100).
-    Percent,
-}
-
-/// Binary operators, including the reference operators.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum BinaryOp {
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Pow,
-    /// Text concatenation `&`.
-    Concat,
-    Eq,
-    Ne,
-    Lt,
-    Le,
-    Gt,
-    Ge,
-    /// Range operator `:` (forms a range from two references).
-    Range,
-    /// Intersection operator ` ` (space).
-    Intersect,
-    /// Union operator `,`.
-    Union,
-}
-
-impl BinaryOp {
-    /// Binding precedence (higher binds tighter). Used by the Pratt parser.
-    pub fn precedence(self) -> u8 {
-        match self {
-            BinaryOp::Range => 9,
-            BinaryOp::Intersect => 8,
-            BinaryOp::Union => 7,
-            BinaryOp::Pow => 5,
-            BinaryOp::Mul | BinaryOp::Div => 4,
-            BinaryOp::Add | BinaryOp::Sub => 3,
-            BinaryOp::Concat => 2,
-            BinaryOp::Eq
-            | BinaryOp::Ne
-            | BinaryOp::Lt
-            | BinaryOp::Le
-            | BinaryOp::Gt
-            | BinaryOp::Ge => 1,
-        }
-    }
-
-    /// True if the operator is left-associative (all of ours except `^`).
-    pub fn left_assoc(self) -> bool {
-        !matches!(self, BinaryOp::Pow)
-    }
-}
+include!("ast/binary_op.rs");

@@ -22,13 +22,13 @@ pub struct RowTagHandler {
 }
 
 impl RowTagHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.RowTagHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Java `RowTagHandler.startElement` — resolve `r` via
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.RowTagHandler。 Java `RowTagHandler.startElement` — resolve `r` via
     /// `PositionUtils.getRowByRowTagt(rowTagt, before)`.
     ///
     /// Returns the zero-based row index for the opened `<row>`.
@@ -46,7 +46,7 @@ impl RowTagHandler {
         }
     }
 
-    /// Java `RowTagHandler.startElement` body (without empty-row gap fill).
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.RowTagHandler。 Java `RowTagHandler.startElement` body (without empty-row gap fill).
     ///
     /// # Errors
     ///
@@ -59,7 +59,7 @@ impl RowTagHandler {
         Ok(row)
     }
 
-    /// Java `RowTagHandler.endElement` — advances the cursor and reports whether
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.RowTagHandler。 Java `RowTagHandler.endElement` — advances the cursor and reports whether
     /// the row looked like `DATA` vs `EMPTY`.
     pub fn end_row(&mut self) -> (u32, bool) {
         let row = self.row_index.unwrap_or(0);
@@ -69,7 +69,7 @@ impl RowTagHandler {
         (row, has_data)
     }
 
-    /// Marks that at least one non-empty cell was seen in the open row.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.RowTagHandler。 Marks that at least one non-empty cell was seen in the open row.
     pub fn mark_data(&mut self) {
         self.has_data = true;
     }

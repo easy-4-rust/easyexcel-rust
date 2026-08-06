@@ -5,7 +5,7 @@ use std::fmt;
 /// 对应 Java：`ReadSheet extends ReadBasicParameter`.
 ///
 /// Rust keeps the sheet identity fields used by SAX executors and
-/// [`super::AnalysisContextImpl::current_sheet`]. Parameter fields from
+/// `AnalysisContextImpl::current_sheet`. Parameter fields from
 /// Java `ReadBasicParameter` remain on [`crate::ReadOptions`].
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ReadSheet {
@@ -55,7 +55,7 @@ impl ReadSheet {
         }
     }
 
-    /// Creates a name-only sheet selector.
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadSheet。 Creates a name-only sheet selector.
     ///
     /// Mirrors `new ReadSheet()` followed by `setSheetName(...)`, leaving the
     /// Java `sheetNo` value null.
@@ -69,12 +69,14 @@ impl ReadSheet {
 
     /// Returns the zero-based sheet index. (Java `getSheetNo()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadSheet。
     pub const fn sheet_no(&self) -> usize {
         self.sheet_no
     }
 
     /// Returns whether a sheet number was explicitly configured.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadSheet。
     pub const fn has_sheet_no(&self) -> bool {
         self.sheet_no_explicit
     }
@@ -84,24 +86,25 @@ impl ReadSheet {
     // 对应 Java：`getSheetNo()` 返回 Integer，超出 i32 范围时按 `(int)` 截断/环绕语义处理，
     // 故保留 `as` 转换以保证与 Java 行为一致。
     #[allow(clippy::cast_possible_wrap, clippy::cast_possible_truncation)]
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadSheet。
     pub const fn sheet_no_i32(&self) -> i32 {
         self.sheet_no as i32
     }
 
-    /// Sets the zero-based sheet index. (Java `setSheetNo(Integer)`)
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadSheet。 Sets the zero-based sheet index. (Java `setSheetNo(Integer)`)
     pub fn set_sheet_no(&mut self, sheet_no: usize) -> &mut Self {
         self.sheet_no = sheet_no;
         self.sheet_no_explicit = true;
         self
     }
 
-    /// Returns the worksheet name. (Java `getSheetName()`)
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadSheet。 Returns the worksheet name. (Java `getSheetName()`)
     #[must_use]
     pub fn sheet_name(&self) -> &str {
         &self.sheet_name
     }
 
-    /// Sets the worksheet name. (Java `setSheetName(String)`)
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadSheet。 Sets the worksheet name. (Java `setSheetName(String)`)
     pub fn set_sheet_name(&mut self, sheet_name: impl Into<String>) -> &mut Self {
         self.sheet_name = sheet_name.into();
         self
@@ -111,11 +114,12 @@ impl ReadSheet {
     ///
     /// Mirrors `ReadBasicParameter.getHeadRowNumber()`.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadSheet。
     pub const fn head_row_number(&self) -> Option<u32> {
         self.head_row_number
     }
 
-    /// Overrides the workbook header row count for this sheet.
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadSheet。 Overrides the workbook header row count for this sheet.
     ///
     /// Mirrors `ReadBasicParameter.setHeadRowNumber(Integer)`.
     pub fn set_head_row_number(&mut self, head_row_number: u32) -> &mut Self {
@@ -127,11 +131,12 @@ impl ReadSheet {
     ///
     /// Mirrors `ReadBasicParameter.getUseScientificFormat()`.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadSheet。
     pub const fn use_scientific_format(&self) -> Option<bool> {
         self.use_scientific_format
     }
 
-    /// Overrides scientific formatting for this sheet.
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadSheet。 Overrides scientific formatting for this sheet.
     ///
     /// Mirrors `ReadBasicParameter.setUseScientificFormat(Boolean)`.
     pub fn set_use_scientific_format(&mut self, enabled: bool) -> &mut Self {
@@ -139,7 +144,7 @@ impl ReadSheet {
         self
     }
 
-    /// Copies common basic-parameter fields from another `ReadSheet`.
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadSheet。 Copies common basic-parameter fields from another `ReadSheet`.
     /// (Java `copyBasicParameter(ReadSheet other)`)
     ///
     pub fn copy_basic_parameter(&mut self, other: &ReadSheet) -> &mut Self {

@@ -10,13 +10,13 @@ pub struct IndexRecordHandler {
 }
 
 impl IndexRecordHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.IndexRecordHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Java `IndexRecordHandler.processRecord`.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.IndexRecordHandler。 Java `IndexRecordHandler.processRecord`.
     pub fn process_index(&mut self, last_row_add_1: u32) {
         self.approximate_total_row_number = Some(last_row_add_1);
     }

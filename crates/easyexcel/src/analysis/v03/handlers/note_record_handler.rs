@@ -14,7 +14,7 @@ pub struct NoteRecordHandler {
 }
 
 impl NoteRecordHandler {
-    /// Creates a handler; `enabled` mirrors Java `support(XlsReadContext)`.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.NoteRecordHandler。 Creates a handler; `enabled` mirrors Java `support(XlsReadContext)`.
     #[must_use]
     pub fn new(enabled: bool) -> Self {
         Self {
@@ -23,7 +23,7 @@ impl NoteRecordHandler {
         }
     }
 
-    /// Java `NoteRecordHandler.processRecord`.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.NoteRecordHandler。 Java `NoteRecordHandler.processRecord`.
     ///
     /// `text` comes from `objectCacheMap.get(shapeId)` in Java.
     pub fn process_note(&mut self, text: Option<String>, row: u32, column: usize) {

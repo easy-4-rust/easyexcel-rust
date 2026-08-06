@@ -15,6 +15,7 @@ pub struct FillStyleCellWriteHandler {
 impl FillStyleCellWriteHandler {
     /// Creates the handler.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.impl.FillStyleCellWriteHandler。
     pub const fn new() -> Self {
         Self {
             last_style: None,
@@ -24,11 +25,12 @@ impl FillStyleCellWriteHandler {
 
     /// Returns the last observed style. (Java `getOriginCellStyle()` step)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.impl.FillStyleCellWriteHandler。
     pub const fn last_style(&self) -> Option<&ExcelCellStyle> {
         self.last_style.as_ref()
     }
 
-    /// Sets the `ignoreFillStyle` flag. (Java `setIgnoreFillStyle`)
+    /// 对应 Java：com.alibaba.excel.write.handler.impl.FillStyleCellWriteHandler。 Sets the `ignoreFillStyle` flag. (Java `setIgnoreFillStyle`)
     pub fn set_ignore(&mut self, ignore: bool) {
         self.ignore = ignore;
     }

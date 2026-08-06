@@ -16,7 +16,7 @@ use crate::write::sheet_style_context::SheetStyleContext;
 use crate::write::write_options::WriteOptions;
 use crate::write::write_progress::WriteProgress;
 
-/// Appends typed rows onto an existing worksheet.
+/// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteAddExecutor。 Appends typed rows onto an existing worksheet.
 ///
 /// Java counterpart: the body of `ExcelWriteAddExecutor.add(Collection<?>)`
 /// plus `addOneRowOfDataToExcel` (header / cell / handler orchestration).
@@ -44,7 +44,7 @@ where
     )
 }
 
-/// Like [`append_rows_to_worksheet`], optionally mirroring data rows into a gzip spill.
+/// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteAddExecutor。 Like [`append_rows_to_worksheet`], optionally mirroring data rows into a gzip spill.
 ///
 /// Java mapping: when `compress_temp_files` is on, [`crate::write::gzip_spill::GzipSheetDataWriter`]
 /// mirrors POI `GZIPSheetDataWriter` for observability and disk spill.
@@ -74,6 +74,7 @@ where
 }
 
 #[allow(clippy::too_many_arguments)]
+/// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteAddExecutor。
 pub(crate) fn append_rows_to_worksheet_with_gzip_and_context<T, I>(
     worksheet: &mut Worksheet,
     options: &WriteOptions,

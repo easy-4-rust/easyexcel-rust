@@ -2,45 +2,22 @@
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
-/// POI `BOFRecord` type codes used by `EasyExcel`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum BofType {
-    /// Workbook-level BOF.
-    Workbook,
-    /// Worksheet-level BOF.
-    Worksheet,
-    /// Other (chart, macro, …) — ignored by Java.
-    Other,
-}
+include!("bof_record_handler/bof_type.rs");
 
-/// Side-effects requested by [`BofRecordHandler`].
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum BofAction {
-    /// Reset workbook sheet cursor. (`TYPE_WORKBOOK`)
-    ResetWorkbook,
-    /// Ignore non-worksheet BOF.
-    Ignore,
-    /// Begin / skip a worksheet sheet.
-    BeginWorksheet {
-        /// Whether the matched sheet should be read (`ignoreRecord = false`).
-        read_sheet: bool,
-        /// Next `readSheetIndex` after this BOF.
-        next_read_sheet_index: usize,
-    },
-}
+include!("bof_record_handler/bof_action.rs");
 
 /// 对应 Java：`BofRecordHandler`.
 #[derive(Debug, Default)]
 pub struct BofRecordHandler;
 
 impl BofRecordHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.BofRecordHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self
     }
 
-    /// Java `BofRecordHandler.processRecord` decision (sheet list already built).
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.BofRecordHandler。 Java `BofRecordHandler.processRecord` decision (sheet list already built).
     #[must_use]
     pub fn decide(
         bof_type: BofType,

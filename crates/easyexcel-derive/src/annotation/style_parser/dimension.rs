@@ -4,7 +4,7 @@ use syn::meta::ParseNestedMeta;
 
 use crate::annotation::integer::{SignedInteger, parse_signed_i32};
 
-/// 解析列宽或行高，保留 Java 的 `-1` 默认值哨兵。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析列宽或行高，保留 Java 的 `-1` 默认值哨兵。
 pub(crate) fn parse_dimension(meta: &ParseNestedMeta<'_>) -> syn::Result<SignedInteger> {
     let value = parse_signed_i32(meta)?;
     if value.value() < -1 || value.value() > i32::from(u16::MAX) {

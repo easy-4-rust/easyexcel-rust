@@ -1,6 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.analysis.v03.XlsRecordHandler`.
 
 /// Handler contract for one or more BIFF record SIDs.
+/// 对应 Java：com.alibaba.excel.analysis.v03.XlsRecordHandler。
 pub trait XlsRecordHandler {
     /// Whether this handler is enabled for the current read configuration.
     fn support(&self) -> bool {

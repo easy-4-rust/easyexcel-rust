@@ -1,4 +1,4 @@
-/// 工作簿读取模式。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 工作簿读取模式。
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub enum ReadMode {
     /// 按行推送事件，适合大文件。

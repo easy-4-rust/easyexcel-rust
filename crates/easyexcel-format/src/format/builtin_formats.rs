@@ -6,12 +6,14 @@
 //! this module mirrors the constant arrays for 1:1 API parity.
 
 /// The minimum custom format index. (Java `MIN_CUSTOM_DATA_FORMAT_INDEX`)
+/// 对应 Java：com.alibaba.excel.constant.BuiltinFormats。
 pub const MIN_CUSTOM_DATA_FORMAT_INDEX: u16 = 82;
 
 /// The General format index. (Java `GENERAL`)
+/// 对应 Java：com.alibaba.excel.constant.BuiltinFormats。
 pub const GENERAL: u16 = 0;
 
-/// Returns the built-in format string for the given index and locale.
+/// 对应 Java：com.alibaba.excel.constant.BuiltinFormats。 Returns the built-in format string for the given index and locale.
 /// (Java `getBuiltinFormat(Short, String, Locale)`)
 ///
 /// Lookup order matches Java: `ALL_LANGUAGES` first, then CN locale table,
@@ -30,7 +32,7 @@ pub fn get_builtin_format(index: u16, default_format: &str) -> &'static str {
     }
 }
 
-/// Resolves a builtin format code the same way `EasyExcel` STRING display does.
+/// 对应 Java：com.alibaba.excel.constant.BuiltinFormats。 Resolves a builtin format code the same way `EasyExcel` STRING display does.
 #[must_use]
 pub fn builtin_format_code(index: u16) -> Option<&'static str> {
     BUILTIN_FORMATS_ALL_LANGUAGES
@@ -40,7 +42,7 @@ pub fn builtin_format_code(index: u16) -> Option<&'static str> {
         .or_else(|| BUILTIN_FORMATS_CN.get(index as usize).copied().flatten())
 }
 
-/// Returns the built-in format array. (Java `switchBuiltinFormats(Locale)`)
+/// 对应 Java：com.alibaba.excel.constant.BuiltinFormats。 Returns the built-in format array. (Java `switchBuiltinFormats(Locale)`)
 #[must_use]
 pub fn switch_builtin_formats() -> &'static [Option<&'static str>] {
     &BUILTIN_FORMATS_ALL_LANGUAGES
@@ -48,6 +50,7 @@ pub fn switch_builtin_formats() -> &'static [Option<&'static str>] {
 
 /// The "all languages" built-in format table. (Java
 /// `BUILTIN_FORMATS_ALL_LANGUAGES`)
+/// 对应 Java：com.alibaba.excel.constant.BuiltinFormats。
 pub static BUILTIN_FORMATS_ALL_LANGUAGES: [Option<&str>; 50] = [
     Some("General"),                                // 0
     Some("0"),                                      // 1
@@ -103,6 +106,7 @@ pub static BUILTIN_FORMATS_ALL_LANGUAGES: [Option<&str>; 50] = [
 
 /// Locale-CN built-in formats used when `ALL_LANGUAGES` has no entry.
 /// (Java `BUILTIN_FORMATS_CN` — date/time slots 27–36 / 50–58)
+/// 对应 Java：com.alibaba.excel.constant.BuiltinFormats。
 pub static BUILTIN_FORMATS_CN: [Option<&str>; 59] = [
     Some("General"),                                // 0
     Some("0"),                                      // 1

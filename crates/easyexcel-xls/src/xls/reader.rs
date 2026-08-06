@@ -18,7 +18,11 @@ use super::biff::{self, RawRecord, Records};
 use super::sst;
 use crate::biff8::builtin_format_code;
 
-/// Read an XLS workbook from any seekable reader.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Read an XLS workbook from any seekable reader.
+///
+/// # Errors
+///
+/// 输入不是有效 OLE2 容器、缺少 Workbook 流或 BIFF8 记录损坏时返回错误。
 pub fn read<R: Read + Seek>(reader: R) -> Result<Workbook> {
     let mut cf = cfb::CompoundFile::open(reader)
         .map_err(|e| Error::Cfb(format!("not a valid OLE2 file: {e}")))?;
@@ -94,7 +98,7 @@ struct Globals {
     /// ifmt -> format code string (built-ins + custom).
     formats: std::collections::HashMap<u16, String>,
     xfs: Vec<XfInfo>,
-    /// (name, stream byte offset, visibility, is_worksheet).
+    /// (name, stream byte offset, visibility, `is_worksheet`).
     boundsheets: Vec<BoundSheet>,
 }
 
@@ -177,7 +181,7 @@ fn parse_format(rec: &RawRecord, g: &mut Globals) {
     g.formats.insert(ifmt, s);
 }
 
-/// Parse an XLUnicodeString with a 2-byte char count (as used inside FORMAT and
+/// Parse an `XLUnicodeString` with a 2-byte char count (as used inside FORMAT and
 /// LABEL records). Does not handle CONTINUE (these are short enough not to).
 fn parse_biff8_string_u16len(d: &[u8], off: usize) -> (String, usize) {
     if off + 3 > d.len() {
@@ -414,8 +418,8 @@ fn cell_header(d: &[u8]) -> Option<(u32, u32, u16)> {
     if d.len() < 6 {
         return None;
     }
-    let row = biff::u16le(d, 0) as u32;
-    let col = biff::u16le(d, 2) as u32;
+    let row = u32::from(biff::u16le(d, 0));
+    let col = u32::from(biff::u16le(d, 2));
     let xf = biff::u16le(d, 4);
     Some((row, col, xf))
 }
@@ -425,13 +429,13 @@ fn parse_mulrk(rec: &RawRecord, xf_to_style: &[u32], sheet: &mut Sheet) {
     if d.len() < 6 {
         return;
     }
-    let row = biff::u16le(d, 0) as u32;
-    let first_col = biff::u16le(d, 2) as u32;
+    let row = u32::from(biff::u16le(d, 0));
+    let first_col = u32::from(biff::u16le(d, 2));
     // Last 2 bytes are the last column index.
     if d.len() < 8 {
         return;
     }
-    let last_col = biff::u16le(d, d.len() - 2) as u32;
+    let last_col = u32::from(biff::u16le(d, d.len() - 2));
     let count = (last_col - first_col + 1) as usize;
     // Each entry: xf(u16) + rk(u32) = 6 bytes, starting at offset 4.
     let mut p = 4;
@@ -453,9 +457,9 @@ fn parse_mulblank(rec: &RawRecord, xf_to_style: &[u32], sheet: &mut Sheet) {
     if d.len() < 6 {
         return;
     }
-    let row = biff::u16le(d, 0) as u32;
-    let first_col = biff::u16le(d, 2) as u32;
-    let last_col = biff::u16le(d, d.len() - 2) as u32;
+    let row = u32::from(biff::u16le(d, 0));
+    let first_col = u32::from(biff::u16le(d, 2));
+    let last_col = u32::from(biff::u16le(d, d.len() - 2));
     let count = (last_col - first_col + 1) as usize;
     let mut p = 4;
     for i in 0..count {
@@ -468,7 +472,7 @@ fn parse_mulblank(rec: &RawRecord, xf_to_style: &[u32], sheet: &mut Sheet) {
     }
 }
 
-/// Parse a FORMULA record. Returns (row, col, xf, cell, result_is_string).
+/// Parse a FORMULA record. Returns (row, col, xf, cell, `result_is_string`).
 /// The cached value is decoded from the 8-byte result field. We store the
 /// formula with a placeholder expr (RPN-to-text decoding is out of scope —
 /// see the PARITY note in the writer).
@@ -514,10 +518,10 @@ fn parse_mergecells(rec: &RawRecord, sheet: &mut Sheet) {
         if p + 8 > d.len() {
             break;
         }
-        let r1 = biff::u16le(d, p) as u32;
-        let r2 = biff::u16le(d, p + 2) as u32;
-        let c1 = biff::u16le(d, p + 4) as u32;
-        let c2 = biff::u16le(d, p + 6) as u32;
+        let r1 = u32::from(biff::u16le(d, p));
+        let r2 = u32::from(biff::u16le(d, p + 2));
+        let c1 = u32::from(biff::u16le(d, p + 4));
+        let c2 = u32::from(biff::u16le(d, p + 6));
         p += 8;
         sheet.merged.push(CellRange::new(
             CellAddress::new(r1, c1),
@@ -543,8 +547,8 @@ fn parse_pane(rec: &RawRecord, sheet: &mut Sheet) {
     // PANE: x(u16 cols frozen), y(u16 rows frozen), ...
     let d = &rec.data;
     if d.len() >= 4 {
-        let cols = biff::u16le(d, 0) as u32;
-        let rows = biff::u16le(d, 2) as u32;
+        let cols = u32::from(biff::u16le(d, 0));
+        let rows = u32::from(biff::u16le(d, 2));
         sheet.frozen = FrozenPanes { rows, cols };
     }
 }
@@ -592,7 +596,7 @@ mod tests {
             2,
             0,
             Cell::Formula {
-                expr: "".into(),
+                expr: String::new(),
                 cached: CellValue::Number(99.0),
             },
         );
@@ -642,7 +646,7 @@ mod tests {
             1,
             0,
             Cell::Formula {
-                expr: "".into(),
+                expr: String::new(),
                 cached: CellValue::Text("computed".into()),
             },
         );

@@ -18,6 +18,7 @@ pub struct WriteConverterContext<'a, T> {
 impl<'a, T> WriteConverterContext<'a, T> {
     /// Creates a write conversion context. (Java `@AllArgsConstructor`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.converters.WriteConverterContext。
     pub const fn new(value: &'a T, column: &'a ExcelColumn, context: &'a ConvertContext) -> Self {
         Self {
             value,
@@ -28,18 +29,21 @@ impl<'a, T> WriteConverterContext<'a, T> {
 
     /// Returns the Rust field value. (Java `getValue()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.converters.WriteConverterContext。
     pub const fn value(&self) -> &'a T {
         self.value
     }
 
     /// Returns the field's static column metadata. (Java `getContentProperty()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.converters.WriteConverterContext。
     pub const fn column(&self) -> &'a ExcelColumn {
         self.column
     }
 
     /// Returns the target row, column, field, and format information. (Java `getWriteContext()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.converters.WriteConverterContext。
     pub const fn convert_context(&self) -> &'a ConvertContext {
         self.context
     }

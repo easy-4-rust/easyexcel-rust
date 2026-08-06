@@ -4,7 +4,7 @@
 
 use crate::core::excel_error::ExcelError;
 
-/// Mirrors `org.apache.commons.lang3.Validate#isTrue`.
+/// 对应 Java：com.alibaba.excel.util.Validate。 Mirrors `org.apache.commons.lang3.Validate#isTrue`.
 ///
 /// # Errors
 ///

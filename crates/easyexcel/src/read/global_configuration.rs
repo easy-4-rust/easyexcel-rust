@@ -24,7 +24,7 @@ pub fn global_configuration_from_read_options(options: &ReadOptions) -> GlobalCo
     }
 }
 
-/// Applies a global configuration onto read options without replacing unrelated fields.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Applies a global configuration onto read options without replacing unrelated fields.
 pub fn apply_global_configuration_to_read_options(
     global: &GlobalConfiguration,
     options: &mut ReadOptions,

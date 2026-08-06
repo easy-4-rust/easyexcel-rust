@@ -7,6 +7,7 @@
 /// Rust port of Java `ReadDefaultReturnEnum`. Mirrors the same three modes
 /// while the `Default` impl reproduces Java's `STRING` default.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.enums.ReadDefaultReturnEnum。
 pub enum ReadDefaultReturnEnum {
     /// Convert every present cell to the text a user sees in the workbook. (Java `STRING`, default)
     #[default]

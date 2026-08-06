@@ -2,7 +2,7 @@
 
 use easyexcel_io::Result;
 
-/// 保存一个 BIFF8 逻辑记录及其后续 `CONTINUE` 记录体。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 保存一个 BIFF8 逻辑记录及其后续 `CONTINUE` 记录体。
 ///
 /// 该类型只负责二进制分段的所有权与解码入口；上层事件分派器决定链属于
 /// SST、公式字符串还是其他逻辑记录。
@@ -12,7 +12,7 @@ pub struct Biff8ContinuationChain {
 }
 
 impl Biff8ContinuationChain {
-    /// 使用逻辑记录的第一个物理记录体创建分段链。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 使用逻辑记录的第一个物理记录体创建分段链。
     #[must_use]
     pub fn new(first_segment: &[u8]) -> Self {
         Self {
@@ -20,18 +20,18 @@ impl Biff8ContinuationChain {
         }
     }
 
-    /// 追加一个 `CONTINUE` 记录体。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 追加一个 `CONTINUE` 记录体。
     pub fn push(&mut self, continuation: &[u8]) {
         self.segments.push(continuation.to_vec());
     }
 
-    /// 返回物理记录体，供特定 BIFF 解码器读取。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回物理记录体，供特定 BIFF 解码器读取。
     #[must_use]
     pub fn segments(&self) -> &[Vec<u8>] {
         &self.segments
     }
 
-    /// 将当前分段链解码为共享字符串表。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 将当前分段链解码为共享字符串表。
     ///
     /// # Errors
     ///
@@ -40,7 +40,7 @@ impl Biff8ContinuationChain {
         super::string::decode_sst_segments(self.segments())
     }
 
-    /// 将当前分段链解码为一个 BIFF8 Unicode 字符串。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 将当前分段链解码为一个 BIFF8 Unicode 字符串。
     ///
     /// # Errors
     ///

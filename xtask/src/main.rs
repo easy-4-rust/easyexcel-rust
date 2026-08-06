@@ -21,6 +21,7 @@ const MAP_PATH: &str = "docs/migration/file-map.csv";
 const LEGACY_FACADE_PREFIX: &str = "easyexcel/src/";
 const WORKSPACE_FACADE_PREFIX: &str = "crates/easyexcel/src/";
 
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) type TaskResult<T = ()> = Result<T, Box<dyn std::error::Error>>;
 
 fn main() -> ExitCode {

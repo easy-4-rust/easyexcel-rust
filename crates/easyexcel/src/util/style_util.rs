@@ -1,7 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.util.StyleUtil`。
 //!
 //! 格式注册、OOXML/BIFF 样式序列化由基础引擎负责；这里仅组合 Java
-//! EasyExcel 风格的写入元数据，并把通用坐标算法委托给 `easyexcel-utils`。
+//! `EasyExcel` 风格的写入元数据，并把通用坐标算法委托给 `easyexcel-utils`。
 
 use crate::metadata::data::DataFormatData;
 use crate::metadata::data::hyperlink_data::HyperlinkType;
@@ -60,19 +60,19 @@ pub fn build_rich_text_string(
     rich_text_string_data.cloned()
 }
 
-/// 返回有效的超链接类型，缺失时回退为 `None`。
+/// 对应 Java：com.alibaba.excel.util.StyleUtil。 返回有效的超链接类型，缺失时回退为 `None`。
 #[must_use]
 pub fn get_hyperlink_type(hyperlink_type: Option<HyperlinkType>) -> HyperlinkType {
     hyperlink_type.unwrap_or_default()
 }
 
-/// 将可选点坐标转换为 EMU。
+/// 对应 Java：com.alibaba.excel.util.StyleUtil。 将可选点坐标转换为 EMU。
 #[must_use]
 pub fn get_coordinate(coordinate: Option<i32>) -> i32 {
     easyexcel_utils::coordinate_utils::points_to_emu(coordinate)
 }
 
-/// 按绝对坐标、相对坐标、当前坐标的优先级解析单元格坐标。
+/// 对应 Java：com.alibaba.excel.util.StyleUtil。 按绝对坐标、相对坐标、当前坐标的优先级解析单元格坐标。
 #[must_use]
 pub fn get_cell_coordinate(
     current_coordinate: i32,

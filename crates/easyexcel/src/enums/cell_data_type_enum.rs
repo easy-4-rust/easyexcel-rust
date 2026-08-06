@@ -12,6 +12,7 @@
 /// (`Formula`, `Image`) keep it aligned with the `CellValue` enum so writers
 /// can carry Java-equivalent rich metadata without an extra wrapper class.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+/// 对应 Java：com.alibaba.excel.enums.CellDataTypeEnum。
 pub enum CellDataTypeEnum {
     /// Shared or inline string.       (Java `STRING`)
     String,
@@ -37,7 +38,7 @@ pub enum CellDataTypeEnum {
 }
 
 impl CellDataTypeEnum {
-    /// Java `CellDataTypeEnum.buildFromCellType(String)`.
+    /// 对应 Java：com.alibaba.excel.enums.CellDataTypeEnum。 Java `CellDataTypeEnum.buildFromCellType(String)`.
     ///
     /// Maps OOXML `c@t` codes onto the enum used by `CellTagHandler.startElement`.
     /// Unknown codes return [`None`] (Java would return `null` and later NPE —

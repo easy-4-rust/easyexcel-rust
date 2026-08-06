@@ -11,7 +11,7 @@ use crate::read::sheet_selector::SheetSelector;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-/// Reads a CSV file through the same typed listener lifecycle as XLSX.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Reads a CSV file through the same typed listener lifecycle as XLSX.
 ///
 /// CSV exposes one logical sheet. Indexes other than zero return `SheetNotFound`.
 ///
@@ -29,7 +29,7 @@ where
         .map_err(ExcelError::from)?;
     read_csv_records::<T, L>(&mut reader.records(), 0, &sheet_name, options, listener)
 }
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn read_csv_records<T, L>(
     records: &mut dyn Iterator<Item = easyexcel_io::Result<Vec<String>>>,
     start_row: usize,
@@ -67,11 +67,11 @@ where
     }
     listener.do_after_all_analysed(&analysis_context(sheet_name, 0, final_row, options))
 }
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn csv_row_index(row_index: usize) -> Result<u32> {
     easyexcel_csv::checked_row_index(row_index).map_err(ExcelError::from)
 }
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn csv_sheet_name(selector: &SheetSelector) -> Result<String> {
     match selector {
         SheetSelector::First | SheetSelector::Index(0) | SheetSelector::All => {

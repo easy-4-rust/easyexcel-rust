@@ -14,7 +14,7 @@ use super::workbook::{Biff8Sheet, Biff8Value};
 use easyexcel_formula::Engine;
 use easyexcel_model::{Cell, CellError, CellValue, Workbook};
 
-/// FORMULA 记录缓存结果（8 字节结果字段，字符串另走 STRING 记录）。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 FORMULA 记录缓存结果（8 字节结果字段，字符串另走 STRING 记录）。
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum Biff8Cached {
     /// 数值结果（0.0 全零字节 = 触发打开时重算）。
@@ -27,7 +27,7 @@ pub(crate) enum Biff8Cached {
     Text(String),
 }
 
-/// 对每个工作表求值公式，返回 `(row, col) → 缓存值` 的映射表。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 对每个工作表求值公式，返回 `(row, col) → 缓存值` 的映射表。
 /// 与 `write_worksheet` 的 sheet 顺序一一对应。
 pub(crate) fn recalc_cached_values(sheets: &[Biff8Sheet]) -> Vec<HashMap<(u16, u8), Biff8Cached>> {
     let mut all = Vec::with_capacity(sheets.len());

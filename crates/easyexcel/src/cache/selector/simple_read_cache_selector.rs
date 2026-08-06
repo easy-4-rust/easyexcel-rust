@@ -30,7 +30,7 @@ impl Default for SimpleReadCacheSelector {
 }
 
 impl SimpleReadCacheSelector {
-    /// Creates a selector with Java defaults.
+    /// 对应 Java：com.alibaba.excel.cache.selector.SimpleReadCacheSelector。 Creates a selector with Java defaults.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -46,11 +46,10 @@ impl SimpleReadCacheSelector {
                 easyexcel_cache::SharedStringCachePolicy::memory_megabytes_to_bytes(
                     max_use_map_cache_size_mb,
                 ),
-            ..Self::default()
         }
     }
 
-    /// Sets the map-cache threshold in megabytes. (Java `setMaxUseMapCacheSize`)
+    /// 对应 Java：com.alibaba.excel.cache.selector.SimpleReadCacheSelector。 Sets the map-cache threshold in megabytes. (Java `setMaxUseMapCacheSize`)
     #[must_use]
     pub fn max_use_map_cache_size_mb(mut self, megabytes: u64) -> Self {
         self.max_use_map_cache_size_bytes =
@@ -60,6 +59,7 @@ impl SimpleReadCacheSelector {
 
     /// Returns the configured map-cache threshold in bytes.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.cache.selector.SimpleReadCacheSelector。
     pub const fn max_use_map_cache_size_bytes(&self) -> u64 {
         self.max_use_map_cache_size_bytes
     }

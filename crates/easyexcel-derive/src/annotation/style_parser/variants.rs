@@ -4,6 +4,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::LitStr;
 
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(super) const HORIZONTAL_ALIGNMENT_VARIANTS: &[(&str, &str)] = &[
     ("general", "General"),
     ("left", "Left"),
@@ -15,6 +16,7 @@ pub(super) const HORIZONTAL_ALIGNMENT_VARIANTS: &[(&str, &str)] = &[
     ("distributed", "Distributed"),
 ];
 
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(super) const VERTICAL_ALIGNMENT_VARIANTS: &[(&str, &str)] = &[
     ("top", "Top"),
     ("center", "Center"),
@@ -23,6 +25,7 @@ pub(super) const VERTICAL_ALIGNMENT_VARIANTS: &[(&str, &str)] = &[
     ("distributed", "Distributed"),
 ];
 
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(super) const BORDER_STYLE_VARIANTS: &[(&str, &str)] = &[
     ("none", "None"),
     ("thin", "Thin"),
@@ -40,6 +43,7 @@ pub(super) const BORDER_STYLE_VARIANTS: &[(&str, &str)] = &[
     ("slant_dash_dot", "SlantDashDot"),
 ];
 
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(super) const FILL_PATTERN_VARIANTS: &[(&str, &str)] = &[
     ("none", "None"),
     ("solid", "Solid"),
@@ -62,7 +66,7 @@ pub(super) const FILL_PATTERN_VARIANTS: &[(&str, &str)] = &[
     ("gray_0625", "Gray0625"),
 ];
 
-/// 将 Java 风格舍入模式名称转换为 `EasyExcel` 枚举表达式。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将 Java 风格舍入模式名称转换为 `EasyExcel` 枚举表达式。
 pub(crate) fn number_rounding_mode_tokens(
     value: &LitStr,
     crate_path: &TokenStream,

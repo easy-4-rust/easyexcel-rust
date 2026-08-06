@@ -1,6 +1,6 @@
 //! 表格单元格 gzip spill 的中立二进制协议。
 //!
-//! 该模块定义压缩临时行的稳定 tag/length 编码，不依赖 EasyExcel 门面
+//! 该模块定义压缩临时行的稳定 tag/length 编码，不依赖 `EasyExcel` 门面
 //! `CellValue`、builder、listener 或具体 XLSX 写入器。
 
 use std::path::{Path, PathBuf};
@@ -9,200 +9,17 @@ use crate::{Error, Result};
 
 use super::gzip_record::{GzipRecordReader, GzipRecordSnapshot, GzipRecordWriter};
 
-/// 带逻辑工作表名称的 gzip spill 可观测状态。
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct GzipCellSpillSnapshot {
-    /// spill 所属的逻辑工作表名称。
-    pub sheet_name: String,
-    /// gzip 临时文件路径。
-    pub path: PathBuf,
-    /// 文件是否包含 gzip 魔数。
-    pub is_gzip: bool,
-    /// 压缩后字节数。
-    pub compressed_len: u64,
-    /// 写入压缩器前的字节数。
-    pub uncompressed_len: u64,
-}
+include!("gzip_cell_record/gzip_cell_spill_snapshot.rs");
 
-/// 可写入 gzip spill 的中立单元格值。
-#[derive(Debug, Clone, PartialEq)]
-pub enum GzipCellValue {
-    /// 空值。
-    Empty,
-    /// 文本。
-    Text(String),
-    /// 布尔值。
-    Bool(bool),
-    /// 有符号整数。
-    Int(i64),
-    /// IEEE 754 双精度数。
-    Float(f64),
-    /// 十进制数字符串。
-    Decimal(String),
-    /// ISO 日期字符串。
-    Date(String),
-    /// ISO 日期时间字符串。
-    DateTime(String),
-    /// Excel 错误文本。
-    Error(String),
-    /// 公式表达式。
-    Formula(String),
-    /// 超链接显示值。
-    Hyperlink {
-        /// 目标地址。
-        url: String,
-        /// 显示文本。
-        text: String,
-    },
-    /// 带批注的嵌套值。
-    Comment {
-        /// 被批注修饰的原始单元格值。
-        value: Box<Self>,
-        /// 批注正文。
-        text: String,
-    },
-    /// 图片字节。
-    Image(Vec<u8>),
-    /// 已展平的富文本。
-    RichText(String),
-    /// 单元格值及多张图片。
-    Images {
-        /// 被图片修饰的原始单元格值。
-        value: Box<Self>,
-        /// 图片二进制内容。
-        images: Vec<Vec<u8>>,
-    },
-}
+include!("gzip_cell_record/gzip_cell_value.rs");
 
-/// 中立单元格行 gzip spill 写入器。
-pub struct GzipCellRecordWriter {
-    inner: GzipRecordWriter,
-}
+include!("gzip_cell_record/gzip_cell_record_writer.rs");
 
-impl GzipCellRecordWriter {
-    /// 在指定目录创建 spill 文件。
-    pub fn create(dir: &Path, prefix: &str, suffix: &str) -> Result<Self> {
-        Ok(Self {
-            inner: GzipRecordWriter::create(dir, prefix, suffix)?,
-        })
-    }
+include!("gzip_cell_record/gzip_cell_record_reader.rs");
 
-    /// 创建自持有临时目录的 spill 文件。
-    pub fn create_owned(prefix: &str, suffix: &str) -> Result<Self> {
-        Ok(Self {
-            inner: GzipRecordWriter::create_owned(prefix, suffix)?,
-        })
-    }
+include!("gzip_cell_record/gzip_cell_spill_writer.rs");
 
-    /// 写入一行中立单元格值。
-    pub fn write_row(&mut self, cells: &[GzipCellValue]) -> Result<()> {
-        self.inner.write_record(&encode_row(cells)?)
-    }
-
-    /// 刷新压缩输出。
-    pub fn flush(&mut self) -> Result<()> {
-        self.inner.flush()
-    }
-
-    /// 返回 spill 状态。
-    pub fn snapshot(&mut self) -> Result<GzipRecordSnapshot> {
-        self.inner.snapshot()
-    }
-
-    /// 完成写入并切换到读取阶段。
-    pub fn finish(self) -> Result<GzipCellRecordReader> {
-        Ok(GzipCellRecordReader {
-            inner: self.inner.finish()?,
-        })
-    }
-}
-
-/// 中立单元格行 gzip spill 读取器。
-pub struct GzipCellRecordReader {
-    inner: GzipRecordReader,
-}
-
-/// 绑定逻辑工作表名称的中立 gzip 行 spill 写入器。
-pub struct GzipCellSpillWriter {
-    sheet_name: String,
-    inner: GzipCellRecordWriter,
-}
-
-impl GzipCellSpillWriter {
-    /// 在指定目录创建工作表 spill 文件。
-    pub fn create(
-        dir: &Path,
-        sheet_name: impl Into<String>,
-        prefix: &str,
-        suffix: &str,
-    ) -> Result<Self> {
-        Ok(Self {
-            sheet_name: sheet_name.into(),
-            inner: GzipCellRecordWriter::create(dir, prefix, suffix)?,
-        })
-    }
-
-    /// 创建自持有临时目录的工作表 spill 文件。
-    pub fn create_owned(sheet_name: impl Into<String>, prefix: &str, suffix: &str) -> Result<Self> {
-        Ok(Self {
-            sheet_name: sheet_name.into(),
-            inner: GzipCellRecordWriter::create_owned(prefix, suffix)?,
-        })
-    }
-
-    /// 写入一行中立单元格值。
-    pub fn write_row(&mut self, cells: &[GzipCellValue]) -> Result<()> {
-        self.inner.write_row(cells)
-    }
-
-    /// 刷新压缩输出。
-    pub fn flush(&mut self) -> Result<()> {
-        self.inner.flush()
-    }
-
-    /// 返回当前 spill 状态。
-    pub fn snapshot(&mut self) -> Result<GzipCellSpillSnapshot> {
-        Ok(spill_snapshot(
-            self.sheet_name.clone(),
-            self.inner.snapshot()?,
-        ))
-    }
-
-    /// 完成压缩并切换到读取阶段。
-    pub fn finish(self) -> Result<GzipCellSpillReader> {
-        Ok(GzipCellSpillReader {
-            sheet_name: self.sheet_name,
-            inner: self.inner.finish()?,
-        })
-    }
-}
-
-/// 绑定逻辑工作表名称的中立 gzip 行 spill 读取器。
-pub struct GzipCellSpillReader {
-    sheet_name: String,
-    inner: GzipCellRecordReader,
-}
-
-impl GzipCellSpillReader {
-    /// 打开已有 spill 文件，主要用于恢复或损坏诊断。
-    pub fn open_path(path: impl Into<PathBuf>, sheet_name: impl Into<String>) -> Result<Self> {
-        Ok(Self {
-            sheet_name: sheet_name.into(),
-            inner: GzipCellRecordReader::open_path(path)?,
-        })
-    }
-
-    /// 返回完成后的 spill 状态。
-    #[must_use]
-    pub fn snapshot(&self) -> GzipCellSpillSnapshot {
-        spill_snapshot(self.sheet_name.clone(), self.inner.snapshot())
-    }
-
-    /// 读取下一行；到达 EOF 时返回 `None`。
-    pub fn next_row(&mut self) -> Result<Option<Vec<GzipCellValue>>> {
-        self.inner.next_row()
-    }
-}
+include!("gzip_cell_record/gzip_cell_spill_reader.rs");
 
 fn spill_snapshot(sheet_name: String, snapshot: GzipRecordSnapshot) -> GzipCellSpillSnapshot {
     GzipCellSpillSnapshot {
@@ -211,29 +28,6 @@ fn spill_snapshot(sheet_name: String, snapshot: GzipRecordSnapshot) -> GzipCellS
         is_gzip: snapshot.is_gzip,
         compressed_len: snapshot.compressed_len,
         uncompressed_len: snapshot.uncompressed_len,
-    }
-}
-
-impl GzipCellRecordReader {
-    /// 打开已有 spill 文件。
-    pub fn open_path(path: impl Into<PathBuf>) -> Result<Self> {
-        Ok(Self {
-            inner: GzipRecordReader::open_path(path)?,
-        })
-    }
-
-    /// 返回 spill 状态。
-    #[must_use]
-    pub fn snapshot(&self) -> GzipRecordSnapshot {
-        self.inner.snapshot()
-    }
-
-    /// 读取下一行；到达 EOF 时返回 `None`。
-    pub fn next_row(&mut self) -> Result<Option<Vec<GzipCellValue>>> {
-        self.inner
-            .next_record()?
-            .map(|row| decode_row(&row))
-            .transpose()
     }
 }
 

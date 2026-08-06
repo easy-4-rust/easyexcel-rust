@@ -27,18 +27,21 @@ impl EternalReadCacheSelector {
 
     /// Creates a selector equivalent to Java `readCache(new MapCache())`.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.cache.selector.EternalReadCacheSelector。
     pub const fn map_cache() -> Self {
         Self::new(ReadCacheMode::Memory)
     }
 
     /// 创建固定使用 Moka 对象缓存的选择器。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.cache.selector.EternalReadCacheSelector。
     pub const fn moka() -> Self {
         Self::new(ReadCacheMode::Moka)
     }
 
     /// 创建固定使用临时文件缓存的选择器。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.cache.selector.EternalReadCacheSelector。
     pub const fn file_cache() -> Self {
         Self::new(ReadCacheMode::File)
     }

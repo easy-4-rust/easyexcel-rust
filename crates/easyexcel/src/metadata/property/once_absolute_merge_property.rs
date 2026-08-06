@@ -17,6 +17,7 @@ impl OnceAbsoluteMergeProperty {
     /// Creates a `OnceAbsoluteMergeProperty`. (Java constructor)
     #[allow(clippy::too_many_arguments)]
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.OnceAbsoluteMergeProperty。
     pub const fn new(
         first_row_index: i32,
         last_row_index: i32,

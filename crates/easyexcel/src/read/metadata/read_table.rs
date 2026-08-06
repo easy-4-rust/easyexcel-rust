@@ -11,13 +11,13 @@ pub struct ReadTable {
 }
 
 impl ReadTable {
-    /// Creates a `ReadTable` with table no 0. (Java `new ReadTable()`)
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadTable。 Creates a `ReadTable` with table no 0. (Java `new ReadTable()`)
     #[must_use]
     pub fn new() -> Self {
         Self { table_no: 0 }
     }
 
-    /// Creates a `ReadTable` with the given table no.
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadTable。 Creates a `ReadTable` with the given table no.
     /// (Java `ReadTable(Integer tableNo)`)
     #[must_use]
     pub fn with_table_no(table_no: i32) -> Self {
@@ -26,11 +26,12 @@ impl ReadTable {
 
     /// Returns the zero-based table index. (Java `getTableNo()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadTable。
     pub const fn table_no(&self) -> i32 {
         self.table_no
     }
 
-    /// Sets the zero-based table index. (Java `setTableNo(Integer)`)
+    /// 对应 Java：com.alibaba.excel.read.metadata.ReadTable。 Sets the zero-based table index. (Java `setTableNo(Integer)`)
     pub fn set_table_no(&mut self, table_no: i32) -> &mut Self {
         self.table_no = table_no;
         self

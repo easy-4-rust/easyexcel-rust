@@ -8,7 +8,7 @@ use super::Registry;
 use crate::formula::context::Context;
 use crate::formula::value::Value;
 use easyexcel_model::error::CellError;
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub fn register(r: &mut Registry) {
     for name in EXT_FUNCTIONS {
         r.add(name, 0, super::VARIADIC, false, unsupported);
@@ -22,6 +22,7 @@ fn unsupported(_: &mut dyn Context, _: &[Value]) -> Value {
 
 /// Functions that require external data, a cube/OLAP connection, RTD, or pivot
 /// cache and therefore cannot be evaluated by an offline engine.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const EXT_FUNCTIONS: &[&str] = &[
     "CUBEKPIMEMBER",
     "CUBEMEMBER",

@@ -1,7 +1,7 @@
-//! EasyExcel 样式 metadata 到 BIFF8 样式请求的适配层。
+//! `EasyExcel` 样式 metadata 到 BIFF8 样式请求的适配层。
 //!
 //! FONT、XF、FORMAT 与调色板分配算法位于 `easyexcel-xls`；本模块只负责
-//! 将 Java EasyExcel 对应的 `ExcelCellStyle` / `ExcelFontStyle` 元数据转换为
+//! 将 Java `EasyExcel` 对应的 `ExcelCellStyle` / `ExcelFontStyle` 元数据转换为
 //! 格式无关门面可使用的 BIFF8 请求。
 
 use crate::core::{
@@ -16,7 +16,7 @@ pub use easyexcel_xls::biff8::{
     Biff8VerticalAlignment,
 };
 
-/// 把 EasyExcel 单元格样式合并到 BIFF8 请求。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 把 `EasyExcel` 单元格样式合并到 BIFF8 请求。
 pub(crate) fn apply_excel_cell_style(request: &mut Biff8StyleRequest, style: ExcelCellStyle) {
     if let Some(align) = style.horizontal_alignment {
         request.horizontal_alignment = Some(excel_halign(align));
@@ -53,7 +53,7 @@ pub(crate) fn apply_excel_cell_style(request: &mut Biff8StyleRequest, style: Exc
     }
 }
 
-/// 把 EasyExcel 字体样式合并到 BIFF8 请求。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 把 `EasyExcel` 字体样式合并到 BIFF8 请求。
 pub(crate) fn apply_excel_font_style(request: &mut Biff8StyleRequest, style: ExcelFontStyle) {
     if let Some(name) = style.font_name {
         request.font_name = Some(name.to_owned());
@@ -133,6 +133,7 @@ const fn excel_valign(align: ExcelVerticalAlignment) -> Biff8VerticalAlignment {
     }
 }
 
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) const fn writer_horizontal_alignment(
     align: HorizontalAlignment,
 ) -> Biff8HorizontalAlignment {
@@ -147,6 +148,7 @@ pub(crate) const fn writer_horizontal_alignment(
     }
 }
 
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) const fn writer_vertical_alignment(align: VerticalAlignment) -> Biff8VerticalAlignment {
     match align {
         VerticalAlignment::Top => Biff8VerticalAlignment::Top,

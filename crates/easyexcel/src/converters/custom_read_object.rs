@@ -4,7 +4,7 @@
 use std::any::Any;
 use std::sync::Arc;
 
-/// Type-safe shared value equivalent to Java `EasyExcel`'s reader `customObject`.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Type-safe shared value equivalent to Java `EasyExcel`'s reader `customObject`.
 ///
 /// Java `AnalysisContext.getCustom()` returns `Object`. Rust hides the value
 /// behind an `Arc<dyn Any>` so listeners can downcast back to the original
@@ -13,7 +13,7 @@ use std::sync::Arc;
 pub struct CustomReadObject(Arc<dyn Any + Send + Sync>);
 
 impl CustomReadObject {
-    /// Wraps a value for propagation to every read callback context.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Wraps a value for propagation to every read callback context.
     #[must_use]
     pub fn new<T>(value: T) -> Self
     where

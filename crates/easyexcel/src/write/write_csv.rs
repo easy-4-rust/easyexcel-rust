@@ -17,7 +17,7 @@ fn take_captured_output(output: &CapturedOutput) -> Result<Vec<u8>> {
     output.take().map_err(ExcelError::Io)
 }
 
-/// 使用自定义处理器将类型化行写入 CSV 文件。
+/// 对应 Java：com.alibaba.excel.ExcelWriter。 使用自定义处理器将类型化行写入 CSV 文件。
 ///
 /// # Errors
 ///
@@ -38,7 +38,7 @@ where
     write_csv_to::<T, I>(path, Box::new(file), options, rows, handlers)
 }
 
-/// Writes typed CSV rows to an owned byte stream.
+/// 对应 Java：com.alibaba.excel.ExcelWriter。 Writes typed CSV rows to an owned byte stream.
 ///
 /// `logical_path` is used by write-handler contexts and does not need to exist
 /// on the filesystem. This is the Rust equivalent of Java `EasyExcel`'s
@@ -64,7 +64,7 @@ where
     write_csv_to::<T, I>(logical_path, Box::new(output), options, rows, handlers)
 }
 
-/// Builds a complete CSV document in memory.
+/// 对应 Java：com.alibaba.excel.ExcelWriter。 Builds a complete CSV document in memory.
 ///
 /// This is primarily used when a borrowed output stream must not receive a
 /// partial document if row conversion or a handler fails.

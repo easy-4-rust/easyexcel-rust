@@ -5,26 +5,7 @@
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
-/// Outcome of [`LabelSstRecordHandler::process_label_sst`].
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum LabelSstCell {
-    /// Empty cell when the cache is missing or the index is absent.
-    Empty {
-        /// Zero-based row.
-        row: u32,
-        /// Zero-based column.
-        column: usize,
-    },
-    /// Resolved shared-string cell.
-    String {
-        /// Zero-based row.
-        row: u32,
-        /// Zero-based column.
-        column: usize,
-        /// Resolved text (already trimmed when `auto_trim` was set).
-        value: String,
-    },
-}
+include!("label_sst_record_handler/label_sst_cell.rs");
 
 /// 对应 Java：`LabelSstRecordHandler`.
 #[derive(Debug, Default)]
@@ -33,25 +14,16 @@ pub struct LabelSstRecordHandler {
     pub last_reference: Option<LabelSstReference>,
 }
 
-/// Raw fields carried by a BIFF `LabelSST` record.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct LabelSstReference {
-    /// Zero-based row.
-    pub row: u32,
-    /// Zero-based column.
-    pub column: usize,
-    /// Shared-string table index.
-    pub sst_index: usize,
-}
+include!("label_sst_record_handler/label_sst_reference.rs");
 
 impl LabelSstRecordHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.LabelSstRecordHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Java `LabelSstRecordHandler.processRecord`.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.LabelSstRecordHandler。 Java `LabelSstRecordHandler.processRecord`.
     ///
     /// `resolve` maps SST index → string (`ReadCache.get`); `None` yields empty.
     pub fn process_label_sst(

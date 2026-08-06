@@ -24,7 +24,7 @@ const BLOCK_VERIFIER_INPUT: [u8; 8] = [0xfe, 0xa7, 0xd2, 0x76, 0x3b, 0x4b, 0x9e,
 const BLOCK_VERIFIER_VALUE: [u8; 8] = [0xd7, 0xaa, 0x0f, 0x6d, 0x30, 0x61, 0x34, 0x4e];
 const BLOCK_KEY_VALUE: [u8; 8] = [0x14, 0x6e, 0x0b, 0xe7, 0xab, 0xac, 0xd0, 0xd6];
 
-/// 判断 CFB 容器是否包含加密 OOXML 所需的两个数据流。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 判断 CFB 容器是否包含加密 OOXML 所需的两个数据流。
 #[must_use]
 pub fn is_encrypted_ooxml(bytes: &[u8]) -> bool {
     cfb::CompoundFile::open(Cursor::new(bytes)).is_ok_and(|compound| {
@@ -32,13 +32,13 @@ pub fn is_encrypted_ooxml(bytes: &[u8]) -> bool {
     })
 }
 
-/// 从文件读取并解密 OOXML 包。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 从文件读取并解密 OOXML 包。
 ///
 /// # Errors
 ///
 /// 文件读取失败、容器无效、密码错误或加密方案不受支持时返回错误。
 pub fn decrypt_file(path: &std::path::Path, password: &str) -> Result<Vec<u8>> {
-    decrypt(std::fs::read(path)?, password)
+    decrypt(&std::fs::read(path)?, password)
 }
 
 /// Read a CFB stream by path (e.g. `/EncryptionInfo`) into a byte vector.
@@ -58,7 +58,7 @@ fn read_encryption_info(bytes: &[u8]) -> Result<Vec<u8>> {
     read_stream(&mut comp, "/EncryptionInfo")
 }
 
-/// Human-readable name of the encryption scheme, parsed from `EncryptionInfo`.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Human-readable name of the encryption scheme, parsed from `EncryptionInfo`.
 ///
 /// Used to tell the user *what* protects the file when they haven't supplied a
 /// password.
@@ -76,8 +76,7 @@ pub fn describe_scheme(bytes: &[u8]) -> Result<String> {
             let cipher = attr_in(&xml, "<keyData", "cipherAlgorithm").unwrap_or("AES");
             let bits = attr_in(&xml, "<keyData", "keyBits").unwrap_or("?");
             let mode = attr_in(&xml, "<keyData", "cipherChaining")
-                .map(|c| c.strip_prefix("ChainingMode").unwrap_or(c))
-                .unwrap_or("CBC");
+                .map_or("CBC", |c| c.strip_prefix("ChainingMode").unwrap_or(c));
             let hash = attr_in(&xml, "<keyData", "hashAlgorithm").unwrap_or("?");
             format!("ECMA-376 agile encryption: {cipher}-{bits}-{mode}, {hash}")
         }
@@ -100,9 +99,9 @@ pub fn describe_scheme(bytes: &[u8]) -> Result<String> {
     })
 }
 
-/// Decrypt an encrypted OOXML package, returning the inner ZIP bytes.
-pub fn decrypt(bytes: Vec<u8>, password: &str) -> Result<Vec<u8>> {
-    let mut comp = cfb::CompoundFile::open(Cursor::new(bytes.as_slice()))
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Decrypt an encrypted OOXML package, returning the inner ZIP bytes.
+pub fn decrypt(bytes: &[u8], password: &str) -> Result<Vec<u8>> {
+    let mut comp = cfb::CompoundFile::open(Cursor::new(bytes))
         .map_err(|e| Error::Cfb(format!("not a valid OLE2 container: {e}")))?;
     let info = read_stream(&mut comp, "/EncryptionInfo")?;
     let package = read_stream(&mut comp, "/EncryptedPackage")?;
@@ -183,11 +182,14 @@ fn decrypt_agile(info: &[u8], package: &[u8], password: &str) -> Result<Vec<u8>>
     if package.len() < 8 {
         return Err(Error::Cfb("short EncryptedPackage".into()));
     }
-    let total = u64::from_le_bytes(package[..8].try_into().unwrap()) as usize;
+    let total = usize::try_from(u64::from_le_bytes(package[..8].try_into().unwrap()))
+        .map_err(|_| Error::Cfb("EncryptedPackage length exceeds address space".into()))?;
     let data = &package[8..];
     let mut out = Vec::with_capacity(total);
     for (i, seg) in data.chunks(4096).enumerate() {
-        let mut iv = kd_hash.digest(&[&kd_salt, &(i as u32).to_le_bytes()]);
+        let segment_index = u32::try_from(i)
+            .map_err(|_| Error::Cfb("EncryptedPackage has too many segments".into()))?;
+        let mut iv = kd_hash.digest(&[&kd_salt, &segment_index.to_le_bytes()]);
         iv.truncate(kd_block);
         out.extend_from_slice(&aes_cbc_decrypt(&secret, &iv, seg)?);
     }
@@ -233,7 +235,8 @@ fn decrypt_standard(info: &[u8], package: &[u8], password: &str) -> Result<Vec<u
     if package.len() < 8 {
         return Err(Error::Cfb("short EncryptedPackage".into()));
     }
-    let total = u64::from_le_bytes(package[..8].try_into().unwrap()) as usize;
+    let total = usize::try_from(u64::from_le_bytes(package[..8].try_into().unwrap()))
+        .map_err(|_| Error::Cfb("EncryptedPackage length exceeds address space".into()))?;
     let mut out = aes_ecb_decrypt(&key, &package[8..])?;
     out.truncate(total);
     Ok(out)
@@ -287,25 +290,33 @@ impl HashAlgo {
             HashAlgo::Sha1 => {
                 use sha1::{Digest, Sha1};
                 let mut d = Sha1::new();
-                parts.iter().for_each(|p| d.update(p));
+                for part in parts {
+                    d.update(part);
+                }
                 d.finalize().to_vec()
             }
             HashAlgo::Sha256 => {
                 use sha2::{Digest, Sha256};
                 let mut d = Sha256::new();
-                parts.iter().for_each(|p| d.update(p));
+                for part in parts {
+                    d.update(part);
+                }
                 d.finalize().to_vec()
             }
             HashAlgo::Sha384 => {
                 use sha2::{Digest, Sha384};
                 let mut d = Sha384::new();
-                parts.iter().for_each(|p| d.update(p));
+                for part in parts {
+                    d.update(part);
+                }
                 d.finalize().to_vec()
             }
             HashAlgo::Sha512 => {
                 use sha2::{Digest, Sha512};
                 let mut d = Sha512::new();
-                parts.iter().for_each(|p| d.update(p));
+                for part in parts {
+                    d.update(part);
+                }
                 d.finalize().to_vec()
             }
         }
@@ -374,7 +385,7 @@ impl AesKey {
 
 /// UTF-16LE encode a password.
 fn utf16le(s: &str) -> Vec<u8> {
-    s.encode_utf16().flat_map(|u| u.to_le_bytes()).collect()
+    s.encode_utf16().flat_map(u16::to_le_bytes).collect()
 }
 
 /// Truncate or 0x36-pad a hash output to exactly `n` bytes (the agile key-fit
@@ -407,11 +418,13 @@ fn b64(s: &str) -> Result<Vec<u8>> {
             continue;
         }
         let v = val(c).ok_or_else(|| Error::Cfb("invalid base64 in EncryptionInfo".into()))?;
-        buf = (buf << 6) | v as u32;
+        buf = (buf << 6) | u32::from(v);
         bits += 6;
         if bits >= 8 {
             bits -= 8;
-            out.push((buf >> bits) as u8);
+            let byte = u8::try_from((buf >> bits) & 0xff)
+                .map_err(|_| Error::Cfb("invalid base64 byte".into()))?;
+            out.push(byte);
         }
     }
     Ok(out)
@@ -436,7 +449,7 @@ fn req<'a>(xml: &'a str, after: &str, name: &str) -> Result<&'a str> {
         .ok_or_else(|| Error::Cfb(format!("EncryptionInfo missing {name} on {after}")))
 }
 
-/// Helper for indexing slices with a uniform "short EncryptionInfo" error.
+/// Helper for indexing slices with a uniform "short `EncryptionInfo`" error.
 trait OrShort<T> {
     fn ok_or_short(self) -> Result<T>;
 }

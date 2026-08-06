@@ -1,15 +1,16 @@
 //! 与具体工作簿格式无关的绘图坐标换算。
 
 /// Apache POI `Units.EMU_PER_POINT`。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const EMU_PER_POINT: i32 = 12_700;
 
-/// 将可选点坐标转换为 EMU；缺失坐标按零处理。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将可选点坐标转换为 EMU；缺失坐标按零处理。
 #[must_use]
 pub fn points_to_emu(coordinate: Option<i32>) -> i32 {
     coordinate.unwrap_or_default().saturating_mul(EMU_PER_POINT)
 }
 
-/// 按 Java EasyExcel 优先级解析单元格内坐标。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 按 Java `EasyExcel` 优先级解析单元格内坐标。
 ///
 /// 正数绝对坐标优先；否则相对坐标叠加到当前坐标；两者均缺失时返回当前坐标。
 #[must_use]

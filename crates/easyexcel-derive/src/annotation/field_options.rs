@@ -13,7 +13,7 @@ use super::write::style::{
     parse_field_content_style, parse_field_head_font_style, parse_field_head_style,
 };
 
-/// `ExcelRow` 派生宏支持的字段级属性。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 `ExcelRow` 派生宏支持的字段级属性。
 #[derive(Default)]
 pub(crate) struct FieldOptions {
     /// 是否显式声明了 Java `@ExcelProperty` 等价配置。
@@ -40,7 +40,7 @@ pub(crate) struct FieldOptions {
     pub(crate) extensions: ExtensionOptions,
 }
 
-/// 解析字段级 `#[excel(...)]` 属性。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析字段级 `#[excel(...)]` 属性。
 pub(crate) fn parse_field_options(
     attrs: &[Attribute],
     crate_path: &TokenStream,

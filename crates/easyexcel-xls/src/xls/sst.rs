@@ -81,7 +81,7 @@ impl<'a> SstCursor<'a> {
                 compressed = grbit & 0x01 == 0;
             }
             if compressed {
-                units.push(self.u8() as u16);
+                units.push(u16::from(self.u8()));
             } else {
                 if self.remaining() < 2 {
                     // A UTF-16 unit split across the boundary is malformed for
@@ -96,7 +96,7 @@ impl<'a> SstCursor<'a> {
     }
 }
 
-/// Parse the SST record payload into the table of unique strings.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Parse the SST record payload into the table of unique strings.
 ///
 /// `data` is the merged SST+CONTINUE payload; `breaks` are the byte offsets
 /// where each CONTINUE block started (from [`biff::RawRecord::continue_breaks`]).
@@ -142,7 +142,7 @@ pub fn parse_sst(data: &[u8], breaks: &[usize]) -> Vec<String> {
     out
 }
 
-/// Build SST record bytes (the record body, *without* the 4-byte BIFF header),
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Build SST record bytes (the record body, *without* the 4-byte BIFF header),
 /// splitting into the SST record plus CONTINUE records as needed. Returns a
 /// fully-framed byte stream: `[SST hdr][body...][CONTINUE hdr][more]...`.
 pub fn build_sst_records(strings: &[String], total_refs: u32) -> Vec<u8> {
@@ -164,7 +164,7 @@ pub fn build_sst_records(strings: &[String], total_refs: u32) -> Vec<u8> {
         let chars: Vec<u16> = s.encode_utf16().collect();
         let compressed = chars.iter().all(|&c| c <= 0xFF);
         // String header: cch (u16) + grbit (u8). Keep these together.
-        let grbit: u8 = if compressed { 0x00 } else { 0x01 };
+        let grbit: u8 = u8::from(!compressed);
         framer.push_header(&(chars.len() as u16).to_le_bytes(), grbit);
         // Character payload, which may need a fresh grbit on continuation.
         framer.push_chars(&chars, compressed);
@@ -226,7 +226,7 @@ impl SstFramer {
             if self.room() < unit {
                 // Start a new record; it must lead with a fresh grbit byte.
                 self.flush();
-                self.cur.push(if compressed { 0x00 } else { 0x01 });
+                self.cur.push(u8::from(!compressed));
             }
             // How many units fit in the remaining room?
             let fit = self.room() / unit;
@@ -311,8 +311,8 @@ mod tests {
         data.push(b'b');
         let brk = data.len();
         data.push(0x01); // fresh grbit -> UTF-16
-        data.extend_from_slice(&(b'c' as u16).to_le_bytes());
-        data.extend_from_slice(&(b'd' as u16).to_le_bytes());
+        data.extend_from_slice(&u16::from(b'c').to_le_bytes());
+        data.extend_from_slice(&u16::from(b'd').to_le_bytes());
 
         let parsed = parse_sst(&data, &[brk]);
         assert_eq!(parsed, vec!["abcd".to_string()]);

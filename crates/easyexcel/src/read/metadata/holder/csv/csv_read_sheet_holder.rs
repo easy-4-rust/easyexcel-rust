@@ -17,6 +17,7 @@ impl CsvReadSheetHolder {
     }
     /// Returns the inner holder.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.read.metadata.holder.csv.CsvReadSheetHolder。
     pub const fn inner(&self) -> &ReadSheetHolder {
         &self.inner
     }

@@ -4,6 +4,7 @@
 ///
 /// Java uses POI `FontScript` codes; Rust strips them.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.enums.poi.FontScript。
 pub enum ExcelFontScript {
     /// Normal baseline text.
     None,

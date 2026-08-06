@@ -7,7 +7,7 @@ use crate::constant::excel_xml_constants::{
     SHAREDSTRINGS_RPH_TAG, SHAREDSTRINGS_SI_TAG, SHAREDSTRINGS_T_TAG,
 };
 
-/// SAX state machine for `xl/sharedStrings.xml`.
+/// 对应 Java：com.alibaba.excel.analysis.v07.handlers.sax.SharedStringsTableHandler。 SAX state machine for `xl/sharedStrings.xml`.
 ///
 /// Corresponds to Java `SharedStringsTableHandler` fields
 /// (`currentData`, `currentElementData`, `ignoreTagt`, `isTagt`).
@@ -24,13 +24,13 @@ pub struct SharedStringsTableHandler {
 }
 
 impl SharedStringsTableHandler {
-    /// Creates an empty handler. (Java constructor `SharedStringsTableHandler(ReadCache)`)
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.sax.SharedStringsTableHandler。 Creates an empty handler. (Java constructor `SharedStringsTableHandler(ReadCache)`)
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Java `SharedStringsTableHandler.startElement(...)`.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.sax.SharedStringsTableHandler。 Java `SharedStringsTableHandler.startElement(...)`.
     ///
     /// `local_name` is the unqualified tag (`si` / `t` / `rPh`). Prefixed forms
     /// (`x:si`, `ns2:t`, …) are normalized by the caller via [`local_tag`].
@@ -50,7 +50,7 @@ impl SharedStringsTableHandler {
         }
     }
 
-    /// Java `SharedStringsTableHandler.endElement(...)`.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.sax.SharedStringsTableHandler。 Java `SharedStringsTableHandler.endElement(...)`.
     ///
     /// Returns `Some(decoded)` when a complete `<si>` closes (including empty
     /// string for a missing `<t>`), matching `readCache.put(...)`.
@@ -78,7 +78,7 @@ impl SharedStringsTableHandler {
         }
     }
 
-    /// Java `SharedStringsTableHandler.characters(...)`.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.sax.SharedStringsTableHandler。 Java `SharedStringsTableHandler.characters(...)`.
     pub fn characters(&mut self, ch: &str) {
         if !self.is_tag_t || self.ignore_tag_t {
             return;
@@ -90,14 +90,14 @@ impl SharedStringsTableHandler {
     }
 }
 
-/// Strips XML namespace / `x:` / `ns2:` prefixes so switch arms match Java
+/// 对应 Java：com.alibaba.excel.analysis.v07.handlers.sax.SharedStringsTableHandler。 Strips XML namespace / `x:` / `ns2:` prefixes so switch arms match Java
 /// `ExcelXmlConstants.SHAREDSTRINGS_*` local names.
 #[must_use]
 pub fn local_tag(name: &str) -> &str {
     easyexcel_xlsx::local_tag_name(name)
 }
 
-/// Java `SharedStringsTableHandler.utfDecode(String)` — OOXML `_xHHHH_` escapes
+/// 对应 Java：com.alibaba.excel.analysis.v07.handlers.sax.SharedStringsTableHandler。 Java `SharedStringsTableHandler.utfDecode(String)` — OOXML `_xHHHH_` escapes
 /// (see OOXML §3.18.9 / POI `XSSFRichTextString`).
 ///
 /// # Panics

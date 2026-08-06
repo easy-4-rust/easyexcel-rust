@@ -33,7 +33,7 @@ impl ExcelDownloadErrorBody {
         }
     }
 
-    /// 使用 Java `WebTest` 默认前缀包装底层错误信息。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 使用 Java `WebTest` 默认前缀包装底层错误信息。
     #[must_use]
     pub fn download_failed(error: impl std::fmt::Display) -> Self {
         Self::failure(format!("下载文件失败{error}"))

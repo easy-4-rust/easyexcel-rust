@@ -1,7 +1,7 @@
 //! XLSX 模板来源识别、工作表选择和 OOXML part 定位。
 //!
 //! 本模块只处理路径、魔数、工作簿关系和中立工作表选择，不依赖
-//! EasyExcel builder、listener、annotation 或门面错误类型。
+//! `EasyExcel` builder、listener、annotation 或门面错误类型。
 
 use std::path::Path;
 
@@ -14,7 +14,7 @@ use super::template_xml::attribute_value;
 const WORKBOOK_PATH: &str = "xl/workbook.xml";
 const WORKBOOK_RELS_PATH: &str = "xl/_rels/workbook.xml.rels";
 
-/// 中立工作表选择器。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 中立工作表选择器。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TemplateSheetSelector<'a> {
     /// 第一张工作表。
@@ -25,12 +25,12 @@ pub enum TemplateSheetSelector<'a> {
     Name(&'a str),
 }
 
-impl<'a> TemplateSheetSelector<'a> {
-    /// 判断两个模板工作表选择器是否指向同一逻辑目标。
+impl TemplateSheetSelector<'_> {
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 判断两个模板工作表选择器是否指向同一逻辑目标。
     ///
     /// 未显式选择与零基下标 `0` 都表示第一张工作表；名称只与相同名称等价。
     #[must_use]
-    pub fn equivalent<'b>(self, other: TemplateSheetSelector<'b>) -> bool {
+    pub fn equivalent(self, other: TemplateSheetSelector<'_>) -> bool {
         match (self, other) {
             (
                 TemplateSheetSelector::First | TemplateSheetSelector::Index(0),
@@ -49,11 +49,16 @@ impl<'a> TemplateSheetSelector<'a> {
 
 /// 返回是否配置了模板文件或模板字节。
 #[must_use]
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const fn has_template(template_file: Option<&Path>, template_bytes: Option<&[u8]>) -> bool {
     template_file.is_some() || template_bytes.is_some()
 }
 
-/// 从文件或内存字节载入模板内容。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 从文件或内存字节载入模板内容。
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn load_template_bytes(
     template_file: Option<&Path>,
     template_bytes: Option<&[u8]>,
@@ -69,9 +74,13 @@ pub fn load_template_bytes(
     ))
 }
 
-/// 校验用于 XLSX 生成路径的模板来源。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 校验用于 XLSX 生成路径的模板来源。
 ///
 /// CSV 不是工作簿模板；OLE/BIFF8 模板必须交给 XLS 引擎处理。
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn validate_xlsx_template_source(
     template_file: Option<&Path>,
     template_bytes: Option<&[u8]>,
@@ -101,7 +110,7 @@ pub fn validate_xlsx_template_source(
     Ok(())
 }
 
-/// 按 Java `sheet(index)` / `sheet(name)` 选择规则解析目标工作表。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 按 Java `sheet(index)` / `sheet(name)` 选择规则解析目标工作表。
 #[must_use]
 pub fn resolve_sheet_target(
     sheet_names: &[String],
@@ -124,7 +133,11 @@ pub fn resolve_sheet_target(
     (sheet_names.len(), sheet_name.to_owned(), true)
 }
 
-/// 从工作簿条目解析选择工作表对应的 worksheet part 路径。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 从工作簿条目解析选择工作表对应的 worksheet part 路径。
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn worksheet_path(
     entries: &[OoxmlZipEntry],
     selector: TemplateSheetSelector<'_>,
@@ -182,7 +195,7 @@ pub fn worksheet_path(
         .ok_or_else(|| Error::SheetNotFound(selector_label(selector)))
 }
 
-/// 提取工作簿中按顺序声明的 `(名称, relationship id)`。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 提取工作簿中按顺序声明的 `(名称, relationship id)`。
 #[must_use]
 pub fn workbook_sheets(xml: &str) -> Vec<(String, String)> {
     xml_elements(xml, "sheet")
@@ -195,7 +208,11 @@ pub fn workbook_sheets(xml: &str) -> Vec<(String, String)> {
         .collect()
 }
 
-/// 将 workbook relationship 的 Target 解析为包内绝对路径。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将 workbook relationship 的 Target 解析为包内绝对路径。
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn normalize_workbook_target(target: &str) -> Result<String> {
     if target.starts_with("xl/") {
         normalize_path(target)
@@ -230,7 +247,7 @@ fn workbook_relationship_target<'a>(xml: &'a str, relationship_id: &str) -> Opti
         .and_then(|element| attribute_value(element, "Target"))
 }
 
-/// 迭代指定名称的 XML 起始标签。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 迭代指定名称的 XML 起始标签。
 ///
 /// 该轻量扫描器用于已知 OOXML 元数据标签，不执行通用 XML 解析。
 pub fn xml_elements<'a>(xml: &'a str, name: &'a str) -> impl Iterator<Item = &'a str> {

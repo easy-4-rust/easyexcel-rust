@@ -11,9 +11,11 @@ use crate::{
     WriteConverterContext,
 };
 
+/// 对应 Java：com.alibaba.excel.converters.date。
 pub(crate) const DEFAULT_DATE_FORMAT: &str = "yyyy-MM-dd";
+/// 对应 Java：com.alibaba.excel.converters.date。
 pub(crate) const DEFAULT_DATETIME_FORMAT: &str = "yyyy-MM-dd HH:mm:ss";
-
+/// 对应 Java：com.alibaba.excel.converters.date。
 pub(crate) fn read_date(context: &ReadConverterContext<'_>) -> Result<NaiveDate, ExcelError> {
     if let Some(CellValue::String(value)) = context.cell() {
         let patterns = context
@@ -34,7 +36,7 @@ pub(crate) fn read_date(context: &ReadConverterContext<'_>) -> Result<NaiveDate,
     }
     NaiveDate::from_excel_cell(context.cell(), context.convert_context())
 }
-
+/// 对应 Java：com.alibaba.excel.converters.date。
 pub(crate) fn read_datetime(
     context: &ReadConverterContext<'_>,
 ) -> Result<NaiveDateTime, ExcelError> {
@@ -69,7 +71,7 @@ pub(crate) fn read_datetime(
     }
     NaiveDateTime::from_excel_cell(context.cell(), context.convert_context())
 }
-
+/// 对应 Java：com.alibaba.excel.converters.date。
 pub(crate) fn write_date_value(
     value: NaiveDate,
     context: &WriteConverterContext<'_, NaiveDate>,
@@ -82,7 +84,7 @@ pub(crate) fn write_date_value(
     );
     cell
 }
-
+/// 对应 Java：com.alibaba.excel.converters.date。
 pub(crate) fn write_datetime_value<T>(
     value: NaiveDateTime,
     context: &WriteConverterContext<'_, T>,
@@ -95,7 +97,7 @@ pub(crate) fn write_datetime_value<T>(
     );
     cell
 }
-
+/// 对应 Java：com.alibaba.excel.converters.date。
 pub(crate) fn write_date_string(
     value: NaiveDate,
     context: &WriteConverterContext<'_, NaiveDate>,
@@ -110,7 +112,7 @@ pub(crate) fn write_date_string(
             .to_string(),
     )
 }
-
+/// 对应 Java：com.alibaba.excel.converters.date。
 pub(crate) fn write_datetime_string<T>(
     value: NaiveDateTime,
     context: &WriteConverterContext<'_, T>,
@@ -125,7 +127,7 @@ pub(crate) fn write_datetime_string<T>(
             .to_string(),
     )
 }
-
+/// 对应 Java：com.alibaba.excel.converters.date。
 pub(crate) fn format_number_as_datetime_string(
     context: &ReadConverterContext<'_>,
     pattern: &str,

@@ -7,6 +7,7 @@
 /// single `ExcelColor` enum and offers `java_or_rgb` to apply the historical
 /// rule "`<= 64` is a palette index".
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.enums.poi.IndexedColors。
 pub enum ExcelColor {
     /// A Java `EasyExcel` / Apache POI indexed palette color. (Java `IndexedColors.shortValue`)
     Indexed(u8),
@@ -17,6 +18,7 @@ pub enum ExcelColor {
 impl ExcelColor {
     /// Interprets Java palette indexes `0..=64` as indexed colors and larger values as RGB.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.enums.poi.IndexedColors。
     pub const fn java_or_rgb(value: u32) -> Self {
         if value <= 64 {
             // Java palette indexes fit into a single `u8`.

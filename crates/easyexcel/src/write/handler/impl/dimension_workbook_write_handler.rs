@@ -15,11 +15,12 @@ pub struct DimensionWorkbookWriteHandler {
 impl DimensionWorkbookWriteHandler {
     /// Creates the handler.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.impl.DimensionWorkbookWriteHandler。
     pub const fn new() -> Self {
         Self { last_ref: None }
     }
 
-    /// Returns the last written dimension reference. (Java `getDimension()` step)
+    /// 对应 Java：com.alibaba.excel.write.handler.impl.DimensionWorkbookWriteHandler。 Returns the last written dimension reference. (Java `getDimension()` step)
     #[must_use]
     pub fn last_ref(&self) -> Option<&str> {
         self.last_ref.as_deref()

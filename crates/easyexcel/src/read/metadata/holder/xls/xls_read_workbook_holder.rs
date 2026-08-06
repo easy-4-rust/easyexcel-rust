@@ -19,7 +19,7 @@ impl XlsReadWorkbookHolder {
         }
     }
 
-    /// Creates the format-specific holder from resolved workbook options.
+    /// 对应 Java：com.alibaba.excel.read.metadata.holder.xls.XlsReadWorkbookHolder。 Creates the format-specific holder from resolved workbook options.
     #[must_use]
     pub fn from_options(options: &crate::ReadOptions) -> Self {
         Self {
@@ -30,17 +30,20 @@ impl XlsReadWorkbookHolder {
 
     /// Returns the inner holder.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.read.metadata.holder.xls.XlsReadWorkbookHolder。
     pub const fn inner(&self) -> &ReadWorkbookHolder {
         &self.inner
     }
 
     /// Returns mutable common workbook state.
+    /// 对应 Java：com.alibaba.excel.read.metadata.holder.xls.XlsReadWorkbookHolder。
     pub const fn inner_mut(&mut self) -> &mut ReadWorkbookHolder {
         &mut self.inner
     }
 
     /// Returns whether the main record pass should process worksheet data.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.read.metadata.holder.xls.XlsReadWorkbookHolder。
     pub const fn need_read_sheet(&self) -> bool {
         self.need_read_sheet
     }
@@ -48,6 +51,7 @@ impl XlsReadWorkbookHolder {
     /// Controls worksheet-data processing.
     ///
     /// Java `XlsListSheetListener` disables it during its metadata-only pass.
+    /// 对应 Java：com.alibaba.excel.read.metadata.holder.xls.XlsReadWorkbookHolder。
     pub const fn set_need_read_sheet(&mut self, need_read_sheet: bool) {
         self.need_read_sheet = need_read_sheet;
     }

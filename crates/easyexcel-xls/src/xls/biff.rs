@@ -1,6 +1,6 @@
 //! Low-level BIFF8 record primitives shared by the reader and writer:
 //! record-type constants, a record iterator with CONTINUE merging, and the
-//! XLUnicodeString codec (including the per-CONTINUE-boundary grbit rule).
+//! `XLUnicodeString` codec (including the per-CONTINUE-boundary grbit rule).
 
 // ---- Record type constants -------------------------------------------------
 
@@ -15,97 +15,42 @@ pub use crate::biff8::record_sid::{
 };
 
 /// Substream type for the workbook globals.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const DT_GLOBALS: u16 = 0x0005;
 /// Substream type for a worksheet.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const DT_WORKSHEET: u16 = 0x0010;
 
 /// BIFF8 version word.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const BIFF8_VERSION: u16 = 0x0600;
 
 /// Maximum data payload for a single record (excluding the 4-byte header).
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const MAX_RECORD_DATA: usize = 8224;
 
 // ---- Reader: raw record iteration ------------------------------------------
 
-/// A single parsed BIFF record (CONTINUE records already merged in by
-/// [`Records`] for records that carry overflow data).
-pub struct RawRecord {
-    pub typ: u16,
-    pub data: Vec<u8>,
-    /// For SST specifically we need to know where each CONTINUE boundary fell
-    /// in the merged byte stream, because the grbit byte restarts there. This
-    /// holds the byte offset (within `data`) at which each continuation block
-    /// began. Empty for records with no continuation.
-    pub continue_breaks: Vec<usize>,
-}
+include!("biff/raw_record.rs");
 
-/// Iterator over BIFF records in a byte buffer. CONTINUE (0x003C) records are
-/// automatically appended to the preceding record's data, and their boundary
-/// offsets recorded in `continue_breaks`.
-pub struct Records<'a> {
-    buf: &'a [u8],
-    pos: usize,
-}
-
-impl<'a> Records<'a> {
-    pub fn new(buf: &'a [u8]) -> Self {
-        Records { buf, pos: 0 }
-    }
-
-    fn read_header(&self, at: usize) -> Option<(u16, usize)> {
-        if at + 4 > self.buf.len() {
-            return None;
-        }
-        let typ = u16::from_le_bytes([self.buf[at], self.buf[at + 1]]);
-        let len = u16::from_le_bytes([self.buf[at + 2], self.buf[at + 3]]) as usize;
-        Some((typ, len))
-    }
-}
-
-impl<'a> Iterator for Records<'a> {
-    type Item = RawRecord;
-
-    fn next(&mut self) -> Option<RawRecord> {
-        let (typ, len) = self.read_header(self.pos)?;
-        let data_start = self.pos + 4;
-        let data_end = (data_start + len).min(self.buf.len());
-        let mut data = self.buf[data_start..data_end].to_vec();
-        self.pos = data_end;
-
-        // Merge any following CONTINUE records.
-        let mut continue_breaks = Vec::new();
-        while let Some((next_typ, next_len)) = self.read_header(self.pos) {
-            if next_typ != CONTINUE {
-                break;
-            }
-            let cstart = self.pos + 4;
-            let cend = (cstart + next_len).min(self.buf.len());
-            continue_breaks.push(data.len());
-            data.extend_from_slice(&self.buf[cstart..cend]);
-            self.pos = cend;
-        }
-
-        Some(RawRecord {
-            typ,
-            data,
-            continue_breaks,
-        })
-    }
-}
+include!("biff/records.rs");
 
 // ---- Little-endian read helpers --------------------------------------------
 
 #[inline]
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub fn u16le(d: &[u8], off: usize) -> u16 {
     u16::from_le_bytes([d[off], d[off + 1]])
 }
 
 #[inline]
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub fn u32le(d: &[u8], off: usize) -> u32 {
     u32::from_le_bytes([d[off], d[off + 1], d[off + 2], d[off + 3]])
 }
 
 #[inline]
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub fn f64le(d: &[u8], off: usize) -> f64 {
     let mut b = [0u8; 8];
     b.copy_from_slice(&d[off..off + 8]);
@@ -114,7 +59,7 @@ pub fn f64le(d: &[u8], off: usize) -> f64 {
 
 // ---- RK decode -------------------------------------------------------------
 
-/// Decode the 4-byte RK encoded numeric value.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Decode the 4-byte RK encoded numeric value.
 ///
 /// bit0 (0x01): the (already-decoded) value was multiplied by 100.
 /// bit1 (0x02): integer (value = encoded >> 2) vs double (top 30 bits are the
@@ -124,11 +69,11 @@ pub fn decode_rk(rk: u32) -> f64 {
     let is_int = rk & 0x02 != 0;
     let mut value = if is_int {
         // Arithmetic shift right by 2 (sign-extending), dropping the 2 flag bits.
-        ((rk as i32) >> 2) as f64
+        f64::from((rk as i32) >> 2)
     } else {
         // The encoded 32 bits, with the low 2 flag bits cleared, are the high
         // 32 bits of a 64-bit IEEE-754 double; the low 32 bits are zero.
-        let bits = ((rk & 0xFFFF_FFFC) as u64) << 32;
+        let bits = u64::from(rk & 0xFFFF_FFFC) << 32;
         f64::from_bits(bits)
     };
     if div100 {
@@ -137,7 +82,7 @@ pub fn decode_rk(rk: u32) -> f64 {
     value
 }
 
-/// Try to encode an f64 as an RK value (lossless only). Returns `None` if the
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Try to encode an f64 as an RK value (lossless only). Returns `None` if the
 /// number cannot be represented exactly in RK form (the caller should then emit
 /// a full NUMBER record).
 pub fn encode_rk(v: f64) -> Option<u32> {
@@ -165,7 +110,7 @@ pub fn encode_rk(v: f64) -> Option<u32> {
 
 // ---- XLUnicodeString codec -------------------------------------------------
 
-/// Encode a string as a full BIFF8 XLUnicodeString (2-byte char count + grbit +
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Encode a string as a full BIFF8 `XLUnicodeString` (2-byte char count + grbit +
 /// chars). Chooses compressed (latin1) when every char is <= 0xFF.
 pub fn encode_unicode_string(s: &str) -> Vec<u8> {
     let chars: Vec<u16> = s.encode_utf16().collect();
@@ -186,7 +131,7 @@ pub fn encode_unicode_string(s: &str) -> Vec<u8> {
     out
 }
 
-/// Encode a string as a *short* XLUnicodeString (1-byte char count), used by
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Encode a string as a *short* `XLUnicodeString` (1-byte char count), used by
 /// BOUNDSHEET sheet names. Char count is clamped to 255.
 pub fn encode_short_unicode_string(s: &str) -> Vec<u8> {
     let chars: Vec<u16> = s.encode_utf16().take(255).collect();
@@ -207,7 +152,7 @@ pub fn encode_short_unicode_string(s: &str) -> Vec<u8> {
     out
 }
 
-/// Parse a short XLUnicodeString (1-byte char count) at `off`. Returns the
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Parse a short `XLUnicodeString` (1-byte char count) at `off`. Returns the
 /// string and the offset just past it.
 pub fn parse_short_unicode_string(d: &[u8], off: usize) -> (String, usize) {
     if off >= d.len() {

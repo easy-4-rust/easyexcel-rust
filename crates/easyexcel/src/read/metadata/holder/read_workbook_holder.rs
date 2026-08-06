@@ -54,13 +54,13 @@ impl ReadWorkbookHolder {
         }
     }
 
-    /// Returns format-discovered sheets in workbook order.
+    /// 对应 Java：com.alibaba.excel.read.metadata.holder.ReadWorkbookHolder。 Returns format-discovered sheets in workbook order.
     #[must_use]
     pub fn actual_sheet_data_list(&self) -> Option<&[ReadSheet]> {
         self.actual_sheet_data_list.as_deref()
     }
 
-    /// Stores format-discovered sheets.
+    /// 对应 Java：com.alibaba.excel.read.metadata.holder.ReadWorkbookHolder。 Stores format-discovered sheets.
     pub fn set_actual_sheet_data_list(&mut self, sheets: Vec<ReadSheet>) {
         self.actual_sheet_data_list = Some(sheets);
     }

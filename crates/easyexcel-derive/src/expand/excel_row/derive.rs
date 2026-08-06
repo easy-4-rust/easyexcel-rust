@@ -10,7 +10,7 @@ use crate::crate_path::easyexcel_path;
 use super::field_expansion::expand_field;
 use super::trait_impl::{ExpansionParts, render_trait_impl};
 
-/// 解析调用方令牌并生成 `ExcelRow` 实现。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析调用方令牌并生成 `ExcelRow` 实现。
 pub(crate) fn expand_excel_row_tokens(
     input: proc_macro2::TokenStream,
 ) -> syn::Result<proc_macro2::TokenStream> {

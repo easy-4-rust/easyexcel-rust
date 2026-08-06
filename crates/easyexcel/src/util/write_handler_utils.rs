@@ -11,7 +11,7 @@ use crate::{
     WriteRowContext, WriteSheetContext, WriteWorkbookContext,
 };
 
-/// Creates a workbook callback context from the live Java-style write context.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Creates a workbook callback context from the live Java-style write context.
 #[must_use]
 pub fn create_workbook_write_handler_context(
     write_context: &dyn WriteContext,
@@ -19,7 +19,7 @@ pub fn create_workbook_write_handler_context(
     WriteWorkbookContext::from_write_context(write_context)
 }
 
-/// Creates a compatibility workbook callback context from an output path.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Creates a compatibility workbook callback context from an output path.
 #[must_use]
 pub fn create_workbook_write_handler_context_from_path(
     path: impl Into<PathBuf>,
@@ -27,7 +27,7 @@ pub fn create_workbook_write_handler_context_from_path(
     WriteWorkbookContext::new(path)
 }
 
-/// Dispatches Java `beforeWorkbookCreate`.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Dispatches Java `beforeWorkbookCreate`.
 ///
 /// # Errors
 ///
@@ -42,7 +42,7 @@ pub fn before_workbook_create(
     Ok(())
 }
 
-/// Dispatches Java `afterWorkbookCreate`.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Dispatches Java `afterWorkbookCreate`.
 ///
 /// # Errors
 ///
@@ -57,7 +57,7 @@ pub fn after_workbook_create(
     Ok(())
 }
 
-/// Dispatches Java `afterWorkbookDispose`.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Dispatches Java `afterWorkbookDispose`.
 ///
 /// # Errors
 ///
@@ -72,7 +72,7 @@ pub fn after_workbook_dispose(
     Ok(())
 }
 
-/// Creates a sheet callback context from the live Java-style write context.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Creates a sheet callback context from the live Java-style write context.
 ///
 /// # Errors
 ///
@@ -84,7 +84,7 @@ pub fn create_sheet_write_handler_context(
         .ok_or_else(|| ExcelError::Format("write context has no active sheet holder".to_owned()))
 }
 
-/// Creates a compatibility sheet callback context from a worksheet name.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Creates a compatibility sheet callback context from a worksheet name.
 #[must_use]
 pub fn create_sheet_write_handler_context_from_name(
     sheet_name: impl Into<String>,
@@ -92,7 +92,7 @@ pub fn create_sheet_write_handler_context_from_name(
     WriteSheetContext::new(sheet_name)
 }
 
-/// Dispatches Java `beforeSheetCreate`.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Dispatches Java `beforeSheetCreate`.
 ///
 /// # Errors
 ///
@@ -107,7 +107,7 @@ pub fn before_sheet_create(
     Ok(())
 }
 
-/// Dispatches Java `afterSheetCreate`.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Dispatches Java `afterSheetCreate`.
 ///
 /// # Errors
 ///
@@ -122,7 +122,7 @@ pub fn after_sheet_create(
     Ok(())
 }
 
-/// Creates a row callback context from the live Java-style write context.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Creates a row callback context from the live Java-style write context.
 ///
 /// # Errors
 ///
@@ -143,7 +143,7 @@ pub fn create_row_write_handler_context(
     )
 }
 
-/// Creates a compatibility row callback context from a worksheet name.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Creates a compatibility row callback context from a worksheet name.
 #[must_use]
 pub fn create_row_write_handler_context_from_sheet(
     sheet_name: impl Into<String>,
@@ -154,7 +154,7 @@ pub fn create_row_write_handler_context_from_sheet(
     WriteRowContext::new(sheet_name, row_index, relative_row_index, is_head)
 }
 
-/// Dispatches Java `beforeRowCreate`.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Dispatches Java `beforeRowCreate`.
 ///
 /// # Errors
 ///
@@ -169,7 +169,7 @@ pub fn before_row_create(
     Ok(())
 }
 
-/// Dispatches Java `afterRowCreate`.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Dispatches Java `afterRowCreate`.
 ///
 /// # Errors
 ///
@@ -184,7 +184,7 @@ pub fn after_row_create(
     Ok(())
 }
 
-/// Dispatches Java `afterRowDispose`.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Dispatches Java `afterRowDispose`.
 ///
 /// # Errors
 ///
@@ -199,7 +199,7 @@ pub fn after_row_dispose(
     Ok(())
 }
 
-/// Creates a cell callback context from the live Java-style write context.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Creates a cell callback context from the live Java-style write context.
 ///
 /// # Errors
 ///
@@ -232,7 +232,7 @@ pub fn create_cell_write_handler_context(
     .with_write_context(write_context))
 }
 
-/// Creates a compatibility cell callback context from a worksheet name.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Creates a compatibility cell callback context from a worksheet name.
 #[must_use]
 #[allow(clippy::too_many_arguments)]
 pub fn create_cell_write_handler_context_from_sheet(
@@ -256,7 +256,7 @@ pub fn create_cell_write_handler_context_from_sheet(
     context
 }
 
-/// Dispatches Java `beforeCellCreate`.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Dispatches Java `beforeCellCreate`.
 ///
 /// # Errors
 ///
@@ -271,7 +271,7 @@ pub fn before_cell_create(
     Ok(())
 }
 
-/// Dispatches Java `afterCellCreate`.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Dispatches Java `afterCellCreate`.
 ///
 /// # Errors
 ///
@@ -286,7 +286,7 @@ pub fn after_cell_create(
     Ok(())
 }
 
-/// Finalizes converted cell metadata and dispatches Java
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Finalizes converted cell metadata and dispatches Java
 /// `afterCellDataConverted` for content cells.
 ///
 /// # Errors
@@ -307,7 +307,7 @@ pub fn after_cell_data_converted(
     Ok(())
 }
 
-/// Dispatches Java `afterCellDispose`.
+/// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Dispatches Java `afterCellDispose`.
 ///
 /// # Errors
 ///

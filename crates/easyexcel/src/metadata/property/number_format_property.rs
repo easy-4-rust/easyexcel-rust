@@ -2,7 +2,7 @@
 
 pub use easyexcel_format::NumberRoundingMode;
 
-/// Number format metadata from `@NumberFormat`.
+/// 对应 Java：com.alibaba.excel.metadata.property.NumberFormatProperty。 Number format metadata from `@NumberFormat`.
 ///
 /// Rust port of Java `NumberFormatProperty`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -14,7 +14,7 @@ pub struct NumberFormatProperty {
 }
 
 impl NumberFormatProperty {
-    /// Creates a number format property. (Java constructor)
+    /// 对应 Java：com.alibaba.excel.metadata.property.NumberFormatProperty。 Creates a number format property. (Java constructor)
     #[must_use]
     pub fn new(format: impl Into<String>, rounding_mode: impl Into<NumberRoundingMode>) -> Self {
         Self {
@@ -23,7 +23,7 @@ impl NumberFormatProperty {
         }
     }
 
-    /// Builds from annotation values. (Java `build(NumberFormat)`)
+    /// 对应 Java：com.alibaba.excel.metadata.property.NumberFormatProperty。 Builds from annotation values. (Java `build(NumberFormat)`)
     #[must_use]
     pub fn build(format: Option<&str>, rounding_mode: Option<NumberRoundingMode>) -> Option<Self> {
         format.map(|format| Self {
@@ -32,7 +32,7 @@ impl NumberFormatProperty {
         })
     }
 
-    /// Returns the format pattern. (Java `getFormat()`)
+    /// 对应 Java：com.alibaba.excel.metadata.property.NumberFormatProperty。 Returns the format pattern. (Java `getFormat()`)
     #[must_use]
     pub fn format(&self) -> &str {
         &self.format
@@ -40,6 +40,7 @@ impl NumberFormatProperty {
 
     /// Returns the rounding mode. (Java `getRoundingMode()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.NumberFormatProperty。
     pub const fn rounding_mode(&self) -> NumberRoundingMode {
         self.rounding_mode
     }

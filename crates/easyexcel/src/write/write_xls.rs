@@ -15,7 +15,7 @@ use crate::write::excel_writer_core::{
 use crate::write::write_options::WriteOptions;
 use crate::write::xls_adapter::Biff8Book;
 
-/// 将类型化行写入 BIFF8 (`.xls`) 文件。
+/// 对应 Java：com.alibaba.excel.ExcelWriter。 将类型化行写入 BIFF8 (`.xls`) 文件。
 ///
 /// # Errors
 ///
@@ -28,7 +28,7 @@ where
     write_xls_with_handlers(path, options, rows, &mut [])
 }
 
-/// Writes typed rows to a BIFF8 file while invoking ordered write handlers.
+/// 对应 Java：com.alibaba.excel.ExcelWriter。 Writes typed rows to a BIFF8 file while invoking ordered write handlers.
 ///
 /// When [`WriteOptions`] carries a template, uses
 /// the `easyexcel-xls` BIFF8 template engine (Java `withTemplate` + `doWrite` on HSSF).
@@ -74,7 +74,7 @@ where
     Ok(())
 }
 
-/// Writes typed rows as BIFF8 bytes to an arbitrary writer.
+/// 对应 Java：com.alibaba.excel.ExcelWriter。 Writes typed rows as BIFF8 bytes to an arbitrary writer.
 ///
 /// # Errors
 ///

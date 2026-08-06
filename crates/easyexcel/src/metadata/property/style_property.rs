@@ -15,6 +15,7 @@ pub struct StyleProperty {
 impl StyleProperty {
     /// Creates a `StyleProperty`. (Java constructor)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.StyleProperty。
     pub const fn new(cell_style: ExcelCellStyle) -> Self {
         Self { cell_style }
     }

@@ -4,7 +4,7 @@ use actix_web::HttpResponse;
 use easyexcel::core::{ExcelDownloadErrorBody, Result};
 use easyexcel::{EasyExcel, ExcelRow};
 
-/// 将 [`ExcelRow`] 行序列化为 XLSX 字节数组。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将 [`ExcelRow`] 行序列化为 XLSX 字节数组。
 ///
 /// # Errors
 ///
@@ -22,7 +22,7 @@ where
     Ok(buffer)
 }
 
-/// 由 XLSX 字节构建 Actix 附件响应。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 由 XLSX 字节构建 Actix 附件响应。
 #[must_use]
 pub fn excel_download_response_from_bytes(file_name: &str, bytes: Vec<u8>) -> HttpResponse {
     let (content_type, content_disposition) =
@@ -36,7 +36,7 @@ pub fn excel_download_response_from_bytes(file_name: &str, bytes: Vec<u8>) -> Ht
         .body(bytes)
 }
 
-/// 一步完成写入并返回 Actix XLSX 附件响应。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 一步完成写入并返回 Actix XLSX 附件响应。
 ///
 /// # Errors
 ///
@@ -54,7 +54,7 @@ where
     Ok(excel_download_response_from_bytes(file_name, bytes))
 }
 
-/// 下载失败时返回 JSON 体。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 下载失败时返回 JSON 体。
 ///
 /// `ExcelDownloadErrorBody` 按值传入以对齐 Java 的 `errorResponse(body)` 语义，
 /// 函数只读该值，按值传递属于 API 契约的一部分，故豁免 `needless_pass_by_value`。
@@ -68,7 +68,7 @@ pub fn excel_download_error_response(body: ExcelDownloadErrorBody) -> HttpRespon
         }))
 }
 
-/// 尝试生成 XLSX 附件；失败时自动降级为 JSON 错误体。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 尝试生成 XLSX 附件；失败时自动降级为 JSON 错误体。
 #[must_use]
 pub fn excel_download_or_json_response<T, I>(
     file_name: &str,

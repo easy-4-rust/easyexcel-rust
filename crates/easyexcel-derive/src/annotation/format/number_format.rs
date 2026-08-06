@@ -4,7 +4,7 @@ use syn::meta::ParseNestedMeta;
 
 use crate::annotation::field_options::FieldOptions;
 
-/// 解析数字格式与舍入模式。
+/// 对应 Java：com.alibaba.excel.annotation.format.NumberFormat。 解析数字格式与舍入模式。
 pub(crate) fn parse(meta: &ParseNestedMeta<'_>, options: &mut FieldOptions) -> syn::Result<bool> {
     if meta.path.is_ident("number_format") {
         options.number_format = Some(meta.value()?.parse()?);

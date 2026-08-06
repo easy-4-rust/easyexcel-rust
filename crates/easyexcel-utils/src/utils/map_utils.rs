@@ -7,7 +7,7 @@ use std::collections::{BTreeMap, HashMap};
 /// 将键值引用转换为拥有所有权的字符串映射。
 ///
 /// 该算法对应 Java `ConverterUtils#convertToStringMap` 使用的通用映射步骤，
-/// 不依赖 EasyExcel 单元格、注解或转换器类型，因此由基础工具 crate 统一维护。
+/// 不依赖 `EasyExcel` 单元格、注解或转换器类型，因此由基础工具 crate 统一维护。
 #[must_use]
 pub fn to_string_map<'a, K, V, I>(entries: I) -> HashMap<String, String>
 where
@@ -21,7 +21,7 @@ where
         .collect()
 }
 
-/// Stand-in for Java's `LinkedHashMap`.
+/// 对应 Java：com.alibaba.excel.util.MapUtils。 Stand-in for Java's `LinkedHashMap`.
 ///
 /// `std::collections` has no exact `LinkedHashMap` (it was removed from
 /// the std prelude long ago). For an Excel writer the insertion order
@@ -34,13 +34,13 @@ pub struct LinkedHashMap<K, V> {
 }
 
 impl<K: PartialEq, V> LinkedHashMap<K, V> {
-    /// Creates an empty map.
+    /// 对应 Java：com.alibaba.excel.util.MapUtils。 Creates an empty map.
     #[must_use]
     pub fn new() -> Self {
         Self { inner: Vec::new() }
     }
 
-    /// Creates an empty map with the given capacity.
+    /// 对应 Java：com.alibaba.excel.util.MapUtils。 Creates an empty map with the given capacity.
     #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
@@ -55,31 +55,31 @@ impl<K: PartialEq, V> Default for LinkedHashMap<K, V> {
     }
 }
 
-/// Mirrors `org.apache.commons.collections4.MapUtils#newHashMap`.
+/// 对应 Java：com.alibaba.excel.util.MapUtils。 Mirrors `org.apache.commons.collections4.MapUtils#newHashMap`.
 #[must_use]
 pub fn new_hash_map<K, V>() -> HashMap<K, V> {
     HashMap::new()
 }
 
-/// Mirrors `com.google.common.collect.Maps#newHashMapWithExpectedSize`.
+/// 对应 Java：com.alibaba.excel.util.MapUtils。 Mirrors `com.google.common.collect.Maps#newHashMapWithExpectedSize`.
 #[must_use]
 pub fn new_hash_map_with_expected_size<K, V>(expected_size: usize) -> HashMap<K, V> {
     HashMap::with_capacity(expected_size)
 }
 
-/// Mirrors `org.apache.commons.collections4.MapUtils#newTreeMap`.
+/// 对应 Java：com.alibaba.excel.util.MapUtils。 Mirrors `org.apache.commons.collections4.MapUtils#newTreeMap`.
 #[must_use]
 pub fn new_tree_map<K, V>() -> BTreeMap<K, V> {
     BTreeMap::new()
 }
 
-/// Mirrors `org.apache.commons.collections4.MapUtils#newLinkedHashMap`.
+/// 对应 Java：com.alibaba.excel.util.MapUtils。 Mirrors `org.apache.commons.collections4.MapUtils#newLinkedHashMap`.
 #[must_use]
 pub fn new_linked_hash_map<K: PartialEq, V>() -> LinkedHashMap<K, V> {
     LinkedHashMap::new()
 }
 
-/// Mirrors `com.google.common.collect.Maps#newLinkedHashMapWithExpectedSize`.
+/// 对应 Java：com.alibaba.excel.util.MapUtils。 Mirrors `com.google.common.collect.Maps#newLinkedHashMapWithExpectedSize`.
 #[must_use]
 pub fn new_linked_hash_map_with_expected_size<K: PartialEq, V>(
     expected_size: usize,

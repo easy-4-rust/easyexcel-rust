@@ -1,6 +1,6 @@
 //! Scientific-notation rendering mode for extreme General-format numbers.
 
-/// Controls how General-format extreme numbers are displayed while reading.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Controls how General-format extreme numbers are displayed while reading.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ScientificFormatMode {
     /// Match Java `EasyExcel`'s default and avoid scientific notation.
@@ -11,6 +11,7 @@ pub enum ScientificFormatMode {
 }
 
 impl ScientificFormatMode {
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub(crate) const fn is_enabled(self) -> bool {
         matches!(self, Self::Scientific)
     }

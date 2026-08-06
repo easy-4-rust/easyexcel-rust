@@ -13,7 +13,7 @@ use easyexcel_model::{Cell, Sheet, Workbook};
 
 use super::CsvCharset;
 
-/// Resolve a Java/WHATWG charset label to the encoding used by the CSV engine.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Resolve a Java/WHATWG charset label to the encoding used by the CSV engine.
 ///
 /// # Errors
 ///
@@ -23,7 +23,7 @@ pub fn resolve_encoding(charset: &CsvCharset) -> Result<&'static Encoding> {
         .ok_or_else(|| Error::Unsupported(format!("unsupported CSV charset: {}", charset.name())))
 }
 
-/// Wrap a byte reader with streaming BOM removal and UTF-8 transcoding.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Wrap a byte reader with streaming BOM removal and UTF-8 transcoding.
 ///
 /// The returned reader does not buffer the entire CSV document. This keeps the
 /// facade's listener-based CSV path suitable for large inputs while locating
@@ -43,46 +43,11 @@ pub fn decode_reader<R: Read>(
         .build(reader))
 }
 
-/// Options controlling CSV reading.
-#[derive(Debug, Clone)]
-pub struct CsvReadOptions {
-    /// Field delimiter. `None` triggers auto-detection (`,`, `;`, `\t`, `|`).
-    pub delimiter: Option<u8>,
-    /// Infer cell types (numbers, ISO dates, booleans) instead of all-text.
-    pub infer_types: bool,
-    /// Sheet name to use for the imported data.
-    pub sheet_name: String,
-}
+include!("codec/csv_read_options.rs");
 
-impl Default for CsvReadOptions {
-    fn default() -> Self {
-        CsvReadOptions {
-            delimiter: None,
-            infer_types: true,
-            sheet_name: "Sheet1".to_string(),
-        }
-    }
-}
+include!("codec/csv_write_options.rs");
 
-/// Options controlling CSV writing.
-#[derive(Debug, Clone)]
-pub struct CsvWriteOptions {
-    /// 单字节字段分隔符。
-    pub delimiter: u8,
-    /// Line terminator (`\n` or `\r\n`).
-    pub crlf: bool,
-}
-
-impl Default for CsvWriteOptions {
-    fn default() -> Self {
-        CsvWriteOptions {
-            delimiter: b',',
-            crlf: false,
-        }
-    }
-}
-
-/// Detect a delimiter from a sample of text by counting candidate separators in
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Detect a delimiter from a sample of text by counting candidate separators in
 /// the first non-empty line.
 #[must_use]
 pub fn detect_delimiter(sample: &str) -> u8 {
@@ -109,7 +74,7 @@ pub fn detect_delimiter(sample: &str) -> u8 {
     best
 }
 
-/// Decode raw bytes to a UTF-8 `String`, stripping a UTF-8/UTF-16 BOM and
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Decode raw bytes to a UTF-8 `String`, stripping a UTF-8/UTF-16 BOM and
 /// transcoding from the detected encoding if necessary.
 #[must_use]
 pub fn decode_bytes(bytes: &[u8]) -> String {
@@ -139,7 +104,7 @@ pub fn decode_bytes(bytes: &[u8]) -> String {
     }
 }
 
-/// Read CSV from any reader into a new single-sheet [`Workbook`].
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Read CSV from any reader into a new single-sheet [`Workbook`].
 ///
 /// # Errors
 ///
@@ -181,7 +146,7 @@ pub fn read_csv<R: Read>(mut reader: R, opts: &CsvReadOptions) -> Result<Workboo
     Ok(wb)
 }
 
-/// Infer a cell type from a raw CSV field: empty, boolean, number, ISO date, or
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Infer a cell type from a raw CSV field: empty, boolean, number, ISO date, or
 /// text. Conservative — anything ambiguous stays text.
 #[must_use]
 pub fn infer_cell(field: &str) -> Cell {
@@ -224,7 +189,7 @@ fn looks_numeric(s: &str) -> bool {
     t.parse::<f64>().is_ok()
 }
 
-/// Write a sheet of a workbook to CSV.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Write a sheet of a workbook to CSV.
 ///
 /// # Errors
 ///

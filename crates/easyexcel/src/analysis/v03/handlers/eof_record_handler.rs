@@ -2,35 +2,25 @@
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
-/// Actions requested by [`EofRecordHandler`] at sheet EOF.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum EofAction {
-    /// Ignore — sheet was skipped or stop was requested without stop-sheet.
-    Ignore,
-    /// Call `endSheet` because the user stopped the current sheet.
-    EndSheetOnly,
-    /// Forge a final row flush (non-empty cellMap) then `endSheet`.
-    FlushRowThenEndSheet,
-    /// Just `endSheet`.
-    EndSheet,
-}
+include!("eof_record_handler/eof_action.rs");
 
 /// 对应 Java：`EofRecordHandler`.
 #[derive(Debug, Default)]
 pub struct EofRecordHandler;
 
 impl EofRecordHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.EofRecordHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self
     }
 
-    /// Java `EofRecordHandler.processRecord` decision tree (pure).
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.EofRecordHandler。 Java `EofRecordHandler.processRecord` decision tree (pure).
     #[must_use]
     // 对应 Java：判定树四个布尔参数与 Java `processRecord` 内部状态一一对应，
     // 为保持 1:1 语义映射不做参数合并。
     #[allow(clippy::fn_params_excessive_bools)]
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.EofRecordHandler。
     pub fn decide(
         has_sheet_holder: bool,
         ignore_record: bool,

@@ -14,7 +14,7 @@ path = "src/main.rs"
 
 [dependencies]
 easyexcel = { workspace = true }
-easyexcel-actix = { path = "../../crates/easyexcel-actix" }
+easyexcel-actix.workspace = true
 actix-web = { workspace = true }
 actix-multipart = { workspace = true }
 chrono = { workspace = true, default-features = false, features = ["std", "clock"] }
@@ -24,7 +24,7 @@ tracing-subscriber = { workspace = true }
 urlencoding = { workspace = true }
 
 [dev-dependencies]
-libc = "0.2"
+libc.workspace = true
 
 [lints]
 workspace = true

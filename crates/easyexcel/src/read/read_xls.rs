@@ -27,7 +27,7 @@ pub fn list_xls_sheets(path: &Path, options: &ReadOptions) -> Result<Vec<(usize,
         .collect())
 }
 
-/// Reads selected legacy XLS sheets through the typed listener lifecycle.
+/// 对应 Java：`XlsSaxAnalyser.sheetList()`。 Reads selected legacy XLS sheets through the typed listener lifecycle.
 ///
 /// `easyexcel-xls` 负责 BIFF/CFB 解析，本门面仅将中立工作表送入 listener 生命周期。
 ///

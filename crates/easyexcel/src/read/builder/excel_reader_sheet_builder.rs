@@ -44,13 +44,13 @@ pub struct ExcelReaderSheetBuilder {
 }
 
 impl ExcelReaderSheetBuilder {
-    /// Creates an empty sheet builder. (Java `ExcelReaderSheetBuilder()`)
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderSheetBuilder。 Creates an empty sheet builder. (Java `ExcelReaderSheetBuilder()`)
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Creates a sheet builder bound to an [`ExcelReader`].
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderSheetBuilder。 Creates a sheet builder bound to an [`ExcelReader`].
     /// (Java `ExcelReaderSheetBuilder(ExcelReader excelReader)`)
     ///
     #[must_use]
@@ -67,28 +67,28 @@ impl ExcelReaderSheetBuilder {
         }
     }
 
-    /// Sets the zero-based sheet index. (Java `sheetNo(Integer)`)
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderSheetBuilder。 Sets the zero-based sheet index. (Java `sheetNo(Integer)`)
     #[must_use]
     pub fn sheet_no(mut self, sheet_no: i32) -> Self {
         self.sheet_no = Some(sheet_no);
         self
     }
 
-    /// Sets the sheet name. (Java `sheetName(String)`)
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderSheetBuilder。 Sets the sheet name. (Java `sheetName(String)`)
     #[must_use]
     pub fn sheet_name(mut self, sheet_name: impl Into<String>) -> Self {
         self.sheet_name = Some(sheet_name.into());
         self
     }
 
-    /// Returns the typed `ReadSheet` view used by the reader.
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderSheetBuilder。 Returns the typed `ReadSheet` view used by the reader.
     /// (Java `protected ReadSheet parameter()`)
     #[must_use]
     pub fn parameter(&self) -> ReadSheet {
         self.build()
     }
 
-    /// Returns the finalised [`ReadSheet`] for use with the
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderSheetBuilder。 Returns the finalised [`ReadSheet`] for use with the
     /// [`ExcelReader`]. (Java `public ReadSheet build()`)
     ///
     /// `Sheet_no` defaults to 0 (matching Java's `new ReadSheet()`).
@@ -96,6 +96,7 @@ impl ExcelReaderSheetBuilder {
     // 对应 Java：`Math.max(sheetNo/headRowNumber, 0)` 保证非负后转 usize/u32，
     // 符号位必然为 0 且值不超目标类型上限，`as` 转换不丢失符号或截断。
     #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderSheetBuilder。
     pub fn build(&self) -> ReadSheet {
         let mut sheet = match (self.sheet_no, &self.sheet_name) {
             (Some(no), Some(name)) => ReadSheet::with_name(no.max(0) as usize, name.clone()),
@@ -112,7 +113,7 @@ impl ExcelReaderSheetBuilder {
         sheet
     }
 
-    /// Sets the head row number (zero-based). (Java
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderSheetBuilder。 Sets the head row number (zero-based). (Java
     /// `AbstractExcelReaderParameterBuilder.headRowNumber(Integer)`)
     #[must_use]
     pub fn head_row_number(mut self, head_row_number: i32) -> Self {
@@ -120,7 +121,7 @@ impl ExcelReaderSheetBuilder {
         self
     }
 
-    /// Toggles scientific-format coercion for numeric cells.
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderSheetBuilder。 Toggles scientific-format coercion for numeric cells.
     /// (Java `AbstractExcelReaderParameterBuilder.useScientificFormat(Boolean)`)
     #[must_use]
     pub fn use_scientific_format(mut self, enabled: bool) -> Self {
@@ -129,92 +130,7 @@ impl ExcelReaderSheetBuilder {
     }
 }
 
-/// A sheet builder borrowing the reader that will execute it.
-///
-/// Java stores an `ExcelReader` field directly on `ExcelReaderSheetBuilder`.
-/// Rust expresses the same ownership relation with an exclusive borrow, which
-/// prevents the reader from being used concurrently while sheet options are
-/// being assembled and executed.
-pub struct BoundExcelReaderSheetBuilder<'a, T, L> {
-    excel_reader: &'a mut ExcelReader<T, L>,
-    sheet_builder: ExcelReaderSheetBuilder,
-}
-
-impl<T, L> BoundExcelReaderSheetBuilder<'_, T, L>
-where
-    T: ExcelRow,
-    L: ReadListener<T>,
-{
-    /// Sets the zero-based sheet index.
-    #[must_use]
-    pub fn sheet_no(mut self, sheet_no: i32) -> Self {
-        self.sheet_builder = self.sheet_builder.sheet_no(sheet_no);
-        self
-    }
-
-    /// Sets the sheet name.
-    #[must_use]
-    pub fn sheet_name(mut self, sheet_name: impl Into<String>) -> Self {
-        self.sheet_builder = self.sheet_builder.sheet_name(sheet_name);
-        self
-    }
-
-    /// Sets the number of header rows for this sheet.
-    #[must_use]
-    pub fn head_row_number(mut self, head_row_number: i32) -> Self {
-        self.sheet_builder = self.sheet_builder.head_row_number(head_row_number);
-        self
-    }
-
-    /// Controls scientific formatting for this sheet.
-    #[must_use]
-    pub fn use_scientific_format(mut self, enabled: bool) -> Self {
-        self.sheet_builder = self.sheet_builder.use_scientific_format(enabled);
-        self
-    }
-
-    /// Builds the sheet metadata without executing it.
-    #[must_use]
-    pub fn build(&self) -> ReadSheet {
-        self.sheet_builder.build()
-    }
-
-    /// Reads the configured sheet, then finishes the bound reader.
-    ///
-    /// This is the Rust equivalent of Java
-    /// `ExcelReaderSheetBuilder.doRead()`.
-    ///
-    /// # Errors
-    ///
-    /// 当工作表解析失败时返回 [`ExcelError`]。
-    pub fn do_read(self) -> Result<()> {
-        let sheet = self.sheet_builder.build();
-        self.excel_reader.read(&[sheet])?;
-        self.excel_reader.finish();
-        Ok(())
-    }
-
-    /// Reads the configured sheet and returns all converted rows.
-    ///
-    /// The bound reader's existing listener runs first, followed by the
-    /// synchronous collecting listener, matching Java listener registration
-    /// order.
-    ///
-    /// # Errors
-    ///
-    /// 当工作表解析失败时返回 [`ExcelError`]。
-    pub fn do_read_sync(self) -> Result<Vec<T>>
-    where
-        T: Clone,
-    {
-        let sheet = self.sheet_builder.build();
-        let mut listener = SheetSyncReadListener::default();
-        self.excel_reader
-            .read_with_additional_listener(&[sheet], &mut listener)?;
-        self.excel_reader.finish();
-        Ok(listener.rows)
-    }
-}
+include!("excel_reader_sheet_builder/bound_excel_reader_sheet_builder.rs");
 
 struct SheetSyncReadListener<T> {
     rows: Vec<T>,

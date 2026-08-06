@@ -1,19 +1,19 @@
-//! Moka 共享字符串缓存的 EasyExcel `ReadCache` 适配。
+//! Moka 共享字符串缓存的 `EasyExcel` `ReadCache` 适配。
 //!
 //! 生命周期内不淘汰的对象存储由 `easyexcel-cache` 实现；本模块只保留
-//! EasyExcel `ReadCache` 契约适配。
+//! `EasyExcel` `ReadCache` 契约适配。
 
 use crate::core::Result;
 
 use super::read_cache::{ReadCache, SharedStringCacheAdapter};
 
-/// 生命周期内完整保留共享字符串对象的 Moka `ReadCache` 适配器。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 生命周期内完整保留共享字符串对象的 Moka `ReadCache` 适配器。
 pub struct MokaCache {
     adapter: SharedStringCacheAdapter,
 }
 
 impl MokaCache {
-    /// 创建无容量淘汰、无过期策略的 Moka 对象缓存。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 创建无容量淘汰、无过期策略的 Moka 对象缓存。
     #[must_use]
     pub fn new() -> Self {
         Self {

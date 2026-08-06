@@ -11,7 +11,7 @@ use bigdecimal::BigDecimal;
 use crate::CellDataType;
 use crate::FormulaData;
 
-/// Excel 内部单元格数据，对齐 Java `CellData<T>`。
+/// 对应 Java：com.alibaba.excel.metadata.data.CellData。 Excel 内部单元格数据，对齐 Java `CellData<T>`。
 ///
 /// # Java 对应字段
 /// - `type` → [`Self::cell_type`]

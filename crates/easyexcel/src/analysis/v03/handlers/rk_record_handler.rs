@@ -14,13 +14,13 @@ pub struct RkRecordHandler {
 }
 
 impl RkRecordHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.RkRecordHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Java `RkRecordHandler.processRecord` — always yields an empty cell.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.RkRecordHandler。 Java `RkRecordHandler.processRecord` — always yields an empty cell.
     #[must_use]
     pub fn process_rk(row: u32, column: usize) -> BlankCell {
         BlankCell { row, column }

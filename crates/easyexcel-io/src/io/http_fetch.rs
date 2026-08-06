@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use super::{Error, Result};
 
-/// 下载 URL 指向的完整二进制内容。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 下载 URL 指向的完整二进制内容。
 ///
 /// # Errors
 ///

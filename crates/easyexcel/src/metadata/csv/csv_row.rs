@@ -6,7 +6,8 @@ use crate::util::work_book_util::CellCreator;
 
 use super::CsvCell;
 
-/// Java EasyExcel 值模型参数化后的 CSV 行。
+/// Java `EasyExcel` 值模型参数化后的 CSV 行。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub type CsvRow = easyexcel_csv::CsvRow<CellValue>;
 
 impl CellCreator for CsvRow {

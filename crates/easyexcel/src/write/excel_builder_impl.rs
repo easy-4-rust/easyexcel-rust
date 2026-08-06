@@ -27,7 +27,7 @@ pub struct ExcelBuilderImpl {
     fill_session_active: bool,
 }
 impl ExcelBuilderImpl {
-    /// Creates a builder from a stateful writer. (Java `new ExcelBuilderImpl(WriteWorkbook)`)
+    /// 对应 Java：com.alibaba.excel.write.ExcelBuilderImpl。 Creates a builder from a stateful writer. (Java `new ExcelBuilderImpl(WriteWorkbook)`)
     #[must_use]
     pub fn new(writer: ExcelWriter, logical_path: impl Into<PathBuf>) -> Self {
         let logical_path = logical_path.into();
@@ -42,7 +42,7 @@ impl ExcelBuilderImpl {
         }
     }
 
-    /// Creates a builder from path and options via [`ExcelWriter::with_handlers_and_options`].
+    /// 对应 Java：com.alibaba.excel.write.ExcelBuilderImpl。 Creates a builder from path and options via [`ExcelWriter::with_handlers_and_options`].
     #[must_use]
     pub fn from_options(path: impl Into<PathBuf>, options: WriteOptions) -> Self {
         let logical_path = path.into();
@@ -52,18 +52,18 @@ impl ExcelBuilderImpl {
         )
     }
 
-    /// Returns the underlying writer for Java-style `ExcelWriter` facades.
+    /// 对应 Java：com.alibaba.excel.write.ExcelBuilderImpl。 Returns the underlying writer for Java-style `ExcelWriter` facades.
     #[must_use]
     pub fn into_writer(self) -> ExcelWriter {
         self.writer
     }
 
-    /// Returns a mutable reference to the underlying writer.
+    /// 对应 Java：com.alibaba.excel.write.ExcelBuilderImpl。 Returns a mutable reference to the underlying writer.
     pub fn writer_mut(&mut self) -> &mut ExcelWriter {
         &mut self.writer
     }
 
-    /// Returns the logical output path carried by this builder.
+    /// 对应 Java：com.alibaba.excel.write.ExcelBuilderImpl。 Returns the logical output path carried by this builder.
     #[must_use]
     pub fn logical_path(&self) -> &std::path::Path {
         &self.logical_path
@@ -77,7 +77,7 @@ impl ExcelBuilderImpl {
         self.fill_executor = Some(executor);
     }
 
-    /// Returns whether a template fill executor has been installed.
+    /// 对应 Java：com.alibaba.excel.write.ExcelBuilderImpl。 Returns whether a template fill executor has been installed.
     #[must_use]
     pub fn has_fill_executor(&self) -> bool {
         self.fill_executor.is_some()
@@ -85,6 +85,7 @@ impl ExcelBuilderImpl {
 
     /// Returns whether [`Self::finish`] already persisted fill output.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.ExcelBuilderImpl。
     pub const fn finished_via_fill(&self) -> bool {
         self.finished_via_fill
     }

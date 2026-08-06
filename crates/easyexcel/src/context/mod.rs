@@ -12,6 +12,8 @@ pub mod write_context_impl;
 pub mod write_fill_executor;
 pub mod write_handler;
 pub mod write_holder_context;
+pub(crate) mod write_mutation;
+pub(crate) mod write_mutation_plan;
 pub mod write_row_context;
 pub mod write_sheet_context;
 pub mod write_workbook_context;

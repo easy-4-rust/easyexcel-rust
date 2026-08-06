@@ -30,7 +30,7 @@ pub struct ExcelWriteHeadProperty {
 }
 
 impl ExcelWriteHeadProperty {
-    /// Creates an empty property.
+    /// 对应 Java：com.alibaba.excel.write.property.ExcelWriteHeadProperty。 Creates an empty property.
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -41,7 +41,7 @@ impl ExcelWriteHeadProperty {
         }
     }
 
-    /// Resolves a dynamic or class-backed head. (Java constructor)
+    /// 对应 Java：com.alibaba.excel.write.property.ExcelWriteHeadProperty。 Resolves a dynamic or class-backed head. (Java constructor)
     #[must_use]
     pub fn from_head(
         configuration_holder: Option<&dyn ConfigurationHolder>,
@@ -58,7 +58,7 @@ impl ExcelWriteHeadProperty {
         Self::from_inner(inner, &metadata)
     }
 
-    /// Resolves Java `Head` entries from Rust derive metadata.
+    /// 对应 Java：com.alibaba.excel.write.property.ExcelWriteHeadProperty。 Resolves Java `Head` entries from Rust derive metadata.
     ///
     /// `columns` contains the effective output column index and schema entry.
     /// An explicit `head` replaces field-derived labels and must contain one
@@ -140,24 +140,28 @@ impl ExcelWriteHeadProperty {
 
     /// Returns the underlying inherited header property.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.property.ExcelWriteHeadProperty。
     pub const fn inner(&self) -> &ExcelHeadProperty {
         &self.inner
     }
 
     /// Returns the head row-height property. (Java getter)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.property.ExcelWriteHeadProperty。
     pub const fn head_row_height_property(&self) -> Option<&RowHeightProperty> {
         self.head_row_height_property.as_ref()
     }
 
     /// Returns the content row-height property. (Java getter)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.property.ExcelWriteHeadProperty。
     pub const fn content_row_height_property(&self) -> Option<&RowHeightProperty> {
         self.content_row_height_property.as_ref()
     }
 
     /// Returns the once-absolute merge property. (Java getter)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.property.ExcelWriteHeadProperty。
     pub const fn once_absolute_merge_property(&self) -> Option<&OnceAbsoluteMergeProperty> {
         self.once_absolute_merge_property.as_ref()
     }
@@ -170,6 +174,7 @@ impl ExcelWriteHeadProperty {
         // 语义敏感：行列索引需转换为 Java 端 i32 单元格坐标，值域受表头规模约束，
         // 不可能超出 i32 范围；保留 `as` 转换以 1:1 对应 Java `headCellRangeList()`。
     )]
+    /// 对应 Java：com.alibaba.excel.write.property.ExcelWriteHeadProperty。
     pub fn head_cell_range_list(&self) -> Vec<CellRange> {
         let head_list = self.inner.head_map.values().collect::<Vec<_>>();
         let mut already_ranged = HashSet::new();

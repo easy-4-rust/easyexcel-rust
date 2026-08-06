@@ -24,9 +24,10 @@
 use md5::{Digest, Md5};
 
 /// Phase 5 marker re-export for test wiring.
+/// 对应 Java：org.apache.poi.hssf.record.crypto.Biff8EncryptionKey。
 pub const PHASE_5_GAP: &str = "Biff8EncryptionInfo — BIFF8 RC4 encryption implemented in Phase 5.3";
 
-/// Placeholder type kept for backward-compat with test imports.
+/// 对应 Java：org.apache.poi.hssf.record.crypto.Biff8EncryptionKey。 Placeholder type kept for backward-compat with test imports.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Biff8EncryptionInfoPlaceholder;
 
@@ -64,25 +65,28 @@ fn rc4_crypt(data: &[u8], key: &[u8]) -> Vec<u8> {
     result
 }
 
-/// Generates random salt + verifier and encrypts a BIFF8 workbook
+include!("encrypt/biff8encryption_output.rs");
+
+/// 对应 Java：org.apache.poi.hssf.record.crypto.Biff8EncryptionKey。 Generates random salt + verifier and encrypts a BIFF8 workbook
 /// stream with RC4. Returns `(encrypted_bytes, salt, verifier_hash)`.
 ///
 /// The encryption wraps the entire workbook stream (including BOF/EOF
 /// records) so that the `FilePass` record can be inserted before the
 /// first BOF in the globals section.
 ///
-/// # Panics
+/// # Errors
 ///
-/// Panics when the OS random source fails (`getrandom` error).
-#[must_use]
+/// Returns an error when the operating system random source is unavailable.
 pub fn encrypt_biff8_stream(
     workbook_bytes: &[u8],
     password: &str,
-) -> (Vec<u8>, [u8; 16], [u8; 16]) {
+) -> Result<Biff8EncryptionOutput, String> {
     let mut salt = [0u8; 16];
     let mut verifier = [0u8; 16];
-    getrandom::fill(&mut salt).expect("getrandom");
-    getrandom::fill(&mut verifier).expect("getrandom");
+    getrandom::fill(&mut salt)
+        .map_err(|error| format!("failed to generate BIFF8 salt: {error}"))?;
+    getrandom::fill(&mut verifier)
+        .map_err(|error| format!("failed to generate BIFF8 verifier: {error}"))?;
 
     let full_key = derive_key(password, &salt);
     let rc4_key = &full_key[..5.min(full_key.len())]; // 40-bit export
@@ -93,10 +97,10 @@ pub fn encrypt_biff8_stream(
 
     let encrypted = rc4_crypt(workbook_bytes, rc4_key);
 
-    (encrypted, salt, vh_arr)
+    Ok((encrypted, salt, vh_arr))
 }
 
-/// Decrypts a BIFF8 workbook stream given password, salt, and `verifier_hash`.
+/// 对应 Java：org.apache.poi.hssf.record.crypto.Biff8EncryptionKey。 Decrypts a BIFF8 workbook stream given password, salt, and `verifier_hash`.
 /// Returns the decrypted bytes, or an error if the password doesn't match.
 ///
 /// # Errors
@@ -150,7 +154,8 @@ mod tests {
         stream.extend_from_slice(b"testworkbook");
         stream.extend_from_slice(&[0; 8]);
 
-        let (encrypted, salt, vh) = encrypt_biff8_stream(&stream, "password123");
+        let (encrypted, salt, vh) =
+            encrypt_biff8_stream(&stream, "password123").expect("OS randomness is available");
         assert_ne!(encrypted, stream);
 
         let decrypted = decrypt_biff8_stream(&encrypted, "password123", &salt, &vh)

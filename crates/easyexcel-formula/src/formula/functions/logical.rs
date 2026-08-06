@@ -7,7 +7,7 @@ use crate::formula::coerce::to_bool;
 use crate::formula::context::Context;
 use crate::formula::value::Value;
 use easyexcel_model::error::CellError;
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub fn register(r: &mut Registry) {
     r.add("NOT", 1, 1, false, not);
     r.add("TRUE", 0, 0, false, |_, _| Value::Bool(true));

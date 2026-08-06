@@ -14,7 +14,7 @@ use easyexcel::core::Result;
 use easyexcel::{EasyExcel, ExcelRow, ReadListener};
 use tempfile::Builder;
 
-/// 将上传字节写入带指定扩展名的临时文件并返回路径与句柄。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将上传字节写入带指定扩展名的临时文件并返回路径与句柄。
 ///
 /// 返回的 [`NamedTempFile`](tempfile::NamedTempFile) 必须在读取完成前保持存活，
 /// 否则临时文件会被删除。
@@ -49,7 +49,7 @@ where
     EasyExcel::read::<T, L>(path, listener).do_read()
 }
 
-/// 同步收集上传 Excel 的全部行。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 同步收集上传 Excel 的全部行。
 ///
 /// # Errors
 ///
@@ -62,7 +62,7 @@ where
     EasyExcel::read_sync::<T>(&path).do_read_sync()
 }
 
-/// 从路径推断扩展名；缺省为 `.xlsx`。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 从路径推断扩展名；缺省为 `.xlsx`。
 #[must_use]
 pub fn extension_from_path(path: &Path) -> &'static str {
     path.extension()

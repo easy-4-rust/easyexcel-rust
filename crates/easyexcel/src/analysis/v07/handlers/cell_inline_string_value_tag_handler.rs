@@ -13,13 +13,13 @@ pub struct CellInlineStringValueTagHandler {
 }
 
 impl CellInlineStringValueTagHandler {
-    /// Creates an idle inline-string handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.CellInlineStringValueTagHandler。 Creates an idle inline-string handler.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Takes accumulated inline `<t>` text.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.CellInlineStringValueTagHandler。 Takes accumulated inline `<t>` text.
     pub fn take(&mut self) -> String {
         self.inner.take()
     }

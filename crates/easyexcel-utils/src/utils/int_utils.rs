@@ -6,17 +6,18 @@
 ///
 /// 供 Java `short`/POI 调色板等兼容入口使用；位级截断语义集中在基础工具层。
 #[must_use]
+/// 对应 Java：com.alibaba.excel.util.IntUtils。
 pub const fn low_u8(value: u32) -> u8 {
     value.to_le_bytes()[0]
 }
 
-/// 将 `u32` 安全收窄为 `u16`，超出范围时返回 `None`。
+/// 对应 Java：com.alibaba.excel.util.IntUtils。 将 `u32` 安全收窄为 `u16`，超出范围时返回 `None`。
 #[must_use]
 pub fn checked_u16(value: u32) -> Option<u16> {
     u16::try_from(value).ok()
 }
 
-/// Mirrors `com.google.common.primitives.Ints#saturatedCast`.
+/// 对应 Java：com.alibaba.excel.util.IntUtils。 Mirrors `com.google.common.primitives.Ints#saturatedCast`.
 ///
 /// Clamps a wider integer (`i64`) into `i32` instead of panicking on
 /// overflow: values outside `i32::MIN..=i32::MAX` are clipped to the

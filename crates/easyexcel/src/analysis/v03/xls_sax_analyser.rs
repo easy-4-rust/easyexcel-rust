@@ -64,7 +64,7 @@ impl XlsSaxAnalyser {
         })
     }
 
-    /// Convenience constructor mirroring Java `ExcelAnalyserImpl` wiring.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.XlsSaxAnalyser。 Convenience constructor mirroring Java `ExcelAnalyserImpl` wiring.
     ///
     /// # Errors
     ///
@@ -74,13 +74,13 @@ impl XlsSaxAnalyser {
         Self::new(context, path, options)
     }
 
-    /// Returns the bound workbook path.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.XlsSaxAnalyser。 Returns the bound workbook path.
     #[must_use]
     pub fn path(&self) -> &Path {
         &self.path
     }
 
-    /// Returns the XLS read context. (Java `xlsReadContext` field)
+    /// 对应 Java：com.alibaba.excel.analysis.v03.XlsSaxAnalyser。 Returns the XLS read context. (Java `xlsReadContext` field)
     #[must_use]
     pub fn xls_read_context(&self) -> &DefaultXlsReadContext {
         &self.xls_read_context
@@ -88,6 +88,7 @@ impl XlsSaxAnalyser {
 
     /// Returns the last error recorded by the void [`ExcelReadExecutor::execute`] entry.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.analysis.v03.XlsSaxAnalyser。
     pub const fn last_error(&self) -> Option<&ExcelError> {
         self.last_error.as_ref()
     }
@@ -104,6 +105,7 @@ impl XlsSaxAnalyser {
 
     /// Returns state produced by the real BIFF handler dispatch.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.analysis.v03.XlsSaxAnalyser。
     pub const fn record_dispatch_state(&self) -> &XlsRecordDispatchState {
         self.record_dispatcher.state()
     }
@@ -120,7 +122,7 @@ impl XlsSaxAnalyser {
         self.record_dispatcher.finish_records()
     }
 
-    /// Typed execute path. (Java `execute()` + listener on `ReadWorkbook`)
+    /// 对应 Java：com.alibaba.excel.analysis.v03.XlsSaxAnalyser。 Typed execute path. (Java `execute()` + listener on `ReadWorkbook`)
     ///
     /// # Errors
     ///
@@ -154,7 +156,7 @@ impl XlsSaxAnalyser {
         }
     }
 
-    /// Returns the listener callback context from the embedded read context.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.XlsSaxAnalyser。 Returns the listener callback context from the embedded read context.
     #[must_use]
     pub fn analysis_context(&self) -> &AnalysisContext {
         self.xls_read_context

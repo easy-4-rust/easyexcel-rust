@@ -2,7 +2,7 @@
 
 use crate::CacheLocation;
 
-/// Global read/write configuration carried by holders.
+/// 对应 Java：com.alibaba.excel.metadata.GlobalConfiguration。 Global read/write configuration carried by holders.
 ///
 /// Rust port of Java `GlobalConfiguration`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -33,7 +33,7 @@ impl Default for GlobalConfiguration {
 }
 
 impl GlobalConfiguration {
-    /// Creates a global configuration with Java default values. (Java constructor)
+    /// 对应 Java：com.alibaba.excel.metadata.GlobalConfiguration。 Creates a global configuration with Java default values. (Java constructor)
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -41,17 +41,19 @@ impl GlobalConfiguration {
 
     /// Returns the auto-trim flag. (Java `getAutoTrim()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.GlobalConfiguration。
     pub const fn auto_trim(&self) -> bool {
         self.auto_trim
     }
 
     /// Returns the 1904-windowing flag. (Java `getUse1904windowing()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.GlobalConfiguration。
     pub const fn use1904windowing(&self) -> bool {
         self.use1904windowing
     }
 
-    /// Returns the locale name. (Java `getLocale()`)
+    /// 对应 Java：com.alibaba.excel.metadata.GlobalConfiguration。 Returns the locale name. (Java `getLocale()`)
     #[must_use]
     pub fn locale(&self) -> &str {
         &self.locale
@@ -59,12 +61,14 @@ impl GlobalConfiguration {
 
     /// Returns the scientific-format flag. (Java `getUseScientificFormat()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.GlobalConfiguration。
     pub const fn use_scientific_format(&self) -> bool {
         self.use_scientific_format
     }
 
     /// Returns the field-cache location. (Java `getFiledCacheLocation()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.GlobalConfiguration。
     pub const fn filed_cache_location(&self) -> CacheLocation {
         self.filed_cache_location
     }

@@ -1,4 +1,4 @@
-//! Parse and emit `xl/tables/tableN.xml` (Excel table / ListObject parts).
+//! Parse and emit `xl/tables/tableN.xml` (Excel table / `ListObject` parts).
 //!
 //! We model the structurally meaningful bits (name, range, columns, header /
 //! totals rows) and keep the original XML verbatim for lossless round-trip of
@@ -6,6 +6,7 @@
 
 use quick_xml::Reader;
 use quick_xml::events::Event;
+use std::fmt::Write as _;
 
 use easyexcel_io::Result;
 use easyexcel_model::addr::CellRange;
@@ -13,7 +14,7 @@ use easyexcel_model::model::Table;
 
 use super::xmlutil::{attr, local_name, xml_escape};
 
-/// Parse one `<table>` part into a [`Table`], preserving the source XML.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Parse one `<table>` part into a [`Table`], preserving the source XML.
 pub fn parse_table(xml: &[u8]) -> Result<Option<Table>> {
     let mut reader = Reader::from_reader(xml);
     reader.config_mut().trim_text(false);
@@ -74,7 +75,7 @@ pub fn parse_table(xml: &[u8]) -> Result<Option<Table>> {
     }))
 }
 
-/// Serialize a [`Table`] to table-part XML. Uses the preserved `raw_xml` when
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Serialize a [`Table`] to table-part XML. Uses the preserved `raw_xml` when
 /// present (lossless round-trip); otherwise synthesizes a minimal valid part.
 pub fn build_table_xml(table: &Table, id: u32) -> Vec<u8> {
     if !table.raw_xml.is_empty() {
@@ -83,25 +84,24 @@ pub fn build_table_xml(table: &Table, id: u32) -> Vec<u8> {
     let ref_a1 = table.range.to_a1();
     let mut s = String::new();
     s.push_str(r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"#);
-    s.push_str(&format!(
+    let _ = write!(
+        s,
         r#"<table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="{}" name="{}" displayName="{}" ref="{}" totalsRowShown="{}">"#,
         id,
         xml_escape(&table.name),
         xml_escape(&table.display_name),
         ref_a1,
-        if table.totals_rows > 0 { 1 } else { 0 },
-    ));
-    s.push_str(&format!(r#"<autoFilter ref="{ref_a1}"/>"#));
-    s.push_str(&format!(
-        r#"<tableColumns count="{}">"#,
-        table.columns.len()
-    ));
+        i32::from(table.totals_rows > 0),
+    );
+    let _ = write!(s, r#"<autoFilter ref="{ref_a1}"/>"#);
+    let _ = write!(s, r#"<tableColumns count="{}">"#, table.columns.len());
     for (i, col) in table.columns.iter().enumerate() {
-        s.push_str(&format!(
+        let _ = write!(
+            s,
             r#"<tableColumn id="{}" name="{}"/>"#,
             i + 1,
             xml_escape(col)
-        ));
+        );
     }
     s.push_str("</tableColumns>");
     s.push_str(

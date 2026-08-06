@@ -8,33 +8,9 @@ use std::sync::Arc;
 use easyexcel_io::io::file_utils::TemporaryInput;
 use easyexcel_io::{Error, Result};
 
-/// 可 seek 的 XLSX 输入流。
-pub enum XlsxInput {
-    /// 直接从文件读取。
-    File(BufReader<File>),
-    /// 从已解密的共享内存读取。
-    Memory(Cursor<Arc<[u8]>>),
-}
+include!("source/xlsx_input.rs");
 
-impl Read for XlsxInput {
-    fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
-        match self {
-            Self::File(reader) => reader.read(buffer),
-            Self::Memory(reader) => reader.read(buffer),
-        }
-    }
-}
-
-impl Seek for XlsxInput {
-    fn seek(&mut self, position: SeekFrom) -> std::io::Result<u64> {
-        match self {
-            Self::File(reader) => reader.seek(position),
-            Self::Memory(reader) => reader.seek(position),
-        }
-    }
-}
-
-/// 可重复创建读取器的 XLSX 源。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 可重复创建读取器的 XLSX 源。
 pub enum XlsxSource {
     /// 未加密 OOXML 文件。
     File(PathBuf),
@@ -43,7 +19,7 @@ pub enum XlsxSource {
 }
 
 impl XlsxSource {
-    /// 打开普通或加密 XLSX 文件。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 打开普通或加密 XLSX 文件。
     ///
     /// # Errors
     ///
@@ -59,7 +35,7 @@ impl XlsxSource {
         Ok(Self::Memory(Arc::from(decrypted)))
     }
 
-    /// 创建一个位于起始位置的新读取器。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 创建一个位于起始位置的新读取器。
     ///
     /// # Errors
     ///
@@ -72,25 +48,24 @@ impl XlsxSource {
     }
 }
 
-/// 判断缓冲输入是否为 OLE2/CFB 容器。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 判断缓冲输入是否为 OLE2/CFB 容器。
 #[must_use]
 pub fn is_compound_document(reader: &mut dyn BufRead) -> bool {
     reader.fill_buf().is_ok_and(easyexcel_io::looks_like_cfb)
 }
 
-/// 根据输入魔数选择物化文件后缀。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 根据输入魔数选择物化文件后缀。
 #[must_use]
 pub fn excel_input_suffix(bytes: &[u8]) -> &'static str {
     match easyexcel_io::Format::from_magic(bytes) {
         easyexcel_io::Format::Xlsx => ".xlsx",
         easyexcel_io::Format::Xls if super::crypto::is_encrypted_ooxml(bytes) => ".xlsx",
         easyexcel_io::Format::Xls => ".xls",
-        easyexcel_io::Format::Csv => ".csv",
         _ => ".csv",
     }
 }
 
-/// 将 Java 风格非随机访问输入流物化为自动删除的 Excel 输入文件。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将 Java 风格非随机访问输入流物化为自动删除的 Excel 输入文件。
 ///
 /// # Errors
 ///

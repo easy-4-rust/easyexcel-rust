@@ -13,7 +13,7 @@ use crate::write::write_row_context::WriteRowContext;
 use crate::write::write_sheet_context::WriteSheetContext;
 use crate::write::write_workbook_context::WriteWorkbookContext;
 
-/// Intercepts the workbook, worksheet, row, and cell write lifecycle.
+/// 对应 Java：com.alibaba.excel.write.handler.WriteHandler。 Intercepts the workbook, worksheet, row, and cell write lifecycle.
 ///
 /// Java exposes four capability interfaces (`WorkbookWriteHandler`,
 /// `SheetWriteHandler`, `RowWriteHandler`, `CellWriteHandler`) plus four

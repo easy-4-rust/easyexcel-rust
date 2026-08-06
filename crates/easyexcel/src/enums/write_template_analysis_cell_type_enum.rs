@@ -2,6 +2,7 @@
 
 /// Cell kind discovered while analysing a template placeholder.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.enums.WriteTemplateAnalysisCellTypeEnum。
 pub enum WriteTemplateAnalysisCellTypeEnum {
     /// Common placeholder such as `{key}`.
     Common,

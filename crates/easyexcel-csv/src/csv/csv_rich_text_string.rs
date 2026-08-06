@@ -5,12 +5,13 @@
 
 /// CSV 富文本兼容值。
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.metadata.csv.CsvRichTextString。
 pub struct CsvRichTextString {
     value: String,
 }
 
 impl CsvRichTextString {
-    /// 从纯文本创建值。
+    /// 对应 Java：com.alibaba.excel.metadata.csv.CsvRichTextString。 从纯文本创建值。
     #[must_use]
     pub fn new(value: impl Into<String>) -> Self {
         Self {
@@ -18,19 +19,19 @@ impl CsvRichTextString {
         }
     }
 
-    /// 返回纯文本。
+    /// 对应 Java：com.alibaba.excel.metadata.csv.CsvRichTextString。 返回纯文本。
     #[must_use]
     pub fn as_str(&self) -> &str {
         &self.value
     }
 
-    /// 返回 Unicode 标量数量。
+    /// 对应 Java：com.alibaba.excel.metadata.csv.CsvRichTextString。 返回 Unicode 标量数量。
     #[must_use]
     pub fn len(&self) -> usize {
         self.value.chars().count()
     }
 
-    /// 返回文本是否为空。
+    /// 对应 Java：com.alibaba.excel.metadata.csv.CsvRichTextString。 返回文本是否为空。
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.value.is_empty()

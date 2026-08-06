@@ -28,5 +28,6 @@ impl easyexcel_csv::CsvCellValue for CellValue {
     }
 }
 
-/// Java EasyExcel 值模型参数化后的 CSV 单元格。
+/// Java `EasyExcel` 值模型参数化后的 CSV 单元格。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub type CsvCell = easyexcel_csv::CsvCell<CellValue>;

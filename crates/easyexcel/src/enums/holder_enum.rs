@@ -6,6 +6,7 @@
 /// containers, although Rust collapses most of these into `ReadOptions` /
 /// `WriteOptions` plus private state inside the writer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.enums.HolderEnum。
 pub enum HolderEnum {
     /// Workbook-scoped holder.
     Workbook,

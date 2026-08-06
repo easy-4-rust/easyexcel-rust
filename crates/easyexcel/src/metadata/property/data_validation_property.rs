@@ -8,6 +8,7 @@
 ///
 /// Default-constructible + `Copy` so it can sit inside `ExcelColumn`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+/// 对应 Java：com.alibaba.excel.metadata.property.ExcelDataValidationProperty。
 pub struct ExcelDataValidationMeta {
     /// Validation type. (Java `@ExcelDataValidation.type()`, e.g. "list", "whole", "decimal")
     pub data_type: &'static str,
@@ -38,6 +39,7 @@ impl ExcelDataValidationMeta {
 
     /// Whether this rule is non-empty.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelDataValidationProperty。
     pub const fn is_present(&self) -> bool {
         !self.data_type.is_empty()
     }

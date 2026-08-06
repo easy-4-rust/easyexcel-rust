@@ -19,7 +19,7 @@ pub fn global_configuration_from_write_options(options: &WriteOptions) -> Global
     }
 }
 
-/// Applies a global configuration onto write options without replacing sheet fields.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Applies a global configuration onto write options without replacing sheet fields.
 pub fn apply_global_configuration_to_write_options(
     global: &GlobalConfiguration,
     options: &mut WriteOptions,

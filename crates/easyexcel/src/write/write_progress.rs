@@ -6,8 +6,8 @@
 /// 写入进度，用于跟踪写入到工作表的行位置。
 ///
 /// 对应 Java：内部 `WriteProgress` 结构。
-/// 由 [`ExcelWriteAddExecutor`] 和状态化 [`ExcelWriter`] 路径使用，
-/// 它们都委托给 [`append_rows_to_worksheet`]。
+/// 由 `ExcelWriteAddExecutor` 和状态化 `ExcelWriter` 路径使用，
+/// 它们都委托给 `append_rows_to_worksheet`。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WriteProgress {
     /// 下一个零基物理工作表行号。

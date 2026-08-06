@@ -35,13 +35,13 @@ pub struct ExcelReaderTableBuilder {
 }
 
 impl ExcelReaderTableBuilder {
-    /// Creates an empty table builder. (Java `ExcelReaderTableBuilder()`)
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderTableBuilder。 Creates an empty table builder. (Java `ExcelReaderTableBuilder()`)
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Creates a table builder bound to an [`ExcelReader`].
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderTableBuilder。 Creates a table builder bound to an [`ExcelReader`].
     /// (Java `ExcelReaderTableBuilder(ExcelReader)`)
     #[must_use]
     pub fn with_excel_reader<T, L>(_excel_reader: &ExcelReader<T, L>) -> Self
@@ -52,21 +52,21 @@ impl ExcelReaderTableBuilder {
         Self::default()
     }
 
-    /// Sets the zero-based table index. (Java `tableNo(Integer)`)
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderTableBuilder。 Sets the zero-based table index. (Java `tableNo(Integer)`)
     #[must_use]
     pub fn table_no(mut self, table_no: i32) -> Self {
         self.table_no = Some(table_no);
         self
     }
 
-    /// Returns the typed `ReadTable` view used by the reader.
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderTableBuilder。 Returns the typed `ReadTable` view used by the reader.
     /// (Java `protected ReadTable parameter()`)
     #[must_use]
     pub fn parameter(&self) -> ReadTable {
         self.build()
     }
 
-    /// Builds the underlying table configuration. (Java `ReadTable build()`)
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderTableBuilder。 Builds the underlying table configuration. (Java `ReadTable build()`)
     ///
     /// Rust port: returns a `ReadTable` carrying the configured
     /// `table_no`. Callers compose this with `ExcelReader::table(...)`.
@@ -75,7 +75,7 @@ impl ExcelReaderTableBuilder {
         ReadTable::with_table_no(self.table_no.unwrap_or(0))
     }
 
-    /// Sets the head row number. (Java
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderTableBuilder。 Sets the head row number. (Java
     /// `AbstractExcelReaderParameterBuilder.headRowNumber(Integer)`)
     #[must_use]
     pub fn head_row_number(mut self, head_row_number: i32) -> Self {
@@ -83,7 +83,7 @@ impl ExcelReaderTableBuilder {
         self
     }
 
-    /// Toggles scientific-format coercion. (Java
+    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderTableBuilder。 Toggles scientific-format coercion. (Java
     /// `AbstractExcelReaderParameterBuilder.useScientificFormat(Boolean)`)
     #[must_use]
     pub fn use_scientific_format(mut self, enabled: bool) -> Self {

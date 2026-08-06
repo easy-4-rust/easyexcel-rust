@@ -7,7 +7,7 @@ use bigdecimal::BigDecimal;
 use num_bigint::BigInt;
 
 use crate::{CellValue, ExcelError, ReadConverterContext, WriteCellData, WriteConverterContext};
-
+/// 对应 Java：com.alibaba.excel.converters.boolean_。
 pub(crate) trait BooleanScalar: Sized {
     fn from_boolean(value: bool) -> Self;
     fn is_one(&self) -> bool;
@@ -56,7 +56,7 @@ impl BooleanScalar for BigInt {
         self == &Self::from(1)
     }
 }
-
+/// 对应 Java：com.alibaba.excel.converters.boolean_。
 pub(crate) fn read_boolean_scalar<T>(context: &ReadConverterContext<'_>) -> Result<T, ExcelError>
 where
     T: BooleanScalar,
@@ -69,14 +69,14 @@ where
             .invalid(&CellValue::Empty, "boolean scalar")),
     }
 }
-
+/// 对应 Java：com.alibaba.excel.converters.boolean_。
 pub(crate) fn write_scalar_boolean<T>(context: &WriteConverterContext<'_, T>) -> WriteCellData
 where
     T: BooleanScalar,
 {
     WriteCellData::new(CellValue::Bool(context.value().is_one()))
 }
-
+/// 对应 Java：com.alibaba.excel.converters.boolean_。
 pub(crate) fn read_boolean(context: &ReadConverterContext<'_>) -> Result<bool, ExcelError> {
     match context.cell() {
         Some(CellValue::Bool(value)) => Ok(*value),
@@ -88,6 +88,7 @@ pub(crate) fn read_boolean(context: &ReadConverterContext<'_>) -> Result<bool, E
 #[allow(clippy::float_cmp)]
 // 语义敏感：对应 Java `BooleanNumberConverter` 对 Double 单元格的严格 `== 1.0`
 // 判断，必须保留精确比较，不能用误差容忍替代。
+/// 对应 Java：com.alibaba.excel.converters.boolean_。
 pub(crate) fn read_number_boolean(context: &ReadConverterContext<'_>) -> Result<bool, ExcelError> {
     match context.cell() {
         Some(CellValue::Int(value)) => Ok(*value == 1),
@@ -97,13 +98,13 @@ pub(crate) fn read_number_boolean(context: &ReadConverterContext<'_>) -> Result<
         None => Err(context.convert_context().invalid(&CellValue::Empty, "bool")),
     }
 }
-
+/// 对应 Java：com.alibaba.excel.converters.boolean_。
 pub(crate) fn write_boolean_number(context: &WriteConverterContext<'_, bool>) -> WriteCellData {
     WriteCellData::new(CellValue::Decimal(BigDecimal::from(i32::from(
         *context.value(),
     ))))
 }
-
+/// 对应 Java：com.alibaba.excel.converters.boolean_。
 pub(crate) fn read_string_boolean(context: &ReadConverterContext<'_>) -> Result<bool, ExcelError> {
     match context.cell() {
         Some(CellValue::String(value)) => Ok(value.eq_ignore_ascii_case("true")),
@@ -111,17 +112,17 @@ pub(crate) fn read_string_boolean(context: &ReadConverterContext<'_>) -> Result<
         None => Err(context.convert_context().invalid(&CellValue::Empty, "bool")),
     }
 }
-
+/// 对应 Java：com.alibaba.excel.converters.boolean_。
 pub(crate) fn write_boolean_string(context: &WriteConverterContext<'_, bool>) -> WriteCellData {
     WriteCellData::from_string(context.value().to_string())
 }
-
+/// 对应 Java：com.alibaba.excel.converters.boolean_。
 pub(crate) fn read_boolean_string_value(
     context: &ReadConverterContext<'_>,
 ) -> Result<String, ExcelError> {
     read_boolean(context).map(|value| value.to_string())
 }
-
+/// 对应 Java：com.alibaba.excel.converters.boolean_。
 pub(crate) fn write_string_boolean(context: &WriteConverterContext<'_, String>) -> WriteCellData {
     WriteCellData::new(CellValue::Bool(
         context.value().eq_ignore_ascii_case("true"),

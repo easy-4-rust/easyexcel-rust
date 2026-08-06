@@ -9,7 +9,7 @@ use crate::annotation::{StructOptions, parse_field_options};
 use super::column::build_column;
 use super::field_tokens::build_field_tokens;
 
-/// 单字段展开结果。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 单字段展开结果。
 pub(super) struct FieldExpansion {
     pub(super) column: Option<TokenStream>,
     pub(super) readers: TokenStream,
@@ -23,7 +23,7 @@ pub(super) struct FieldExpansion {
     pub(super) forced_index: Option<(usize, String, Span)>,
 }
 
-/// 展开一个具名字段，并保持 `ExcelIgnore` 的最高优先级。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 展开一个具名字段，并保持 `ExcelIgnore` 的最高优先级。
 pub(super) fn expand_field(
     field: Field,
     crate_path: &TokenStream,

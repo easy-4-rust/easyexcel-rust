@@ -6,7 +6,7 @@ use std::io::{self, Read, Write};
 
 use crate::Error as ExcelError;
 
-/// Mirrors `org.apache.commons.io.IOUtils#copy`.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Mirrors `org.apache.commons.io.IOUtils#copy`.
 ///
 /// Copies all bytes from `reader` into `writer` using a 4 KiB stack
 /// buffer (Java uses a 4 KiB byte array).
@@ -19,14 +19,22 @@ pub fn copy(reader: &mut dyn Read, writer: &mut dyn Write) -> Result<u64, ExcelE
     Ok(n)
 }
 
-/// 读取输入流剩余的全部字节。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 读取输入流剩余的全部字节。
+///
+/// # Errors
+///
+/// 输入流读取失败时返回 [`ExcelError::Io`]。
 pub fn read_all(reader: &mut dyn Read) -> Result<Vec<u8>, ExcelError> {
     let mut bytes = Vec::new();
     reader.read_to_end(&mut bytes)?;
     Ok(bytes)
 }
 
-/// 写入全部字节并刷新输出流。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 写入全部字节并刷新输出流。
+///
+/// # Errors
+///
+/// 输出流写入或刷新失败时返回 [`ExcelError::Io`]。
 pub fn write_all_and_flush<W>(writer: &mut W, bytes: &[u8]) -> Result<(), ExcelError>
 where
     W: Write + ?Sized,

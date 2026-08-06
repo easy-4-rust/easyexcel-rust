@@ -10,6 +10,7 @@
 ///
 /// Rust port of Java `WriteDirectionEnum`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.enums.WriteDirectionEnum。
 pub enum WriteDirectionEnum {
     /// Expand downward.
     Vertical,

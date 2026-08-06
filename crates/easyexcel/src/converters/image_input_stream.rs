@@ -10,7 +10,7 @@ use crate::core::excel_error::ExcelError;
 use crate::core::from_excel_cell::FromExcelCell;
 use crate::core::into_excel_cell::IntoExcelCell;
 
-/// Java `InputStreamImageConverter` equivalent for a stateful Rust [`Read`] source.
+/// 对应 Java：com.alibaba.excel.converters.inputstream.InputStreamImageConverter。 Java `InputStreamImageConverter` equivalent for a stateful Rust [`Read`] source.
 ///
 /// The first conversion consumes and caches the bytes remaining in the reader;
 /// repeated conversion passes reuse that cache. The reader is deliberately not
@@ -32,6 +32,7 @@ impl<R> fmt::Debug for ImageInputStream<R> {
 impl<R> ImageInputStream<R> {
     /// Wraps a reader whose remaining bytes represent one image.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.converters.inputstream.InputStreamImageConverter。
     pub const fn new(reader: R) -> Self {
         Self {
             reader: RefCell::new(reader),
@@ -39,7 +40,7 @@ impl<R> ImageInputStream<R> {
         }
     }
 
-    /// Returns the wrapped reader, preserving its position after conversion.
+    /// 对应 Java：com.alibaba.excel.converters.inputstream.InputStreamImageConverter。 Returns the wrapped reader, preserving its position after conversion.
     #[must_use]
     pub fn into_inner(self) -> R {
         self.reader.into_inner()
@@ -47,7 +48,7 @@ impl<R> ImageInputStream<R> {
 }
 
 impl ImageInputStream {
-    /// Type-erases a reader so the default converter registry can use one stable `TypeId`.
+    /// 对应 Java：com.alibaba.excel.converters.inputstream.InputStreamImageConverter。 Type-erases a reader so the default converter registry can use one stable `TypeId`.
     ///
     /// This is the Rust counterpart of declaring a Java model field as
     /// `InputStream` rather than as a concrete `ByteArrayInputStream` subtype.

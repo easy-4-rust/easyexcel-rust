@@ -6,6 +6,7 @@
 /// `rust_xlsxwriter::Image` automatically; the enum is preserved for API
 /// completeness.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.metadata.data.ImageData.ImageType。
 pub enum ImageType {
     /// Extended Windows metafile.
     Emf,

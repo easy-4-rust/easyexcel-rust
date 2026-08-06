@@ -91,11 +91,12 @@ pub struct WriteCellContext {
 impl WriteCellContext {
     /// Returns the mutable logical cell handle.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。
     pub const fn cell(&self) -> &WriteCellHandle {
         &self.cell
     }
 
-    /// Creates a cell handler context before cell conversion callbacks run.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Creates a cell handler context before cell conversion callbacks run.
     #[must_use]
     pub fn new(
         sheet_name: impl Into<String>,
@@ -134,6 +135,7 @@ impl WriteCellContext {
 
     /// Attaches typed column metadata.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。
     pub const fn with_column(mut self, column: &'static ExcelColumn) -> Self {
         self.field = if column.field.is_empty() {
             None
@@ -145,14 +147,14 @@ impl WriteCellContext {
         self
     }
 
-    /// Replaces the source value captured before conversion.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Replaces the source value captured before conversion.
     #[must_use]
     pub fn with_original_value(mut self, original_value: CellValue) -> Self {
         self.pending_original_value = PendingOriginalValue::Explicit(original_value);
         self
     }
 
-    /// Clears the source value for header cells.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Clears the source value for header cells.
     ///
     /// Java does not assign `originalValue` while creating head rows.
     #[must_use]
@@ -164,7 +166,7 @@ impl WriteCellContext {
         self
     }
 
-    /// Makes pre-converter metadata visible at Java's conversion stage.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Makes pre-converter metadata visible at Java's conversion stage.
     ///
     /// 显式设置的 pending 采用移动（`take`）而非克隆：`original_value` 与转换
     /// 前值共享同一份底层缓冲，热路径上每次回调省去一次 `CellValue` 克隆
@@ -181,7 +183,7 @@ impl WriteCellContext {
         self.original_field_type = self.pending_original_field_type.take();
     }
 
-    /// Marks a header cell and records its current label.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Marks a header cell and records its current label.
     #[must_use]
     pub fn with_head(mut self, head_name: impl Into<String>) -> Self {
         self.is_head = true;
@@ -191,6 +193,7 @@ impl WriteCellContext {
 
     /// Sets the relative row index.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。
     pub const fn with_relative_row_index(mut self, relative_row_index: Option<usize>) -> Self {
         self.relative_row_index = relative_row_index;
         self
@@ -204,14 +207,14 @@ impl WriteCellContext {
         self.cell_data_list.first()
     }
 
-    /// Refreshes conversion metadata after a handler changes [`Self::value`].
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Refreshes conversion metadata after a handler changes [`Self::value`].
     pub fn refresh_converted_data(&mut self) {
         self.target_cell_data_type = Some(self.value.data_type());
         self.cell_data_list.clear();
         self.cell_data_list.push(self.value.clone());
     }
 
-    /// Applies mutations requested through [`Self::cell`].
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Applies mutations requested through [`Self::cell`].
     ///
     /// Writer backends call this after the logical callback chain and before
     /// committing the physical cell.
@@ -225,13 +228,13 @@ impl WriteCellContext {
         }
     }
 
-    /// Synchronizes the logical handle after compatibility callbacks mutate
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Synchronizes the logical handle after compatibility callbacks mutate
     /// [`Self::value`] directly.
     pub fn sync_cell_handle(&self) {
         self.cell.sync_value(&self.value);
     }
 
-    /// Attaches the real writer holder state visible for this cell callback.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Attaches the real writer holder state visible for this cell callback.
     #[must_use]
     pub fn with_holder_context(
         mut self,
@@ -256,7 +259,7 @@ impl WriteCellContext {
         self
     }
 
-    /// Replaces compatibility holder data with a live-context snapshot.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Replaces compatibility holder data with a live-context snapshot.
     ///
     /// 内联等价 `WriteHolderContext::from_write_context(context)` 加
     /// `with_callback_sheet(&self.sheet_name, Some(self.row_index))`：旧实现会
@@ -293,7 +296,7 @@ impl WriteCellContext {
         self
     }
 
-    /// Attaches all holder views and the resolved Java `currentWriteHolder()` state.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Attaches all holder views and the resolved Java `currentWriteHolder()` state.
     #[must_use]
     pub fn with_resolved_holder_context(
         mut self,
@@ -319,11 +322,12 @@ impl WriteCellContext {
 
     /// Returns the active workbook holder view, when supplied by the writer.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。
     pub const fn write_workbook_holder(&self) -> Option<&WriteWorkbookHolderView> {
         self.holders.workbook()
     }
 
-    /// Returns the active sheet holder view.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Returns the active sheet holder view.
     ///
     /// # Panics
     ///
@@ -338,12 +342,14 @@ impl WriteCellContext {
 
     /// Returns the active table holder view for table callbacks.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。
     pub const fn write_table_holder(&self) -> Option<&WriteTableHolderView> {
         self.holders.table()
     }
 
     /// Returns all holder views captured for this callback.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。
     pub const fn write_context(&self) -> &WriteHolderContext {
         &self.holders
     }

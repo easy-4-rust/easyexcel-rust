@@ -4,7 +4,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{LitStr, meta::ParseNestedMeta};
 
-/// 将条件格式属性转换为运行时元数据元组。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将条件格式属性转换为运行时元数据元组。
 pub(super) fn parse_conditional(meta: &ParseNestedMeta<'_>) -> syn::Result<TokenStream> {
     let mut condition: Option<LitStr> = None;
     let mut font_color: Option<LitStr> = None;

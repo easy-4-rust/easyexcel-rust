@@ -12,7 +12,7 @@ use crate::core::ExcelWriteHeadProperty;
 use crate::write::WriteHolder;
 use crate::write::metadata::WriteBasicParameter;
 
-/// 对应 Java：`AbstractWriteHolder extends AbstractHolder implements WriteHolder`.
+/// 对应 Java：com.alibaba.excel.write.metadata.holder.AbstractWriteHolder。 对应 Java：`AbstractWriteHolder extends AbstractHolder implements WriteHolder`.
 ///
 /// The Java side carries resolved nullable parameters inherited from the
 /// parent holder. Rust keeps the same resolved state here; builders use
@@ -22,6 +22,7 @@ use crate::write::metadata::WriteBasicParameter;
 // `AbstractWriteHolder` 一一对应，合并会破坏 1:1 可追溯性。
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone)]
+/// 对应 Java：com.alibaba.excel.write.metadata.holder.AbstractWriteHolder。
 pub struct AbstractWriteHolder {
     /// Mirrors `AbstractWriteHolder.needHead`.
     pub need_head: bool,
@@ -78,7 +79,7 @@ impl Default for AbstractWriteHolder {
 }
 
 impl AbstractWriteHolder {
-    /// Resolves Java nullable write parameters against an optional parent.
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.AbstractWriteHolder。 Resolves Java nullable write parameters against an optional parent.
     ///
     /// A missing collection inherits the parent collection, while an explicit
     /// empty collection clears it. This distinction is required by Java
@@ -142,11 +143,12 @@ impl AbstractWriteHolder {
     /// Returns the effective converter map inherited by this holder.
     /// (Java `ConfigurationHolder.converterMap()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.AbstractWriteHolder。
     pub const fn converter_map(&self) -> &ConverterRegistry {
         &self.converter_map
     }
 
-    /// Replaces the resolved head property carried by this holder.
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.AbstractWriteHolder。 Replaces the resolved head property carried by this holder.
     ///
     /// Java creates this property during every holder constructor. Rust
     /// builders can resolve schema and dynamic-head information later, so the
@@ -155,7 +157,7 @@ impl AbstractWriteHolder {
         self.excel_write_head_property = property;
     }
 
-    /// Resolves a raw dynamic/class head into this holder. (Java constructor)
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.AbstractWriteHolder。 Resolves a raw dynamic/class head into this holder. (Java constructor)
     pub fn resolve_head(
         &mut self,
         head_clazz: Option<String>,

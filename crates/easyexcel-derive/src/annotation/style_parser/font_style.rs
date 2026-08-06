@@ -8,7 +8,7 @@ use crate::annotation::integer::parse_unsigned_integer;
 
 use super::parse_named_variant;
 
-/// 解析 Java 字体注解的全部九个属性。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析 Java 字体注解的全部九个属性。
 pub(crate) fn parse_font_style(
     meta: &ParseNestedMeta<'_>,
     crate_path: &TokenStream,

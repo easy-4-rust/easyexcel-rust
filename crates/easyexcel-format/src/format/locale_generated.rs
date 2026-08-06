@@ -7,7 +7,7 @@
 use pure_rust_locales::{Locale as SystemLocale, locale_match};
 
 use crate::SpreadsheetLocale as FormatLocale;
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(super) fn formatter_locale(locale: SystemLocale) -> FormatLocale {
     let decimal_separator = locale_match!(locale => LC_NUMERIC::DECIMAL_POINT)
         .chars()

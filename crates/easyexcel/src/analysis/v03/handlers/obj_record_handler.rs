@@ -12,13 +12,13 @@ pub struct ObjRecordHandler {
 }
 
 impl ObjRecordHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Java `ObjRecordHandler.processRecord`.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler。 Java `ObjRecordHandler.processRecord`.
     pub fn process_obj(&mut self, object_id: u32) {
         self.temp_object_index = Some(object_id);
     }

@@ -2,9 +2,13 @@
 
 use crate::{Error, Result};
 
-/// 校验可选的零基闭区间行范围。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 校验可选的零基闭区间行范围。
 ///
 /// 仅同时给出起止行且起始行大于结束行时返回错误。
+///
+/// # Errors
+///
+/// `start_row` 大于 `end_row` 时返回范围错误。
 pub fn validate_row_range(start_row: Option<u32>, end_row: Option<u32>) -> Result<()> {
     if let (Some(start), Some(end)) = (start_row, end_row)
         && start > end
@@ -16,7 +20,7 @@ pub fn validate_row_range(start_row: Option<u32>, end_row: Option<u32>) -> Resul
     Ok(())
 }
 
-/// 判断物理行是否应进入上层读取管线。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 判断物理行是否应进入上层读取管线。
 ///
 /// 表头行始终保留；数据行再按可选的零基闭区间筛选。调用方应先通过
 /// [`validate_row_range`] 校验起止范围。

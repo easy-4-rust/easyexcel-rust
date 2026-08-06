@@ -9,7 +9,7 @@ use crate::core::enum_cell_data_type::CellDataType;
 use crate::core::image_data::ImageData;
 use crate::core::rich_text_string_data::RichTextStringData;
 
-/// A backend-neutral Excel cell value.
+/// 对应 Java：com.alibaba.excel.metadata.data.`CellData<T>`。 A backend-neutral Excel cell value.
 ///
 /// The Java counterpart stores a `CellDataTypeEnum` plus per-type fields in
 /// `CellData<T>`. Rust collapses both into a single enum so the variant set
@@ -67,11 +67,12 @@ pub enum CellValue {
 impl CellValue {
     /// Returns whether the cell is empty.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.`CellData<T>`。
     pub const fn is_empty(&self) -> bool {
         matches!(self, Self::Empty)
     }
 
-    /// Returns a deterministic textual representation used for header matching.
+    /// 对应 Java：com.alibaba.excel.metadata.data.`CellData<T>`。 Returns a deterministic textual representation used for header matching.
     #[must_use]
     pub fn as_text(&self) -> String {
         match self {
@@ -89,7 +90,7 @@ impl CellValue {
         }
     }
 
-    /// Returns the Java EasyExcel-compatible logical cell type used to select converters.
+    /// 对应 Java：com.alibaba.excel.metadata.data.`CellData<T>`。 Returns the Java EasyExcel-compatible logical cell type used to select converters.
     #[must_use]
     pub fn data_type(&self) -> CellDataType {
         match self {

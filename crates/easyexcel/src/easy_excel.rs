@@ -24,23 +24,23 @@ use crate::excel_reader_builder::ExcelReaderBuilder;
 use crate::excel_sync_reader_builder::ExcelSyncReaderBuilder;
 use crate::write::builder::excel_writer_builder::ExcelWriterBuilder;
 
-/// Static factory matching Java `EasyExcel`'s entry point.
+/// 对应 Java：com.alibaba.excel.EasyExcel。 Static factory matching Java `EasyExcel`'s entry point.
 pub struct EasyExcel;
 
 impl EasyExcel {
-    /// Starts Java's path-independent `read()` builder.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Starts Java's path-independent `read()` builder.
     #[must_use]
     pub fn reader() -> CompatibleExcelReaderBuilder {
         CompatibleExcelReaderBuilder::new()
     }
 
-    /// Starts Java's `read(File/String)` builder without a listener.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Starts Java's `read(File/String)` builder without a listener.
     #[must_use]
     pub fn reader_from_path(path: impl Into<PathBuf>) -> CompatibleExcelReaderBuilder {
         Self::reader().file(path)
     }
 
-    /// Starts Java's `read(InputStream)` builder.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Starts Java's `read(InputStream)` builder.
     ///
     /// The stream is materialised into an automatically deleted temporary
     /// file so the existing XLSX, XLS, and CSV engines retain random access.
@@ -56,7 +56,7 @@ impl EasyExcel {
         Self::reader().input_stream(input)
     }
 
-    /// Starts an event-driven XLSX, XLS, or CSV read selected from the path extension.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Starts an event-driven XLSX, XLS, or CSV read selected from the path extension.
     pub fn read<T, L>(path: impl Into<PathBuf>, listener: L) -> ExcelReaderBuilder<T, L>
     where
         T: ExcelRow,
@@ -65,7 +65,7 @@ impl EasyExcel {
         ExcelReaderBuilder::new(path.into(), listener)
     }
 
-    /// Starts a synchronous read that collects all converted rows.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Starts a synchronous read that collects all converted rows.
     pub fn read_sync<T>(path: impl Into<PathBuf>) -> ExcelSyncReaderBuilder<T>
     where
         T: ExcelRow,
@@ -73,7 +73,7 @@ impl EasyExcel {
         ExcelSyncReaderBuilder::new(path.into())
     }
 
-    /// Starts a Java-compatible no-model event read.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Starts a Java-compatible no-model event read.
     pub fn read_dynamic<L>(
         path: impl Into<PathBuf>,
         listener: L,
@@ -84,13 +84,13 @@ impl EasyExcel {
         Self::read(path, listener)
     }
 
-    /// Starts a Java-compatible no-model synchronous read.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Starts a Java-compatible no-model synchronous read.
     #[must_use]
     pub fn read_dynamic_sync(path: impl Into<PathBuf>) -> ExcelSyncReaderBuilder<DynamicRow> {
         Self::read_sync(path)
     }
 
-    /// Starts a new XLSX or CSV write, selected from the path extension.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Starts a new XLSX or CSV write, selected from the path extension.
     pub fn write<T>(path: impl Into<PathBuf>) -> ExcelWriterBuilder<T>
     where
         T: ExcelRow,
@@ -98,19 +98,19 @@ impl EasyExcel {
         ExcelWriterBuilder::new(path.into())
     }
 
-    /// Starts Java's path-independent `write()` builder.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Starts Java's path-independent `write()` builder.
     #[must_use]
     pub fn writer() -> CompatibleExcelWriterBuilder {
         CompatibleExcelWriterBuilder::new()
     }
 
-    /// Starts Java's `write(File/String)` builder.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Starts Java's `write(File/String)` builder.
     #[must_use]
     pub fn writer_to_path(path: impl Into<PathBuf>) -> CompatibleExcelWriterBuilder {
         Self::writer().file(path)
     }
 
-    /// Starts Java's `write(OutputStream)` builder.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Starts Java's `write(OutputStream)` builder.
     #[must_use]
     pub fn writer_to_output_stream<W>(
         output: ExcelOutputStream<W>,
@@ -121,25 +121,25 @@ impl EasyExcel {
         Self::writer().output_stream(output)
     }
 
-    /// Builds Java's unbound `readSheet()` metadata builder.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Builds Java's unbound `readSheet()` metadata builder.
     #[must_use]
     pub fn read_sheet() -> CompatibleExcelReaderSheetBuilder {
         CompatibleExcelReaderSheetBuilder::new()
     }
 
-    /// Builds Java's unbound `readSheet(Integer)` metadata builder.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Builds Java's unbound `readSheet(Integer)` metadata builder.
     #[must_use]
     pub fn read_sheet_index(index: i32) -> CompatibleExcelReaderSheetBuilder {
         Self::read_sheet().sheet_no(index)
     }
 
-    /// Builds Java's unbound `readSheet(String)` metadata builder.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Builds Java's unbound `readSheet(String)` metadata builder.
     #[must_use]
     pub fn read_sheet_name(name: impl Into<String>) -> CompatibleExcelReaderSheetBuilder {
         Self::read_sheet().sheet_name(name)
     }
 
-    /// Builds Java's unbound `readSheet(Integer, String)` metadata builder.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Builds Java's unbound `readSheet(Integer, String)` metadata builder.
     #[must_use]
     pub fn read_sheet_with(
         index: i32,
@@ -148,7 +148,7 @@ impl EasyExcel {
         Self::read_sheet().sheet_no(index).sheet_name(name)
     }
 
-    /// Creates typed worksheet metadata for a stateful [`ExcelWriter`].
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Creates typed worksheet metadata for a stateful `ExcelWriter`.
     #[must_use]
     pub fn writer_sheet<T>(name: impl Into<String>) -> WriteSheet<T>
     where
@@ -157,7 +157,7 @@ impl EasyExcel {
         WriteSheet::new(name)
     }
 
-    /// Creates typed worksheet metadata for a Java-style zero-based sheet number.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Creates typed worksheet metadata for a Java-style zero-based sheet number.
     #[must_use]
     pub fn writer_sheet_index<T>(index: usize) -> WriteSheet<T>
     where
@@ -166,25 +166,25 @@ impl EasyExcel {
         WriteSheet::new_index(index)
     }
 
-    /// Builds Java's unbound `writerSheet()` metadata builder.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Builds Java's unbound `writerSheet()` metadata builder.
     #[must_use]
     pub fn writer_sheet_builder() -> CompatibleExcelWriterSheetBuilder {
         CompatibleExcelWriterSheetBuilder::new()
     }
 
-    /// Builds Java's unbound `writerSheet(Integer)` metadata builder.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Builds Java's unbound `writerSheet(Integer)` metadata builder.
     #[must_use]
     pub fn writer_sheet_builder_index(index: i32) -> CompatibleExcelWriterSheetBuilder {
         Self::writer_sheet_builder().sheet_no(index)
     }
 
-    /// Builds Java's unbound `writerSheet(String)` metadata builder.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Builds Java's unbound `writerSheet(String)` metadata builder.
     #[must_use]
     pub fn writer_sheet_builder_name(name: impl Into<String>) -> CompatibleExcelWriterSheetBuilder {
         Self::writer_sheet_builder().sheet_name(name)
     }
 
-    /// Builds Java's unbound `writerSheet(Integer, String)` metadata builder.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Builds Java's unbound `writerSheet(Integer, String)` metadata builder.
     #[must_use]
     pub fn writer_sheet_builder_with(
         index: i32,
@@ -195,7 +195,7 @@ impl EasyExcel {
             .sheet_name(name)
     }
 
-    /// Creates a `WriteTable` value mirroring Java
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Creates a `WriteTable` value mirroring Java
     /// `EasyExcelFactory.writerTable(Integer)`. (Java `writerTable(int)`)
     #[must_use]
     pub fn writer_table(table_no: i32) -> crate::write::MirroredWriteTable {
@@ -215,15 +215,15 @@ impl EasyExcel {
         crate::write::ExcelWriterTableBuilder::new().table_no(table_no)
     }
 
-    /// Builds Java's unbound `writerTable()` builder.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Builds Java's unbound `writerTable()` builder.
     #[must_use]
     pub fn writer_table_builder_default() -> crate::write::ExcelWriterTableBuilder {
         crate::write::ExcelWriterTableBuilder::new()
     }
 
-    /// Fills scalar `{key}` placeholders in an existing XLSX template.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Fills scalar `{key}` placeholders in an existing XLSX template.
     ///
-    /// Legacy `.xls` templates return typed [`ExcelError::Unsupported`]
+    /// Legacy `.xls` templates return typed `ExcelError::Unsupported`
     /// (`legacy XLS template fill is not supported`). Java maps this to
     /// `ExcelWriter.fill` on `HSSFWorkbook`; Rust fill remains OOXML-only.
     /// Use [`Self::write`] / `with_template` for `.xls` cell append instead.
@@ -239,10 +239,10 @@ impl EasyExcel {
         fill_xlsx_template(template.as_ref(), output.as_ref(), data)
     }
 
-    /// Expands a collection in an existing XLSX template.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Expands a collection in an existing XLSX template.
     ///
     /// XLS (`.xls`) collection fill is not supported — returns
-    /// [`ExcelError::Unsupported`] with `legacy XLS template fill is not supported`.
+    /// `ExcelError::Unsupported` with `legacy XLS template fill is not supported`.
     ///
     /// # Errors
     ///
@@ -256,7 +256,7 @@ impl EasyExcel {
         fill_xlsx_template_list(template.as_ref(), output.as_ref(), data, config)
     }
 
-    /// Loads an XLSX template for repeated Java-style `fill` calls.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Loads an XLSX template for repeated Java-style `fill` calls.
     ///
     /// XLS (`.xls`) stateful template writers are rejected with
     /// `legacy XLS template fill is not supported` (use [`Self::fill_template`] for
@@ -272,7 +272,7 @@ impl EasyExcel {
         ExcelTemplateWriter::new(template, output)
     }
 
-    /// Loads an XLSX template from a Java-style input stream and writes to a path.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Loads an XLSX template from a Java-style input stream and writes to a path.
     ///
     /// # Errors
     ///
@@ -287,7 +287,7 @@ impl EasyExcel {
         ExcelTemplateWriter::from_reader(template, output)
     }
 
-    /// Loads a path template and writes to a caller-owned output stream.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Loads a path template and writes to a caller-owned output stream.
     ///
     /// # Errors
     ///
@@ -302,7 +302,7 @@ impl EasyExcel {
         ExcelTemplateWriter::to_writer(template, output)
     }
 
-    /// Loads a stream template and writes to a caller-owned output stream.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Loads a stream template and writes to a caller-owned output stream.
     ///
     /// # Errors
     ///
@@ -318,7 +318,7 @@ impl EasyExcel {
         ExcelTemplateWriter::from_reader_to_writer(template, output)
     }
 
-    /// Loads a path template and writes to a closeable output stream.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Loads a path template and writes to a closeable output stream.
     ///
     /// # Errors
     ///
@@ -333,7 +333,7 @@ impl EasyExcel {
         ExcelTemplateWriter::to_output_stream(template, output)
     }
 
-    /// Loads a stream template and writes to a closeable output stream.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Loads a stream template and writes to a closeable output stream.
     ///
     /// # Errors
     ///

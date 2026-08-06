@@ -3,7 +3,7 @@
 use crate::core::anchor_type::AnchorType;
 use crate::core::coordinate_data::CoordinateData;
 
-/// Client-anchor margins and movement behavior.
+/// 对应 Java：com.alibaba.excel.metadata.data.ClientAnchorData。 Client-anchor margins and movement behavior.
 ///
 /// Java `ClientAnchorData extends CoordinateData`; Rust uses composition
 /// because the inner type is `Copy`/`Default` and we avoid the inheritance
@@ -21,6 +21,7 @@ pub struct ClientAnchorData {
 impl ClientAnchorData {
     /// Creates a default anchor for the decorated cell. (Java default constructor)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ClientAnchorData。
     pub const fn new() -> Self {
         Self {
             coordinates: CoordinateData::new(),
@@ -34,6 +35,7 @@ impl ClientAnchorData {
 
     /// Sets its absolute and relative cell coordinates.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ClientAnchorData。
     pub const fn coordinates(mut self, value: CoordinateData) -> Self {
         self.coordinates = value;
         self
@@ -41,6 +43,7 @@ impl ClientAnchorData {
 
     /// Sets the top margin in pixels.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ClientAnchorData。
     pub const fn top(mut self, value: u32) -> Self {
         self.top = Some(value);
         self
@@ -48,6 +51,7 @@ impl ClientAnchorData {
 
     /// Sets the right margin in pixels.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ClientAnchorData。
     pub const fn right(mut self, value: u32) -> Self {
         self.right = Some(value);
         self
@@ -55,6 +59,7 @@ impl ClientAnchorData {
 
     /// Sets the bottom margin in pixels.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ClientAnchorData。
     pub const fn bottom(mut self, value: u32) -> Self {
         self.bottom = Some(value);
         self
@@ -62,6 +67,7 @@ impl ClientAnchorData {
 
     /// Sets the left margin in pixels.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ClientAnchorData。
     pub const fn left(mut self, value: u32) -> Self {
         self.left = Some(value);
         self
@@ -69,6 +75,7 @@ impl ClientAnchorData {
 
     /// Sets the object movement and resize behavior.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ClientAnchorData。
     pub const fn anchor_type(mut self, value: AnchorType) -> Self {
         self.anchor_type = Some(value);
         self
@@ -76,36 +83,42 @@ impl ClientAnchorData {
 
     /// Returns the coordinates. (Java `getCoordinates()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ClientAnchorData。
     pub const fn get_coordinates(self) -> CoordinateData {
         self.coordinates
     }
 
     /// Returns the top margin in pixels. (Java `getTop()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ClientAnchorData。
     pub const fn get_top(self) -> Option<u32> {
         self.top
     }
 
     /// Returns the right margin in pixels. (Java `getRight()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ClientAnchorData。
     pub const fn get_right(self) -> Option<u32> {
         self.right
     }
 
     /// Returns the bottom margin in pixels. (Java `getBottom()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ClientAnchorData。
     pub const fn get_bottom(self) -> Option<u32> {
         self.bottom
     }
 
     /// Returns the left margin in pixels. (Java `getLeft()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ClientAnchorData。
     pub const fn get_left(self) -> Option<u32> {
         self.left
     }
 
     /// Returns the movement and resize behavior. (Java `getAnchorType()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.ClientAnchorData。
     pub const fn get_anchor_type(self) -> Option<AnchorType> {
         self.anchor_type
     }

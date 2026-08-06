@@ -1,6 +1,6 @@
 use thiserror::Error as ThisError;
 
-/// 表格读取、写入和协议执行错误。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 表格读取、写入和协议执行错误。
 #[derive(Debug, ThisError)]
 #[non_exhaustive]
 pub enum Error {
@@ -63,11 +63,4 @@ impl From<quick_xml::Error> for Error {
     }
 }
 
-impl From<quick_xml_legacy::Error> for Error {
-    fn from(error: quick_xml_legacy::Error) -> Self {
-        Self::Xml(error.to_string())
-    }
-}
-
-/// 表格 I/O 的统一结果类型。
-pub type Result<T> = std::result::Result<T, Error>;
+include!("error/result.rs");

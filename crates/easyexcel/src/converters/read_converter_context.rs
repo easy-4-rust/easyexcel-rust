@@ -24,6 +24,7 @@ pub struct ReadConverterContext<'a> {
 impl<'a> ReadConverterContext<'a> {
     /// Creates a read conversion context. (Java `@AllArgsConstructor`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.converters.ReadConverterContext。
     pub const fn new(
         cell: Option<&'a CellValue>,
         column: &'a ExcelColumn,
@@ -65,6 +66,7 @@ impl<'a> ReadConverterContext<'a> {
     /// `ReadCellData.numberValue` parsed from OOXML rather than its `f64`
     /// transport representation.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.converters.ReadConverterContext。
     pub const fn with_cell_metadata(
         cell: Option<&'a CellValue>,
         formula: Option<&'a FormulaData>,
@@ -85,36 +87,42 @@ impl<'a> ReadConverterContext<'a> {
 
     /// Returns the source cell, or `None` when it is physically absent. (Java `getReadCellData()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.converters.ReadConverterContext。
     pub const fn cell(&self) -> Option<&'a CellValue> {
         self.cell
     }
 
     /// Returns formula metadata when the source cell contains a formula. (Java `ReadCellData.getFormulaData()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.converters.ReadConverterContext。
     pub const fn formula(&self) -> Option<&'a FormulaData> {
         self.formula
     }
 
     /// Returns the Excel/POI-compatible rendered text when the reader retained it.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.converters.ReadConverterContext。
     pub const fn display_value(&self) -> Option<&'a str> {
         self.display_value
     }
 
     /// Returns the exact decimal token retained from the source workbook.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.converters.ReadConverterContext。
     pub const fn decimal_value(&self) -> Option<&'a BigDecimal> {
         self.decimal_value
     }
 
     /// Returns the field's static column metadata. (Java `getContentProperty()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.converters.ReadConverterContext。
     pub const fn column(&self) -> &'a ExcelColumn {
         self.column
     }
 
     /// Returns the resolved row, column, field, and format information. (Java `getAnalysisContext()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.converters.ReadConverterContext。
     pub const fn convert_context(&self) -> &'a ConvertContext {
         self.context
     }

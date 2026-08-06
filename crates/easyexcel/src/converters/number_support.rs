@@ -17,6 +17,7 @@ use crate::{CellValue, ExcelError, ReadConverterContext, WriteCellData, WriteCon
 #[cfg(test)]
 use easyexcel_format::{java_f32_string, java_f64_string};
 
+/// 对应 Java：com.alibaba.excel.converters。
 pub(crate) trait JavaNumber: Sized {
     fn from_decimal(value: &BigDecimal) -> Result<Self, ExcelError>;
     fn to_decimal(&self) -> Result<BigDecimal, ExcelError>;
@@ -31,6 +32,7 @@ pub(crate) trait JavaNumber: Sized {
     }
 }
 
+/// 对应 Java：com.alibaba.excel.converters。
 pub(crate) fn read_number<T>(context: &ReadConverterContext<'_>) -> Result<T, ExcelError>
 where
     T: JavaNumber,
@@ -46,6 +48,7 @@ where
     T::from_decimal(&decimal).map_err(|error| number_error(context, cell, error))
 }
 
+/// 对应 Java：com.alibaba.excel.converters。
 pub(crate) fn write_number<T>(
     context: &WriteConverterContext<'_, T>,
 ) -> Result<WriteCellData, ExcelError>
@@ -64,6 +67,7 @@ where
     Ok(cell)
 }
 
+/// 对应 Java：com.alibaba.excel.converters。
 pub(crate) fn read_string_number<T>(context: &ReadConverterContext<'_>) -> Result<T, ExcelError>
 where
     T: JavaNumber,
@@ -83,6 +87,7 @@ where
     T::from_decimal(&decimal).map_err(|error| number_error(context, cell, error))
 }
 
+/// 对应 Java：com.alibaba.excel.converters。
 pub(crate) fn write_number_string<T>(
     context: &WriteConverterContext<'_, T>,
 ) -> Result<WriteCellData, ExcelError>

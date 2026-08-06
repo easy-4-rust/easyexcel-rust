@@ -4,7 +4,7 @@ use crate::CacheLocation;
 
 use super::basic_parameter::BasicParameter;
 
-/// Shared fluent builder surface for read/write parameter objects.
+/// 对应 Java：com.alibaba.excel.metadata.AbstractParameterBuilder。 Shared fluent builder surface for read/write parameter objects.
 ///
 /// Java uses `AbstractParameterBuilder<T, C extends BasicParameter>`. Rust
 /// exposes the same method names through a trait so writer/reader builders can
@@ -81,28 +81,4 @@ pub trait AbstractParameterBuilder {
     }
 }
 
-/// Minimal builder used by metadata tests and future reader/writer facades.
-#[derive(Debug, Clone, Default)]
-pub struct BasicParameterBuilder {
-    parameter: BasicParameter,
-}
-
-impl BasicParameterBuilder {
-    /// Creates an empty builder. (Java builder entry point)
-    #[must_use]
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Builds the parameter bag. (Java `build()` parameter extraction)
-    #[must_use]
-    pub fn build(self) -> BasicParameter {
-        self.parameter
-    }
-}
-
-impl AbstractParameterBuilder for BasicParameterBuilder {
-    fn parameter(&mut self) -> &mut BasicParameter {
-        &mut self.parameter
-    }
-}
+include!("abstract_parameter_builder/basic_parameter_builder.rs");

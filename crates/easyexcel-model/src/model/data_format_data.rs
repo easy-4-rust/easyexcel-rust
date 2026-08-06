@@ -1,11 +1,11 @@
 //! 工作簿无关的数据格式元数据。
 //!
 //! 语义对应 Java：`com.alibaba.excel.metadata.data.DataFormatData`，供
-//! XLS、XLSX、CSV 与 EasyExcel 门面共同使用。
+//! XLS、XLSX、CSV 与 `EasyExcel` 门面共同使用。
 
 use std::borrow::Cow;
 
-/// 单元格数据格式索引与自定义格式文本。
+/// 对应 Java：com.alibaba.excel.metadata.data.DataFormatData。 单元格数据格式索引与自定义格式文本。
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct DataFormatData {
     /// 工作簿内的格式索引。
@@ -15,7 +15,7 @@ pub struct DataFormatData {
 }
 
 impl DataFormatData {
-    /// 创建空的数据格式元数据。
+    /// 对应 Java：com.alibaba.excel.metadata.data.DataFormatData。 创建空的数据格式元数据。
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -23,27 +23,28 @@ impl DataFormatData {
 
     /// 返回格式索引。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.DataFormatData。
     pub const fn index(&self) -> Option<i16> {
         self.index
     }
 
-    /// 设置格式索引。
+    /// 对应 Java：com.alibaba.excel.metadata.data.DataFormatData。 设置格式索引。
     pub fn set_index(&mut self, index: Option<i16>) {
         self.index = index;
     }
 
-    /// 返回自定义格式文本。
+    /// 对应 Java：com.alibaba.excel.metadata.data.DataFormatData。 返回自定义格式文本。
     #[must_use]
     pub fn format(&self) -> Option<&str> {
         self.format.as_deref()
     }
 
-    /// 设置自定义格式文本。
+    /// 对应 Java：com.alibaba.excel.metadata.data.DataFormatData。 设置自定义格式文本。
     pub fn set_format(&mut self, format: impl Into<Option<String>>) {
         self.format = format.into();
     }
 
-    /// 将来源中的非空字段合并到目标对象。
+    /// 对应 Java：com.alibaba.excel.metadata.data.DataFormatData。 将来源中的非空字段合并到目标对象。
     pub fn merge(source: Option<&Self>, target: Option<&mut Self>) {
         let (Some(source), Some(target)) = (source, target) else {
             return;
@@ -60,13 +61,13 @@ impl DataFormatData {
         }
     }
 
-    /// 返回独立副本。
+    /// 对应 Java：com.alibaba.excel.metadata.data.DataFormatData。 返回独立副本。
     #[must_use]
     pub fn clone_data(&self) -> Self {
         self.clone()
     }
 
-    /// 以借用优先的形式返回格式文本。
+    /// 对应 Java：com.alibaba.excel.metadata.data.DataFormatData。 以借用优先的形式返回格式文本。
     #[must_use]
     pub fn format_cow(&self) -> Cow<'_, str> {
         match &self.format {
@@ -75,7 +76,7 @@ impl DataFormatData {
         }
     }
 
-    /// 解析有效的数据格式；缺失或无效值回退为内建 `General`（索引 0）。
+    /// 对应 Java：com.alibaba.excel.metadata.data.DataFormatData。 解析有效的数据格式；缺失或无效值回退为内建 `General`（索引 0）。
     ///
     /// 非负格式索引优先于自定义格式文本；没有有效索引时保留非空自定义
     /// 格式。该规则与具体 XLS/XLSX 后端无关，可由门面和格式引擎共同复用。
@@ -102,6 +103,7 @@ impl DataFormatData {
 
     /// 返回内建 `General` 数据格式。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.DataFormatData。
     pub const fn general() -> Self {
         Self {
             index: Some(0),

@@ -4,7 +4,7 @@ use crate::core::cell_value::CellValue;
 use crate::core::convert_context::ConvertContext;
 use crate::core::excel_error::ExcelError;
 
-/// Converts a backend-neutral cell into a Rust value.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Converts a backend-neutral cell into a Rust value.
 ///
 /// Java-side counterpart: `Converter<T>.convertToJavaData(...)`.
 /// `Sized` bound matches Java's ability to instantiate the result type.

@@ -18,7 +18,7 @@ pub struct WriteTable {
 }
 
 impl WriteTable {
-    /// Creates a `WriteTable` with table no 0. (Java `new WriteTable()`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteTable。 Creates a `WriteTable` with table no 0. (Java `new WriteTable()`)
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -28,7 +28,7 @@ impl WriteTable {
         }
     }
 
-    /// Creates a `WriteTable` with the given table no. (Java `WriteTable.tableNo` setter)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteTable。 Creates a `WriteTable` with the given table no. (Java `WriteTable.tableNo` setter)
     #[must_use]
     pub fn with_table_no(table_no: i32) -> Self {
         Self {
@@ -40,11 +40,12 @@ impl WriteTable {
 
     /// Returns the zero-based table index. (Java `getTableNo()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteTable。
     pub const fn table_no(&self) -> i32 {
         self.table_no
     }
 
-    /// Sets the zero-based table index. (Java `setTableNo(Integer)`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteTable。 Sets the zero-based table index. (Java `setTableNo(Integer)`)
     pub fn set_table_no(&mut self, table_no: i32) -> &mut Self {
         self.table_no = table_no;
         self
@@ -52,12 +53,14 @@ impl WriteTable {
 
     /// Returns the shared write options.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteTable。
     pub const fn options(&self) -> &WriteOptions {
         &self.options
     }
 
     /// Returns nullable table-level overrides before parent inheritance.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteTable。
     pub const fn parameter(&self) -> &WriteBasicParameter {
         &self.parameter
     }

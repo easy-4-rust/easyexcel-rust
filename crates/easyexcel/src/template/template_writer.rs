@@ -28,6 +28,7 @@ use crate::{FillConfig, FillWrapper, TemplateData, TemplateSheet};
 /// Scalar values and collection fills are accumulated against one loaded XLSX
 /// package. Repeated collection fills with the same prefix append at the prior
 /// fill position instead of reopening the original template.
+/// 对应 Java：com.alibaba.excel.ExcelWriter。
 pub struct ExcelTemplateWriter<'a> {
     pub(crate) output: TemplateOutput<'a>,
     pub(crate) entries: Vec<TemplateEntry>,
@@ -35,6 +36,7 @@ pub struct ExcelTemplateWriter<'a> {
     pub(crate) next_collection_order: usize,
     pub(crate) finished: bool,
     pub(crate) auto_close_stream: bool,
+    pub(crate) collection_column_styles: BTreeMap<usize, u32>,
 }
 
 impl std::fmt::Debug for ExcelTemplateWriter<'_> {
@@ -61,6 +63,7 @@ impl ExcelTemplateWriter<'static> {
     /// # Errors
     ///
     /// Returns an I/O or OOXML package error when the template cannot be read.
+    /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub fn new(template: impl AsRef<Path>, output: impl Into<PathBuf>) -> Result<Self> {
         Ok(Self::from_entries(
             TemplateOutput::Path(output.into()),
@@ -77,6 +80,7 @@ impl ExcelTemplateWriter<'static> {
     /// # Errors
     ///
     /// Returns an I/O or OOXML package error when the template cannot be read.
+    /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub fn from_reader<R>(template: R, output: impl Into<PathBuf>) -> Result<Self>
     where
         R: Read,
@@ -97,6 +101,7 @@ impl<'a> ExcelTemplateWriter<'a> {
             next_collection_order: 0,
             finished: false,
             auto_close_stream: true,
+            collection_column_styles: BTreeMap::new(),
         }
     }
 
@@ -108,6 +113,7 @@ impl<'a> ExcelTemplateWriter<'a> {
     /// # Errors
     ///
     /// Returns an I/O or OOXML package error when the template cannot be read.
+    /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub fn to_writer<W>(template: impl AsRef<Path>, output: &'a mut W) -> Result<Self>
     where
         W: Write,
@@ -123,6 +129,7 @@ impl<'a> ExcelTemplateWriter<'a> {
     /// # Errors
     ///
     /// Returns an I/O or OOXML package error when the template cannot be read.
+    /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub fn from_reader_to_writer<R, W>(template: R, output: &'a mut W) -> Result<Self>
     where
         R: Read,
@@ -142,6 +149,7 @@ impl<'a> ExcelTemplateWriter<'a> {
     /// # Errors
     ///
     /// Returns an I/O or OOXML package error when the template cannot be read.
+    /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub fn to_output_stream<W>(
         template: impl AsRef<Path>,
         output: ExcelOutputStream<W>,
@@ -160,6 +168,7 @@ impl<'a> ExcelTemplateWriter<'a> {
     /// # Errors
     ///
     /// Returns an I/O or OOXML package error when the template cannot be read.
+    /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub fn from_reader_to_output_stream<R, W>(
         template: R,
         output: ExcelOutputStream<W>,
@@ -179,6 +188,7 @@ impl<'a> ExcelTemplateWriter<'a> {
     /// The default is `true`, matching Java `EasyExcel`. Borrowed writers always
     /// remain caller-owned regardless of this setting.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub const fn auto_close_stream(mut self, enabled: bool) -> Self {
         self.auto_close_stream = enabled;
         self
@@ -192,6 +202,7 @@ impl<'a> ExcelTemplateWriter<'a> {
     /// # Errors
     ///
     /// Returns an error after the writer has finished.
+    /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub fn fill(&mut self, data: &TemplateData) -> Result<&mut Self> {
         self.fill_on_sheet(&TemplateSheet::first(), data)
     }
@@ -201,6 +212,7 @@ impl<'a> ExcelTemplateWriter<'a> {
     /// # Errors
     ///
     /// Returns an error after the writer has finished.
+    /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub fn fill_on_sheet(
         &mut self,
         sheet: &TemplateSheet,
@@ -223,6 +235,7 @@ impl<'a> ExcelTemplateWriter<'a> {
     /// # Errors
     ///
     /// Returns an error after the writer has finished.
+    /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub fn fill_list(&mut self, data: &FillWrapper, config: FillConfig) -> Result<&mut Self> {
         self.fill_list_on_sheet(&TemplateSheet::first(), data, config)
     }
@@ -232,6 +245,7 @@ impl<'a> ExcelTemplateWriter<'a> {
     /// # Errors
     ///
     /// Returns an error after the writer has finished.
+    /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub fn fill_list_on_sheet(
         &mut self,
         sheet: &TemplateSheet,
@@ -244,13 +258,42 @@ impl<'a> ExcelTemplateWriter<'a> {
         }
         let order = self.next_collection_order;
         self.next_collection_order = self.next_collection_order.saturating_add(1);
+        let column_styles = self.collection_column_styles.clone();
         let state = self.sheet_state_mut(sheet);
         state.collections.push(PendingCollectionFill {
             wrapper: data.clone(),
             config,
             order,
+            column_styles,
         });
         Ok(self)
+    }
+
+    /// 合并由写注解和 handler 编译出的样式，并将其应用到后续集合填充。
+    pub(crate) fn import_collection_styles(
+        &mut self,
+        compiled_xlsx: &[u8],
+        columns: &[usize],
+    ) -> Result<()> {
+        if columns.is_empty() {
+            return Ok(());
+        }
+        let worksheet = worksheet_path(&self.entries, &TemplateSheet::first())?;
+        let base_by_column =
+            easyexcel_xlsx::collection_column_style_indexes(&self.entries, &worksheet);
+        let base_indexes = columns
+            .iter()
+            .map(|column| base_by_column.get(column).copied().unwrap_or(0))
+            .collect::<Vec<_>>();
+        let entries = std::mem::take(&mut self.entries);
+        let package = easyexcel_xlsx::OoxmlPackage::from_entries(entries);
+        let mut package = easyexcel_xlsx::OoxmlTemplatePackage::from_package(package);
+        let mapped = package
+            .import_compiled_styles_onto(compiled_xlsx, &base_indexes)
+            .map_err(ExcelError::from)?;
+        self.entries = package.into_package().into_entries();
+        self.collection_column_styles = columns.iter().copied().zip(mapped).collect();
+        Ok(())
     }
 
     /// Queues ordinary rows after the template fill cursor.
@@ -262,6 +305,7 @@ impl<'a> ExcelTemplateWriter<'a> {
     /// # Errors
     ///
     /// Returns an error after the writer has finished.
+    /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub fn write_rows(
         &mut self,
         rows: impl IntoIterator<Item = Vec<CellValue>>,
@@ -274,6 +318,7 @@ impl<'a> ExcelTemplateWriter<'a> {
     /// # Errors
     ///
     /// Returns an error after the writer has finished.
+    /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub fn write_rows_on_sheet(
         &mut self,
         sheet: &TemplateSheet,
@@ -289,6 +334,7 @@ impl<'a> ExcelTemplateWriter<'a> {
     /// # Errors
     ///
     /// Returns an XML, ZIP, or output I/O error.
+    /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub fn finish(&mut self) -> Result<()> {
         if self.finished {
             return Ok(());
@@ -308,6 +354,7 @@ impl<'a> ExcelTemplateWriter<'a> {
 
     /// Returns whether [`Self::finish`] has run.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub const fn is_finished(&self) -> bool {
         self.finished
     }
@@ -334,6 +381,7 @@ impl<'a> ExcelTemplateWriter<'a> {
         self.sheets.last_mut().expect("sheet state was just pushed")
     }
 
+    /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub(crate) fn resolved_sheet_fills(&self) -> Result<Vec<ResolvedSheetFill>> {
         let mut resolved: Vec<ResolvedSheetFill> = Vec::new();
         for pending_sheet in &self.sheets {
@@ -368,6 +416,7 @@ impl<'a> ExcelTemplateWriter<'a> {
     }
 }
 
+/// 对应 Java：com.alibaba.excel.ExcelWriter。
 pub(crate) fn same_sheet(left: &TemplateSheet, right: &TemplateSheet) -> bool {
     left.as_engine_selector()
         .equivalent(right.as_engine_selector())
@@ -382,6 +431,7 @@ pub(crate) fn same_sheet(left: &TemplateSheet, right: &TemplateSheet) -> bool {
 ///
 /// Returns an I/O or format error for invalid ZIP/OOXML input or output failures.
 /// Legacy `.xls` templates are now supported via BIFF8 placeholder replacement.
+/// 对应 Java：com.alibaba.excel.ExcelWriter。
 pub fn fill_xlsx_template(template: &Path, output: &Path, data: &TemplateData) -> Result<()> {
     if easyexcel_io::Format::from_path(template) == Some(easyexcel_io::Format::Xls) {
         return fill_xls_template_scalar(template, output, data);
@@ -398,6 +448,7 @@ pub fn fill_xlsx_template(template: &Path, output: &Path, data: &TemplateData) -
 /// # Errors
 ///
 /// Returns an I/O or format error when the package cannot be read or written.
+/// 对应 Java：com.alibaba.excel.ExcelWriter。
 pub fn fill_xlsx_template_list(
     template: &Path,
     output: &Path,
@@ -413,6 +464,7 @@ pub fn fill_xlsx_template_list(
             wrapper: data.clone(),
             config,
             order: 0,
+            column_styles: BTreeMap::new(),
         });
     }
     writer.finish()
@@ -455,6 +507,7 @@ fn template_text_values(data: &TemplateData) -> BTreeMap<String, String> {
         .collect()
 }
 
+/// 对应 Java：com.alibaba.excel.ExcelWriter。
 pub(crate) fn load_entries(path: &Path) -> Result<Vec<TemplateEntry>> {
     // Scalar `.xls` fill is handled by [`fill_xlsx_template`] before ZIP load.
     // Stateful ExcelTemplateWriter / collection fill stay OOXML-only.
@@ -472,6 +525,7 @@ fn load_entries_from_reader(reader: Box<dyn Read + '_>) -> Result<Vec<TemplateEn
     Ok(easyexcel_xlsx::OoxmlPackage::from_stream(reader)?.into_entries())
 }
 
+/// 对应 Java：com.alibaba.excel.ExcelWriter。
 pub(crate) fn worksheet_path(entries: &[TemplateEntry], sheet: &TemplateSheet) -> Result<String> {
     easyexcel_xlsx::worksheet_path(entries, sheet.as_engine_selector()).map_err(ExcelError::from)
 }
@@ -479,10 +533,12 @@ pub(crate) fn worksheet_path(entries: &[TemplateEntry], sheet: &TemplateSheet) -
 #[cfg(test)]
 pub(crate) use easyexcel_xlsx::{normalize_workbook_target, workbook_sheets, xml_elements};
 
+/// 对应 Java：com.alibaba.excel.ExcelWriter。
 pub(crate) fn write_entries(path: &Path, entries: &[TemplateEntry]) -> Result<()> {
     Ok(easyexcel_xlsx::OoxmlPackage::from_entries(entries.to_vec()).save_to_path(path)?)
 }
 
+/// 对应 Java：com.alibaba.excel.ExcelWriter。
 pub(crate) fn write_entries_to_output(
     output: &mut TemplateOutput<'_>,
     entries: &[TemplateEntry],
@@ -510,6 +566,7 @@ pub(crate) fn write_entries_to_output(
     }
 }
 
+/// 对应 Java：com.alibaba.excel.ExcelWriter。
 pub(crate) fn encode_entries(entries: &[TemplateEntry]) -> Result<Vec<u8>> {
     Ok(easyexcel_xlsx::OoxmlPackage::from_entries(entries.to_vec()).to_bytes()?)
 }

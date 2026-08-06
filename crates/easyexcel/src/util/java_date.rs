@@ -4,7 +4,7 @@ use chrono::NaiveDateTime;
 
 use crate::{CellValue, ConvertContext, ExcelError, FromExcelCell, IntoExcelCell};
 
-/// Distinct workbook-local date-time type for Java `java.util.Date` fields.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Distinct workbook-local date-time type for Java `java.util.Date` fields.
 ///
 /// `chrono::NaiveDateTime` remains the counterpart of Java
 /// `java.time.LocalDateTime`. Keeping `JavaDate` as a transparent newtype gives
@@ -17,12 +17,14 @@ pub struct JavaDate(NaiveDateTime);
 impl JavaDate {
     /// Creates a Java-date equivalent from workbook-local date and time.
     #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn new(value: NaiveDateTime) -> Self {
         Self(value)
     }
 
     /// Returns the workbook-local date and time.
     #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn naive_local(self) -> NaiveDateTime {
         self.0
     }

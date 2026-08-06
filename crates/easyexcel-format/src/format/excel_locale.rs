@@ -10,7 +10,7 @@ use crate::SpreadsheetLocale as FormatLocale;
 
 use super::locale_generated::formatter_locale;
 
-/// Locale data used by Java-compatible number and date formatting.
+/// 对应 Java：java.util.Locale。 Locale data used by Java-compatible number and date formatting.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExcelLocale {
     language_tag: String,
@@ -18,7 +18,7 @@ pub struct ExcelLocale {
 }
 
 impl ExcelLocale {
-    /// Resolves a Java, POSIX, or BCP-47-style locale name.
+    /// 对应 Java：java.util.Locale。 Resolves a Java, POSIX, or BCP-47-style locale name.
     ///
     /// Examples include `en_US`, `zh-CN`, and `de_DE.UTF-8`.
     #[must_use]
@@ -33,13 +33,13 @@ impl ExcelLocale {
         })
     }
 
-    /// Returns the normalized locale name used to resolve formatting data.
+    /// 对应 Java：java.util.Locale。 Returns the normalized locale name used to resolve formatting data.
     #[must_use]
     pub fn language_tag(&self) -> &str {
         &self.language_tag
     }
 
-    /// 返回解析后的电子表格格式化区域数据。
+    /// 对应 Java：java.util.Locale。 返回解析后的电子表格格式化区域数据。
     #[must_use]
     pub fn formatter(&self) -> FormatLocale {
         self.formatter.clone()

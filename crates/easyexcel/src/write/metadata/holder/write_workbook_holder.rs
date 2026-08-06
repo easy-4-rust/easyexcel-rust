@@ -23,7 +23,7 @@ pub struct WriteWorkbookHolder<'a> {
 }
 
 impl<'a> WriteWorkbookHolder<'a> {
-    /// Creates a holder matching the Java `WriteWorkbookHolder(WriteWorkbook)`
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteWorkbookHolder。 Creates a holder matching the Java `WriteWorkbookHolder(WriteWorkbook)`
     /// initialiser.
     #[must_use]
     pub fn new(path: impl Into<String>) -> Self {
@@ -35,7 +35,7 @@ impl<'a> WriteWorkbookHolder<'a> {
         }
     }
 
-    /// Creates a workbook holder from nullable write parameters.
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteWorkbookHolder。 Creates a workbook holder from nullable write parameters.
     #[must_use]
     pub fn from_parameter(path: impl Into<String>, parameter: &WriteBasicParameter) -> Self {
         let mut holder = Self::new(path);
@@ -45,39 +45,41 @@ impl<'a> WriteWorkbookHolder<'a> {
 
     /// Returns the inherited write-holder state.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteWorkbookHolder。
     pub const fn abstract_holder(&self) -> &AbstractWriteHolder {
         &self.abstract_holder
     }
 
     /// Returns mutable inherited write-holder state.
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteWorkbookHolder。
     pub const fn abstract_holder_mut(&mut self) -> &mut AbstractWriteHolder {
         &mut self.abstract_holder
     }
 
-    /// Returns the output path. (Java `getFile()`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteWorkbookHolder。 Returns the output path. (Java `getFile()`)
     #[must_use]
     pub fn path(&self) -> &str {
         &self.path
     }
 
-    /// Returns the in-progress sheet holders. (Java `getHasBeenInitializedSheetNameMap()`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteWorkbookHolder。 Returns the in-progress sheet holders. (Java `getHasBeenInitializedSheetNameMap()`)
     #[must_use]
     pub fn sheets(&self) -> &HashMap<String, WriteSheetHolder<'a>> {
         &self.sheets
     }
 
-    /// Returns a mutable handle on the in-progress sheet holders.
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteWorkbookHolder。 Returns a mutable handle on the in-progress sheet holders.
     pub fn sheets_mut(&mut self) -> &mut HashMap<String, WriteSheetHolder<'a>> {
         &mut self.sheets
     }
 
-    /// Returns the ordered write handler list. (Java `getWriteHandlerList()`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteWorkbookHolder。 Returns the ordered write handler list. (Java `getWriteHandlerList()`)
     #[must_use]
     pub fn handlers(&self) -> &[Box<dyn WriteHandler>] {
         &self.handlers
     }
 
-    /// Appends a handler. (Java `setWriteHandlerList` step)
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteWorkbookHolder。 Appends a handler. (Java `setWriteHandlerList` step)
     pub fn push_handler(&mut self, handler: Box<dyn WriteHandler>) {
         self.handlers.push(handler);
     }

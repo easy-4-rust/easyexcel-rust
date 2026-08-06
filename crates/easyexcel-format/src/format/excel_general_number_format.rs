@@ -7,6 +7,7 @@
 /// `ExcelGeneralNumberFormat.format(Object, StringBuffer, FieldPosition)`)
 #[allow(dead_code)]
 #[must_use]
+/// 对应 Java：com.alibaba.excel.metadata.format.ExcelGeneralNumberFormat。
 pub fn format_general(value: f64) -> String {
     format!("{value}")
 }

@@ -11,7 +11,7 @@ use super::{
     VERTICAL_ALIGNMENT_VARIANTS, parse_named_variant,
 };
 
-/// 解析 Java 单元格样式的全部可配置字段。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析 Java 单元格样式的全部可配置字段。
 pub(crate) fn parse_cell_style(
     meta: &ParseNestedMeta<'_>,
     crate_path: &TokenStream,

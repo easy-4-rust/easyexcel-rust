@@ -45,7 +45,7 @@ where
         })
     }
 
-    /// Creates a reader for a path owned by a temporary-input guard.
+    /// 对应 Java：com.alibaba.excel.ExcelReader。 Creates a reader for a path owned by a temporary-input guard.
     ///
     /// The compatible builder uses this for Java `read(InputStream, ...)`.
     pub(crate) fn from_temporary_input(
@@ -63,11 +63,12 @@ where
 
     /// Returns whether this reader owns a materialised input-stream guard.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.ExcelReader。
     pub const fn has_temporary_input(&self) -> bool {
         self.analyser.has_temporary_input()
     }
 
-    /// Parses every configured worksheet. (Java `readAll()`)
+    /// 对应 Java：com.alibaba.excel.ExcelReader。 Parses every configured worksheet. (Java `readAll()`)
     ///
     /// # Errors
     ///
@@ -77,7 +78,7 @@ where
         ExcelAnalyser::analysis::<T, L>(&mut self.analyser, &mut self.listener)
     }
 
-    /// Deprecated Java `read()` alias for [`Self::read_all`].
+    /// 对应 Java：com.alibaba.excel.ExcelReader。 Deprecated Java `read()` alias for [`Self::read_all`].
     #[deprecated(note = "please use read_all()")]
     ///
     /// # Errors
@@ -86,7 +87,7 @@ where
     pub fn read_deprecated(&mut self) -> Result<()> {
         self.read_all()
     }
-
+    /// 对应 Java：com.alibaba.excel.ExcelReader。
     pub(crate) fn read_all_with_additional_listener<M>(&mut self, listener: &mut M) -> Result<()>
     where
         T: Clone,
@@ -96,7 +97,7 @@ where
         ExcelAnalyser::analysis::<T, _>(&mut self.analyser, &mut listeners)
     }
 
-    /// Parses the supplied worksheets. (Java `read(ReadSheet...)`)
+    /// 对应 Java：com.alibaba.excel.ExcelReader。 Parses the supplied worksheets. (Java `read(ReadSheet...)`)
     ///
     /// # Errors
     ///
@@ -106,7 +107,7 @@ where
         Self::read_sheets_with_listener(&mut self.analyser, &mut self.listener, sheets)?;
         Ok(self)
     }
-
+    /// 对应 Java：com.alibaba.excel.ExcelReader。
     pub(crate) fn read_with_additional_listener<M>(
         &mut self,
         sheets: &[ReadSheet],
@@ -184,31 +185,31 @@ where
         Ok(())
     }
 
-    /// Returns the live analysis context. (Java `analysisContext()`)
+    /// 对应 Java：com.alibaba.excel.ExcelReader。 Returns the live analysis context. (Java `analysisContext()`)
     #[must_use]
     pub fn analysis_context(&self) -> &AnalysisContext {
         ExcelAnalyser::analysis_context(&self.analyser)
     }
 
-    /// Deprecated Java `getAnalysisContext()` alias.
+    /// 对应 Java：com.alibaba.excel.ExcelReader。 Deprecated Java `getAnalysisContext()` alias.
     #[deprecated(note = "please use analysis_context()")]
     #[must_use]
     pub fn get_analysis_context(&self) -> &AnalysisContext {
         self.analysis_context()
     }
 
-    /// Returns the selected XLSX/XLS/CSV executor.
+    /// 对应 Java：com.alibaba.excel.ExcelReader。 Returns the selected XLSX/XLS/CSV executor.
     #[must_use]
     pub fn excel_executor(&self) -> &ExcelReadExecutorKind {
         ExcelAnalyser::excel_executor(&self.analyser)
     }
 
-    /// Completes the read and releases resources. (Java `finish()`)
+    /// 对应 Java：com.alibaba.excel.ExcelReader。 Completes the read and releases resources. (Java `finish()`)
     pub fn finish(&mut self) {
         ExcelAnalyser::finish(&mut self.analyser);
     }
 
-    /// Java `Closeable.close()` alias. Finishing is idempotent.
+    /// 对应 Java：com.alibaba.excel.ExcelReader。 Java `Closeable.close()` alias. Finishing is idempotent.
     pub fn close(&mut self) {
         self.finish();
     }

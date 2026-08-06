@@ -13,19 +13,19 @@ pub struct CellValueTagHandler {
 }
 
 impl CellValueTagHandler {
-    /// Creates an idle `<v>` handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.CellValueTagHandler。 Creates an idle `<v>` handler.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Returns a reference to the shared temp buffer.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.CellValueTagHandler。 Returns a reference to the shared temp buffer.
     #[must_use]
     pub fn temp_data(&self) -> &str {
         &self.inner.temp_data
     }
 
-    /// Takes accumulated `<v>` text.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.CellValueTagHandler。 Takes accumulated `<v>` text.
     pub fn take(&mut self) -> String {
         self.inner.take()
     }

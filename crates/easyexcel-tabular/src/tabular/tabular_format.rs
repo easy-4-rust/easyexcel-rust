@@ -1,4 +1,4 @@
-/// 中立表格文档的文本格式。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 中立表格文档的文本格式。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum TabularFormat {

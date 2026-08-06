@@ -2,7 +2,10 @@
 
 use std::path::{Path, PathBuf};
 
+use crate::{CellValue, Result};
 use crate::{WriteContext, WriteHolderContext, WriteWorkbookHolderView};
+
+use super::write_mutation_plan::WriteMutationPlan;
 
 /// Workbook-level write lifecycle context.
 ///
@@ -13,40 +16,47 @@ use crate::{WriteContext, WriteHolderContext, WriteWorkbookHolderView};
 pub struct WriteWorkbookContext {
     path: PathBuf,
     holders: WriteHolderContext,
+    mutations: WriteMutationPlan,
 }
 
 impl WriteWorkbookContext {
     /// Returns this backend-neutral workbook context.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.context.WorkbookWriteHandlerContext。
     pub const fn workbook(&self) -> &Self {
         self
     }
 
-    /// Creates a workbook context for an output path.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.WorkbookWriteHandlerContext。 Creates a workbook context for an output path.
     #[must_use]
     pub fn new(path: impl Into<PathBuf>) -> Self {
         let path = path.into();
         Self {
             holders: WriteHolderContext::new().with_workbook(WriteWorkbookHolderView::new(&path)),
             path,
+            mutations: WriteMutationPlan::default(),
         }
     }
 
-    /// Creates the Java callback context from a live [`WriteContext`].
+    /// 对应 Java：com.alibaba.excel.write.handler.context.WorkbookWriteHandlerContext。 Creates the Java callback context from a live [`WriteContext`].
     #[must_use]
     pub fn from_write_context(context: &dyn WriteContext) -> Self {
         let holders = WriteHolderContext::from_write_context(context);
         let path = holders.current_write_holder().path().to_path_buf();
-        Self { path, holders }
+        Self {
+            path,
+            holders,
+            mutations: WriteMutationPlan::default(),
+        }
     }
 
-    /// Returns the output path. (Java `WriteWorkbookHolder.getFile()`)
+    /// 对应 Java：com.alibaba.excel.write.handler.context.WorkbookWriteHandlerContext。 Returns the output path. (Java `WriteWorkbookHolder.getFile()`)
     #[must_use]
     pub fn path(&self) -> &Path {
         &self.path
     }
 
-    /// Returns the live workbook holder view carried by this callback.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.WorkbookWriteHandlerContext。 Returns the live workbook holder view carried by this callback.
     ///
     /// # Panics
     ///
@@ -61,8 +71,37 @@ impl WriteWorkbookContext {
 
     /// Returns all holder views captured for this callback.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.context.WorkbookWriteHandlerContext。
     pub const fn write_context(&self) -> &WriteHolderContext {
         &self.holders
+    }
+
+    /// 请求在保存前设置指定工作表的单元格值。
+    ///
+    /// 对应 Java：`WorkbookWriteHandlerContext#getWriteWorkbookHolder().getWorkbook()`
+    /// 后对 `Sheet` / `Row` / `Cell` 的修改。
+    ///
+    /// # Errors
+    ///
+    /// 当共享修改计划不可用时返回错误。
+    pub fn set_cell(
+        &self,
+        sheet_name: impl Into<String>,
+        row_index: u32,
+        column_index: u16,
+        value: CellValue,
+    ) -> Result<()> {
+        self.mutations
+            .set_cell(sheet_name, row_index, column_index, value)
+    }
+
+    pub(crate) const fn mutation_plan(&self) -> &WriteMutationPlan {
+        &self.mutations
+    }
+
+    pub(crate) fn with_mutation_plan(mut self, mutations: WriteMutationPlan) -> Self {
+        self.mutations = mutations;
+        self
     }
 }
 

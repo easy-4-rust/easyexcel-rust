@@ -5,7 +5,7 @@ use crate::metadata::property::{
     ColumnWidthProperty, FontProperty, LoopMergeProperty, StyleProperty,
 };
 
-/// Excel header metadata for one column.
+/// 对应 Java：com.alibaba.excel.metadata.Head。 Excel header metadata for one column.
 ///
 /// Rust port of Java `Head`.
 #[derive(Debug, Clone, PartialEq)]
@@ -31,7 +31,7 @@ pub struct Head {
 }
 
 impl Head {
-    /// Creates a head definition. (Java constructor)
+    /// 对应 Java：com.alibaba.excel.metadata.Head。 Creates a head definition. (Java constructor)
     ///
     /// # Errors
     ///
@@ -58,19 +58,19 @@ impl Head {
         })
     }
 
-    /// Returns the column index. (Java `getColumnIndex()`)
+    /// 对应 Java：com.alibaba.excel.metadata.Head。 Returns the column index. (Java `getColumnIndex()`)
     #[must_use]
     pub fn column_index(&self) -> Option<i32> {
         self.column_index
     }
 
-    /// Returns the field name. (Java `getFieldName()`)
+    /// 对应 Java：com.alibaba.excel.metadata.Head。 Returns the field name. (Java `getFieldName()`)
     #[must_use]
     pub fn field_name(&self) -> Option<&str> {
         self.field_name.as_deref()
     }
 
-    /// Returns the header labels. (Java `getHeadNameList()`)
+    /// 对应 Java：com.alibaba.excel.metadata.Head。 Returns the header labels. (Java `getHeadNameList()`)
     #[must_use]
     pub fn head_name_list(&self) -> &[String] {
         &self.head_name_list
@@ -78,12 +78,14 @@ impl Head {
 
     /// Returns whether the column index was forced. (Java `getForceIndex()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.Head。
     pub const fn force_index(&self) -> bool {
         self.force_index
     }
 
     /// Returns whether the header name was forced. (Java `getForceName()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.Head。
     pub const fn force_name(&self) -> bool {
         self.force_name
     }

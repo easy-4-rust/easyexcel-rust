@@ -1,6 +1,6 @@
 //! 二进制媒体文件头识别。
 
-/// 规范化常见图片类型扩展名。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 规范化常见图片类型扩展名。
 #[must_use]
 pub fn normalize_image_type(image_type: &str) -> String {
     match image_type.to_ascii_lowercase().as_str() {
@@ -12,7 +12,7 @@ pub fn normalize_image_type(image_type: &str) -> String {
     }
 }
 
-/// 根据文件头识别常见图片类型。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 根据文件头识别常见图片类型。
 #[must_use]
 pub fn detect_image_type(header: &[u8]) -> Option<&'static str> {
     if header.starts_with(&[0xFF, 0xD8, 0xFF]) {

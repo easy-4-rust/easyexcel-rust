@@ -7,13 +7,13 @@ use crate::core::Result;
 
 use super::read_cache::{ReadCache, SharedStringCacheAdapter};
 
-/// BIFF SST 预构建共享字符串缓存的 Java 兼容门面。
+/// 对应 Java：com.alibaba.excel.cache.XlsCache。 BIFF SST 预构建共享字符串缓存的 Java 兼容门面。
 pub struct XlsCache {
     adapter: SharedStringCacheAdapter,
 }
 
 impl XlsCache {
-    /// 从 SST 索引顺序字符串创建缓存。
+    /// 对应 Java：com.alibaba.excel.cache.XlsCache。 从 SST 索引顺序字符串创建缓存。
     #[must_use]
     pub fn new(values: Vec<String>) -> Self {
         Self {
@@ -21,19 +21,19 @@ impl XlsCache {
         }
     }
 
-    /// 创建空的 SST 缓存占位符。
+    /// 对应 Java：com.alibaba.excel.cache.XlsCache。 创建空的 SST 缓存占位符。
     #[must_use]
     pub fn empty() -> Self {
         Self::new(Vec::new())
     }
 
-    /// 返回字符串数量。
+    /// 对应 Java：com.alibaba.excel.cache.XlsCache。 返回字符串数量。
     #[must_use]
     pub fn len(&self) -> usize {
         self.adapter.len()
     }
 
-    /// 返回缓存是否为空。
+    /// 对应 Java：com.alibaba.excel.cache.XlsCache。 返回缓存是否为空。
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.adapter.is_empty()

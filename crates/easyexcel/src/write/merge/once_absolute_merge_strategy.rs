@@ -4,7 +4,7 @@ use crate::core::{CellExtra, OnceAbsoluteMergeProperty, WriteCellContext, WriteH
 
 use crate::write::merge::abstract_merge_strategy::AbstractMergeStrategy;
 
-/// 对应 Java：`OnceAbsoluteMergeStrategy implements SheetWriteHandler`.
+/// 对应 Java：com.alibaba.excel.write.merge.OnceAbsoluteMergeStrategy。 对应 Java：`OnceAbsoluteMergeStrategy implements SheetWriteHandler`.
 ///
 /// Registered instances are consumed by the XLSX write path via
 /// [`WriteHandler::style_once_absolute_merge`] (in addition to type-level
@@ -12,6 +12,7 @@ use crate::write::merge::abstract_merge_strategy::AbstractMergeStrategy;
 // 语义敏感：字段名与 Java `OnceAbsoluteMergeStrategy(int firstRowIndex,
 // int lastRowIndex, int firstColumnIndex, int lastColumnIndex)` 一一对应。
 #[allow(clippy::struct_field_names)]
+/// 对应 Java：com.alibaba.excel.write.merge.OnceAbsoluteMergeStrategy。
 pub struct OnceAbsoluteMergeStrategy {
     first_row_index: i32,
     last_row_index: i32,
@@ -20,7 +21,7 @@ pub struct OnceAbsoluteMergeStrategy {
 }
 
 impl OnceAbsoluteMergeStrategy {
-    /// Creates the strategy. (Java
+    /// 对应 Java：com.alibaba.excel.write.merge.OnceAbsoluteMergeStrategy。 Creates the strategy. (Java
     /// `OnceAbsoluteMergeStrategy(int, int, int, int)`)
     ///
     /// Java throws when any index is negative; Rust returns a typed error at
@@ -53,7 +54,7 @@ impl OnceAbsoluteMergeStrategy {
         })
     }
 
-    /// Creates from annotation/runtime property.
+    /// 对应 Java：com.alibaba.excel.write.merge.OnceAbsoluteMergeStrategy。 Creates from annotation/runtime property.
     /// (Java `OnceAbsoluteMergeStrategy(OnceAbsoluteMergeProperty)`)
     ///
     /// # Errors
@@ -71,6 +72,7 @@ impl OnceAbsoluteMergeStrategy {
 
     /// Returns the merge region as a property. (Java getters)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.merge.OnceAbsoluteMergeStrategy。
     pub const fn to_property(&self) -> OnceAbsoluteMergeProperty {
         OnceAbsoluteMergeProperty::new(
             self.first_row_index,
@@ -82,24 +84,28 @@ impl OnceAbsoluteMergeStrategy {
 
     /// Returns the first row index. (Java `getFirstRowIndex()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.merge.OnceAbsoluteMergeStrategy。
     pub const fn first_row_index(&self) -> i32 {
         self.first_row_index
     }
 
     /// Returns the last row index. (Java `getLastRowIndex()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.merge.OnceAbsoluteMergeStrategy。
     pub const fn last_row_index(&self) -> i32 {
         self.last_row_index
     }
 
     /// Returns the first column index. (Java `getFirstColumnIndex()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.merge.OnceAbsoluteMergeStrategy。
     pub const fn first_column_index(&self) -> i32 {
         self.first_column_index
     }
 
     /// Returns the last column index. (Java `getLastColumnIndex()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.merge.OnceAbsoluteMergeStrategy。
     pub const fn last_column_index(&self) -> i32 {
         self.last_column_index
     }

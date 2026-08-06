@@ -13,13 +13,13 @@ pub struct StringRecordHandler {
 }
 
 impl StringRecordHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.StringRecordHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Java `StringRecordHandler.processRecord` — applies string onto pending formula.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.StringRecordHandler。 Java `StringRecordHandler.processRecord` — applies string onto pending formula.
     pub fn process_string(
         formula_handler: &mut FormulaRecordHandler,
         value: String,
@@ -35,7 +35,7 @@ impl StringRecordHandler {
             .map(|cell| (cell, text))
     }
 
-    /// Stores an already decoded String record value.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.StringRecordHandler。 Stores an already decoded String record value.
     pub fn process_decoded(&mut self, value: String) {
         self.last_value = Some(value);
     }

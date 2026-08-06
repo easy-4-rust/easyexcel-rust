@@ -10,19 +10,19 @@
 pub struct CollectionRowData(pub Vec<crate::core::CellValue>);
 
 impl CollectionRowData {
-    /// Creates a `CollectionRowData` mirroring Java's constructor.
+    /// 对应 Java：com.alibaba.excel.write.metadata.CollectionRowData。 Creates a `CollectionRowData` mirroring Java's constructor.
     #[must_use]
     pub fn new(values: Vec<crate::core::CellValue>) -> Self {
         Self(values)
     }
 
-    /// Returns the underlying values. (Java `getCollection()` equivalent)
+    /// 对应 Java：com.alibaba.excel.write.metadata.CollectionRowData。 Returns the underlying values. (Java `getCollection()` equivalent)
     #[must_use]
     pub fn values(&self) -> &[crate::core::CellValue] {
         &self.0
     }
 
-    /// Returns whether the row is empty. (Java `RowData.isEmpty()`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.CollectionRowData。 Returns whether the row is empty. (Java `RowData.isEmpty()`)
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()

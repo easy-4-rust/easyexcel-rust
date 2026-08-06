@@ -14,18 +14,18 @@ pub struct TextObjectRecordHandler {
 }
 
 impl TextObjectRecordHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Java `TextObjectRecordHandler.processRecord`.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler。 Java `TextObjectRecordHandler.processRecord`.
     pub fn process_text(&mut self, object_id: u32, text: String) {
         self.object_cache.insert(object_id, text);
     }
 
-    /// Lookup used by [`super::note_record_handler::NoteRecordHandler`].
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler。 Lookup used by [`super::note_record_handler::NoteRecordHandler`].
     #[must_use]
     pub fn get(&self, object_id: u32) -> Option<&str> {
         self.object_cache.get(&object_id).map(String::as_str)

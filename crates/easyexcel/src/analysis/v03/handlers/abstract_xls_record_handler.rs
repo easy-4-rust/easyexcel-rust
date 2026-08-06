@@ -2,7 +2,7 @@
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
-/// Rust marker counterpart of Java's abstract base class.
+/// 对应 Java：com.alibaba.excel.analysis.v03.handlers.AbstractXlsRecordHandler。 Rust marker counterpart of Java's abstract base class.
 ///
 /// It cannot be instantiated and therefore cannot become an accidental no-op
 /// record handler. Concrete handlers must implement [`XlsRecordHandler`].

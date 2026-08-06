@@ -7,7 +7,7 @@ use crate::annotation::field_options::FieldOptions;
 use crate::annotation::struct_options::StructOptions;
 use crate::annotation::style_parser::parse_font_style;
 
-/// 解析字段级内容字体。
+/// 对应 Java：com.alibaba.excel.annotation.write.style.ContentFontStyle。 解析字段级内容字体。
 pub(crate) fn parse_field(
     meta: &ParseNestedMeta<'_>,
     options: &mut FieldOptions,
@@ -20,7 +20,7 @@ pub(crate) fn parse_field(
     Ok(true)
 }
 
-/// 解析类型级内容字体。
+/// 对应 Java：com.alibaba.excel.annotation.write.style.ContentFontStyle。 解析类型级内容字体。
 pub(crate) fn parse_struct(
     meta: &ParseNestedMeta<'_>,
     options: &mut StructOptions,

@@ -2,7 +2,7 @@
 
 use easyexcel_io::{Error as ExcelError, Result};
 
-/// Decodes an SST record body plus its physical CONTINUE record bodies.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Decodes an SST record body plus its physical CONTINUE record bodies.
 ///
 /// # Errors
 ///
@@ -26,7 +26,7 @@ pub fn decode_sst_segments(segments: &[Vec<u8>]) -> Result<Vec<String>> {
     Ok(strings)
 }
 
-/// Decodes a BIFF8 `XLUnicodeString` split over CONTINUE records.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Decodes a BIFF8 `XLUnicodeString` split over CONTINUE records.
 ///
 /// # Errors
 ///
@@ -38,7 +38,7 @@ pub fn decode_unicode_string_segments(segments: &[Vec<u8>]) -> Result<String> {
     cursor.read_characters(character_count, flags & 0x01 != 0, "String")
 }
 
-/// 解码未分段的 BIFF8 `XLUnicodeString` 记录体。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码未分段的 BIFF8 `XLUnicodeString` 记录体。
 ///
 /// # Errors
 ///

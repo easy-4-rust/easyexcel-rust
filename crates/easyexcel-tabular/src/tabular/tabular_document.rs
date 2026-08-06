@@ -4,7 +4,7 @@ use easyexcel_model::{Cell, CellValue, Workbook};
 
 use super::{TabularCell, TabularTable};
 
-/// 可包含多个表格的中立文档。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 可包含多个表格的中立文档。
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct TabularDocument {
     tables: Vec<TabularTable>,
@@ -13,28 +13,29 @@ pub struct TabularDocument {
 impl TabularDocument {
     /// 创建空文档。
     #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn new() -> Self {
         Self { tables: Vec::new() }
     }
 
-    /// 从表格集合创建文档。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 从表格集合创建文档。
     #[must_use]
     pub fn from_tables(tables: Vec<TabularTable>) -> Self {
         Self { tables }
     }
 
-    /// 返回全部表格。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回全部表格。
     #[must_use]
     pub fn tables(&self) -> &[TabularTable] {
         &self.tables
     }
 
-    /// 追加一个表格。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 追加一个表格。
     pub fn push_table(&mut self, table: TabularTable) {
         self.tables.push(table);
     }
 
-    /// 将所有表格映射为工作簿中的独立工作表。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 将所有表格映射为工作簿中的独立工作表。
     #[must_use]
     pub fn to_workbook(&self) -> Workbook {
         let mut workbook = Workbook::empty();
@@ -44,14 +45,16 @@ impl TabularDocument {
             let sheet_index = workbook.add_sheet(name);
             if let Some(sheet) = workbook.sheet_mut(sheet_index) {
                 for (row_index, row) in table.rows().iter().enumerate() {
+                    let Ok(row_index) = u32::try_from(row_index) else {
+                        break;
+                    };
                     for (column_index, cell) in row.iter().enumerate() {
+                        let Ok(column_index) = u32::try_from(column_index) else {
+                            break;
+                        };
                         let value = cell.value().clone();
                         if !matches!(value, CellValue::Empty) {
-                            sheet.set(
-                                row_index as u32,
-                                column_index as u32,
-                                Cell::from_value(value),
-                            );
+                            sheet.set(row_index, column_index, Cell::from_value(value));
                         }
                     }
                 }
@@ -64,7 +67,7 @@ impl TabularDocument {
         workbook
     }
 
-    /// 从工作簿构造中立表格文档。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 从工作簿构造中立表格文档。
     #[must_use]
     pub fn from_workbook(workbook: &Workbook) -> Self {
         let tables = workbook

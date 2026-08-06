@@ -1,7 +1,7 @@
 //! 可复用的 OOXML 模板包修改引擎。
 //!
 //! 本模块负责工作表部件定位、创建、行追加、布局修改和样式表合并，
-//! 不依赖 EasyExcel builder、listener、annotation 或门面值类型。
+//! 不依赖 `EasyExcel` builder、listener、annotation 或门面值类型。
 
 use std::io::Write;
 use std::ops::{Deref, DerefMut};
@@ -12,7 +12,7 @@ use zip::CompressionMethod;
 
 use super::ooxml_package::{OoxmlPackage, OoxmlZipEntry};
 use super::package::resolve_target;
-use super::template_styles::merge_compiled_styles;
+use super::template_styles::{merge_compiled_styles, merge_compiled_styles_onto};
 use super::template_xml::{
     TemplateCellValue, TemplateMergeRange, append_sparse_rows, apply_column_widths,
     apply_merge_ranges, attribute_value, cell_style_index, escape_xml, worksheet_max_row,
@@ -30,33 +30,41 @@ const EMPTY_WORKSHEET_XML: &str = concat!(
     r#"<dimension ref="A1"/><sheetData></sheetData></worksheet>"#
 );
 
-/// 保留未知部件的 OOXML 模板工作簿。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 保留未知部件的 OOXML 模板工作簿。
 #[derive(Debug, Clone)]
 pub struct OoxmlTemplatePackage {
     entries: OoxmlPackage,
 }
 
 impl OoxmlTemplatePackage {
-    /// 从 XLSX/OOXML 字节载入模板包。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 从 XLSX/OOXML 字节载入模板包。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         Ok(Self {
             entries: OoxmlPackage::from_bytes(bytes)?,
         })
     }
 
-    /// 使用已载入的 OOXML 条目包构建模板引擎。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 使用已载入的 OOXML 条目包构建模板引擎。
     #[must_use]
     pub fn from_package(entries: OoxmlPackage) -> Self {
         Self { entries }
     }
 
-    /// 取出底层无损 OOXML 包。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 取出底层无损 OOXML 包。
     #[must_use]
     pub fn into_package(self) -> OoxmlPackage {
         self.entries
     }
 
-    /// 按工作簿顺序返回工作表名称。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 按工作簿顺序返回工作表名称。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn sheet_names(&self) -> Result<Vec<String>> {
         Ok(self
             .workbook_sheets()?
@@ -65,7 +73,11 @@ impl OoxmlTemplatePackage {
             .collect())
     }
 
-    /// 返回指定工作表下一条可追加的零基行号。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回指定工作表下一条可追加的零基行号。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn next_row_for_sheet(&self, sheet_name: &str) -> Result<u32> {
         let path = self.worksheet_path_by_name(sheet_name)?;
         let xml = self.entry_xml(&path)?;
@@ -77,7 +89,11 @@ impl OoxmlTemplatePackage {
         }
     }
 
-    /// 按工作表名称解析对应的 worksheet part 路径。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 按工作表名称解析对应的 worksheet part 路径。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn worksheet_path_by_name(&self, sheet_name: &str) -> Result<String> {
         let sheets = self.workbook_sheets()?;
         let selected = sheets
@@ -87,7 +103,11 @@ impl OoxmlTemplatePackage {
         self.worksheet_part_for_relationship(&selected.1, &selected.0)
     }
 
-    /// 按零基工作表下标返回名称与 worksheet part 路径。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 按零基工作表下标返回名称与 worksheet part 路径。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn worksheet_path_by_index(&self, index: usize) -> Result<(String, String)> {
         let sheets = self.workbook_sheets()?;
         let selected = sheets
@@ -97,7 +117,11 @@ impl OoxmlTemplatePackage {
         Ok((selected.0.clone(), path))
     }
 
-    /// 确保指定名称的工作表存在。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 确保指定名称的工作表存在。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn ensure_sheet(&mut self, sheet_name: &str) -> Result<()> {
         if self.sheet_names()?.iter().any(|name| name == sheet_name) {
             return Ok(());
@@ -105,7 +129,11 @@ impl OoxmlTemplatePackage {
         self.create_sheet(sheet_name)
     }
 
-    /// 创建空工作表并继承第一个工作表的默认行高和列宽。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 创建空工作表并继承第一个工作表的默认行高和列宽。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn create_sheet(&mut self, sheet_name: &str) -> Result<()> {
         let sheet_part = next_worksheet_part_name(&self.entries);
         let workbook_index = entry_index(&self.entries, WORKBOOK_PATH)?;
@@ -148,7 +176,11 @@ impl OoxmlTemplatePackage {
         Ok(())
     }
 
-    /// 追加稀疏行、行高和样式索引，并保留显式缺席的 Java `null` 行。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 追加稀疏行、行高和样式索引，并保留显式缺席的 Java `null` 行。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn append_rows(
         &mut self,
         sheet_name: &str,
@@ -171,7 +203,11 @@ impl OoxmlTemplatePackage {
         Ok(next_row)
     }
 
-    /// 应用列宽和绝对合并区域。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 应用列宽和绝对合并区域。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn apply_sheet_layout(
         &mut self,
         sheet_name: &str,
@@ -195,7 +231,11 @@ impl OoxmlTemplatePackage {
         Ok(())
     }
 
-    /// 合并编译工作簿的样式表并返回目标 XF 索引。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 合并编译工作簿的样式表并返回目标 XF 索引。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn import_compiled_styles(
         &mut self,
         compiled_xlsx: &[u8],
@@ -224,17 +264,66 @@ impl OoxmlTemplatePackage {
         Ok(mapped)
     }
 
-    /// 序列化为 XLSX 字节。
+    /// 将编译样式叠加到指定模板 XF，并返回新样式索引。
+    ///
+    /// # Errors
+    ///
+    /// 当编译工作簿、模板样式表或样式索引无效时返回错误。
+    pub fn import_compiled_styles_onto(
+        &mut self,
+        compiled_xlsx: &[u8],
+        base_indexes: &[usize],
+    ) -> Result<Vec<u32>> {
+        if base_indexes.is_empty() {
+            return Ok(Vec::new());
+        }
+        let compiled = Self::from_bytes(compiled_xlsx)?;
+        let source_styles = compiled.entry_xml(STYLES_PATH)?;
+        let (_, source_sheet_path) = compiled.worksheet_path_by_index(0)?;
+        let source_sheet = compiled.entry_xml(&source_sheet_path)?;
+        let source_indexes = (1..=base_indexes.len())
+            .map(|row| {
+                cell_style_index(&source_sheet, &format!("A{row}")).ok_or_else(|| {
+                    Error::Xlsx(format!("compiled style cell A{row} has no style index"))
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let destination = self.entry_mut(STYLES_PATH)?;
+        let destination_styles = String::from_utf8(std::mem::take(&mut destination.bytes))
+            .map_err(|error| Error::Xlsx(error.to_string()))?;
+        let (updated, mapped) = merge_compiled_styles_onto(
+            &destination_styles,
+            &source_styles,
+            &source_indexes,
+            base_indexes,
+        )?;
+        destination.bytes = updated.into_bytes();
+        Ok(mapped)
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 序列化为 XLSX 字节。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn to_bytes(&self) -> Result<Vec<u8>> {
         self.entries.to_bytes()
     }
 
-    /// 保存到路径。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 保存到路径。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn save_to_path(&self, path: &Path) -> Result<()> {
         self.entries.save_to_path(path)
     }
 
-    /// 保存到输出流。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 保存到输出流。
+    ///
+    /// # Errors
+    ///
+    /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
     pub fn save_to_writer(&self, output: &mut dyn Write) -> Result<()> {
         self.entries.save_to_writer(output)
     }

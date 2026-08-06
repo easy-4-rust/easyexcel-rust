@@ -16,12 +16,14 @@ pub struct DefaultWriteWorkbookHandler {
 impl DefaultWriteWorkbookHandler {
     /// Creates the handler. (Java `DefaultWriteWorkbookHandler()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.impl.DefaultWriteWorkbookHandler。
     pub const fn new() -> Self {
         Self { initialized: false }
     }
 
     /// Returns whether the workbook has been initialized.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.impl.DefaultWriteWorkbookHandler。
     pub const fn initialized(&self) -> bool {
         self.initialized
     }

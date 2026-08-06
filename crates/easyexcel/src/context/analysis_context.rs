@@ -6,7 +6,7 @@ use std::any::Any;
 use crate::core::custom_read_object::CustomReadObject;
 use crate::core::excel_error::ExcelError;
 
-/// Read callback context equivalent to Java `AnalysisContext`.
+/// 对应 Java：com.alibaba.excel.context.AnalysisContext。 Read callback context equivalent to Java `AnalysisContext`.
 ///
 /// Java exposes 14 methods plus several `@Deprecated` accessors. Rust keeps
 /// only the methods actually consumed by `ReadListener` callbacks; legacy
@@ -22,7 +22,7 @@ pub struct AnalysisContext {
 }
 
 impl AnalysisContext {
-    /// Creates a context. (Java `AnalysisContextImpl(ReadWorkbook, ExcelTypeEnum)` initial state)
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContext。 Creates a context. (Java `AnalysisContextImpl(ReadWorkbook, ExcelTypeEnum)` initial state)
     #[must_use]
     pub fn new(sheet_name: impl Into<String>, sheet_no: usize, row_index: u32) -> Self {
         Self {
@@ -34,7 +34,7 @@ impl AnalysisContext {
         }
     }
 
-    /// Returns the sheet name. (Java `AnalysisContext.readSheetHolder().getSheetName()`)
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContext。 Returns the sheet name. (Java `AnalysisContext.readSheetHolder().getSheetName()`)
     #[must_use]
     pub fn sheet_name(&self) -> &str {
         &self.sheet_name
@@ -42,12 +42,14 @@ impl AnalysisContext {
 
     /// Returns the zero-based sheet index. (Java `AnalysisContext.readSheetHolder().getSheetNo()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContext。
     pub const fn sheet_no(&self) -> usize {
         self.sheet_no
     }
 
     /// Returns the zero-based physical row index. (Java `getCurrentRowNum()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContext。
     pub const fn row_index(&self) -> u32 {
         self.row_index
     }
@@ -55,31 +57,33 @@ impl AnalysisContext {
     /// Returns the zero-based callback batch index.
     /// Rust extension tracking the page index in `PageReadListener`.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContext。
     pub const fn batch_index(&self) -> usize {
         self.batch_index
     }
 
     /// Returns the configured custom read object, if any.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContext。
     pub const fn custom_object(&self) -> Option<&CustomReadObject> {
         self.custom_object.as_ref()
     }
 
-    /// Returns the custom read object when its concrete type matches `T`.
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContext。 Returns the custom read object when its concrete type matches `T`.
     /// Mirrors `(T) AnalysisContext.getCustom()` after an explicit cast.
     #[must_use]
     pub fn custom<T: Any>(&self) -> Option<&T> {
         self.custom_object.as_ref()?.downcast_ref()
     }
 
-    /// Returns a context carrying the supplied custom read object.
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContext。 Returns a context carrying the supplied custom read object.
     #[must_use]
     pub fn with_custom_object(mut self, custom_object: Option<CustomReadObject>) -> Self {
         self.custom_object = custom_object;
         self
     }
 
-    /// Returns a copy with a different batch index.
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContext。 Returns a copy with a different batch index.
     #[must_use]
     pub fn with_batch_index(&self, batch_index: usize) -> Self {
         let mut context = self.clone();
@@ -88,22 +92,6 @@ impl AnalysisContext {
     }
 }
 
-/// Action selected by a listener after a row error.
-///
-/// 对应 Java：`ReadListener.onException(...)` semantics:
-/// * `Continue` ⇒ Java's `onException` returns without throwing.
-/// * `SkipRow` ⇒ Rust extension for batch pagination.
-/// * `Stop` ⇒ Java's `onException` throws `ExcelAnalysisException`.
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub enum ErrorAction {
-    /// Continue with the next row.
-    Continue,
-    /// Skip the failed row and continue.
-    SkipRow,
-    /// Stop and return the error. (default — matches Java's throw-exception behaviour)
-    #[default]
-    Stop,
-}
+include!("analysis_context/error_action.rs");
 
-/// Result alias used across the `easyexcel` crates.
-pub type Result<T> = std::result::Result<T, ExcelError>;
+include!("analysis_context/result.rs");

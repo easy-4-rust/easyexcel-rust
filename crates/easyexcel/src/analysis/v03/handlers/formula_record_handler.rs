@@ -5,43 +5,9 @@
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
-/// Cached formula result kinds aligned with POI `CellType.forInt`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum FormulaCachedType {
-    /// String result — Java waits for the next `StringRecord`.
-    String,
-    /// Numeric result.
-    Numeric,
-    /// Error result (`#VALUE!`).
-    Error,
-    /// Boolean result.
-    Boolean,
-    /// Empty / unknown.
-    Empty,
-}
+include!("formula_record_handler/formula_cached_type.rs");
 
-/// Decoded formula cell produced by [`FormulaRecordHandler`].
-#[derive(Debug, Clone, PartialEq)]
-pub struct FormulaCell {
-    /// Zero-based row.
-    pub row: u32,
-    /// Zero-based column.
-    pub column: usize,
-    /// Formula text (may be `None` when parsing failed).
-    pub formula: Option<String>,
-    /// XF index used by the cached numeric result.
-    pub format_index: u16,
-    /// Cached result type.
-    pub cached_type: FormulaCachedType,
-    /// Numeric cached value when `cached_type == Numeric`.
-    pub number_value: Option<f64>,
-    /// Boolean cached value when `cached_type == Boolean`.
-    pub bool_value: Option<bool>,
-    /// String cached value (`StringRecord` or `#VALUE!` for errors).
-    pub string_value: Option<String>,
-    /// Whether the string result is pending a following `StringRecord`.
-    pub pending_string: bool,
-}
+include!("formula_record_handler/formula_cell.rs");
 
 /// 对应 Java：`FormulaRecordHandler`.
 #[derive(Debug, Default)]
@@ -53,13 +19,13 @@ pub struct FormulaRecordHandler {
 }
 
 impl FormulaRecordHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.FormulaRecordHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Java `FormulaRecordHandler.processRecord` (caller supplies parsed fields).
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.FormulaRecordHandler。 Java `FormulaRecordHandler.processRecord` (caller supplies parsed fields).
     pub fn process_formula(
         &mut self,
         row: u32,
@@ -80,11 +46,12 @@ impl FormulaRecordHandler {
         )
     }
 
-    /// Java `FormulaRecordHandler.processRecord` with the record XF index.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.FormulaRecordHandler。 Java `FormulaRecordHandler.processRecord` with the record XF index.
     // 对应 Java：`processRecord(row, column, formula, cachedResultType,
     // numberValue, booleanValue, xfIndex)` 参数一一对应，为保持 Java 签名
     // 语义不做参数聚合。
     #[allow(clippy::too_many_arguments)]
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.FormulaRecordHandler。
     pub fn process_formula_with_format(
         &mut self,
         row: u32,
@@ -126,7 +93,7 @@ impl FormulaRecordHandler {
         }
     }
 
-    /// Java `StringRecordHandler` follow-up for a pending string formula.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.FormulaRecordHandler。 Java `StringRecordHandler` follow-up for a pending string formula.
     pub fn complete_pending_string(&mut self, value: String) -> Option<FormulaCell> {
         let mut cell = self.pending.take()?;
         cell.pending_string = false;

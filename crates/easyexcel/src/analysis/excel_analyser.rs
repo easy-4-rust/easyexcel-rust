@@ -20,7 +20,7 @@ pub trait ExcelAnalyser {
     ///
     /// # Errors
     ///
-    /// 当工作簿解析（SAX/记录读取）失败时返回 [`ExcelError`]。
+    /// 当工作簿解析（SAX/记录读取）失败时返回 `ExcelError`。
     fn analysis<T, L>(&mut self, listener: &mut L) -> Result<()>
     where
         T: ExcelRow,

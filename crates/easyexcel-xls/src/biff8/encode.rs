@@ -14,6 +14,7 @@
 )]
 
 /// Maximum BIFF record data payload (excluding the 4-byte header).
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const MAX_RECORD_DATA: usize = 8224;
 
 pub use super::record_sid::{
@@ -31,30 +32,40 @@ pub use super::record_sid::{
 };
 
 /// Workbook globals substream type.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const DT_GLOBALS: u16 = 0x0005;
 /// Worksheet substream type.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const DT_WORKSHEET: u16 = 0x0010;
 /// BIFF8 version word.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const BIFF8_VERSION: u16 = 0x0600;
 
 /// Built-in XF index used for unstyled cells (last of the 16 style XFs).
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const XF_GENERAL: u16 = 15;
 /// First cell XF after the 16 built-in style XFs — date (`m/d/yy`, id 14).
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const XF_DATE: u16 = 16;
 /// Second cell XF — datetime (`m/d/yy h:mm`, id 22).
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const XF_DATETIME: u16 = 17;
 /// First custom cell XF index (after date / datetime helpers).
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const XF_CUSTOM_BASE: u16 = 18;
 
 /// Automatic / default font colour ICV.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const ICV_AUTO: u16 = 0x7FFF;
 /// Default pattern background (automatic).
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const ICV_PATTERN_BG_DEFAULT: u16 = 64;
 
-/// Appends a framed BIFF record (`type` + `len` + `data`) to `out`.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Appends a framed BIFF record (`type` + `len` + `data`) to `out`.
 // 语义敏感：上方 debug_assert 已保证 data.len() <= MAX_RECORD_DATA（远小于
 // u16 上限），记录长度字段按 BIFF8 规范为 u16，保留 as 转换。
 #[allow(clippy::cast_possible_truncation)]
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub fn record(out: &mut Vec<u8>, typ: u16, data: &[u8]) {
     debug_assert!(data.len() <= MAX_RECORD_DATA);
     out.extend_from_slice(&typ.to_le_bytes());
@@ -62,11 +73,12 @@ pub fn record(out: &mut Vec<u8>, typ: u16, data: &[u8]) {
     out.extend_from_slice(data);
 }
 
-/// Encodes a long `XLUnicodeString` (`cch:u16` + `grbit` + chars).
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Encodes a long `XLUnicodeString` (`cch:u16` + `grbit` + chars).
 // 语义敏感：Excel 单元格文本上限 32767 字符（远小于 u16 上限）；压缩模式下
 // 每字符必 <= 0xFF，u16->u8 无损。保留 as 以对齐 BIFF8 规范。
 #[allow(clippy::cast_possible_truncation)]
 #[must_use]
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub fn encode_unicode_string(s: &str) -> Vec<u8> {
     let chars: Vec<u16> = s.encode_utf16().collect();
     let compressed = chars.iter().all(|&c| c <= 0xFF);
@@ -86,10 +98,11 @@ pub fn encode_unicode_string(s: &str) -> Vec<u8> {
     out
 }
 
-/// Encodes a short `XLUnicodeString` (`cch:u8` + `grbit` + chars) for BOUNDSHEET / FONT.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Encodes a short `XLUnicodeString` (`cch:u8` + `grbit` + chars) for BOUNDSHEET / FONT.
 // 语义敏感：上方 take(255) 已保证字符数 <= 255，且压缩模式下每字符必 <= 0xFF。
 #[allow(clippy::cast_possible_truncation)]
 #[must_use]
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub fn encode_short_unicode_string(s: &str) -> Vec<u8> {
     let chars: Vec<u16> = s.encode_utf16().take(255).collect();
     let compressed = chars.iter().all(|&c| c <= 0xFF);
@@ -109,7 +122,7 @@ pub fn encode_short_unicode_string(s: &str) -> Vec<u8> {
     out
 }
 
-/// Tries to pack `v` into an RK record value; `None` means emit a NUMBER record.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Tries to pack `v` into an RK record value; `None` means emit a NUMBER record.
 #[must_use]
 pub fn encode_rk(v: f64) -> Option<u32> {
     if !v.is_finite() {
@@ -148,7 +161,7 @@ pub fn encode_rk(v: f64) -> Option<u32> {
     None
 }
 
-/// Packs a BIFF8 cell XF (20 bytes) with optional solid fill / alignment.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Packs a BIFF8 cell XF (20 bytes) with optional solid fill / alignment.
 ///
 /// Field packing matches xlwt `XFRecord` / `OpenOffice` BIFF8 XF (Java HSSF
 /// `ExtendedFormatRecord`).
@@ -161,6 +174,7 @@ pub fn encode_rk(v: f64) -> Option<u32> {
 // 记录的字段，拆分结构体会破坏 1:1 可追溯性。
 #[allow(clippy::similar_names, clippy::too_many_arguments)]
 #[must_use]
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub fn pack_cell_xf(
     font_index: u16,
     ifmt: u16,
@@ -196,7 +210,7 @@ pub fn pack_cell_xf(
     d
 }
 
-/// Packs a BIFF8 FONT record payload (Java HSSF `FontRecord`).
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Packs a BIFF8 FONT record payload (Java HSSF `FontRecord`).
 ///
 /// `height_points` is converted to twips (`* 20`). Bold uses `bls=700`.
 #[must_use]
@@ -226,7 +240,7 @@ pub fn pack_font(
     data
 }
 
-/// Packs one MERGECELLS range (8 bytes): `rwFirst..rwLast`, `colFirst..colLast`.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Packs one MERGECELLS range (8 bytes): `rwFirst..rwLast`, `colFirst..colLast`.
 ///
 /// Java HSSF `MergedCellsTable` / record 0x00E5.
 #[must_use]
@@ -239,10 +253,11 @@ pub fn pack_merge_range(first_row: u16, last_row: u16, first_col: u16, last_col:
     d
 }
 
-/// Emits one or more MERGECELLS records (max 1027 ranges each).
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Emits one or more MERGECELLS records (max 1027 ranges each).
 // 语义敏感：chunks(1027) 保证每记录范围数 <= 1027（远小于 u16 上限），
 // MERGECELLS 计数按 BIFF8 规范为 u16。
 #[allow(clippy::cast_possible_truncation)]
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub fn write_merge_cells(out: &mut Vec<u8>, ranges: &[[u8; 8]]) {
     const MAX_PER_RECORD: usize = 1027;
     for chunk in ranges.chunks(MAX_PER_RECORD) {
@@ -255,11 +270,12 @@ pub fn write_merge_cells(out: &mut Vec<u8>, ranges: &[[u8; 8]]) {
     }
 }
 
-/// Writes a PALETTE record with optional RGB overrides at indices 8..
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Writes a PALETTE record with optional RGB overrides at indices 8..
 ///
 /// Java HSSF `PaletteRecord` — first override replaces palette slot 8, etc.
 // 语义敏感：BIFF8 调色板最多 56 色，usize->u16 不可能截断。
 #[allow(clippy::cast_possible_truncation)]
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub fn write_palette_record(out: &mut Vec<u8>, overrides: &[(u8, u8, u8)]) {
     // Standard BIFF8 customizable palette (56 colours, indices 8..63).
     let mut colours: [(u8, u8, u8); 56] = [
@@ -336,7 +352,7 @@ pub fn write_palette_record(out: &mut Vec<u8>, overrides: &[(u8, u8, u8)]) {
     record(out, PALETTE, &data);
 }
 
-/// Packs a COLINFO record payload (12 bytes).
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Packs a COLINFO record payload (12 bytes).
 ///
 /// `width_chars` is Excel's character width; stored as `width * 256` (POI
 /// `sheet.setColumnWidth(col, chars * 256)`).
@@ -352,7 +368,7 @@ pub fn pack_colinfo(first_col: u8, last_col: u8, width_chars: u16, xf_index: u16
     d
 }
 
-/// Packs a ROW record payload (16 bytes).
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Packs a ROW record payload (16 bytes).
 ///
 /// `height_points` is converted to twips (`* 20`), matching POI
 /// `row.setHeightInPoints` / Java `StyleDataTest` (`40pt → 800`).

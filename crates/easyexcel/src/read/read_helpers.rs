@@ -4,11 +4,11 @@ use crate::core::{AnalysisContext, CellValue, ErrorAction, ExcelError, ReadListe
 use crate::read::read_options::ReadOptions;
 use crate::read::row_consumer::ReadFlow;
 use std::collections::HashMap;
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn validate_read_options(options: &ReadOptions) -> Result<()> {
     easyexcel_io::validate_row_range(options.start_row, options.end_row).map_err(ExcelError::from)
 }
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn reject_extra_read(options: &ReadOptions, format: &str) -> Result<()> {
     validate_read_options(options)?;
     if options.extra_read.is_empty() {
@@ -19,7 +19,7 @@ pub(crate) fn reject_extra_read(options: &ReadOptions, format: &str) -> Result<(
         )))
     }
 }
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn trim_string_cells(cells: &mut [CellValue]) {
     for cell in cells {
         if let CellValue::String(value) = cell {
@@ -30,11 +30,11 @@ pub(crate) fn trim_string_cells(cells: &mut [CellValue]) {
         }
     }
 }
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn is_empty_read_cell(cell: &CellValue) -> bool {
     cell.is_empty() || matches!(cell, CellValue::String(value) if value.is_empty())
 }
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn header_map(
     cells: &[CellValue],
     header_aliases: &HashMap<String, String>,
@@ -51,7 +51,7 @@ pub(crate) fn header_map(
         })
         .collect()
 }
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn analysis_context(
     sheet_name: &str,
     sheet_no: usize,
@@ -61,7 +61,7 @@ pub(crate) fn analysis_context(
     AnalysisContext::new(sheet_name, sheet_no, row_index)
         .with_custom_object(options.custom_object.clone())
 }
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn listener_result<T>(
     result: Result<()>,
     listener: &mut dyn ReadListener<T>,
@@ -73,7 +73,7 @@ pub(crate) fn listener_result<T>(
         Err(error) => listener_error(error, listener, context),
     }
 }
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn listener_error<T>(
     error: ExcelError,
     listener: &mut dyn ReadListener<T>,

@@ -17,6 +17,7 @@ impl XlsReadSheetHolder {
     }
     /// Returns the inner holder.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.read.metadata.holder.xls.XlsReadSheetHolder。
     pub const fn inner(&self) -> &ReadSheetHolder {
         &self.inner
     }

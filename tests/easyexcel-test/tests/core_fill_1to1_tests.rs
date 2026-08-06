@@ -11,8 +11,9 @@
 
 use chrono::NaiveDate;
 use easyexcel::{
-    CellValue, DynamicRow, DynamicValue, EasyExcel, ExcelRow, FillConfig, FillDirection,
-    FillWrapper, TemplateData, TemplateSheet,
+    CellValue, DynamicRow, DynamicValue, EasyExcel, ExcelCellStyle, ExcelColor, ExcelFillPattern,
+    ExcelFontStyle, ExcelRow, FillConfig, FillDirection, FillWrapper, TemplateData, TemplateSheet,
+    WriteCellContext, WriteHandler,
 };
 
 fn temp_path(name: &str) -> std::path::PathBuf {
@@ -505,10 +506,15 @@ mod fill_style_data_test {
     /// Java: com.alibaba.easyexcel.test.core.fill.style.FillStyleDataTest#t11FillStyleHandler07
     #[test]
     fn t11_fill_style_handler07() {
-        // Java registers AbstractVerticalCellStyleStrategy on fill.
-        // Rust fill inherits template styles; assert value fill parity (no soft-skip).
         let template = require_fixture("fill/style.xlsx");
-        assert_style_list_fill(&template, "fileStyleHandler07.xlsx");
+        let output = temp_path("fileStyleHandler07.xlsx");
+        EasyExcel::write::<FillStyleData>(&output)
+            .with_template(&template)
+            .register_write_handler(VerticalFillStyleHandler)
+            .need_head(false)
+            .do_fill(&FillWrapper::new(style_data_rows()))
+            .unwrap();
+        assert_fill_style_output(&output, true);
     }
 
     /// Java: com.alibaba.easyexcel.test.core.fill.style.FillStyleDataTest#t12FillStyleHandler03
@@ -533,10 +539,14 @@ mod fill_style_annotated_test {
     /// Java: com.alibaba.easyexcel.test.core.fill.style.FillStyleAnnotatedTest#t01Fill07
     #[test]
     fn t01_fill07() {
-        // Java uses FillStyleAnnotatedData with @ContentStyle/@ContentFontStyle.
-        // Rust TemplateData fill covers placeholder values; style annotations are write-side.
         let template = require_fixture("fill/style.xlsx");
-        assert_style_list_fill(&template, "FillStyleAnnotated07.xlsx");
+        let output = temp_path("FillStyleAnnotated07.xlsx");
+        EasyExcel::write::<FillStyleAnnotatedData>(&output)
+            .with_template(&template)
+            .need_head(false)
+            .do_fill(&FillWrapper::new(style_data_rows()))
+            .unwrap();
+        assert_fill_style_output(&output, false);
     }
 
     /// Java: com.alibaba.easyexcel.test.core.fill.style.FillStyleAnnotatedTest#t02Fill03
@@ -544,5 +554,106 @@ mod fill_style_annotated_test {
     fn t02_fill03() {
         // Java fills xls/fill/style.xls. Legacy XLS template fill is Unsupported (visible).
         assert_xls_fill_works(&require_fixture("xls/fill/style.xls"), "t02_fill03.xls");
+    }
+}
+
+#[derive(Debug, Clone, ExcelRow)]
+struct FillStyleData {
+    #[excel(index = 0)]
+    name: String,
+    #[excel(index = 1)]
+    number: f64,
+    #[excel(index = 2)]
+    date: chrono::NaiveDateTime,
+    #[excel(index = 3)]
+    empty: String,
+}
+
+#[derive(Debug, Clone, ExcelRow)]
+struct FillStyleAnnotatedData {
+    #[excel(
+        index = 0,
+        content_style(fill_pattern = "solid", fill_foreground_color = 13),
+        content_font_style(bold = true, color = 19)
+    )]
+    name: String,
+    #[excel(
+        index = 1,
+        content_style(fill_pattern = "solid", fill_foreground_color = 10),
+        content_font_style(bold = true, color = 16)
+    )]
+    number: f64,
+    #[excel(
+        index = 2,
+        content_style(fill_pattern = "solid", fill_foreground_color = 17),
+        content_font_style(bold = true, color = 58)
+    )]
+    date: chrono::NaiveDateTime,
+    #[excel(
+        index = 3,
+        content_style(fill_pattern = "solid", fill_foreground_color = 12),
+        content_font_style(bold = true, color = 18)
+    )]
+    empty: String,
+}
+
+struct VerticalFillStyleHandler;
+
+impl WriteHandler for VerticalFillStyleHandler {
+    fn style_cell_style(&self, context: &WriteCellContext) -> Option<ExcelCellStyle> {
+        if context.is_head {
+            return None;
+        }
+        let colors = [(13, 19), (10, 16), (17, 58), (12, 18), (13, 19), (21, 56)];
+        let (fill, font) = *colors.get(usize::from(context.column_index))?;
+        Some(ExcelCellStyle {
+            fill_pattern: Some(ExcelFillPattern::Solid),
+            fill_foreground_color: Some(ExcelColor::Indexed(fill)),
+            font: Some(ExcelFontStyle {
+                bold: Some(true),
+                color: Some(ExcelColor::Indexed(font)),
+                ..ExcelFontStyle::default()
+            }),
+            ..ExcelCellStyle::default()
+        })
+    }
+}
+
+fn assert_fill_style_output(path: &std::path::Path, handler_style: bool) {
+    let rows = EasyExcel::read_dynamic_sync(path)
+        .head_row_number(0)
+        .do_read_sync()
+        .unwrap();
+    assert!(dynamic_contains(&rows, "张三"));
+    let workbook = easyexcel::xlsx::read_path(path).unwrap();
+    let sheet = &workbook.sheets[0];
+    for row in [1_u32, 2] {
+        for column in 0..=5_u32 {
+            assert!(
+                sheet.style_at(row, column).is_some(),
+                "missing style at ({row},{column})"
+            );
+        }
+        let name_style = workbook
+            .styles
+            .get(sheet.style_at(row, 0).unwrap())
+            .unwrap();
+        assert_eq!(name_style.number_format_id, Some(49));
+        let date_style = workbook
+            .styles
+            .get(sheet.style_at(row, 2).unwrap())
+            .unwrap();
+        assert_eq!(date_style.number_format, "yyyy-MM-dd HH:mm:ss");
+        for column in 0..=if handler_style { 5 } else { 3 } {
+            let style = workbook
+                .styles
+                .get(sheet.style_at(row, column).unwrap())
+                .unwrap();
+            assert!(style.font.bold, "font must be bold at ({row},{column})");
+            assert_eq!(
+                style.fill.pattern,
+                easyexcel::model::styles::FillPattern::Solid
+            );
+        }
     }
 }

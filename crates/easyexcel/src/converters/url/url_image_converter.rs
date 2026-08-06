@@ -13,7 +13,7 @@ use crate::core::into_excel_cell::IntoExcelCell;
 use crate::core::write_converter_context::WriteConverterContext;
 use crate::write::write_cell_data::WriteCellData;
 
-/// Java `UrlImageConverter` equivalent with Java's default timeout values.
+/// 对应 Java：com.alibaba.excel.converters.url.UrlImageConverter。 Java `UrlImageConverter` equivalent with Java's default timeout values.
 ///
 /// Uses the `ureq` crate for HTTP; defaulting to 1s connect and 5s read
 /// matches Java `EasyExcel`.
@@ -31,6 +31,7 @@ impl UrlImageConverter {
 
     /// Creates a converter with explicit connection and response-read timeouts.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.converters.url.UrlImageConverter。
     pub const fn new(connect_timeout: Duration, read_timeout: Duration) -> Self {
         Self {
             connect_timeout,
@@ -40,12 +41,14 @@ impl UrlImageConverter {
 
     /// Returns the configured connection timeout. (Java `getConnectTimeout()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.converters.url.UrlImageConverter。
     pub const fn connect_timeout(self) -> Duration {
         self.connect_timeout
     }
 
     /// Returns the configured response-read timeout. (Java `getReadTimeout()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.converters.url.UrlImageConverter。
     pub const fn read_timeout(self) -> Duration {
         self.read_timeout
     }

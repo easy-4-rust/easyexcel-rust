@@ -8,13 +8,13 @@ use crate::core::{CsvCharset, Result};
 
 pub use easyexcel_csv::CsvEncoding;
 
-/// 保持原有 `easyexcel::CsvEncodingWriter` API 的薄适配器。
+/// 对应 Java：com.alibaba.excel.csv.CsvEncodingWriter。 保持原有 `easyexcel::CsvEncodingWriter` API 的薄适配器。
 pub struct CsvEncodingWriter {
     inner: easyexcel_csv::CsvEncodingWriter,
 }
 
 impl CsvEncodingWriter {
-    /// 使用 Java 风格字符集名称创建转码器。
+    /// 对应 Java：com.alibaba.excel.csv.CsvEncodingWriter。 使用 Java 风格字符集名称创建转码器。
     ///
     /// # Errors
     ///
@@ -40,6 +40,7 @@ impl CsvEncodingWriter {
     /// # Errors
     ///
     /// 底层输出无法写入时返回 I/O 错误。
+    /// 对应 Java：com.alibaba.excel.csv.CsvEncodingWriter。
     pub fn encode_utf16(
         output: &mut dyn Write,
         text: &str,
@@ -53,6 +54,7 @@ impl CsvEncodingWriter {
     /// # Errors
     ///
     /// 剩余数据不是完整 UTF-8，或底层输出失败时返回 I/O 错误。
+    /// 对应 Java：com.alibaba.excel.csv.CsvEncodingWriter。
     pub fn finish(&mut self) -> std::io::Result<()> {
         self.inner.finish()
     }
@@ -73,12 +75,14 @@ impl Write for CsvEncodingWriter {
 /// # Errors
 ///
 /// 字符集名称不受支持时返回 `EasyExcel` 公共错误。
+/// 对应 Java：com.alibaba.excel.csv.CsvEncodingWriter。
 pub fn csv_encoding(charset: &CsvCharset) -> Result<CsvEncoding> {
     easyexcel_csv::csv_encoding(charset).map_err(crate::core::ExcelError::from)
 }
 
 /// 返回编码对应的字节顺序标记。
 #[must_use]
+/// 对应 Java：com.alibaba.excel.csv.CsvEncodingWriter。
 pub fn csv_bom(encoding: CsvEncoding) -> &'static [u8] {
     easyexcel_csv::csv_bom(encoding)
 }

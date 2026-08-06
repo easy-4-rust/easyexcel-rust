@@ -7,7 +7,7 @@ use std::borrow::Cow;
 
 use crate::core::{ExcelColumn, ExcelRow};
 
-/// Mirrors `com.alibaba.excel.util.FieldUtils#resolveCglibFieldName`.
+/// 对应 Java：com.alibaba.excel.util.FieldUtils。 Mirrors `com.alibaba.excel.util.FieldUtils#resolveCglibFieldName`.
 ///
 /// Java compares the first two characters and switches the first character's case when only
 /// one is uppercase. The reusable string rule is implemented by `easyexcel-utils`.
@@ -16,7 +16,7 @@ pub fn resolve_cglib_field_name(name: &str) -> Cow<'_, str> {
     easyexcel_utils::string_utils::resolve_cglib_field_name(name)
 }
 
-/// Mirrors `com.alibaba.excel.util.FieldUtils#getField`.
+/// 对应 Java：com.alibaba.excel.util.FieldUtils。 Mirrors `com.alibaba.excel.util.FieldUtils#getField`.
 ///
 /// Rust field access is resolved at compile time via `derive(ExcelRow)`.
 #[must_use]

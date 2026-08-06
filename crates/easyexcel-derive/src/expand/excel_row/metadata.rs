@@ -5,7 +5,7 @@ use quote::quote;
 
 use crate::annotation::StructOptions;
 
-/// 生成类型级默认列宽、行高、样式、字体和绝对合并元数据。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 生成类型级默认列宽、行高、样式、字体和绝对合并元数据。
 pub(super) fn write_metadata_tokens(
     crate_path: &TokenStream,
     options: &StructOptions,

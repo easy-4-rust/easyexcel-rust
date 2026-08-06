@@ -4,7 +4,7 @@ use easyexcel_utils::string_utils::equals_with_optional_java_trim;
 
 use crate::{Error, Result};
 
-/// 中立的工作表选择请求。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 中立的工作表选择请求。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SheetSelection<'a> {
     /// 选择第一张工作表。
@@ -19,7 +19,7 @@ pub enum SheetSelection<'a> {
 }
 
 impl SheetSelection<'_> {
-    /// 判断工作簿顺序中的一张工作表是否命中当前选择请求。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 判断工作簿顺序中的一张工作表是否命中当前选择请求。
     ///
     /// `index` 为零基下标；启用 `auto_trim` 时，名称匹配采用 Java
     /// `String#trim` 语义。该方法适用于无法预先收集全部工作表的事件读取器。
@@ -36,10 +36,14 @@ impl SheetSelection<'_> {
     }
 }
 
-/// 从有序工作表名称中解析选择结果。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 从有序工作表名称中解析选择结果。
 ///
 /// 返回值保留原始工作簿下标与名称。启用 `auto_trim` 时，名称匹配采用
 /// Java `String#trim` 语义；索引越界或名称不存在时返回强类型错误。
+///
+/// # Errors
+///
+/// 工作簿为空、索引越界或指定名称不存在时返回 [`Error::SheetNotFound`]。
 pub fn select_sheet_names(
     names: Vec<String>,
     selection: SheetSelection<'_>,

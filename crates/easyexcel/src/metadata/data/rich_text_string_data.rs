@@ -8,7 +8,7 @@ use crate::core::interval_font::IntervalFont;
 use crate::core::into_excel_cell::IntoExcelCell;
 use crate::core::write_font::WriteFont;
 
-/// Java `RichTextStringData` equivalent.
+/// 对应 Java：com.alibaba.excel.metadata.data.RichTextStringData。 Java `RichTextStringData` equivalent.
 ///
 /// Java exposes `textString`, `writeFont`, `intervalFontList` via Lombok
 /// accessors. Rust preserves the same fields and offers builder-style
@@ -21,7 +21,7 @@ pub struct RichTextStringData {
 }
 
 impl RichTextStringData {
-    /// Creates rich-text metadata for a string. (Java `RichTextStringData(String)`)
+    /// 对应 Java：com.alibaba.excel.metadata.data.RichTextStringData。 Creates rich-text metadata for a string. (Java `RichTextStringData(String)`)
     #[must_use]
     pub fn new(text_string: impl Into<String>) -> Self {
         Self {
@@ -31,14 +31,14 @@ impl RichTextStringData {
         }
     }
 
-    /// Applies a font to the entire string. (Java `applyFont(WriteFont)`)
+    /// 对应 Java：com.alibaba.excel.metadata.data.RichTextStringData。 Applies a font to the entire string. (Java `applyFont(WriteFont)`)
     #[must_use]
     pub fn apply_font(mut self, write_font: WriteFont) -> Self {
         self.write_font = Some(write_font);
         self
     }
 
-    /// Applies a font to a half-open UTF-16 character range. (Java `applyFont(int, int, WriteFont)`)
+    /// 对应 Java：com.alibaba.excel.metadata.data.RichTextStringData。 Applies a font to a half-open UTF-16 character range. (Java `applyFont(int, int, WriteFont)`)
     #[must_use]
     pub fn apply_font_range(
         mut self,
@@ -51,14 +51,14 @@ impl RichTextStringData {
         self
     }
 
-    /// Replaces all interval font entries.
+    /// 对应 Java：com.alibaba.excel.metadata.data.RichTextStringData。 Replaces all interval font entries.
     #[must_use]
     pub fn interval_font_list(mut self, value: impl IntoIterator<Item = IntervalFont>) -> Self {
         self.interval_font_list = value.into_iter().collect();
         self
     }
 
-    /// Returns the underlying text. (Java `getTextString()`)
+    /// 对应 Java：com.alibaba.excel.metadata.data.RichTextStringData。 Returns the underlying text. (Java `getTextString()`)
     #[must_use]
     pub fn text_string(&self) -> &str {
         &self.text_string
@@ -66,11 +66,12 @@ impl RichTextStringData {
 
     /// Returns the optional whole-string font. (Java `getWriteFont()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.data.RichTextStringData。
     pub const fn write_font(&self) -> Option<&WriteFont> {
         self.write_font.as_ref()
     }
 
-    /// Returns interval fonts in application order. (Java `getIntervalFontList()`)
+    /// 对应 Java：com.alibaba.excel.metadata.data.RichTextStringData。 Returns interval fonts in application order. (Java `getIntervalFontList()`)
     #[must_use]
     pub fn interval_fonts(&self) -> &[IntervalFont] {
         &self.interval_font_list

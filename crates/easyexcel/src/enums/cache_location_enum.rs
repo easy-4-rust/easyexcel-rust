@@ -8,6 +8,7 @@
 ///
 /// Rust port of Java `CacheLocationEnum`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.enums.CacheLocationEnum。
 pub enum CacheLocationEnum {
     /// Stored in `ThreadLocal`; cleared when the read or write completes.
     ThreadLocal,

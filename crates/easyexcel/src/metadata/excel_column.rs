@@ -12,7 +12,7 @@ use crate::metadata::property::NumberRoundingMode;
 use crate::metadata::property::data_validation_property::ExcelDataValidationMeta;
 use crate::write::write_cell_data::WriteCellData;
 
-/// Static metadata for one Rust struct field and Excel column.
+/// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。 Static metadata for one Rust struct field and Excel column.
 ///
 /// Mirrors the union of fields that Java stores across
 /// `Head` / `FieldCache` / `FieldWrapper`. The Rust port exposes a single
@@ -87,6 +87,7 @@ impl ExcelColumn {
     /// Creates static column metadata. (Java `Head(columnIndex, field, fieldName, headNameList, forceIndex, forceName)` subset)
     #[allow(clippy::too_many_arguments)]
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn new(
         field: &'static str,
         name: &'static str,
@@ -124,12 +125,13 @@ impl ExcelColumn {
 
     /// 设置 Java `@ExcelProperty.value()` 对应的完整多级表头路径。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_head_names(mut self, head_names: &'static [&'static str]) -> Self {
         self.head_names = Some(head_names);
         self
     }
 
-    /// 返回读取时使用的末级表头名称。
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。 返回读取时使用的末级表头名称。
     #[must_use]
     pub fn leaf_name(&self) -> &'static str {
         self.head_names
@@ -137,7 +139,7 @@ impl ExcelColumn {
             .unwrap_or(self.name)
     }
 
-    /// 返回用于写入的拥有所有权的表头路径。
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。 返回用于写入的拥有所有权的表头路径。
     #[must_use]
     pub fn head_path(&self) -> Vec<String> {
         self.head_names.map_or_else(
@@ -148,6 +150,7 @@ impl ExcelColumn {
 
     /// Adds Java-compatible number rounding metadata.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_number_rounding_mode(mut self, mode: NumberRoundingMode) -> Self {
         self.number_rounding_mode = Some(mode);
         self
@@ -155,6 +158,7 @@ impl ExcelColumn {
 
     /// 设置 Java `@DateTimeFormat.value` 元数据。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_date_time_format(mut self, format: &'static str) -> Self {
         self.date_time_format = Some(format);
         self
@@ -162,6 +166,7 @@ impl ExcelColumn {
 
     /// 设置 Java `@NumberFormat.value` 元数据。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_number_format(mut self, format: &'static str) -> Self {
         self.number_format = Some(format);
         self
@@ -169,6 +174,7 @@ impl ExcelColumn {
 
     /// 设置已废弃的 Java `ExcelProperty.format` 兼容值。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_legacy_format(mut self, format: &'static str) -> Self {
         self.format = Some(format);
         self
@@ -176,6 +182,7 @@ impl ExcelColumn {
 
     /// 返回日期转换应使用的格式，兼容旧 `ExcelProperty.format`。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn effective_date_time_format(&self) -> Option<&'static str> {
         match self.date_time_format {
             Some(format) => Some(format),
@@ -185,6 +192,7 @@ impl ExcelColumn {
 
     /// 返回数字转换应使用的格式，兼容历史通用格式字段。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn effective_number_format(&self) -> Option<&'static str> {
         match self.number_format {
             Some(format) => Some(format),
@@ -203,6 +211,7 @@ impl ExcelColumn {
 
     /// Adds the field-level `@DateTimeFormat.use1904windowing` override.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_use_1904_windowing(mut self, enabled: bool) -> Self {
         self.use_1904_windowing = Some(enabled);
         self
@@ -210,6 +219,7 @@ impl ExcelColumn {
 
     /// Adds annotation-driven column width. (Java `@ColumnWidth`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_column_width(mut self, width: u16) -> Self {
         self.column_width = Some(width);
         self
@@ -217,6 +227,7 @@ impl ExcelColumn {
 
     /// Adds a field-level header cell style. (Java `@HeadStyle`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_head_style(mut self, style: ExcelCellStyle) -> Self {
         self.head_style = Some(style);
         self
@@ -224,6 +235,7 @@ impl ExcelColumn {
 
     /// Adds a field-level content cell style. (Java `@ContentStyle`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_content_style(mut self, style: ExcelCellStyle) -> Self {
         self.content_style = Some(style);
         self
@@ -231,6 +243,7 @@ impl ExcelColumn {
 
     /// Adds a field-level header font style. (Java `@HeadFontStyle`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_head_font_style(mut self, style: ExcelFontStyle) -> Self {
         self.head_font_style = Some(style);
         self
@@ -238,6 +251,7 @@ impl ExcelColumn {
 
     /// Adds a field-level content font style. (Java `@ContentFontStyle`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_content_font_style(mut self, style: ExcelFontStyle) -> Self {
         self.content_font_style = Some(style);
         self
@@ -245,6 +259,7 @@ impl ExcelColumn {
 
     /// Adds a field-level repeating content merge. (Java `@ContentLoopMerge`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_loop_merge(mut self, property: LoopMergeProperty) -> Self {
         self.loop_merge = Some(property);
         self
@@ -254,6 +269,7 @@ impl ExcelColumn {
 
     /// Adds a per-column image source. (Java `@ExcelImage`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_image_path(mut self, path: &'static str) -> Self {
         self.image_path = Some(path);
         self
@@ -261,6 +277,7 @@ impl ExcelColumn {
 
     /// Adds a per-column cell comment. (Java `@ExcelComment`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_comment(mut self, comment: &'static str) -> Self {
         self.comment = Some(comment);
         self
@@ -268,6 +285,7 @@ impl ExcelColumn {
 
     /// Adds a per-column hyperlink target. (Java `@ExcelHyperlink`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_hyperlink(mut self, link: &'static str) -> Self {
         self.hyperlink = Some(link);
         self
@@ -275,6 +293,7 @@ impl ExcelColumn {
 
     /// Adds a per-column formula override. (Java `@ExcelFormula`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_formula(mut self, formula: &'static str) -> Self {
         self.formula = Some(formula);
         self
@@ -282,6 +301,7 @@ impl ExcelColumn {
 
     /// Adds per-column data-validation metadata. (Java `@ExcelDataValidation`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_data_validation(mut self, meta: ExcelDataValidationMeta) -> Self {
         self.data_validation = Some(meta);
         self
@@ -289,6 +309,7 @@ impl ExcelColumn {
 
     /// Adds per-column conditional-formatting metadata. (Java `@ExcelConditional`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_conditional_format(
         mut self,
         cf: (&'static str, &'static str, &'static str),
@@ -299,6 +320,7 @@ impl ExcelColumn {
 
     /// Marks the column as participating in auto-filter. (Java `@ExcelFilter`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。
     pub const fn with_auto_filter(mut self) -> Self {
         self.auto_filter = true;
         self
@@ -306,7 +328,7 @@ impl ExcelColumn {
 
     // -------- Phase 1.4: decoration helpers applied to WriteCellData --------
 
-    /// Applies this column's annotation-driven decorations (hyperlink / formula /
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelHeadProperty。 Applies this column's annotation-driven decorations (hyperlink / formula /
     /// comment) onto a `WriteCellData`. (Java `Head.fillHeadAndWriteData` decorations)
     ///
     /// Order matches Java `ExcelBuilderImpl` write path:

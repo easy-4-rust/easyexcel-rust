@@ -5,7 +5,7 @@
 
 use crate::enums::holder_enum::HolderEnum;
 
-/// Java `Holder` 接口的 Rust trait。
+/// 对应 Java：com.alibaba.excel.metadata.Holder。 Java `Holder` 接口的 Rust trait。
 ///
 /// # Java 对应
 /// - 接口：`com.alibaba.excel.metadata.Holder`

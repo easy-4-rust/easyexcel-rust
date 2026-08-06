@@ -18,7 +18,7 @@ use crate::core::read_converter_context::ReadConverterContext;
 use crate::core::write_converter_context::WriteConverterContext;
 use crate::write::write_cell_data::WriteCellData;
 
-/// Custom bidirectional converter selected by `#[excel(converter = Type)]`.
+/// 对应 Java：com.alibaba.excel.converters.Converter。 Custom bidirectional converter selected by `#[excel(converter = Type)]`.
 ///
 /// The Java counterpart exposes six default methods (`supportJavaTypeKey`,
 /// `supportExcelTypeKey`, two `convertToJavaData` overloads, two

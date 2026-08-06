@@ -3,14 +3,14 @@
 use crate::metadata::configuration_holder::ConfigurationHolder;
 use crate::metadata::property::excel_head_property::ExcelHeadProperty;
 
-/// Read-side header metadata.
+/// 对应 Java：com.alibaba.excel.read.metadata.property.ExcelReadHeadProperty。 Read-side header metadata.
 ///
 /// Rust port of Java `ExcelReadHeadProperty extends ExcelHeadProperty`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExcelReadHeadProperty(ExcelHeadProperty);
 
 impl ExcelReadHeadProperty {
-    /// Creates read-side header metadata. (Java constructor)
+    /// 对应 Java：com.alibaba.excel.read.metadata.property.ExcelReadHeadProperty。 Creates read-side header metadata. (Java constructor)
     #[must_use]
     pub fn new(
         configuration_holder: Option<&dyn ConfigurationHolder>,
@@ -25,19 +25,19 @@ impl ExcelReadHeadProperty {
         Self(property)
     }
 
-    /// Returns the underlying header property. (Java inherited getters)
+    /// 对应 Java：com.alibaba.excel.read.metadata.property.ExcelReadHeadProperty。 Returns the underlying header property. (Java inherited getters)
     #[must_use]
     pub fn inner(&self) -> &ExcelHeadProperty {
         &self.0
     }
 
-    /// Returns whether any header is configured. (Java `hasHead()`)
+    /// 对应 Java：com.alibaba.excel.read.metadata.property.ExcelReadHeadProperty。 Returns whether any header is configured. (Java `hasHead()`)
     #[must_use]
     pub fn has_head(&self) -> bool {
         self.0.has_head()
     }
 
-    /// Returns the header map. (Java `getHeadMap()`)
+    /// 对应 Java：com.alibaba.excel.read.metadata.property.ExcelReadHeadProperty。 Returns the header map. (Java `getHeadMap()`)
     #[must_use]
     pub fn head_map(&self) -> &std::collections::BTreeMap<i32, crate::metadata::head::Head> {
         self.0.head_map()

@@ -11,7 +11,7 @@ use super::xlsx_tag_handler::XlsxTagHandler;
 pub struct AbstractXlsxTagHandler;
 
 impl AbstractXlsxTagHandler {
-    /// Creates the abstract base (rarely constructed on its own).
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler。 Creates the abstract base (rarely constructed on its own).
     #[must_use]
     pub fn new() -> Self {
         Self

@@ -4,7 +4,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Ident, Path, Type};
 
-/// 生成字段写入单元格值的表达式。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 生成字段写入单元格值的表达式。
 pub(crate) fn field_write_conversion(
     crate_path: &TokenStream,
     ty: &Type,
@@ -26,7 +26,7 @@ pub(crate) fn field_write_conversion(
     )
 }
 
-/// 生成支持运行时转换器注册表的字段写入表达式。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 生成支持运行时转换器注册表的字段写入表达式。
 pub(crate) fn field_registered_write_conversion(
     crate_path: &TokenStream,
     ty: &Type,
@@ -55,7 +55,7 @@ pub(crate) fn field_registered_write_conversion(
     )
 }
 
-/// 生成保留写入元数据的 `WriteCellData` 转换表达式。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 生成保留写入元数据的 `WriteCellData` 转换表达式。
 pub(crate) fn field_registered_write_cell_data_conversion(
     crate_path: &TokenStream,
     ty: &Type,
@@ -92,7 +92,7 @@ fn option_null_expression(ty: &Type, ident: &Ident) -> TokenStream {
     }
 }
 
-/// 生成写处理器使用的原始值快照表达式。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 生成写处理器使用的原始值快照表达式。
 pub(crate) fn field_original_write_conversion(
     crate_path: &TokenStream,
     ty: &Type,
@@ -105,7 +105,7 @@ pub(crate) fn field_original_write_conversion(
         quote!(Ok(#crate_path::CellValue::Empty))
     }
 }
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn is_side_effect_free_original_type(ty: &Type) -> bool {
     let Type::Path(path) = ty else {
         return false;

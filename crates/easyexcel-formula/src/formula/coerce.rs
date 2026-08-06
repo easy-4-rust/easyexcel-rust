@@ -5,9 +5,13 @@
 use super::value::Value;
 use easyexcel_model::error::CellError;
 
-/// Coerce a value to a number following Excel's rules for scalar contexts:
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Coerce a value to a number following Excel's rules for scalar contexts:
 /// numbers pass through, booleans → 1/0, empty → 0, numeric text parses, other
 /// text → `#VALUE!`, errors propagate.
+///
+/// # Errors
+///
+/// 文本无法解析为数字，或输入本身是错误、引用、lambda 时返回对应单元格错误。
 pub fn to_number(v: &Value) -> Result<f64, CellError> {
     match v {
         Value::Number(n) => Ok(*n),
@@ -23,8 +27,9 @@ pub fn to_number(v: &Value) -> Result<f64, CellError> {
     }
 }
 
-/// Parse text the way Excel coerces a string operand to a number: decimal,
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Parse text the way Excel coerces a string operand to a number: decimal,
 /// scientific, leading/trailing whitespace, leading `+`/`-`, and percentages.
+#[must_use]
 pub fn parse_number_text(s: &str) -> Option<f64> {
     let t = s.trim();
     if t.is_empty() {
@@ -47,7 +52,11 @@ pub fn parse_number_text(s: &str) -> Option<f64> {
     None
 }
 
-/// Coerce to display text (numbers via General format, booleans uppercase).
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Coerce to display text (numbers via General format, booleans uppercase).
+///
+/// # Errors
+///
+/// 输入是错误、引用或 lambda 时返回对应单元格错误。
 pub fn to_text(v: &Value) -> Result<String, CellError> {
     match v {
         Value::Text(s) => Ok(s.clone()),
@@ -63,8 +72,12 @@ pub fn to_text(v: &Value) -> Result<String, CellError> {
     }
 }
 
-/// Coerce to a boolean: booleans pass, numbers → nonzero, "TRUE"/"FALSE" text,
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Coerce to a boolean: booleans pass, numbers → nonzero, "TRUE"/"FALSE" text,
 /// empty → false, other text → `#VALUE!`.
+///
+/// # Errors
+///
+/// 文本无法按布尔或数字规则解析，或输入本身是错误、引用、lambda 时返回错误。
 pub fn to_bool(v: &Value) -> Result<bool, CellError> {
     match v {
         Value::Bool(b) => Ok(*b),
@@ -90,12 +103,13 @@ pub fn to_bool(v: &Value) -> Result<bool, CellError> {
     }
 }
 
-/// Excel comparison ordering across mixed types. Returns `Less`/`Equal`/`Greater`.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Excel comparison ordering across mixed types. Returns `Less`/`Equal`/`Greater`.
 ///
 /// Within a type: numbers compare numerically, text compares
 /// case-insensitively, booleans FALSE < TRUE. Across types the hierarchy is
 /// number < text < boolean (empty is treated as 0 or "" depending on the other
 /// operand).
+#[must_use]
 pub fn compare(a: &Value, b: &Value) -> std::cmp::Ordering {
     use std::cmp::Ordering;
     fn rank(v: &Value) -> u8 {
@@ -131,8 +145,9 @@ fn normalize_empty(v: &Value, other: &Value) -> Value {
     }
 }
 
-/// Excel equality (used by `=`/`<>` and by criteria matching). Numeric-text is
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Excel equality (used by `=`/`<>` and by criteria matching). Numeric-text is
 /// NOT coerced here — Excel treats `"1"=1` as FALSE.
+#[must_use]
 pub fn equal(a: &Value, b: &Value) -> bool {
     compare(a, b) == std::cmp::Ordering::Equal
 }

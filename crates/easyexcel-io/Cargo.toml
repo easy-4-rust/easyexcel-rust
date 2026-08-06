@@ -16,7 +16,6 @@ easyexcel-model.workspace = true
 easyexcel-utils.workspace = true
 flate2.workspace = true
 quick-xml.workspace = true
-quick-xml-legacy = { package = "quick-xml", version = "0.37.5" }
 thiserror.workspace = true
 tempfile.workspace = true
 ureq.workspace = true

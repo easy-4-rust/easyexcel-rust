@@ -6,7 +6,7 @@
 use crate::core::{ExcelColumn, ExcelRow};
 use crate::metadata::{DateTimeFormatProperty, ExcelContentProperty, NumberFormatProperty};
 
-/// Mirrors `com.alibaba.excel.util.ClassUtils#declaredExcelContentProperty`.
+/// 对应 Java：com.alibaba.excel.util.ClassUtils。 Mirrors `com.alibaba.excel.util.ClassUtils#declaredExcelContentProperty`.
 ///
 #[must_use]
 pub fn declared_excel_content_property<T: ExcelRow>(
@@ -29,7 +29,7 @@ pub fn declared_excel_content_property<T: ExcelRow>(
     })
 }
 
-/// Mirrors `com.alibaba.excel.util.ClassUtils#combineExcelContentProperty`.
+/// 对应 Java：com.alibaba.excel.util.ClassUtils。 Mirrors `com.alibaba.excel.util.ClassUtils#combineExcelContentProperty`.
 ///
 /// 字段级属性优先于类型级属性，缺失字段回退到类型级属性。
 #[must_use]
@@ -64,14 +64,14 @@ pub fn combine_excel_content_property(
     })
 }
 
-/// Mirrors `com.alibaba.excel.util.ClassUtils#declaredFields`.
+/// 对应 Java：com.alibaba.excel.util.ClassUtils。 Mirrors `com.alibaba.excel.util.ClassUtils#declaredFields`.
 ///
 #[must_use]
 pub fn declared_fields<T: ExcelRow>() -> &'static [ExcelColumn] {
     T::schema()
 }
 
-/// Mirrors `com.alibaba.excel.util.ClassUtils#removeThreadLocalCache`.
+/// 对应 Java：com.alibaba.excel.util.ClassUtils。 Mirrors `com.alibaba.excel.util.ClassUtils#removeThreadLocalCache`.
 ///
 /// Java caches reflected `Field` arrays in a `ThreadLocal` for performance.
 /// Rust field info is compile-time (`&'static [ExcelColumn]`), no runtime
@@ -102,8 +102,10 @@ mod tests_extra {
         assert!(declared_excel_content_property::<MetadataRow>("missing").is_none());
         assert_eq!(declared_fields::<MetadataRow>()[0].field, "value");
 
-        let mut type_property = ExcelContentProperty::default();
-        type_property.date_time_format = Some("yyyy-MM-dd");
+        let type_property = ExcelContentProperty {
+            date_time_format: Some("yyyy-MM-dd"),
+            ..ExcelContentProperty::default()
+        };
         let combined = combine_excel_content_property(Some(&type_property), Some(&property))
             .expect("combined property");
         assert_eq!(combined.date_time_format, Some("yyyy-MM-dd"));

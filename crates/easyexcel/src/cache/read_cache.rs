@@ -50,19 +50,19 @@ pub trait ReadCache: Send {
     }
 }
 
-/// Creates an in-memory cache backend. (Java `new MapCache()`)
+/// 对应 Java：com.alibaba.excel.cache.ReadCache。 Creates an in-memory cache backend. (Java `new MapCache()`)
 #[must_use]
 pub fn new_map_cache() -> Box<dyn SharedStringCache> {
     easyexcel_cache::create_memory_cache()
 }
 
-/// 创建生命周期内不淘汰对象的 Moka 缓存。
+/// 对应 Java：com.alibaba.excel.cache.ReadCache。 创建生命周期内不淘汰对象的 Moka 缓存。
 #[must_use]
 pub fn new_moka_cache() -> Box<dyn SharedStringCache> {
     easyexcel_cache::create_moka_cache()
 }
 
-/// 创建用于大文件 SAX 读取的临时文件缓存。
+/// 对应 Java：com.alibaba.excel.cache.ReadCache。 创建用于大文件 SAX 读取的临时文件缓存。
 ///
 /// # Errors
 ///
@@ -85,65 +85,7 @@ pub fn resolve_read_cache_mode(
     })
 }
 
-/// Adapts the internal SAX cache writer to the Java `ReadCache` surface.
-pub(crate) struct SharedStringCacheAdapter {
-    inner: easyexcel_cache::SharedStringCacheHandle,
-}
-
-impl SharedStringCacheAdapter {
-    /// Wraps a live shared-string cache writer.
-    #[must_use]
-    pub fn new(inner: Box<dyn SharedStringCache>) -> Self {
-        Self {
-            inner: easyexcel_cache::SharedStringCacheHandle::new(inner),
-        }
-    }
-
-    /// 返回写入侧或已完成读取侧的字符串数量。
-    #[must_use]
-    pub fn len(&self) -> usize {
-        self.inner.len()
-    }
-
-    /// 返回缓存是否为空。
-    #[must_use]
-    pub fn is_empty(&self) -> bool {
-        self.inner.is_empty()
-    }
-
-    /// Returns the read-only cache produced by [`ReadCache::put_finished`].
-    ///
-    /// # Panics
-    ///
-    /// Panics when called before [`ReadCache::put_finished`].
-    // 内部缓存 API 脚手架，暂未在 crate 内直接调用。
-    #[must_use]
-    #[allow(dead_code)]
-    pub fn into_reader(self) -> Box<dyn SharedStringCacheReader> {
-        self.inner
-            .into_reader()
-            .expect("ReadCache.put_finished must run before into_reader")
-    }
-}
-
-impl ReadCache for SharedStringCacheAdapter {
-    fn put(&mut self, value: String) -> Result<()> {
-        self.inner.put(value)?;
-        Ok(())
-    }
-
-    fn get(&self, key: Option<usize>) -> Result<Option<String>> {
-        let Some(index) = key else {
-            return Ok(None);
-        };
-        Ok(Some(self.inner.get(index)?))
-    }
-
-    fn put_finished(&mut self) -> Result<()> {
-        self.inner.finish()?;
-        Ok(())
-    }
-}
+include!("read_cache/shared_string_cache_adapter.rs");
 
 #[cfg(test)]
 mod tests_extra {

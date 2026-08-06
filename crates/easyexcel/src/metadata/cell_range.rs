@@ -4,6 +4,7 @@
 ///
 /// Rust port of Java `CellRange`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.metadata.CellRange。
 pub struct CellRange {
     /// First row index. (Java `firstRow`)
     pub first_row: i32,
@@ -18,6 +19,7 @@ pub struct CellRange {
 impl CellRange {
     /// Creates a cell range. (Java constructor)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.CellRange。
     pub const fn new(first_row: i32, last_row: i32, first_col: i32, last_col: i32) -> Self {
         Self {
             first_row,
@@ -29,24 +31,28 @@ impl CellRange {
 
     /// Returns the first row index. (Java `getFirstRow()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.CellRange。
     pub const fn first_row(&self) -> i32 {
         self.first_row
     }
 
     /// Returns the last row index. (Java `getLastRow()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.CellRange。
     pub const fn last_row(&self) -> i32 {
         self.last_row
     }
 
     /// Returns the first column index. (Java `getFirstCol()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.CellRange。
     pub const fn first_col(&self) -> i32 {
         self.first_col
     }
 
     /// Returns the last column index. (Java `getLastCol()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.CellRange。
     pub const fn last_col(&self) -> i32 {
         self.last_col
     }

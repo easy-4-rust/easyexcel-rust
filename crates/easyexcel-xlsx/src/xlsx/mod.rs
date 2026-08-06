@@ -58,8 +58,9 @@ pub use source::{
 pub use stream::stream;
 pub use template_fill::{
     TemplateCollectionFill, TemplateFillData, TemplateFillDirection, append_rows_to_sheet,
-    append_rows_to_xml, render_typed_cell, replace_collection_fills_in_sheet, replace_scalar_cells,
-    replace_scalar_cells_in_sheet, replace_scalar_cells_in_xml,
+    append_rows_to_xml, collection_column_style_indexes, render_typed_cell,
+    replace_collection_fills_in_sheet, replace_scalar_cells, replace_scalar_cells_in_sheet,
+    replace_scalar_cells_in_xml,
 };
 pub use template_package::OoxmlTemplatePackage;
 pub use template_source::{
@@ -70,25 +71,38 @@ pub use template_source::{
 pub use writer::write;
 pub use xmlutil::{decode_ooxml_escape, local_tag_name, parse_attribute_pairs};
 
-/// Read an XLSX workbook from a path.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Read an XLSX workbook from a path.
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn read_path(path: &std::path::Path) -> Result<Workbook> {
     read_path_with_password(path, None)
 }
 
-/// Read an XLSX workbook from a path, decrypting with `password` if it is a
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Read an XLSX workbook from a path, decrypting with `password` if it is a
 /// password-protected (MS-OFFCRYPTO) file.
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn read_path_with_password(path: &std::path::Path, password: Option<&str>) -> Result<Workbook> {
     let file = std::fs::File::open(path)?;
     read_with_password(file, password)
 }
 
-/// Write a workbook to an XLSX file at `path`.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Write a workbook to an XLSX file at `path`.
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn write_path(wb: &Workbook, path: &std::path::Path) -> Result<()> {
     let file = std::fs::File::create(path)?;
     write(wb, file)
 }
 
-/// Detect whether bytes look like a ZIP (and therefore possibly XLSX).
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Detect whether bytes look like a ZIP (and therefore possibly XLSX).
+#[must_use]
 pub fn looks_like_zip(magic: &[u8]) -> bool {
     magic.starts_with(b"PK\x03\x04") || magic.starts_with(b"PK\x05\x06")
 }

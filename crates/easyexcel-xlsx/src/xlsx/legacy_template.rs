@@ -10,7 +10,7 @@ use easyexcel_io::{Error, Result};
 use easyexcel_model::Cell;
 use rust_xlsxwriter::{Workbook, Worksheet};
 
-/// One worksheet value snapshot used by the opt-in legacy template path.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 One worksheet value snapshot used by the opt-in legacy template path.
 #[derive(Debug, Clone)]
 pub struct LegacyTemplateSheet {
     /// Worksheet name in workbook order.
@@ -21,7 +21,7 @@ pub struct LegacyTemplateSheet {
     pub next_row: u32,
 }
 
-/// Parse an XLSX package into neutral value snapshots.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Parse an XLSX package into neutral value snapshots.
 ///
 /// # Errors
 ///
@@ -62,7 +62,7 @@ pub fn load_legacy_template_sheets(bytes: &[u8]) -> Result<Vec<LegacyTemplateShe
         .collect()
 }
 
-/// Replay neutral template values into a fresh `rust_xlsxwriter` workbook.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Replay neutral template values into a fresh `rust_xlsxwriter` workbook.
 ///
 /// # Errors
 ///

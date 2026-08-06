@@ -4,7 +4,7 @@
 use crate::core::cell_value::CellValue;
 use crate::core::read_cell_data::ReadCellData;
 
-/// A type-safe value in a Java-compatible no-model row.
+/// 对应 Java：com.alibaba.excel.enums.ReadDefaultReturnEnum。 A type-safe value in a Java-compatible no-model row.
 ///
 /// Java uses `Map<Integer, Object>` plus `ReadDefaultReturnEnum` to switch the
 /// value kind; Rust enforces the kind via the `DynamicValue` enum so the

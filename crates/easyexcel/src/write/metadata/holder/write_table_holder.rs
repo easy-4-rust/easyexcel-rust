@@ -8,7 +8,7 @@ use crate::write::metadata::WriteBasicParameter;
 /// 对应 Java：`WriteTableHolder extends AbstractWriteHolder`.
 ///
 /// Java's holder carries a POI `Sheet` plus a `tableNo` field. The Rust port
-/// mirrors the type so the [`crate::ExcelWriterTableBuilder`] can return a
+/// mirrors the type so `ExcelWriterTableBuilder` can return a
 /// `WriteTableHolder` for parity. Runtime callbacks expose the active table
 /// through [`crate::core::WriteTableHolderView`].
 pub struct WriteTableHolder<'a> {
@@ -19,7 +19,7 @@ pub struct WriteTableHolder<'a> {
 }
 
 impl<'a> WriteTableHolder<'a> {
-    /// Creates a table holder matching the Java `WriteTableHolder(WriteTable, WriteSheetHolder)` initialiser.
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteTableHolder。 Creates a table holder matching the Java `WriteTableHolder(WriteTable, WriteSheetHolder)` initialiser.
     #[must_use]
     pub fn new(table_no: i32) -> Self {
         Self {
@@ -30,7 +30,7 @@ impl<'a> WriteTableHolder<'a> {
         }
     }
 
-    /// Creates a table holder and resolves nullable values against its sheet.
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteTableHolder。 Creates a table holder and resolves nullable values against its sheet.
     #[must_use]
     pub fn from_parameter(
         table_no: i32,
@@ -44,34 +44,38 @@ impl<'a> WriteTableHolder<'a> {
 
     /// Returns the inherited write-holder state.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteTableHolder。
     pub const fn abstract_holder(&self) -> &AbstractWriteHolder {
         &self.abstract_holder
     }
 
     /// Returns mutable inherited write-holder state.
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteTableHolder。
     pub const fn abstract_holder_mut(&mut self) -> &mut AbstractWriteHolder {
         &mut self.abstract_holder
     }
 
-    /// Returns the parent sheet name, if any. (Java `getParentWriteSheetHolder().getSheetName()`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteTableHolder。 Returns the parent sheet name, if any. (Java `getParentWriteSheetHolder().getSheetName()`)
     #[must_use]
     pub fn parent_sheet(&self) -> Option<&str> {
         self.parent_sheet
     }
 
-    /// Sets the parent sheet name.
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteTableHolder。 Sets the parent sheet name.
     pub fn set_parent_sheet(&mut self, parent: &'a str) {
         self.parent_sheet = Some(parent);
     }
 
     /// Returns the zero-based table index. (Java `getTableNo()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteTableHolder。
     pub const fn table_no(&self) -> i32 {
         self.table_no
     }
 
     /// Returns the last row index. (Java `getLastRowIndex()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteTableHolder。
     pub const fn last_row_index(&self) -> i32 {
         self.last_row_index
     }

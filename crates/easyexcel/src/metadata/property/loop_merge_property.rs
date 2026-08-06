@@ -12,6 +12,7 @@ pub struct LoopMergeProperty {
 impl LoopMergeProperty {
     /// Creates a `LoopMergeProperty`. (Java constructor)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.LoopMergeProperty。
     pub const fn new(each_row: u32, column_extend: u16) -> Self {
         Self {
             each_row,
@@ -20,11 +21,13 @@ impl LoopMergeProperty {
     }
     /// Returns `eachRow`. (Java `getEachRow()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.LoopMergeProperty。
     pub const fn each_row(&self) -> u32 {
         self.each_row
     }
     /// Returns `columnExtend`. (Java `getColumnExtend()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.LoopMergeProperty。
     pub const fn column_extend(&self) -> u16 {
         self.column_extend
     }

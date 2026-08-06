@@ -15,7 +15,7 @@ use salvo::http::{HeaderMap, HeaderValue};
 pub const XLSX_CONTENT_TYPE: &str =
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-/// 生成 XLSX 附件下载所需的 HTTP 头。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 生成 XLSX 附件下载所需的 HTTP 头。
 ///
 /// `file_name` 为不含扩展名的逻辑文件名（Java 侧为 `URLEncoder.encode("测试")` 结果）。
 /// 返回的 `Content-Disposition` 使用 RFC 5987 `filename*` 语法，并将 `+` 替换为 `%20`，

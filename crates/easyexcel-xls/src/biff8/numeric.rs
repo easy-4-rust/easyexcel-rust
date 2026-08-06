@@ -8,7 +8,7 @@ use std::path::Path;
 use easyexcel_format::{SpreadsheetLocale, builtin_format_code, format_with_code};
 use easyexcel_io::Result;
 
-/// 一个数字单元格及其 BIFF8 数字格式元数据。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 一个数字单元格及其 BIFF8 数字格式元数据。
 #[derive(Debug, Clone, PartialEq)]
 pub struct Biff8NumericCell {
     /// 原始 IEEE754 数值。
@@ -19,13 +19,11 @@ pub struct Biff8NumericCell {
     pub custom_format: Option<String>,
 }
 
-/// 每个工作表的 `(row, col) -> numeric cell` 映射。
-pub type Biff8NumericSheets = Vec<HashMap<(u32, usize), Biff8NumericCell>>;
+include!("numeric/biff8numeric_sheets.rs");
 
-/// 每个工作表的 `(row, col) -> Excel 格式化显示文本` 映射。
-pub type Biff8SheetDisplays = Vec<HashMap<(u32, usize), String>>;
+include!("numeric/biff8sheet_displays.rs");
 
-/// 从 `.xls` 文件加载所有数字单元格的 Excel 显示文本。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 从 `.xls` 文件加载所有数字单元格的 Excel 显示文本。
 ///
 /// # Errors
 ///
@@ -39,7 +37,7 @@ pub fn load_numeric_displays(
     Ok(format_numeric_displays(&workbook, date_1904, locale))
 }
 
-/// 从原始 BIFF8 Workbook 流生成数字显示文本。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 从原始 BIFF8 Workbook 流生成数字显示文本。
 #[must_use]
 pub fn format_numeric_displays(
     workbook: &[u8],
@@ -70,7 +68,7 @@ pub fn format_numeric_displays(
         .collect()
 }
 
-/// 顺序扫描 Workbook 流中的 FORMAT、XF、NUMBER、RK 与 MULRK 记录。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 顺序扫描 Workbook 流中的 FORMAT、XF、NUMBER、RK 与 MULRK 记录。
 #[must_use]
 pub fn scan_numeric_cells(workbook: &[u8]) -> Biff8NumericSheets {
     let mut custom_formats: HashMap<u16, String> = HashMap::new();
@@ -193,7 +191,7 @@ fn push_numeric(
     );
 }
 
-/// 解析 BIFF8 FORMAT 记录负载。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析 BIFF8 FORMAT 记录负载。
 #[must_use]
 pub fn parse_format_record(payload: &[u8]) -> Option<(u16, String)> {
     if payload.len() < 5 {
@@ -221,7 +219,7 @@ pub fn parse_format_record(payload: &[u8]) -> Option<(u16, String)> {
     Some((format_index, code))
 }
 
-/// 解码 BIFF8 RK 压缩数值。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 BIFF8 RK 压缩数值。
 #[must_use]
 pub fn decode_rk(bytes: &[u8]) -> f64 {
     if bytes.len() < 4 {

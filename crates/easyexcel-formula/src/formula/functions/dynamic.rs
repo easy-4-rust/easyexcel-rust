@@ -11,7 +11,7 @@ use super::super::value::{Array, Value};
 use super::Registry;
 use crate::formula::coerce::{self, to_number};
 use easyexcel_model::error::CellError;
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub fn register(r: &mut Registry) {
     r.add("SORT", 1, 4, false, sort);
     r.add("SORTBY", 2, super::VARIADIC, false, sortby);
@@ -363,8 +363,8 @@ fn randarray(ctx: &mut dyn Context, args: &[Value]) -> Value {
     // Deterministic-but-varying PRNG seeded from the cell + clock (no rand dep).
     let cur = ctx.current();
     let mut state = (ctx.now_serial().to_bits())
-        ^ ((cur.row as u64) << 20)
-        ^ ((cur.col as u64) << 5)
+        ^ (u64::from(cur.row) << 20)
+        ^ (u64::from(cur.col) << 5)
         ^ 0x9E37_79B9_7F4A_7C15;
     let mut next = || {
         // xorshift64*
@@ -511,7 +511,7 @@ fn wrap(ctx: &mut dyn Context, args: &[Value], by_col: bool) -> Value {
             let (c, r) = (k / wrap_count, k % wrap_count);
             data[r * cols + c] = v;
         }
-        for slot in data.iter_mut() {
+        for slot in &mut data {
             if matches!(slot, Value::Empty) {
                 *slot = pad_v();
             }

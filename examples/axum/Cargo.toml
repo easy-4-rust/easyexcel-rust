@@ -14,7 +14,7 @@ path = "src/main.rs"
 
 [dependencies]
 easyexcel = { workspace = true }
-easyexcel-axum = { path = "../../crates/easyexcel-axum" }
+easyexcel-axum.workspace = true
 axum = { workspace = true, features = ["multipart"] }
 chrono = { workspace = true, default-features = false, features = ["std", "clock"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal"] }
@@ -23,7 +23,7 @@ tracing-subscriber = { workspace = true }
 urlencoding = { workspace = true }
 
 [dev-dependencies]
-libc = "0.2"
+libc.workspace = true
 
 [lints]
 workspace = true

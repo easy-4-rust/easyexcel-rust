@@ -1,118 +1,30 @@
 //! BIFF8 事件读取所需的中立记录载荷解码器。
 
-/// BIFF8 单元格记录公共头。
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Biff8CellHeader {
-    /// 零基行号。
-    pub row: u32,
-    /// 零基列号。
-    pub column: usize,
-    /// XF 样式索引。
-    pub xf_index: u16,
-}
+include!("event_record/biff8cell_header.rs");
 
-/// BIFF8 NUMBER 记录。
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Biff8NumberRecord {
-    /// 单元格公共头。
-    pub header: Biff8CellHeader,
-    /// IEEE-754 数值。
-    pub value: f64,
-}
+include!("event_record/biff8number_record.rs");
 
-/// BIFF8 LABELSST 记录。
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Biff8LabelSstRecord {
-    /// 单元格公共头。
-    pub header: Biff8CellHeader,
-    /// 共享字符串表索引。
-    pub sst_index: usize,
-}
+include!("event_record/biff8label_sst_record.rs");
 
-/// FORMULA 记录中的缓存值。
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Biff8FormulaCachedValue {
-    /// 后续 STRING 记录承载文本。
-    String,
-    /// 数字缓存值。
-    Number(f64),
-    /// 布尔缓存值。
-    Boolean(bool),
-    /// 错误缓存值。
-    Error,
-    /// 空值或未定义缓存类型。
-    Empty,
-}
+include!("event_record/biff8formula_cached_value.rs");
 
-/// BIFF8 BOF 记录声明的子流类型。
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Biff8BofType {
-    /// 工作簿全局子流。
-    Workbook,
-    /// 工作表子流。
-    Worksheet,
-    /// 其他 BIFF 子流类型。
-    Other(u16),
-}
+include!("event_record/biff8bof_type.rs");
 
-/// BIFF8 FORMULA 记录。
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Biff8FormulaRecord {
-    /// 单元格公共头。
-    pub header: Biff8CellHeader,
-    /// 公式缓存值。
-    pub cached_value: Biff8FormulaCachedValue,
-}
+include!("event_record/biff8formula_record.rs");
 
-/// BIFF8 单元格区域。
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Biff8CellRange {
-    /// 首行。
-    pub first_row: u32,
-    /// 尾行。
-    pub last_row: u32,
-    /// 首列。
-    pub first_column: usize,
-    /// 尾列。
-    pub last_column: usize,
-}
+include!("event_record/biff8cell_range.rs");
 
-/// BIFF8 BOUNDSHEET 记录。
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Biff8BoundSheetRecord {
-    /// 工作表名称。
-    pub name: String,
-    /// 工作表 BOF 的绝对偏移。
-    pub bof_position: u32,
-}
+include!("event_record/biff8bound_sheet_record.rs");
 
-/// BIFF8 OBJ 记录中的公共对象数据。
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Biff8CommonObjectData {
-    /// 对象类型码，例如批注对象为 `0x0019`。
-    pub object_type: u16,
-    /// 工作表范围内的对象编号。
-    pub object_id: u32,
-}
+include!("event_record/biff8common_object_data.rs");
 
 /// BIFF8 公共对象类型：批注。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const BIFF8_OBJECT_TYPE_COMMENT: u16 = 0x0019;
 
-/// TxO/CONTINUE 记录解码片段。
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Biff8TextObjectFragment {
-    /// TxO 起始记录。
-    Start {
-        /// 形状对象编号。
-        object_id: u32,
-        /// 记录内携带的可选文本。
-        text: Option<String>,
-    },
-    /// 后续 CONTINUE 文本。
-    Continue(String),
-}
+include!("event_record/biff8text_object_fragment.rs");
 
-/// 解码单元格记录中的 `row|column` 坐标。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码单元格记录中的 `row|column` 坐标。
 #[must_use]
 pub fn decode_cell_position(data: &[u8]) -> Option<(u32, usize)> {
     if data.len() < 4 {
@@ -124,7 +36,7 @@ pub fn decode_cell_position(data: &[u8]) -> Option<(u32, usize)> {
     ))
 }
 
-/// 解码 LABEL 记录的单元格坐标，并校验 BIFF8 LABEL 固定头长度。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 LABEL 记录的单元格坐标，并校验 BIFF8 LABEL 固定头长度。
 #[must_use]
 pub fn decode_label_record_position(data: &[u8]) -> Option<(u32, usize)> {
     if data.len() < 8 {
@@ -133,7 +45,7 @@ pub fn decode_label_record_position(data: &[u8]) -> Option<(u32, usize)> {
     decode_cell_position(data)
 }
 
-/// 解码 NOTE 记录的单元格坐标，并校验 BIFF8 NOTE 固定头长度。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 NOTE 记录的单元格坐标，并校验 BIFF8 NOTE 固定头长度。
 #[must_use]
 pub fn decode_note_record_position(data: &[u8]) -> Option<(u32, usize)> {
     if data.len() < 6 {
@@ -142,7 +54,7 @@ pub fn decode_note_record_position(data: &[u8]) -> Option<(u32, usize)> {
     decode_cell_position(data)
 }
 
-/// 解码 OBJ 记录的 `ftCmo`（Common Object Data）子记录。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 OBJ 记录的 `ftCmo`（Common Object Data）子记录。
 ///
 /// OBJ 由一组 `ft|cb|payload` 子记录组成；本函数逐段校验长度，并从
 /// `ftCmo(0x0015)` 载荷读取对象类型与对象编号。
@@ -173,7 +85,7 @@ pub fn decode_obj_common_data(data: &[u8]) -> Option<Biff8CommonObjectData> {
     None
 }
 
-/// 解码带有 `row|column|xf` 的单元格公共头。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码带有 `row|column|xf` 的单元格公共头。
 #[must_use]
 pub fn decode_cell_header(data: &[u8]) -> Option<Biff8CellHeader> {
     if data.len() < 6 {
@@ -187,7 +99,7 @@ pub fn decode_cell_header(data: &[u8]) -> Option<Biff8CellHeader> {
     })
 }
 
-/// 解码 BOOLERR 的布尔分支；错误分支返回 `Some(None)`。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 BOOLERR 的布尔分支；错误分支返回 `Some(None)`。
 #[must_use]
 pub fn decode_bool_err_record(data: &[u8]) -> Option<Option<(Biff8CellHeader, bool)>> {
     if data.len() < 8 {
@@ -199,7 +111,7 @@ pub fn decode_bool_err_record(data: &[u8]) -> Option<Option<(Biff8CellHeader, bo
     decode_cell_header(data).map(|header| Some((header, data[6] != 0)))
 }
 
-/// 解码 NUMBER 记录。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 NUMBER 记录。
 #[must_use]
 pub fn decode_number_record(data: &[u8]) -> Option<Biff8NumberRecord> {
     let header = decode_cell_header(data)?;
@@ -210,7 +122,7 @@ pub fn decode_number_record(data: &[u8]) -> Option<Biff8NumberRecord> {
     })
 }
 
-/// 解码 LABELSST 记录。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 LABELSST 记录。
 #[must_use]
 pub fn decode_label_sst_record(data: &[u8]) -> Option<Biff8LabelSstRecord> {
     let header = decode_cell_header(data)?;
@@ -221,7 +133,7 @@ pub fn decode_label_sst_record(data: &[u8]) -> Option<Biff8LabelSstRecord> {
     })
 }
 
-/// 解码 FORMULA 记录的公共头和缓存结果。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 FORMULA 记录的公共头和缓存结果。
 #[must_use]
 pub fn decode_formula_record(data: &[u8]) -> Option<Biff8FormulaRecord> {
     let header = decode_cell_header(data)?;
@@ -242,7 +154,7 @@ pub fn decode_formula_record(data: &[u8]) -> Option<Biff8FormulaRecord> {
     })
 }
 
-/// 解码 BOF 记录的语义化子流类型。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 BOF 记录的语义化子流类型。
 #[must_use]
 pub fn decode_bof_type(data: &[u8]) -> Option<Biff8BofType> {
     let code = data
@@ -256,7 +168,7 @@ pub fn decode_bof_type(data: &[u8]) -> Option<Biff8BofType> {
     })
 }
 
-/// 解码 BOUNDSHEET 记录。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 BOUNDSHEET 记录。
 #[must_use]
 pub fn decode_bound_sheet_record(data: &[u8]) -> Option<Biff8BoundSheetRecord> {
     let bof_position = u32::from_le_bytes(data.get(0..4)?.try_into().ok()?);
@@ -280,7 +192,7 @@ pub fn decode_bound_sheet_record(data: &[u8]) -> Option<Biff8BoundSheetRecord> {
     Some(Biff8BoundSheetRecord { name, bof_position })
 }
 
-/// 解码 INDEX 记录的 `lastRowAdd1`。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 INDEX 记录的 `lastRowAdd1`。
 #[must_use]
 pub fn decode_index_last_row(data: &[u8]) -> Option<u32> {
     if data.len() < 16 {
@@ -291,7 +203,7 @@ pub fn decode_index_last_row(data: &[u8]) -> Option<u32> {
         .map(u32::from_le_bytes)
 }
 
-/// 解码 SST 记录的唯一字符串数量。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 SST 记录的唯一字符串数量。
 #[must_use]
 pub fn decode_sst_unique_count(data: &[u8]) -> Option<u32> {
     data.get(4..8)
@@ -299,7 +211,7 @@ pub fn decode_sst_unique_count(data: &[u8]) -> Option<u32> {
         .map(u32::from_le_bytes)
 }
 
-/// 解码一个 8 字节单元格区域。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码一个 8 字节单元格区域。
 #[must_use]
 pub fn decode_cell_range(data: &[u8]) -> Option<Biff8CellRange> {
     if data.len() < 8 {
@@ -313,7 +225,7 @@ pub fn decode_cell_range(data: &[u8]) -> Option<Biff8CellRange> {
     })
 }
 
-/// 解码 MERGECELLS 记录中的完整区域列表。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 MERGECELLS 记录中的完整区域列表。
 #[must_use]
 pub fn decode_merge_ranges(data: &[u8]) -> Vec<Biff8CellRange> {
     if data.len() < 2 {
@@ -327,7 +239,7 @@ pub fn decode_merge_ranges(data: &[u8]) -> Vec<Biff8CellRange> {
         .collect()
 }
 
-/// 解码 TxO 起始记录或 CONTINUE 文本片段。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 `TxO` 起始记录或 CONTINUE 文本片段。
 #[must_use]
 pub fn decode_text_object_fragment(
     record_sid: u16,

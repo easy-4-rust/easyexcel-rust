@@ -1,7 +1,7 @@
 //! 中立 OOXML 模板占位符填充引擎。
 //!
 //! 该模块负责集合游标、标量替换、类型化单元格渲染和行追加；调用方只需
-//! 将领域值转换为 [`TemplateCellValue`]，无需暴露 EasyExcel 门面类型。
+//! 将领域值转换为 [`TemplateCellValue`]，无需暴露 `EasyExcel` 门面类型。
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -18,39 +18,16 @@ use super::template_xml::{
     worksheet_max_row,
 };
 
-/// 集合填充方向。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum TemplateFillDirection {
-    /// 逐行向下填充。
-    #[default]
-    Vertical,
-    /// 逐列向右填充。
-    Horizontal,
-}
+include!("template_fill/template_fill_direction.rs");
 
-/// 一行模板数据。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 一行模板数据。
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct TemplateFillData {
     /// 占位符名称到中立值的映射。
     pub values: BTreeMap<String, TemplateCellValue>,
 }
 
-/// 一次集合填充请求。
-#[derive(Debug, Clone, Default, PartialEq)]
-pub struct TemplateCollectionFill {
-    /// 可选集合前缀；`None` 对应 `{.field}`。
-    pub name: Option<String>,
-    /// 需要填充的数据行。
-    pub rows: Vec<TemplateFillData>,
-    /// 填充方向。
-    pub direction: TemplateFillDirection,
-    /// 是否在垂直填充时平移模板尾部行。
-    pub force_new_row: bool,
-    /// 是否保留模板单元格样式。
-    pub auto_style: bool,
-    /// 同一工作表中的调用顺序。
-    pub order: usize,
-}
+include!("template_fill/template_collection_fill.rs");
 
 #[derive(Debug, Clone)]
 struct CollectionTemplateCell {
@@ -67,8 +44,39 @@ struct CollectionFillCursor {
     initialized: bool,
 }
 
-/// 在指定 worksheet part 中依次执行集合填充。
+/// 返回集合占位符各物理列的模板样式索引。
+#[must_use]
+pub fn collection_column_style_indexes(
+    entries: &[OoxmlZipEntry],
+    worksheet: &str,
+) -> BTreeMap<usize, usize> {
+    let shared_strings = shared_strings(entries);
+    let Some(entry) = entries
+        .iter()
+        .find(|entry| entry.name.eq_ignore_ascii_case(worksheet))
+    else {
+        return BTreeMap::new();
+    };
+    let Ok(xml) = std::str::from_utf8(&entry.bytes) else {
+        return BTreeMap::new();
+    };
+    collection_template_cells(xml, None, &shared_strings)
+        .into_iter()
+        .map(|cell| {
+            let style = attribute_value(&cell.cell, "s")
+                .and_then(|value| value.parse::<usize>().ok())
+                .unwrap_or(0);
+            (cell.column, style)
+        })
+        .collect()
+}
+
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 在指定 worksheet part 中依次执行集合填充。
 #[allow(clippy::too_many_lines)]
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn replace_collection_fills_in_sheet(
     entries: &mut [OoxmlZipEntry],
     worksheet: &str,
@@ -105,9 +113,11 @@ pub fn replace_collection_fills_in_sheet(
             shift_following_rows_for_fill(&mut xml, &mut cursors, &key, fill.rows.len());
         }
 
-        let cursor = cursors
-            .get_mut(&key)
-            .expect("collection cursor was initialized");
+        let Some(cursor) = cursors.get_mut(&key) else {
+            return Err(Error::Xlsx(
+                "collection fill cursor initialization failed".to_owned(),
+            ));
+        };
         for data in &fill.rows {
             for index in 0..cursor.templates.len() {
                 let template = cursor.templates[index].clone();
@@ -132,6 +142,7 @@ pub fn replace_collection_fills_in_sheet(
                     fill.auto_style,
                     target_row,
                     target_column,
+                    fill.column_styles.get(&target_column).copied(),
                 );
                 let row_tag =
                     replace_attribute(&template.row_tag, "r", &(target_row + 1).to_string());
@@ -146,7 +157,11 @@ pub fn replace_collection_fills_in_sheet(
     Ok(())
 }
 
-/// 在指定 worksheet part 中替换标量占位符。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 在指定 worksheet part 中替换标量占位符。
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn replace_scalar_cells_in_sheet(
     entries: &mut [OoxmlZipEntry],
     worksheet: &str,
@@ -155,12 +170,20 @@ pub fn replace_scalar_cells_in_sheet(
     replace_scalar_cells_matching(entries, Some(worksheet), data)
 }
 
-/// 在全部 worksheet part 中替换标量占位符。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 在全部 worksheet part 中替换标量占位符。
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn replace_scalar_cells(entries: &mut [OoxmlZipEntry], data: &TemplateFillData) -> Result<()> {
     replace_scalar_cells_matching(entries, None, data)
 }
 
-/// 在指定 worksheet part 末尾追加普通行。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 在指定 worksheet part 末尾追加普通行。
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn append_rows_to_sheet(
     entries: &mut [OoxmlZipEntry],
     worksheet: &str,
@@ -179,7 +202,11 @@ pub fn append_rows_to_sheet(
     Ok(())
 }
 
-/// 在工作表 XML 的 `sheetData` 末尾追加连续行。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 在工作表 XML 的 `sheetData` 末尾追加连续行。
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn append_rows_to_xml(xml: &str, rows: &[Vec<TemplateCellValue>]) -> Result<String> {
     let sheet_data_end = xml
         .find("</sheetData>")
@@ -208,7 +235,7 @@ pub fn append_rows_to_xml(xml: &str, rows: &[Vec<TemplateCellValue>]) -> Result<
     Ok(update_worksheet_dimension(&expanded))
 }
 
-/// 在单个工作表 XML 中替换标量占位符。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 在单个工作表 XML 中替换标量占位符。
 #[must_use]
 pub fn replace_scalar_cells_in_xml(
     xml: &str,
@@ -241,7 +268,7 @@ pub fn replace_scalar_cells_in_xml(
     output
 }
 
-/// 渲染保留原坐标与可选样式的类型化单元格。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 渲染保留原坐标与可选样式的类型化单元格。
 #[must_use]
 pub fn render_typed_cell(cell: &str, value: &TemplateCellValue, auto_style: bool) -> String {
     let Some(tag_end) = cell.find('>') else {
@@ -277,6 +304,9 @@ pub fn render_typed_cell(cell: &str, value: &TemplateCellValue, auto_style: bool
     }
 }
 
+// BTreeMap 的键本身包含 Option 以区分默认集合与命名集合；直接借用完整键避免在热路径
+// 为查询临时克隆 String。
+#[allow(clippy::ref_option)]
 fn shift_following_rows_for_fill(
     xml: &mut String,
     cursors: &mut BTreeMap<Option<String>, CollectionFillCursor>,
@@ -362,6 +392,7 @@ fn collection_cells<'a>(
         .collect()
 }
 
+#[allow(clippy::too_many_arguments)]
 fn positioned_collection_cell(
     template_cell: &str,
     data: &TemplateFillData,
@@ -370,13 +401,31 @@ fn positioned_collection_cell(
     auto_style: bool,
     row: usize,
     column: usize,
+    style: Option<u32>,
 ) -> String {
-    let cell = fill_cell(template_cell, data, prefix, shared_strings, auto_style);
+    let mut cell = fill_cell(template_cell, data, prefix, shared_strings, auto_style);
+    if let Some(style) = style {
+        cell = set_cell_style(&cell, style);
+    }
     replace_attribute(
         &cell,
         "r",
         &format!("{}{}", column_name(column + 1), row + 1),
     )
+}
+
+fn set_cell_style(cell: &str, style: u32) -> String {
+    if attribute_value(cell, "s").is_some() {
+        return replace_attribute(cell, "s", &style.to_string());
+    }
+    let Some(tag_end) = cell.find('>') else {
+        return cell.to_owned();
+    };
+    let mut output = String::with_capacity(cell.len() + 16);
+    output.push_str(&cell[..tag_end]);
+    let _ = write!(output, " s=\"{style}\"");
+    output.push_str(&cell[tag_end..]);
+    output
 }
 
 fn fill_cell(

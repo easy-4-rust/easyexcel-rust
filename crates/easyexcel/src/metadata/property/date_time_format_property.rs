@@ -4,6 +4,7 @@
 ///
 /// Rust port of Java `DateTimeFormatProperty`.
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.metadata.property.DateTimeFormatProperty。
 pub struct DateTimeFormatProperty {
     /// Format pattern. (Java `format`)
     pub format: String,
@@ -12,7 +13,7 @@ pub struct DateTimeFormatProperty {
 }
 
 impl DateTimeFormatProperty {
-    /// Creates a date-time format property. (Java constructor)
+    /// 对应 Java：com.alibaba.excel.metadata.property.DateTimeFormatProperty。 Creates a date-time format property. (Java constructor)
     #[must_use]
     pub fn new(format: impl Into<String>, use1904windowing: bool) -> Self {
         Self {
@@ -21,7 +22,7 @@ impl DateTimeFormatProperty {
         }
     }
 
-    /// Builds from annotation values. (Java `build(DateTimeFormat)`)
+    /// 对应 Java：com.alibaba.excel.metadata.property.DateTimeFormatProperty。 Builds from annotation values. (Java `build(DateTimeFormat)`)
     #[must_use]
     pub fn build(format: Option<&str>, use1904windowing: Option<bool>) -> Option<Self> {
         format.map(|format| Self {
@@ -30,7 +31,7 @@ impl DateTimeFormatProperty {
         })
     }
 
-    /// Returns the format pattern. (Java `getFormat()`)
+    /// 对应 Java：com.alibaba.excel.metadata.property.DateTimeFormatProperty。 Returns the format pattern. (Java `getFormat()`)
     #[must_use]
     pub fn format(&self) -> &str {
         &self.format
@@ -38,6 +39,7 @@ impl DateTimeFormatProperty {
 
     /// Returns the 1904-windowing flag. (Java `getUse1904windowing()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.DateTimeFormatProperty。
     pub const fn use1904windowing(&self) -> bool {
         self.use1904windowing
     }

@@ -5,4 +5,4 @@
 pub mod empty;
 pub mod excel_type_enum;
 
-pub use excel_type_enum::*;
+pub use excel_type_enum::ExcelTypeEnum;

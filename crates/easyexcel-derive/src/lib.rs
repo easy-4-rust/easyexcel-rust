@@ -53,7 +53,7 @@ mod annotation;
 mod crate_path;
 mod expand;
 
-/// 为结构体生成静态 Excel 列元数据以及双向行转换实现。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 为结构体生成静态 Excel 列元数据以及双向行转换实现。
 #[proc_macro_derive(ExcelRow, attributes(excel))]
 pub fn derive_excel_row(input: TokenStream) -> TokenStream {
     expand::expand_excel_row_tokens(input.into())

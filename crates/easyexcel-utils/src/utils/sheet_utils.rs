@@ -3,9 +3,10 @@
 #![allow(dead_code)]
 
 /// Excel/POI 允许的最大列宽字符数。
+/// 对应 Java：com.alibaba.excel.util.SheetUtils。
 pub const MAX_COLUMN_WIDTH_CHARS: u16 = 255;
 
-/// Mirrors `com.alibaba.excel.util.SheetUtils#match`.
+/// 对应 Java：com.alibaba.excel.util.SheetUtils。 Mirrors `com.alibaba.excel.util.SheetUtils#match`.
 ///
 /// Java matches a Java `RegEx` against the sheet name. Rust uses the
 /// `regex` crate's syntax via `str::contains` for the placeholder, the

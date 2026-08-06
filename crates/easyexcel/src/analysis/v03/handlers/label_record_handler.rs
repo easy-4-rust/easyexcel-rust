@@ -2,29 +2,20 @@
 
 use super::super::xls_record_handler::XlsRecordHandler;
 
-/// Decoded inline-label cell produced by [`LabelRecordHandler`].
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct LabelCell {
-    /// Zero-based row. (Java `LabelRecord.getRow`)
-    pub row: u32,
-    /// Zero-based column. (Java `LabelRecord.getColumn`)
-    pub column: usize,
-    /// Label text (already trimmed when `auto_trim` was set).
-    pub value: String,
-}
+include!("label_record_handler/label_cell.rs");
 
 /// 对应 Java：`LabelRecordHandler`.
 #[derive(Debug, Default)]
 pub struct LabelRecordHandler;
 
 impl LabelRecordHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.LabelRecordHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self
     }
 
-    /// Java `LabelRecordHandler.processRecord`.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.LabelRecordHandler。 Java `LabelRecordHandler.processRecord`.
     #[must_use]
     pub fn process_label(row: u32, column: usize, value: &str, auto_trim: bool) -> LabelCell {
         let value = if auto_trim {

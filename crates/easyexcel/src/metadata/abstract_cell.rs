@@ -2,7 +2,7 @@
 
 use super::cell::Cell;
 
-/// Base cell coordinate holder.
+/// 对应 Java：com.alibaba.excel.metadata.AbstractCell。 Base cell coordinate holder.
 ///
 /// Rust port of Java `AbstractCell implements Cell`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -16,6 +16,7 @@ pub struct AbstractCell {
 impl AbstractCell {
     /// Creates an empty cell coordinate. (Java default constructor)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.AbstractCell。
     pub const fn new() -> Self {
         Self {
             row_index: None,
@@ -25,6 +26,7 @@ impl AbstractCell {
 
     /// Creates a cell coordinate with explicit indices. (Java setter chain)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.AbstractCell。
     pub const fn with_indices(row_index: i32, column_index: i32) -> Self {
         Self {
             row_index: Some(row_index),

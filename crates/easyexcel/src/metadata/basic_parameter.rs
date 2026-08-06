@@ -2,7 +2,7 @@
 
 use crate::CacheLocation;
 
-/// Shared read/write builder parameters.
+/// 对应 Java：com.alibaba.excel.metadata.BasicParameter。 Shared read/write builder parameters.
 ///
 /// Java stores a reflective `Class<?> clazz`; Rust stores the type name string
 /// because model metadata is resolved at compile time through `ExcelRow`.
@@ -29,25 +29,25 @@ pub struct BasicParameter {
 }
 
 impl BasicParameter {
-    /// Creates an empty parameter bag. (Java default constructor)
+    /// 对应 Java：com.alibaba.excel.metadata.BasicParameter。 Creates an empty parameter bag. (Java default constructor)
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Returns the configured header rows. (Java `getHead()`)
+    /// 对应 Java：com.alibaba.excel.metadata.BasicParameter。 Returns the configured header rows. (Java `getHead()`)
     #[must_use]
     pub fn head(&self) -> Option<&[Vec<String>]> {
         self.head.as_deref()
     }
 
-    /// Returns the model type name. (Java `getClazz()`)
+    /// 对应 Java：com.alibaba.excel.metadata.BasicParameter。 Returns the model type name. (Java `getClazz()`)
     #[must_use]
     pub fn clazz(&self) -> Option<&str> {
         self.clazz.as_deref()
     }
 
-    /// Returns custom converter registrations. (Java `getCustomConverterList()`)
+    /// 对应 Java：com.alibaba.excel.metadata.BasicParameter。 Returns custom converter registrations. (Java `getCustomConverterList()`)
     #[must_use]
     pub fn custom_converter_list(&self) -> &[String] {
         &self.custom_converter_list

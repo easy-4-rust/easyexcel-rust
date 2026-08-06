@@ -3,7 +3,7 @@
 
 use crate::core::excel_error::ExcelError;
 
-/// Location and formatting information supplied to cell converters.
+/// 对应 Java：com.alibaba.excel.metadata.property.ExcelContentProperty。 Location and formatting information supplied to cell converters.
 ///
 /// Java's `ReadConverterContext` and `WriteConverterContext` carry
 /// `contentProperty` (resolved annotation) plus `analysisContext` or
@@ -33,6 +33,7 @@ pub struct ConvertContext {
 impl ConvertContext {
     /// 返回日期转换应使用的格式。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelContentProperty。
     pub const fn effective_date_time_format(&self) -> Option<&'static str> {
         match self.date_time_format {
             Some(format) => Some(format),
@@ -42,6 +43,7 @@ impl ConvertContext {
 
     /// 返回数字转换应使用的格式。
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelContentProperty。
     pub const fn effective_number_format(&self) -> Option<&'static str> {
         match self.number_format {
             Some(format) => Some(format),
@@ -49,7 +51,7 @@ impl ConvertContext {
         }
     }
 
-    /// Builds a typed conversion error matching Java `ExcelDataConvertException`.
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelContentProperty。 Builds a typed conversion error matching Java `ExcelDataConvertException`.
     pub(crate) fn invalid(
         &self,
         value: &crate::core::cell_value::CellValue,
@@ -65,7 +67,7 @@ impl ConvertContext {
         }
     }
 
-    /// Attaches this field's conversion location to an arbitrary converter error.
+    /// 对应 Java：com.alibaba.excel.metadata.property.ExcelContentProperty。 Attaches this field's conversion location to an arbitrary converter error.
     ///
     /// Java wraps every exception raised by `Converter.convertToExcelData` in
     /// `ExcelWriteDataConvertException`, so even converters that return a

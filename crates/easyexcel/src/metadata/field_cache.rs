@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 
 use super::field_wrapper::FieldWrapper;
 
-/// Cached, sorted model fields.
+/// 对应 Java：com.alibaba.excel.metadata.FieldCache。 Cached, sorted model fields.
 ///
 /// Rust port of Java `FieldCache`.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -16,7 +16,7 @@ pub struct FieldCache {
 }
 
 impl FieldCache {
-    /// Creates a field cache. (Java all-args constructor)
+    /// 对应 Java：com.alibaba.excel.metadata.FieldCache。 Creates a field cache. (Java all-args constructor)
     #[must_use]
     pub fn new(
         sorted_field_map: BTreeMap<i32, FieldWrapper>,
@@ -28,13 +28,13 @@ impl FieldCache {
         }
     }
 
-    /// Returns the sorted field map. (Java `getSortedFieldMap()`)
+    /// 对应 Java：com.alibaba.excel.metadata.FieldCache。 Returns the sorted field map. (Java `getSortedFieldMap()`)
     #[must_use]
     pub fn sorted_field_map(&self) -> &BTreeMap<i32, FieldWrapper> {
         &self.sorted_field_map
     }
 
-    /// Returns the index field map. (Java `getIndexFieldMap()`)
+    /// 对应 Java：com.alibaba.excel.metadata.FieldCache。 Returns the index field map. (Java `getIndexFieldMap()`)
     #[must_use]
     pub fn index_field_map(&self) -> &BTreeMap<i32, FieldWrapper> {
         &self.index_field_map

@@ -9,7 +9,7 @@ use crate::core::excel_horizontal_alignment::ExcelHorizontalAlignment;
 use crate::core::excel_vertical_alignment::ExcelVerticalAlignment;
 use crate::write::metadata::style::write_font::merge_excel_font_style;
 
-/// Cell-style properties generated from `HeadStyle` or `ContentStyle` equivalents.
+/// 对应 Java：com.alibaba.excel.write.metadata.style.WriteCellStyle。 Cell-style properties generated from `HeadStyle` or `ContentStyle` equivalents.
 ///
 /// Fields correspond to Java's `WriteCellStyle`. Java's boxed `Short` /
 /// `Integer` becomes `Option<u16>` / `Option<i16>`; Java's `BooleanEnum`
@@ -69,6 +69,7 @@ pub struct WriteCellStyle {
 impl WriteCellStyle {
     /// Creates an annotation style with every property unspecified. (Java `WriteCellStyle()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteCellStyle。
     pub const fn new() -> Self {
         Self {
             hidden: None,
@@ -98,6 +99,7 @@ impl WriteCellStyle {
 
     /// Attaches a nested font. (Java `WriteCellStyle.setWriteFont(WriteFont)`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteCellStyle。
     pub const fn with_font(mut self, font: ExcelFontStyle) -> Self {
         self.font = Some(font);
         self

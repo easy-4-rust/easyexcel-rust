@@ -2,7 +2,7 @@
 
 use crate::WriteRowContext;
 
-/// Mirrors `com.alibaba.excel.util.PoiUtils#customHeight`.
+/// 对应 Java：com.alibaba.excel.util.PoiUtils。 Mirrors `com.alibaba.excel.util.PoiUtils#customHeight`.
 ///
 /// Java 版本反射读取 `XSSFRow` / `HSSFRow` 的 `customHeight` 属性；Rust
 /// 门面从后端无关的行写入上下文读取显式高度请求，物理格式写入仍由引擎负责。

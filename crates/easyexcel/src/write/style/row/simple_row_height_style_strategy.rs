@@ -13,6 +13,7 @@ pub struct SimpleRowHeightStyleStrategy {
 impl SimpleRowHeightStyleStrategy {
     /// Creates a strategy with the given row heights. (Java constructor)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.style.row.SimpleRowHeightStyleStrategy。
     pub const fn new(head_row_height: Option<u16>, content_row_height: Option<u16>) -> Self {
         Self {
             head_row_height,

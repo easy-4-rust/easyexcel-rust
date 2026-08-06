@@ -29,9 +29,17 @@ use crate::read::processor::analysis_event_processor::AnalysisEventProcessor;
 pub struct DefaultAnalysisEventProcessor;
 
 impl AnalysisEventProcessor for DefaultAnalysisEventProcessor {
-    fn extra(&mut self, _: &AnalysisContext) {}
-    fn end_row(&mut self, _: &AnalysisContext) {}
-    fn end_sheet(&mut self, _: &AnalysisContext) {}
+    fn extra(&mut self, _: &AnalysisContext) {
+        // Java 的 extra 分发已由 RowConsumer::extra 在实际读取链路中执行。
+    }
+
+    fn end_row(&mut self, _: &AnalysisContext) {
+        // Java 的表头/数据行分发已由 RowConsumer 与 row_processing 执行。
+    }
+
+    fn end_sheet(&mut self, _: &AnalysisContext) {
+        // Java 的 doAfterAllAnalysed 已由 RowConsumer::after 执行。
+    }
 }
 
 #[cfg(test)]

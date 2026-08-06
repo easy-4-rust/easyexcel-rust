@@ -8,7 +8,7 @@ use super::basic_parameter::BasicParameter;
 use super::configuration_holder::ConfigurationHolder;
 use super::global_configuration::GlobalConfiguration;
 
-/// Shared holder state for read and write pipelines.
+/// 对应 Java：com.alibaba.excel.metadata.AbstractHolder。 Shared holder state for read and write pipelines.
 ///
 /// Rust port of Java `AbstractHolder implements ConfigurationHolder`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -34,7 +34,7 @@ impl Default for AbstractHolder {
 }
 
 impl AbstractHolder {
-    /// Creates an empty workbook-scoped holder. (Java no-args constructor)
+    /// 对应 Java：com.alibaba.excel.metadata.AbstractHolder。 Creates an empty workbook-scoped holder. (Java no-args constructor)
     #[must_use]
     pub fn new(holder_type: HolderEnum) -> Self {
         Self {
@@ -47,7 +47,7 @@ impl AbstractHolder {
         }
     }
 
-    /// Initializes holder state from builder parameters and an optional parent.
+    /// 对应 Java：com.alibaba.excel.metadata.AbstractHolder。 Initializes holder state from builder parameters and an optional parent.
     /// (Java `AbstractHolder(BasicParameter, AbstractHolder)`)
     #[must_use]
     pub fn from_parameter(
@@ -102,13 +102,13 @@ impl AbstractHolder {
         holder
     }
 
-    /// Returns the dynamic header rows. (Java `getHead()`)
+    /// 对应 Java：com.alibaba.excel.metadata.AbstractHolder。 Returns the dynamic header rows. (Java `getHead()`)
     #[must_use]
     pub fn head(&self) -> Option<&[Vec<String>]> {
         self.head.as_deref()
     }
 
-    /// Returns the model type name. (Java `getClazz()`)
+    /// 对应 Java：com.alibaba.excel.metadata.AbstractHolder。 Returns the model type name. (Java `getClazz()`)
     #[must_use]
     pub fn clazz(&self) -> Option<&str> {
         self.clazz.as_deref()

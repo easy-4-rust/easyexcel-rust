@@ -3,7 +3,7 @@
 use crate::cache::{EternalReadCacheSelector, ReadCacheSelector, SimpleReadCacheSelector};
 use crate::read::read_cache::{ReadCacheMode, SharedStringCache};
 
-/// Stored cache selector matching Java `ReadCacheSelector` wiring.
+/// 对应 Java：SimpleReadCacheSelector。 Stored cache selector matching Java `ReadCacheSelector` wiring.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StoredReadCacheSelector {
     /// 对应 Java：`SimpleReadCacheSelector`.

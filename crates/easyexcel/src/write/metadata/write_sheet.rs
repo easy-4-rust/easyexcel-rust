@@ -20,7 +20,7 @@ pub struct WriteSheet {
 }
 
 impl WriteSheet {
-    /// Creates a `WriteSheet` matching Java `new WriteSheet()`.
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。 Creates a `WriteSheet` matching Java `new WriteSheet()`.
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -31,7 +31,7 @@ impl WriteSheet {
         }
     }
 
-    /// Creates a `WriteSheet` with the given sheet no. (Java `WriteSheet(sheetNo)`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。 Creates a `WriteSheet` with the given sheet no. (Java `WriteSheet(sheetNo)`)
     #[must_use]
     pub fn with_sheet_no(sheet_no: i32) -> Self {
         Self {
@@ -42,7 +42,7 @@ impl WriteSheet {
         }
     }
 
-    /// Creates a `WriteSheet` with the given sheet no and name. (Java `WriteSheet(sheetNo, sheetName)`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。 Creates a `WriteSheet` with the given sheet no and name. (Java `WriteSheet(sheetNo, sheetName)`)
     #[must_use]
     pub fn with_sheet(sheet_no: i32, sheet_name: impl Into<String>) -> Self {
         Self {
@@ -55,23 +55,24 @@ impl WriteSheet {
 
     /// Returns the zero-based sheet index. (Java `getSheetNo()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。
     pub const fn sheet_no(&self) -> i32 {
         self.sheet_no
     }
 
-    /// Sets the zero-based sheet index. (Java `setSheetNo(Integer)`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。 Sets the zero-based sheet index. (Java `setSheetNo(Integer)`)
     pub fn set_sheet_no(&mut self, sheet_no: i32) -> &mut Self {
         self.sheet_no = sheet_no;
         self
     }
 
-    /// Returns the sheet name. (Java `getSheetName()`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。 Returns the sheet name. (Java `getSheetName()`)
     #[must_use]
     pub fn sheet_name(&self) -> &str {
         &self.sheet_name
     }
 
-    /// Sets the sheet name. (Java `setSheetName(String)`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。 Sets the sheet name. (Java `setSheetName(String)`)
     pub fn set_sheet_name(&mut self, sheet_name: impl Into<String>) -> &mut Self {
         self.sheet_name = sheet_name.into();
         self
@@ -79,12 +80,14 @@ impl WriteSheet {
 
     /// Returns the shared write options.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。
     pub const fn options(&self) -> &WriteOptions {
         &self.options
     }
 
     /// Returns nullable sheet-level overrides before workbook inheritance.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。
     pub const fn parameter(&self) -> &WriteBasicParameter {
         &self.parameter
     }

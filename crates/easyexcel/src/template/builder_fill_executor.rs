@@ -24,8 +24,14 @@ pub struct BuilderFillExecutor {
     inner: ExcelTemplateWriter<'static>,
 }
 
+/// 由类型注解和写 handler 编译出的模板集合填充样式。
+pub(crate) struct CompiledTemplateFillStyles {
+    pub(crate) workbook: Vec<u8>,
+    pub(crate) columns: Vec<usize>,
+}
+
 impl BuilderFillExecutor {
-    /// Loads a template from path or bytes and prepares fill against `output`.
+    /// 对应 Java：ExcelWriteFillExecutor。 Loads a template from path or bytes and prepares fill against `output`.
     ///
     /// # Errors
     ///
@@ -47,7 +53,22 @@ impl BuilderFillExecutor {
         Ok(Self { inner })
     }
 
-    /// Loads a template file and writes to an existing path.
+    pub(crate) fn with_compiled_styles(
+        template_file: Option<PathBuf>,
+        template_bytes: Option<Vec<u8>>,
+        output: PathBuf,
+        styles: Option<CompiledTemplateFillStyles>,
+    ) -> Result<Self> {
+        let mut executor = Self::new(template_file, template_bytes, output)?;
+        if let Some(styles) = styles {
+            executor
+                .inner
+                .import_collection_styles(&styles.workbook, &styles.columns)?;
+        }
+        Ok(executor)
+    }
+
+    /// 对应 Java：ExcelWriteFillExecutor。 Loads a template file and writes to an existing path.
     ///
     /// # Errors
     ///
@@ -62,7 +83,7 @@ impl BuilderFillExecutor {
     }
 }
 
-/// Creates a boxed fill executor for facade wiring into [`ExcelBuilderImpl`](crate::write::ExcelBuilderImpl).
+/// 对应 Java：ExcelWriteFillExecutor。 Creates a boxed fill executor for facade wiring into [`ExcelBuilderImpl`](crate::write::ExcelBuilderImpl).
 ///
 /// # Errors
 ///
@@ -76,6 +97,20 @@ pub fn create_builder_fill_executor(
         template_file,
         template_bytes,
         output,
+    )?))
+}
+
+pub(crate) fn create_builder_fill_executor_with_styles(
+    template_file: Option<PathBuf>,
+    template_bytes: Option<Vec<u8>>,
+    output: PathBuf,
+    styles: Option<CompiledTemplateFillStyles>,
+) -> Result<Box<dyn WriteFillExecutor>> {
+    Ok(Box::new(BuilderFillExecutor::with_compiled_styles(
+        template_file,
+        template_bytes,
+        output,
+        styles,
     )?))
 }
 

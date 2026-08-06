@@ -7,7 +7,7 @@ use easyexcel_io::Result;
 
 use super::xmlutil::{general_ref, local_name, local_name_end, text};
 
-/// Parse shared strings. Each `<si>` becomes one entry; rich-text runs
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Parse shared strings. Each `<si>` becomes one entry; rich-text runs
 /// (`<r><t>...`) are concatenated. `xml:space="preserve"` is respected because
 /// we capture raw text events without trimming.
 pub fn parse_shared_strings(xml: &[u8]) -> Result<Vec<String>> {

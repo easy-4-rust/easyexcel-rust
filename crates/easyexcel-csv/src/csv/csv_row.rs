@@ -5,7 +5,7 @@ use easyexcel_model::CellValue as ModelCellValue;
 
 use super::{CsvCell, CsvCellStyle, CsvCellValue};
 
-/// 具有零基行号和稀疏单元格集合的 CSV 行。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 具有零基行号和稀疏单元格集合的 CSV 行。
 #[derive(Debug, Clone, PartialEq)]
 pub struct CsvRow<V: CsvCellValue = ModelCellValue> {
     row_index: u32,
@@ -16,6 +16,7 @@ pub struct CsvRow<V: CsvCellValue = ModelCellValue> {
 impl<V: CsvCellValue> CsvRow<V> {
     /// 在零基行号处创建空行。
     #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn new(row_index: u32) -> Self {
         Self {
             row_index,
@@ -26,17 +27,18 @@ impl<V: CsvCellValue> CsvRow<V> {
 
     /// 返回零基行号。
     #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn row_index(&self) -> u32 {
         self.row_index
     }
 
-    /// 返回按创建顺序保存的单元格。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回按创建顺序保存的单元格。
     #[must_use]
     pub fn cells(&self) -> &[CsvCell<V>] {
         &self.cells
     }
 
-    /// 按逻辑列查询单元格。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 按逻辑列查询单元格。
     #[must_use]
     pub fn cell(&self, column_index: u16) -> Option<&CsvCell<V>> {
         self.cells
@@ -44,12 +46,12 @@ impl<V: CsvCellValue> CsvRow<V> {
             .find(|cell| cell.column_index() == column_index)
     }
 
-    /// 设置行级样式。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 设置行级样式。
     pub fn set_cell_style(&mut self, style: CsvCellStyle) {
         self.cell_style = Some(style);
     }
 
-    /// 创建唯一列单元格。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 创建唯一列单元格。
     ///
     /// # Errors
     ///
@@ -66,10 +68,12 @@ impl<V: CsvCellValue> CsvRow<V> {
             )));
         }
         self.cells.push(CsvCell::new(column_index));
-        Ok(self.cells.last_mut().expect("cell was just appended"))
+        self.cells
+            .last_mut()
+            .ok_or_else(|| Error::Csv("CSV cell append produced no cell".to_owned()))
     }
 
-    /// 构建包含 `width` 列的稠密 CSV 记录。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 构建包含 `width` 列的稠密 CSV 记录。
     #[must_use]
     pub fn into_record(self, width: usize) -> Vec<String> {
         let mut record = vec![String::new(); width];

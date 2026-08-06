@@ -1,4 +1,4 @@
-//! 基础引擎单元格到 EasyExcel 门面单元格的适配。
+//! 基础引擎单元格到 `EasyExcel` 门面单元格的适配。
 
 use crate::core::{CellValue, FormulaData};
 #[cfg(test)]
@@ -19,6 +19,7 @@ pub(crate) fn excel_datetime_cell(value: &ExcelDateTime, use_1904_windowing: boo
 }
 
 /// 将 Excel 日期序列转换为门面日期时间值，无法表示时保留原始数字。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn excel_serial_datetime_cell(value: f64, use_1904_windowing: bool) -> CellValue {
     let system = easyexcel_model::DateSystem::from_1904_windowing(use_1904_windowing);
     system
@@ -27,6 +28,7 @@ pub(crate) fn excel_serial_datetime_cell(value: f64, use_1904_windowing: bool) -
 }
 
 /// 将中立模型单元格转换为门面值及公式元数据。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn from_model_cell(cell: &easyexcel_model::Cell) -> (CellValue, Option<FormulaData>) {
     use easyexcel_model::{Cell, value::CellValue as ModelCellValue};
 

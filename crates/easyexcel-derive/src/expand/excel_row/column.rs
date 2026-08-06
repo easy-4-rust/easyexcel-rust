@@ -6,7 +6,7 @@ use syn::{Ident, LitStr, Type};
 
 use crate::annotation::{FieldOptions, SignedInteger, number_rounding_mode_tokens};
 
-/// 构造并装饰单个静态列定义。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 构造并装饰单个静态列定义。
 pub(super) fn build_column(
     crate_path: &TokenStream,
     ident: &Ident,

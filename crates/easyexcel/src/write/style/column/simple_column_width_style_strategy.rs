@@ -12,7 +12,7 @@ pub struct SimpleColumnWidthStyleStrategy {
 }
 
 impl SimpleColumnWidthStyleStrategy {
-    /// Creates the strategy. (Java `SimpleColumnWidthStyleStrategy()`)
+    /// 对应 Java：com.alibaba.excel.write.style.column.SimpleColumnWidthStyleStrategy。 Creates the strategy. (Java `SimpleColumnWidthStyleStrategy()`)
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -20,7 +20,7 @@ impl SimpleColumnWidthStyleStrategy {
         }
     }
 
-    /// Creates a strategy that applies the same width to every column index
+    /// 对应 Java：com.alibaba.excel.write.style.column.SimpleColumnWidthStyleStrategy。 Creates a strategy that applies the same width to every column index
     /// queried later. (Java `SimpleColumnWidthStyleStrategy(Integer columnWidth)`)
     ///
     /// Stores width under key `usize::MAX` as the uniform fallback; callers of
@@ -33,7 +33,7 @@ impl SimpleColumnWidthStyleStrategy {
         Self { widths }
     }
 
-    /// Sets a column width. (Java `setColumnWidth(Integer, Integer)`)
+    /// 对应 Java：com.alibaba.excel.write.style.column.SimpleColumnWidthStyleStrategy。 Sets a column width. (Java `setColumnWidth(Integer, Integer)`)
     pub fn set_column_width(&mut self, column_index: usize, width: u16) {
         self.widths.insert(column_index, width);
     }

@@ -3,13 +3,40 @@
 //!
 //! Layering:
 //! * [`ast`] — the expression tree (parser output / evaluator input).
-//! * [`parse`] — text → [`ast::Expr`].
+//! * [`parse()`] — text → [`ast::Expr`].
 //! * [`value`] — the evaluator's value type ([`value::Value`]).
 //! * [`coerce`] — Excel coercion + comparison rules.
 //! * [`context`] — the [`context::Context`] trait functions use.
 //! * [`eval`] — the tree-walking [`eval::Evaluator`].
 //! * [`engine`] — dependency graph + recalculation ([`engine::Engine`]).
 //! * [`functions`] — the worksheet-function library + dispatch [`functions::Registry`].
+
+// Excel 公式参数统一处于 IEEE-754 double 数值域；与 Java EasyExcel/POI 一致，
+// 整数型参数在各函数完成范围校验后采用截断转换，统计/财务算法再回到 double。
+// 这些转换是兼容契约而非 Rust 领域模型的通用做法，因此豁免严格限定在公式模块。
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
+    clippy::float_cmp
+)]
+// 数学公式沿用论文和 Excel 规范中的短变量名；展开会降低公式可核对性。
+#![allow(clippy::many_single_char_names, clippy::similar_names)]
+// 解析器、依赖图和数值迭代保持单个算法块，便于与来源公式逐行核对。
+#![allow(clippy::items_after_statements, clippy::too_many_lines)]
+// 分支结构显式对应不同 Excel 错误/标记分支，即使当前返回值相同也不合并；
+// 这能在与 Java 来源和函数规范核对时保留一一对应关系。
+#![allow(
+    clippy::manual_let_else,
+    clippy::match_same_arms,
+    clippy::needless_continue,
+    clippy::redundant_else
+)]
+// 工作表函数由统一函数指针签名注册，少数轻量参数必须随该 ABI 传递。
+#![allow(clippy::needless_pass_by_value, clippy::trivially_copy_pass_by_ref)]
+// 正负 instance 参数是 Excel 文本函数的三路契约，显式分支比排序匹配更清楚。
+#![allow(clippy::comparison_chain)]
 
 pub mod ast;
 pub mod coerce;

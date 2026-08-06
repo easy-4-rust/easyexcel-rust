@@ -13,7 +13,7 @@ use crate::core::enum_read_default_return::ReadDefaultReturn;
 use crate::core::excel_column::ExcelColumn;
 use crate::core::formula_data::FormulaData;
 
-/// A physical row plus resolved header positions.
+/// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 A physical row plus resolved header positions.
 ///
 /// Java distributes these across `ReadRowHolder` (current row), `CellData`
 /// (per-cell scalars), and `AnalysisContext` (current sheet / row index).
@@ -34,7 +34,7 @@ pub struct RowData {
 }
 
 impl RowData {
-    /// Creates row data. (Java `ReadRowHolder(rowIndex, rowType, globalConfiguration, cellMap)` subset)
+    /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Creates row data. (Java `ReadRowHolder(rowIndex, rowType, globalConfiguration, cellMap)` subset)
     #[must_use]
     pub fn new(
         sheet_name: impl Into<String>,
@@ -57,28 +57,28 @@ impl RowData {
         }
     }
 
-    /// Attaches formula metadata indexed by zero-based physical column. (Java `CellData.formulaData`)
+    /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Attaches formula metadata indexed by zero-based physical column. (Java `CellData.formulaData`)
     #[must_use]
     pub fn with_formulas(mut self, formulas: HashMap<usize, FormulaData>) -> Self {
         self.formulas = formulas;
         self
     }
 
-    /// Attaches Java-compatible formatted display text by physical column index. (Java `CellData.stringValue`)
+    /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Attaches Java-compatible formatted display text by physical column index. (Java `CellData.stringValue`)
     #[must_use]
     pub fn with_display_values(mut self, display_values: HashMap<usize, String>) -> Self {
         self.display_values = display_values;
         self
     }
 
-    /// Attaches exact OOXML decimal values by physical column index. (Java `CellData.numberValue`)
+    /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Attaches exact OOXML decimal values by physical column index. (Java `CellData.numberValue`)
     #[must_use]
     pub fn with_decimal_values(mut self, decimal_values: HashMap<usize, BigDecimal>) -> Self {
         self.decimal_values = decimal_values;
         self
     }
 
-    /// Attaches the physical columns that were explicitly present in the source.
+    /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Attaches the physical columns that were explicitly present in the source.
     #[must_use]
     pub fn with_present_columns(mut self, present_columns: HashSet<usize>) -> Self {
         self.present_columns = present_columns;
@@ -87,6 +87,7 @@ impl RowData {
 
     /// Selects the Java-compatible no-model return mode. (Java `ReadDefaultReturnEnum`)
     #[must_use]
+    /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。
     pub const fn with_read_default_return(mut self, mode: ReadDefaultReturn) -> Self {
         self.read_default_return = mode;
         self
@@ -94,6 +95,7 @@ impl RowData {
 
     /// Selects Excel's 1904 numeric date system for field conversion.
     #[must_use]
+    /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。
     pub const fn with_use_1904_windowing(mut self, enabled: bool) -> Self {
         self.use_1904_windowing = enabled;
         self
@@ -101,11 +103,12 @@ impl RowData {
 
     /// Returns the physical zero-based row index. (Java `ReadRowHolder.getRowIndex()`)
     #[must_use]
+    /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。
     pub const fn row_index(&self) -> u32 {
         self.row_index
     }
 
-    /// Returns the sheet name. (Java `ReadRowHolder.sheetName`)
+    /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Returns the sheet name. (Java `ReadRowHolder.sheetName`)
     #[must_use]
     pub fn sheet_name(&self) -> &str {
         &self.sheet_name
@@ -123,7 +126,7 @@ impl RowData {
         self.cells.get(index)
     }
 
-    /// Resolves formula metadata using the same index-before-name priority as [`Self::cell`].
+    /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Resolves formula metadata using the same index-before-name priority as [`Self::cell`].
     #[must_use]
     pub fn formula(&self, column: &ExcelColumn) -> Option<&FormulaData> {
         let index = column
@@ -132,7 +135,7 @@ impl RowData {
         self.formulas.get(&index)
     }
 
-    /// Returns POI-compatible display text retained for a numeric source cell.
+    /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Returns POI-compatible display text retained for a numeric source cell.
     #[must_use]
     pub fn display_value(&self, column: &ExcelColumn) -> Option<&str> {
         let index = column
@@ -141,7 +144,7 @@ impl RowData {
         self.display_values.get(&index).map(String::as_str)
     }
 
-    /// Returns the exact decimal token retained from OOXML for a numeric cell.
+    /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Returns the exact decimal token retained from OOXML for a numeric cell.
     #[must_use]
     pub fn decimal_value(&self, column: &ExcelColumn) -> Option<&BigDecimal> {
         let index = column
@@ -150,7 +153,7 @@ impl RowData {
         self.decimal_values.get(&index)
     }
 
-    /// Dynamic-row support: maximum physical column touched by either headers or cells.
+    /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Dynamic-row support: maximum physical column touched by either headers or cells.
     pub(crate) fn dynamic_width(&self) -> usize {
         let head_width = self
             .headers
@@ -161,7 +164,7 @@ impl RowData {
         self.cells.len().max(head_width)
     }
 
-    /// Dynamic-row support: produce a `DynamicValue` for a column.
+    /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Dynamic-row support: produce a `DynamicValue` for a column.
     pub(crate) fn dynamic_cell(&self, column_index: usize) -> DynamicValue {
         if !self.present_columns.contains(&column_index) {
             return DynamicValue::Null;
@@ -201,7 +204,7 @@ impl RowData {
         }
     }
 
-    /// Creates a conversion context for a column. (Java `ReadConverterContext` constructor)
+    /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Creates a conversion context for a column. (Java `ReadConverterContext` constructor)
     #[must_use]
     pub fn convert_context(&self, column: &ExcelColumn) -> ConvertContext {
         let column_index = column
@@ -219,7 +222,7 @@ impl RowData {
         }
     }
 }
-
+/// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。
 pub(crate) fn actual_cell_value(value: &CellValue) -> CellValue {
     match value {
         CellValue::Empty => CellValue::String(String::new()),

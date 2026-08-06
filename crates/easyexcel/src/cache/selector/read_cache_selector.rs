@@ -8,8 +8,8 @@ use crate::read::read_cache::{ReadCacheMode, SharedStringCache};
 ///
 /// Java receives the `sharedStrings.xml` package part size in bytes. Rust passes
 /// the same measurement into [`select_mode`](Self::select_mode). Use
-/// [`SimpleReadCacheSelector`] for the default 5 MB Auto boundary, or
-/// [`EternalReadCacheSelector`] to pin Memory/Moka/File regardless of size.
+/// `SimpleReadCacheSelector` for the default 5 MB Auto boundary, or
+/// `EternalReadCacheSelector` to pin Memory/Moka/File regardless of size.
 pub trait ReadCacheSelector: Send + Sync {
     /// Selects a cache mode for the given `sharedStrings.xml` size.
     ///

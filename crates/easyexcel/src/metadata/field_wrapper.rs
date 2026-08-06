@@ -7,6 +7,7 @@
 ///
 /// Rust port of Java `FieldWrapper`.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
+/// 对应 Java：com.alibaba.excel.metadata.FieldWrapper。
 pub struct FieldWrapper {
     /// Rust field name. (Java `field` / `fieldName`)
     pub field_name: String,
@@ -15,7 +16,7 @@ pub struct FieldWrapper {
 }
 
 impl FieldWrapper {
-    /// Creates a field wrapper. (Java all-args constructor)
+    /// 对应 Java：com.alibaba.excel.metadata.FieldWrapper。 Creates a field wrapper. (Java all-args constructor)
     #[must_use]
     pub fn new(field_name: impl Into<String>, heads: Vec<String>) -> Self {
         Self {
@@ -24,13 +25,13 @@ impl FieldWrapper {
         }
     }
 
-    /// Returns the field name. (Java `getFieldName()`)
+    /// 对应 Java：com.alibaba.excel.metadata.FieldWrapper。 Returns the field name. (Java `getFieldName()`)
     #[must_use]
     pub fn field_name(&self) -> &str {
         &self.field_name
     }
 
-    /// Returns the configured header labels. (Java `getHeads()`)
+    /// 对应 Java：com.alibaba.excel.metadata.FieldWrapper。 Returns the configured header labels. (Java `getHeads()`)
     #[must_use]
     pub fn heads(&self) -> &[String] {
         &self.heads

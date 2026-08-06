@@ -1,6 +1,9 @@
 //! 对应 Java：`com.alibaba.excel.write.handler.context.SheetWriteHandlerContext`.
 
+use crate::Result;
 use crate::WriteContext;
+
+use super::write_mutation_plan::WriteMutationPlan;
 
 /// Worksheet-level write lifecycle context.
 ///
@@ -9,26 +12,29 @@ use crate::WriteContext;
 pub struct WriteSheetContext {
     sheet_name: String,
     holders: WriteHolderContext,
+    mutations: WriteMutationPlan,
 }
 
 impl WriteSheetContext {
     /// Returns this backend-neutral sheet context.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.context.SheetWriteHandlerContext。
     pub const fn sheet(&self) -> &Self {
         self
     }
 
-    /// Creates a worksheet context.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.SheetWriteHandlerContext。 Creates a worksheet context.
     #[must_use]
     pub fn new(sheet_name: impl Into<String>) -> Self {
         let sheet_name = sheet_name.into();
         Self {
             holders: WriteHolderContext::new().with_sheet(WriteSheetHolderView::new(&sheet_name)),
             sheet_name,
+            mutations: WriteMutationPlan::default(),
         }
     }
 
-    /// Creates a sheet callback context from a live [`WriteContext`].
+    /// 对应 Java：com.alibaba.excel.write.handler.context.SheetWriteHandlerContext。 Creates a sheet callback context from a live [`WriteContext`].
     ///
     /// Returns `None` before the context has selected a sheet.
     #[must_use]
@@ -39,10 +45,11 @@ impl WriteSheetContext {
             holders: WriteHolderContext::from_write_context(context)
                 .with_callback_sheet(&sheet_name, holder.last_row_index()),
             sheet_name,
+            mutations: WriteMutationPlan::default(),
         })
     }
 
-    /// Replaces compatibility holder data with a live-context snapshot.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.SheetWriteHandlerContext。 Replaces compatibility holder data with a live-context snapshot.
     #[must_use]
     pub fn with_write_context(mut self, context: &dyn WriteContext) -> Self {
         self.holders = WriteHolderContext::from_write_context(context)
@@ -50,13 +57,13 @@ impl WriteSheetContext {
         self
     }
 
-    /// Returns the worksheet name. (Java `WriteSheetHolder.getSheetName()`)
+    /// 对应 Java：com.alibaba.excel.write.handler.context.SheetWriteHandlerContext。 Returns the worksheet name. (Java `WriteSheetHolder.getSheetName()`)
     #[must_use]
     pub fn sheet_name(&self) -> &str {
         &self.sheet_name
     }
 
-    /// Attaches the workbook, resolved sheet number, and optional table.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.SheetWriteHandlerContext。 Attaches the workbook, resolved sheet number, and optional table.
     #[must_use]
     pub fn with_holder_context(
         mut self,
@@ -81,7 +88,7 @@ impl WriteSheetContext {
         self
     }
 
-    /// Attaches all holder views and the resolved Java `currentWriteHolder()` state.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.SheetWriteHandlerContext。 Attaches all holder views and the resolved Java `currentWriteHolder()` state.
     #[must_use]
     pub fn with_resolved_holder_context(
         mut self,
@@ -105,11 +112,12 @@ impl WriteSheetContext {
 
     /// Returns the active workbook holder view, when the writer supplied one.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.context.SheetWriteHandlerContext。
     pub const fn write_workbook_holder(&self) -> Option<&WriteWorkbookHolderView> {
         self.holders.workbook()
     }
 
-    /// Returns the active sheet holder view.
+    /// 对应 Java：com.alibaba.excel.write.handler.context.SheetWriteHandlerContext。 Returns the active sheet holder view.
     ///
     /// # Panics
     ///
@@ -124,14 +132,33 @@ impl WriteSheetContext {
 
     /// Returns the active table holder view for table callbacks.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.context.SheetWriteHandlerContext。
     pub const fn write_table_holder(&self) -> Option<&WriteTableHolderView> {
         self.holders.table()
     }
 
     /// Returns all holder views captured for this callback.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.context.SheetWriteHandlerContext。
     pub const fn write_context(&self) -> &WriteHolderContext {
         &self.holders
+    }
+
+    /// 请求在保存前使用密码保护当前工作表。
+    ///
+    /// 对应 Java：`SheetWriteHandlerContext#getWriteSheetHolder().getSheet().protectSheet`。
+    ///
+    /// # Errors
+    ///
+    /// 当共享修改计划不可用时返回错误。
+    pub fn protect_sheet(&self, password: impl Into<String>) -> Result<()> {
+        self.mutations
+            .protect_sheet(self.sheet_name.clone(), password)
+    }
+
+    pub(crate) fn with_mutation_plan(mut self, mutations: WriteMutationPlan) -> Self {
+        self.mutations = mutations;
+        self
     }
 }
 use crate::{

@@ -17,7 +17,7 @@ use crate::read::{
     StoredReadCacheSelector, read_csv, read_xls, read_xlsx,
 };
 
-/// Synchronous collecting reader builder.
+/// 对应 Java：`EasyExcel.readSync(...)`。 Synchronous collecting reader builder.
 pub struct ExcelSyncReaderBuilder<T> {
     pub(crate) path: PathBuf,
     pub(crate) options: ReadOptions,
@@ -28,7 +28,7 @@ impl<T> ExcelSyncReaderBuilder<T>
 where
     T: ExcelRow,
 {
-    /// 从路径构造一个默认配置的同步读取 builder。
+    /// 对应 Java：`EasyExcel.readSync(...)`。 从路径构造一个默认配置的同步读取 builder。
     pub(crate) fn new(path: PathBuf) -> Self {
         Self {
             path,
@@ -37,14 +37,14 @@ where
         }
     }
 
-    /// Selects a worksheet by name or zero-based index.
+    /// 对应 Java：`EasyExcel.readSync(...)`。 Selects a worksheet by name or zero-based index.
     #[must_use]
     pub fn sheet(mut self, sheet: impl IntoSheetSelector) -> Self {
         self.options.sheet = sheet.into_sheet_selector();
         self
     }
 
-    /// Selects every worksheet in workbook order.
+    /// 对应 Java：`EasyExcel.readSync(...)`。 Selects every worksheet in workbook order.
     #[must_use]
     pub fn all_sheets(mut self) -> Self {
         self.options.sheet = SheetSelector::All;
@@ -53,6 +53,7 @@ where
 
     /// Sets the number of header rows.
     #[must_use]
+    /// 对应 Java：`EasyExcel.readSync(...)`。
     pub const fn head_row_number(mut self, rows: u32) -> Self {
         self.options.head_row_number = rows;
         self
@@ -60,6 +61,7 @@ where
 
     /// Includes or skips rows containing no values.
     #[must_use]
+    /// 对应 Java：`EasyExcel.readSync(...)`。
     pub const fn ignore_empty_row(mut self, ignore: bool) -> Self {
         self.options.ignore_empty_row = ignore;
         self
@@ -67,6 +69,7 @@ where
 
     /// Enables or disables Java EasyExcel-compatible string trimming.
     #[must_use]
+    /// 对应 Java：`EasyExcel.readSync(...)`。
     pub const fn auto_trim(mut self, enabled: bool) -> Self {
         self.options.auto_trim = enabled;
         self
@@ -74,6 +77,7 @@ where
 
     /// Selects Excel's 1904 date windowing system while collecting rows.
     #[must_use]
+    /// 对应 Java：`EasyExcel.readSync(...)`。
     pub const fn use_1904_windowing(mut self, enabled: bool) -> Self {
         self.options.use_1904_windowing = enabled;
         self
@@ -81,6 +85,7 @@ where
 
     /// Controls scientific notation while collecting extreme General-format numbers.
     #[must_use]
+    /// 对应 Java：`EasyExcel.readSync(...)`。
     pub const fn use_scientific_format(mut self, enabled: bool) -> Self {
         self.options.scientific_format = if enabled {
             ScientificFormatMode::Scientific
@@ -90,14 +95,14 @@ where
         self
     }
 
-    /// Sets the locale used while collecting formatted number and date values.
+    /// 对应 Java：`EasyExcel.readSync(...)`。 Sets the locale used while collecting formatted number and date values.
     #[must_use]
     pub fn locale(mut self, locale: ExcelLocale) -> Self {
         self.options.locale = locale;
         self
     }
 
-    /// Registers a Java-style global converter while collecting rows.
+    /// 对应 Java：`EasyExcel.readSync(...)`。 Registers a Java-style global converter while collecting rows.
     #[must_use]
     pub fn register_converter<V, C>(mut self, converter: C) -> Self
     where
@@ -108,7 +113,7 @@ where
         self
     }
 
-    /// Registers a nullable converter while collecting rows.
+    /// 对应 Java：`EasyExcel.readSync(...)`。 Registers a nullable converter while collecting rows.
     #[must_use]
     pub fn register_nullable_converter<V, C>(mut self, converter: C) -> Self
     where
@@ -119,7 +124,7 @@ where
         self
     }
 
-    /// Selects the XLSX shared-string cache backend while collecting rows.
+    /// 对应 Java：`EasyExcel.readSync(...)`。 Selects the XLSX shared-string cache backend while collecting rows.
     #[must_use]
     pub fn read_cache(mut self, mode: ReadCacheMode) -> Self {
         self.options.read_cache = mode;
@@ -127,7 +132,7 @@ where
         self
     }
 
-    /// Installs a Java-style cache selector while collecting rows.
+    /// 对应 Java：`EasyExcel.readSync(...)`。 Installs a Java-style cache selector while collecting rows.
     #[must_use]
     pub fn read_cache_selector(mut self, selector: StoredReadCacheSelector) -> Self {
         self.options.read_cache_selector = Some(selector);
@@ -138,6 +143,7 @@ where
     ///
     /// Configured header rows are still analysed for name-based mapping.
     #[must_use]
+    /// 对应 Java：`EasyExcel.readSync(...)`。
     pub const fn start_row(mut self, row: u32) -> Self {
         self.options.start_row = Some(row);
         self
@@ -147,6 +153,7 @@ where
     ///
     /// Configured header rows are still analysed for name-based mapping.
     #[must_use]
+    /// 对应 Java：`EasyExcel.readSync(...)`。
     pub const fn end_row(mut self, row: u32) -> Self {
         self.options.end_row = Some(row);
         self
@@ -154,13 +161,14 @@ where
 
     /// Limits collected data to an inclusive physical row range.
     #[must_use]
+    /// 对应 Java：`EasyExcel.readSync(...)`。
     pub const fn read_rows(mut self, start: u32, end: u32) -> Self {
         self.options.start_row = Some(start);
         self.options.end_row = Some(end);
         self
     }
 
-    /// Maps a workbook header name to the name used by typed row mapping.
+    /// 对应 Java：`EasyExcel.readSync(...)`。 Maps a workbook header name to the name used by typed row mapping.
     #[must_use]
     pub fn header_alias(mut self, header: impl Into<String>, alias: impl Into<String>) -> Self {
         self.options
@@ -169,7 +177,7 @@ where
         self
     }
 
-    /// Stores a type-safe value exposed while synchronously collecting rows.
+    /// 对应 Java：`EasyExcel.readSync(...)`。 Stores a type-safe value exposed while synchronously collecting rows.
     #[must_use]
     pub fn custom_object<C>(mut self, custom_object: C) -> Self
     where
@@ -181,33 +189,34 @@ where
 
     /// Selects the Java-compatible no-model return mode.
     #[must_use]
+    /// 对应 Java：`EasyExcel.readSync(...)`。
     pub const fn read_default_return(mut self, mode: ReadDefaultReturn) -> Self {
         self.options.read_default_return = mode;
         self
     }
 
-    /// Enables a Java `extraRead` metadata category.
+    /// 对应 Java：`EasyExcel.readSync(...)`。 Enables a Java `extraRead` metadata category.
     #[must_use]
     pub fn extra_read(mut self, extra_type: CellExtraType) -> Self {
         self.options.extra_read.insert(extra_type);
         self
     }
 
-    /// Sets the password for an encrypted OOXML workbook.
+    /// 对应 Java：`EasyExcel.readSync(...)`。 Sets the password for an encrypted OOXML workbook.
     #[must_use]
     pub fn password(mut self, password: impl Into<String>) -> Self {
         self.options.password = Some(password.into());
         self
     }
 
-    /// Sets the character encoding used for CSV input.
+    /// 对应 Java：`EasyExcel.readSync(...)`。 Sets the character encoding used for CSV input.
     #[must_use]
     pub fn charset(mut self, charset: impl Into<CsvCharset>) -> Self {
         self.options.charset = charset.into();
         self
     }
 
-    /// Reads all rows into memory.
+    /// 对应 Java：`EasyExcel.readSync(...)`。 Reads all rows into memory.
     ///
     /// # Errors
     ///

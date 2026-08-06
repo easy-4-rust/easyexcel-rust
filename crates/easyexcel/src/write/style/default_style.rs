@@ -15,6 +15,7 @@ pub struct DefaultStyle {
 impl DefaultStyle {
     /// Creates the default style with a bold header.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.style.DefaultStyle。
     pub const fn new() -> Self {
         let mut header = ExcelCellStyle::new();
         header.horizontal_alignment = Some(ExcelHorizontalAlignment::Center);
@@ -23,6 +24,7 @@ impl DefaultStyle {
 
     /// Returns the configured header style. (Java `getHeaderStyle()` step)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.style.DefaultStyle。
     pub const fn header(&self) -> &ExcelCellStyle {
         &self.header
     }

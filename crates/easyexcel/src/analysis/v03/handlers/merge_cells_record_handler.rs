@@ -14,7 +14,7 @@ pub struct MergeCellsRecordHandler {
 }
 
 impl MergeCellsRecordHandler {
-    /// Creates a handler; `enabled` mirrors Java `support(XlsReadContext)`.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.MergeCellsRecordHandler。 Creates a handler; `enabled` mirrors Java `support(XlsReadContext)`.
     #[must_use]
     pub fn new(enabled: bool) -> Self {
         Self {
@@ -23,13 +23,13 @@ impl MergeCellsRecordHandler {
         }
     }
 
-    /// Java `MergeCellsRecordHandler.support`.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.MergeCellsRecordHandler。 Java `MergeCellsRecordHandler.support`.
     #[must_use]
     pub fn support(&self) -> bool {
         self.enabled
     }
 
-    /// Java `MergeCellsRecordHandler.processRecord` for one merged area.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.MergeCellsRecordHandler。 Java `MergeCellsRecordHandler.processRecord` for one merged area.
     pub fn process_area(
         &mut self,
         first_row: u32,
@@ -50,7 +50,7 @@ impl MergeCellsRecordHandler {
         ));
     }
 
-    /// Drains extras accumulated for the current record.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.MergeCellsRecordHandler。 Drains extras accumulated for the current record.
     pub fn take_extras(&mut self) -> Vec<CellExtra> {
         std::mem::take(&mut self.last_extras)
     }

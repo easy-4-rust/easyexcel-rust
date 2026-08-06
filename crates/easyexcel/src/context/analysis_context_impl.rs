@@ -54,13 +54,13 @@ impl AnalysisContextImpl {
         }
     }
 
-    /// Returns the listener callback context. (Java deprecated getters collapse here)
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContextImpl。 Returns the listener callback context. (Java deprecated getters collapse here)
     #[must_use]
     pub fn analysis_context(&self) -> &AnalysisContext {
         &self.inner
     }
 
-    /// Returns a mutable listener callback context.
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContextImpl。 Returns a mutable listener callback context.
     #[must_use]
     pub fn analysis_context_mut(&mut self) -> &mut AnalysisContext {
         &mut self.inner
@@ -93,51 +93,55 @@ impl AnalysisContextImpl {
 
     /// Returns the workbook holder. (Java `readWorkbookHolder()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContextImpl。
     pub const fn read_workbook_holder(&self) -> &ReadWorkbookHolder {
         &self.read_workbook_holder
     }
 
     /// Returns the active sheet holder. (Java `readSheetHolder()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContextImpl。
     pub const fn read_sheet_holder(&self) -> Option<&ReadSheetHolder> {
         self.read_sheet_holder.as_ref()
     }
 
     /// Returns the active row holder. (Java `readRowHolder()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContextImpl。
     pub const fn read_row_holder(&self) -> Option<&ReadRowHolder> {
         self.read_row_holder.as_ref()
     }
 
-    /// Sets the active row holder. (Java `readRowHolder(ReadRowHolder)`)
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContextImpl。 Sets the active row holder. (Java `readRowHolder(ReadRowHolder)`)
     pub fn set_read_row_holder(&mut self, read_row_holder: ReadRowHolder) {
         self.read_row_holder = Some(read_row_holder);
     }
 
-    /// Returns the custom read object. (Java `getCustom()`)
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContextImpl。 Returns the custom read object. (Java `getCustom()`)
     #[must_use]
     pub fn custom(&self) -> Option<&CustomReadObject> {
         self.inner.custom_object()
     }
 
-    /// Returns the event processor. (Java `analysisEventProcessor()`)
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContextImpl。 Returns the event processor. (Java `analysisEventProcessor()`)
     pub fn analysis_event_processor(&mut self) -> &mut dyn AnalysisEventProcessor {
         &mut self.analysis_event_processor
     }
 
-    /// Returns requested sheets. (Java `readSheetList()`)
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContextImpl。 Returns requested sheets. (Java `readSheetList()`)
     #[must_use]
     pub fn read_sheet_list(&self) -> Option<&[ReadSheet]> {
         self.read_sheet_list.as_deref()
     }
 
-    /// Sets requested sheets. (Java `readSheetList(List<ReadSheet>)`)
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContextImpl。 Sets requested sheets. (Java `readSheetList(List<ReadSheet>)`)
     pub fn set_read_sheet_list(&mut self, read_sheet_list: Vec<ReadSheet>) {
         self.read_sheet_list = Some(read_sheet_list);
     }
 
     /// Returns the resolved workbook format. (Java `@Deprecated getExcelType()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.context.AnalysisContextImpl。
     pub const fn excel_type(&self) -> ExcelTypeEnum {
         self.excel_type
     }

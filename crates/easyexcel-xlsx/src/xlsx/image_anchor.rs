@@ -4,16 +4,9 @@ use easyexcel_io::{Error, Result};
 
 use super::{MAX_XLSX_COLUMN_NUMBER, MAX_XLSX_ROW_NUMBER};
 
-/// 相对当前单元格或绝对指定的锚点坐标。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub struct AnchorCoordinate {
-    /// 非零绝对坐标；零值按未指定处理，以匹配 EasyExcel/POI 语义。
-    pub absolute: Option<u32>,
-    /// 相对当前坐标的有符号偏移。
-    pub relative: Option<i32>,
-}
+include!("image_anchor/anchor_coordinate.rs");
 
-/// 图片锚点输入参数。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 图片锚点输入参数。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ImageAnchorSpec {
     /// 当前单元格行号。
@@ -38,24 +31,9 @@ pub struct ImageAnchorSpec {
     pub bottom: u32,
 }
 
-/// 已校验、可直接交给 XLSX 写入后端的图片锚点。
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ResolvedImageAnchor {
-    /// 首行坐标。
-    pub first_row: u32,
-    /// 首列坐标。
-    pub first_column: u16,
-    /// 扣除左右边距后的图片宽度。
-    pub width: u32,
-    /// 扣除上下边距后的图片高度。
-    pub height: u32,
-    /// 左侧像素偏移。
-    pub left: u32,
-    /// 顶部像素偏移。
-    pub top: u32,
-}
+include!("image_anchor/resolved_image_anchor.rs");
 
-/// 解析图片锚点并按行列尺寸计算可用像素区域。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析图片锚点并按行列尺寸计算可用像素区域。
 ///
 /// # Errors
 ///

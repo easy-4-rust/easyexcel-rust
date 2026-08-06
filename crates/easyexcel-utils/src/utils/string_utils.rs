@@ -4,16 +4,16 @@
 
 use std::borrow::Cow;
 
-/// 返回字符串的 UTF-8 字节长度；超过 `u16` 可表示范围时返回 `None`。
+/// 对应 Java：com.alibaba.excel.util.StringUtils。 返回字符串的 UTF-8 字节长度；超过 `u16` 可表示范围时返回 `None`。
 ///
-/// Java EasyExcel 的最长列宽策略使用 `String#getBytes().length`，门面可用
+/// Java `EasyExcel` 的最长列宽策略使用 `String#getBytes().length`，门面可用
 /// 该基础原语实现相同的有界长度计算而不自行处理整数收窄。
 #[must_use]
 pub fn utf8_byte_len_u16(value: &str) -> Option<u16> {
     u16::try_from(value.len()).ok()
 }
 
-/// 按配置使用 Java `String#trim` 语义裁剪字符串两端字符。
+/// 对应 Java：com.alibaba.excel.util.StringUtils。 按配置使用 Java `String#trim` 语义裁剪字符串两端字符。
 ///
 /// 无论是否启用均返回原字符串的借用切片，避免写入热路径产生分配。
 #[must_use]
@@ -25,7 +25,7 @@ pub fn maybe_trim(value: &str, enabled: bool) -> Cow<'_, str> {
     }
 }
 
-/// 按 Java EasyExcel `FieldUtils.resolveCglibFieldName` 规则规范字段名。
+/// 对应 Java：com.alibaba.excel.util.StringUtils。 按 Java `EasyExcel` `FieldUtils.resolveCglibFieldName` 规则规范字段名。
 ///
 /// 长度小于两个字符，或前两个字符同为大写/同为非大写时保持不变；否则切换
 /// 首字符大小写。未发生变化时返回借用，避免分配。
@@ -53,16 +53,16 @@ pub fn resolve_cglib_field_name(value: &str) -> Cow<'_, str> {
     Cow::Owned(resolved)
 }
 
-/// 按 Java `String#trim` 语义移除两端不大于 U+0020 的字符。
+/// 对应 Java：com.alibaba.excel.util.StringUtils。 按 Java `String#trim` 语义移除两端不大于 U+0020 的字符。
 ///
 /// Rust `str::trim` 会处理更多 Unicode 空白；Excel sheet 名、表头和兼容
-/// 配置需要保持 Java EasyExcel 的原始行为。
+/// 配置需要保持 Java `EasyExcel` 的原始行为。
 #[must_use]
 pub fn java_trim(value: &str) -> &str {
     value.trim_matches(|character| character <= '\u{20}')
 }
 
-/// 按配置应用 Java trim 后比较两个字符串。
+/// 对应 Java：com.alibaba.excel.util.StringUtils。 按配置应用 Java trim 后比较两个字符串。
 #[must_use]
 pub fn equals_with_optional_java_trim(left: &str, right: &str, enabled: bool) -> bool {
     if enabled {
@@ -72,7 +72,7 @@ pub fn equals_with_optional_java_trim(left: &str, right: &str, enabled: bool) ->
     }
 }
 
-/// Mirrors `org.apache.commons.lang3.StringUtils#isEmpty`.
+/// 对应 Java：com.alibaba.excel.util.StringUtils。 Mirrors `org.apache.commons.lang3.StringUtils#isEmpty`.
 #[must_use]
 pub fn is_empty(cs: Option<&str>) -> bool {
     match cs {
@@ -81,7 +81,7 @@ pub fn is_empty(cs: Option<&str>) -> bool {
     }
 }
 
-/// Mirrors `org.apache.commons.lang3.StringUtils#isBlank`.
+/// 对应 Java：com.alibaba.excel.util.StringUtils。 Mirrors `org.apache.commons.lang3.StringUtils#isBlank`.
 #[must_use]
 pub fn is_blank(cs: Option<&str>) -> bool {
     match cs {
@@ -90,19 +90,19 @@ pub fn is_blank(cs: Option<&str>) -> bool {
     }
 }
 
-/// Mirrors `org.apache.commons.lang3.StringUtils#isNotBlank`.
+/// 对应 Java：com.alibaba.excel.util.StringUtils。 Mirrors `org.apache.commons.lang3.StringUtils#isNotBlank`.
 #[must_use]
 pub fn is_not_blank(cs: Option<&str>) -> bool {
     !is_blank(cs)
 }
 
-/// Mirrors `org.apache.commons.lang3.StringUtils#equals`.
+/// 对应 Java：com.alibaba.excel.util.StringUtils。 Mirrors `org.apache.commons.lang3.StringUtils#equals`.
 #[must_use]
 pub fn equals(cs1: Option<&str>, cs2: Option<&str>) -> bool {
     cs1 == cs2
 }
 
-/// Mirrors `java.lang.String#regionMatches(boolean, int, String, int, int)`.
+/// 对应 Java：com.alibaba.excel.util.StringUtils。 Mirrors `java.lang.String#regionMatches(boolean, int, String, int, int)`.
 #[must_use]
 pub fn region_matches(
     ignore_case: bool,
@@ -133,7 +133,7 @@ pub fn region_matches(
     true
 }
 
-/// Mirrors `org.apache.commons.lang3.StringUtils#isNumeric`.
+/// 对应 Java：com.alibaba.excel.util.StringUtils。 Mirrors `org.apache.commons.lang3.StringUtils#isNumeric`.
 #[must_use]
 pub fn is_numeric(cs: Option<&str>) -> bool {
     let s = match cs {

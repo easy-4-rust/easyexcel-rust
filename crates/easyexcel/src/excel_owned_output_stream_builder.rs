@@ -9,7 +9,7 @@ use crate::core::{ExcelRow, Result};
 use crate::write::builder::excel_writer_builder::ExcelWriterBuilder;
 use crate::write::{ExcelOutputStream, ExcelWriter, WriteSheet};
 
-/// Owned, cloneable output-stream builder for one-shot or stateful writes.
+/// 对应 Java：ExcelWriterBuilder。 Owned, cloneable output-stream builder for one-shot or stateful writes.
 pub struct ExcelOwnedOutputStreamBuilder<T, W> {
     pub(crate) builder: ExcelWriterBuilder<T>,
     pub(crate) output: ExcelOutputStream<W>,
@@ -20,7 +20,7 @@ where
     T: ExcelRow,
     W: Write + Send + 'static,
 {
-    /// Builds a stateful writer for repeated `write` calls.
+    /// 对应 Java：ExcelWriterBuilder。 Builds a stateful writer for repeated `write` calls.
     #[must_use]
     pub fn build(self) -> ExcelWriter {
         ExcelWriter::with_output_stream(
@@ -31,7 +31,7 @@ where
         )
     }
 
-    /// Writes one batch and completes the output-stream lifecycle.
+    /// 对应 Java：ExcelWriterBuilder。 Writes one batch and completes the output-stream lifecycle.
     ///
     /// # Errors
     ///

@@ -26,14 +26,19 @@ pub use easyexcel_io::{RowSink, StreamCell, StreamInfo};
 /// workbook.xml, rels, sharedStrings, styles).
 fn read_entry<R: Read + Seek>(archive: &mut zip::ZipArchive<R>, name: &str) -> Option<Vec<u8>> {
     let mut f = archive.by_name(name).ok()?;
-    let mut data = Vec::with_capacity(f.size() as usize);
+    let capacity = usize::try_from(f.size()).ok()?;
+    let mut data = Vec::with_capacity(capacity);
     f.read_to_end(&mut data).ok()?;
     Some(data)
 }
 
-/// Stream the rows of one sheet from a seekable XLSX reader into `sink`.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Stream the rows of one sheet from a seekable XLSX reader into `sink`.
 ///
 /// `sheet` selects by name (case-insensitive); `None` uses the first sheet.
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn stream<R: Read + Seek, S: RowSink>(
     reader: R,
     sheet: Option<&str>,
@@ -117,8 +122,7 @@ pub fn stream<R: Read + Seek, S: RowSink>(
                 "row" => {
                     cur_row = attr(&e, "r")
                         .and_then(|s| s.parse::<u32>().ok())
-                        .map(|r| r.saturating_sub(1))
-                        .unwrap_or(cur_row);
+                        .map_or(cur_row, |r| r.saturating_sub(1));
                     row_cells.clear();
                 }
                 "c" => {
@@ -225,6 +229,15 @@ mod tests {
         }
     }
 
+    struct FormattedCell(String);
+
+    impl RowSink for FormattedCell {
+        fn row(&mut self, _row: u32, cells: &[StreamCell]) -> Result<()> {
+            self.0 = cells[0].display(easyexcel_model::dates::DateSystem::Date1900);
+            Ok(())
+        }
+    }
+
     #[test]
     fn streams_rows_matching_model() {
         let mut wb = Workbook::new();
@@ -269,14 +282,7 @@ mod tests {
         let mut bytes = Vec::new();
         super::super::write(&wb, Cursor::new(&mut bytes)).unwrap();
 
-        struct Fmt(String);
-        impl RowSink for Fmt {
-            fn row(&mut self, _r: u32, cells: &[StreamCell]) -> Result<()> {
-                self.0 = cells[0].display(easyexcel_model::dates::DateSystem::Date1900);
-                Ok(())
-            }
-        }
-        let mut f = Fmt(String::new());
+        let mut f = FormattedCell(String::new());
         stream(Cursor::new(bytes), None, &mut f).unwrap();
         assert_eq!(f.0, "3.50");
     }

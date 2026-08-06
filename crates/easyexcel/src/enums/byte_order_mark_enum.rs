@@ -6,7 +6,7 @@
 
 use crate::ExcelError;
 
-/// UTF BOM byte sequences aligned with Java's `ByteOrderMarkEnum`.
+/// 对应 Java：com.alibaba.excel.enums.ByteOrderMarkEnum。 UTF BOM byte sequences aligned with Java's `ByteOrderMarkEnum`.
 ///
 /// Rust port of Java `ByteOrderMarkEnum`. Stores the raw BOM bytes and the
 /// associated canonical charset name.
@@ -27,23 +27,25 @@ pub enum ByteOrderMarkEnum {
 impl ByteOrderMarkEnum {
     /// Returns the BOM bytes as a slice.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.enums.ByteOrderMarkEnum。
     pub const fn bytes(self) -> &'static [u8] {
         self.engine_value().bytes()
     }
 
     /// Canonical charset name matched against the BOM.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.enums.ByteOrderMarkEnum。
     pub const fn charset_name(self) -> &'static str {
         self.engine_value().charset_name()
     }
 
-    /// Resolves a Java-style charset label to its BOM, if any.
+    /// 对应 Java：com.alibaba.excel.enums.ByteOrderMarkEnum。 Resolves a Java-style charset label to its BOM, if any.
     #[must_use]
     pub fn value_of_by_charset_name(name: &str) -> Option<Self> {
         easyexcel_io::ByteOrderMark::from_charset_name(name).map(Self::from_engine_value)
     }
 
-    /// Returns an error explaining the BOM lookup failure (for `Result`-style callers).
+    /// 对应 Java：com.alibaba.excel.enums.ByteOrderMarkEnum。 Returns an error explaining the BOM lookup failure (for `Result`-style callers).
     #[must_use]
     pub fn error_for_missing_bom(name: &str) -> ExcelError {
         ExcelError::Unsupported(format!("unsupported CSV charset: {name}"))

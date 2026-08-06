@@ -2,13 +2,14 @@
 
 use thiserror::Error;
 
-/// All public easyexcel errors with row and column diagnostics where applicable.
+/// 对应 Java：com.alibaba.excel.exception.*。 All public easyexcel errors with row and column diagnostics where applicable.
 ///
 /// Java uses seven `RuntimeException` subclasses (`ExcelCommonException`,
 /// `ExcelAnalysisException`, `ExcelAnalysisStopException`, etc.). Rust
 /// collapses them into a single `Error` enum with `thiserror` for
 /// ergonomic `Display` / `From<io::Error>` integration.
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum ExcelError {
     /// A cell-to-field conversion error. (Java `ExcelDataConvertException`)
     #[error(

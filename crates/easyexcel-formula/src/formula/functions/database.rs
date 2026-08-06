@@ -13,7 +13,7 @@ use crate::formula::coerce::{to_number, to_text};
 use crate::formula::context::Context;
 use crate::formula::value::{Array, Value};
 use easyexcel_model::error::CellError;
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub fn register(r: &mut Registry) {
     r.add("DSUM", 3, 3, false, dsum);
     r.add("DAVERAGE", 3, 3, false, daverage);
@@ -93,8 +93,7 @@ fn matching_field_values(ctx: &mut dyn Context, args: &[Value]) -> Result<Vec<Va
             let db_col = (0..db.cols).find(|&dc| {
                 db.get(0, dc)
                     .and_then(|v| to_text(v).ok())
-                    .map(|s| s.to_lowercase() == hname)
-                    .unwrap_or(false)
+                    .is_some_and(|s| s.to_lowercase() == hname)
             });
             crit_col_map.push(db_col);
         } else {
@@ -387,7 +386,7 @@ mod tests {
             &mut ctx,
             &[db_ref(), Value::Text("Salary".into()), crit_ref()],
         );
-        assert_eq!(result, Value::Number(185000.0));
+        assert_eq!(result, Value::Number(185_000.0));
     }
 
     #[test]
@@ -426,7 +425,7 @@ mod tests {
             &mut ctx,
             &[db_ref(), Value::Text("Salary".into()), crit_ref()],
         );
-        assert_eq!(result, Value::Number(185000.0 / 3.0));
+        assert_eq!(result, Value::Number(185_000.0 / 3.0));
     }
 
     // DCOUNT / DCOUNTA ---------------------------------------------------

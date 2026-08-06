@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use easyexcel_format::{MIN_CUSTOM_DATA_FORMAT_INDEX, switch_builtin_formats};
 
-/// 工作簿局部的 CSV 数据格式注册表。
+/// 对应 Java：com.alibaba.excel.metadata.csv.CsvDataFormat。 工作簿局部的 CSV 数据格式注册表。
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct CsvDataFormat {
     custom_indexes: HashMap<String, i16>,
@@ -14,13 +14,13 @@ pub struct CsvDataFormat {
 }
 
 impl CsvDataFormat {
-    /// 创建空的自定义格式注册表。
+    /// 对应 Java：com.alibaba.excel.metadata.csv.CsvDataFormat。 创建空的自定义格式注册表。
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// 返回内建格式或工作簿局部格式的索引。
+    /// 对应 Java：com.alibaba.excel.metadata.csv.CsvDataFormat。 返回内建格式或工作簿局部格式的索引。
     pub fn get_format_index(&mut self, format: &str) -> i16 {
         if let Some(index) = switch_builtin_formats()
             .iter()
@@ -38,7 +38,7 @@ impl CsvDataFormat {
         index
     }
 
-    /// 按索引解析内建格式或工作簿局部格式文本。
+    /// 对应 Java：com.alibaba.excel.metadata.csv.CsvDataFormat。 按索引解析内建格式或工作簿局部格式文本。
     #[must_use]
     pub fn get_format(&self, index: i16) -> Option<&str> {
         let index = usize::try_from(index).ok()?;

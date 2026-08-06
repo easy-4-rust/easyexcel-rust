@@ -9,7 +9,7 @@ use crate::core::excel_error::ExcelError;
 use crate::core::write_converter_context::WriteConverterContext;
 use crate::write::write_cell_data::WriteCellData;
 
-/// Java `StringImageConverter` equivalent for fields containing an image file path.
+/// 对应 Java：com.alibaba.excel.converters.string.StringImageConverter。 Java `StringImageConverter` equivalent for fields containing an image file path.
 ///
 /// Use it with `#[excel(converter = StringImageConverter)]`. The file is
 /// read during row conversion; missing or unreadable files return an I/O

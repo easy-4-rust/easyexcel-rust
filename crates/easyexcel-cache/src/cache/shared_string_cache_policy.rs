@@ -4,9 +4,9 @@ use easyexcel_io::Result;
 
 use super::{ReadCacheMode, SharedStringCache, create_cache};
 
-/// 根据 `sharedStrings.xml` 大小创建共享字符串缓存。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 根据 `sharedStrings.xml` 大小创建共享字符串缓存。
 ///
-/// 该策略不依赖 EasyExcel 门面的 selector trait，可由事件读取器、CLI 或
+/// 该策略不依赖 `EasyExcel` 门面的 selector trait，可由事件读取器、CLI 或
 /// 其他工作簿 API 直接复用。小于内存阈值时使用纯内存缓存；达到阈值后
 /// 使用临时文件缓存，维持 SAX 大文件读取的内存边界。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -25,24 +25,28 @@ impl Default for SharedStringCachePolicy {
 impl SharedStringCachePolicy {
     /// 将 Java `maxUseMapCacheSize` 使用的十进制 MB 转换为字节。
     #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn memory_megabytes_to_bytes(megabytes: u64) -> u64 {
         megabytes.saturating_mul(1_000_000)
     }
 
     /// 使用指定的纯内存缓存阈值创建策略。
     #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn new(max_memory_bytes: u64) -> Self {
         Self { max_memory_bytes }
     }
 
     /// 返回纯内存缓存阈值（字节）。
     #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn max_memory_bytes(self) -> u64 {
         self.max_memory_bytes
     }
 
     /// 根据共享字符串 XML 大小选择缓存模式。
     #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn select_mode(self, shared_strings_xml_size: u64) -> ReadCacheMode {
         if shared_strings_xml_size < self.max_memory_bytes {
             ReadCacheMode::Memory
@@ -51,7 +55,7 @@ impl SharedStringCachePolicy {
         }
     }
 
-    /// 根据当前策略创建缓存后端。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 根据当前策略创建缓存后端。
     ///
     /// # Errors
     ///

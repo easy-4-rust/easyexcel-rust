@@ -2,7 +2,7 @@
 
 use super::error::CellError;
 
-/// A scalar value that can live in a cell or be the cached result of a formula.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 A scalar value that can live in a cell or be the cached result of a formula.
 ///
 /// This is deliberately *scalar*: the formula engine has a richer internal
 /// `Value` type (in `core::formula`) that additionally models arrays and range
@@ -20,10 +20,14 @@ pub enum CellValue {
 }
 
 impl CellValue {
+    #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub fn is_empty(&self) -> bool {
         matches!(self, CellValue::Empty)
     }
 
+    #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub fn as_number(&self) -> Option<f64> {
         match self {
             CellValue::Number(n) => Some(*n),
@@ -33,7 +37,8 @@ impl CellValue {
         }
     }
 
-    /// Plain, unformatted text rendering (no number-format applied).
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Plain, unformatted text rendering (no number-format applied).
+    #[must_use]
     pub fn to_display_string(&self) -> String {
         match self {
             CellValue::Empty => String::new(),
@@ -51,8 +56,10 @@ impl CellValue {
     }
 }
 
-/// Render a number the way Excel's "General" format does: shortest round-trip
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Render a number the way Excel's "General" format does: shortest round-trip
 /// representation, no trailing zeros, integers without a decimal point.
+#[must_use]
+#[allow(clippy::cast_possible_truncation)]
 pub fn format_number_general(n: f64) -> String {
     if n == 0.0 {
         return "0".to_string();
@@ -74,7 +81,7 @@ pub fn format_number_general(n: f64) -> String {
     s
 }
 
-/// 按 Excel 标量强制转换规则解析数字文本。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 按 Excel 标量强制转换规则解析数字文本。
 ///
 /// 支持空白、正负号、科学计数法、百分比和千位分隔符。
 #[must_use]
@@ -113,7 +120,7 @@ mod tests {
         assert_eq!(format_number_general(1.0), "1");
         assert_eq!(format_number_general(1.5), "1.5");
         assert_eq!(format_number_general(-42.0), "-42");
-        assert_eq!(format_number_general(1000000.0), "1000000");
+        assert_eq!(format_number_general(1_000_000.0), "1000000");
     }
 
     #[test]

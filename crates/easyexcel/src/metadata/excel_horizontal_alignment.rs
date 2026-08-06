@@ -6,6 +6,7 @@
 /// underlying backend (`rust_xlsxwriter`) does not need them. Variant names
 /// match Java's `HorizontalAlignment`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.enums.poi.HorizontalAlignmentEnum。
 pub enum ExcelHorizontalAlignment {
     /// Excel's type-dependent default.
     General,

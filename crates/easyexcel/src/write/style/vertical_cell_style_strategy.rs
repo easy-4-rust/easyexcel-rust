@@ -23,7 +23,7 @@ pub struct VerticalCellStyleStrategy {
 }
 
 impl VerticalCellStyleStrategy {
-    /// Creates a strategy from head/content style factories keyed by column index.
+    /// 对应 Java：com.alibaba.excel.write.style.AbstractVerticalCellStyleStrategy。 Creates a strategy from head/content style factories keyed by column index.
     ///
     /// (Java anonymous class overriding `headCellStyle(Head)` / `contentCellStyle(Head)`)
     #[must_use]
@@ -37,13 +37,13 @@ impl VerticalCellStyleStrategy {
         }
     }
 
-    /// Creates a strategy with constant head and content styles for every column.
+    /// 对应 Java：com.alibaba.excel.write.style.AbstractVerticalCellStyleStrategy。 Creates a strategy with constant head and content styles for every column.
     #[must_use]
     pub fn uniform(head: ExcelCellStyle, content: ExcelCellStyle) -> Self {
         Self::new(move |_| head, move |_| content)
     }
 
-    /// Creates a uniform strategy and attaches head/content fonts
+    /// 对应 Java：com.alibaba.excel.write.style.AbstractVerticalCellStyleStrategy。 Creates a uniform strategy and attaches head/content fonts
     /// (Java `WriteCellStyle.setWriteFont` on both styles).
     #[must_use]
     pub fn uniform_with_fonts(
@@ -57,7 +57,7 @@ impl VerticalCellStyleStrategy {
         Self::uniform(head, content)
     }
 
-    /// Creates a uniform strategy from runtime [`WriteFont`] values
+    /// 对应 Java：com.alibaba.excel.write.style.AbstractVerticalCellStyleStrategy。 Creates a uniform strategy from runtime [`WriteFont`] values
     /// (Java `setWriteFont(WriteFont)`; owned names omitted — see
     /// [`excel_font_style_from_write_font`]).
     #[must_use]

@@ -4,6 +4,7 @@
 
 /// Worksheet selected for Java-style template fill and write operations.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。
 pub enum TemplateSheet {
     /// Selects a worksheet by its zero-based workbook order.
     #[default]
@@ -17,23 +18,25 @@ pub enum TemplateSheet {
 impl TemplateSheet {
     /// Selects the first worksheet, equivalent to Java `writerSheet().build()`.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。
     pub const fn first() -> Self {
         Self::First
     }
 
     /// Selects a worksheet by Java-style zero-based sheet number.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。
     pub const fn index(index: usize) -> Self {
         Self::Index(index)
     }
 
-    /// Selects a worksheet by exact name.
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。 Selects a worksheet by exact name.
     #[must_use]
     pub fn name(name: impl Into<String>) -> Self {
         Self::Name(name.into())
     }
 
-    /// 映射为 XLSX 模板引擎选择器。
+    /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。 映射为 XLSX 模板引擎选择器。
     #[must_use]
     pub(crate) fn as_engine_selector(&self) -> easyexcel_xlsx::TemplateSheetSelector<'_> {
         match self {

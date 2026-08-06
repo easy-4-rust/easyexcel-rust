@@ -82,7 +82,7 @@ pub struct WriteOptions {
     pub charset: CsvCharset,
     /// CSV 输出是否以编码的字节顺序标记开头。
     pub with_bom: bool,
-    /// 状态化 [`ExcelOutputStream`] 是否由 `finish` 关闭。
+    /// 状态化 `ExcelOutputStream` 是否由 `finish` 关闭。
     pub auto_close_stream: bool,
     /// `finish_on_exception` 是否在错误前发出累积的行。
     pub write_excel_on_exception: bool,

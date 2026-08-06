@@ -12,44 +12,14 @@ use tempfile::NamedTempFile;
 use super::ReadCacheMode;
 
 /// Java `SimpleReadCacheSelector` 使用的默认内存阈值。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES: u64 = 5_000_000;
 
-/// 共享字符串顺序写入阶段。
-pub trait SharedStringCacheWriter {
-    /// 追加一条共享字符串。
-    ///
-    /// # Errors
-    ///
-    /// 后备存储写入失败时返回错误。
-    fn put(&mut self, value: String) -> Result<()>;
+include!("shared_string_cache/shared_string_cache_writer.rs");
 
-    /// 结束写入并返回线程安全的只读视图。
-    ///
-    /// # Errors
-    ///
-    /// 后备存储无法完成落盘时返回错误。
-    fn finish(self: Box<Self>) -> Result<Box<dyn SharedStringCacheReader>>;
-}
+include!("shared_string_cache/shared_string_cache_reader.rs");
 
-/// 共享字符串并发读取阶段。
-pub trait SharedStringCacheReader: Send + Sync {
-    /// 按零基下标读取共享字符串。
-    ///
-    /// # Errors
-    ///
-    /// 下标越界或后备存储读取失败时返回错误。
-    fn get(&self, index: usize) -> Result<String>;
-
-    /// 返回缓存中的共享字符串数量。
-    fn len(&self) -> usize;
-
-    /// 返回缓存是否为空。
-    fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-}
-
-/// 同时支持写入阶段和读取阶段的共享字符串缓存。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 同时支持写入阶段和读取阶段的共享字符串缓存。
 pub trait SharedStringCache: SharedStringCacheWriter + SharedStringCacheReader {
     /// 结束当前缓存的写入阶段。
     ///
@@ -64,13 +34,13 @@ pub trait SharedStringCache: SharedStringCacheWriter + SharedStringCacheReader {
     }
 }
 
-/// 创建空的只读内存缓存。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 创建空的只读内存缓存。
 #[must_use]
 pub fn memory_cache() -> Box<dyn SharedStringCacheReader> {
     Box::new(MemorySharedStringReader::default())
 }
 
-/// 创建处于顺序写入阶段的纯内存共享字符串缓存。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 创建处于顺序写入阶段的纯内存共享字符串缓存。
 #[must_use]
 pub fn create_memory_cache() -> Box<dyn SharedStringCache> {
     Box::new(MemorySharedStringCache::default())
@@ -85,7 +55,7 @@ pub fn prebuilt_cache(values: Vec<String>) -> Box<dyn SharedStringCache> {
     Box::new(PrebuiltSharedStringCache { values })
 }
 
-/// 按模式和 XML 大小创建共享字符串缓存。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 按模式和 XML 大小创建共享字符串缓存。
 ///
 /// # Errors
 ///
@@ -101,7 +71,7 @@ pub fn create_cache(mode: ReadCacheMode, xml_size: u64) -> Result<Box<dyn Shared
     }
 }
 
-/// 创建由临时文件持有全部共享字符串的缓存。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 创建由临时文件持有全部共享字符串的缓存。
 ///
 /// # Errors
 ///
@@ -110,7 +80,7 @@ pub fn create_file_cache() -> Result<Box<dyn SharedStringCache>> {
     Ok(Box::new(FileSharedStringCache::new()?))
 }
 
-/// 创建生命周期内不淘汰对象的 Moka 共享字符串缓存。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 创建生命周期内不淘汰对象的 Moka 共享字符串缓存。
 ///
 /// 不设置容量、TTL 或 TTI；条目只在缓存对象销毁时整体释放。
 #[must_use]
@@ -119,113 +89,16 @@ pub fn create_moka_cache() -> Box<dyn SharedStringCache> {
 }
 
 /// 兼容旧调用点；Moka 后端不持有线程局部文件句柄，因此无需显式清理。
-pub const fn remove_thread_local_cache() {}
-
-/// 管理共享字符串缓存从顺序写入到并发只读的阶段切换。
-///
-/// 该状态机属于缓存引擎，不依赖 EasyExcel Java 门面的 `ReadCache` trait。
-/// 门面只需把自身的可空索引和错误类型映射到这个句柄。
-pub struct SharedStringCacheHandle {
-    writer: Box<dyn SharedStringCache>,
-    reader: Option<Box<dyn SharedStringCacheReader>>,
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
+pub const fn remove_thread_local_cache() {
+    // Moka/Vec/File 后端由所有权管理，不持有 Java ThreadLocal 生命周期状态。
 }
 
-impl SharedStringCacheHandle {
-    /// 包装一个仍处于写入阶段的共享字符串缓存。
-    #[must_use]
-    pub fn new(writer: Box<dyn SharedStringCache>) -> Self {
-        Self {
-            writer,
-            reader: None,
-        }
-    }
-
-    /// 追加一条共享字符串。
-    ///
-    /// # Errors
-    ///
-    /// 后备存储写入失败时返回错误。
-    pub fn put(&mut self, value: String) -> Result<()> {
-        self.writer.put(value)
-    }
-
-    /// 按零基索引读取共享字符串。
-    ///
-    /// 完成前从写入缓存读取，完成后从不可变读取视图读取。
-    ///
-    /// # Errors
-    ///
-    /// 索引越界或后备存储读取失败时返回错误。
-    pub fn get(&self, index: usize) -> Result<String> {
-        self.reader
-            .as_ref()
-            .map_or_else(|| self.writer.get(index), |reader| reader.get(index))
-    }
-
-    /// 完成写入并切换到只读阶段；重复调用是幂等的。
-    ///
-    /// # Errors
-    ///
-    /// 后备存储无法完成落盘时返回错误。
-    pub fn finish(&mut self) -> Result<()> {
-        if self.reader.is_some() {
-            return Ok(());
-        }
-        let writer = std::mem::replace(
-            &mut self.writer,
-            Box::new(MemorySharedStringCache::default()),
-        );
-        self.reader = Some(writer.finish()?);
-        Ok(())
-    }
-
-    /// 返回当前缓存中的共享字符串数量。
-    #[must_use]
-    pub fn len(&self) -> usize {
-        self.reader
-            .as_ref()
-            .map_or_else(|| self.writer.len(), |reader| reader.len())
-    }
-
-    /// 返回缓存是否为空。
-    #[must_use]
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    /// 取出完成后的不可变读取视图。
-    #[must_use]
-    pub fn into_reader(self) -> Option<Box<dyn SharedStringCacheReader>> {
-        self.reader
-    }
-}
+include!("shared_string_cache/shared_string_cache_handle.rs");
 
 #[derive(Default)]
 struct MemorySharedStringCache {
     values: Vec<String>,
-}
-
-impl SharedStringCacheWriter for MemorySharedStringCache {
-    fn put(&mut self, value: String) -> Result<()> {
-        self.values.push(value);
-        Ok(())
-    }
-
-    fn finish(self: Box<Self>) -> Result<Box<dyn SharedStringCacheReader>> {
-        Ok(Box::new(MemorySharedStringReader {
-            values: self.values,
-        }))
-    }
-}
-
-impl SharedStringCacheReader for MemorySharedStringCache {
-    fn get(&self, index: usize) -> Result<String> {
-        value_at(&self.values, index)
-    }
-
-    fn len(&self) -> usize {
-        self.values.len()
-    }
 }
 
 impl SharedStringCache for MemorySharedStringCache {}
@@ -234,43 +107,11 @@ struct PrebuiltSharedStringCache {
     values: Vec<String>,
 }
 
-impl SharedStringCacheWriter for PrebuiltSharedStringCache {
-    fn put(&mut self, _value: String) -> Result<()> {
-        Ok(())
-    }
-
-    fn finish(self: Box<Self>) -> Result<Box<dyn SharedStringCacheReader>> {
-        Ok(Box::new(MemorySharedStringReader {
-            values: self.values,
-        }))
-    }
-}
-
-impl SharedStringCacheReader for PrebuiltSharedStringCache {
-    fn get(&self, index: usize) -> Result<String> {
-        value_at(&self.values, index)
-    }
-
-    fn len(&self) -> usize {
-        self.values.len()
-    }
-}
-
 impl SharedStringCache for PrebuiltSharedStringCache {}
 
 #[derive(Default)]
 struct MemorySharedStringReader {
     values: Vec<String>,
-}
-
-impl SharedStringCacheReader for MemorySharedStringReader {
-    fn get(&self, index: usize) -> Result<String> {
-        value_at(&self.values, index)
-    }
-
-    fn len(&self) -> usize {
-        self.values.len()
-    }
 }
 
 fn value_at(values: &[String], index: usize) -> Result<String> {
@@ -294,52 +135,12 @@ impl MokaSharedStringCache {
     }
 }
 
-impl SharedStringCacheWriter for MokaSharedStringCache {
-    fn put(&mut self, value: String) -> Result<()> {
-        let index = self.len;
-        self.objects.insert(index, Arc::<str>::from(value));
-        self.len = self.len.saturating_add(1);
-        Ok(())
-    }
-
-    fn finish(self: Box<Self>) -> Result<Box<dyn SharedStringCacheReader>> {
-        let Self { objects, len } = *self;
-        Ok(Box::new(MokaSharedStringReader { objects, len }))
-    }
-}
-
-impl SharedStringCacheReader for MokaSharedStringCache {
-    fn get(&self, index: usize) -> Result<String> {
-        self.objects
-            .get(&index)
-            .map(|value| value.to_string())
-            .ok_or_else(|| out_of_bounds(index))
-    }
-
-    fn len(&self) -> usize {
-        self.len
-    }
-}
-
 impl SharedStringCache for MokaSharedStringCache {}
 
 /// 完成写入后的 Moka 对象缓存只读视图。
 struct MokaSharedStringReader {
     objects: Cache<usize, Arc<str>>,
     len: usize,
-}
-
-impl SharedStringCacheReader for MokaSharedStringReader {
-    fn get(&self, index: usize) -> Result<String> {
-        self.objects
-            .get(&index)
-            .map(|value| value.to_string())
-            .ok_or_else(|| out_of_bounds(index))
-    }
-
-    fn len(&self) -> usize {
-        self.len
-    }
 }
 
 /// 顺序写入、按索引读取的临时文件共享字符串缓存。
@@ -364,53 +165,13 @@ impl FileSharedStringCache {
     }
 }
 
-impl SharedStringCacheWriter for FileSharedStringCache {
-    fn put(&mut self, value: String) -> Result<()> {
-        let offset = self.writer.seek(SeekFrom::End(0))?;
-        let bytes = value.as_bytes();
-        self.writer.write_all(bytes)?;
-        self.entries.push((offset, bytes.len()));
-        Ok(())
-    }
-
-    fn finish(mut self: Box<Self>) -> Result<Box<dyn SharedStringCacheReader>> {
-        self.writer.flush()?;
-        Ok(Box::new(FileSharedStringReader {
-            temporary_file: self.temporary_file,
-            path: self.path,
-            entries: self.entries,
-        }))
-    }
-}
-
-impl SharedStringCacheReader for FileSharedStringCache {
-    fn get(&self, index: usize) -> Result<String> {
-        read_file_entry(&self.path, &self.entries, index)
-    }
-
-    fn len(&self) -> usize {
-        self.entries.len()
-    }
-}
-
 impl SharedStringCache for FileSharedStringCache {}
 
 /// 完成写入后的文件缓存只读视图。
 struct FileSharedStringReader {
-    temporary_file: NamedTempFile,
+    _temporary_file: NamedTempFile,
     path: PathBuf,
     entries: Vec<(u64, usize)>,
-}
-
-impl SharedStringCacheReader for FileSharedStringReader {
-    fn get(&self, index: usize) -> Result<String> {
-        let _lifetime_guard = &self.temporary_file;
-        read_file_entry(&self.path, &self.entries, index)
-    }
-
-    fn len(&self) -> usize {
-        self.entries.len()
-    }
 }
 
 fn read_file_entry(path: &Path, entries: &[(u64, usize)], index: usize) -> Result<String> {

@@ -5,17 +5,9 @@ use crate::Holder as HolderEnum;
 
 use super::global_configuration::GlobalConfiguration;
 
-/// Java `Holder` interface contract.
-///
-/// The core crate already exports [`HolderEnum`] for Java `HolderEnum`. This
-/// trait mirrors Java `Holder.holderType()` without colliding with that enum
-/// name.
-pub trait MetadataHolder {
-    /// Returns the holder scope. (Java `holderType()`)
-    fn holder_type(&self) -> HolderEnum;
-}
+include!("configuration_holder/metadata_holder.rs");
 
-/// Read/write holder configuration contract.
+/// 对应 Java：com.alibaba.excel.metadata.ConfigurationHolder。 Read/write holder configuration contract.
 ///
 /// Rust port of Java `ConfigurationHolder extends Holder`.
 pub trait ConfigurationHolder: MetadataHolder {

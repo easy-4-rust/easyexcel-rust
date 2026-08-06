@@ -10,11 +10,13 @@ pub struct RowHeightProperty {
 impl RowHeightProperty {
     /// Creates a `RowHeightProperty`. (Java constructor)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.RowHeightProperty。
     pub const fn new(height: u16) -> Self {
         Self { height }
     }
     /// Returns the height. (Java `getHeight()`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.metadata.property.RowHeightProperty。
     pub const fn height(&self) -> u16 {
         self.height
     }

@@ -4,7 +4,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{LitStr, meta::ParseNestedMeta};
 
-/// 将数据校验属性转换为运行时元数据构造表达式。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将数据校验属性转换为运行时元数据构造表达式。
 pub(super) fn parse_data_validation(
     meta: &ParseNestedMeta<'_>,
     crate_path: &TokenStream,

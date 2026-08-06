@@ -7,36 +7,26 @@ use std::collections::HashMap;
 use super::super::xls_record_handler::XlsRecordHandler;
 use super::blank_record_handler::BlankCell;
 
-/// Events synthesised by [`DummyRecordHandler`].
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum DummyRecordEvent {
-    /// Java `LastCellOfRowDummyRecord` — flush the current row.
-    EndRow {
-        /// Zero-based row index to emit.
-        row: u32,
-    },
-    /// Java `MissingCellDummyRecord` — insert empty if absent.
-    MissingCell(BlankCell),
-}
+include!("dummy_record_handler/dummy_record_event.rs");
 
 /// 对应 Java：`DummyRecordHandler`.
 #[derive(Debug, Default)]
 pub struct DummyRecordHandler;
 
 impl DummyRecordHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self
     }
 
-    /// Java `LastCellOfRowDummyRecord` branch.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler。 Java `LastCellOfRowDummyRecord` branch.
     #[must_use]
     pub fn process_last_cell_of_row(row: u32) -> DummyRecordEvent {
         DummyRecordEvent::EndRow { row }
     }
 
-    /// Java `MissingCellDummyRecord` branch — `putIfAbsent` semantics.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler。 Java `MissingCellDummyRecord` branch — `putIfAbsent` semantics.
     ///
     /// Returns `Some(MissingCell)` only when the column is not already present
     /// (see `EasyExcel` issue #2236).
@@ -44,6 +34,7 @@ impl DummyRecordHandler {
     // 对应 Java：参数 `Map<Long, ?>` 仅作“列是否已存在”的键集合使用，
     // 保留 `HashMap<usize, ()>` 形态以镜像 Java 侧容器类型。
     #[allow(clippy::zero_sized_map_values)]
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler。
     pub fn process_missing_cell(
         row: u32,
         column: usize,

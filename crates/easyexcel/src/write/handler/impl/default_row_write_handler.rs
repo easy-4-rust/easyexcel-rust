@@ -17,12 +17,14 @@ pub struct DefaultRowWriteHandler {
 impl DefaultRowWriteHandler {
     /// Creates the handler.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.impl.DefaultRowWriteHandler。
     pub const fn new() -> Self {
         Self { frozen: false }
     }
 
     /// Returns whether the first row is frozen. (Java `getFreeze()` equivalent)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.impl.DefaultRowWriteHandler。
     pub const fn frozen(&self) -> bool {
         self.frozen
     }
@@ -43,7 +45,7 @@ impl WriteHandler for DefaultRowWriteHandler {
     }
 }
 
-/// Mirrors the Java constructor pattern that received a
+/// 对应 Java：com.alibaba.excel.write.handler.impl.DefaultRowWriteHandler。 Mirrors the Java constructor pattern that received a
 /// `WriteContext` for back-reference. Kept for parity.
 pub fn new_default_row_write_handler(_ctx: &dyn WriteContext) -> DefaultRowWriteHandler {
     DefaultRowWriteHandler::new()

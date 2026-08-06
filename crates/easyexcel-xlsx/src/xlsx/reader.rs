@@ -1,4 +1,4 @@
-//! XLSX (OOXML SpreadsheetML) reader.
+//! XLSX (OOXML `SpreadsheetML`) reader.
 
 use std::collections::HashMap;
 use std::io::{Cursor, Read, Seek, SeekFrom};
@@ -35,17 +35,25 @@ fn is_known_part(name: &str) -> bool {
         || (n.starts_with("xl/worksheets/") && n.ends_with(".xml") && !n.contains("_rels"))
 }
 
-/// Read an XLSX workbook from any seekable reader.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Read an XLSX workbook from any seekable reader.
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn read<R: Read + Seek>(reader: R) -> Result<Workbook> {
     read_with_password(reader, None)
 }
 
-/// Read an XLSX workbook, transparently decrypting a password-protected
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Read an XLSX workbook, transparently decrypting a password-protected
 /// (MS-OFFCRYPTO) file when `password` is supplied.
 ///
 /// A plain `.xlsx` is a ZIP. A password-protected one is an OLE2/CFB container
 /// holding the real ZIP encrypted in an `EncryptedPackage` stream; we detect
 /// that by magic bytes and decrypt before parsing.
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn read_with_password<R: Read + Seek>(
     mut reader: R,
     password: Option<&str>,
@@ -61,7 +69,7 @@ pub fn read_with_password<R: Read + Seek>(
         let Some(pw) = password else {
             return Err(Error::PasswordProtected(scheme));
         };
-        let inner = super::crypto::decrypt(bytes, pw)?;
+        let inner = super::crypto::decrypt(&bytes, pw)?;
         return read_zip(Cursor::new(inner));
     }
 
@@ -83,7 +91,9 @@ fn read_zip<R: Read + Seek>(reader: R) -> Result<Workbook> {
             continue;
         }
         let name = f.name().to_string();
-        let mut data = Vec::with_capacity(f.size() as usize);
+        let capacity = usize::try_from(f.size())
+            .map_err(|_| Error::Zip("ZIP entry exceeds address space".into()))?;
+        let mut data = Vec::with_capacity(capacity);
         f.read_to_end(&mut data)?;
         parts.insert(name, data);
     }
@@ -159,13 +169,15 @@ fn read_zip<R: Read + Seek>(reader: R) -> Result<Workbook> {
         };
         let mut table_rids = Vec::new();
         let mut sheet = parse_worksheet(data, &shared_strings, &xf_to_interned, &mut table_rids)?;
-        sheet.name = sref.name.clone();
+        sheet.name.clone_from(&sref.name);
         sheet.visibility = sref.visibility;
 
         // Resolve table parts via the worksheet's own relationships.
         if !table_rids.is_empty() {
-            let dir = path.rsplit_once('/').map(|(d, _)| d).unwrap_or("");
-            let file = path.rsplit_once('/').map(|(_, f)| f).unwrap_or(&path);
+            let dir = path.rsplit_once('/').map_or("", |(directory, _)| directory);
+            let file = path
+                .rsplit_once('/')
+                .map_or(path.as_str(), |(_, file)| file);
             let rels_path = format!("{dir}/_rels/{file}.rels");
             if let Some(rels_bytes) = parts.get(&rels_path) {
                 let sheet_rels = parse_rels(rels_bytes)?;
@@ -222,7 +234,7 @@ fn read_zip<R: Read + Seek>(reader: R) -> Result<Workbook> {
     Ok(wb)
 }
 
-/// Parse `xl/_rels/workbook.xml.rels` into rId -> Target.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Parse `xl/_rels/workbook.xml.rels` into rId -> Target.
 pub(super) fn parse_rels(xml: &[u8]) -> Result<HashMap<String, String>> {
     let mut reader = Reader::from_reader(xml);
     reader.config_mut().trim_text(false);
@@ -245,13 +257,13 @@ pub(super) fn parse_rels(xml: &[u8]) -> Result<HashMap<String, String>> {
     Ok(map)
 }
 
-/// Normalize a relationship target into a zip part path. Targets are relative to
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Normalize a relationship target into a zip part path. Targets are relative to
 /// `xl/` (the dir of workbook.xml). Handle leading `/` (absolute) too.
 pub(super) fn normalize_part_path(target: &str) -> String {
     normalize_rel_path("xl", target)
 }
 
-/// Resolve a relationship `target` against the directory `base_dir` of the part
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Resolve a relationship `target` against the directory `base_dir` of the part
 /// that owns the relationship, yielding a zip part path. Handles `/`-absolute,
 /// `./`, and `../` targets.
 pub(super) fn normalize_rel_path(base_dir: &str, target: &str) -> String {
@@ -275,18 +287,14 @@ pub(super) fn normalize_rel_path(base_dir: &str, target: &str) -> String {
     base.join("/")
 }
 
-pub(super) struct SheetRef {
-    pub(super) name: String,
-    pub(super) rid: String,
-    pub(super) visibility: Visibility,
-}
-
+include!("reader/sheet_ref.rs");
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(super) struct WorkbookInfo {
     pub(super) sheets: Vec<SheetRef>,
     pub(super) date_system: DateSystem,
     pub(super) defined_names: Vec<DefinedName>,
 }
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(super) fn parse_workbook(xml: &[u8]) -> Result<WorkbookInfo> {
     let mut reader = Reader::from_reader(xml);
     reader.config_mut().trim_text(false);
@@ -332,8 +340,7 @@ pub(super) fn parse_workbook(xml: &[u8]) -> Result<WorkbookInfo> {
                         let nm = attr(&e, "name").unwrap_or_default();
                         let scope = attr(&e, "localSheetId").and_then(|s| s.parse::<usize>().ok());
                         let hidden = attr(&e, "hidden")
-                            .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
-                            .unwrap_or(false);
+                            .is_some_and(|v| v == "1" || v.eq_ignore_ascii_case("true"));
                         cur_name = Some((nm, scope, hidden));
                         cur_name_text.clear();
                         in_defined_name = true;
@@ -409,8 +416,7 @@ fn parse_worksheet(
                     "row" => {
                         cur_row = attr(&e, "r")
                             .and_then(|s| s.parse::<u32>().ok())
-                            .map(|r| r.saturating_sub(1))
-                            .unwrap_or(cur_row);
+                            .map_or(cur_row, |r| r.saturating_sub(1));
                         let mut info = RowInfo::default();
                         let mut has_info = false;
                         if let Some(h) = attr(&e, "ht").and_then(|s| s.parse::<f64>().ok()) {
@@ -481,7 +487,6 @@ fn parse_worksheet(
                             table_rids.push(rid);
                         }
                     }
-                    "dimension" => {}
                     _ => {}
                 }
             }
@@ -537,7 +542,7 @@ fn parse_worksheet(
 
     Ok(sheet)
 }
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(super) fn parse_cell_ref(
     e: &quick_xml::events::BytesStart,
     fallback_row: u32,
@@ -572,6 +577,9 @@ fn parse_col(e: &quick_xml::events::BytesStart, sheet: &mut Sheet) {
     }
 }
 
+// OOXML pane splits are serialized as floating-point values even though the workbook model stores
+// whole row/column counts. Values are clamped before this deliberate conversion.
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 fn parse_pane(e: &quick_xml::events::BytesStart, sheet: &mut Sheet) {
     let state = attr(e, "state").unwrap_or_default();
     if state != "frozen" && state != "frozenSplit" {
@@ -584,12 +592,11 @@ fn parse_pane(e: &quick_xml::events::BytesStart, sheet: &mut Sheet) {
     let y = attr(e, "ySplit")
         .and_then(|s| s.parse::<f64>().ok())
         .unwrap_or(0.0);
-    sheet.frozen = FrozenPanes {
-        rows: y as u32,
-        cols: x as u32,
-    };
+    let rows = y.clamp(0.0, f64::from(u32::MAX)).trunc() as u32;
+    let cols = x.clamp(0.0, f64::from(u32::MAX)).trunc() as u32;
+    sheet.frozen = FrozenPanes { rows, cols };
 }
-
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(super) fn build_cell(
     t: &str,
     v: &str,
@@ -638,8 +645,7 @@ fn cached_value(t: &str, v: &str, shared: &[String]) -> CellValue {
             .parse::<usize>()
             .ok()
             .and_then(|i| shared.get(i).cloned())
-            .map(CellValue::Text)
-            .unwrap_or(CellValue::Empty),
+            .map_or(CellValue::Empty, CellValue::Text),
         "str" => CellValue::Text(v.to_string()),
         "b" => CellValue::Bool(v.trim() == "1"),
         "e" => CellValue::Error(CellError::parse(v.trim()).unwrap_or(CellError::Value)),
@@ -743,205 +749,5 @@ fn parse_app_props(xml: &[u8], meta: &mut Metadata) {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::xlsx::write;
-    use easyexcel_model::styles::{CellStyle, HAlign};
-    use std::io::{Cursor, Write};
-
-    fn roundtrip(wb: &Workbook) -> Workbook {
-        let mut buf = Vec::new();
-        write(wb, Cursor::new(&mut buf)).expect("write");
-        read(Cursor::new(buf)).expect("read")
-    }
-
-    #[test]
-    fn cells_values_formulas() {
-        let mut wb = Workbook::empty();
-        let mut sheet = Sheet::new("Data");
-        sheet.set(0, 0, Cell::Number(42.5));
-        sheet.set(0, 1, Cell::Text("hello".into()));
-        sheet.set(0, 2, Cell::Text(" leading space ".into()));
-        sheet.set(1, 0, Cell::Bool(true));
-        sheet.set(1, 1, Cell::Error(CellError::Div0));
-        sheet.set(
-            2,
-            0,
-            Cell::Formula {
-                expr: "A1*2".into(),
-                cached: CellValue::Number(85.0),
-            },
-        );
-        sheet.set(
-            2,
-            1,
-            Cell::Formula {
-                expr: "B1&\"!\"".into(),
-                cached: CellValue::Text("hello!".into()),
-            },
-        );
-        wb.sheets.push(sheet);
-
-        let out = roundtrip(&wb);
-        let s = &out.sheets[0];
-        assert_eq!(s.name, "Data");
-        assert_eq!(s.value(0, 0), CellValue::Number(42.5));
-        assert_eq!(s.value(0, 1), CellValue::Text("hello".into()));
-        assert_eq!(s.value(0, 2), CellValue::Text(" leading space ".into()));
-        assert_eq!(s.value(1, 0), CellValue::Bool(true));
-        assert_eq!(s.value(1, 1), CellValue::Error(CellError::Div0));
-        match s.get(2, 0) {
-            Some(Cell::Formula { expr, cached }) => {
-                assert_eq!(expr, "A1*2");
-                assert_eq!(*cached, CellValue::Number(85.0));
-            }
-            other => panic!("expected formula, got {other:?}"),
-        }
-        match s.get(2, 1) {
-            Some(Cell::Formula { expr, cached }) => {
-                assert_eq!(expr, "B1&\"!\"");
-                assert_eq!(*cached, CellValue::Text("hello!".into()));
-            }
-            other => panic!("expected formula, got {other:?}"),
-        }
-    }
-
-    #[test]
-    fn merged_and_frozen() {
-        let mut wb = Workbook::empty();
-        let mut sheet = Sheet::new("S1");
-        sheet.set(0, 0, Cell::Text("hdr".into()));
-        sheet.merged.push(CellRange::parse_a1("A1:C1").unwrap());
-        sheet.frozen = FrozenPanes { rows: 1, cols: 2 };
-        wb.sheets.push(sheet);
-
-        let out = roundtrip(&wb);
-        let s = &out.sheets[0];
-        assert_eq!(s.merged.len(), 1);
-        assert_eq!(s.merged[0], CellRange::parse_a1("A1:C1").unwrap());
-        assert_eq!(s.frozen, FrozenPanes { rows: 1, cols: 2 });
-    }
-
-    #[test]
-    fn styles_and_numfmt() {
-        let mut wb = Workbook::empty();
-        let mut sheet = Sheet::new("Styled");
-
-        let bold_idx = {
-            let mut st = CellStyle::default();
-            st.font.bold = true;
-            st.halign = HAlign::Center;
-            wb.styles.intern(st)
-        };
-        let date_idx = {
-            let st = CellStyle {
-                number_format: "yyyy-mm-dd".into(),
-                ..Default::default()
-            };
-            wb.styles.intern(st)
-        };
-        let pct_idx = {
-            let st = CellStyle {
-                number_format: "0.00%".into(),
-                number_format_id: Some(10),
-                ..Default::default()
-            };
-            wb.styles.intern(st)
-        };
-
-        sheet.set(0, 0, Cell::Text("title".into()));
-        sheet.set_style(0, 0, bold_idx);
-        sheet.set(1, 0, Cell::Number(44000.0));
-        sheet.set_style(1, 0, date_idx);
-        sheet.set(2, 0, Cell::Number(0.5));
-        sheet.set_style(2, 0, pct_idx);
-        wb.sheets.push(sheet);
-
-        let out = roundtrip(&wb);
-        let s = &out.sheets[0];
-
-        let bs = out.styles.get(s.style_at(0, 0).unwrap()).unwrap();
-        assert!(bs.font.bold);
-        assert_eq!(bs.halign, HAlign::Center);
-
-        let ds = out.styles.get(s.style_at(1, 0).unwrap()).unwrap();
-        assert_eq!(ds.number_format, "yyyy-mm-dd");
-        assert!(ds.is_date());
-
-        let ps = out.styles.get(s.style_at(2, 0).unwrap()).unwrap();
-        assert_eq!(ps.number_format, "0.00%");
-    }
-
-    #[test]
-    fn date1904_flag() {
-        let mut wb = Workbook::empty();
-        wb.date_system = DateSystem::Date1904;
-        wb.sheets.push(Sheet::new("Sheet1"));
-        let out = roundtrip(&wb);
-        assert_eq!(out.date_system, DateSystem::Date1904);
-    }
-
-    #[test]
-    fn multi_sheet_and_visibility() {
-        let mut wb = Workbook::empty();
-        let mut s1 = Sheet::new("First");
-        s1.set(0, 0, Cell::Number(1.0));
-        let mut s2 = Sheet::new("Hidden");
-        s2.visibility = Visibility::Hidden;
-        s2.set(0, 0, Cell::Number(2.0));
-        wb.sheets.push(s1);
-        wb.sheets.push(s2);
-
-        let out = roundtrip(&wb);
-        assert_eq!(out.sheets.len(), 2);
-        assert_eq!(out.sheets[0].name, "First");
-        assert_eq!(out.sheets[1].name, "Hidden");
-        assert_eq!(out.sheets[1].visibility, Visibility::Hidden);
-        assert_eq!(out.sheets[1].value(0, 0), CellValue::Number(2.0));
-    }
-
-    #[test]
-    fn defined_names_roundtrip() {
-        let mut wb = Workbook::empty();
-        wb.sheets.push(Sheet::new("Sheet1"));
-        wb.defined_names.push(DefinedName {
-            name: "MyRange".into(),
-            refers_to: "Sheet1!$A$1:$B$2".into(),
-            scope: None,
-            hidden: false,
-        });
-        let out = roundtrip(&wb);
-        assert_eq!(out.defined_names.len(), 1);
-        assert_eq!(out.defined_names[0].name, "MyRange");
-        assert_eq!(out.defined_names[0].refers_to, "Sheet1!$A$1:$B$2");
-    }
-
-    #[test]
-    fn opaque_part_roundtrip() {
-        let mut wb = Workbook::empty();
-        wb.sheets.push(Sheet::new("Sheet1"));
-        wb.opaque.push(OpaquePart {
-            name: "xl/theme/theme1.xml".into(),
-            data: b"<theme>x</theme>".to_vec(),
-        });
-        let out = roundtrip(&wb);
-        let theme = out.opaque.iter().find(|p| p.name == "xl/theme/theme1.xml");
-        assert!(theme.is_some(), "theme part should round-trip opaquely");
-        assert_eq!(theme.unwrap().data, b"<theme>x</theme>");
-    }
-
-    #[test]
-    fn password_detection() {
-        // A minimal zip containing an EncryptedPackage entry triggers the error.
-        let mut buf = Vec::new();
-        {
-            let mut zip = zip::ZipWriter::new(Cursor::new(&mut buf));
-            zip.start_file("EncryptedPackage", zip::write::SimpleFileOptions::default())
-                .unwrap();
-            zip.write_all(b"junk").unwrap();
-            zip.finish().unwrap();
-        }
-        let err = read(Cursor::new(buf)).unwrap_err();
-        assert!(matches!(err, Error::PasswordProtected(_)));
-    }
-}
+#[path = "reader_tests/tests.rs"]
+mod tests;

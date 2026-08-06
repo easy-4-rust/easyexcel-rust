@@ -15,19 +15,19 @@ use crate::core::CellValue;
 pub struct MapRowData(pub BTreeMap<usize, CellValue>);
 
 impl MapRowData {
-    /// Creates a `MapRowData` from a column-indexed map.
+    /// 对应 Java：com.alibaba.excel.write.metadata.MapRowData。 Creates a `MapRowData` from a column-indexed map.
     #[must_use]
     pub fn new(values: BTreeMap<usize, CellValue>) -> Self {
         Self(values)
     }
 
-    /// Returns the underlying map. (Java `getMap()` equivalent)
+    /// 对应 Java：com.alibaba.excel.write.metadata.MapRowData。 Returns the underlying map. (Java `getMap()` equivalent)
     #[must_use]
     pub fn values(&self) -> &BTreeMap<usize, CellValue> {
         &self.0
     }
 
-    /// Returns whether the row is empty. (Java `RowData.isEmpty()`)
+    /// 对应 Java：com.alibaba.excel.write.metadata.MapRowData。 Returns whether the row is empty. (Java `RowData.isEmpty()`)
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()

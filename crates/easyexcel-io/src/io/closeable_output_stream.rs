@@ -3,16 +3,16 @@
 use std::io::Write;
 use std::sync::{Arc, Mutex};
 
-/// 多个句柄共享同一个底层 writer 的可关闭输出流。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 多个句柄共享同一个底层 writer 的可关闭输出流。
 ///
 /// 任一句柄关闭流后，所有克隆都会观察到关闭状态；关闭前会刷新底层
-/// writer。该类型不依赖 EasyExcel 门面，可供 CLI、HTTP 适配器和模板写入器复用。
+/// writer。该类型不依赖 `EasyExcel` 门面，可供 CLI、HTTP 适配器和模板写入器复用。
 pub struct CloseableOutputStream<W> {
     inner: Arc<Mutex<Option<W>>>,
 }
 
 impl<W> CloseableOutputStream<W> {
-    /// 包装一个拥有的字节写入器。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 包装一个拥有的字节写入器。
     #[must_use]
     pub fn new(writer: W) -> Self {
         Self {
@@ -20,7 +20,7 @@ impl<W> CloseableOutputStream<W> {
         }
     }
 
-    /// 关闭共享流，在释放底层 writer 前刷新它。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 关闭共享流，在释放底层 writer 前刷新它。
     ///
     /// # Errors
     ///
@@ -39,13 +39,13 @@ impl<W> CloseableOutputStream<W> {
         Ok(())
     }
 
-    /// 返回共享流是否已经关闭。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回共享流是否已经关闭。
     #[must_use]
     pub fn is_closed(&self) -> bool {
         self.inner.lock().map_or(true, |writer| writer.is_none())
     }
 
-    /// 对仍处于打开状态的底层 writer 运行只读回调。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 对仍处于打开状态的底层 writer 运行只读回调。
     ///
     /// 流已关闭或锁被污染时返回 `None`。
     pub fn with_inner<R>(&self, inspect: impl FnOnce(&W) -> R) -> Option<R> {
@@ -55,7 +55,7 @@ impl<W> CloseableOutputStream<W> {
             .and_then(|writer| writer.as_ref().map(inspect))
     }
 
-    /// 当当前实例是唯一句柄且流仍打开时，回收底层 writer。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 当当前实例是唯一句柄且流仍打开时，回收底层 writer。
     ///
     /// # Errors
     ///

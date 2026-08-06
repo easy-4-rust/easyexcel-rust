@@ -10,7 +10,7 @@ pub struct FormulaData {
 }
 
 impl FormulaData {
-    /// Creates formula metadata from the expression stored in the workbook.
+    /// 对应 Java：com.alibaba.excel.metadata.data.FormulaData。 Creates formula metadata from the expression stored in the workbook.
     #[must_use]
     pub fn new(formula_value: impl Into<String>) -> Self {
         Self {
@@ -18,7 +18,7 @@ impl FormulaData {
         }
     }
 
-    /// Returns the formula expression without adding a leading equals sign. (Java `getFormulaValue()`)
+    /// 对应 Java：com.alibaba.excel.metadata.data.FormulaData。 Returns the formula expression without adding a leading equals sign. (Java `getFormulaValue()`)
     #[must_use]
     pub fn formula_value(&self) -> &str {
         &self.formula_value

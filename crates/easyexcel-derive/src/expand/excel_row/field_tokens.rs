@@ -10,7 +10,7 @@ use crate::expand::conversion::{
     field_write_conversion,
 };
 
-/// 一个字段参与全部 `ExcelRow` 方法所需的令牌。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 一个字段参与全部 `ExcelRow` 方法所需的令牌。
 pub(super) struct FieldTokens {
     pub(super) reader: TokenStream,
     pub(super) registered_reader: TokenStream,
@@ -22,7 +22,7 @@ pub(super) struct FieldTokens {
     pub(super) selected_registered_write_cell: TokenStream,
 }
 
-/// 生成一个字段的读取、写入及转换器注册表分支。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 生成一个字段的读取、写入及转换器注册表分支。
 pub(super) fn build_field_tokens(
     crate_path: &TokenStream,
     ident: &Ident,

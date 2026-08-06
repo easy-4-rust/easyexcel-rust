@@ -5,12 +5,12 @@ use std::io::{Read, Seek, Write};
 use easyexcel_io::Result;
 use ms_offcrypto_writer::Ecma376AgileWriter;
 
-/// 同时支持读取、写入和定位的加密容器输出。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 同时支持读取、写入和定位的加密容器输出。
 pub trait ReadWriteSeek: Read + Write + Seek {}
 
 impl<T> ReadWriteSeek for T where T: Read + Write + Seek {}
 
-/// 将完整 OOXML ZIP 包加密写入 OLE/CFB 容器。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将完整 OOXML ZIP 包加密写入 OLE/CFB 容器。
 ///
 /// # Errors
 ///

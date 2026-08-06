@@ -26,7 +26,7 @@ pub struct LongestMatchColumnWidthStyleStrategy {
 }
 
 impl LongestMatchColumnWidthStyleStrategy {
-    /// Creates the strategy with length-based widths only.
+    /// 对应 Java：com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy。 Creates the strategy with length-based widths only.
     /// (Java `LongestMatchColumnWidthStyleStrategy()`)
     #[must_use]
     pub fn new() -> Self {
@@ -36,7 +36,7 @@ impl LongestMatchColumnWidthStyleStrategy {
         }
     }
 
-    /// Enables or disables autofit as an optional fallback after length widths.
+    /// 对应 Java：com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy。 Enables or disables autofit as an optional fallback after length widths.
     #[must_use]
     pub fn with_autofit_fallback(mut self, enabled: bool) -> Self {
         self.autofit_fallback = enabled;
@@ -45,6 +45,7 @@ impl LongestMatchColumnWidthStyleStrategy {
 
     /// Returns whether autofit fallback is enabled.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy。
     pub const fn autofit_fallback(&self) -> bool {
         self.autofit_fallback
     }

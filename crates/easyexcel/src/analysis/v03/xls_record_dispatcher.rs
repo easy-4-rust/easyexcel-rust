@@ -39,133 +39,9 @@ const NOTE_SID: u16 = easyexcel_xls::biff8::record_sid::NOTE_SID;
 const DUMMY_RECORD_SID: u16 = u16::MAX;
 const CONTINUE_SID: u16 = easyexcel_xls::biff8::record_sid::CONTINUE_SID;
 
-/// Observable result of running Java-compatible BIFF handler dispatch.
-#[derive(Debug, Clone, Default, PartialEq)]
-pub struct XlsRecordDispatchState {
-    total_record_count: usize,
-    handled_record_count: usize,
-    unknown_record_count: usize,
-    skipped_record_count: usize,
-    workbook_bof_count: usize,
-    worksheet_bof_count: usize,
-    eof_count: usize,
-    bound_sheets: Vec<BoundSheetEntry>,
-    unique_string_count: Option<u32>,
-    approximate_total_row_number: Option<u32>,
-    last_blank_cell: Option<BlankCell>,
-    last_boolean_cell: Option<BoolCell>,
-    last_number_cell: Option<NumberCell>,
-    last_rk_cell: Option<BlankCell>,
-    shared_strings: Vec<String>,
-    last_label_sst_cell: Option<LabelSstCell>,
-    last_formula_cell: Option<FormulaCell>,
-}
+include!("xls_record_dispatcher/xls_record_dispatch_state.rs");
 
-impl XlsRecordDispatchState {
-    /// Number of physical BIFF records presented to the dispatcher.
-    #[must_use]
-    pub const fn total_record_count(&self) -> usize {
-        self.total_record_count
-    }
-
-    /// Number of records routed to a registered handler.
-    #[must_use]
-    pub const fn handled_record_count(&self) -> usize {
-        self.handled_record_count
-    }
-
-    /// Number of records ignored because Java has no registered handler SID.
-    #[must_use]
-    pub const fn unknown_record_count(&self) -> usize {
-        self.unknown_record_count
-    }
-
-    /// Number of known records skipped by a disabled `support()` predicate.
-    #[must_use]
-    pub const fn skipped_record_count(&self) -> usize {
-        self.skipped_record_count
-    }
-
-    /// Number of workbook-global BOF records.
-    #[must_use]
-    pub const fn workbook_bof_count(&self) -> usize {
-        self.workbook_bof_count
-    }
-
-    /// Number of worksheet BOF records.
-    #[must_use]
-    pub const fn worksheet_bof_count(&self) -> usize {
-        self.worksheet_bof_count
-    }
-
-    /// Number of EOF records.
-    #[must_use]
-    pub const fn eof_count(&self) -> usize {
-        self.eof_count
-    }
-
-    /// Bound-sheet metadata decoded by `BoundSheetRecordHandler`.
-    #[must_use]
-    pub fn bound_sheets(&self) -> &[BoundSheetEntry] {
-        &self.bound_sheets
-    }
-
-    /// Unique string count announced by the SST record.
-    #[must_use]
-    pub const fn unique_string_count(&self) -> Option<u32> {
-        self.unique_string_count
-    }
-
-    /// Approximate row count announced by the last Index record.
-    #[must_use]
-    pub const fn approximate_total_row_number(&self) -> Option<u32> {
-        self.approximate_total_row_number
-    }
-
-    /// Last blank cell decoded by the registered handler.
-    #[must_use]
-    pub const fn last_blank_cell(&self) -> Option<BlankCell> {
-        self.last_blank_cell
-    }
-
-    /// Last boolean cell decoded by the registered handler.
-    #[must_use]
-    pub const fn last_boolean_cell(&self) -> Option<BoolCell> {
-        self.last_boolean_cell
-    }
-
-    /// Last number cell decoded by the registered handler.
-    #[must_use]
-    pub fn last_number_cell(&self) -> Option<&NumberCell> {
-        self.last_number_cell.as_ref()
-    }
-
-    /// Last RK placement decoded with `EasyExcel`'s historical empty-cell rule.
-    #[must_use]
-    pub const fn last_rk_cell(&self) -> Option<BlankCell> {
-        self.last_rk_cell
-    }
-
-    /// Fully decoded shared-string table in BIFF index order.
-    #[must_use]
-    pub fn shared_strings(&self) -> &[String] {
-        &self.shared_strings
-    }
-
-    /// Last `LabelSST` cell resolved through the decoded shared-string table.
-    #[must_use]
-    pub const fn last_label_sst_cell(&self) -> Option<&LabelSstCell> {
-        self.last_label_sst_cell.as_ref()
-    }
-
-    /// Last completed cached formula result.
-    #[must_use]
-    pub const fn last_formula_cell(&self) -> Option<&FormulaCell> {
-        self.last_formula_cell.as_ref()
-    }
-}
-
-/// Owns the 19 Java `EasyExcel` XLS handlers and dispatches by BIFF SID.
+/// 对应 Java：XlsSaxAnalyser.processRecord。 Owns the 19 Java `EasyExcel` XLS handlers and dispatches by BIFF SID.
 #[derive(Debug)]
 pub struct XlsRecordDispatcher {
     state: XlsRecordDispatchState,
@@ -196,7 +72,7 @@ pub struct XlsRecordDispatcher {
 }
 
 impl XlsRecordDispatcher {
-    /// Creates the handler map using Java `support(context)` feature flags.
+    /// 对应 Java：XlsSaxAnalyser.processRecord。 Creates the handler map using Java `support(context)` feature flags.
     #[must_use]
     pub fn new(options: &ReadOptions) -> Self {
         Self {
@@ -232,7 +108,7 @@ impl XlsRecordDispatcher {
         }
     }
 
-    /// Resets all per-workbook state while preserving configured feature flags.
+    /// 对应 Java：XlsSaxAnalyser.processRecord。 Resets all per-workbook state while preserving configured feature flags.
     pub fn reset(&mut self) {
         let hyperlink_enabled = self.hyperlink.enabled;
         let merge_enabled = self.merge_cells.enabled;
@@ -270,19 +146,21 @@ impl XlsRecordDispatcher {
 
     /// Returns observable dispatch state for diagnostics and parity tests.
     #[must_use]
+    /// 对应 Java：XlsSaxAnalyser.processRecord。
     pub const fn state(&self) -> &XlsRecordDispatchState {
         &self.state
     }
 
-    /// 对应 Java：`XlsSaxAnalyser.processRecord`: unknown SIDs are ignored,
+    /// 对应 Java：XlsSaxAnalyser.processRecord。 对应 Java：`XlsSaxAnalyser.processRecord`: unknown SIDs are ignored,
     /// disabled handlers are skipped, and known records reach their handler.
     ///
     /// # Errors
     ///
-    /// 当待收尾的 SST/公式字符串记录解码失败时返回 [`ExcelError`]。
+    /// 当待收尾的 SST/公式字符串记录解码失败时返回 `ExcelError`。
     // 对应 Java：`processRecord` 的大 switch 与 POI handler 路由顺序一一对应；
     // SST/STRING 的物理 CONTINUE 生命周期由 easyexcel-xls 状态机管理。
     #[allow(clippy::too_many_lines)]
+    /// 对应 Java：XlsSaxAnalyser.processRecord。
     pub fn process_record(&mut self, record_sid: u16, data: &[u8]) -> Result<()> {
         self.state.total_record_count += 1;
         if record_sid == CONTINUE_SID {
@@ -399,11 +277,11 @@ impl XlsRecordDispatcher {
         Ok(())
     }
 
-    /// Finalizes a continuable logical record at end-of-stream.
+    /// 对应 Java：XlsSaxAnalyser.processRecord。 Finalizes a continuable logical record at end-of-stream.
     ///
     /// # Errors
     ///
-    /// 当待收尾的 SST/公式字符串记录解码失败时返回 [`ExcelError`]。
+    /// 当待收尾的 SST/公式字符串记录解码失败时返回 `ExcelError`。
     pub fn finish_records(&mut self) -> Result<()> {
         self.finish_pending_records()
     }
@@ -480,360 +358,13 @@ impl Default for XlsRecordDispatcher {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::super::handlers::formula_record_handler::FormulaCachedType;
-    use super::*;
-
-    #[test]
-    // 对应 Java：断言为 BIFF `f64` 位级往返值（`to_le_bytes`/`from_le_bytes` 无损），
-    // 精确相等即预期语义，不做容差比较。
-    #[allow(clippy::float_cmp)]
-    fn dispatches_number_to_real_handler_and_keeps_unknown_records_ignorable() -> Result<()> {
-        let mut dispatcher = XlsRecordDispatcher::default();
-        let mut number = vec![2, 0, 3, 0, 7, 0];
-        number.extend_from_slice(&42.5f64.to_le_bytes());
-
-        dispatcher.process_record(NUMBER_SID, &number)?;
-        dispatcher.process_record(0x1234, &[])?;
-
-        assert_eq!(dispatcher.state().total_record_count(), 2);
-        assert_eq!(dispatcher.state().handled_record_count(), 1);
-        assert_eq!(dispatcher.state().unknown_record_count(), 1);
-        let cell = dispatcher
-            .state()
-            .last_number_cell()
-            .expect("number handler output");
-        assert_eq!((cell.row, cell.column, cell.format_index), (2, 3, 7));
-        assert_eq!(cell.value, 42.5);
-        Ok(())
-    }
-
-    #[test]
-    fn support_predicate_skips_merge_when_not_requested() -> Result<()> {
-        let mut dispatcher = XlsRecordDispatcher::default();
-        dispatcher.process_record(MERGE_CELLS_SID, &[0; 10])?;
-        assert_eq!(dispatcher.state().handled_record_count(), 0);
-        assert_eq!(dispatcher.state().skipped_record_count(), 1);
-        Ok(())
-    }
-
-    #[test]
-    // 对应 Java：断言为 BIFF `f64` 位级往返值（`to_le_bytes`/`from_le_bytes` 无损），
-    // 精确相等即预期语义，不做容差比较。
-    #[allow(clippy::float_cmp)]
-    fn selected_sheet_skips_ignorable_records_until_next_bof() -> Result<()> {
-        let mut dispatcher = XlsRecordDispatcher::default();
-        let workbook_bof = [0, 0, 0x05, 0x00];
-        let worksheet_bof = [0, 0, 0x10, 0x00];
-        let mut first_number = vec![0, 0, 0, 0, 0, 0];
-        first_number.extend_from_slice(&1.0f64.to_le_bytes());
-        let mut second_number = vec![0, 0, 0, 0, 0, 0];
-        second_number.extend_from_slice(&2.0f64.to_le_bytes());
-
-        dispatcher.process_record(BOF_SID, &workbook_bof)?;
-        dispatcher.process_record(BOF_SID, &worksheet_bof)?;
-        dispatcher.process_record(NUMBER_SID, &first_number)?;
-        dispatcher.process_record(EOF_SID, &[])?;
-        dispatcher.process_record(BOF_SID, &worksheet_bof)?;
-        dispatcher.process_record(NUMBER_SID, &second_number)?;
-
-        assert_eq!(
-            dispatcher
-                .state()
-                .last_number_cell()
-                .expect("first sheet number")
-                .value,
-            1.0
-        );
-        assert_eq!(dispatcher.state().skipped_record_count(), 1);
-        Ok(())
-    }
-
-    #[test]
-    fn sst_continue_resolves_following_label_sst() -> Result<()> {
-        let mut dispatcher = XlsRecordDispatcher::default();
-        let mut sst = Vec::new();
-        sst.extend_from_slice(&1u32.to_le_bytes());
-        sst.extend_from_slice(&1u32.to_le_bytes());
-        sst.extend_from_slice(&4u16.to_le_bytes());
-        sst.push(0);
-        sst.extend_from_slice(b"  ");
-        dispatcher.process_record(SST_SID, &sst)?;
-        dispatcher.process_record(CONTINUE_SID, &[0, b'o', b'k'])?;
-
-        let mut label = vec![3, 0, 2, 0, 0, 0];
-        label.extend_from_slice(&0u32.to_le_bytes());
-        dispatcher.process_record(LABEL_SST_SID, &label)?;
-
-        assert_eq!(dispatcher.state().shared_strings(), &["  ok".to_owned()]);
-        assert_eq!(
-            dispatcher.state().last_label_sst_cell(),
-            Some(&LabelSstCell::String {
-                row: 3,
-                column: 2,
-                value: "ok".to_owned(),
-            })
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn formula_string_record_completes_pending_cached_result_across_continue() -> Result<()> {
-        let mut dispatcher = XlsRecordDispatcher::default();
-        let formula = vec![5, 0, 4, 0, 0, 0, 0x00, 0, 0, 0, 0, 0, 0xFF, 0xFF];
-        dispatcher.process_record(FORMULA_SID, &formula)?;
-        assert!(
-            dispatcher
-                .state()
-                .last_formula_cell()
-                .is_none_or(|cell| cell.cached_type != FormulaCachedType::String)
-        );
-
-        let string = vec![4, 0, 0, b'a', b'b'];
-        dispatcher.process_record(STRING_SID, &string)?;
-        dispatcher.process_record(CONTINUE_SID, &[0, b'c', b'd'])?;
-
-        let cell = dispatcher
-            .state()
-            .last_formula_cell()
-            .expect("completed string formula");
-        assert_eq!((cell.row, cell.column), (5, 4));
-        assert_eq!(cell.string_value.as_deref(), Some("abcd"));
-        assert!(!cell.pending_string);
-        Ok(())
-    }
-
-    #[test]
-    fn finish_records_rejects_truncated_continuable_record() -> Result<()> {
-        let mut dispatcher = XlsRecordDispatcher::default();
-        let mut sst = Vec::new();
-        sst.extend_from_slice(&1u32.to_le_bytes());
-        sst.extend_from_slice(&1u32.to_le_bytes());
-        sst.extend_from_slice(&2u16.to_le_bytes());
-        sst.push(0);
-        sst.push(b'a');
-        dispatcher.process_record(SST_SID, &sst)?;
-        assert!(dispatcher.finish_records().is_err());
-        Ok(())
-    }
-}
+#[path = "xls_record_dispatcher_tests/tests.rs"]
+mod tests;
 
 #[cfg(test)]
-mod tests_extra {
-    use super::*;
-    use crate::ReadOptions;
-    use crate::core::CellExtraType;
-
-    fn enabled_options() -> ReadOptions {
-        let mut options = ReadOptions::default();
-        options.extra_read.insert(CellExtraType::Hyperlink);
-        options.extra_read.insert(CellExtraType::Merge);
-        options.extra_read.insert(CellExtraType::Comment);
-        options
-    }
-
-    #[test]
-    fn dispatches_blank_bool_rk_hyperlink_note_and_text_object() -> Result<()> {
-        // 对应 Java：XlsSaxAnalyser.processRecord 全量 SID 路由（启用态）
-        let mut dispatcher = XlsRecordDispatcher::new(&enabled_options());
-
-        // BLANK
-        dispatcher.process_record(BLANK_SID, &[1, 0, 2, 0, 3, 0])?;
-        assert_eq!(
-            dispatcher.state().last_blank_cell(),
-            Some(BlankCell { row: 1, column: 2 })
-        );
-        // BOOL_ERR
-        dispatcher.process_record(BOOL_ERR_SID, &[4, 0, 5, 0, 0, 0, 1, 0])?;
-        assert_eq!(
-            dispatcher.state().last_boolean_cell(),
-            Some(BoolCell {
-                row: 4,
-                column: 5,
-                value: true
-            })
-        );
-        // RK
-        dispatcher.process_record(RK_SID, &[7, 0, 8, 0, 0, 0])?;
-        assert_eq!(
-            dispatcher.state().last_rk_cell(),
-            Some(BlankCell { row: 7, column: 8 })
-        );
-        // HYPERLINK（启用）
-        dispatcher.process_record(HYPERLINK_SID, &[0, 0, 1, 0, 0, 0, 1, 0])?;
-        // NOTE（启用）
-        dispatcher.process_record(NOTE_SID, &[2, 0, 3, 0, 0, 0])?;
-        // MERGE（启用）
-        dispatcher.process_record(MERGE_CELLS_SID, &[1, 0, 0, 0, 1, 0, 0, 0, 1, 0])?;
-        // TEXT_OBJECT
-        let mut txo = vec![0, 0, 5, 0];
-        txo.extend_from_slice(&[0u8; 8]);
-        txo.extend_from_slice(b"note");
-        dispatcher.process_record(TEXT_OBJECT_SID, &txo)?;
-        // OBJ
-        dispatcher.process_record(OBJ_SID, &[])?;
-        // LABEL
-        dispatcher.process_record(LABEL_SID, &[0, 0, 1, 0, 0, 0, 0, 0])?;
-        // INDEX
-        let mut index = vec![0u8; 16];
-        index[8..12].copy_from_slice(&9u32.to_le_bytes());
-        dispatcher.process_record(INDEX_SID, &index)?;
-        assert_eq!(dispatcher.state().approximate_total_row_number(), Some(9));
-        // EOF
-        dispatcher.process_record(EOF_SID, &[])?;
-        assert_eq!(dispatcher.state().eof_count(), 1);
-        // DUMMY
-        dispatcher.process_record(DUMMY_RECORD_SID, &[])?;
-        assert_eq!(dispatcher.state().handled_record_count(), 12);
-        Ok(())
-    }
-
-    #[test]
-    fn disabled_hyperlink_and_note_are_skipped() -> Result<()> {
-        // 对应 Java：support()=false 的处理器跳过并计数
-        let mut dispatcher = XlsRecordDispatcher::default();
-        dispatcher.process_record(HYPERLINK_SID, &[0, 0, 1, 0, 0, 0, 1, 0])?;
-        dispatcher.process_record(NOTE_SID, &[2, 0, 3, 0, 0, 0])?;
-        assert_eq!(dispatcher.state().skipped_record_count(), 2);
-        assert_eq!(dispatcher.state().handled_record_count(), 0);
-        Ok(())
-    }
-
-    #[test]
-    // 对应 Java：断言为 BIFF `f64` 位级往返值（`to_le_bytes`/`from_le_bytes` 无损），
-    // 精确相等即预期语义，不做容差比较。
-    #[allow(clippy::float_cmp)]
-    fn name_selector_reads_only_the_matching_sheet() -> Result<()> {
-        // 对应 Java：SheetUtils.match 按名称匹配工作表
-        let options = ReadOptions {
-            sheet: SheetSelector::Name("Second".to_owned()),
-            ..ReadOptions::default()
-        };
-        let mut dispatcher = XlsRecordDispatcher::new(&options);
-
-        dispatcher.process_record(BOF_SID, &[0, 0, 0x05, 0x00])?;
-        let mut first = vec![0x20, 0, 0, 0, 0, 0, 5, 0];
-        first.extend_from_slice(b"First");
-        dispatcher.process_record(BOUND_SHEET_SID, &first)?;
-        let mut second = vec![0x40, 0, 0, 0, 0, 0, 6, 0];
-        second.extend_from_slice(b"Second");
-        dispatcher.process_record(BOUND_SHEET_SID, &second)?;
-        assert_eq!(dispatcher.state().bound_sheets().len(), 2);
-
-        let mut number = vec![0, 0, 0, 0, 0, 0];
-        number.extend_from_slice(&1.0f64.to_le_bytes());
-        // 第一个工作表（First）不读
-        dispatcher.process_record(BOF_SID, &[0, 0, 0x10, 0x00])?;
-        dispatcher.process_record(NUMBER_SID, &number)?;
-        assert!(dispatcher.state().last_number_cell().is_none());
-        // 第二个工作表（Second）读取
-        dispatcher.process_record(BOF_SID, &[0, 0, 0x10, 0x00])?;
-        dispatcher.process_record(NUMBER_SID, &number)?;
-        assert_eq!(dispatcher.state().last_number_cell().unwrap().value, 1.0);
-        Ok(())
-    }
-
-    #[test]
-    fn bof_unknown_type_and_short_bof_are_tolerated() -> Result<()> {
-        // 对应 Java：非工作簿/工作表 BOF 类型忽略；短 BOF 也容忍
-        let mut dispatcher = XlsRecordDispatcher::default();
-        dispatcher.process_record(BOF_SID, &[0, 0, 0x99, 0x00])?;
-        dispatcher.process_record(BOF_SID, &[0, 0])?;
-        assert_eq!(dispatcher.state().workbook_bof_count(), 0);
-        assert_eq!(dispatcher.state().worksheet_bof_count(), 0);
-        Ok(())
-    }
-
-    #[test]
-    fn continue_without_pending_is_unknown_and_truncated_formula_string_fails() -> Result<()> {
-        // 对应 Java：孤儿 CONTINUE 记入 unknown；截断的公式字符串在收尾时报错
-        let mut dispatcher = XlsRecordDispatcher::default();
-        dispatcher.process_record(CONTINUE_SID, &[0])?;
-        assert_eq!(dispatcher.state().unknown_record_count(), 1);
-
-        // STRING_SID 声明 3 个字符但只有 1 字节 → 解码失败，收尾时报错
-        dispatcher.process_record(STRING_SID, &[3, 0, 0, b'a'])?;
-        let mut number = vec![0, 0, 0, 0, 0, 0];
-        number.extend_from_slice(&1.0f64.to_le_bytes());
-        assert!(dispatcher.process_record(NUMBER_SID, &number).is_err());
-        Ok(())
-    }
-
-    #[test]
-    fn reset_preserves_feature_flags_and_clears_state() -> Result<()> {
-        // 对应 Java：每个工作簿读取前 reset 保持 support 配置
-        let mut dispatcher = XlsRecordDispatcher::new(&enabled_options());
-        dispatcher.process_record(NOTE_SID, &[2, 0, 3, 0, 0, 0])?;
-        assert_eq!(dispatcher.state().handled_record_count(), 1);
-        dispatcher.reset();
-        assert_eq!(dispatcher.state().handled_record_count(), 0);
-        // reset 后 hyperlink/note/merge 仍启用
-        dispatcher.process_record(NOTE_SID, &[2, 0, 3, 0, 0, 0])?;
-        dispatcher.process_record(HYPERLINK_SID, &[0, 0, 1, 0, 0, 0, 1, 0])?;
-        dispatcher.process_record(MERGE_CELLS_SID, &[1, 0, 0, 0, 1, 0, 0, 0, 1, 0])?;
-        assert_eq!(dispatcher.state().skipped_record_count(), 0);
-        assert_eq!(dispatcher.state().handled_record_count(), 3);
-        Ok(())
-    }
-}
+#[path = "xls_record_dispatcher_tests/tests_extra.rs"]
+mod tests_extra;
 
 #[cfg(test)]
-mod tests_extra2 {
-    use super::*;
-
-    #[test]
-    fn label_sst_without_reference_keeps_state_unchanged() -> Result<()> {
-        // 对应 Java：LabelSST 记录体不足 10 字节时不更新 lastReference
-        let mut dispatcher = XlsRecordDispatcher::default();
-        dispatcher.process_record(LABEL_SST_SID, &[0, 0, 2, 0])?;
-        assert!(dispatcher.state().last_label_sst_cell().is_none());
-        // 上一记录解析失败后，后续合法 LabelSST 正常解析
-        let mut label = vec![3, 0, 2, 0, 0, 0];
-        label.extend_from_slice(&0u32.to_le_bytes());
-        dispatcher.process_record(LABEL_SST_SID, &label)?;
-        assert!(dispatcher.state().last_label_sst_cell().is_some());
-        Ok(())
-    }
-
-    #[test]
-    fn all_sheets_selector_reads_every_worksheet() -> Result<()> {
-        // 对应 Java：SheetUtils.match 全表选择时不跳过任何工作表
-        let options = crate::ReadOptions {
-            sheet: SheetSelector::All,
-            ..crate::ReadOptions::default()
-        };
-        let mut dispatcher = XlsRecordDispatcher::new(&options);
-
-        dispatcher.process_record(BOF_SID, &[0, 0, 0x05, 0x00])?;
-        let mut number = vec![0, 0, 0, 0, 0, 0];
-        number.extend_from_slice(&1.0f64.to_le_bytes());
-        // 第一个工作表
-        dispatcher.process_record(BOF_SID, &[0, 0, 0x10, 0x00])?;
-        dispatcher.process_record(NUMBER_SID, &number)?;
-        // 第二个工作表
-        dispatcher.process_record(BOF_SID, &[0, 0, 0x10, 0x00])?;
-        dispatcher.process_record(NUMBER_SID, &number)?;
-
-        assert_eq!(dispatcher.state().skipped_record_count(), 0);
-        assert_eq!(dispatcher.state().worksheet_bof_count(), 2);
-        assert_eq!(dispatcher.state().handled_record_count(), 5);
-        Ok(())
-    }
-
-    #[test]
-    fn continue_record_extends_pending_sst_segments() -> Result<()> {
-        // 对应 Java：SST 主记录 + CONTINUE 继续片段分两次解码
-        let mut dispatcher = XlsRecordDispatcher::default();
-        let mut sst = Vec::new();
-        sst.extend_from_slice(&1u32.to_le_bytes());
-        sst.extend_from_slice(&1u32.to_le_bytes());
-        sst.extend_from_slice(&2u16.to_le_bytes());
-        sst.push(0);
-        sst.push(b'a');
-        // CONTINUE 补齐剩余字符后完成解码
-        dispatcher.process_record(SST_SID, &sst)?;
-        dispatcher.process_record(CONTINUE_SID, &[0, b'b'])?;
-        assert_eq!(dispatcher.state().shared_strings(), &["ab".to_owned()]);
-        Ok(())
-    }
-}
+#[path = "xls_record_dispatcher_tests/tests_extra2.rs"]
+mod tests_extra2;

@@ -14,7 +14,7 @@ use crate::write::style::default_style::DefaultStyle;
 pub struct DefaultWriteHandlerLoader;
 
 impl DefaultWriteHandlerLoader {
-    /// Returns the default XLSX handler list with default style enabled.
+    /// 对应 Java：com.alibaba.excel.write.handler.DefaultWriteHandlerLoader。 Returns the default XLSX handler list with default style enabled.
     ///
     /// This no-argument form is retained for earlier Rust callers. Use
     /// [`Self::load_default_handler_for`] for Java's complete parameterized

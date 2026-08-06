@@ -4,7 +4,7 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{LitStr, meta::ParseNestedMeta};
 
-/// 解析命名枚举变量并生成目标 `EasyExcel` 枚举表达式。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析命名枚举变量并生成目标 `EasyExcel` 枚举表达式。
 pub(crate) fn parse_named_variant(
     meta: &ParseNestedMeta<'_>,
     crate_path: &TokenStream,

@@ -4,4 +4,5 @@
 //! empty trait so 1:1 Java package references resolve.
 
 /// Empty marker trait mirroring Java `Listener`.
+/// 对应 Java：com.alibaba.excel.event.Listener。
 pub trait Listener {}

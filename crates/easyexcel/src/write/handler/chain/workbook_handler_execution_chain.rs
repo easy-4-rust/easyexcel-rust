@@ -11,6 +11,7 @@ pub struct WorkbookHandlerExecutionChain {
 impl WorkbookHandlerExecutionChain {
     /// Creates an empty chain head.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.WorkbookHandlerExecutionChain。
     pub const fn new() -> Self {
         Self {
             handler: None,
@@ -18,7 +19,7 @@ impl WorkbookHandlerExecutionChain {
         }
     }
 
-    /// Creates a chain whose head contains `handler`. (Java constructor)
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.WorkbookHandlerExecutionChain。 Creates a chain whose head contains `handler`. (Java constructor)
     #[must_use]
     pub fn with_handler(handler: Box<dyn crate::core::WriteHandler>) -> Self {
         Self {
@@ -27,7 +28,7 @@ impl WorkbookHandlerExecutionChain {
         }
     }
 
-    /// Appends a handler. (Java `addLast`)
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.WorkbookHandlerExecutionChain。 Appends a handler. (Java `addLast`)
     pub fn add_last(&mut self, handler: Box<dyn crate::core::WriteHandler>) {
         match self.next.as_mut() {
             Some(next) => next.add_last(handler),
@@ -40,7 +41,7 @@ impl WorkbookHandlerExecutionChain {
         }
     }
 
-    /// Runs Java `beforeWorkbookCreate` in chain order.
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.WorkbookHandlerExecutionChain。 Runs Java `beforeWorkbookCreate` in chain order.
     /// # Errors
     ///
     /// Propagates errors from the registered handlers (chain stops at the
@@ -58,7 +59,7 @@ impl WorkbookHandlerExecutionChain {
         Ok(())
     }
 
-    /// Runs Java `afterWorkbookCreate` in chain order.
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.WorkbookHandlerExecutionChain。 Runs Java `afterWorkbookCreate` in chain order.
     /// # Errors
     ///
     /// Propagates errors from the registered handlers (chain stops at the
@@ -76,7 +77,7 @@ impl WorkbookHandlerExecutionChain {
         Ok(())
     }
 
-    /// Runs Java `afterWorkbookDispose` in chain order.
+    /// 对应 Java：com.alibaba.excel.write.handler.chain.WorkbookHandlerExecutionChain。 Runs Java `afterWorkbookDispose` in chain order.
     /// # Errors
     ///
     /// Propagates errors from the registered handlers (chain stops at the

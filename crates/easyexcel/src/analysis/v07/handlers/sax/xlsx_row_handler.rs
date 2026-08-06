@@ -22,40 +22,7 @@ use crate::analysis::v07::handlers::merge_cell_tag_handler::MergeCellTagHandler;
 use crate::analysis::v07::handlers::row_tag_handler::RowTagHandler;
 use crate::analysis::v07::handlers::xlsx_tag_handler::XlsxTagHandler;
 
-/// Tag → handler routing table, mirroring Java `XlsxRowHandler.XLSX_CELL_HANDLER_MAP`.
-pub enum RoutedHandler {
-    /// `<c>`
-    Cell(CellTagHandler),
-    /// `<row>`
-    Row(RowTagHandler),
-    /// `<v>`
-    CellValue(CellValueTagHandler),
-    /// inline `<t>`
-    InlineString(CellInlineStringValueTagHandler),
-    /// `<f>`
-    Formula(CellFormulaTagHandler),
-    /// `<dimension>`
-    Count(CountTagHandler),
-    /// `<mergeCell>`
-    Merge(MergeCellTagHandler),
-    /// `<hyperlink>`
-    Hyperlink(HyperlinkTagHandler),
-}
-
-impl RoutedHandler {
-    fn as_mut(&mut self) -> &mut dyn XlsxTagHandler {
-        match self {
-            Self::Cell(h) => h,
-            Self::Row(h) => h,
-            Self::CellValue(h) => h,
-            Self::InlineString(h) => h,
-            Self::Formula(h) => h,
-            Self::Count(h) => h,
-            Self::Merge(h) => h,
-            Self::Hyperlink(h) => h,
-        }
-    }
-}
+include!("xlsx_row_handler/routed_handler.rs");
 
 /// 对应 Java：`XlsxRowHandler extends DefaultHandler`.
 pub struct XlsxRowHandler {
@@ -66,7 +33,7 @@ pub struct XlsxRowHandler {
 }
 
 impl XlsxRowHandler {
-    /// Java `XlsxRowHandler(XlsxReadContext)` static map initialisation.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.sax.XlsxRowHandler。 Java `XlsxRowHandler(XlsxReadContext)` static map initialisation.
     #[must_use]
     pub fn new(read_merge: bool, read_hyperlink: bool) -> Self {
         let mut handlers = HashMap::new();
@@ -99,7 +66,7 @@ impl XlsxRowHandler {
         }
     }
 
-    /// Java `XlsxRowHandler.startElement`.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.sax.XlsxRowHandler。 Java `XlsxRowHandler.startElement`.
     pub fn start_element(&mut self, name: &str, attrs: &str) {
         let local = easyexcel_xlsx::local_tag_name(name);
         let Some(handler) = self.handlers.get_mut(local) else {
@@ -112,7 +79,7 @@ impl XlsxRowHandler {
         handler.as_mut().start_element(name, attrs);
     }
 
-    /// Java `XlsxRowHandler.characters`.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.sax.XlsxRowHandler。 Java `XlsxRowHandler.characters`.
     pub fn characters(&mut self, ch: &str) {
         let Some(current) = self.tag_stack.last() else {
             return;
@@ -127,7 +94,7 @@ impl XlsxRowHandler {
         handler.as_mut().characters(ch);
     }
 
-    /// Java `XlsxRowHandler.endElement`.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.sax.XlsxRowHandler。 Java `XlsxRowHandler.endElement`.
     pub fn end_element(&mut self, name: &str) {
         let local = easyexcel_xlsx::local_tag_name(name);
         let Some(handler) = self.handlers.get_mut(local) else {

@@ -6,7 +6,7 @@ use std::any::TypeId;
 
 use crate::core::excel_error::ExcelError;
 
-/// Mirrors `com.alibaba.excel.util.ConverterUtils#convertToJavaObject`.
+/// 对应 Java：com.alibaba.excel.util.ConverterUtils。 Mirrors `com.alibaba.excel.util.ConverterUtils#convertToJavaObject`.
 ///
 /// The Rust port performs cell-to-field conversion via the
 /// `FromExcelCell` trait; this function is the Java-API-shaped anchor
@@ -21,7 +21,7 @@ pub fn convert_to_java_object(_source: &str, _target_type: TypeId) -> Result<Str
     ))
 }
 
-/// Mirrors `com.alibaba.excel.util.ConverterUtils#convertToStringMap`.
+/// 对应 Java：com.alibaba.excel.util.ConverterUtils。 Mirrors `com.alibaba.excel.util.ConverterUtils#convertToStringMap`.
 ///
 /// Converts a flat `(key, value)` iterator into a `HashMap<String, String>`,
 /// the Rust analogue of the Java `Map<String, String>` produced by the
@@ -36,7 +36,7 @@ where
     easyexcel_utils::map_utils::to_string_map(entries)
 }
 
-/// Mirrors `com.alibaba.excel.util.ConverterUtils#defaultClassGeneric`.
+/// 对应 Java：com.alibaba.excel.util.ConverterUtils。 Mirrors `com.alibaba.excel.util.ConverterUtils#defaultClassGeneric`.
 #[must_use]
 pub fn default_class_generic(_type_id: TypeId) -> Option<TypeId> {
     None

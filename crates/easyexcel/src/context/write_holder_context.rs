@@ -6,121 +6,13 @@ use crate::{
     ExcelWriteHeadProperty, Holder, WriteContext, WriteContextHolder, WriteContextHolderState,
 };
 
-/// Read-only runtime view of Java `WriteWorkbookHolder`.
-///
-/// The view deliberately exposes logical `EasyExcel` state rather than a fake
-/// Apache POI workbook. Backend objects remain owned by the writer engine.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct WriteWorkbookHolderView {
-    path: PathBuf,
-}
+include!("write_holder_context/write_workbook_holder_view.rs");
 
-impl WriteWorkbookHolderView {
-    /// Creates a workbook holder view for the active output.
-    #[must_use]
-    pub fn new(path: impl Into<PathBuf>) -> Self {
-        Self { path: path.into() }
-    }
+include!("write_holder_context/write_sheet_holder_view.rs");
 
-    /// Returns the active output path. (Java `WriteWorkbookHolder.getFile()`)
-    #[must_use]
-    pub fn path(&self) -> &Path {
-        &self.path
-    }
-}
+include!("write_holder_context/write_table_holder_view.rs");
 
-/// Read-only runtime view of Java `WriteSheetHolder`.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct WriteSheetHolderView {
-    sheet_name: String,
-    sheet_no: Option<i32>,
-    last_row_index: Option<u32>,
-    has_data: bool,
-}
-
-impl WriteSheetHolderView {
-    /// Creates a view for an active worksheet.
-    #[must_use]
-    pub fn new(sheet_name: impl Into<String>) -> Self {
-        Self {
-            sheet_name: sheet_name.into(),
-            sheet_no: None,
-            last_row_index: None,
-            has_data: false,
-        }
-    }
-
-    /// Records the resolved zero-based sheet number.
-    #[must_use]
-    pub const fn with_sheet_no(mut self, sheet_no: i32) -> Self {
-        self.sheet_no = Some(sheet_no);
-        self
-    }
-
-    /// Records the latest physical row visible at this callback stage.
-    #[must_use]
-    pub const fn with_last_row_index(mut self, last_row_index: u32) -> Self {
-        self.last_row_index = Some(last_row_index);
-        self.has_data = true;
-        self
-    }
-
-    /// Returns the resolved worksheet name.
-    #[must_use]
-    pub fn sheet_name(&self) -> &str {
-        &self.sheet_name
-    }
-
-    /// Returns the resolved zero-based sheet number, when known.
-    #[must_use]
-    pub const fn sheet_no(&self) -> Option<i32> {
-        self.sheet_no
-    }
-
-    /// Returns the latest physical row visible at this callback stage.
-    #[must_use]
-    pub const fn last_row_index(&self) -> Option<u32> {
-        self.last_row_index
-    }
-
-    /// Returns whether a physical row is visible at this callback stage.
-    #[must_use]
-    pub const fn has_data(&self) -> bool {
-        self.has_data
-    }
-}
-
-/// Read-only runtime view of Java `WriteTableHolder`.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct WriteTableHolderView {
-    table_no: i32,
-    parent_sheet_name: String,
-}
-
-impl WriteTableHolderView {
-    /// Creates a view for the active table and its parent sheet.
-    #[must_use]
-    pub fn new(table_no: i32, parent_sheet_name: impl Into<String>) -> Self {
-        Self {
-            table_no,
-            parent_sheet_name: parent_sheet_name.into(),
-        }
-    }
-
-    /// Returns the zero-based table number. (Java `WriteTableHolder.getTableNo()`)
-    #[must_use]
-    pub const fn table_no(&self) -> i32 {
-        self.table_no
-    }
-
-    /// Returns the parent worksheet name.
-    #[must_use]
-    pub fn parent_sheet_name(&self) -> &str {
-        &self.parent_sheet_name
-    }
-}
-
-/// Holder set captured for a concrete write-handler callback.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Holder set captured for a concrete write-handler callback.
 #[derive(Debug, Clone, PartialEq)]
 pub struct WriteHolderContext {
     workbook: Option<WriteWorkbookHolderView>,
@@ -130,7 +22,7 @@ pub struct WriteHolderContext {
 }
 
 impl WriteHolderContext {
-    /// Creates an empty holder set for compatibility constructors.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Creates an empty holder set for compatibility constructors.
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -141,35 +33,35 @@ impl WriteHolderContext {
         }
     }
 
-    /// Attaches the active workbook holder view.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Attaches the active workbook holder view.
     #[must_use]
     pub fn with_workbook(mut self, workbook: WriteWorkbookHolderView) -> Self {
         self.workbook = Some(workbook);
         self
     }
 
-    /// Attaches the active sheet holder view.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Attaches the active sheet holder view.
     #[must_use]
     pub fn with_sheet(mut self, sheet: WriteSheetHolderView) -> Self {
         self.sheet = Some(sheet);
         self
     }
 
-    /// Attaches the active table holder view.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Attaches the active table holder view.
     #[must_use]
     pub fn with_table(mut self, table: WriteTableHolderView) -> Self {
         self.table = Some(table);
         self
     }
 
-    /// Attaches the fully resolved Java `currentWriteHolder()` state.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Attaches the fully resolved Java `currentWriteHolder()` state.
     #[must_use]
     pub fn with_current_holder_state(mut self, state: WriteContextHolderState) -> Self {
         self.current_holder_state = state;
         self
     }
 
-    /// Captures all backend-neutral holder state from a live write context.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Captures all backend-neutral holder state from a live write context.
     #[must_use]
     pub fn from_write_context(context: &dyn WriteContext) -> Self {
         let holder = context.current_write_holder();
@@ -193,7 +85,7 @@ impl WriteHolderContext {
         snapshot
     }
 
-    /// Sets callback-specific sheet and optional latest-row state while
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Sets callback-specific sheet and optional latest-row state while
     /// preserving the live holder's resolved sheet number.
     #[must_use]
     pub fn with_callback_sheet(
@@ -218,23 +110,26 @@ impl WriteHolderContext {
 
     /// Returns the active workbook holder view.
     #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn workbook(&self) -> Option<&WriteWorkbookHolderView> {
         self.workbook.as_ref()
     }
 
     /// Returns the active sheet holder view.
     #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn sheet(&self) -> Option<&WriteSheetHolderView> {
         self.sheet.as_ref()
     }
 
     /// Returns the active table holder view.
     #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn table(&self) -> Option<&WriteTableHolderView> {
         self.table.as_ref()
     }
 
-    /// Returns the active write holder through the Java-compatible context API.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Returns the active write holder through the Java-compatible context API.
     #[must_use]
     pub fn current_write_holder(&self) -> &dyn WriteContextHolder {
         self

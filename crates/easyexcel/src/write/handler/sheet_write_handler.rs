@@ -5,4 +5,5 @@
 /// Implement `before_sheet_create` and `after_sheet_create` on
 /// [`crate::core::WriteHandler`]; those are the hooks invoked by the
 /// writer engine.
+/// 对应 Java：com.alibaba.excel.write.handler.SheetWriteHandler。
 pub trait SheetWriteHandler: crate::core::WriteHandler {}

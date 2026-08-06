@@ -10,7 +10,7 @@ use crate::read::xlsx_rows::XlsxRowMetadata;
 use crate::read::xlsx_source::{XlsxSource, open_xlsx_source};
 use std::collections::HashSet;
 
-/// Reads selected XLSX sheets and dispatches typed row events.
+/// 对应 Java：XlsxSaxAnalyser。 Reads selected XLSX sheets and dispatches typed row events.
 ///
 /// # Errors
 ///
@@ -37,7 +37,7 @@ pub fn list_xlsx_sheets(path: &Path, options: &ReadOptions) -> Result<Vec<(usize
     let metadata = XlsxRowMetadata::new_with_cache(reader, options)?;
     Ok(metadata.sheet_names().into_iter().enumerate().collect())
 }
-
+/// 对应 Java：XlsxSaxAnalyser。
 pub(crate) fn read_xlsx_source<T, L>(
     source: &XlsxSource,
     options: &ReadOptions,

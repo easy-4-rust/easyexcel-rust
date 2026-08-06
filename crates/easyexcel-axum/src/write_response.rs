@@ -36,7 +36,7 @@ where
     Ok(buffer)
 }
 
-/// 由已生成的 XLSX 字节构建 Axum 附件响应。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 由已生成的 XLSX 字节构建 Axum 附件响应。
 ///
 /// # Errors
 ///

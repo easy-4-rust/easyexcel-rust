@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 
 use crate::{CellValue, ConverterRegistry, ExcelError, ExcelRow};
 
-/// Field-name view of an [`ExcelRow`].
+/// 对应 Java：BeanMap.getPropertyType。 Field-name view of an [`ExcelRow`].
 ///
 /// Values are the converted write values used by the actual writer pipeline.
 /// Declared Rust field types are retained separately for converter and template
@@ -20,7 +20,7 @@ pub struct BeanMap {
 }
 
 impl BeanMap {
-    /// Returns the value associated with a Rust field name.
+    /// 对应 Java：BeanMap.getPropertyType。 Returns the value associated with a Rust field name.
     #[must_use]
     pub fn get(&self, field_name: &str) -> Option<&CellValue> {
         self.values.get(field_name)
@@ -35,25 +35,25 @@ impl BeanMap {
         self.field_types.get(field_name).copied().flatten()
     }
 
-    /// Iterates values in deterministic field-name order.
+    /// 对应 Java：BeanMap.getPropertyType。 Iterates values in deterministic field-name order.
     pub fn iter(&self) -> impl Iterator<Item = (&'static str, &CellValue)> {
         self.values.iter().map(|(field, value)| (*field, value))
     }
 
-    /// Returns the number of mapped fields.
+    /// 对应 Java：BeanMap.getPropertyType。 Returns the number of mapped fields.
     #[must_use]
     pub fn len(&self) -> usize {
         self.values.len()
     }
 
-    /// Returns whether no fields were mapped.
+    /// 对应 Java：BeanMap.getPropertyType。 Returns whether no fields were mapped.
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.values.is_empty()
     }
 }
 
-/// Creates a field-name map from an [`ExcelRow`].
+/// 对应 Java：BeanMap.getPropertyType。 Creates a field-name map from an [`ExcelRow`].
 ///
 /// This is the Rust equivalent of `BeanMapUtils.create(bean)` for write and
 /// template-fill paths. It executes the same `ExcelRow::to_row` conversion used
@@ -67,7 +67,7 @@ pub fn create<T: ExcelRow>(bean: &T) -> Result<BeanMap, ExcelError> {
     create_with_converters(bean, &ConverterRegistry::default())
 }
 
-/// Creates a field-name map using an explicit converter registry.
+/// 对应 Java：BeanMap.getPropertyType。 Creates a field-name map using an explicit converter registry.
 ///
 /// # Errors
 ///

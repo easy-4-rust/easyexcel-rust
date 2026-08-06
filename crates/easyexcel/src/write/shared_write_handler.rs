@@ -13,14 +13,7 @@ use crate::event::NotRepeatExecutor;
 
 use crate::write::write_options::WriteOptions;
 
-#[derive(Clone)]
-pub(crate) struct StatefulSheetState {
-    pub(crate) schema: &'static [ExcelColumn],
-    pub(crate) metadata: ExcelWriteMetadata,
-    pub(crate) options: WriteOptions,
-    pub(crate) next_row: u32,
-    pub(crate) next_data_index: usize,
-}
+include!("shared_write_handler/stateful_sheet_state.rs");
 
 #[derive(Debug, Clone)]
 struct SharedHandlerUniqueValue(String);
@@ -31,7 +24,7 @@ impl NotRepeatExecutor for SharedHandlerUniqueValue {
     }
 }
 
-/// Shared ownership for one real handler instance.
+/// 对应 Java：com.alibaba.excel。 Shared ownership for one real handler instance.
 ///
 /// Java Holder chains reference the same parent handler objects. Rust cannot
 /// clone `Box<dyn WriteHandler>`, so effective Sheet/Table chains clone this
@@ -47,6 +40,7 @@ impl SharedWriteHandler {
     // 语义敏感：对应 Java Handler 在单线程写入链内的共享设计，`Box<dyn WriteHandler>`
     // 本身不要求 Send/Sync，Arc<Mutex<>> 仅为生命周期共享，无需线程安全约束。
     #[allow(clippy::arc_with_non_send_sync)]
+    /// 对应 Java：com.alibaba.excel。
     pub(crate) fn new(handler: Box<dyn WriteHandler>) -> Self {
         let order = handler.order();
         let unique_value = handler
@@ -58,7 +52,7 @@ impl SharedWriteHandler {
             unique_value,
         }
     }
-
+    /// 对应 Java：com.alibaba.excel。
     pub(crate) fn with_mut<R>(&self, action: impl FnOnce(&mut dyn WriteHandler) -> R) -> R {
         let mut handler = self
             .inner
@@ -66,7 +60,7 @@ impl SharedWriteHandler {
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         action(handler.as_mut())
     }
-
+    /// 对应 Java：com.alibaba.excel。
     pub(crate) fn with_ref<R>(&self, action: impl FnOnce(&dyn WriteHandler) -> R) -> R {
         let handler = self
             .inner
@@ -169,11 +163,11 @@ impl WriteHandler for SharedWriteHandler {
         self.with_ref(|handler| handler.style_loop_merge())
     }
 }
-
+/// 对应 Java：com.alibaba.excel。
 pub(crate) fn share_handlers(handlers: Vec<Box<dyn WriteHandler>>) -> Vec<SharedWriteHandler> {
     handlers.into_iter().map(SharedWriteHandler::new).collect()
 }
-
+/// 对应 Java：com.alibaba.excel。
 pub(crate) fn boxed_handlers(handlers: &[SharedWriteHandler]) -> Vec<Box<dyn WriteHandler>> {
     handlers
         .iter()
@@ -181,7 +175,7 @@ pub(crate) fn boxed_handlers(handlers: &[SharedWriteHandler]) -> Vec<Box<dyn Wri
         .map(|handler| Box::new(handler) as Box<dyn WriteHandler>)
         .collect()
 }
-
+/// 对应 Java：com.alibaba.excel。
 pub(crate) fn normalized_shared_handlers(
     mut handlers: Vec<SharedWriteHandler>,
 ) -> Vec<SharedWriteHandler> {

@@ -3,14 +3,14 @@
 use std::io::{self, Write};
 use std::sync::{Arc, Mutex};
 
-/// 允许多个写入器句柄共享同一字节缓冲区。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 允许多个写入器句柄共享同一字节缓冲区。
 #[derive(Clone, Default)]
 pub struct SharedByteBuffer {
     bytes: Arc<Mutex<Vec<u8>>>,
 }
 
 impl SharedByteBuffer {
-    /// 取出当前全部字节，并清空共享缓冲区。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 取出当前全部字节，并清空共享缓冲区。
     ///
     /// # Errors
     ///

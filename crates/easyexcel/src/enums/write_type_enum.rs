@@ -7,6 +7,7 @@
 ///
 /// Rust port of Java `WriteTypeEnum`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.enums.WriteTypeEnum。
 pub enum WriteTypeEnum {
     /// Append new rows. (Java `ADD`)
     Add,

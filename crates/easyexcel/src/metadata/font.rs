@@ -5,7 +5,7 @@
 
 use crate::WriteFont;
 
-/// 已弃用的字体模型，对齐 Java `Font`。
+/// 对应 Java：com.alibaba.excel.metadata.Font。 已弃用的字体模型，对齐 Java `Font`。
 ///
 /// # Java 对应
 /// - 类：`com.alibaba.excel.metadata.Font`
@@ -63,7 +63,7 @@ impl Font {
         self.bold = bold;
     }
 
-    /// 转换为推荐的 [`WriteFont`]。
+    /// 对应 Java：com.alibaba.excel.metadata.Font。 转换为推荐的 [`WriteFont`]。
     #[must_use]
     pub fn to_write_font(&self) -> WriteFont {
         let mut font = WriteFont::new();

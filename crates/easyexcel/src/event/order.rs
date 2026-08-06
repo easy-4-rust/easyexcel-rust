@@ -3,6 +3,7 @@
 /// Implement this interface when sorting.
 ///
 /// Rust port of Java `Order`. The smaller the first implementation.
+/// 对应 Java：com.alibaba.excel.event.Order。
 pub trait Order {
     /// Returns the sort order. Lower values execute first.
     fn order(&self) -> i32;

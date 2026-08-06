@@ -37,9 +37,9 @@ where
     Ok(buffer)
 }
 
-/// 由已生成的 XLSX 字节构建 Rocket 附件响应（200 + 附件头 + body）。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 由已生成的 XLSX 字节构建 Rocket 附件响应（200 + 附件头 + body）。
 ///
-/// Rocket 的 [`Header::new`] 不做值校验，`Response::build()` 亦无失败路径，
+/// Rocket 的 `Header::new` 不做值校验，`Response::build()` 亦无失败路径，
 /// 因此恒返回 `Ok`（与 axum 适配器保持同一 `Result` 签名形状）。
 ///
 /// # Errors

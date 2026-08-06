@@ -4,7 +4,7 @@
 
 use crate::TemplateData;
 
-/// Named or unnamed collection data corresponding to Java `EasyExcel`'s `FillWrapper`.
+/// 对应 Java：com.alibaba.excel.write.metadata.fill.FillWrapper。 Named or unnamed collection data corresponding to Java `EasyExcel`'s `FillWrapper`.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct FillWrapper {
     pub(crate) name: Option<String>,
@@ -12,7 +12,7 @@ pub struct FillWrapper {
 }
 
 impl FillWrapper {
-    /// Creates an unnamed collection for `{.field}` placeholders.
+    /// 对应 Java：com.alibaba.excel.write.metadata.fill.FillWrapper。 Creates an unnamed collection for `{.field}` placeholders.
     #[must_use]
     pub fn new(rows: impl IntoIterator<Item = TemplateData>) -> Self {
         Self {
@@ -21,7 +21,7 @@ impl FillWrapper {
         }
     }
 
-    /// Creates a named collection for `{name.field}` placeholders.
+    /// 对应 Java：com.alibaba.excel.write.metadata.fill.FillWrapper。 Creates a named collection for `{name.field}` placeholders.
     #[must_use]
     pub fn named(name: impl Into<String>, rows: impl IntoIterator<Item = TemplateData>) -> Self {
         Self {
@@ -30,13 +30,13 @@ impl FillWrapper {
         }
     }
 
-    /// Returns the optional collection prefix.
+    /// 对应 Java：com.alibaba.excel.write.metadata.fill.FillWrapper。 Returns the optional collection prefix.
     #[must_use]
     pub fn name(&self) -> Option<&str> {
         self.name.as_deref()
     }
 
-    /// Returns collection rows in fill order.
+    /// 对应 Java：com.alibaba.excel.write.metadata.fill.FillWrapper。 Returns collection rows in fill order.
     #[must_use]
     pub fn rows(&self) -> &[TemplateData] {
         &self.rows

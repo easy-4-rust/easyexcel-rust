@@ -12,6 +12,7 @@ use crate::write::excel_writer_core::{
 use crate::write::write_options::WriteOptions;
 
 #[derive(Debug)]
+/// 对应 Java：com.alibaba.excel。
 pub(crate) struct ImageLayout {
     pub(crate) column_widths: HashMap<u16, u32>,
     pub(crate) head_rows: u32,
@@ -31,7 +32,7 @@ impl Default for ImageLayout {
 }
 
 impl ImageLayout {
-    /// Builds image pixel layout from explicit options, annotation widths, and
+    /// 对应 Java：com.alibaba.excel。 Builds image pixel layout from explicit options, annotation widths, and
     /// registered column-width strategies
     /// (Java `SimpleColumnWidthStyleStrategy` / `AbstractColumnWidthStyleStrategy`).
     ///
@@ -98,11 +99,12 @@ impl ImageLayout {
             ),
         })
     }
-
+    /// 对应 Java：com.alibaba.excel。
     pub(crate) fn column_width(&self, column: u16) -> u32 {
         self.column_widths.get(&column).copied().unwrap_or(64)
     }
 
+    /// 对应 Java：com.alibaba.excel。
     pub(crate) const fn row_height(&self, row: u32) -> u32 {
         if row < self.head_rows {
             self.head_row_height

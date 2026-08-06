@@ -10,18 +10,18 @@ pub struct CellFormulaTagHandler {
 }
 
 impl CellFormulaTagHandler {
-    /// Creates an idle handler.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.CellFormulaTagHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Java `CellFormulaTagHandler.startElement`.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.CellFormulaTagHandler。 Java `CellFormulaTagHandler.startElement`.
     pub fn begin_formula(&mut self) {
         self.temp_formula.clear();
     }
 
-    /// Java `CellFormulaTagHandler.endElement` — returns the formula string.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.CellFormulaTagHandler。 Java `CellFormulaTagHandler.endElement` — returns the formula string.
     pub fn finish_formula(&mut self) -> String {
         std::mem::take(&mut self.temp_formula)
     }

@@ -4,7 +4,11 @@ use easyexcel_io::{Error, Result};
 
 use super::template_xml::attribute_value;
 
-/// 将编译工作簿中的字体、填充、边框、数字格式和 cell XF 合并到模板 styles.xml。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将编译工作簿中的字体、填充、边框、数字格式和 cell XF 合并到模板 styles.xml。
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn merge_compiled_styles(
     destination: &str,
     source: &str,
@@ -63,6 +67,100 @@ pub fn merge_compiled_styles(
     }
     updated = append_collection(&updated, "cellXfs", "xf", &appended_xfs)?;
     Ok((updated, mapped))
+}
+
+/// 将编译样式叠加到模板已有 XF，未显式设置的格式属性保持模板原值。
+///
+/// # Errors
+///
+/// 当任一 styles.xml 结构无效或样式索引无法映射时返回错误。
+pub fn merge_compiled_styles_onto(
+    destination: &str,
+    source: &str,
+    source_indexes: &[usize],
+    base_indexes: &[usize],
+) -> Result<(String, Vec<u32>)> {
+    if source_indexes.len() != base_indexes.len() {
+        return Err(Error::Xlsx(
+            "compiled style and base style counts differ".to_owned(),
+        ));
+    }
+    let source_fonts = collection_elements(source, "fonts", "font")?;
+    let source_fills = collection_elements(source, "fills", "fill")?;
+    let source_borders = collection_elements(source, "borders", "border")?;
+    let source_xfs = collection_elements(source, "cellXfs", "xf")?;
+    let (mut updated, font_indexes) =
+        merge_component_collection(destination, "fonts", "font", &source_fonts)?;
+    let (next, fill_indexes) =
+        merge_component_collection(&updated, "fills", "fill", &source_fills)?;
+    updated = next;
+    let (next, border_indexes) =
+        merge_component_collection(&updated, "borders", "border", &source_borders)?;
+    updated = next;
+    let destination_xfs = collection_elements(&updated, "cellXfs", "xf")?;
+    let mut appended_xfs = Vec::new();
+    let mut mapped = Vec::with_capacity(source_indexes.len());
+    for (source_index, base_index) in source_indexes.iter().zip(base_indexes) {
+        let source_xf = source_xfs.get(*source_index).ok_or_else(|| {
+            Error::Xlsx(format!(
+                "compiled style index {source_index} is out of range"
+            ))
+        })?;
+        let base_xf = destination_xfs.get(*base_index).ok_or_else(|| {
+            Error::Xlsx(format!(
+                "template base style index {base_index} is out of range"
+            ))
+        })?;
+        let mut xf = source_xf.clone();
+        remap_index_attribute(&mut xf, "fontId", &font_indexes)?;
+        remap_index_attribute(&mut xf, "fillId", &fill_indexes)?;
+        remap_index_attribute(&mut xf, "borderId", &border_indexes)?;
+        remap_number_format(&mut updated, source, &mut xf)?;
+        for (apply, attribute) in [
+            ("applyFont", "fontId"),
+            ("applyFill", "fillId"),
+            ("applyBorder", "borderId"),
+            ("applyNumberFormat", "numFmtId"),
+        ] {
+            if attribute_value(&xf, apply) != Some("1")
+                && let Some(base_value) = attribute_value(base_xf, attribute)
+            {
+                replace_attribute(&mut xf, attribute, base_value)?;
+            }
+        }
+        if attribute_value(&xf, "applyAlignment") != Some("1") {
+            xf = copy_alignment(base_xf, &xf);
+        }
+        let destination_index = destination_xfs
+            .iter()
+            .chain(appended_xfs.iter())
+            .position(|existing| existing == &xf)
+            .map_or_else(
+                || {
+                    let index = u32::try_from(destination_xfs.len() + appended_xfs.len())
+                        .unwrap_or(u32::MAX);
+                    appended_xfs.push(xf);
+                    index
+                },
+                |index| u32::try_from(index).unwrap_or(u32::MAX),
+            );
+        mapped.push(destination_index);
+    }
+    updated = append_collection(&updated, "cellXfs", "xf", &appended_xfs)?;
+    Ok((updated, mapped))
+}
+
+fn copy_alignment(base: &str, target: &str) -> String {
+    let Some(alignment) = extract_elements(base, "alignment").into_iter().next() else {
+        return target.to_owned();
+    };
+    if let Some(current) = extract_elements(target, "alignment").into_iter().next() {
+        return target.replacen(&current, &alignment, 1);
+    }
+    if let Some(prefix) = target.strip_suffix("/>") {
+        return format!("{prefix}>{alignment}</xf>");
+    }
+    target.replacen("</xf>", &format!("{alignment}</xf>"), 1)
 }
 
 fn remap_index_attribute(xml: &mut String, name: &str, indexes: &[usize]) -> Result<()> {

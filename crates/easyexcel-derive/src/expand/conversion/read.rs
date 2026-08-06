@@ -4,7 +4,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Path, Type};
 
-/// 生成字段使用显式转换器或默认转换器读取的表达式。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 生成字段使用显式转换器或默认转换器读取的表达式。
 pub(crate) fn field_read_conversion(
     crate_path: &TokenStream,
     ty: &Type,
@@ -30,7 +30,7 @@ pub(crate) fn field_read_conversion(
     )
 }
 
-/// 生成支持运行时转换器注册表的字段读取表达式。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 生成支持运行时转换器注册表的字段读取表达式。
 pub(crate) fn field_registered_read_conversion(
     crate_path: &TokenStream,
     ty: &Type,

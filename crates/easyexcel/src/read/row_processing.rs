@@ -16,6 +16,7 @@ use calamine::{Data, Range, Reader, Xlsx};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn select_sheet_names(
     names: Vec<String>,
     selector: &SheetSelector,
@@ -70,6 +71,7 @@ pub(crate) fn select_xls_sheets(
 }
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn read_sheet(
     reader: &mut XlsxDisplayCellReader<'_>,
     sheet_no: usize,
@@ -190,6 +192,7 @@ pub(crate) fn read_sheet(
 }
 
 #[allow(clippy::too_many_arguments)]
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn process_missing_rows(
     start_row: u32,
     end_row: u32,
@@ -277,10 +280,11 @@ pub(crate) fn read_range(
     Ok(ReadFlow::Continue)
 }
 
-/// Dispatch one neutral engine worksheet through the EasyExcel listener lifecycle.
+/// Dispatch one neutral engine worksheet through the `EasyExcel` listener lifecycle.
 ///
 /// BIFF/CFB parsing belongs to `easyexcel-xls`; this adapter only preserves the
 /// facade's row metadata, formula and listener semantics.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn read_model_sheet(
     sheet: &easyexcel_model::Sheet,
     sheet_no: usize,
@@ -346,6 +350,7 @@ pub(crate) fn read_model_sheet(
 }
 
 #[allow(clippy::too_many_arguments)]
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn process_row<T>(
     sheet_no: usize,
     sheet_name: &str,
@@ -376,6 +381,7 @@ where
 }
 
 #[allow(clippy::too_many_arguments)]
+/// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn dispatch_row(
     consumer: &mut dyn RowConsumer,
     sheet_no: usize,

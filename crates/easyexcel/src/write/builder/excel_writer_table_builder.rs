@@ -25,7 +25,7 @@ pub struct ExcelWriterTableBuilder {
 }
 
 impl ExcelWriterTableBuilder {
-    /// Creates a table builder.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Creates a table builder.
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -57,56 +57,56 @@ impl ExcelWriterTableBuilder {
         }
     }
 
-    /// Sets the zero-based table index. (Java `tableNo(Integer)`)
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Sets the zero-based table index. (Java `tableNo(Integer)`)
     #[must_use]
     pub fn table_no(mut self, table_no: i32) -> Self {
         self.table.table_no = table_no;
         self
     }
 
-    /// Sets whether a header row is written. (Java `needHead(Boolean)`)
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Sets whether a header row is written. (Java `needHead(Boolean)`)
     #[must_use]
     pub fn need_head(mut self, need_head: bool) -> Self {
         self.parameter.need_head = Some(need_head);
         self
     }
 
-    /// Sets the relative head row index. (Java `relativeHeadRowIndex(Integer)`)
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Sets the relative head row index. (Java `relativeHeadRowIndex(Integer)`)
     #[must_use]
     pub fn relative_head_row_index(mut self, index: i32) -> Self {
         self.parameter.relative_head_row_index = Some(index);
         self
     }
 
-    /// Sets automatic header merging. (Java `automaticMergeHead(Boolean)`)
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Sets automatic header merging. (Java `automaticMergeHead(Boolean)`)
     #[must_use]
     pub fn automatic_merge_head(mut self, automatic_merge_head: bool) -> Self {
         self.parameter.automatic_merge_head = Some(automatic_merge_head);
         self
     }
 
-    /// Sets the include-order flag. (Java `orderByIncludeColumn(Boolean)`)
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Sets the include-order flag. (Java `orderByIncludeColumn(Boolean)`)
     #[must_use]
     pub fn order_by_include_column(mut self, enabled: bool) -> Self {
         self.parameter.order_by_include_column = Some(enabled);
         self
     }
 
-    /// Controls whether Java's default header style is enabled.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Controls whether Java's default header style is enabled.
     #[must_use]
     pub fn use_default_style(mut self, enabled: bool) -> Self {
         self.parameter.use_default_style = Some(enabled);
         self
     }
 
-    /// Replaces inherited included physical columns.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Replaces inherited included physical columns.
     #[must_use]
     pub fn include_column_indexes(mut self, indexes: impl IntoIterator<Item = usize>) -> Self {
         self.parameter.include_column_indexes = Some(indexes.into_iter().collect());
         self
     }
 
-    /// Replaces inherited included field names.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Replaces inherited included field names.
     #[must_use]
     pub fn include_column_field_names<S>(mut self, names: impl IntoIterator<Item = S>) -> Self
     where
@@ -117,14 +117,14 @@ impl ExcelWriterTableBuilder {
         self
     }
 
-    /// Replaces inherited excluded physical columns.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Replaces inherited excluded physical columns.
     #[must_use]
     pub fn exclude_column_indexes(mut self, indexes: impl IntoIterator<Item = usize>) -> Self {
         self.parameter.exclude_column_indexes = Some(indexes.into_iter().collect());
         self
     }
 
-    /// Replaces inherited excluded field names.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Replaces inherited excluded field names.
     #[must_use]
     pub fn exclude_column_field_names<S>(mut self, names: impl IntoIterator<Item = S>) -> Self
     where
@@ -135,21 +135,21 @@ impl ExcelWriterTableBuilder {
         self
     }
 
-    /// Registers a write handler. (Java `registerWriteHandler(WriteHandler)`)
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Registers a write handler. (Java `registerWriteHandler(WriteHandler)`)
     #[must_use]
     pub fn register_write_handler(mut self, handler: Box<dyn WriteHandler>) -> Self {
         self.own_handlers.push(handler);
         self
     }
 
-    /// Applies a head style to the built table options.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Applies a head style to the built table options.
     #[must_use]
     pub fn head_style(mut self, style: CellStyle) -> Self {
         self.table.options.head_style = style;
         self
     }
 
-    /// Builds the `WriteTable` value. (Java `build()`)
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Builds the `WriteTable` value. (Java `build()`)
     #[must_use]
     pub fn build(&self) -> WriteTable {
         let mut table = self.table.clone();
@@ -159,7 +159,7 @@ impl ExcelWriterTableBuilder {
         table
     }
 
-    /// Builds a table holder for handler contexts. (Java `WriteTableHolder`)
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Builds a table holder for handler contexts. (Java `WriteTableHolder`)
     #[must_use]
     pub fn build_table_holder<'a>(&self, parent_sheet: &'a str) -> WriteTableHolder<'a> {
         let mut holder = WriteTableHolder::new(self.table.table_no);
@@ -169,17 +169,18 @@ impl ExcelWriterTableBuilder {
 
     /// Returns a reference to the inner `WriteTable` for inspection.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。
     pub const fn table(&self) -> &WriteTable {
         &self.table
     }
 
-    /// Returns the number of currently registered handlers. Useful for tests.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Returns the number of currently registered handlers. Useful for tests.
     #[must_use]
     pub fn handler_count(&self) -> usize {
         self.own_handlers.len() + self.parent_handlers.len()
     }
 
-    /// Returns the registered handler list. (Java `getCustomWriteHandlerList()`)
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Returns the registered handler list. (Java `getCustomWriteHandlerList()`)
     #[must_use]
     pub fn handlers(&self) -> &[Box<dyn WriteHandler>] {
         &self.own_handlers
@@ -221,7 +222,7 @@ impl ExcelWriterTableBuilder {
         writer.finish()
     }
 
-    /// Resolves rows lazily, then delegates to [`Self::do_write`].
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Resolves rows lazily, then delegates to [`Self::do_write`].
     ///
     /// # Errors
     ///
@@ -235,7 +236,7 @@ impl ExcelWriterTableBuilder {
         self.do_write(supplier())
     }
 
-    /// Convenience setter that records a head style without emitting a
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Convenience setter that records a head style without emitting a
     /// no-op. Provided for parity with Java's chainable setters.
     pub fn head_style_record(&mut self, _style: CellStyle) -> &mut Self {
         self
@@ -259,7 +260,7 @@ impl AbstractExcelWriterParameterBuilder for ExcelWriterTableBuilder {
     }
 }
 
-/// Merges [`WriteTable`] overrides into worksheet [`WriteOptions`].
+/// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Merges [`WriteTable`] overrides into worksheet [`WriteOptions`].
 ///
 /// Table-level head settings override the parent sheet options, matching Java
 /// `WriteTableHolder` inheritance from `WriteSheetHolder`.

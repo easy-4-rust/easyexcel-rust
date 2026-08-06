@@ -17,92 +17,11 @@ use crate::core::excel_error::ExcelError;
 use crate::core::read_converter_context::ReadConverterContext;
 use crate::core::write_converter_context::WriteConverterContext;
 
-/// Trait-object erase of `Converter<T>` keyed by `TypeId`.
-///
-/// Mirrors the role of `ConverterKeyBuild.ConverterKey` plus the dispatch
-/// through `ConverterKeyBuild.buildKey(Class, CellDataTypeEnum)`. Rust uses
-/// `TypeId` because `TypeId` is the type-safe `Class` equivalent.
-pub(crate) trait ErasedConverter: Send + Sync {
-    fn target_type_id(&self) -> TypeId;
-    fn target_type_name(&self) -> &'static str;
-    fn support_excel_type(&self) -> CellDataType;
-    fn write_target_type(&self) -> Option<CellDataType>;
-    fn accepts_null(&self) -> bool;
-    fn convert_to_rust_data(
-        &self,
-        context: &ReadConverterContext<'_>,
-    ) -> Result<Box<dyn Any>, ExcelError>;
-    fn convert_to_excel_data(
-        &self,
-        value: &dyn Any,
-        column: &ExcelColumn,
-        context: &ConvertContext,
-    ) -> Result<WriteCellData, ExcelError>;
-}
+include!("converter_registry/erased_converter.rs");
 
-/// Type-tagged carrier for `Converter<T>`.
-///
-/// Mirrors `TypedConverter` from the Java side. The marker phantom
-/// parameter is the Rust equivalent of `Converter<T>.supportJavaTypeKey()`.
-pub(crate) struct TypedConverter<T, C> {
-    pub(crate) converter: C,
-    pub(crate) write_target_type: Option<CellDataType>,
-    pub(crate) accepts_null: bool,
-    pub(crate) marker: std::marker::PhantomData<fn() -> T>,
-}
+include!("converter_registry/typed_converter.rs");
 
-impl<T, C> ErasedConverter for TypedConverter<T, C>
-where
-    T: 'static,
-    C: Converter<T> + Send + Sync,
-{
-    fn target_type_id(&self) -> TypeId {
-        TypeId::of::<T>()
-    }
-
-    fn target_type_name(&self) -> &'static str {
-        type_name::<T>()
-    }
-
-    fn support_excel_type(&self) -> CellDataType {
-        self.converter.support_excel_type()
-    }
-
-    fn write_target_type(&self) -> Option<CellDataType> {
-        self.write_target_type
-    }
-
-    fn accepts_null(&self) -> bool {
-        self.accepts_null
-    }
-
-    fn convert_to_rust_data(
-        &self,
-        context: &ReadConverterContext<'_>,
-    ) -> Result<Box<dyn Any>, ExcelError> {
-        self.converter
-            .convert_to_rust_data(context)
-            .map(|value| Box::new(value) as Box<dyn Any>)
-    }
-
-    fn convert_to_excel_data(
-        &self,
-        value: &dyn Any,
-        column: &ExcelColumn,
-        context: &ConvertContext,
-    ) -> Result<WriteCellData, ExcelError> {
-        let value = value.downcast_ref::<T>().ok_or_else(|| {
-            ExcelError::Format(format!(
-                "registered converter expected Rust type {}",
-                type_name::<T>()
-            ))
-        })?;
-        self.converter
-            .convert_to_excel_data(&WriteConverterContext::new(value, column, context))
-    }
-}
-
-/// Runtime converter registry populated by Java-style `registerConverter` builders.
+/// 对应 Java：com.alibaba.excel.converters.ConverterKeyBuild。 Runtime converter registry populated by Java-style `registerConverter` builders.
 ///
 /// Mirrors the union of `DefaultConverterLoader` and `AbstractHolder.converterMap`.
 /// Registrations are searched from newest to oldest. Read selection uses the
@@ -115,7 +34,7 @@ pub struct ConverterRegistry {
 }
 
 impl ConverterRegistry {
-    /// Registers a converter for `T`, overriding an earlier converter with the same key.
+    /// 对应 Java：com.alibaba.excel.converters.ConverterKeyBuild。 Registers a converter for `T`, overriding an earlier converter with the same key.
     /// (Java `DefaultConverterLoader.putWriteConverter`)
     pub fn register<T, C>(&mut self, converter: C)
     where
@@ -130,7 +49,7 @@ impl ConverterRegistry {
         }));
     }
 
-    /// Registers a converter under Java's `(class, targetCellDataType)` write key.
+    /// 对应 Java：com.alibaba.excel.converters.ConverterKeyBuild。 Registers a converter under Java's `(class, targetCellDataType)` write key.
     pub fn register_for_write_type<T, C>(&mut self, target: CellDataType, converter: C)
     where
         T: 'static,
@@ -144,7 +63,7 @@ impl ConverterRegistry {
         }));
     }
 
-    /// Registers Java's `NullableObjectConverter<T>` under the normal read/write key.
+    /// 对应 Java：com.alibaba.excel.converters.ConverterKeyBuild。 Registers Java's `NullableObjectConverter<T>` under the normal read/write key.
     ///
     /// Unlike an ordinary converter, this converter is invoked for an empty
     /// source cell and may be selected for an absent `Option<T>` write.
@@ -161,7 +80,7 @@ impl ConverterRegistry {
         }));
     }
 
-    /// Registers a nullable converter under a target Excel cell type.
+    /// 对应 Java：com.alibaba.excel.converters.ConverterKeyBuild。 Registers a nullable converter under a target Excel cell type.
     pub fn register_nullable_for_write_type<T, C>(&mut self, target: CellDataType, converter: C)
     where
         T: 'static,
@@ -187,7 +106,7 @@ impl ConverterRegistry {
         }
     }
 
-    /// Returns a clone selecting Java's target cell type for this write pass.
+    /// 对应 Java：com.alibaba.excel.converters.ConverterKeyBuild。 Returns a clone selecting Java's target cell type for this write pass.
     #[must_use]
     pub fn with_write_target(&self, target: Option<CellDataType>) -> Self {
         let mut registry = self.clone();
@@ -238,7 +157,7 @@ impl ConverterRegistry {
             })
     }
 
-    /// Converts a Rust value through the newest matching global converter. Mirrors
+    /// 对应 Java：com.alibaba.excel.converters.ConverterKeyBuild。 Converts a Rust value through the newest matching global converter. Mirrors
     /// `AbstractHolder.converterMap` + write dispatch.
     ///
     /// # Errors
@@ -256,7 +175,7 @@ impl ConverterRegistry {
         self.convert_to_excel_data_with_null_state(value, column, context, false)
     }
 
-    /// Converts a Rust value while preserving Java's nullable-converter gate.
+    /// 对应 Java：com.alibaba.excel.converters.ConverterKeyBuild。 Converts a Rust value while preserving Java's nullable-converter gate.
     ///
     /// Derive-generated `Option<T>` fields pass `true` for `value_is_null`.
     /// An ordinary converter is skipped and the caller writes an empty cell;
@@ -294,7 +213,7 @@ impl ConverterRegistry {
             .map(Some)
     }
 
-    /// Returns whether no custom converter has been registered.
+    /// 对应 Java：com.alibaba.excel.converters.ConverterKeyBuild。 Returns whether no custom converter has been registered.
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.converters.is_empty()

@@ -15,7 +15,7 @@ use chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, NaiveTime, Timelike, 
 
 use super::error::{Error, Result};
 
-/// Which date epoch a workbook uses.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Which date epoch a workbook uses.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum DateSystem {
     /// 1900-based (Windows). Includes the fictional 1900-02-29 leap day.
@@ -28,7 +28,11 @@ pub enum DateSystem {
 /// Days between the 1900 and 1904 epochs.
 const EPOCH_DIFF_1904: f64 = 1462.0;
 
-/// 按多个 Java `SimpleDateFormat` 模式依次解析日期时间。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 按多个 Java `SimpleDateFormat` 模式依次解析日期时间。
+///
+/// # Errors
+///
+/// Returns [`Error::Other`] when none of the supplied patterns parses the value.
 pub fn parse_java_date<'a>(
     value: &str,
     patterns: impl IntoIterator<Item = &'a str>,
@@ -45,7 +49,7 @@ pub fn parse_java_date<'a>(
     Err(Error::Other(format!("date parse failed for {value:?}")))
 }
 
-/// 使用 Java `SimpleDateFormat` 模式格式化日期时间。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 使用 Java `SimpleDateFormat` 模式格式化日期时间。
 #[must_use]
 pub fn format_java_date(value: NaiveDateTime, pattern: &str) -> String {
     value
@@ -53,7 +57,7 @@ pub fn format_java_date(value: NaiveDateTime, pattern: &str) -> String {
         .to_string()
 }
 
-/// 将 Excel 1900 日期系统的整数天数转换为 UTC 时间。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将 Excel 1900 日期系统的整数天数转换为 UTC 时间。
 #[must_use]
 pub fn excel_days_to_utc(days: i64) -> DateTime<Utc> {
     let base = NaiveDate::from_ymd_opt(1899, 12, 30)
@@ -63,13 +67,13 @@ pub fn excel_days_to_utc(days: i64) -> DateTime<Utc> {
     DateTime::<Utc>::from_naive_utc_and_offset(base + Duration::days(days), Utc)
 }
 
-/// 判断代码中是否包含 Excel 日期或时间格式标记。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 判断代码中是否包含 Excel 日期或时间格式标记。
 #[must_use]
 pub fn is_internal_date_format(format: &str) -> bool {
     super::numfmt::is_date_format(format)
 }
 
-/// 将 Java `SimpleDateFormat` 的常用字母转换为 chrono 格式。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将 Java `SimpleDateFormat` 的常用字母转换为 chrono 格式。
 #[must_use]
 pub fn java_date_format_to_chrono(pattern: &str) -> String {
     let mut output = String::with_capacity(pattern.len() * 2);
@@ -107,10 +111,10 @@ pub fn java_date_format_to_chrono(pattern: &str) -> String {
     output
 }
 
-/// 返回可直接交给 chrono 的日期格式。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 返回可直接交给 chrono 的日期格式。
 ///
 /// 已包含 `%` 的 chrono 格式保持借用；否则按 Java `SimpleDateFormat`
-/// 规则转换，供 EasyExcel annotation/converter 与格式引擎共同使用。
+/// 规则转换，供 `EasyExcel` annotation/converter 与格式引擎共同使用。
 #[must_use]
 pub fn chrono_date_format(pattern: &str) -> Cow<'_, str> {
     if pattern.contains('%') {
@@ -120,7 +124,7 @@ pub fn chrono_date_format(pattern: &str) -> Cow<'_, str> {
     }
 }
 
-/// 将日期转换为 Excel 1900 或 1904 日期系统序列号。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将日期转换为 Excel 1900 或 1904 日期系统序列号。
 #[must_use]
 pub fn date_to_excel_serial(date: NaiveDate, use_1904_windowing: bool) -> f64 {
     let system = DateSystem::from_1904_windowing(use_1904_windowing);
@@ -134,7 +138,7 @@ pub fn date_to_excel_serial(date: NaiveDate, use_1904_windowing: bool) -> f64 {
     }))
 }
 
-/// 将日期时间转换为 Excel 1900 或 1904 日期系统序列号。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 将日期时间转换为 Excel 1900 或 1904 日期系统序列号。
 #[must_use]
 pub fn datetime_to_excel_serial(value: NaiveDateTime, use_1904_windowing: bool) -> f64 {
     let date_part = date_to_excel_serial(value.date(), use_1904_windowing);
@@ -147,6 +151,7 @@ pub fn datetime_to_excel_serial(value: NaiveDateTime, use_1904_windowing: bool) 
 impl DateSystem {
     /// 根据 EasyExcel/POI 的 `use1904windowing` 标志选择日期系统。
     #[must_use]
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn from_1904_windowing(use_1904_windowing: bool) -> Self {
         if use_1904_windowing {
             Self::Date1904
@@ -155,13 +160,14 @@ impl DateSystem {
         }
     }
 
-    /// Convert a serial number to a `NaiveDateTime`. Returns `None` for serials
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Convert a serial number to a `NaiveDateTime`. Returns `None` for serials
     /// that cannot be represented (for example negative or non-finite values).
     ///
     /// Excel's fictional `1900-02-29` cannot be represented by chrono. For
     /// EasyExcel/POI compatibility serials `60` and `61` both resolve to
     /// `1900-03-01`; serial `59` remains `1900-02-28`.
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    #[must_use]
     pub fn serial_to_datetime(self, serial: f64) -> Option<NaiveDateTime> {
         if !serial.is_finite() || serial < 0.0 {
             return None;
@@ -181,7 +187,8 @@ impl DateSystem {
             .checked_add_signed(Duration::milliseconds(milliseconds))
     }
 
-    /// Convert a `NaiveDateTime` to an Excel serial number.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Convert a `NaiveDateTime` to an Excel serial number.
+    #[must_use]
     pub fn datetime_to_serial(self, dt: NaiveDateTime) -> f64 {
         let date = dt.date();
         let time = dt.time();
@@ -198,7 +205,12 @@ impl DateSystem {
         })) + frac
     }
 
-    /// Convert just a date to its integer serial.
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Convert just a date to its integer serial.
+    ///
+    /// # Panics
+    ///
+    /// Never in practice: all epoch dates are fixed valid Gregorian constants.
+    #[must_use]
     pub fn date_to_serial(self, date: NaiveDate) -> i64 {
         match self {
             DateSystem::Date1900 => {
@@ -217,8 +229,9 @@ impl DateSystem {
         }
     }
 
-    /// Translate a serial between this system and the other (used on XLS/XLSX
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Translate a serial between this system and the other (used on XLS/XLSX
     /// round-trip when the date system changes).
+    #[must_use]
     pub fn convert_serial_to(self, serial: f64, other: DateSystem) -> f64 {
         match (self, other) {
             (DateSystem::Date1900, DateSystem::Date1904) => serial - EPOCH_DIFF_1904,
@@ -228,26 +241,32 @@ impl DateSystem {
     }
 }
 
-/// Build a serial from y/m/d, used by the DATE() worksheet function.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Build a serial from y/m/d, used by the `DATE()` worksheet function.
+#[must_use]
+#[allow(clippy::cast_precision_loss)]
 pub fn ymd_to_serial(system: DateSystem, year: i32, month: u32, day: u32) -> Option<f64> {
     let date = NaiveDate::from_ymd_opt(year, month, day)?;
     Some(system.date_to_serial(date) as f64)
 }
 
-/// Extract the time-of-day fraction's H/M/S, used by HOUR/MINUTE/SECOND.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Extract the time-of-day fraction's H/M/S, used by HOUR/MINUTE/SECOND.
+#[must_use]
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 pub fn serial_time_parts(serial: f64) -> (u32, u32, u32) {
     let frac = serial.fract().abs();
     let total = (frac * 86400.0).round() as u32 % 86400;
     (total / 3600, (total % 3600) / 60, total % 60)
 }
 
-/// Parse `text` as a date/time using an **Excel-style** format code (e.g.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Parse `text` as a date/time using an **Excel-style** format code (e.g.
 /// `dd/mm/yyyy`, `dd-mmm-yy`, `dd/mm/yyyy hh:mm:ss`, `hh:mm AM/PM`) and return
 /// the Excel serial for `system`. Returns `None` if the text doesn't match.
 ///
 /// This is the parser behind the `to-date` command — the date twin of
 /// `parse_number_text`. The Excel `m`/`mm` token means **minute** when adjacent
 /// to an hour or second token, else **month** (Excel's rule).
+#[must_use]
+#[allow(clippy::cast_precision_loss)]
 pub fn parse_text_date(text: &str, excel_fmt: &str, system: DateSystem) -> Option<f64> {
     use chrono::Timelike;
     let (chrono_fmt, has_date, has_time) = excel_format_to_chrono(excel_fmt)?;
@@ -263,7 +282,7 @@ pub fn parse_text_date(text: &str, excel_fmt: &str, system: DateSystem) -> Optio
         Some(system.date_to_serial(d) as f64)
     } else if has_time {
         let t = NaiveTime::parse_from_str(text, &chrono_fmt).ok()?;
-        Some(t.num_seconds_from_midnight() as f64 / 86400.0)
+        Some(f64::from(t.num_seconds_from_midnight()) / 86400.0)
     } else {
         None
     }
@@ -377,8 +396,13 @@ fn excel_format_to_chrono(fmt: &str) -> Option<(String, bool, bool)> {
     Some((out, has_date, has_time))
 }
 
-/// Heuristic: does `s` *look like* a date stored as text? Used by `profile` to
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Heuristic: does `s` *look like* a date stored as text? Used by `profile` to
 /// flag text-stored dates (a soft hint to run `to-date`), not a hard claim.
+///
+/// # Panics
+///
+/// Never in practice: the statically defined regular expression is valid.
+#[must_use]
 pub fn looks_like_date(s: &str) -> bool {
     use std::sync::OnceLock;
     static RE: OnceLock<regex::Regex> = OnceLock::new();
@@ -397,6 +421,9 @@ pub fn looks_like_date(s: &str) -> bool {
 }
 
 #[cfg(test)]
+// 这些断言覆盖 Excel 序列值的离散边界；输入和期望值均可被 f64 精确表示，
+// 因而使用精确比较能更直接地防止日期系统偏移发生回归。
+#[allow(clippy::float_cmp)]
 mod tests {
     use super::*;
 

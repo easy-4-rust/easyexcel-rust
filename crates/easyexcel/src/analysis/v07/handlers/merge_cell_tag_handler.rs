@@ -17,7 +17,7 @@ pub struct MergeCellTagHandler {
 }
 
 impl MergeCellTagHandler {
-    /// Creates a handler; `enabled` mirrors Java `support(XlsxReadContext)`.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.MergeCellTagHandler。 Creates a handler; `enabled` mirrors Java `support(XlsxReadContext)`.
     #[must_use]
     pub fn new(enabled: bool) -> Self {
         Self {
@@ -26,7 +26,7 @@ impl MergeCellTagHandler {
         }
     }
 
-    /// Java `MergeCellTagHandler.startElement`.
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.MergeCellTagHandler。 Java `MergeCellTagHandler.startElement`.
     ///
     /// # Errors
     ///
@@ -45,7 +45,7 @@ impl MergeCellTagHandler {
         Ok(())
     }
 
-    /// Same as [`Self::start_merge`], but missing / empty `ref` is an error
+    /// 对应 Java：com.alibaba.excel.analysis.v07.handlers.MergeCellTagHandler。 Same as [`Self::start_merge`], but missing / empty `ref` is an error
     /// (matches historical `xlsx_rows::required_attribute` behaviour).
     ///
     /// # Errors
@@ -80,7 +80,7 @@ impl XlsxTagHandler for MergeCellTagHandler {
     }
 }
 
-/// Builds a [`CellExtra`] from an A1 / A1:B2 reference (Java `new CellExtra(type, text, ref)`).
+/// 对应 Java：com.alibaba.excel.analysis.v07.handlers.MergeCellTagHandler。 Builds a [`CellExtra`] from an A1 / A1:B2 reference (Java `new CellExtra(type, text, ref)`).
 ///
 /// Also enforces first≤last ordering used by `xlsx_rows::parse_cell_range`.
 pub(crate) fn cell_extra_from_ref(

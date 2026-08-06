@@ -8,7 +8,7 @@ use std::path::Path;
 use crate::support::ExcelTypeEnum;
 use crate::write::WriteOptions;
 
-/// 写入是否走 CSV：显式 `excel_type` 优先，否则按路径扩展名判断。
+/// 对应 Java：com.alibaba.excel.support.ExcelTypeEnum。 写入是否走 CSV：显式 `excel_type` 优先，否则按路径扩展名判断。
 pub(crate) fn is_csv_write(path: &Path, options: &WriteOptions) -> bool {
     match options.excel_type {
         Some(excel_type) => excel_type == ExcelTypeEnum::Csv,
@@ -16,7 +16,7 @@ pub(crate) fn is_csv_write(path: &Path, options: &WriteOptions) -> bool {
     }
 }
 
-/// 写入是否走 XLS：显式 `excel_type` 优先，否则按路径扩展名判断。
+/// 对应 Java：com.alibaba.excel.support.ExcelTypeEnum。 写入是否走 XLS：显式 `excel_type` 优先，否则按路径扩展名判断。
 pub(crate) fn is_xls_write(path: &Path, options: &WriteOptions) -> bool {
     match options.excel_type {
         Some(excel_type) => excel_type == ExcelTypeEnum::Xls,
@@ -24,7 +24,7 @@ pub(crate) fn is_xls_write(path: &Path, options: &WriteOptions) -> bool {
     }
 }
 
-/// 计算写入实际使用的 `ExcelTypeEnum`（CSV / XLS / XLSX）。
+/// 对应 Java：com.alibaba.excel.support.ExcelTypeEnum。 计算写入实际使用的 `ExcelTypeEnum`（CSV / XLS / XLSX）。
 pub(crate) fn effective_write_type(path: &Path, options: &WriteOptions) -> ExcelTypeEnum {
     if is_csv_write(path, options) {
         ExcelTypeEnum::Csv

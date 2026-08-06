@@ -4,6 +4,7 @@
 
 /// Supplements POI `CellType` so write paths can distinguish date from number.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// 对应 Java：com.alibaba.excel.enums.NumericCellTypeEnum。
 pub enum NumericCellTypeEnum {
     /// Plain number.
     Number,

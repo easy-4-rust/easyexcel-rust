@@ -11,7 +11,7 @@ use super::write::style::{
     parse_struct_head_font_style, parse_struct_head_style,
 };
 
-/// `ExcelRow` 派生宏支持的类型级属性。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 `ExcelRow` 派生宏支持的类型级属性。
 #[derive(Default)]
 pub(crate) struct StructOptions {
     pub(crate) ignore_unannotated: bool,
@@ -25,7 +25,7 @@ pub(crate) struct StructOptions {
     pub(crate) once_absolute_merge: Option<TokenStream>,
 }
 
-/// 解析类型级 `#[excel(...)]` 属性。
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 解析类型级 `#[excel(...)]` 属性。
 pub(crate) fn parse_struct_options(
     attrs: &[Attribute],
     crate_path: &TokenStream,

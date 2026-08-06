@@ -11,7 +11,7 @@ use crate::core::{
     Converter, CsvCharset, DynamicRow, ExcelError, ExcelRow, NullableObjectConverter, Result,
     WriteDirection, WriteHandler,
 };
-use crate::excel_builder::{do_fill_template, do_fill_template_with_config};
+use crate::excel_builder::do_fill_template_with_compiled_styles;
 use crate::excel_output_stream_builder::ExcelOutputStreamBuilder;
 use crate::excel_owned_output_stream_builder::ExcelOwnedOutputStreamBuilder;
 use crate::template::{FillConfig, FillDirection};
@@ -22,7 +22,7 @@ use crate::write::{
 };
 use crate::write_type_helpers::{effective_write_type, is_csv_write, is_xls_write};
 
-/// New-workbook writer builder.
+/// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 New-workbook writer builder.
 pub struct ExcelWriterBuilder<T> {
     pub(crate) path: PathBuf,
     pub(crate) options: WriteOptions,
@@ -34,7 +34,7 @@ impl<T> ExcelWriterBuilder<T>
 where
     T: ExcelRow,
 {
-    /// 从路径构造一个默认配置的写入 builder。
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 从路径构造一个默认配置的写入 builder。
     pub(crate) fn new(path: PathBuf) -> Self {
         Self {
             path,
@@ -47,19 +47,20 @@ where
     /// Sets an explicit output type, overriding the file extension.
     /// (Java `ExcelWriterBuilder.excelType`)
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。
     pub const fn excel_type(mut self, excel_type: crate::support::ExcelTypeEnum) -> Self {
         self.options.excel_type = Some(excel_type);
         self
     }
 
-    /// Sets the worksheet name.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Sets the worksheet name.
     #[must_use]
     pub fn sheet(mut self, name: impl Into<String>) -> Self {
         self.options.sheet_name = name.into();
         self
     }
 
-    /// Sets the Java-style zero-based logical worksheet number.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Sets the Java-style zero-based logical worksheet number.
     #[must_use]
     pub fn sheet_index(mut self, index: usize) -> Self {
         self.options.sheet_index = Some(index);
@@ -69,12 +70,13 @@ where
 
     /// Enables or disables the header row.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。
     pub const fn need_head(mut self, need_head: bool) -> Self {
         self.options.need_head = need_head;
         self
     }
 
-    /// Enables or disables Java's default header style.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Enables or disables Java's default header style.
     #[must_use]
     pub fn use_default_style(mut self, enabled: bool) -> Self {
         self.options.use_default_style = enabled;
@@ -88,6 +90,7 @@ where
 
     /// Controls automatic merging of equal multi-level headers.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。
     pub const fn automatic_merge_head(mut self, enabled: bool) -> Self {
         self.options.automatic_merge_head = enabled;
         self
@@ -99,6 +102,7 @@ where
     /// zero-based row, leaving the rows above blank — matching Java
     /// `WriteBasicParameter.relativeHeadRowIndex`.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。
     pub const fn relative_head_row_index(mut self, index: i32) -> Self {
         self.options.relative_head_row_index = index;
         self
@@ -106,6 +110,7 @@ where
 
     /// Freezes the header row.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。
     pub const fn freeze_head(mut self, freeze: bool) -> Self {
         self.options.freeze_head = freeze;
         self
@@ -113,19 +118,20 @@ where
 
     /// Freezes rows and columns above and to the left of the position.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。
     pub const fn freeze_panes(mut self, row: u32, column: u16) -> Self {
         self.options.freeze_panes = Some((row, column));
         self
     }
 
-    /// Includes only the supplied physical column indexes.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Includes only the supplied physical column indexes.
     #[must_use]
     pub fn include_column_indexes(mut self, indexes: impl IntoIterator<Item = usize>) -> Self {
         self.options.include_column_indexes = Some(indexes.into_iter().collect());
         self
     }
 
-    /// Includes only the supplied Rust field names.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Includes only the supplied Rust field names.
     #[must_use]
     pub fn include_column_field_names<S>(mut self, names: impl IntoIterator<Item = S>) -> Self
     where
@@ -135,14 +141,14 @@ where
         self
     }
 
-    /// Excludes physical column indexes.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Excludes physical column indexes.
     #[must_use]
     pub fn exclude_column_indexes(mut self, indexes: impl IntoIterator<Item = usize>) -> Self {
         self.options.exclude_column_indexes = indexes.into_iter().collect();
         self
     }
 
-    /// Excludes Rust field names.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Excludes Rust field names.
     #[must_use]
     pub fn exclude_column_field_names<S>(mut self, names: impl IntoIterator<Item = S>) -> Self
     where
@@ -154,12 +160,13 @@ where
 
     /// Orders selected columns by the corresponding include list.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。
     pub const fn order_by_include_column(mut self, enabled: bool) -> Self {
         self.options.order_by_include_column = enabled;
         self
     }
 
-    /// Adds an absolute merged-cell range using zero-based inclusive coordinates.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Adds an absolute merged-cell range using zero-based inclusive coordinates.
     #[must_use]
     pub fn merge_cells(mut self, range: MergeRange) -> Self {
         self.options.merge_ranges.push(range);
@@ -168,40 +175,41 @@ where
 
     /// Enables automatic width calculation for used columns.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。
     pub const fn auto_width(mut self) -> Self {
         self.options.auto_width = true;
         self
     }
 
-    /// Sets an explicit width for a zero-based physical column.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Sets an explicit width for a zero-based physical column.
     #[must_use]
     pub fn column_width(mut self, column: u16, width: u16) -> Self {
         self.options.column_widths.push((column, width));
         self
     }
 
-    /// Replaces the default bold header style.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Replaces the default bold header style.
     #[must_use]
     pub fn head_style(mut self, style: CellStyle) -> Self {
         self.options.head_style = style;
         self
     }
 
-    /// Applies one style to every content row.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Applies one style to every content row.
     #[must_use]
     pub fn content_style(mut self, style: CellStyle) -> Self {
         self.options.content_styles = vec![style];
         self
     }
 
-    /// Cycles the supplied styles across content rows.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Cycles the supplied styles across content rows.
     #[must_use]
     pub fn content_styles(mut self, styles: impl IntoIterator<Item = CellStyle>) -> Self {
         self.options.content_styles = styles.into_iter().collect();
         self
     }
 
-    /// Registers a Java-style global converter for this workbook.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Registers a Java-style global converter for this workbook.
     #[must_use]
     pub fn register_converter<V, C>(mut self, converter: C) -> Self
     where
@@ -212,7 +220,7 @@ where
         self
     }
 
-    /// Registers a nullable converter for this workbook.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Registers a nullable converter for this workbook.
     #[must_use]
     pub fn register_nullable_converter<V, C>(mut self, converter: C) -> Self
     where
@@ -223,14 +231,14 @@ where
         self
     }
 
-    /// Registers a repeating data-row merge strategy.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Registers a repeating data-row merge strategy.
     #[must_use]
     pub fn loop_merge(mut self, strategy: LoopMergeStrategy) -> Self {
         self.options.loop_merges.push(strategy);
         self
     }
 
-    /// Replaces derived headers with dynamic multi-level head paths.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Replaces derived headers with dynamic multi-level head paths.
     #[must_use]
     pub fn head<S, P>(mut self, paths: impl IntoIterator<Item = P>) -> Self
     where
@@ -246,21 +254,21 @@ where
         self
     }
 
-    /// Registers a write lifecycle handler. Handlers execute by ascending order.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Registers a write lifecycle handler. Handlers execute by ascending order.
     #[must_use]
     pub fn register_write_handler(mut self, handler: impl WriteHandler + 'static) -> Self {
         self.handlers.push(Box::new(handler));
         self
     }
 
-    /// Encrypts XLSX output using ECMA-376 Agile Encryption.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Encrypts XLSX output using ECMA-376 Agile Encryption.
     #[must_use]
     pub fn password(mut self, password: impl Into<String>) -> Self {
         self.options.password = Some(password.into());
         self
     }
 
-    /// Sets the character encoding used for CSV output.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Sets the character encoding used for CSV output.
     #[must_use]
     pub fn charset(mut self, charset: impl Into<CsvCharset>) -> Self {
         self.options.charset = charset.into();
@@ -269,12 +277,13 @@ where
 
     /// Enables or disables the CSV byte-order mark. Java `EasyExcel` defaults to enabled.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。
     pub const fn with_bom(mut self, enabled: bool) -> Self {
         self.options.with_bom = enabled;
         self
     }
 
-    /// Sets a template workbook file. (Java `ExcelWriterBuilder.withTemplate(String/File)`)
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Sets a template workbook file. (Java `ExcelWriterBuilder.withTemplate(String/File)`)
     ///
     /// The template is loaded fully into memory (Java warns this can OOM for large
     /// files). Typed `do_write` / stateful `write` appends after existing template
@@ -302,7 +311,7 @@ where
         self
     }
 
-    /// Sets a template from owned bytes. (Java `ExcelWriterBuilder.withTemplate(InputStream)`)
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Sets a template from owned bytes. (Java `ExcelWriterBuilder.withTemplate(InputStream)`)
     ///
     /// Same semantics as [`Self::with_template`]; the stream/file is fully buffered.
     #[must_use]
@@ -318,12 +327,13 @@ where
     /// images, comments, and drawings are not preserved. Default is `false` (ZIP
     /// preserve). Prefer the default unless you need the legacy seed for debugging.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。
     pub const fn use_legacy_template_seed(mut self, enabled: bool) -> Self {
         self.options.use_legacy_template_seed = enabled;
         self
     }
 
-    /// Redirects this write from its logical path to a caller-owned XLSX stream.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Redirects this write from its logical path to a caller-owned XLSX stream.
     ///
     /// The path remains available to handler contexts but no file is created.
     /// Borrowing the stream makes ownership explicit and corresponds to Java
@@ -340,7 +350,7 @@ where
         }
     }
 
-    /// Redirects this builder to a cloneable, explicitly closeable stream.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Redirects this builder to a cloneable, explicitly closeable stream.
     ///
     /// This form supports both one-shot writes and stateful multi-batch writes,
     /// including Java-compatible `autoCloseStream` behavior.
@@ -360,6 +370,7 @@ where
 
     /// Enables or disables closing an owned output stream during finish.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。
     pub const fn auto_close_stream(mut self, enabled: bool) -> Self {
         self.options.auto_close_stream = enabled;
         self
@@ -367,12 +378,13 @@ where
 
     /// Controls whether accumulated rows are emitted by `finish_on_exception`.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。
     pub const fn write_excel_on_exception(mut self, enabled: bool) -> Self {
         self.options.write_excel_on_exception = enabled;
         self
     }
 
-    /// Builds a stateful writer for multiple `.write(rows, &sheet)` calls.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Builds a stateful writer for multiple `.write(rows, &sheet)` calls.
     #[must_use]
     pub fn build(self) -> ExcelWriter {
         ExcelWriter::with_handlers_and_options(self.path, self.handlers, self.options)
@@ -380,6 +392,7 @@ where
 
     /// Selects constant-memory output.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。
     pub const fn constant_memory(mut self, enabled: bool) -> Self {
         self.options.constant_memory = enabled;
         self
@@ -394,6 +407,7 @@ where
     /// See [`WriteOptions::compress_temp_files`] for the POI vs `rust_xlsxwriter`
     /// gzip difference.
     #[must_use]
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。
     pub const fn compress_temp_files(mut self, enabled: bool) -> Self {
         self.options.compress_temp_files = enabled;
         if enabled {
@@ -402,7 +416,7 @@ where
         self
     }
 
-    /// Writes any owned row iterator.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Writes any owned row iterator.
     ///
     /// When [`Self::with_template`] is set, rows are appended onto the template
     /// workbook (Java `withTemplate(...).sheet().doWrite(data)`).
@@ -453,7 +467,7 @@ where
         }
     }
 
-    /// Alias emphasizing that the input is consumed incrementally.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Alias emphasizing that the input is consumed incrementally.
     ///
     /// # Errors
     ///
@@ -465,7 +479,7 @@ where
         self.do_write(rows)
     }
 
-    /// Fills scalar `{key}` placeholders through [`ExcelBuilderImpl::fill`].
+    /// Fills scalar `{key}` placeholders through `ExcelBuilderImpl::fill`.
     ///
     /// 对应 Java：`EasyExcel.write(file).withTemplate(template).sheet().doFill(data)`.
     ///
@@ -474,7 +488,22 @@ where
     /// Returns template, fill, CSV/XLS unsupported, or output errors.
     pub fn do_fill(self, data: &dyn std::any::Any) -> Result<()> {
         let sheet = WriteSheet::<DynamicRow>::from_options(self.options.clone());
-        do_fill_template(self.build(), data, &sheet)
+        let mut handlers = self.handlers;
+        handlers.extend(
+            crate::write::handler_execution_scope::load_annotation_handlers::<T>(&self.options)?,
+        );
+        let styles = crate::write::excel_writer_core::compile_template_fill_styles::<T>(
+            &self.options,
+            &mut handlers,
+        )?;
+        let writer = ExcelWriter::with_handlers_and_options(self.path, handlers, self.options);
+        do_fill_template_with_compiled_styles(
+            writer,
+            data,
+            BuilderFillConfig::default(),
+            &sheet,
+            styles,
+        )
     }
 
     /// Fills scalar or collection data with Java-compatible `FillConfig`.
@@ -497,7 +526,16 @@ where
             .force_new_row(fill_config.get_force_new_row())
             .auto_style(fill_config.get_auto_style());
         let sheet = WriteSheet::<DynamicRow>::from_options(self.options.clone());
-        do_fill_template_with_config(self.build(), data, builder_config, &sheet)
+        let mut handlers = self.handlers;
+        handlers.extend(
+            crate::write::handler_execution_scope::load_annotation_handlers::<T>(&self.options)?,
+        );
+        let styles = crate::write::excel_writer_core::compile_template_fill_styles::<T>(
+            &self.options,
+            &mut handlers,
+        )?;
+        let writer = ExcelWriter::with_handlers_and_options(self.path, handlers, self.options);
+        do_fill_template_with_compiled_styles(writer, data, builder_config, &sheet, styles)
     }
 
     /// Resolves fill data lazily, then delegates to [`Self::do_fill`].

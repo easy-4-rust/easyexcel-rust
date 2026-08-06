@@ -5,7 +5,7 @@
 
 use crate::read::SheetSelector;
 
-/// Input accepted by `.sheet(...)`.
+/// 对应 Java：`com.alibaba.excel.read.builder.ExcelReaderBuilder.sheet(...)`。 Input accepted by `.sheet(...)`.
 pub trait IntoSheetSelector {
     /// Converts to internal sheet selection.
     fn into_sheet_selector(self) -> SheetSelector;

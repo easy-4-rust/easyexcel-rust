@@ -2,4 +2,4 @@
 //!
 //! 实现数据在 `metadata/cell_extra.rs`，本文件保留旧模块路径兼容。
 
-pub use crate::metadata::cell_extra::*;
+pub use crate::metadata::cell_extra::{CellExtra, CellExtraType};

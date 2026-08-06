@@ -192,7 +192,7 @@ fn lex(input: &str) -> Result<Vec<Spanned>, String> {
                 lex_after_sheet(&chars, &mut i, SheetSpec::Name(sheet_name))?
             }
             c if c.is_ascii_digit()
-                || (c == '.' && chars.get(i + 1).is_some_and(|d| d.is_ascii_digit())) =>
+                || (c == '.' && chars.get(i + 1).is_some_and(char::is_ascii_digit)) =>
             {
                 let (n, len) = read_number(&chars, i);
                 i += len;
@@ -300,7 +300,7 @@ fn read_ref_body(chars: &[char], i: &mut usize) -> String {
 }
 
 /// Read a `'...'` quoted name starting at `start` (which must point at `'`).
-/// Returns (name, chars_consumed including both quotes).
+/// Returns (name, `chars_consumed` including both quotes).
 fn read_quoted_name(chars: &[char], start: usize) -> Result<(String, usize), String> {
     let mut i = start + 1;
     let mut s = String::new();
@@ -349,7 +349,7 @@ fn read_number(chars: &[char], start: usize) -> (f64, usize) {
         if chars.get(j) == Some(&'+') || chars.get(j) == Some(&'-') {
             j += 1;
         }
-        if chars.get(j).is_some_and(|c| c.is_ascii_digit()) {
+        if chars.get(j).is_some_and(char::is_ascii_digit) {
             i = j;
             while i < chars.len() && chars[i].is_ascii_digit() {
                 i += 1;
@@ -396,10 +396,7 @@ impl Parser {
         self.toks.get(self.pos).map(|s| &s.tok)
     }
     fn peek_ws(&self) -> bool {
-        self.toks
-            .get(self.pos)
-            .map(|s| s.ws_before)
-            .unwrap_or(false)
+        self.toks.get(self.pos).is_some_and(|s| s.ws_before)
     }
     fn next(&mut self) -> Option<Tok> {
         let t = self.toks.get(self.pos).map(|s| s.tok.clone());
@@ -524,7 +521,7 @@ impl Parser {
             }
             Tok::LBrace => self.parse_array_const(),
             Tok::Ident(word) => self.classify_ident(word),
-            Tok::QRef { sheet, body } => self.make_qref(sheet, body),
+            Tok::QRef { sheet, body } => Ok(self.make_qref(sheet, body)),
             other => Err(format!("unexpected token {other:?}")),
         }
     }
@@ -532,28 +529,25 @@ impl Parser {
     fn parse_array_const(&mut self) -> Result<Expr, String> {
         let mut rows: Vec<Vec<Expr>> = vec![Vec::new()];
         loop {
-            match self.peek() {
-                Some(Tok::RBrace) => {
-                    self.pos += 1;
-                    break;
-                }
-                _ => {
-                    let e = self.parse_expr(0)?; // stops at the , / ; separators
-                    rows.last_mut().unwrap().push(e);
-                    match self.peek() {
-                        Some(Tok::Comma) => {
-                            self.pos += 1;
-                        }
-                        Some(Tok::Semi) => {
-                            self.pos += 1;
-                            rows.push(Vec::new());
-                        }
-                        Some(Tok::RBrace) => {
-                            self.pos += 1;
-                            break;
-                        }
-                        _ => return Err("malformed array constant".into()),
+            if let Some(Tok::RBrace) = self.peek() {
+                self.pos += 1;
+                break;
+            } else {
+                let e = self.parse_expr(0)?; // stops at the , / ; separators
+                rows.last_mut().unwrap().push(e);
+                match self.peek() {
+                    Some(Tok::Comma) => {
+                        self.pos += 1;
                     }
+                    Some(Tok::Semi) => {
+                        self.pos += 1;
+                        rows.push(Vec::new());
+                    }
+                    Some(Tok::RBrace) => {
+                        self.pos += 1;
+                        break;
+                    }
+                    _ => return Err("malformed array constant".into()),
                 }
             }
         }
@@ -579,7 +573,7 @@ impl Parser {
         }
         // Cell reference?
         if let Some(addr) = CellAddress::parse_a1(&word) {
-            return self.finish_ref(SheetSpec::Current, RefAtom::Cell(addr));
+            return Ok(self.finish_ref(SheetSpec::Current, RefAtom::Cell(addr)));
         }
         // Column-only / row-only token: only a reference when it begins a range
         // (`A:A`, `2:2`). A bare column letter on its own (`x`, `a`) is a name —
@@ -588,13 +582,13 @@ impl Parser {
         if matches!(self.peek(), Some(Tok::Colon))
             && let Some(atom) = parse_col_or_row(&word)
         {
-            return self.finish_ref(SheetSpec::Current, atom);
+            return Ok(self.finish_ref(SheetSpec::Current, atom));
         }
         // Otherwise a defined name (or a LET/lambda-bound variable).
         Ok(Expr::Name(word))
     }
 
-    fn make_qref(&mut self, sheet: SheetSpec, body: String) -> Result<Expr, String> {
+    fn make_qref(&mut self, sheet: SheetSpec, body: String) -> Expr {
         if let Some(addr) = CellAddress::parse_a1(&body) {
             return self.finish_ref(sheet, RefAtom::Cell(addr));
         }
@@ -602,11 +596,11 @@ impl Parser {
             return self.finish_ref(sheet, atom);
         }
         // Sheet-qualified defined name (rare): treat as a plain name.
-        Ok(Expr::Name(body))
+        Expr::Name(body)
     }
 
     /// Given a starting reference atom, optionally consume `:atom` to form a range.
-    fn finish_ref(&mut self, sheet: SheetSpec, first: RefAtom) -> Result<Expr, String> {
+    fn finish_ref(&mut self, sheet: SheetSpec, first: RefAtom) -> Expr {
         if matches!(self.peek(), Some(Tok::Colon)) {
             // Look ahead: is the next token another reference atom?
             if let Some(second_tok) = self.toks.get(self.pos + 1).map(|s| s.tok.clone())
@@ -614,17 +608,17 @@ impl Parser {
             {
                 self.pos += 2; // consume ':' and the atom
                 let (start, end) = resolve_range(first, second);
-                return Ok(Expr::Ref(Reference::range(sheet, start, end)));
+                return Expr::Ref(Reference::range(sheet, start, end));
             }
         }
         // single
         let addr = first.to_address_start();
         if let RefAtom::Cell(_) = first {
-            Ok(Expr::Ref(Reference::cell(sheet, addr)))
+            Expr::Ref(Reference::cell(sheet, addr))
         } else {
             // full column/row used alone → a range spanning it
             let (start, end) = full_span(first);
-            Ok(Expr::Ref(Reference::range(sheet, start, end)))
+            Expr::Ref(Reference::range(sheet, start, end))
         }
     }
 
@@ -636,7 +630,7 @@ impl Parser {
         }
         loop {
             // allow omitted arguments (e.g. IF(A1,,0)) as Empty
-            if matches!(self.peek(), Some(Tok::Comma) | Some(Tok::RParen)) {
+            if matches!(self.peek(), Some(Tok::Comma | Tok::RParen)) {
                 args.push(Expr::Text(String::new())); // placeholder empty arg
             } else {
                 // `,` is not an operator, so parse_expr stops at the separator.
@@ -767,12 +761,20 @@ fn combine(op: BinaryOp, lhs: Expr, rhs: Expr) -> Expr {
     }
 }
 
-/// Parse a formula string (leading `=` optional) into an [`Expr`].
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Parse a formula string (leading `=` optional) into an [`Expr`].
+///
+/// # Errors
+///
+/// 公式为空或不符合词法、语法规则时返回 [`CellError::Name`]。
 pub fn parse(input: &str) -> Result<Expr, CellError> {
     parse_detailed(input).map_err(|_| CellError::Name)
 }
 
-/// Parse with a descriptive error message.
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Parse with a descriptive error message.
+///
+/// # Errors
+///
+/// 公式为空或不符合词法、语法规则时返回带位置上下文的错误文本。
 pub fn parse_detailed(input: &str) -> Result<Expr, String> {
     let text = input.strip_prefix('=').unwrap_or(input).trim();
     if text.is_empty() {
@@ -791,105 +793,5 @@ pub fn parse_detailed(input: &str) -> Result<Expr, String> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn p(s: &str) -> Expr {
-        parse_detailed(s).unwrap_or_else(|e| panic!("parse {s:?}: {e}"))
-    }
-
-    #[test]
-    fn literals() {
-        assert_eq!(p("=42"), Expr::Number(42.0));
-        assert_eq!(
-            p("=-3.5"),
-            Expr::Unary {
-                op: UnaryOp::Neg,
-                expr: Box::new(Expr::Number(3.5))
-            }
-        );
-        assert_eq!(p(r#"="hi""#), Expr::Text("hi".into()));
-        assert_eq!(p("=TRUE"), Expr::Bool(true));
-        assert_eq!(p("=#REF!"), Expr::Error(CellError::Ref));
-    }
-
-    #[test]
-    fn precedence() {
-        // 1+2*3 → 1 + (2*3)
-        let e = p("=1+2*3");
-        if let Expr::Binary {
-            op: BinaryOp::Add,
-            rhs,
-            ..
-        } = e
-        {
-            assert!(matches!(
-                *rhs,
-                Expr::Binary {
-                    op: BinaryOp::Mul,
-                    ..
-                }
-            ));
-        } else {
-            panic!("bad tree");
-        }
-    }
-
-    #[test]
-    fn references() {
-        assert!(matches!(p("=A1"), Expr::Ref(_)));
-        assert!(matches!(p("=A1:B10"), Expr::Ref(r) if r.is_range()));
-        match p("=Sheet1!A1") {
-            Expr::Ref(r) => assert_eq!(r.sheet, SheetSpec::Name("Sheet1".into())),
-            _ => panic!(),
-        }
-        match p("='My Sheet'!B2") {
-            Expr::Ref(r) => assert_eq!(r.sheet, SheetSpec::Name("My Sheet".into())),
-            _ => panic!(),
-        }
-    }
-
-    #[test]
-    fn func_calls() {
-        match p("=SUM(A1:A3, 5)") {
-            Expr::Func { name, args } => {
-                assert_eq!(name, "SUM");
-                assert_eq!(args.len(), 2);
-            }
-            _ => panic!(),
-        }
-    }
-
-    #[test]
-    fn array_constant() {
-        match p("={1,2;3,4}") {
-            Expr::Array(rows) => {
-                assert_eq!(rows.len(), 2);
-                assert_eq!(rows[0].len(), 2);
-            }
-            _ => panic!(),
-        }
-    }
-
-    #[test]
-    fn three_d_ref() {
-        match p("=Sheet1:Sheet3!A1") {
-            Expr::Ref(r) => assert_eq!(r.sheet, SheetSpec::Span("Sheet1".into(), "Sheet3".into())),
-            _ => panic!(),
-        }
-    }
-
-    #[test]
-    fn full_column() {
-        match p("=SUM(A:A)") {
-            Expr::Func { args, .. } => match &args[0] {
-                Expr::Ref(r) => {
-                    assert_eq!(r.start.col, 0);
-                    assert_eq!(r.end.unwrap().row, MAX_ROW);
-                }
-                _ => panic!(),
-            },
-            _ => panic!(),
-        }
-    }
-}
+#[path = "parse_tests/tests.rs"]
+mod tests;
