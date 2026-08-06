@@ -4,7 +4,7 @@ use easyexcel::ExcelRow;
 use easyexcel_web::{ExcelImport, ExcelRequestMetadata, ExcelRows, ExcelWebRuntime};
 use http_body_util::BodyExt;
 use salvo::extract::Metadata;
-use salvo::{Extractible, Request};
+use salvo::{Depot, Extractible, Request};
 
 use crate::ExcelSalvoError;
 
@@ -41,7 +41,10 @@ where
     }
 
     #[allow(refining_impl_trait)]
-    async fn extract(request: &'ex mut Request) -> Result<Self, ExcelSalvoError> {
+    async fn extract(
+        request: &'ex mut Request,
+        _depot: &'ex mut Depot,
+    ) -> Result<Self, ExcelSalvoError> {
         let runtime = request
             .extensions()
             .get::<ExcelWebRuntime>()

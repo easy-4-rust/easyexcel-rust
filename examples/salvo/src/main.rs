@@ -63,7 +63,7 @@ async fn download(request: &mut Request, depot: &mut Depot, response: &mut Respo
 
 #[handler]
 async fn upload(request: &mut Request, depot: &mut Depot, response: &mut Response) {
-    match ExcelRequest::<DemoRow>::extract(request).await {
+    match ExcelRequest::<DemoRow>::extract(request, depot).await {
         Ok(excel_request) => {
             let request_id = excel_request.request_id().to_string();
             let mut rows = excel_request.into_rows();

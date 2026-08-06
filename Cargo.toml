@@ -95,7 +95,7 @@ hyper-util = { version = "0.1.20", features = ["http1", "server", "tokio"] }
 libc = "0.2.189"
 poem = "3.1.12"
 rocket = "0.5.1"
-salvo = { version = "0.85.0", default-features = false, features = ["http1", "server", "test"] }
+salvo = { version = "0.89.3", default-features = false, features = ["http1", "server", "test"] }
 warp = { version = "0.4.3", features = ["server", "test"] }
 md-5 = "0.11.0"
 moka = { version = "0.12.15", features = ["sync"] }

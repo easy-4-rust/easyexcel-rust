@@ -21,7 +21,7 @@ async fn salvo_conforms_to_shared_excel_contract() {
         .build();
     request.extensions_mut().insert(runtime.clone());
     let mut depot = Depot::new();
-    let upload = ExcelRequest::<ConformanceRow>::extract(&mut request)
+    let upload = ExcelRequest::<ConformanceRow>::extract(&mut request, &mut depot)
         .await
         .expect("extract Salvo upload");
     verify_upload(upload.into_rows())
