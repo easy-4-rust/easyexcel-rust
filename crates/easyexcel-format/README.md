@@ -2,43 +2,124 @@
 
 [简体中文](README.zh-CN.md)
 
-Spreadsheet number, date and display formatting algorithms with Java-compatible behavior.
+Java EasyExcel-compatible number, date and display formatting algorithms.
 
-> Release line: 0.1.1 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
-## Responsibilities
+## Overview
 
-- Resolves built-in and custom number formats.
-- Formats decimal, integer, floating-point and date values deterministically.
+This crate is a published module in the EasyExcel-Rust workspace. It is intended for Rust developers who need its boundary, direct engine API or implementation details. Application code should normally consume the re-exported surface through the `easyexcel` facade.
+
+## At a glance
+
+```text
+Input / public API -> easyexcel-format -> typed model, stream, file or report
+```
 
 ## Architecture
 
-```text
-raw cell value + format code -> easyexcel-format -> display text
+```mermaid
+flowchart LR
+    Value["Raw numeric value"] --> Formatter["easyexcel-format"]
+    Code["Built-in/custom code"] --> Formatter
+    Locale["ExcelLocale"] --> Formatter
+    Formatter --> Display["Deterministic display text"]
 ```
 
-Main public surface: `ExcelLocale, NumberRoundingMode, builtin_format_code, format_with_code`.
+Dependency direction remains from the facade or format engines toward foundations; this crate never depends back on an application.
 
-## Installation and usage
+## Capability matrix
+
+| Capability | Status | Details |
+|:---|:---|:---|
+| Built-in formats | Available | EasyExcel/POI priority with ECMA-376 fallback. |
+| Locale-aware rendering | Available | Java/POSIX/BCP-47 locale names. |
+| Container parsing | Out of scope | Consumes values and format codes only. |
+
+## Public API
+
+| API | Purpose |
+|:---|:---|
+| `ExcelLocale` | Locale resolution and formatter data. |
+| `format_with_code` | Render a numeric value with an Excel format code. |
+| `builtin_format_code` | Resolve standard format identifiers. |
+| `NumberRoundingMode` | Java-compatible rounding metadata. |
+
+The current `src/lib.rs` re-exports and their implementations are authoritative. This README does not present private implementation objects as stable API.
+
+## Installation
 
 ```toml
 [dependencies]
-easyexcel-format = "0.1.1"
+easyexcel-format = "0.1.2"
 ```
+
+If an application needs several EasyExcel engines, prefer a single `easyexcel = "0.1.2"` dependency and the `easyexcel::...` re-exports to prevent version drift.
+
+## Basic usage
 
 ```rust
-use easyexcel_format::{NumberRoundingMode, builtin_format_code, format_with_code};
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+use easyexcel_format::{ExcelLocale, format_with_code};
+
+let locale = ExcelLocale::from_name("zh-CN").expect("supported locale");
+let displayed = format_with_code(
+    45_292.0,
+    "yyyy-mm-dd",
+    false,
+    &locale.formatter(),
+);
+assert!(displayed.is_some());
+Ok(())
+}
 ```
 
-## Compatibility and limits
+## Advanced usage
 
-This crate formats values; it does not read or write spreadsheet containers.
+```rust
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+use easyexcel_format::{
+    builtin_format_code, is_date_format_code, resolve_builtin_format_code,
+};
 
-The authoritative capability boundaries are maintained in the [workspace compatibility matrix](../../docs/compatibility.md). Unsupported behavior must return an explicit error or warning rather than silently downgrade.
+assert_eq!(builtin_format_code(0), Some("General"));
+assert!(resolve_builtin_format_code(14).is_some());
+assert!(is_date_format_code("yyyy-mm-dd"));
+Ok(())
+}
+```
 
-## Project links
+## Errors and capability boundaries
 
-- [EasyExcel-Rust](https://github.com/easy-4-rust/easyexcel-rust)
+- Formatting follows deterministic spreadsheet display semantics; it does not retain workbook styles or read ZIP/BIFF containers.
+- Non-finite values and unsupported format patterns are handled through explicit result/option paths rather than guessed output.
+
+Resource limits, format loss and unsupported behavior must surface through typed errors, `Option`, warnings or conversion reports; silent guessing and downgrade are forbidden.
+
+## Relationship to other crates
+
+```mermaid
+flowchart LR
+    User["Application"] --> Facade["easyexcel"]
+    Facade --> This["easyexcel-format"]
+    This --> Foundation["Shared foundation crates"]
+```
+
+The diagram shows the public dependency direction, not that this crate depends on every foundation module. `Cargo.toml` is authoritative.
+
+## Evidence map
+
+| Claim | Source of truth |
+|:---|:---|
+| Package version, MSRV and dependencies | [`Cargo.toml`](Cargo.toml) |
+| Public exports | [`src/lib.rs`](src/lib.rs) |
+| Implementation behavior | `src/format/` |
+| Cross-format boundaries | [Workspace compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md) |
+
+## Related links
+
+- [Repository](https://github.com/easy-4-rust/easyexcel-rust)
 - [API documentation](https://docs.rs/easyexcel-format)
-- [Changelog](../../CHANGELOG.md)
+- [Compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
+- [Changelog](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [Chinese README](README.zh-CN.md)

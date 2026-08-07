@@ -2,70 +2,152 @@
 
 [简体中文](README.zh-CN.md)
 
-Procedural macros for typed EasyExcel row mapping and annotation metadata.
+Procedural macro implementing typed EasyExcel row schemas, conversion and Java annotation metadata.
 
-> Release line: 0.1.1 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
-## Responsibilities
+## Overview
 
-- Derives `ExcelRow` schemas and bidirectional row conversion.
-- Maps the supported Java EasyExcel annotation semantics to `#[excel(...)]` attributes.
+This crate is a published module in the EasyExcel-Rust workspace. It is intended for Rust developers who need its boundary, direct engine API or implementation details. Application code should normally consume the re-exported surface through the `easyexcel` facade.
+
+## At a glance
+
+```text
+Input / public API -> easyexcel-derive -> typed model, stream, file or report
+```
 
 ## Architecture
 
-```text
-Rust struct + attributes -> easyexcel-derive -> ExcelRow implementation
+```mermaid
+flowchart LR
+    Struct["Rust struct"] --> Parser["syn attribute parser"]
+    Parser --> Metadata["Annotation model"]
+    Metadata --> Expand["quote code generation"]
+    Expand --> Trait["ExcelRow implementation"]
+    Trait --> Facade["easyexcel builders"]
 ```
 
-Main public surface: `#[derive(ExcelRow)] and #[excel(...)]`.
+Dependency direction remains from the facade or format engines toward foundations; this crate never depends back on an application.
 
-## Installation and usage
+## Capability matrix
+
+| Capability | Status | Details |
+|:---|:---|:---|
+| Typed row derive | Available | Schema plus bidirectional row conversion. |
+| Java annotation semantics | Available with backend limits | Fourteen annotation families mapped to `#[excel(...)]`. |
+| Rust extensions | Available | Formula, image, comment, hyperlink, validation, conditional and filter metadata. |
+
+## Public API
+
+| API | Purpose |
+|:---|:---|
+| `#[derive(ExcelRow)]` | Generate row schema and conversion implementation. |
+| `#[excel(name/index/order/...)]` | Column mapping metadata. |
+| Style attributes | Header/content font, style, width, height and merge metadata. |
+| Format attributes | Date/time, number format and rounding mode. |
+
+The current `src/lib.rs` re-exports and their implementations are authoritative. This README does not present private implementation objects as stable API.
+
+## Installation
 
 ```toml
 [dependencies]
-easyexcel-derive = "0.1.1"
+easyexcel-derive = "0.1.2"
 ```
 
+If an application needs several EasyExcel engines, prefer a single `easyexcel = "0.1.2"` dependency and the `easyexcel::...` re-exports to prevent version drift.
+
+## Basic usage
+
 ```rust
+fn main() -> Result<(), Box<dyn std::error::Error>> {
 use easyexcel::ExcelRow;
 
-#[derive(ExcelRow)]
+#[derive(Debug, ExcelRow)]
+#[excel(column_width = 18, head_row_height = 24)]
 struct OrderRow {
-    #[excel(name = "Order ID", index = 0)]
+    #[excel(value = ["Order", "ID"], index = 0)]
     id: String,
+
+    #[excel(name = "Amount", number_format = "0.00")]
+    amount: f64,
+}
+Ok(())
 }
 ```
 
-## Compatibility and limits
+## Advanced usage
 
-Users should not depend on this proc-macro crate directly; `easyexcel` re-exports `ExcelRow`. Format rendering limits remain backend-specific.
+```rust
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+use easyexcel::ExcelRow;
 
-The authoritative capability boundaries are maintained in the [workspace compatibility matrix](../../docs/compatibility.md). Unsupported behavior must return an explicit error or warning rather than silently downgrade.
+#[derive(ExcelRow)]
+#[excel(ignore_unannotated)]
+struct StrictRow {
+    #[excel(property, name = "Included")]
+    included: String,
 
-## Java annotation mapping
+    // Style-only metadata does not opt this field into strict mapping.
+    #[excel(number_format = "0.00")]
+    ignored: f64,
+
+    #[excel(ignore, default = String::new())]
+    internal: String,
+}
+Ok(())
+}
+```
+
+## Annotation mapping
 
 | Java annotation | Rust attribute |
-|---|---|
+|:---|:---|
 | `ExcelIgnore` | `ignore` |
 | `ExcelIgnoreUnannotated` | `ignore_unannotated` |
 | `ExcelProperty` | `property`, `value/head`, `name`, `index`, `order`, `converter` |
 | `DateTimeFormat` | `date_time_format`, `use_1904_windowing` |
 | `NumberFormat` | `number_format`, `rounding_mode` |
 | `ColumnWidth` | `column_width` |
-| `ContentFontStyle` | `content_font_style(...)` |
+| `ContentFontStyle` / `HeadFontStyle` | `content_font_style(...)` / `head_font_style(...)` |
+| `ContentStyle` / `HeadStyle` | `content_style(...)` / `head_style(...)` |
 | `ContentLoopMerge` | `content_loop_merge(...)` |
-| `ContentRowHeight` | `content_row_height` |
-| `ContentStyle` | `content_style(...)` |
-| `HeadFontStyle` | `head_font_style(...)` |
-| `HeadRowHeight` | `head_row_height` |
-| `HeadStyle` | `head_style(...)` |
+| `ContentRowHeight` / `HeadRowHeight` | `content_row_height` / `head_row_height` |
 | `OnceAbsoluteMerge` | `once_absolute_merge(...)` |
 
-`value = ["Level 1", "Level 2"]` models a multi-level `ExcelProperty.value()` header. With `ignore_unannotated`, formatting or style attributes alone do not opt a field into mapping. `default = expression`, `image`, `comment`, `hyperlink`, `formula`, `data_validation`, `conditional` and `filter` are documented Rust extensions, not falsely labeled Java annotation members.
+Multi-level `ExcelProperty.value()` maps to `value = ["Level 1", "Level 2"]`. The `default = expression` attribute is an explicitly documented Rust extension.
 
-## Project links
+## Errors and capability boundaries
 
-- [EasyExcel-Rust](https://github.com/easy-4-rust/easyexcel-rust)
+- Users should consume the macro through `easyexcel::ExcelRow`, not add a direct runtime dependency on this proc-macro crate.
+- Metadata support and file-format rendering are separate: backend-specific limitations remain authoritative.
+
+Resource limits, format loss and unsupported behavior must surface through typed errors, `Option`, warnings or conversion reports; silent guessing and downgrade are forbidden.
+
+## Relationship to other crates
+
+```mermaid
+flowchart LR
+    User["Application"] --> Facade["easyexcel"]
+    Facade --> This["easyexcel-derive"]
+    This --> Foundation["Shared foundation crates"]
+```
+
+The diagram shows the public dependency direction, not that this crate depends on every foundation module. `Cargo.toml` is authoritative.
+
+## Evidence map
+
+| Claim | Source of truth |
+|:---|:---|
+| Package version, MSRV and dependencies | [`Cargo.toml`](Cargo.toml) |
+| Public exports | [`src/lib.rs`](src/lib.rs) |
+| Implementation behavior | `src/annotation/ and src/expand/` |
+| Cross-format boundaries | [Workspace compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md) |
+
+## Related links
+
+- [Repository](https://github.com/easy-4-rust/easyexcel-rust)
 - [API documentation](https://docs.rs/easyexcel-derive)
-- [Changelog](../../CHANGELOG.md)
+- [Compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
+- [Changelog](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [Chinese README](README.zh-CN.md)

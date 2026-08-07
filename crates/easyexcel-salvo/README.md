@@ -2,43 +2,197 @@
 
 [简体中文](README.zh-CN.md)
 
-Native Salvo integration for the shared EasyExcel Web runtime.
+Native EasyExcel request extraction and response adapter for Salvo.
 
-> Release line: 0.1.1 · Rust 1.89+ · Edition 2024 · Apache-2.0
+> Release: 0.1.2 · Rust 1.89+ · Edition 2024 · Apache-2.0
 
-## Responsibilities
+## Overview
 
-- Exposes Salvo-native extractor and writer types as `ExcelRequest<T>` and `ExcelResponse<T>`.
-- Maps shared policy and problem details to Salvo transport primitives.
+`easyexcel-salvo` only bridges Salvo transport types to `easyexcel-web`. Upload spooling, resource limits, row-stream backpressure, cancellation, timeouts, temporary-file cleanup and stable errors remain in the shared runtime, preventing framework-specific semantic drift.
+
+Native integration: `Extractible` request type and Salvo `Writer` response. Runtime injection: `ExcelWebRuntime` inserted into request extensions by a hoop.
+
+## At a glance
+
+```text
+HTTP request -> easyexcel-salvo -> easyexcel-web -> typed rows / streamed response
+```
 
 ## Architecture
 
-```text
-Salvo request -> easyexcel-salvo -> easyexcel-web -> EasyExcel engines -> Salvo response
+```mermaid
+flowchart LR
+    Request["Salvo request"] --> Adapter["easyexcel-salvo"]
+    Adapter --> Import["easyexcel-web / ExcelImport"]
+    Import --> Rows["ExcelRows<T> / backpressure"]
+    Rows --> Handler["Application handler"]
+    Handler --> Export["ExcelExport<T>"]
+    Export --> Response["Salvo response"]
 ```
 
-Main public surface: `ExcelRequest, ExcelResponse, ExcelSalvoError, ExcelWebPolicy, ExcelWebRuntime`.
+The adapter does not reimplement spreadsheet parsing, writing or resource policy. Business rows are consumed through a bounded channel and downloads are exposed to Salvo as an asynchronous file stream.
 
-## Installation and usage
+## Capability matrix
+
+| Capability | Status | Implementation |
+|:---|:---|:---|
+| `ExcelRequest<T>` | Available | Native Salvo extraction with a typed, backpressured row stream. |
+| `ExcelResponse<T>` | Available | Generates a controlled file before committing headers, then streams it asynchronously. |
+| Limits and concurrency | Shared | `ExcelWebPolicy` + `ExcelWebRuntime` |
+| Error protocol | Stable | `ExcelSalvoError` + `ExcelProblemDetails` |
+| TUI / HTML form | Out of scope | Owned by the application or examples. |
+
+## Installation
 
 ```toml
 [dependencies]
-easyexcel-salvo = "0.1.1"
+easyexcel = "0.1.2"
+easyexcel-salvo = "0.1.2"
 ```
+
+`easyexcel` provides `ExcelRow`, `Format` and typed spreadsheet semantics; this adapter provides Salvo transport integration. Keep both on the same release line.
+
+## Define the row model
 
 ```rust
-use easyexcel_salvo::{ExcelRequest, ExcelResponse, ExcelWebPolicy};
+use easyexcel::ExcelRow;
+
+#[derive(Debug, ExcelRow)]
+struct ReportRow {
+    #[excel(name = "Name")]
+    name: String,
+
+    #[excel(name = "Value", number_format = "0")]
+    value: i64,
+}
+
+fn report_rows() -> impl Iterator<Item = ReportRow> {
+    (0..10).map(|value| ReportRow {
+        name: format!("row-{value}"),
+        value,
+    })
+}
 ```
 
-## Compatibility and limits
+## Streaming download
 
-Business rules, parsing and resource enforcement stay in `easyexcel-web`; this crate only owns the Salvo transport adapter. See `examples/salvo` in the repository.
+```rust
+use easyexcel::io::Format;
+use easyexcel_salvo::{ExcelResponse, ExcelWebRuntime};
+use salvo::prelude::*;
 
-The authoritative capability boundaries are maintained in the [workspace compatibility matrix](../../docs/compatibility.md). Unsupported behavior must return an explicit error or warning rather than silently downgrade.
+#[handler]
+async fn download(
+    request: &mut Request,
+    depot: &mut Depot,
+    response: &mut Response,
+) {
+    let runtime = request.extensions()
+        .get::<ExcelWebRuntime>()
+        .expect("runtime attached")
+        .clone();
+    match ExcelResponse::<ReportRow>::prepare(
+        report_rows(),
+        Format::Xlsx,
+        "report.xlsx",
+        "Data",
+        runtime.generated_context(),
+    ).await {
+        Ok(value) => value.write(request, depot, response).await,
+        Err(error) => error.write(request, depot, response).await,
+    }
+}
+```
 
-## Project links
+`ExcelResponse::prepare` completes generation and limit checks before returning a Salvo response. The response body then reads the temporary file asynchronously instead of copying the complete file into memory.
 
-- [EasyExcel-Rust](https://github.com/easy-4-rust/easyexcel-rust)
+## Backpressured upload
+
+```rust
+use easyexcel_salvo::{ExcelRequest, ExcelSalvoError};
+use salvo::prelude::*;
+
+#[handler]
+async fn upload(
+    request: &mut Request,
+    depot: &mut Depot,
+    response: &mut Response,
+) {
+    match ExcelRequest::<ReportRow>::extract(request, depot).await {
+        Ok(value) => {
+            let request_id = value.request_id().to_owned();
+            let mut rows = value.into_rows();
+            while let Some(row) = rows.next_row().await {
+                if let Err(error) = row {
+                    ExcelSalvoError::new(error, &request_id)
+                        .write(request, depot, response).await;
+                    return;
+                }
+            }
+            response.render("success");
+        }
+        Err(error) => error.write(request, depot, response).await,
+    }
+}
+```
+
+Uploads must provide `x-excel-file-name`, `Content-Disposition` or a recognizable `Content-Type`. Optional `x-request-id` is propagated into tracing and error responses.
+
+## Runtime wiring
+
+```rust
+use easyexcel_salvo::{ExcelWebPolicy, ExcelWebRuntime};
+use salvo::prelude::*;
+
+let runtime = ExcelWebRuntime::new(ExcelWebPolicy::default());
+// Add a Salvo hoop that inserts runtime.clone() into request.extensions_mut().
+// Then register /download and /upload handlers on Router.
+```
+
+Create one shared `ExcelWebRuntime` instead of rebuilding the concurrency permit pool per request. `ExcelWebPolicy` configures file bytes, rows, upload/processing timeouts, maximum tasks, row-channel capacity and temporary directory.
+
+## Headers and errors
+
+- `Content-Type` is derived from XLSX, XLS or CSV format.
+- `Content-Disposition` uses UTF-8 filename encoding and sanitizes unsafe names.
+- `Content-Length` comes from the generated file size.
+- `ExcelSalvoError` maps shared failures to the framework-native rejection/error/response.
+- Diagnostics go to tracing; the stable problem response does not expose internal paths.
+
+## Capability boundaries
+
+- Streaming upload means chunked spooling followed by parsing; it does not make XLS/XLSX random-access containers parseable before the complete upload arrives.
+- Streaming download starts after successful generation so clients do not receive a partially valid workbook.
+- The adapter does not own business validation, authorization or persistence; those belong to application handlers/middleware.
+- The complete runnable service is in `examples/salvo`; shared assertions live in `tests/easyexcel-web-conformance`.
+
+## Dependency relationship
+
+```mermaid
+flowchart TB
+    Framework["Salvo"] --> Adapter["easyexcel-salvo"]
+    Adapter --> Web["easyexcel-web"]
+    Web --> Facade["easyexcel"]
+    Facade --> Engines["XLS / XLSX / CSV engines"]
+```
+
+Reverse dependencies such as `easyexcel-web -> easyexcel-salvo` or `easyexcel -> easyexcel-salvo` are forbidden.
+
+## Evidence map
+
+| Claim | Source of truth |
+|:---|:---|
+| Extractor/request behavior | [`src/excel_request.rs`](src/excel_request.rs) |
+| Responder/reply behavior | [`src/excel_response.rs`](src/excel_response.rs) |
+| Error mapping | [`src/excel_error.rs`](src/excel_error.rs) |
+| Runnable integration | [`examples/salvo`](https://github.com/easy-4-rust/easyexcel-rust/tree/main/examples/salvo) |
+| Shared adapter contract | [`tests/easyexcel-web-conformance`](https://github.com/easy-4-rust/easyexcel-rust/tree/main/tests/easyexcel-web-conformance) |
+
+## Related links
+
+- [Repository](https://github.com/easy-4-rust/easyexcel-rust)
 - [API documentation](https://docs.rs/easyexcel-salvo)
-- [Changelog](../../CHANGELOG.md)
+- [easyexcel-web](https://crates.io/crates/easyexcel-web)
+- [Runnable example](https://github.com/easy-4-rust/easyexcel-rust/tree/main/examples/salvo)
+- [Compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
 - [Chinese README](README.zh-CN.md)

@@ -2,43 +2,125 @@
 
 [English](README.md)
 
-OOXML `.xlsx` 读取、写入、事件流、模板、加密与往返修改引擎。
+OOXML `.xlsx` 读取、写入、事件读取、模板包、加密与面向保留的往返引擎。
 
-> 版本线：0.1.1 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
-## 职责
+## 概述
 
-- 读写工作簿包，并提供事件式工作表读取器。
-- 支持模板物化、加密 OOXML 和面向保留的包处理。
+本 crate 是 EasyExcel-Rust Workspace 的正式发布模块。本文面向需要理解模块职责、直接调用底层 API 或维护格式引擎的 Rust 开发者。普通业务项目应优先通过 `easyexcel` 门面访问重导出的能力。
+
+## 一览
+
+```text
+输入 / 公共 API -> easyexcel-xlsx -> 类型化模型、行流、文件或报告
+```
 
 ## 架构
 
-```text
-ZIP / OOXML bytes <-> easyexcel-xlsx <-> Workbook / event stream
+```mermaid
+flowchart LR
+    File[".xlsx / 加密 OOXML"] --> ZIP["ZIP / 加密层"]
+    ZIP --> XML["quick-xml 事件解析"]
+    XML --> Events["单元格事件"]
+    XML --> Model["Workbook"]
+    Model --> Generate["rust_xlsxwriter"]
+    Model --> RoundTrip["包保留"]
+    Generate --> Output[".xlsx"]
+    RoundTrip --> Output
 ```
 
-主要公共 API：`read_path, write_path, XlsxCellEventReader, OoxmlPackage, TemplateFillData`。
+依赖方向必须保持从门面或格式引擎指向基础模块；本 crate 不反向依赖业务应用。
 
-## 安装与使用
+## 能力矩阵
+
+| 能力 | 状态 | 说明 |
+|:---|:---|:---|
+| 工作簿读写 | 可用 | OOXML ZIP 包与共享模型双向映射。 |
+| 事件读取 | 可用 | 无需物化每一行即可读取工作表名称、条目和单元格事件。 |
+| 往返保留 | 尽力而为 | 在支持范围保留未知部件，不保证所有高级对象无损。 |
+
+## 公共 API
+
+| API | 用途 |
+|:---|:---|
+| `read_path`、`write_path` | 工作簿模式路径 API。 |
+| `read_path_with_password` | 支持密码的 OOXML 输入。 |
+| `XlsxCellEventReader`、`stream_sheet_entries` | 事件模式基础组件。 |
+| `OoxmlPackage`、`OoxmlTemplatePackage` | 包与模板保留类型。 |
+
+API 的权威定义来自当前 `src/lib.rs` 重导出与对应实现；README 不把内部私有对象描述为稳定契约。
+
+## 安装
 
 ```toml
 [dependencies]
-easyexcel-xlsx = "0.1.1"
+easyexcel-xlsx = "0.1.2"
 ```
+
+如果项目同时使用多个 EasyExcel 引擎，请改为只依赖 `easyexcel = "0.1.2"`，并通过 `easyexcel::...` 使用，以避免版本漂移。
+
+## 基础使用
 
 ```rust
-use easyexcel_xlsx::{XlsxCellEventReader, read_path, write_path};
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+use std::path::Path;
+use easyexcel_xlsx::{read_path, write_path};
+
+let workbook = read_path(Path::new("input.xlsx"))?;
+write_path(&workbook, Path::new("copy.xlsx"))?;
+Ok(())
+}
 ```
 
-## 兼容性与边界
+## 进阶使用
 
-在支持范围内保留未知 OOXML 部件，但不保证宏、图表和所有高级对象编辑无损；业务代码优先使用 `easyexcel::xlsx`。
+```rust
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+use std::path::Path;
+use easyexcel_xlsx::read_path_with_password;
 
-权威能力边界维护在[工作区兼容性矩阵](../../docs/compatibility.md)中。未支持行为必须返回明确错误或警告，禁止静默降级。
+let password = std::env::var("EASYEXCEL_PASSWORD")?;
+let workbook = read_path_with_password(
+    Path::new("protected.xlsx"),
+    Some(password.as_str()),
+)?;
+println!("sheets: {}", workbook.sheets.len());
+Ok(())
+}
+```
 
-## 项目链接
+## 错误与能力边界
 
-- [EasyExcel-Rust](https://github.com/easy-4-rust/easyexcel-rust)
+- 密码应来自 stdin、环境注入或安全描述符，不应写入命令历史或日志。
+- 不承诺宏、图表和所有高级 OOXML 对象编辑无损；应检查上层保留警告。
+
+资源限制、格式损失或未支持能力必须通过类型化错误、`Option`、warning 或转换报告显式呈现，禁止静默猜测或降级。
+
+## 依赖关系
+
+```mermaid
+flowchart LR
+    User["业务代码"] --> Facade["easyexcel"]
+    Facade --> This["easyexcel-xlsx"]
+    This --> Foundation["共享基础 crate"]
+```
+
+该图表达公共依赖方向，不表示本 crate 必然依赖所有基础模块。实际依赖以 `Cargo.toml` 为准。
+
+## 证据索引
+
+| 声明 | 事实来源 |
+|:---|:---|
+| 包版本、MSRV 与依赖 | [`Cargo.toml`](Cargo.toml) |
+| 公共重导出 | [`src/lib.rs`](src/lib.rs) |
+| 实现行为 | `src/xlsx/` |
+| 跨格式边界 | [Workspace 兼容性矩阵](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md) |
+
+## 相关链接
+
+- [项目仓库](https://github.com/easy-4-rust/easyexcel-rust)
 - [API 文档](https://docs.rs/easyexcel-xlsx)
-- [变更日志](../../CHANGELOG.md)
+- [兼容性矩阵](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
+- [变更日志](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [英文 README](README.md)

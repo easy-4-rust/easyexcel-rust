@@ -2,43 +2,129 @@
 
 [简体中文](README.zh-CN.md)
 
-Shared spreadsheet I/O contracts, format detection, streaming rows, limits and typed errors.
+Shared format detection, streaming row contracts, modes, resource limits and typed I/O errors.
 
-> Release line: 0.1.1 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
-## Responsibilities
+## Overview
 
-- Defines `RowSource`/`RowSink`, stream metadata and read/write modes.
-- Centralizes format detection, sheet selection and resource-limit enforcement contracts.
+This crate is a published module in the EasyExcel-Rust workspace. It is intended for Rust developers who need its boundary, direct engine API or implementation details. Application code should normally consume the re-exported surface through the `easyexcel` facade.
+
+## At a glance
+
+```text
+Input / public API -> easyexcel-io -> typed model, stream, file or report
+```
 
 ## Architecture
 
-```text
-bytes / paths -> easyexcel-io contracts -> format engines
+```mermaid
+flowchart LR
+    Bytes["Path / bytes"] --> Detect["Format detection"]
+    Detect --> Source["Format RowSource"]
+    Source --> Sink["RowSink"]
+    Limits["ResourceLimits"] --> Detect
+    Limits --> Source
+    Limits --> Sink
 ```
 
-Main public surface: `Format, ResourceLimits, RowSource, RowSink, StreamCell, ReadMode, WriteMode`.
+Dependency direction remains from the facade or format engines toward foundations; this crate never depends back on an application.
 
-## Installation and usage
+## Capability matrix
+
+| Capability | Status | Details |
+|:---|:---|:---|
+| Format detection | Available | Extension and magic-byte recognition for XLSX/XLS/CSV. |
+| Streaming contracts | Available | `RowSource`, `RowSink`, `StreamInfo` and sparse `StreamCell`. |
+| Resource limits | Available | Input/output bytes, sheets, rows, formula cells, cell chars and columns. |
+
+## Public API
+
+| API | Purpose |
+|:---|:---|
+| `Format` | Supported workbook format discriminator. |
+| `RowSource`, `RowSink` | Push-based row streaming boundary. |
+| `ResourceLimits` | Reusable safety contract. |
+| `Error`, `Result` | Stable engine I/O error layer. |
+
+The current `src/lib.rs` re-exports and their implementations are authoritative. This README does not present private implementation objects as stable API.
+
+## Installation
 
 ```toml
 [dependencies]
-easyexcel-io = "0.1.1"
+easyexcel-io = "0.1.2"
 ```
+
+If an application needs several EasyExcel engines, prefer a single `easyexcel = "0.1.2"` dependency and the `easyexcel::...` re-exports to prevent version drift.
+
+## Basic usage
 
 ```rust
-use easyexcel_io::{Format, ResourceLimits, RowSink, RowSource};
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+use std::path::Path;
+use easyexcel_io::Format;
+
+assert_eq!(Format::from_extension("xlsx"), Some(Format::Xlsx));
+assert_eq!(Format::from_magic(b"PK\x03\x04"), Format::Xlsx);
+let detected = Format::detect_path(Path::new("report.xlsx"))?;
+assert_eq!(detected, Format::Xlsx);
+Ok(())
+}
 ```
 
-## Compatibility and limits
+## Advanced usage
 
-Concrete XLS, XLSX and CSV codecs live in their format crates. Prefer `easyexcel::io` in application code.
+```rust
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+use easyexcel_io::ResourceLimits;
 
-The authoritative capability boundaries are maintained in the [workspace compatibility matrix](../../docs/compatibility.md). Unsupported behavior must return an explicit error or warning rather than silently downgrade.
+let limits = ResourceLimits::new(
+    64 * 1024 * 1024, // input bytes
+    32,               // sheets
+    1_000_000,        // rows
+    100_000,          // formula cells
+)
+.with_max_output_bytes(128 * 1024 * 1024)
+.with_max_cell_chars(256 * 1024)
+.with_max_columns(4_096);
 
-## Project links
+assert_eq!(limits.max_sheets(), 32);
+Ok(())
+}
+```
 
-- [EasyExcel-Rust](https://github.com/easy-4-rust/easyexcel-rust)
+## Errors and capability boundaries
+
+- `Format` deliberately represents XLS, XLSX and CSV only; Markdown/HTML/JSON are projections, not workbook container formats.
+- Concrete codecs belong to `easyexcel-xls`, `easyexcel-xlsx` and `easyexcel-csv`.
+
+Resource limits, format loss and unsupported behavior must surface through typed errors, `Option`, warnings or conversion reports; silent guessing and downgrade are forbidden.
+
+## Relationship to other crates
+
+```mermaid
+flowchart LR
+    User["Application"] --> Facade["easyexcel"]
+    Facade --> This["easyexcel-io"]
+    This --> Foundation["Shared foundation crates"]
+```
+
+The diagram shows the public dependency direction, not that this crate depends on every foundation module. `Cargo.toml` is authoritative.
+
+## Evidence map
+
+| Claim | Source of truth |
+|:---|:---|
+| Package version, MSRV and dependencies | [`Cargo.toml`](Cargo.toml) |
+| Public exports | [`src/lib.rs`](src/lib.rs) |
+| Implementation behavior | `src/io/` |
+| Cross-format boundaries | [Workspace compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md) |
+
+## Related links
+
+- [Repository](https://github.com/easy-4-rust/easyexcel-rust)
 - [API documentation](https://docs.rs/easyexcel-io)
-- [Changelog](../../CHANGELOG.md)
+- [Compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
+- [Changelog](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [Chinese README](README.zh-CN.md)

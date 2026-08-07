@@ -2,43 +2,121 @@
 
 [简体中文](README.zh-CN.md)
 
-Reusable Java-compatible string, collection, coordinate and validation algorithms.
+Small Java-compatible utility algorithms reused by EasyExcel-Rust engines.
 
-> Release line: 0.1.1 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
-## Responsibilities
+## Overview
 
-- Provides small deterministic helpers used across engines.
-- Keeps reusable algorithms out of the public EasyExcel facade orchestration layer.
+This crate is a published module in the EasyExcel-Rust workspace. It is intended for Rust developers who need its boundary, direct engine API or implementation details. Application code should normally consume the re-exported surface through the `easyexcel` facade.
+
+## At a glance
+
+```text
+Input / public API -> easyexcel-utils -> typed model, stream, file or report
+```
 
 ## Architecture
 
-```text
-engine input -> easyexcel-utils helpers -> normalized values
+```mermaid
+flowchart LR
+    Java["Java semantics"] --> Helpers["easyexcel-utils"]
+    Helpers --> Format["Format engines"]
+    Helpers --> Facade["easyexcel facade"]
+    Helpers --> Result["Deterministic normalized values"]
 ```
 
-Main public surface: `string_utils, coordinate_utils, list_utils, map_utils, validation`.
+Dependency direction remains from the facade or format engines toward foundations; this crate never depends back on an application.
 
-## Installation and usage
+## Capability matrix
+
+| Capability | Status | Details |
+|:---|:---|:---|
+| String compatibility | Available | Java trim, blank/numeric checks and CGLIB field-name normalization. |
+| Coordinate helpers | Available | Point-to-EMU and absolute/relative coordinate resolution. |
+| General utility framework | Out of scope | Only spreadsheet migration primitives belong here. |
+
+## Public API
+
+| API | Purpose |
+|:---|:---|
+| `string_utils` | Java-compatible string behavior. |
+| `coordinate_utils` | Drawing and cell coordinates. |
+| `list_utils`, `map_utils` | Collection helpers used by migrated code. |
+| `validation::ensure` | Error-type-neutral condition validation. |
+
+The current `src/lib.rs` re-exports and their implementations are authoritative. This README does not present private implementation objects as stable API.
+
+## Installation
 
 ```toml
 [dependencies]
-easyexcel-utils = "0.1.1"
+easyexcel-utils = "0.1.2"
 ```
+
+If an application needs several EasyExcel engines, prefer a single `easyexcel = "0.1.2"` dependency and the `easyexcel::...` re-exports to prevent version drift.
+
+## Basic usage
 
 ```rust
-use easyexcel_utils::{coordinate_utils, string_utils, validation};
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+use easyexcel_utils::{coordinate_utils, string_utils};
+
+assert_eq!(string_utils::java_trim("  Sheet1\t"), "Sheet1");
+assert!(string_utils::is_blank(Some(" \n")));
+assert_eq!(coordinate_utils::points_to_emu(Some(2)), 25_400);
+assert_eq!(
+    coordinate_utils::resolve_cell_coordinate(10, None, Some(3)),
+    13
+);
+Ok(())
+}
 ```
 
-## Compatibility and limits
+## Advanced usage
 
-This is an internal engine crate, not an alternative facade or general-purpose utility framework.
+```rust
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+use easyexcel_utils::validation;
 
-The authoritative capability boundaries are maintained in the [workspace compatibility matrix](../../docs/compatibility.md). Unsupported behavior must return an explicit error or warning rather than silently downgrade.
+fn validate_sheet_count(count: usize) -> Result<(), &'static str> {
+    validation::ensure(count > 0, "workbook must contain a sheet")
+}
+Ok(())
+}
+```
 
-## Project links
+## Errors and capability boundaries
 
-- [EasyExcel-Rust](https://github.com/easy-4-rust/easyexcel-rust)
+- This crate deliberately has no dependency on the `easyexcel` facade or format-specific error types.
+- It is not intended to replace standard-library or established ecosystem utilities in application code.
+
+Resource limits, format loss and unsupported behavior must surface through typed errors, `Option`, warnings or conversion reports; silent guessing and downgrade are forbidden.
+
+## Relationship to other crates
+
+```mermaid
+flowchart LR
+    User["Application"] --> Facade["easyexcel"]
+    Facade --> This["easyexcel-utils"]
+    This --> Foundation["Shared foundation crates"]
+```
+
+The diagram shows the public dependency direction, not that this crate depends on every foundation module. `Cargo.toml` is authoritative.
+
+## Evidence map
+
+| Claim | Source of truth |
+|:---|:---|
+| Package version, MSRV and dependencies | [`Cargo.toml`](Cargo.toml) |
+| Public exports | [`src/lib.rs`](src/lib.rs) |
+| Implementation behavior | `src/utils/` |
+| Cross-format boundaries | [Workspace compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md) |
+
+## Related links
+
+- [Repository](https://github.com/easy-4-rust/easyexcel-rust)
 - [API documentation](https://docs.rs/easyexcel-utils)
-- [Changelog](../../CHANGELOG.md)
+- [Compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
+- [Changelog](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [Chinese README](README.zh-CN.md)

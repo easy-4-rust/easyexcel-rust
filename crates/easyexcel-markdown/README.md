@@ -2,43 +2,131 @@
 
 [简体中文](README.zh-CN.md)
 
-Policy-driven Markdown projection for workbooks and streaming rows.
+Policy-driven GFM table import/export for workbooks and row streams with structured loss reporting.
 
-> Release line: 0.1.1 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
-## Responsibilities
+## Overview
 
-- Parses GFM tables into `TabularDocument`.
-- Exports workbook or row streams with formula, merge, type-inference and loss-report policies.
+This crate is a published module in the EasyExcel-Rust workspace. It is intended for Rust developers who need its boundary, direct engine API or implementation details. Application code should normally consume the re-exported surface through the `easyexcel` facade.
+
+## At a glance
+
+```text
+Input / public API -> easyexcel-markdown -> typed model, stream, file or report
+```
 
 ## Architecture
 
-```text
-Workbook / RowSource <-> easyexcel-markdown <-> GFM tables + report
+```mermaid
+flowchart LR
+    Markdown["GFM tables"] --> Parser["pulldown-cmark state"]
+    Parser --> Document["TabularDocument"]
+    Workbook["Workbook"] --> Policy["Formula / merge / value policy"]
+    Policy --> Writer["Workbook or RowSink writer"]
+    Writer --> Output["UTF-8 GFM + report"]
 ```
 
-Main public surface: `MarkdownExportOptions, MarkdownImportOptions, MarkdownWriter, MarkdownWorkbookWriter`.
+Dependency direction remains from the facade or format engines toward foundations; this crate never depends back on an application.
 
-## Installation and usage
+## Capability matrix
+
+| Capability | Status | Details |
+|:---|:---|:---|
+| GFM import | Available | Multiple tables, nearest headings and conservative type inference. |
+| Workbook export | Available | Formula, merge, hidden-sheet and display-value policies. |
+| Lossless Excel round trip | Not claimed | Markdown is a semantic projection. |
+
+## Public API
+
+| API | Purpose |
+|:---|:---|
+| `MarkdownImportOptions`, `read_markdown` | GFM to `TabularDocument` plus report. |
+| `MarkdownExportOptions`, `write_workbook` | Workbook to GFM plus report. |
+| `MarkdownWriter` | `RowSink` implementation for Event Mode. |
+| `MarkdownWarning`, `MarkdownConversionReport` | Machine-readable loss information. |
+
+The current `src/lib.rs` re-exports and their implementations are authoritative. This README does not present private implementation objects as stable API.
+
+## Installation
 
 ```toml
 [dependencies]
-easyexcel-markdown = "0.1.1"
+easyexcel-markdown = "0.1.2"
 ```
+
+If an application needs several EasyExcel engines, prefer a single `easyexcel = "0.1.2"` dependency and the `easyexcel::...` re-exports to prevent version drift.
+
+## Basic usage
 
 ```rust
-use easyexcel_markdown::{MarkdownExportOptions, MarkdownProfile, MarkdownWriter};
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+use std::io::Cursor;
+use easyexcel_markdown::{MarkdownImportOptions, read_markdown};
+
+let source = "## Orders\n\n| id | name |\n| --- | --- |\n| 007 | Alice |\n";
+let result = read_markdown(
+    Cursor::new(source.as_bytes()),
+    &MarkdownImportOptions::default(),
+)?;
+assert_eq!(result.document.tables()[0].name(), "Orders");
+Ok(())
+}
 ```
 
-## Compatibility and limits
+## Advanced usage
 
-Markdown is a semantic projection, not a lossless Excel round-trip format. Application code should use `easyexcel::markdown`.
+```rust
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+use std::io::Cursor;
+use easyexcel_markdown::{
+    MarkdownExportOptions, MarkdownFormulaPolicy, MarkdownMergePolicy,
+    write_workbook,
+};
+use easyexcel_model::Workbook;
 
-The authoritative capability boundaries are maintained in the [workspace compatibility matrix](../../docs/compatibility.md). Unsupported behavior must return an explicit error or warning rather than silently downgrade.
+let workbook = Workbook::new();
+let options = MarkdownExportOptions::default()
+    .with_formulas(MarkdownFormulaPolicy::ExpressionAndCached)
+    .with_merges(MarkdownMergePolicy::AnchorWithWarning);
+let (output, report) =
+    write_workbook(&workbook, Cursor::new(Vec::new()), &options)?;
+println!("warnings: {}", report.warnings.len());
+Ok(())
+}
+```
 
-## Project links
+## Errors and capability boundaries
 
-- [EasyExcel-Rust](https://github.com/easy-4-rust/easyexcel-rust)
+- The default `AgentStable` profile emits UTF-8/LF GFM and makes formula/merge losses explicit.
+- Formula-looking Markdown text remains text on import; the importer does not create executable formulas.
+
+Resource limits, format loss and unsupported behavior must surface through typed errors, `Option`, warnings or conversion reports; silent guessing and downgrade are forbidden.
+
+## Relationship to other crates
+
+```mermaid
+flowchart LR
+    User["Application"] --> Facade["easyexcel"]
+    Facade --> This["easyexcel-markdown"]
+    This --> Foundation["Shared foundation crates"]
+```
+
+The diagram shows the public dependency direction, not that this crate depends on every foundation module. `Cargo.toml` is authoritative.
+
+## Evidence map
+
+| Claim | Source of truth |
+|:---|:---|
+| Package version, MSRV and dependencies | [`Cargo.toml`](Cargo.toml) |
+| Public exports | [`src/lib.rs`](src/lib.rs) |
+| Implementation behavior | `src/markdown/` |
+| Cross-format boundaries | [Workspace compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md) |
+
+## Related links
+
+- [Repository](https://github.com/easy-4-rust/easyexcel-rust)
 - [API documentation](https://docs.rs/easyexcel-markdown)
-- [Changelog](../../CHANGELOG.md)
+- [Compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
+- [Changelog](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [Chinese README](README.zh-CN.md)

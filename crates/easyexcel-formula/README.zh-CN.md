@@ -2,43 +2,133 @@
 
 [English](README.md)
 
-Excel 兼容的公式解析、求值、重算与动态数组引擎。
+离线 Excel 公式解析、求值、依赖图与重算引擎。
 
-> 版本线：0.1.1 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
-## 职责
+## 概述
 
-- 把公式解析为表达式模型，并在工作簿上下文中求值。
-- 报告重算结果，同时明确保留未支持函数边界。
+本 crate 是 EasyExcel-Rust Workspace 的正式发布模块。本文面向需要理解模块职责、直接调用底层 API 或维护格式引擎的 Rust 开发者。普通业务项目应优先通过 `easyexcel` 门面访问重导出的能力。
+
+## 一览
+
+```text
+输入 / 公共 API -> easyexcel-formula -> 类型化模型、行流、文件或报告
+```
 
 ## 架构
 
-```text
-formula text + Workbook -> easyexcel-formula -> value / recalculation report
+```mermaid
+flowchart LR
+    Text["公式文本"] --> Parser["解析器 / AST 缓存"]
+    Parser --> Graph["依赖图"]
+    Workbook["Workbook"] --> Evaluator["求值器 + 函数注册表"]
+    Graph --> Evaluator
+    Evaluator --> Cache["缓存值 + RecalcReport"]
 ```
 
-主要公共 API：`Engine, Evaluator, Expr, Context, RecalcReport, parse`。
+依赖方向必须保持从门面或格式引擎指向基础模块；本 crate 不反向依赖业务应用。
 
-## 安装与使用
+## 能力矩阵
+
+| 能力 | 状态 | 说明 |
+|:---|:---|:---|
+| 解析与 AST | 可用 | 单元格/范围引用、函数与表达式。 |
+| 工作簿重算 | 可用 | 依赖排序、缓存值更新与循环引用报告。 |
+| 外部数据函数 | 不支持 | Cube、Web、RTD、Pivot 宿主及服务函数返回明确错误。 |
+
+## 公共 API
+
+| API | 用途 |
+|:---|:---|
+| `parse`、`parse_detailed` | 公式文本转 AST。 |
+| `Engine::eval_formula` | 在工作簿上下文中计算单条公式。 |
+| `Engine::recalc` | 重算公式单元格并更新缓存。 |
+| `Value`、`Array`、`CellRef` | 求值结果与引用类型。 |
+
+API 的权威定义来自当前 `src/lib.rs` 重导出与对应实现；README 不把内部私有对象描述为稳定契约。
+
+## 安装
 
 ```toml
 [dependencies]
-easyexcel-formula = "0.1.1"
+easyexcel-formula = "0.1.2"
 ```
+
+如果项目同时使用多个 EasyExcel 引擎，请改为只依赖 `easyexcel = "0.1.2"`，并通过 `easyexcel::...` 使用，以避免版本漂移。
+
+## 基础使用
 
 ```rust
-use easyexcel_formula::{Engine, Expr, RecalcReport, parse};
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+use easyexcel_formula::{CellRef, Engine, Value};
+use easyexcel_model::Workbook;
+
+let workbook = Workbook::new();
+let mut engine = Engine::new();
+let value = engine.eval_formula(
+    &workbook,
+    CellRef { sheet: 0, row: 0, col: 0 },
+    "=SUM(1,2,3)",
+);
+assert_eq!(value, Value::Number(6.0));
+Ok(())
+}
 ```
 
-## 兼容性与边界
+## 进阶使用
 
-公式引擎不承诺覆盖 Excel 的全部函数或外部数据函数。
+```rust
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+use easyexcel_formula::Engine;
+use easyexcel_model::{Cell, CellValue, Workbook};
 
-权威能力边界维护在[工作区兼容性矩阵](../../docs/compatibility.md)中。未支持行为必须返回明确错误或警告，禁止静默降级。
+let mut workbook = Workbook::new();
+workbook.sheets[0].set(
+    0,
+    0,
+    Cell::Formula {
+        expr: "1+2".to_owned(),
+        cached: CellValue::Empty,
+    },
+);
+let report = Engine::new().recalc(&mut workbook);
+println!("recalculated: {}", report.evaluated);
+Ok(())
+}
+```
 
-## 项目链接
+## 错误与能力边界
 
-- [EasyExcel-Rust](https://github.com/easy-4-rust/easyexcel-rust)
+- 本引擎离线运行，刻意不计算依赖网络服务、OLAP 连接、实时数据或宿主应用状态的函数。
+- 函数覆盖范围是显式的，不得把未支持函数描述为完整 Excel 对等。
+
+资源限制、格式损失或未支持能力必须通过类型化错误、`Option`、warning 或转换报告显式呈现，禁止静默猜测或降级。
+
+## 依赖关系
+
+```mermaid
+flowchart LR
+    User["业务代码"] --> Facade["easyexcel"]
+    Facade --> This["easyexcel-formula"]
+    This --> Foundation["共享基础 crate"]
+```
+
+该图表达公共依赖方向，不表示本 crate 必然依赖所有基础模块。实际依赖以 `Cargo.toml` 为准。
+
+## 证据索引
+
+| 声明 | 事实来源 |
+|:---|:---|
+| 包版本、MSRV 与依赖 | [`Cargo.toml`](Cargo.toml) |
+| 公共重导出 | [`src/lib.rs`](src/lib.rs) |
+| 实现行为 | `src/formula/` |
+| 跨格式边界 | [Workspace 兼容性矩阵](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md) |
+
+## 相关链接
+
+- [项目仓库](https://github.com/easy-4-rust/easyexcel-rust)
 - [API 文档](https://docs.rs/easyexcel-formula)
-- [变更日志](../../CHANGELOG.md)
+- [兼容性矩阵](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
+- [变更日志](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [英文 README](README.md)

@@ -2,70 +2,152 @@
 
 [English](README.md)
 
-用于 EasyExcel 类型化行映射与注解元数据的过程宏。
+实现类型化 EasyExcel 行 schema、转换与 Java 注解元数据的过程宏。
 
-> 版本线：0.1.1 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
-## 职责
+## 概述
 
-- 派生 `ExcelRow` schema 与双向行转换。
-- 把已支持的 Java EasyExcel 注解语义映射为 `#[excel(...)]` 属性。
+本 crate 是 EasyExcel-Rust Workspace 的正式发布模块。本文面向需要理解模块职责、直接调用底层 API 或维护格式引擎的 Rust 开发者。普通业务项目应优先通过 `easyexcel` 门面访问重导出的能力。
+
+## 一览
+
+```text
+输入 / 公共 API -> easyexcel-derive -> 类型化模型、行流、文件或报告
+```
 
 ## 架构
 
-```text
-Rust struct + attributes -> easyexcel-derive -> ExcelRow implementation
+```mermaid
+flowchart LR
+    Struct["Rust 结构体"] --> Parser["syn 属性解析器"]
+    Parser --> Metadata["注解模型"]
+    Metadata --> Expand["quote 代码生成"]
+    Expand --> Trait["ExcelRow 实现"]
+    Trait --> Facade["easyexcel builders"]
 ```
 
-主要公共 API：`#[derive(ExcelRow)] and #[excel(...)]`。
+依赖方向必须保持从门面或格式引擎指向基础模块；本 crate 不反向依赖业务应用。
 
-## 安装与使用
+## 能力矩阵
+
+| 能力 | 状态 | 说明 |
+|:---|:---|:---|
+| 类型化行派生 | 可用 | 生成 schema 与双向行转换。 |
+| Java 注解语义 | 受后端边界约束可用 | 十四类注解映射为 `#[excel(...)]`。 |
+| Rust 扩展 | 可用 | 公式、图片、批注、超链接、校验、条件与过滤元数据。 |
+
+## 公共 API
+
+| API | 用途 |
+|:---|:---|
+| `#[derive(ExcelRow)]` | 生成行 schema 与转换实现。 |
+| `#[excel(name/index/order/...)]` | 列映射元数据。 |
+| 样式属性 | 表头/内容字体、样式、宽高与合并元数据。 |
+| 格式属性 | 日期时间、数字格式与舍入模式。 |
+
+API 的权威定义来自当前 `src/lib.rs` 重导出与对应实现；README 不把内部私有对象描述为稳定契约。
+
+## 安装
 
 ```toml
 [dependencies]
-easyexcel-derive = "0.1.1"
+easyexcel-derive = "0.1.2"
 ```
 
+如果项目同时使用多个 EasyExcel 引擎，请改为只依赖 `easyexcel = "0.1.2"`，并通过 `easyexcel::...` 使用，以避免版本漂移。
+
+## 基础使用
+
 ```rust
+fn main() -> Result<(), Box<dyn std::error::Error>> {
 use easyexcel::ExcelRow;
 
-#[derive(ExcelRow)]
+#[derive(Debug, ExcelRow)]
+#[excel(column_width = 18, head_row_height = 24)]
 struct OrderRow {
-    #[excel(name = "Order ID", index = 0)]
+    #[excel(value = ["Order", "ID"], index = 0)]
     id: String,
+
+    #[excel(name = "Amount", number_format = "0.00")]
+    amount: f64,
+}
+Ok(())
 }
 ```
 
-## 兼容性与边界
+## 进阶使用
 
-用户不应直接依赖此过程宏 crate；`easyexcel` 已重导出 `ExcelRow`。格式渲染边界仍由具体后端决定。
+```rust
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+use easyexcel::ExcelRow;
 
-权威能力边界维护在[工作区兼容性矩阵](../../docs/compatibility.md)中。未支持行为必须返回明确错误或警告，禁止静默降级。
+#[derive(ExcelRow)]
+#[excel(ignore_unannotated)]
+struct StrictRow {
+    #[excel(property, name = "Included")]
+    included: String,
 
-## Java 注解映射
+    // Style-only metadata does not opt this field into strict mapping.
+    #[excel(number_format = "0.00")]
+    ignored: f64,
+
+    #[excel(ignore, default = String::new())]
+    internal: String,
+}
+Ok(())
+}
+```
+
+## 注解映射
 
 | Java 注解 | Rust 属性 |
-|---|---|
+|:---|:---|
 | `ExcelIgnore` | `ignore` |
 | `ExcelIgnoreUnannotated` | `ignore_unannotated` |
 | `ExcelProperty` | `property`、`value/head`、`name`、`index`、`order`、`converter` |
 | `DateTimeFormat` | `date_time_format`、`use_1904_windowing` |
 | `NumberFormat` | `number_format`、`rounding_mode` |
 | `ColumnWidth` | `column_width` |
-| `ContentFontStyle` | `content_font_style(...)` |
+| `ContentFontStyle` / `HeadFontStyle` | `content_font_style(...)` / `head_font_style(...)` |
+| `ContentStyle` / `HeadStyle` | `content_style(...)` / `head_style(...)` |
 | `ContentLoopMerge` | `content_loop_merge(...)` |
-| `ContentRowHeight` | `content_row_height` |
-| `ContentStyle` | `content_style(...)` |
-| `HeadFontStyle` | `head_font_style(...)` |
-| `HeadRowHeight` | `head_row_height` |
-| `HeadStyle` | `head_style(...)` |
+| `ContentRowHeight` / `HeadRowHeight` | `content_row_height` / `head_row_height` |
 | `OnceAbsoluteMerge` | `once_absolute_merge(...)` |
 
-`value = ["一级", "二级"]` 对应多级 `ExcelProperty.value()` 表头。启用 `ignore_unannotated` 后，仅配置格式或样式不会让字段进入映射。`default = expression`、`image`、`comment`、`hyperlink`、`formula`、`data_validation`、`conditional` 与 `filter` 是明确标注的 Rust 扩展，不冒充 Java 注解成员。
+多级 `ExcelProperty.value()` 映射为 `value = ["一级", "二级"]`。`default = expression` 是明确记录的 Rust 扩展。
 
-## 项目链接
+## 错误与能力边界
 
-- [EasyExcel-Rust](https://github.com/easy-4-rust/easyexcel-rust)
+- 用户应通过 `easyexcel::ExcelRow` 使用该宏，不应直接把过程宏 crate 作为运行时依赖。
+- 元数据支持与文件格式渲染是两个层次，具体后端限制仍是权威边界。
+
+资源限制、格式损失或未支持能力必须通过类型化错误、`Option`、warning 或转换报告显式呈现，禁止静默猜测或降级。
+
+## 依赖关系
+
+```mermaid
+flowchart LR
+    User["业务代码"] --> Facade["easyexcel"]
+    Facade --> This["easyexcel-derive"]
+    This --> Foundation["共享基础 crate"]
+```
+
+该图表达公共依赖方向，不表示本 crate 必然依赖所有基础模块。实际依赖以 `Cargo.toml` 为准。
+
+## 证据索引
+
+| 声明 | 事实来源 |
+|:---|:---|
+| 包版本、MSRV 与依赖 | [`Cargo.toml`](Cargo.toml) |
+| 公共重导出 | [`src/lib.rs`](src/lib.rs) |
+| 实现行为 | `src/annotation/ and src/expand/` |
+| 跨格式边界 | [Workspace 兼容性矩阵](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md) |
+
+## 相关链接
+
+- [项目仓库](https://github.com/easy-4-rust/easyexcel-rust)
 - [API 文档](https://docs.rs/easyexcel-derive)
-- [变更日志](../../CHANGELOG.md)
+- [兼容性矩阵](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
+- [变更日志](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [英文 README](README.md)
