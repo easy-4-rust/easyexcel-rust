@@ -4,16 +4,16 @@
 
 CSV/TSV codec with charset handling, delimiter detection, type inference and incremental row streaming.
 
-> Release: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
 ## Overview
 
-This crate is a published module in the EasyExcel-Rust workspace. It is intended for Rust developers who need its boundary, direct engine API or implementation details. Application code should normally consume the re-exported surface through the `easyexcel` facade.
+This crate is independently published to support the EasyExcel-Rust internal dependency graph. Its README documents the engine boundary for contributors and engine implementors; application code should depend on `easyexcel` and use the matching `easyexcel::...` facade path.
 
 ## At a glance
 
 ```text
-Input / public API -> easyexcel-csv -> typed model, stream, file or report
+Application -> easyexcel:: facade -> easyexcel-csv internal engine -> typed result
 ```
 
 ## Architecture
@@ -53,16 +53,16 @@ The current `src/lib.rs` re-exports and their implementations are authoritative.
 
 ```toml
 [dependencies]
-easyexcel-csv = "0.1.2"
+easyexcel = "0.1.3"
 ```
 
-If an application needs several EasyExcel engines, prefer a single `easyexcel = "0.1.2"` dependency and the `easyexcel::...` re-exports to prevent version drift.
+`easyexcel-csv` remains independently publishable for the internal dependency graph. Applications should use the stable `easyexcel::csv` facade.
 
 ## Basic usage
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-use easyexcel_csv::{CsvReadOptions, CsvWriteOptions, read_csv, write_csv};
+use easyexcel::csv::{CsvReadOptions, CsvWriteOptions, read_csv, write_csv};
 
 let input = "id,name\n1,Alice\n2,Bob\n";
 let workbook = read_csv(input.as_bytes(), &CsvReadOptions::default())?;
@@ -83,7 +83,7 @@ Ok(())
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-use easyexcel_csv::{CsvCharset, CsvReadOptions, CsvRowSource};
+use easyexcel::csv::{CsvCharset, CsvReadOptions, CsvRowSource};
 
 let options = CsvReadOptions {
     delimiter: Some(b';'),
@@ -95,7 +95,7 @@ let source = CsvRowSource::new(
     options,
     CsvCharset::utf8(),
 );
-// Call RowSource::stream with an easyexcel_io::RowSink implementation.
+// Call RowSource::stream with an easyexcel::io::RowSink implementation.
 Ok(())
 }
 ```

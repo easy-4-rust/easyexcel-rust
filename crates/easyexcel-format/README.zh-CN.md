@@ -4,16 +4,16 @@
 
 兼容 Java EasyExcel 语义的数字、日期与显示格式算法。
 
-> 版本: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
 ## 概述
 
-本 crate 是 EasyExcel-Rust Workspace 的正式发布模块。本文面向需要理解模块职责、直接调用底层 API 或维护格式引擎的 Rust 开发者。普通业务项目应优先通过 `easyexcel` 门面访问重导出的能力。
+本 crate 独立发布是为了支撑 EasyExcel-Rust 内部依赖图。README 面向贡献者和引擎实现者说明模块边界；业务应用应只依赖 `easyexcel`，并使用对应的 `easyexcel::...` 门面路径。
 
 ## 一览
 
 ```text
-输入 / 公共 API -> easyexcel-format -> 类型化模型、行流、文件或报告
+业务应用 -> easyexcel:: 门面 -> easyexcel-format 内部引擎 -> 类型化结果
 ```
 
 ## 架构
@@ -51,16 +51,16 @@ API 的权威定义来自当前 `src/lib.rs` 重导出与对应实现；README �
 
 ```toml
 [dependencies]
-easyexcel-format = "0.1.2"
+easyexcel = "0.1.3"
 ```
 
-如果项目同时使用多个 EasyExcel 引擎，请改为只依赖 `easyexcel = "0.1.2"`，并通过 `easyexcel::...` 使用，以避免版本漂移。
+`easyexcel-format` 是内部显示格式引擎。业务应用应统一使用稳定的 `easyexcel::format` 门面。
 
 ## 基础使用
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-use easyexcel_format::{ExcelLocale, format_with_code};
+use easyexcel::format::{ExcelLocale, format_with_code};
 
 let locale = ExcelLocale::from_name("zh-CN").expect("supported locale");
 let displayed = format_with_code(
@@ -78,7 +78,7 @@ Ok(())
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-use easyexcel_format::{
+use easyexcel::format::{
     builtin_format_code, is_date_format_code, resolve_builtin_format_code,
 };
 

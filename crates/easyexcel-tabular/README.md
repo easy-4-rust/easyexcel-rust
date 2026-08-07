@@ -4,16 +4,16 @@
 
 Safe HTML and JSON table conversion with generic dispatch to the dedicated Markdown codec.
 
-> Release: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
 ## Overview
 
-This crate is a published module in the EasyExcel-Rust workspace. It is intended for Rust developers who need its boundary, direct engine API or implementation details. Application code should normally consume the re-exported surface through the `easyexcel` facade.
+This crate is independently published to support the EasyExcel-Rust internal dependency graph. Its README documents the engine boundary for contributors and engine implementors; application code should depend on `easyexcel` and use the matching `easyexcel::...` facade path.
 
 ## At a glance
 
 ```text
-Input / public API -> easyexcel-tabular -> typed model, stream, file or report
+Application -> easyexcel:: facade -> easyexcel-tabular internal engine -> typed result
 ```
 
 ## Architecture
@@ -53,16 +53,16 @@ The current `src/lib.rs` re-exports and their implementations are authoritative.
 
 ```toml
 [dependencies]
-easyexcel-tabular = "0.1.2"
+easyexcel = "0.1.3"
 ```
 
-If an application needs several EasyExcel engines, prefer a single `easyexcel = "0.1.2"` dependency and the `easyexcel::...` re-exports to prevent version drift.
+`easyexcel-tabular` is an internal conversion engine. Applications should use the stable `easyexcel::tabular` facade.
 
 ## Basic usage
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-use easyexcel_tabular::{parse_html, render_json};
+use easyexcel::tabular::{parse_html, render_json};
 
 let html = r#"
 <table id="orders">
@@ -81,7 +81,7 @@ Ok(())
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-use easyexcel_tabular::{
+use easyexcel::tabular::{
     TabularFormat, parse_document, render_document,
 };
 

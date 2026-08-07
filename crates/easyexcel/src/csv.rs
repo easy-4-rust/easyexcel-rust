@@ -7,6 +7,7 @@ pub use crate::metadata::csv::{CsvCell, CsvRow, CsvSheet, CsvWorkbook};
 pub use easyexcel_csv::{
     CsvCellStyle, CsvCellValue, CsvCharset, CsvDataFormat, CsvEncoding, CsvEncodingWriter,
     CsvNumericCellType, CsvReadOptions, CsvRecordReader, CsvRecordWriter, CsvRichTextString,
-    CsvWriteOptions, checked_column_index, checked_row_index, csv_bom, csv_encoding, decode_bytes,
-    decode_reader, detect_delimiter, infer_cell, read_csv, resolve_encoding, write_csv,
+    CsvRowSource, CsvWriteOptions, checked_column_index, checked_row_index, csv_bom, csv_encoding,
+    decode_bytes, decode_reader, detect_delimiter, infer_cell, read_csv, resolve_encoding,
+    write_csv,
 };

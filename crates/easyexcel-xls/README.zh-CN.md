@@ -4,16 +4,16 @@
 
 BIFF8/OLE2 `.xls` 工作簿读取与写入引擎。
 
-> 版本: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
 ## 概述
 
-本 crate 是 EasyExcel-Rust Workspace 的正式发布模块。本文面向需要理解模块职责、直接调用底层 API 或维护格式引擎的 Rust 开发者。普通业务项目应优先通过 `easyexcel` 门面访问重导出的能力。
+本 crate 独立发布是为了支撑 EasyExcel-Rust 内部依赖图。README 面向贡献者和引擎实现者说明模块边界；业务应用应只依赖 `easyexcel`，并使用对应的 `easyexcel::...` 门面路径。
 
 ## 一览
 
 ```text
-输入 / 公共 API -> easyexcel-xls -> 类型化模型、行流、文件或报告
+业务应用 -> easyexcel:: 门面 -> easyexcel-xls 内部引擎 -> 类型化结果
 ```
 
 ## 架构
@@ -52,17 +52,17 @@ API 的权威定义来自当前 `src/lib.rs` 重导出与对应实现；README �
 
 ```toml
 [dependencies]
-easyexcel-xls = "0.1.2"
+easyexcel = "0.1.3"
 ```
 
-如果项目同时使用多个 EasyExcel 引擎，请改为只依赖 `easyexcel = "0.1.2"`，并通过 `easyexcel::...` 使用，以避免版本漂移。
+`easyexcel-xls` 是内部 BIFF8 引擎。业务应用应使用 `easyexcel::xls` 或更高层的 `EasyExcel` builder。
 
 ## 基础使用
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 use std::path::Path;
-use easyexcel_xls::{read_path, write_path};
+use easyexcel::xls::{read_path, write_path};
 
 let workbook = read_path(Path::new("input.xls"))?;
 write_path(&workbook, Path::new("copy.xls"))?;
@@ -75,8 +75,8 @@ Ok(())
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 use std::path::Path;
-use easyexcel_model::Cell;
-use easyexcel_xls::{read_path, write_path};
+use easyexcel::model::Cell;
+use easyexcel::xls::{read_path, write_path};
 
 let mut workbook = read_path(Path::new("input.xls"))?;
 workbook.sheets[0].set_a1("B2", Cell::Text("updated".to_owned()));

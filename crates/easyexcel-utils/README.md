@@ -4,16 +4,16 @@
 
 Small Java-compatible utility algorithms reused by EasyExcel-Rust engines.
 
-> Release: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
 ## Overview
 
-This crate is a published module in the EasyExcel-Rust workspace. It is intended for Rust developers who need its boundary, direct engine API or implementation details. Application code should normally consume the re-exported surface through the `easyexcel` facade.
+This crate is independently published to support the EasyExcel-Rust internal dependency graph. Its README documents the engine boundary for contributors and engine implementors; application code should depend on `easyexcel` and use the matching `easyexcel::...` facade path.
 
 ## At a glance
 
 ```text
-Input / public API -> easyexcel-utils -> typed model, stream, file or report
+Application -> easyexcel:: facade -> easyexcel-utils internal engine -> typed result
 ```
 
 ## Architecture
@@ -51,24 +51,21 @@ The current `src/lib.rs` re-exports and their implementations are authoritative.
 
 ```toml
 [dependencies]
-easyexcel-utils = "0.1.2"
+easyexcel = "0.1.3"
 ```
 
-If an application needs several EasyExcel engines, prefer a single `easyexcel = "0.1.2"` dependency and the `easyexcel::...` re-exports to prevent version drift.
+`easyexcel-utils` is an internal algorithm crate. Applications that need Java-compatible helpers should use the corresponding `easyexcel::util` facade modules.
 
 ## Basic usage
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-use easyexcel_utils::{coordinate_utils, string_utils};
+use easyexcel::util::{position_utils, string_utils};
 
 assert_eq!(string_utils::java_trim("  Sheet1\t"), "Sheet1");
 assert!(string_utils::is_blank(Some(" \n")));
-assert_eq!(coordinate_utils::points_to_emu(Some(2)), 25_400);
-assert_eq!(
-    coordinate_utils::resolve_cell_coordinate(10, None, Some(3)),
-    13
-);
+assert_eq!(position_utils::get_row("B12"), 11);
+assert_eq!(position_utils::get_col("B12"), 1);
 Ok(())
 }
 ```
@@ -77,10 +74,10 @@ Ok(())
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-use easyexcel_utils::validation;
+use easyexcel::util::validate;
 
-fn validate_sheet_count(count: usize) -> Result<(), &'static str> {
-    validation::ensure(count > 0, "workbook must contain a sheet")
+fn validate_sheet_count(count: usize) -> easyexcel::Result<()> {
+    validate::is_true(count > 0, "workbook must contain a sheet")
 }
 Ok(())
 }

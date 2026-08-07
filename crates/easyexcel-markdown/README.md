@@ -4,16 +4,16 @@
 
 Policy-driven GFM table import/export for workbooks and row streams with structured loss reporting.
 
-> Release: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
 ## Overview
 
-This crate is a published module in the EasyExcel-Rust workspace. It is intended for Rust developers who need its boundary, direct engine API or implementation details. Application code should normally consume the re-exported surface through the `easyexcel` facade.
+This crate is independently published to support the EasyExcel-Rust internal dependency graph. Its README documents the engine boundary for contributors and engine implementors; application code should depend on `easyexcel` and use the matching `easyexcel::...` facade path.
 
 ## At a glance
 
 ```text
-Input / public API -> easyexcel-markdown -> typed model, stream, file or report
+Application -> easyexcel:: facade -> easyexcel-markdown internal engine -> typed result
 ```
 
 ## Architecture
@@ -52,17 +52,17 @@ The current `src/lib.rs` re-exports and their implementations are authoritative.
 
 ```toml
 [dependencies]
-easyexcel-markdown = "0.1.2"
+easyexcel = "0.1.3"
 ```
 
-If an application needs several EasyExcel engines, prefer a single `easyexcel = "0.1.2"` dependency and the `easyexcel::...` re-exports to prevent version drift.
+`easyexcel-markdown` is the internal projection engine. Applications should use the stable `easyexcel::markdown` facade.
 
 ## Basic usage
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 use std::io::Cursor;
-use easyexcel_markdown::{MarkdownImportOptions, read_markdown};
+use easyexcel::markdown::{MarkdownImportOptions, read_markdown};
 
 let source = "## Orders\n\n| id | name |\n| --- | --- |\n| 007 | Alice |\n";
 let result = read_markdown(
@@ -79,11 +79,11 @@ Ok(())
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 use std::io::Cursor;
-use easyexcel_markdown::{
+use easyexcel::markdown::{
     MarkdownExportOptions, MarkdownFormulaPolicy, MarkdownMergePolicy,
     write_workbook,
 };
-use easyexcel_model::Workbook;
+use easyexcel::model::Workbook;
 
 let workbook = Workbook::new();
 let options = MarkdownExportOptions::default()

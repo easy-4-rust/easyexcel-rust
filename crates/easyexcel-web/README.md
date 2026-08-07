@@ -4,7 +4,7 @@
 
 Framework-neutral Web runtime for bounded spreadsheet uploads, backpressured row streams and streaming downloads.
 
-> Release: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
 ## Overview
 
@@ -56,10 +56,11 @@ The current `src/lib.rs` re-exports and their implementations are authoritative.
 
 ```toml
 [dependencies]
-easyexcel-web = "0.1.2"
+easyexcel = "0.1.3"
+easyexcel-web = "0.1.3"
 ```
 
-If an application needs several EasyExcel engines, prefer a single `easyexcel = "0.1.2"` dependency and the `easyexcel::...` re-exports to prevent version drift.
+Workbook models, formats and row derives always come from `easyexcel::...`. `easyexcel-web` is a transport extension and is the deliberate exception to facade-only installation: it already depends on `easyexcel`, so re-exporting it back from `easyexcel` would create a dependency cycle. Keep both crates on the same release line.
 
 ## Basic usage
 

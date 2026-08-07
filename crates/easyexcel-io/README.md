@@ -4,16 +4,16 @@
 
 Shared format detection, streaming row contracts, modes, resource limits and typed I/O errors.
 
-> Release: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
 ## Overview
 
-This crate is a published module in the EasyExcel-Rust workspace. It is intended for Rust developers who need its boundary, direct engine API or implementation details. Application code should normally consume the re-exported surface through the `easyexcel` facade.
+This crate is independently published to support the EasyExcel-Rust internal dependency graph. Its README documents the engine boundary for contributors and engine implementors; application code should depend on `easyexcel` and use the matching `easyexcel::...` facade path.
 
 ## At a glance
 
 ```text
-Input / public API -> easyexcel-io -> typed model, stream, file or report
+Application -> easyexcel:: facade -> easyexcel-io internal engine -> typed result
 ```
 
 ## Architecture
@@ -53,17 +53,17 @@ The current `src/lib.rs` re-exports and their implementations are authoritative.
 
 ```toml
 [dependencies]
-easyexcel-io = "0.1.2"
+easyexcel = "0.1.3"
 ```
 
-If an application needs several EasyExcel engines, prefer a single `easyexcel = "0.1.2"` dependency and the `easyexcel::...` re-exports to prevent version drift.
+`easyexcel-io` is an independently published internal engine crate. Applications should use `easyexcel::io`; direct dependencies are reserved for EasyExcel engine implementors.
 
 ## Basic usage
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 use std::path::Path;
-use easyexcel_io::Format;
+use easyexcel::io::Format;
 
 assert_eq!(Format::from_extension("xlsx"), Some(Format::Xlsx));
 assert_eq!(Format::from_magic(b"PK\x03\x04"), Format::Xlsx);
@@ -77,7 +77,7 @@ Ok(())
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-use easyexcel_io::ResourceLimits;
+use easyexcel::io::ResourceLimits;
 
 let limits = ResourceLimits::new(
     64 * 1024 * 1024, // input bytes

@@ -4,16 +4,16 @@
 
 共享的格式识别、流式行契约、模式、资源限制与类型化 I/O 错误。
 
-> 版本: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
 ## 概述
 
-本 crate 是 EasyExcel-Rust Workspace 的正式发布模块。本文面向需要理解模块职责、直接调用底层 API 或维护格式引擎的 Rust 开发者。普通业务项目应优先通过 `easyexcel` 门面访问重导出的能力。
+本 crate 独立发布是为了支撑 EasyExcel-Rust 内部依赖图。README 面向贡献者和引擎实现者说明模块边界；业务应用应只依赖 `easyexcel`，并使用对应的 `easyexcel::...` 门面路径。
 
 ## 一览
 
 ```text
-输入 / 公共 API -> easyexcel-io -> 类型化模型、行流、文件或报告
+业务应用 -> easyexcel:: 门面 -> easyexcel-io 内部引擎 -> 类型化结果
 ```
 
 ## 架构
@@ -53,17 +53,17 @@ API 的权威定义来自当前 `src/lib.rs` 重导出与对应实现；README �
 
 ```toml
 [dependencies]
-easyexcel-io = "0.1.2"
+easyexcel = "0.1.3"
 ```
 
-如果项目同时使用多个 EasyExcel 引擎，请改为只依赖 `easyexcel = "0.1.2"`，并通过 `easyexcel::...` 使用，以避免版本漂移。
+`easyexcel-io` 独立发布是为了内部引擎依赖分层。业务应用应使用 `easyexcel::io`；只有 EasyExcel 引擎实现者才应直接依赖本 crate。
 
 ## 基础使用
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 use std::path::Path;
-use easyexcel_io::Format;
+use easyexcel::io::Format;
 
 assert_eq!(Format::from_extension("xlsx"), Some(Format::Xlsx));
 assert_eq!(Format::from_magic(b"PK\x03\x04"), Format::Xlsx);
@@ -77,7 +77,7 @@ Ok(())
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-use easyexcel_io::ResourceLimits;
+use easyexcel::io::ResourceLimits;
 
 let limits = ResourceLimits::new(
     64 * 1024 * 1024, // input bytes

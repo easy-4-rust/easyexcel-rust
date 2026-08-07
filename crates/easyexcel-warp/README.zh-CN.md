@@ -4,7 +4,7 @@
 
 面向 Warp 的 EasyExcel 原生请求提取与响应适配器。
 
-> 版本: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
 ## 概述
 
@@ -46,11 +46,11 @@ flowchart LR
 
 ```toml
 [dependencies]
-easyexcel = "0.1.2"
-easyexcel-warp = "0.1.2"
+easyexcel = "0.1.3"
+easyexcel-warp = "0.1.3"
 ```
 
-`easyexcel` 提供 `ExcelRow`、`Format` 和类型化读写语义；本适配器提供 Warp 传输集成。两者必须使用同一版本线。
+所有工作簿 API 仍通过 `easyexcel::...` 使用；只有 Warp 原生 filter、reply 与 rejection 类型来自本适配器。适配器依赖 `easyexcel`，门面反向重导出会形成循环依赖。两个 crate 必须保持同一发布线。
 
 ## 定义行模型
 

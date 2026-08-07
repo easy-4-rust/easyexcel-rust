@@ -4,7 +4,7 @@
 
 Native EasyExcel request extraction and response adapter for Actix Web.
 
-> Release: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
 ## Overview
 
@@ -46,11 +46,11 @@ The adapter does not reimplement spreadsheet parsing, writing or resource policy
 
 ```toml
 [dependencies]
-easyexcel = "0.1.2"
-easyexcel-actix = "0.1.2"
+easyexcel = "0.1.3"
+easyexcel-actix = "0.1.3"
 ```
 
-`easyexcel` provides `ExcelRow`, `Format` and typed spreadsheet semantics; this adapter provides Actix Web transport integration. Keep both on the same release line.
+All workbook APIs remain under `easyexcel::...`; only Actix Web-native extractor, responder and error types come from this adapter. The adapter depends on `easyexcel`, so facade-side re-export would create a cycle. Keep both crates on the same release line.
 
 ## Define the row model
 

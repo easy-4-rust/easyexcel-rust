@@ -4,7 +4,7 @@
 
 框架中立的 Web 运行时，提供有界电子表格上传、背压行流与流式下载。
 
-> 版本: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
 ## 概述
 
@@ -56,10 +56,11 @@ API 的权威定义来自当前 `src/lib.rs` 重导出与对应实现；README �
 
 ```toml
 [dependencies]
-easyexcel-web = "0.1.2"
+easyexcel = "0.1.3"
+easyexcel-web = "0.1.3"
 ```
 
-如果项目同时使用多个 EasyExcel 引擎，请改为只依赖 `easyexcel = "0.1.2"`，并通过 `easyexcel::...` 使用，以避免版本漂移。
+工作簿模型、格式与行派生始终从 `easyexcel::...` 导入。`easyexcel-web` 是传输层扩展，也是“只装门面”规则的明确例外：它已经依赖 `easyexcel`，若再由 `easyexcel` 反向重导出就会形成循环依赖。两个 crate 必须保持同一发布线。
 
 ## 基础使用
 

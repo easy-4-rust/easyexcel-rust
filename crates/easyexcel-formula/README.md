@@ -4,16 +4,16 @@
 
 Offline Excel formula parser, evaluator, dependency graph and recalculation engine.
 
-> Release: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
 ## Overview
 
-This crate is a published module in the EasyExcel-Rust workspace. It is intended for Rust developers who need its boundary, direct engine API or implementation details. Application code should normally consume the re-exported surface through the `easyexcel` facade.
+This crate is independently published to support the EasyExcel-Rust internal dependency graph. Its README documents the engine boundary for contributors and engine implementors; application code should depend on `easyexcel` and use the matching `easyexcel::...` facade path.
 
 ## At a glance
 
 ```text
-Input / public API -> easyexcel-formula -> typed model, stream, file or report
+Application -> easyexcel:: facade -> easyexcel-formula internal engine -> typed result
 ```
 
 ## Architecture
@@ -52,17 +52,17 @@ The current `src/lib.rs` re-exports and their implementations are authoritative.
 
 ```toml
 [dependencies]
-easyexcel-formula = "0.1.2"
+easyexcel = "0.1.3"
 ```
 
-If an application needs several EasyExcel engines, prefer a single `easyexcel = "0.1.2"` dependency and the `easyexcel::...` re-exports to prevent version drift.
+`easyexcel-formula` is an internal calculation engine. Applications should use `easyexcel::formula` together with `easyexcel::model`.
 
 ## Basic usage
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-use easyexcel_formula::{CellRef, Engine, Value};
-use easyexcel_model::Workbook;
+use easyexcel::formula::{CellRef, Engine, Value};
+use easyexcel::model::Workbook;
 
 let workbook = Workbook::new();
 let mut engine = Engine::new();
@@ -80,8 +80,8 @@ Ok(())
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-use easyexcel_formula::Engine;
-use easyexcel_model::{Cell, CellValue, Workbook};
+use easyexcel::formula::Engine;
+use easyexcel::model::{Cell, CellValue, Workbook};
 
 let mut workbook = Workbook::new();
 workbook.sheets[0].set(

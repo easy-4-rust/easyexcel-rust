@@ -4,16 +4,16 @@
 
 BIFF8/OLE2 `.xls` workbook reader and writer.
 
-> Release: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
 ## Overview
 
-This crate is a published module in the EasyExcel-Rust workspace. It is intended for Rust developers who need its boundary, direct engine API or implementation details. Application code should normally consume the re-exported surface through the `easyexcel` facade.
+This crate is independently published to support the EasyExcel-Rust internal dependency graph. Its README documents the engine boundary for contributors and engine implementors; application code should depend on `easyexcel` and use the matching `easyexcel::...` facade path.
 
 ## At a glance
 
 ```text
-Input / public API -> easyexcel-xls -> typed model, stream, file or report
+Application -> easyexcel:: facade -> easyexcel-xls internal engine -> typed result
 ```
 
 ## Architecture
@@ -52,17 +52,17 @@ The current `src/lib.rs` re-exports and their implementations are authoritative.
 
 ```toml
 [dependencies]
-easyexcel-xls = "0.1.2"
+easyexcel = "0.1.3"
 ```
 
-If an application needs several EasyExcel engines, prefer a single `easyexcel = "0.1.2"` dependency and the `easyexcel::...` re-exports to prevent version drift.
+`easyexcel-xls` is the internal BIFF8 engine. Applications should use `easyexcel::xls` or the high-level `EasyExcel` builders.
 
 ## Basic usage
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 use std::path::Path;
-use easyexcel_xls::{read_path, write_path};
+use easyexcel::xls::{read_path, write_path};
 
 let workbook = read_path(Path::new("input.xls"))?;
 write_path(&workbook, Path::new("copy.xls"))?;
@@ -75,8 +75,8 @@ Ok(())
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 use std::path::Path;
-use easyexcel_model::Cell;
-use easyexcel_xls::{read_path, write_path};
+use easyexcel::model::Cell;
+use easyexcel::xls::{read_path, write_path};
 
 let mut workbook = read_path(Path::new("input.xls"))?;
 workbook.sheets[0].set_a1("B2", Cell::Text("updated".to_owned()));

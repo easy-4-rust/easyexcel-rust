@@ -4,7 +4,7 @@
 
 EasyExcel-Rust 面向用户的统一门面，提供 Java EasyExcel 风格 builder、listener、converter、handler 与注解元数据。
 
-> 版本: 0.1.2 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
 
 ## 概述
 
@@ -56,10 +56,10 @@ API 的权威定义来自当前 `src/lib.rs` 重导出与对应实现；README �
 
 ```toml
 [dependencies]
-easyexcel = "0.1.2"
+easyexcel = "0.1.3"
 ```
 
-如果项目同时使用多个 EasyExcel 引擎，请改为只依赖 `easyexcel = "0.1.2"`，并通过 `easyexcel::...` 使用，以避免版本漂移。
+如果项目同时使用多个 EasyExcel 引擎，请改为只依赖 `easyexcel = "0.1.3"`，并通过 `easyexcel::...` 使用，以避免版本漂移。
 
 ## 基础使用
 
