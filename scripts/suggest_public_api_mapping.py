@@ -18,6 +18,10 @@ from typing import Any
 
 OWNER_ALIASES = {
     "EasyExcelFactory": "EasyExcel",
+    "CellWriteHandlerContext": "WriteCellContext",
+    "RowWriteHandlerContext": "WriteRowContext",
+    "SheetWriteHandlerContext": "WriteSheetContext",
+    "WorkbookWriteHandlerContext": "WriteWorkbookContext",
     # Rust 将 Java `ExcelWriter` 的配置/上下文/fill 门面保存在
     # `ExcelBuilderImpl`，底层 `ExcelWriter` 仅负责格式写入状态机。
     "ExcelWriter": "ExcelBuilderImpl",
@@ -79,8 +83,10 @@ def rust_indexes(
             if match:
                 name = match.group(1)
                 types[name].append(item)
-        elif item["kind"] == "function":
-            match = re.search(r"::([A-Z][A-Za-z0-9_]*)(?:<[^>]*>)?::[a-z_]", signature)
+        elif item["kind"] in {"function", "const", "static"}:
+            match = re.search(
+                r"::([A-Z][A-Za-z0-9_]*)(?:<[^>]*>)?::[A-Za-z_]", signature
+            )
             if match:
                 members[match.group(1)].append(item)
     return dict(types), dict(members)
@@ -319,6 +325,8 @@ def member_candidates(java: dict[str, Any], rust: list[dict[str, str]]) -> list[
         if java_name == "<init>"
         else method_names(java_name)
     )
+    if java["kind"] == "field":
+        names.update({java_name, snake_case(java_name)})
     owner_pattern = re.compile(rf"(?:::|\s){re.escape(owner)}(?:<[^>]*>)?::")
     result: list[dict[str, str]] = []
     for item in rust:

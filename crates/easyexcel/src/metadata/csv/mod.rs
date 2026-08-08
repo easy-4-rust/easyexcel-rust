@@ -8,7 +8,7 @@ pub mod csv_row;
 pub mod csv_sheet;
 pub mod csv_workbook;
 
-pub use csv_cell::CsvCell;
+pub use csv_cell::{CsvCell, CsvCellType};
 pub use csv_cell_style::CsvCellStyle;
 pub use csv_data_format::CsvDataFormat;
 pub use csv_rich_text_string::CsvRichTextString;

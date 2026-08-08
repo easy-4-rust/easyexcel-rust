@@ -18,6 +18,46 @@ pub trait XlsxTagHandler {
     fn characters(&mut self, ch: &str) {
         let _ = ch;
     }
+
+    /// Java `support(XlsxReadContext)` 的上下文感知入口。
+    ///
+    /// 默认桥接现有无上下文实现，使自定义 Handler 可以逐步迁移而不丢失动态分派。
+    fn support_with_context(&self, context: &dyn crate::XlsxReadContext) -> bool {
+        let _ = context;
+        self.support()
+    }
+
+    /// Java `startElement(XlsxReadContext, String, Attributes)` 的上下文感知入口。
+    fn start_element_with_context(
+        &mut self,
+        context: &dyn crate::XlsxReadContext,
+        name: &str,
+        attrs: &str,
+    ) {
+        let _ = context;
+        self.start_element(name, attrs);
+    }
+
+    /// Java `endElement(XlsxReadContext, String)` 的上下文感知入口。
+    fn end_element_with_context(&mut self, context: &dyn crate::XlsxReadContext, name: &str) {
+        let _ = context;
+        self.end_element(name);
+    }
+
+    /// Java `characters(XlsxReadContext, char[], int, int)`，严格按字符而非 UTF-8 字节切片。
+    fn characters_with_context(
+        &mut self,
+        context: &dyn crate::XlsxReadContext,
+        ch: &[char],
+        start: usize,
+        length: usize,
+    ) {
+        let _ = context;
+        if start >= ch.len() || length == 0 { return; }
+        let end = start.saturating_add(length).min(ch.len());
+        let value: String = ch[start..end].iter().collect();
+        self.characters(&value);
+    }
 }
 
 #[cfg(test)]

@@ -202,6 +202,115 @@ pub fn render_cell(reference: &str, value: &TemplateCellValue, style: Option<u32
     }
 }
 
+/// 在工作表 XML 中新增或替换一个绝对坐标单元格，并保留原有样式索引。
+///
+/// # Errors
+///
+/// 工作表缺少 `sheetData`、坐标越界或 XML 结构不完整时返回错误。
+pub fn set_cell_value(
+    xml: &str,
+    zero_based_row: u32,
+    zero_based_column: u16,
+    value: &TemplateCellValue,
+) -> Result<String> {
+    let one_based_row = usize::try_from(zero_based_row)
+        .unwrap_or(usize::MAX)
+        .checked_add(1)
+        .ok_or_else(|| Error::Xlsx("worksheet row index overflow".to_owned()))?;
+    let one_based_column = usize::from(zero_based_column) + 1;
+    let reference = format!("{}{one_based_row}", column_name(one_based_column));
+
+    for (start, end, cell) in all_cells(xml) {
+        if attribute_value(cell, "r") == Some(reference.as_str()) {
+            let style = attribute_value(cell, "s").and_then(|value| value.parse::<u32>().ok());
+            let replacement = render_cell(&reference, value, style);
+            return Ok(update_worksheet_dimension(&format!(
+                "{}{}{}",
+                &xml[..start],
+                replacement,
+                &xml[end..]
+            )));
+        }
+    }
+
+    let row_marker = format!(" r=\"{one_based_row}\"");
+    let mut search = 0;
+    while let Some(relative) = xml[search..].find("<row") {
+        let row_start = search + relative;
+        let row_open_end = xml[row_start..]
+            .find('>')
+            .map(|offset| row_start + offset + 1)
+            .ok_or_else(|| Error::Xlsx("worksheet row start tag is incomplete".to_owned()))?;
+        let row_open = &xml[row_start..row_open_end];
+        if row_open.contains(&row_marker) {
+            let row_end = xml[row_open_end..]
+                .find("</row>")
+                .map(|offset| row_open_end + offset)
+                .ok_or_else(|| Error::Xlsx("worksheet row end tag is missing".to_owned()))?;
+            let replacement = render_cell(&reference, value, None);
+            return Ok(update_worksheet_dimension(&format!(
+                "{}{}{}",
+                &xml[..row_end],
+                replacement,
+                &xml[row_end..]
+            )));
+        }
+        search = row_open_end;
+    }
+
+    let expanded = expand_self_closing_sheet_data(xml)?;
+    let sheet_data_end = expanded
+        .find("</sheetData>")
+        .ok_or_else(|| Error::Xlsx("worksheet does not contain sheetData".to_owned()))?;
+    let row = format!(
+        "<row r=\"{one_based_row}\">{}</row>",
+        render_cell(&reference, value, None)
+    );
+    Ok(update_worksheet_dimension(&format!(
+        "{}{}{}",
+        &expanded[..sheet_data_end],
+        row,
+        &expanded[sheet_data_end..]
+    )))
+}
+
+/// 添加或更新 OOXML 工作表保护元素。
+///
+/// # Errors
+///
+/// 工作表 XML 缺少根结束标签时返回错误。
+pub fn apply_sheet_protection(xml: &str, password: &str) -> Result<String> {
+    let hash = legacy_password_hash(password);
+    let protection = format!(
+        "<sheetProtection password=\"{hash:04X}\" sheet=\"1\" objects=\"1\" scenarios=\"1\"/>"
+    );
+    if let Some(start) = xml.find("<sheetProtection") {
+        let end = xml[start..]
+            .find('>')
+            .map(|offset| start + offset + 1)
+            .ok_or_else(|| Error::Xlsx("sheetProtection tag is incomplete".to_owned()))?;
+        return Ok(format!("{}{}{}", &xml[..start], protection, &xml[end..]));
+    }
+    if let Some(sheet_data_end) = xml.find("</sheetData>") {
+        let insert = sheet_data_end + "</sheetData>".len();
+        return Ok(format!("{}{}{}", &xml[..insert], protection, &xml[insert..]));
+    }
+    let end = xml
+        .rfind("</worksheet>")
+        .ok_or_else(|| Error::Xlsx("worksheet end tag is missing".to_owned()))?;
+    Ok(format!("{}{}{}", &xml[..end], protection, &xml[end..]))
+}
+
+fn legacy_password_hash(password: &str) -> u16 {
+    let utf16: Vec<u16> = password.encode_utf16().collect();
+    let mut hash = 0_u16;
+    for value in utf16.iter().rev() {
+        hash = hash.rotate_left(1) ^ *value;
+    }
+    hash ^= u16::try_from(utf16.len()).unwrap_or(u16::MAX);
+    hash ^ 0xCE4B
+}
+
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 查找既有单元格的样式索引。
 #[must_use]
 pub fn cell_style_index(sheet_xml: &str, reference: &str) -> Option<usize> {
@@ -432,4 +541,3 @@ pub fn remove_attribute(xml: &str, attribute: &str) -> String {
     };
     xml.replacen(&format!(" {attribute}=\"{current}\""), "", 1)
 }
-

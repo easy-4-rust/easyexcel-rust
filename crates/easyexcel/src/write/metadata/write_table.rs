@@ -44,6 +44,8 @@ impl WriteTable {
     pub const fn table_no(&self) -> i32 {
         self.table_no
     }
+    /// Java `getTableNo` 别名。
+    #[must_use] pub const fn get_table_no(&self) -> i32 { self.table_no }
 
     /// 对应 Java：com.alibaba.excel.write.metadata.WriteTable。 Sets the zero-based table index. (Java `setTableNo(Integer)`)
     pub fn set_table_no(&mut self, table_no: i32) -> &mut Self {
@@ -57,6 +59,10 @@ impl WriteTable {
     pub const fn options(&self) -> &WriteOptions {
         &self.options
     }
+    /// 替换共享写入选项。
+    pub fn set_options(&mut self, value: WriteOptions) { self.options = value; }
+    /// 返回可变共享写入选项。
+    pub const fn options_mut(&mut self) -> &mut WriteOptions { &mut self.options }
 
     /// Returns nullable table-level overrides before parent inheritance.
     #[must_use]
@@ -64,6 +70,10 @@ impl WriteTable {
     pub const fn parameter(&self) -> &WriteBasicParameter {
         &self.parameter
     }
+    /// 替换 Java 父类参数。
+    pub fn set_parameter(&mut self, value: WriteBasicParameter) { self.parameter = value; }
+    /// 返回可变 Java 父类参数。
+    pub const fn parameter_mut(&mut self) -> &mut WriteBasicParameter { &mut self.parameter }
 }
 
 impl Default for WriteTable {

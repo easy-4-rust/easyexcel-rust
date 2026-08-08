@@ -9,6 +9,24 @@ pub struct WorkbookHandlerExecutionChain {
 }
 
 impl WorkbookHandlerExecutionChain {
+    /// Java `getHandler`。
+    #[must_use]
+    pub fn get_handler(&self) -> Option<&dyn crate::core::WriteHandler> {
+        self.handler.as_deref()
+    }
+    /// Java `setHandler`。
+    pub fn set_handler(&mut self, value: Option<Box<dyn crate::core::WriteHandler>>) {
+        self.handler = value;
+    }
+    /// Java `getNext`。
+    #[must_use]
+    pub const fn get_next(&self) -> Option<&WorkbookHandlerExecutionChain> {
+        self.next.as_deref()
+    }
+    /// Java `setNext`。
+    pub fn set_next(&mut self, value: Option<WorkbookHandlerExecutionChain>) {
+        self.next = value.map(Box::new);
+    }
     /// Creates an empty chain head.
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.handler.chain.WorkbookHandlerExecutionChain。

@@ -7,6 +7,8 @@ use super::{LexTok, tokenize};
 pub(crate) struct Biff8LinkTable {
     sheet_count: u16,
     entries: Vec<(String, String, u16, u16)>,
+    ixti_base: u16,
+    supbook_index: u16,
 }
 
 impl Biff8LinkTable {
@@ -24,6 +26,8 @@ impl Biff8LinkTable {
         let mut table = Self {
             sheet_count,
             entries: Vec::new(),
+            ixti_base: 0,
+            supbook_index: 0,
         };
         for formula in formulas {
             let expr = formula.strip_prefix('=').unwrap_or(formula);
@@ -47,6 +51,18 @@ impl Biff8LinkTable {
         table
     }
 
+    /// 将新 LinkTable 接到模板已有 SUPBOOK/EXTERNSHEET 表之后。
+    #[must_use]
+    pub(crate) const fn with_template_offsets(
+        mut self,
+        ixti_base: u16,
+        supbook_index: u16,
+    ) -> Self {
+        self.ixti_base = ixti_base;
+        self.supbook_index = supbook_index;
+        self
+    }
+
     fn register(&mut self, sheet_names: &[String], first_sheet: &str, last_sheet: &str) {
         if self.ixti(first_sheet, last_sheet).is_some() {
             return;
@@ -64,6 +80,7 @@ impl Biff8LinkTable {
                 first.eq_ignore_ascii_case(first_sheet) && last.eq_ignore_ascii_case(last_sheet)
             })
             .and_then(|index| u16::try_from(index).ok())
+            .map(|index| self.ixti_base.saturating_add(index))
     }
 
     pub(crate) fn is_empty(&self) -> bool {
@@ -83,7 +100,7 @@ impl Biff8LinkTable {
                 .to_le_bytes(),
         );
         for (_, _, first, last) in &self.entries {
-            payload.extend_from_slice(&0u16.to_le_bytes());
+            payload.extend_from_slice(&self.supbook_index.to_le_bytes());
             payload.extend_from_slice(&first.to_le_bytes());
             payload.extend_from_slice(&last.to_le_bytes());
         }

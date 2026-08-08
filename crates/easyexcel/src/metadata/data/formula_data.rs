@@ -23,4 +23,15 @@ impl FormulaData {
     pub fn formula_value(&self) -> &str {
         &self.formula_value
     }
+
+    /// Java `getFormulaValue` 别名。
+    #[must_use]
+    pub fn get_formula_value(&self) -> &str { &self.formula_value }
+    /// Java `setFormulaValue`。
+    pub fn set_formula_value(&mut self, value: impl Into<String>) {
+        self.formula_value = value.into();
+    }
+    /// Java `clone()` 的显式别名。
+    #[must_use]
+    pub fn clone_data(&self) -> Self { self.clone() }
 }

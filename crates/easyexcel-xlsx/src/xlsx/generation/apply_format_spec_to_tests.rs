@@ -214,7 +214,17 @@ pub const fn color_from_rgb(rgb: u32) -> Color {
 /// XLSX 序列化、文件写入或加密失败时返回错误。
 pub fn save_workbook(workbook: &mut Workbook, path: &Path, password: Option<&str>) -> Result<()> {
     let Some(password) = password else {
-        return workbook.save(path).map_err(xlsxwriter_error);
+        let file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(path)?;
+        let mut output = BufWriter::with_capacity(XLSX_OUTPUT_BUFFER_CAPACITY, file);
+        workbook
+            .save_to_writer(&mut output)
+            .map_err(xlsxwriter_error)?;
+        output.flush()?;
+        return Ok(());
     };
     let mut file = OpenOptions::new()
         .read(true)
@@ -240,9 +250,11 @@ pub fn save_workbook_to_writer(
         save_encrypted_workbook_to(workbook, password, &mut encrypted)?;
         output.write_all(encrypted.get_ref())?;
     } else {
+        let mut buffered = BufWriter::with_capacity(XLSX_OUTPUT_BUFFER_CAPACITY, &mut *output);
         workbook
-            .save_to_writer(&mut *output)
+            .save_to_writer(&mut buffered)
             .map_err(xlsxwriter_error)?;
+        buffered.flush()?;
     }
     output.flush()?;
     Ok(())

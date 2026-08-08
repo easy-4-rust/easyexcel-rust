@@ -8,7 +8,7 @@ use crate::core::coordinate_data::CoordinateData;
 /// Java `ClientAnchorData extends CoordinateData`; Rust uses composition
 /// because the inner type is `Copy`/`Default` and we avoid the inheritance
 /// bookkeeping penalty. The four pixel margin fields match Java exactly.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct ClientAnchorData {
     coordinates: CoordinateData,
     top: Option<u32>,
@@ -122,4 +122,17 @@ impl ClientAnchorData {
     pub const fn get_anchor_type(self) -> Option<AnchorType> {
         self.anchor_type
     }
+
+    /// Java `setTop`。
+    pub const fn set_top(&mut self, value: Option<u32>) { self.top = value; }
+    /// Java `setRight`。
+    pub const fn set_right(&mut self, value: Option<u32>) { self.right = value; }
+    /// Java `setBottom`。
+    pub const fn set_bottom(&mut self, value: Option<u32>) { self.bottom = value; }
+    /// Java `setLeft`。
+    pub const fn set_left(&mut self, value: Option<u32>) { self.left = value; }
+    /// Java `setAnchorType`。
+    pub const fn set_anchor_type(&mut self, value: Option<AnchorType>) { self.anchor_type = value; }
+    /// 替换继承坐标。
+    pub const fn set_coordinates(&mut self, value: CoordinateData) { self.coordinates = value; }
 }

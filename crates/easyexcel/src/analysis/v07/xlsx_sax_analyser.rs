@@ -28,6 +28,9 @@ pub struct XlsxSaxAnalyser {
 }
 
 impl XlsxSaxAnalyser {
+    /// OOXML 共享字符串部件名。对应 Java：`XlsxSaxAnalyser#SHARED_STRINGS_PART_NAME`。
+    pub const SHARED_STRINGS_PART_NAME: &'static str = "/xl/sharedStrings.xml";
+
     /// 对应 Java：`XlsxSaxAnalyser(XlsxReadContext, InputStream decryptedStream)`.
     ///
     /// Sheet discovery uses the same quick-xml metadata path as [`read_xlsx`].
@@ -124,6 +127,21 @@ impl XlsxSaxAnalyser {
     {
         let options = self.options.clone();
         ExcelReadExecutor::execute_with_listener::<T, L>(self, &options, listener)
+    }
+
+    /// 执行当前工作簿的流式解析。对应 Java：`XlsxSaxAnalyser#execute()`。
+    ///
+    /// # Errors
+    ///
+    /// 当工作簿、工作表或单元格解析失败时返回错误。
+    pub fn execute(&mut self) -> Result<()> {
+        ExcelReadExecutor::execute(self)
+    }
+
+    /// 返回构造阶段发现的工作表。对应 Java：`XlsxSaxAnalyser#sheetList()`。
+    #[must_use]
+    pub fn sheet_list(&self) -> &[ReadSheet] {
+        &self.sheet_list
     }
 
     fn execute_with_options<T, L>(&mut self, options: &ReadOptions, listener: &mut L) -> Result<()>

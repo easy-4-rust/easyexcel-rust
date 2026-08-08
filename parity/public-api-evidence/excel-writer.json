@@ -194,7 +194,7 @@
       "source_files": [
         {
           "path": "scripts/java-golden-export/src/main/java/com/alibaba/easyexcel/golden/JavaGoldenExporter.java",
-          "sha256": "ab75bf585e5a97f444c07dff996365e1e17753c432d1fbf027365e94a1e3568c"
+          "sha256": "790dbc84da0e6b4f200616e9228696c79bb9b3ef4ed9b39a6cd8019f351cf529"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/excel_writer_lifecycle.contract.json",

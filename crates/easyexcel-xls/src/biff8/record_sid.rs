@@ -20,6 +20,8 @@ pub const NAME_SID: u16 = 0x0018;
 /// NOTE 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const NOTE_SID: u16 = 0x001C;
+/// BIFF8 inline rich-string cell record SID。
+pub const RICH_STRING_SID: u16 = 0x00D6;
 /// DATEMODE 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const DATE_MODE_SID: u16 = 0x0022;
@@ -151,6 +153,14 @@ pub const FORMAT_SID: u16 = 0x041E;
 /// BOF 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const BOF_SID: u16 = 0x0809;
+/// 工作表保护标志记录 SID。
+pub const PROTECT_SID: u16 = 0x0012;
+/// 工作表保护密码 verifier 记录 SID。
+pub const PASSWORD_SID: u16 = 0x0013;
+/// 工作表对象保护标志记录 SID。
+pub const OBJECT_PROTECT_SID: u16 = 0x0063;
+/// 工作表方案保护标志记录 SID。
+pub const SCENARIO_PROTECT_SID: u16 = 0x00DD;
 
 /// 判断记录是否属于可在未选中工作表中直接跳过的事件记录。
 ///

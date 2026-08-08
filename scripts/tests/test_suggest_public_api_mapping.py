@@ -38,6 +38,35 @@ def test_maps_camel_case_method_to_snake_case_without_verifying():
     assert not entry["behavior_tests"]
 
 
+def test_maps_java_public_static_field_to_rust_associated_const():
+    java = {
+        "types": [],
+        "members": [
+            {
+                "id": "x.XlsxSaxAnalyser#FIELD:SHARED_STRINGS_PART_NAME:Lx/PartName;",
+                "kind": "field",
+                "name": "SHARED_STRINGS_PART_NAME",
+                "owner": "x.XlsxSaxAnalyser",
+            }
+        ],
+    }
+    rust = rust_manifest(
+        {
+            "id": "rust:shared-strings-part-name",
+            "kind": "const",
+            "signature": (
+                "pub const easyexcel::analysis::XlsxSaxAnalyser::"
+                "SHARED_STRINGS_PART_NAME: &'static str"
+            ),
+        }
+    )
+
+    entry = MODULE.suggest(java, rust)[0]
+
+    assert entry["status"] == "candidate"
+    assert entry["rust_ids"] == ["rust:shared-strings-part-name"]
+
+
 def test_preserves_ambiguous_overloads_as_fail_closed_candidates():
     java = {
         "types": [],

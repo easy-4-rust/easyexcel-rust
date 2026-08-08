@@ -4,6 +4,7 @@ use std::ops::{Deref, DerefMut};
 
 use crate::write::holder::abstract_write_holder::AbstractWriteHolder;
 use crate::write::metadata::WriteBasicParameter;
+use crate::{HolderEnum, WriteTable};
 
 /// 对应 Java：`WriteTableHolder extends AbstractWriteHolder`.
 ///
@@ -15,6 +16,8 @@ pub struct WriteTableHolder<'a> {
     abstract_holder: AbstractWriteHolder,
     table_no: i32,
     parent_sheet: Option<&'a str>,
+    parent_write_sheet_holder_id: Option<usize>,
+    write_table: WriteTable,
     last_row_index: i32,
 }
 
@@ -22,10 +25,14 @@ impl<'a> WriteTableHolder<'a> {
     /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteTableHolder。 Creates a table holder matching the Java `WriteTableHolder(WriteTable, WriteSheetHolder)` initialiser.
     #[must_use]
     pub fn new(table_no: i32) -> Self {
+        let mut abstract_holder = AbstractWriteHolder::default();
+        abstract_holder.abstract_holder_mut().holder_type = HolderEnum::Table;
         Self {
-            abstract_holder: AbstractWriteHolder::default(),
+            abstract_holder,
             table_no,
             parent_sheet: None,
+            parent_write_sheet_holder_id: None,
+            write_table: WriteTable::with_table_no(table_no),
             last_row_index: 0,
         }
     }
@@ -39,6 +46,7 @@ impl<'a> WriteTableHolder<'a> {
     ) -> Self {
         let mut holder = Self::new(table_no);
         holder.abstract_holder = AbstractWriteHolder::from_parameter(parameter, Some(parent));
+        holder.abstract_holder.abstract_holder_mut().holder_type = HolderEnum::Table;
         holder
     }
 
@@ -79,6 +87,29 @@ impl<'a> WriteTableHolder<'a> {
     pub const fn last_row_index(&self) -> i32 {
         self.last_row_index
     }
+
+    /// 使用完整 `WriteTable` 创建 Holder。
+    #[must_use]
+    pub fn from_write_table(write_table: WriteTable, parent_sheet: Option<&'a str>, parent: &AbstractWriteHolder) -> Self {
+        let mut holder = Self::from_parameter(write_table.table_no, &write_table.parameter, parent);
+        holder.parent_sheet = parent_sheet;
+        holder.write_table = write_table;
+        holder
+    }
+    /// Java `getTableNo`。
+    #[must_use] pub const fn get_table_no(&self) -> i32 { self.table_no }
+    /// Java `setTableNo`。
+    pub const fn set_table_no(&mut self, value: i32) { self.table_no = value; }
+    /// Java `getWriteTable`。
+    #[must_use] pub const fn get_write_table(&self) -> &WriteTable { &self.write_table }
+    /// Java `setWriteTable`。
+    pub fn set_write_table(&mut self, value: WriteTable) { self.table_no = value.table_no; self.write_table = value; }
+    /// Java `getParentWriteSheetHolder` 的稳定身份映射。
+    #[must_use] pub const fn get_parent_write_sheet_holder_id(&self) -> Option<usize> { self.parent_write_sheet_holder_id }
+    /// Java `setParentWriteSheetHolder` 的稳定身份映射。
+    pub const fn set_parent_write_sheet_holder_id(&mut self, value: Option<usize>) { self.parent_write_sheet_holder_id = value; }
+    /// Java `holderType`。
+    #[must_use] pub const fn holder_type(&self) -> HolderEnum { HolderEnum::Table }
 }
 
 impl Deref for WriteTableHolder<'_> {

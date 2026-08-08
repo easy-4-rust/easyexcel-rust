@@ -1,4 +1,4 @@
-fn write_comments(out: &mut Vec<u8>, comments: &[Biff8Comment]) {
+pub(crate) fn write_comments(out: &mut Vec<u8>, comments: &[Biff8Comment]) {
     if comments.is_empty() {
         return;
     }
@@ -12,14 +12,49 @@ fn write_comments(out: &mut Vec<u8>, comments: &[Biff8Comment]) {
         record(out, MSODRAWING, &drawing);
         record(out, OBJ, &comment_obj(shape_id));
         record(out, MSODRAWING, &[0x00, 0x00, 0x0D, 0xF0, 0, 0, 0, 0]);
-        record(out, TXO, &comment_txo(&comment.text));
+        let formatting = comment_formatting_continue(comment);
+        record(out, TXO, &comment_txo(&comment.text, formatting.len()));
         write_comment_text_continue(out, &comment.text);
-        record(out, CONTINUE, &comment_formatting_continue(&comment.text));
+        record(out, CONTINUE, &formatting);
     }
     for (index, comment) in comments.iter().enumerate() {
         let shape_id = 1_025u16.saturating_add(u16::try_from(index).unwrap_or(u16::MAX));
         record(out, NOTE, &comment_note(comment, shape_id));
     }
+}
+
+/// 向已有 Escher DG 容器追加批注 shape/object/text/note 记录。
+///
+/// 调用者负责先扩展已有 F002/F003/F008 头；这里不再创建第二个 DG
+/// container，从而避免模板已有图形时产生重复 drawing group。
+pub(crate) fn write_appended_comments(
+    out: &mut Vec<u8>,
+    comments: &[Biff8Comment],
+    first_shape_id: u32,
+) {
+    for (index, comment) in comments.iter().enumerate() {
+        let shape_id = first_shape_id.saturating_add(u32::try_from(index).unwrap_or(u32::MAX));
+        record(out, MSODRAWING, &comment_shape(comment, shape_id));
+        record(out, OBJ, &comment_obj(shape_id));
+        record(out, MSODRAWING, &[0x00, 0x00, 0x0D, 0xF0, 0, 0, 0, 0]);
+        let formatting = comment_formatting_continue(comment);
+        record(out, TXO, &comment_txo(&comment.text, formatting.len()));
+        write_comment_text_continue(out, &comment.text);
+        record(out, CONTINUE, &formatting);
+    }
+    for (index, comment) in comments.iter().enumerate() {
+        let shape_id = first_shape_id.saturating_add(u32::try_from(index).unwrap_or(u32::MAX));
+        record(
+            out,
+            NOTE,
+            &comment_note(comment, u16::try_from(shape_id).unwrap_or(u16::MAX)),
+        );
+    }
+}
+
+/// 返回批注 shape container 的精确字节长度，用于扩展 Escher 容器声明长度。
+pub(crate) fn appended_comment_shape_len(comment: &Biff8Comment, shape_id: u32) -> usize {
+    comment_shape(comment, shape_id).len()
 }
 
 fn comment_drawing_group(comment_count: usize) -> Vec<u8> {
@@ -90,11 +125,28 @@ fn comment_shape(comment: &Biff8Comment, shape_id: u32) -> Vec<u8> {
     payload.extend_from_slice(&escher_record(0x00A3, 0xF00B, &opt, None));
     let mut anchor = Vec::with_capacity(18);
     anchor.extend_from_slice(&0u16.to_le_bytes());
-    let first_col = u16::from(comment.col.saturating_add(1).min(252));
-    let last_col = first_col.saturating_add(3).min(255);
-    let first_row = comment.row.saturating_add(1);
-    let last_row = first_row.saturating_add(4);
-    for value in [first_col, 0, first_row, 0, last_col, 0, last_row, 0] {
+    let first_col = u16::from(
+        comment
+            .first_col
+            .unwrap_or_else(|| comment.col.saturating_add(1).min(252)),
+    );
+    let last_col = u16::from(
+        comment
+            .last_col
+            .unwrap_or_else(|| u8::try_from(first_col.saturating_add(3).min(255)).unwrap_or(255)),
+    );
+    let first_row = comment.first_row.unwrap_or_else(|| comment.row.saturating_add(1));
+    let last_row = comment.last_row.unwrap_or_else(|| first_row.saturating_add(4));
+    for value in [
+        first_col,
+        comment.left.unwrap_or(0),
+        first_row,
+        comment.top.unwrap_or(0),
+        last_col,
+        comment.right.unwrap_or(0),
+        last_row,
+        comment.bottom.unwrap_or(0),
+    ] {
         anchor.extend_from_slice(&value.to_le_bytes());
     }
     payload.extend_from_slice(&escher_record(0, 0xF010, &anchor, None));
@@ -137,13 +189,17 @@ fn comment_obj(shape_id: u32) -> Vec<u8> {
     data
 }
 
-fn comment_txo(text: &str) -> Vec<u8> {
+fn comment_txo(text: &str, formatting_length: usize) -> Vec<u8> {
     let length = u16::try_from(text.encode_utf16().count()).unwrap_or(u16::MAX);
     let mut data = Vec::with_capacity(18);
     data.extend_from_slice(&0x0212u16.to_le_bytes());
     data.extend_from_slice(&[0; 8]);
     data.extend_from_slice(&length.to_le_bytes());
-    data.extend_from_slice(&0x0010u16.to_le_bytes());
+    data.extend_from_slice(
+        &u16::try_from(formatting_length)
+            .unwrap_or(u16::MAX)
+            .to_le_bytes(),
+    );
     data.extend_from_slice(&[0; 4]);
     data
 }
@@ -171,10 +227,27 @@ fn write_comment_text_continue(out: &mut Vec<u8>, text: &str) {
     record(out, CONTINUE, &current);
 }
 
-fn comment_formatting_continue(text: &str) -> Vec<u8> {
-    let length = u16::try_from(text.encode_utf16().count()).unwrap_or(u16::MAX);
-    let mut data = vec![0; 16];
-    data[8..10].copy_from_slice(&length.to_le_bytes());
+fn comment_formatting_continue(comment: &Biff8Comment) -> Vec<u8> {
+    let length = u16::try_from(comment.text.encode_utf16().count()).unwrap_or(u16::MAX);
+    let mut runs = comment
+        .formatting_runs
+        .iter()
+        .copied()
+        .filter(|(start, _)| *start < length)
+        .collect::<Vec<_>>();
+    runs.sort_unstable_by_key(|(start, _)| *start);
+    runs.dedup_by_key(|(start, _)| *start);
+    if runs.first().is_none_or(|(start, _)| *start != 0) {
+        runs.insert(0, (0, 0));
+    }
+    // BIFF8 TXO 以文本 UTF-16 长度处的哨兵 run 结束。其字体索引不参与显示。
+    runs.push((length, 0));
+    let mut data = Vec::with_capacity(runs.len().saturating_mul(8));
+    for (start, font_index) in runs {
+        data.extend_from_slice(&start.to_le_bytes());
+        data.extend_from_slice(&font_index.to_le_bytes());
+        data.extend_from_slice(&0u32.to_le_bytes());
+    }
     data
 }
 

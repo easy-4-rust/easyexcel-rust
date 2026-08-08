@@ -93,12 +93,9 @@ impl ExcelWriter {
         if let Err(error) = after_workbook(&mut handlers, &context) {
             result = Err(error);
         }
-        if !self.mutation_plan.is_empty()?
-            && (self.is_csv() || self.xls_template.is_some() || self.template_package.is_some())
-        {
+        if !self.mutation_plan.is_empty()? && self.is_csv() {
             result = Err(ExcelError::Unsupported(
-                "workbook handler mutations are not supported for CSV or template output"
-                    .to_owned(),
+                "workbook handler mutations are not supported for CSV output".to_owned(),
             ));
         }
         if self.is_csv() {
@@ -123,9 +120,12 @@ impl ExcelWriter {
                 }
             }
         } else if write_excel && self.is_xls() {
-            if let Err(error) = apply_xls_mutations(&mut self.xls_book, &self.mutation_plan)
-                .and_then(|()| self.save_xls_output())
-            {
+            let mutation_result = if let Some(package) = self.xls_template.as_mut() {
+                package.apply_mutations(&self.mutation_plan)
+            } else {
+                apply_xls_mutations(&mut self.xls_book, &self.mutation_plan)
+            };
+            if let Err(error) = mutation_result.and_then(|()| self.save_xls_output()) {
                 result = Err(error);
             }
         } else if write_excel
@@ -514,8 +514,8 @@ impl ExcelWriter {
 
     /// Appends typed rows onto a record-preserving `.xls` template package.
     ///
-    /// Mirrors [`Self::write_xlsx_batch_onto_template_package`] for HSSF/BIFF8.
-    /// Creating sheets absent from the template remains unsupported (MVP).
+    /// Mirrors [`Self::write_xlsx_batch_onto_template_package`] for HSSF/BIFF8，
+    /// including creation of sheets absent from the template.
     // 语义敏感：参数与 Java 对应写入路径一一对应，拆分结构体会破坏
     // 1:1 可追溯性；函数体端到端覆盖完整写入流程，故豁免
     // too_many_arguments / too_many_lines。
@@ -548,9 +548,12 @@ impl ExcelWriter {
                 &sheet.options().sheet_name,
             );
         if create_new {
-            return Err(ExcelError::Unsupported(
-                "xls template cannot create sheets absent from the template".to_owned(),
-            ));
+            let package = self
+                .xls_template
+                .as_mut()
+                .expect("xls template must exist for BIFF preserve path");
+            package.ensure_sheet(&target_name)?;
+            self.template_pending_rows.insert(target_name.clone(), 0);
         }
         let sheet_name = target_name;
         let (state, is_new) = if let Some(state) = self.sheets.get(&sheet_name).cloned() {

@@ -4,7 +4,7 @@
 ///
 /// Variant names are normalised to `PascalCase` while preserving the four POI
 /// anchor modes.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 /// 对应 Java：com.alibaba.excel.metadata.data.ClientAnchorData.AnchorType。
 pub enum AnchorType {
     /// Move and resize with the anchor cells.

@@ -5,6 +5,7 @@ pub(crate) fn write_xls_onto_template<T, I>(
     options: &WriteOptions,
     rows: I,
     handlers: &mut [Box<dyn WriteHandler>],
+    workbook_context: &WriteWorkbookContext,
 ) -> Result<()>
 where
     T: ExcelRow,
@@ -31,9 +32,7 @@ where
             &options.sheet_name,
         );
     if create_new {
-        return Err(ExcelError::Unsupported(
-            "xls template cannot create sheets absent from the template".to_owned(),
-        ));
+        package.ensure_sheet(&target_name)?;
     }
     let mut write_options = options.clone();
     write_options.sheet_name.clone_from(&target_name);
@@ -65,6 +64,8 @@ where
     )?;
     package.append_rows(&target_name, &append_rows)?;
     after_sheet(handlers, &sheet_context)?;
+    after_workbook(handlers, workbook_context)?;
+    package.apply_mutations(workbook_context.mutation_plan())?;
     match output {
         Some(writer) => package.save_to_writer_with_password_and_macro_policy(
             writer,
@@ -98,15 +99,20 @@ pub(crate) fn apply_xls_mutations(
                 value,
             } => {
                 let cell = cell_value_to_biff8(&value, global)?;
-                let sheet = book.sheet_mut(&sheet_name);
-                sheet.set(row_index, usize::from(column_index), cell)?;
-                add_biff8_cell_metadata(sheet, row_index, usize::from(column_index), &value)?;
+                book.sheet_mut(&sheet_name)
+                    .set(row_index, usize::from(column_index), cell)?;
+                add_biff8_cell_metadata(
+                    book,
+                    &sheet_name,
+                    row_index,
+                    usize::from(column_index),
+                    &value,
+                )?;
             }
-            crate::context::write_mutation::WriteMutation::ProtectSheet { .. } => {
-                return Err(ExcelError::Unsupported(
-                    "BIFF8 sheet protection from a write handler is not implemented".to_owned(),
-                ));
-            }
+            crate::context::write_mutation::WriteMutation::ProtectSheet {
+                sheet_name,
+                password,
+            } => book.sheet_mut(&sheet_name).protect_sheet(&password),
             crate::context::write_mutation::WriteMutation::AddChart(chart) => {
                 add_biff8_chart(book, &chart)?;
             }
@@ -118,7 +124,7 @@ pub(crate) fn apply_xls_mutations(
     Ok(())
 }
 
-fn add_biff8_chart(book: &mut Biff8Book, mutation: &crate::ChartMutation) -> Result<()> {
+pub(crate) fn add_biff8_chart(book: &mut Biff8Book, mutation: &crate::ChartMutation) -> Result<()> {
     if mutation.series.is_empty() {
         return Err(ExcelError::Format(
             "chart mutation requires at least one data series".to_owned(),
@@ -412,7 +418,8 @@ where
                     create_cell(&mut row, column)?.set(cell)?;
                 }
                 add_biff8_cell_metadata(
-                    book.sheet_mut(sheet_name),
+                    book,
+                    sheet_name,
                     row_index,
                     *physical_index,
                     &context.value,
@@ -541,12 +548,7 @@ pub(crate) fn write_biff8_styled_text_cell(
             let column = Biff8Sheet::column_index(physical_index)?;
             create_cell(&mut row, column)?.set(cell)?;
         }
-        add_biff8_cell_metadata(
-            book.sheet_mut(sheet_name),
-            row_index,
-            physical_index,
-            &context.value,
-        )?;
+        add_biff8_cell_metadata(book, sheet_name, row_index, physical_index, &context.value)?;
     }
     Ok(())
 }
@@ -590,7 +592,8 @@ pub(crate) fn cell_value_to_biff8(
         CellValue::DateTime(date_time) => Ok(Biff8Cell::datetime_serial(
             datetime_to_excel_serial_with_windowing(*date_time, global.use_1904_windowing),
         )),
-        CellValue::Comment { value, .. } => cell_value_to_biff8(value, global),
+        CellValue::Comment { value, .. }
+        | CellValue::CommentWithMetadata { value, .. } => cell_value_to_biff8(value, global),
         CellValue::Images { .. } => Err(ExcelError::Unsupported(
             "legacy XLS writing does not support CellValue::Images".to_owned(),
         )),
@@ -605,14 +608,16 @@ pub(crate) fn cell_value_to_biff8(
 }
 
 fn add_biff8_cell_metadata(
-    sheet: &mut Biff8Sheet,
+    book: &mut Biff8Book,
+    sheet_name: &str,
     row: u32,
     column: usize,
     value: &CellValue,
 ) -> Result<()> {
     match value {
         CellValue::Hyperlink { url, text } => {
-            sheet.add_hyperlink(row, column, url.clone(), text.clone())?;
+            book.sheet_mut(sheet_name)
+                .add_hyperlink(row, column, url.clone(), text.clone())?;
             Ok(())
         }
         CellValue::HyperlinkWithMetadata {
@@ -652,7 +657,7 @@ fn add_biff8_cell_metadata(
                 "last column",
             )?;
             let address = normalize_hyperlink_address(address, *hyperlink_type);
-            sheet.add_typed_hyperlink(
+            book.sheet_mut(sheet_name).add_typed_hyperlink(
                 first_row,
                 last_row,
                 usize::try_from(first_column).map_err(|_| {
@@ -668,11 +673,139 @@ fn add_biff8_cell_metadata(
             Ok(())
         }
         CellValue::Comment { text, .. } => {
-            sheet.add_comment(row, column, text.clone(), "easyexcel-rust")?;
+            book.sheet_mut(sheet_name)
+                .add_comment(row, column, text.clone(), "easyexcel-rust")?;
+            Ok(())
+        }
+        CellValue::CommentWithMetadata { comment, .. } => {
+            let text = comment.note_text();
+            let author = comment.get_author().unwrap_or("").to_owned();
+            if text.contains('\0') || author.contains('\0') {
+                return Err(ExcelError::Format(
+                    "BIFF8 comment text and author cannot contain NUL".to_owned(),
+                ));
+            }
+            if text.encode_utf16().count() > usize::from(u16::MAX)
+                || author.encode_utf16().count() > usize::from(u16::MAX)
+            {
+                return Err(ExcelError::Format(
+                    "BIFF8 comment text or author exceeds 65535 UTF-16 units".to_owned(),
+                ));
+            }
+            let anchor = comment.get_anchor();
+            let coordinates = anchor.get_coordinates();
+            let current_column = u32::try_from(column)
+                .map_err(|_| ExcelError::Format("BIFF8 comment column exceeds u32".to_owned()))?;
+            let first_row = resolve_hyperlink_coordinate(
+                row,
+                coordinates.get_first_row_index(),
+                coordinates.get_relative_first_row_index(),
+                "comment first row",
+            )?;
+            let first_column = resolve_hyperlink_coordinate(
+                current_column,
+                coordinates.get_first_column_index().map(u32::from),
+                coordinates.get_relative_first_column_index(),
+                "comment first column",
+            )?;
+            let last_row = resolve_hyperlink_coordinate(
+                row,
+                coordinates.get_last_row_index(),
+                coordinates.get_relative_last_row_index(),
+                "comment last row",
+            )?
+            .saturating_add(1);
+            let last_column = resolve_hyperlink_coordinate(
+                current_column,
+                coordinates.get_last_column_index().map(u32::from),
+                coordinates.get_relative_last_column_index(),
+                "comment last column",
+            )?
+            .saturating_add(1);
+            let formatting_runs = comment
+                .get_rich_text_string_data()
+                .map(|rich| resolve_biff8_rich_text_runs(rich, &mut book.styles))
+                .transpose()?;
+            let mut comment = Biff8Comment::new(
+                u16::try_from(row).map_err(|_| {
+                    ExcelError::Format("BIFF8 comment row exceeds 65535".to_owned())
+                })?,
+                u8::try_from(column).map_err(|_| {
+                    ExcelError::Format("BIFF8 comment column exceeds 255".to_owned())
+                })?,
+                text,
+                author,
+            )
+            .with_anchor(
+                u16::try_from(first_row).map_err(|_| {
+                    ExcelError::Format("BIFF8 comment first row exceeds 65535".to_owned())
+                })?,
+                u8::try_from(first_column).map_err(|_| {
+                    ExcelError::Format("BIFF8 comment first column exceeds 255".to_owned())
+                })?,
+                u16::try_from(last_row).map_err(|_| {
+                    ExcelError::Format("BIFF8 comment last row exceeds 65535".to_owned())
+                })?,
+                u8::try_from(last_column).map_err(|_| {
+                    ExcelError::Format("BIFF8 comment last column exceeds 255".to_owned())
+                })?,
+                anchor.get_top().map(biff8_comment_offset),
+                anchor.get_right().map(biff8_comment_offset),
+                anchor.get_bottom().map(biff8_comment_offset),
+                anchor.get_left().map(biff8_comment_offset),
+            );
+            if let Some(formatting_runs) = formatting_runs {
+                comment = comment.with_formatting_runs(formatting_runs);
+            }
+            book.sheet_mut(sheet_name).comments.push(comment);
             Ok(())
         }
         _ => Ok(()),
     }
+}
+
+fn resolve_biff8_rich_text_runs(
+    rich: &RichTextStringData,
+    styles: &mut Biff8StyleTable,
+) -> Result<Vec<(u16, u16)>> {
+    let intervals = rich
+        .interval_fonts()
+        .iter()
+        .map(|interval| (interval.start_index(), interval.end_index()))
+        .collect::<Vec<_>>();
+    let segments = easyexcel_xlsx::segment_utf16_text(rich.text_string(), &intervals)
+        .map_err(ExcelError::from)?;
+    let mut runs = Vec::new();
+    let mut utf16_start = 0usize;
+    let mut previous_font = None;
+    for segment in segments {
+        let font = segment.interval_index.map_or(rich.write_font(), |index| {
+            Some(rich.interval_fonts()[index].write_font())
+        });
+        let font_index = font.map_or(0, |font| {
+            let mut request = Biff8StyleRequest::default();
+            apply_write_font(&mut request, font);
+            styles.resolve_font_index(&request)
+        });
+        if previous_font != Some(font_index) {
+            runs.push((
+                u16::try_from(utf16_start).map_err(|_| {
+                    ExcelError::Unsupported(
+                        "legacy XLS rich text exceeds 65535 UTF-16 units".to_owned(),
+                    )
+                })?,
+                font_index,
+            ));
+            previous_font = Some(font_index);
+        }
+        utf16_start = utf16_start.saturating_add(segment.text.encode_utf16().count());
+    }
+    Ok(runs)
+}
+
+const fn biff8_comment_offset(pixels: u32) -> u16 {
+    let emu = pixels.saturating_mul(9_525);
+    if emu > u16::MAX as u32 { u16::MAX } else { emu as u16 }
 }
 
 const fn biff8_hyperlink_kind(value: HyperlinkType) -> Option<Biff8HyperlinkKind> {
@@ -720,36 +853,7 @@ pub(crate) fn cell_value_to_biff8_styled(
     format_ctx: CellFormatContext<'_>,
 ) -> Result<Biff8Cell> {
     let cell = if let CellValue::RichText(rich) = value {
-        let intervals = rich
-            .interval_fonts()
-            .iter()
-            .map(|interval| (interval.start_index(), interval.end_index()))
-            .collect::<Vec<_>>();
-        let segments = easyexcel_xlsx::segment_utf16_text(rich.text_string(), &intervals)
-            .map_err(ExcelError::from)?;
-        let mut runs = Vec::new();
-        let mut utf16_start = 0usize;
-        let mut previous_font = None;
-        for segment in segments {
-            let font = segment.interval_index.map_or(rich.write_font(), |index| {
-                Some(rich.interval_fonts()[index].write_font())
-            });
-            let font_index = font.map_or(0, |font| {
-                let mut request = Biff8StyleRequest::default();
-                apply_write_font(&mut request, font);
-                styles.resolve_font_index(&request)
-            });
-            if previous_font != Some(font_index) {
-                let start = u16::try_from(utf16_start).map_err(|_| {
-                    ExcelError::Unsupported(
-                        "legacy XLS rich text exceeds 65535 UTF-16 units".to_owned(),
-                    )
-                })?;
-                runs.push((start, font_index));
-                previous_font = Some(font_index);
-            }
-            utf16_start = utf16_start.saturating_add(segment.text.encode_utf16().count());
-        }
+        let runs = resolve_biff8_rich_text_runs(rich, styles)?;
         Biff8Cell::general(Biff8Value::RichText(Biff8RichText::new(
             // 富文本区间使用原始 UTF-16 坐标；裁剪文本会让 Java
             // `applyFont(start, end, ...)` 的坐标失效，因此不能套用普通字符串的 autoTrim。

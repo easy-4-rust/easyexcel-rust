@@ -17,6 +17,8 @@ pub struct Biff8Sheet {
     pub comments: Vec<Biff8Comment>,
     /// 内嵌 BIFF8 图表。
     pub charts: Vec<Biff8Chart>,
+    /// 工作表保护的 16 位 Excel XOR verifier。
+    pub protection_password_hash: Option<u16>,
     /// Frozen panes as `(rows, cols)` — Java `Sheet.createFreezePane(row, col)`,
     /// emitted as a `PANE` record + `WINDOW2` fFrozen flags.
     pub freeze: Option<(u16, u16)>,
@@ -39,10 +41,16 @@ impl Biff8Sheet {
             hyperlinks: Vec::new(),
             comments: Vec::new(),
             charts: Vec::new(),
+            protection_password_hash: None,
             freeze: None,
             next_row: 0,
             next_data_index: 0,
         }
+    }
+
+    /// 使用 Excel 传统工作表密码 verifier 保护本工作表。
+    pub fn protect_sheet(&mut self, password: &str) {
+        self.protection_password_hash = Some(super::protection::legacy_password_hash(password));
     }
 
     /// 添加已经完成坐标与系列校验的内嵌图表。

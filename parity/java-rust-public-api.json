@@ -1719,37 +1719,55 @@
       "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler",
       "rust_ids": [
         "easyexcel:acdbb64f72789de8ab13"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler#<init>()V",
       "rust_ids": [
         "easyexcel:d4e1baa95fa782813acb"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
         "easyexcel:df8cdc775740b74651ba"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
       "behavior_tests": [
@@ -1854,48 +1872,72 @@
       "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler",
       "rust_ids": [
         "easyexcel:588c8b8c7a0338bb14fa"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler#<init>()V",
       "rust_ids": [
         "easyexcel:2559e8ea5d71a7775bc7"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
         "easyexcel:763e13f7d394768c29e5"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler#support(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)Z",
       "rust_ids": [
         "easyexcel:0c64371e096a179f4362"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
       "behavior_tests": [
@@ -2238,70 +2280,106 @@
       "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler",
       "rust_ids": [
         "easyexcel:ecc975b72f35713dd2b0"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler#<init>()V",
       "rust_ids": [
         "easyexcel:2ad39bf8a2d7cd4ee77d"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
         "easyexcel:e53aaf08a5900d0a2717"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.RkRecordHandler",
       "rust_ids": [
         "easyexcel:284747758828af4d33c2"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.RkRecordHandler#<init>()V",
       "rust_ids": [
         "easyexcel:a2ad8733230576e7d617"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.RkRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
         "easyexcel:513d3aa81f99918e096d"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
       "behavior_tests": [
@@ -2406,200 +2484,310 @@
       "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler",
       "rust_ids": [
         "easyexcel:f6bc91043b06709623f0"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler#<init>()V",
       "rust_ids": [
         "easyexcel:22ce63a964f61d6f86f6"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
         "easyexcel:6a6c0873fcb90e57dff3"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler#support(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)Z",
       "rust_ids": [
         "easyexcel:5a151d799ed13bd579b2"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser",
       "rust_ids": [
         "easyexcel:ef75d783260aa52e6b70"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#<init>(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/io/InputStream;)V",
       "rust_ids": [
         "easyexcel:cc73c2a9698e90206c2c"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#FIELD:SHARED_STRINGS_PART_NAMELorg/apache/poi/openxml4j/opc/PackagePartName;",
-      "rust_ids": [],
-      "semantic_notes": "",
-      "status": "unmapped"
+      "rust_ids": [
+        "easyexcel:6307d314e55a59fbb869"
+      ],
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#execute()V",
       "rust_ids": [
         "easyexcel:8b8d712eb991773d715d"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#sheetList()Ljava/util/List;",
       "rust_ids": [
         "easyexcel:ba7c0eda2f61bd910b08"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler",
       "rust_ids": [
         "easyexcel:ac817361c069e3eefd3b"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler#<init>()V",
       "rust_ids": [
         "easyexcel:1ee767feeeaf855d3e75"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler#characters(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;[CII)V",
       "rust_ids": [
         "easyexcel:18a2c992601386d87223"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler",
       "rust_ids": [
         "easyexcel:037314b6c9939cf795b0"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#<init>()V",
       "rust_ids": [
         "easyexcel:709d7fe9867cb1bc7bde"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#characters(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;[CII)V",
       "rust_ids": [
         "easyexcel:d9ae70fc3bc43bf34f40"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#endElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;)V",
       "rust_ids": [
         "easyexcel:f769f1abab21a0f8628d"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#startElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;Lorg/xml/sax/Attributes;)V",
       "rust_ids": [
         "easyexcel:21b485444fb5c25d1493"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#support(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;)Z",
       "rust_ids": [
         "easyexcel:5972f0c8557da8891e01"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
       "behavior_tests": [],
@@ -2910,59 +3098,89 @@
       "status": "candidate"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler",
       "rust_ids": [
         "easyexcel:10bd2c696e37bff22292"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#characters(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;[CII)V",
       "rust_ids": [
         "easyexcel:78d60bedba974ab565c2"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#endElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;)V",
       "rust_ids": [
         "easyexcel:dcf8b5bfb3bf119635de"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#startElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;Lorg/xml/sax/Attributes;)V",
       "rust_ids": [
         "easyexcel:9431f6909c74742e3f89"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "excel-analyser.behavior.v1"
+      ],
+      "compile_probes": [
+        "excel-analyser.compile.v1"
+      ],
+      "java_golden": [
+        "excel-analyser.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#support(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;)Z",
       "rust_ids": [
         "easyexcel:6bdb8958fe3bb5d5cf7d"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "verified by curated executable evidence catalog",
+      "status": "verified"
     },
     {
       "behavior_tests": [],
@@ -19211,9 +19429,11 @@
       "compile_probes": [],
       "java_golden": [],
       "java_id": "com.alibaba.excel.metadata.property.ExcelContentProperty#FIELD:EMPTYLcom/alibaba/excel/metadata/property/ExcelContentProperty;",
-      "rust_ids": [],
-      "semantic_notes": "",
-      "status": "unmapped"
+      "rust_ids": [
+        "easyexcel:edafe470043b62a3d7ff"
+      ],
+      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -32507,6 +32727,6 @@
     }
   ],
   "java_manifest_sha256": "c76c399a5683f3756b1feea922f8f260cc970de6255e26a53ca145576f830c3d",
-  "rust_manifest_sha256": "7198af9a8b58bae41e61a08fedb068e4612c093773b92c21e0583398cfe779bf",
+  "rust_manifest_sha256": "6196f558b60fcf5c761ab75de7f69964ed279b6ed2e65bd55b4bd992b3eb6136",
   "schema_version": 1
 }

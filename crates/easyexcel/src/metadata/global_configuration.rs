@@ -72,6 +72,40 @@ impl GlobalConfiguration {
     pub const fn filed_cache_location(&self) -> CacheLocation {
         self.filed_cache_location
     }
+
+    /// Java `getAutoTrim` 别名。
+    #[must_use]
+    pub const fn get_auto_trim(&self) -> bool { self.auto_trim }
+    /// Java `setAutoTrim`。
+    pub const fn set_auto_trim(&mut self, value: bool) { self.auto_trim = value; }
+    /// Java `getUse1904windowing` 别名。
+    #[must_use]
+    pub const fn get_use_1904windowing(&self) -> bool { self.use1904windowing }
+    /// Java `setUse1904windowing`。
+    pub const fn set_use_1904windowing(&mut self, value: bool) {
+        self.use1904windowing = value;
+    }
+    /// Java `getLocale` 别名。
+    #[must_use]
+    pub fn get_locale(&self) -> &str { &self.locale }
+    /// Java `setLocale`。
+    pub fn set_locale(&mut self, value: impl Into<String>) { self.locale = value.into(); }
+    /// Java `getUseScientificFormat` 别名。
+    #[must_use]
+    pub const fn get_use_scientific_format(&self) -> bool { self.use_scientific_format }
+    /// Java `setUseScientificFormat`。
+    pub const fn set_use_scientific_format(&mut self, value: bool) {
+        self.use_scientific_format = value;
+    }
+    /// Java `getFiledCacheLocation` 别名（保留原拼写）。
+    #[must_use]
+    pub const fn get_filed_cache_location(&self) -> CacheLocation {
+        self.filed_cache_location
+    }
+    /// Java `setFiledCacheLocation`（保留原拼写）。
+    pub const fn set_filed_cache_location(&mut self, value: CacheLocation) {
+        self.filed_cache_location = value;
+    }
 }
 
 #[cfg(test)]

@@ -52,6 +52,8 @@ impl HyperlinkData {
     pub fn get_address(&self) -> Option<&str> {
         self.address.as_deref()
     }
+    /// Java `setAddress` 原位 setter。
+    pub fn set_address(&mut self, value: Option<String>) { self.address = value; }
 
     /// Returns the hyperlink type. (Java `getHyperlinkType()`)
     #[must_use]
@@ -59,6 +61,8 @@ impl HyperlinkData {
     pub const fn get_hyperlink_type(&self) -> HyperlinkType {
         self.hyperlink_type
     }
+    /// Java `setHyperlinkType` 原位 setter。
+    pub const fn set_hyperlink_type(&mut self, value: HyperlinkType) { self.hyperlink_type = value; }
 
     /// Returns the coordinates.
     #[must_use]
@@ -66,6 +70,8 @@ impl HyperlinkData {
     pub const fn get_coordinates(&self) -> CoordinateData {
         self.coordinates
     }
+    /// 设置继承的坐标数据。
+    pub const fn set_coordinates(&mut self, value: CoordinateData) { self.coordinates = value; }
 }
 
 #[cfg(test)]

@@ -9,6 +9,7 @@ use crate::core::enum_cell_data_type::CellDataType;
 use crate::core::image_data::ImageData;
 use crate::core::rich_text_string_data::RichTextStringData;
 use crate::core::{CoordinateData, HyperlinkType};
+use crate::metadata::data::comment_data::CommentData;
 
 /// 对应 Java：com.alibaba.excel.metadata.data.`CellData<T>`。 A backend-neutral Excel cell value.
 ///
@@ -63,6 +64,13 @@ pub enum CellValue {
         /// Note text.
         text: String,
     },
+    /// A value decorated with complete Java `CommentData` metadata.
+    CommentWithMetadata {
+        /// Underlying cell value.
+        value: Box<CellValue>,
+        /// Author, rich-text body and client-anchor metadata.
+        comment: CommentData,
+    },
     /// Encoded PNG, JPEG, GIF, or BMP image bytes.
     Image(Vec<u8>),
     /// Text with whole-string and interval font metadata.
@@ -98,7 +106,9 @@ impl CellValue {
             Self::DateTime(value) => value.format("%Y-%m-%d %H:%M:%S").to_string(),
             Self::Hyperlink { text, .. } | Self::HyperlinkWithMetadata { text, .. } => text.clone(),
             Self::RichText(value) => value.text_string().to_owned(),
-            Self::Comment { value, .. } | Self::Images { value, .. } => value.as_text(),
+            Self::Comment { value, .. }
+            | Self::CommentWithMetadata { value, .. }
+            | Self::Images { value, .. } => value.as_text(),
         }
     }
 
@@ -116,7 +126,9 @@ impl CellValue {
             Self::RichText(_) => CellDataType::RichTextString,
             Self::Error(_) => CellDataType::Error,
             Self::Formula(_) => CellDataType::Formula,
-            Self::Comment { value, .. } | Self::Images { value, .. } => value.data_type(),
+            Self::Comment { value, .. }
+            | Self::CommentWithMetadata { value, .. }
+            | Self::Images { value, .. } => value.data_type(),
             Self::Image(_) => CellDataType::Image,
         }
     }

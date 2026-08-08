@@ -2,7 +2,7 @@
 //!
 //! Handles POI "dummy" records that mark end-of-row and missing cells.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use super::super::xls_record_handler::XlsRecordHandler;
 use super::blank_record_handler::BlankCell;
@@ -11,13 +11,16 @@ include!("dummy_record_handler/dummy_record_event.rs");
 
 /// 对应 Java：`DummyRecordHandler`.
 #[derive(Debug, Default)]
-pub struct DummyRecordHandler;
+pub struct DummyRecordHandler {
+    occupied_columns: HashSet<usize>,
+    last_event: Option<DummyRecordEvent>,
+}
 
 impl DummyRecordHandler {
     /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
-        Self
+        Self::default()
     }
 
     /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler。 Java `LastCellOfRowDummyRecord` branch.
@@ -45,15 +48,63 @@ impl DummyRecordHandler {
         }
         Some(DummyRecordEvent::MissingCell(BlankCell { row, column }))
     }
+
+    /// Records a real cell already present in the current Java `cellMap`.
+    pub(crate) fn observe_cell(&mut self, column: usize) {
+        self.occupied_columns.insert(column);
+    }
+
+    /// Takes the semantic event emitted by the most recent dummy record.
+    pub(crate) fn take_event(&mut self) -> Option<DummyRecordEvent> {
+        self.last_event.take()
+    }
 }
 
 impl XlsRecordHandler for DummyRecordHandler {
-    /// Java `DummyRecordHandler.processRecord` — POI synthesised dummy records
-    /// are not true BIFF sids; use [`Self::process_last_cell_of_row`] /
-    /// [`Self::process_missing_cell`].
-    fn process_record(&mut self, _record_sid: u16, _data: &[u8]) {
-        // No-op by design (matches Java's instanceof branches on DummyRecord).
+    /// Java `DummyRecordHandler.processRecord` for POI-synthesised records.
+    ///
+    /// Dummy records have no physical BIFF body. The Rust dispatcher therefore
+    /// uses a stable internal envelope after sid `0xFFFF`: tag `0` + row `u32`
+    /// for `LastCellOfRowDummyRecord`, or tag `1` + row `u32` + column `u32`
+    /// for `MissingCellDummyRecord`.
+    fn process_record(&mut self, record_sid: u16, data: &[u8]) {
+        const DUMMY_RECORD_SID: u16 = u16::MAX;
+        const END_ROW_TAG: u8 = 0;
+        const MISSING_CELL_TAG: u8 = 1;
+
+        self.last_event = None;
+        if record_sid != DUMMY_RECORD_SID {
+            return;
+        }
+        match data.first().copied() {
+            Some(END_ROW_TAG) => {
+                let Some(row) = decode_u32(data, 1) else {
+                    return;
+                };
+                self.last_event = Some(Self::process_last_cell_of_row(row));
+                self.occupied_columns.clear();
+            }
+            Some(MISSING_CELL_TAG) => {
+                let (Some(row), Some(column)) = (decode_u32(data, 1), decode_u32(data, 5)) else {
+                    return;
+                };
+                let Ok(column) = usize::try_from(column) else {
+                    return;
+                };
+                if self.occupied_columns.insert(column) {
+                    self.last_event =
+                        Some(DummyRecordEvent::MissingCell(BlankCell { row, column }));
+                }
+            }
+            _ => {}
+        }
     }
+}
+
+fn decode_u32(data: &[u8], offset: usize) -> Option<u32> {
+    data.get(offset..offset.saturating_add(4))
+        .and_then(|bytes| bytes.try_into().ok())
+        .map(u32::from_le_bytes)
 }
 
 #[cfg(test)]
@@ -86,10 +137,38 @@ mod tests_extra {
     }
 
     #[test]
-    fn process_record_is_noop_by_design() {
-        // 对应 Java：DummyRecord 非真实 BIFF sid，processRecord 空实现
+    fn process_record_decodes_missing_cell_and_end_row() {
+        // 对应 Java：MissingCellDummyRecord 使用 putIfAbsent，LastCell 清空当前行。
         let mut handler = DummyRecordHandler::new();
-        handler.process_record(u16::MAX, &[]);
-        handler.process_record(0xFFFF, &[1, 2]);
+        handler.observe_cell(2);
+
+        let mut occupied = vec![1];
+        occupied.extend_from_slice(&3u32.to_le_bytes());
+        occupied.extend_from_slice(&2u32.to_le_bytes());
+        handler.process_record(u16::MAX, &occupied);
+        assert!(handler.take_event().is_none());
+
+        let mut missing = vec![1];
+        missing.extend_from_slice(&3u32.to_le_bytes());
+        missing.extend_from_slice(&4u32.to_le_bytes());
+        handler.process_record(u16::MAX, &missing);
+        assert_eq!(
+            handler.take_event(),
+            Some(DummyRecordEvent::MissingCell(BlankCell {
+                row: 3,
+                column: 4
+            }))
+        );
+
+        let mut end_row = vec![0];
+        end_row.extend_from_slice(&3u32.to_le_bytes());
+        handler.process_record(u16::MAX, &end_row);
+        assert_eq!(
+            handler.take_event(),
+            Some(DummyRecordEvent::EndRow { row: 3 })
+        );
+
+        handler.process_record(0x1234, &missing);
+        assert!(handler.take_event().is_none());
     }
 }

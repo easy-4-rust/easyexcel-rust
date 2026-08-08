@@ -40,7 +40,7 @@ use crate::write::image_layout::ImageLayout;
 use crate::write::shared_write_handler::StatefulSheetState;
 use crate::write::sheet_style_context::{CellFormatContext, SheetStyleContext};
 use crate::write::xls_adapter::{
-    Biff8Book, Biff8Cell, Biff8Chart, Biff8ChartKind, Biff8ChartRange, Biff8ChartSeries,
+    Biff8Book, Biff8Cell, Biff8Chart, Biff8ChartKind, Biff8ChartRange, Biff8ChartSeries, Biff8Comment,
     Biff8Color, Biff8FillPattern, Biff8HyperlinkKind, Biff8Merge, Biff8RichText, Biff8Sheet,
     Biff8StyleRequest, Biff8StyleTable, Biff8Value, apply_excel_cell_style, apply_excel_font_style,
     apply_write_font, date_to_excel_serial_with_windowing, datetime_to_excel_serial_with_windowing,

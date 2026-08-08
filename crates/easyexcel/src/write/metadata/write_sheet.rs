@@ -59,6 +59,8 @@ impl WriteSheet {
     pub const fn sheet_no(&self) -> i32 {
         self.sheet_no
     }
+    /// Java `getSheetNo` 别名。
+    #[must_use] pub const fn get_sheet_no(&self) -> i32 { self.sheet_no }
 
     /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。 Sets the zero-based sheet index. (Java `setSheetNo(Integer)`)
     pub fn set_sheet_no(&mut self, sheet_no: i32) -> &mut Self {
@@ -71,6 +73,8 @@ impl WriteSheet {
     pub fn sheet_name(&self) -> &str {
         &self.sheet_name
     }
+    /// Java `getSheetName` 别名。
+    #[must_use] pub fn get_sheet_name(&self) -> &str { &self.sheet_name }
 
     /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。 Sets the sheet name. (Java `setSheetName(String)`)
     pub fn set_sheet_name(&mut self, sheet_name: impl Into<String>) -> &mut Self {
@@ -84,6 +88,10 @@ impl WriteSheet {
     pub const fn options(&self) -> &WriteOptions {
         &self.options
     }
+    /// 替换共享写入选项。
+    pub fn set_options(&mut self, value: WriteOptions) { self.options = value; }
+    /// 返回可变共享写入选项。
+    pub const fn options_mut(&mut self) -> &mut WriteOptions { &mut self.options }
 
     /// Returns nullable sheet-level overrides before workbook inheritance.
     #[must_use]
@@ -91,6 +99,10 @@ impl WriteSheet {
     pub const fn parameter(&self) -> &WriteBasicParameter {
         &self.parameter
     }
+    /// 替换 Java 父类参数。
+    pub fn set_parameter(&mut self, value: WriteBasicParameter) { self.parameter = value; }
+    /// 返回可变 Java 父类参数。
+    pub const fn parameter_mut(&mut self) -> &mut WriteBasicParameter { &mut self.parameter }
 }
 
 impl Default for WriteSheet {

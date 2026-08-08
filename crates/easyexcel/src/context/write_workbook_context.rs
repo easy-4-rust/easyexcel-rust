@@ -68,12 +68,24 @@ impl WriteWorkbookContext {
             .workbook()
             .expect("workbook contexts always carry a workbook holder")
     }
+    /// Java `getWriteWorkbookHolder`。
+    #[must_use] pub fn get_write_workbook_holder(&self) -> &WriteWorkbookHolderView { self.write_workbook_holder() }
 
     /// Returns all holder views captured for this callback.
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.handler.context.WorkbookWriteHandlerContext。
     pub const fn write_context(&self) -> &WriteHolderContext {
         &self.holders
+    }
+    /// Java `getWriteContext`。
+    #[must_use] pub const fn get_write_context(&self) -> &WriteHolderContext { self.write_context() }
+
+    /// 替换全部 holder 视图。
+    pub fn set_write_context(&mut self, value: WriteHolderContext) { self.holders = value; }
+    /// 替换 workbook holder 视图并同步输出路径。
+    pub fn set_write_workbook_holder(&mut self, value: WriteWorkbookHolderView) {
+        self.path = value.path().to_path_buf();
+        self.holders = std::mem::take(&mut self.holders).with_workbook(value);
     }
 
     /// 请求在保存前设置指定工作表的单元格值。

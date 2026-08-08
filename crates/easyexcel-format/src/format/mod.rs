@@ -8,8 +8,10 @@ mod locale_generated;
 mod number_utils;
 
 pub use builtin_formats::{
-    BUILTIN_FORMATS_ALL_LANGUAGES, BUILTIN_FORMATS_CN, GENERAL, MIN_CUSTOM_DATA_FORMAT_INDEX,
-    builtin_format_code, get_builtin_format, switch_builtin_formats,
+    BUILTIN_FORMATS_ALL_LANGUAGES, BUILTIN_FORMATS_CN, BUILTIN_FORMATS_MAP_CN,
+    BUILTIN_FORMATS_MAP_US, BUILTIN_FORMATS_US, GENERAL, MIN_CUSTOM_DATA_FORMAT_INDEX,
+    builtin_format_code, get_builtin_format, get_builtin_format_for_locale, switch_builtin_formats,
+    switch_builtin_formats_for_locale, switch_builtin_formats_map,
 };
 pub use data_formatter::{
     CompiledExcelFormat, SpreadsheetLocale, compile_format_code, excel_display_number,

@@ -117,7 +117,7 @@ use crate::core::excel_underline::ExcelUnderline;
 /// Java uses boxed `Boolean`/`Short`/`Byte`/`Integer`; Rust uses `Option`
 /// to express "unset" with zero overhead. All nine fields preserve the Java
 /// semantics, including the POI alignment with `null` meaning "inherit".
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct WriteFont {
     font_name: Option<String>,
     font_height_in_points: Option<f64>,
@@ -217,6 +217,12 @@ impl WriteFont {
     pub const fn bold(mut self, value: bool) -> Self {
         self.bold = Some(value);
         self
+    }
+
+    /// 合并源字体的非空字段到目标字体，语义对应 Java 静态 `merge`。
+    #[must_use]
+    pub fn merge(source: &Self, target: Self) -> Self {
+        merge_write_font(source, target)
     }
 
     /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。 Returns the optional font family name. (Java `getFontName()`)

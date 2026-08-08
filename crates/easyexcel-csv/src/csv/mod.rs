@@ -18,7 +18,7 @@ pub use codec::{
     CsvReadOptions, CsvWriteOptions, decode_bytes, decode_reader, detect_delimiter, infer_cell,
     read_csv, resolve_encoding, write_csv,
 };
-pub use csv_cell::{CsvCell, CsvCellValue, CsvNumericCellType};
+pub use csv_cell::{CsvCell, CsvCellType, CsvCellValue, CsvNumericCellType};
 pub use csv_cell_style::CsvCellStyle;
 pub use csv_charset::CsvCharset;
 pub use csv_data_format::CsvDataFormat;

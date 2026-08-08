@@ -54,8 +54,10 @@ import com.alibaba.excel.analysis.v03.handlers.AbstractXlsRecordHandler;
 import com.alibaba.excel.analysis.v03.handlers.BoundSheetRecordHandler;
 import com.alibaba.excel.analysis.v03.handlers.BlankRecordHandler;
 import com.alibaba.excel.analysis.v03.handlers.BoolErrRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler;
 import com.alibaba.excel.analysis.v03.handlers.EofRecordHandler;
 import com.alibaba.excel.analysis.v03.handlers.FormulaRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler;
 import com.alibaba.excel.analysis.v03.handlers.IndexRecordHandler;
 import com.alibaba.excel.analysis.v03.handlers.LabelRecordHandler;
 import com.alibaba.excel.analysis.v03.handlers.LabelSstRecordHandler;
@@ -66,6 +68,11 @@ import com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler;
 import com.alibaba.excel.analysis.v03.handlers.RkRecordHandler;
 import com.alibaba.excel.analysis.v03.handlers.SstRecordHandler;
 import com.alibaba.excel.analysis.v03.handlers.StringRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler;
+import com.alibaba.excel.analysis.v07.XlsxSaxAnalyser;
+import com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler;
+import com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler;
+import com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler;
 import com.alibaba.excel.context.csv.DefaultCsvReadContext;
 import com.alibaba.excel.context.xls.DefaultXlsReadContext;
 import com.alibaba.excel.context.xlsx.DefaultXlsxReadContext;
@@ -84,6 +91,7 @@ import org.apache.poi.hssf.record.BoolErrRecord;
 import org.apache.poi.hssf.record.CommonObjectDataSubRecord;
 import org.apache.poi.hssf.record.EOFRecord;
 import org.apache.poi.hssf.record.FormulaRecord;
+import org.apache.poi.hssf.record.HyperlinkRecord;
 import org.apache.poi.hssf.record.IndexRecord;
 import org.apache.poi.hssf.record.LabelRecord;
 import org.apache.poi.hssf.record.LabelSSTRecord;
@@ -96,9 +104,14 @@ import org.apache.poi.hssf.record.RecordInputStream;
 import org.apache.poi.hssf.record.SSTRecord;
 import org.apache.poi.hssf.record.RKRecord;
 import org.apache.poi.hssf.record.StringRecord;
+import org.apache.poi.hssf.record.TextObjectRecord;
 import org.apache.poi.hssf.record.UnknownRecord;
 import org.apache.poi.hssf.record.common.UnicodeString;
+import org.apache.poi.hssf.eventusermodel.dummyrecord.LastCellOfRowDummyRecord;
+import org.apache.poi.hssf.eventusermodel.dummyrecord.MissingCellDummyRecord;
+import org.apache.poi.hssf.usermodel.HSSFRichTextString;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.xml.sax.helpers.AttributesImpl;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
 import com.alibaba.excel.write.style.column.SimpleColumnWidthStyleStrategy;
@@ -385,6 +398,24 @@ public final class JavaGoldenExporter {
         analyser.finish();
         payload.put("finish_twice_succeeded", Boolean.TRUE);
 
+        ReadWorkbook xlsxSaxWorkbook = new ReadWorkbook();
+        xlsxSaxWorkbook.setFile(input.toFile());
+        xlsxSaxWorkbook.setExcelType(ExcelTypeEnum.XLSX);
+        xlsxSaxWorkbook.setHeadRowNumber(Integer.valueOf(1));
+        DefaultXlsxReadContext xlsxSaxContext =
+            new DefaultXlsxReadContext(xlsxSaxWorkbook, ExcelTypeEnum.XLSX);
+        xlsxSaxContext.xlsxReadWorkbookHolder().setReadAll(Boolean.TRUE);
+        XlsxSaxAnalyser xlsxSaxAnalyser = new XlsxSaxAnalyser(xlsxSaxContext, null);
+        payload.put("xlsx_sax_analyser_class", xlsxSaxAnalyser.getClass().getName());
+        payload.put("xlsx_sax_analyser_shared_strings_part_name",
+            XlsxSaxAnalyser.SHARED_STRINGS_PART_NAME.getName());
+        payload.put("xlsx_sax_analyser_sheet_count", Integer.valueOf(xlsxSaxAnalyser.sheetList().size()));
+        payload.put("xlsx_sax_analyser_sheet_no", xlsxSaxAnalyser.sheetList().get(0).getSheetNo());
+        payload.put("xlsx_sax_analyser_sheet_name", xlsxSaxAnalyser.sheetList().get(0).getSheetName());
+        xlsxSaxAnalyser.execute();
+        payload.put("xlsx_sax_analyser_execute_succeeded", Boolean.TRUE);
+        xlsxSaxContext.xlsxReadWorkbookHolder().getOpcPackage().close();
+
         Path csvInput = artifactDir.resolve("excel_read_executor_api.csv");
         Files.write(csvInput, "value\ncsv-row\n".getBytes(StandardCharsets.UTF_8));
         ReadWorkbook csvWorkbook = new ReadWorkbook();
@@ -623,6 +654,74 @@ public final class JavaGoldenExporter {
             Boolean.valueOf(Integer.valueOf(15).equals(
                 listenerRecordContext.xlsReadSheetHolder().getTempObjectIndex())));
 
+        HyperlinkRecord hyperlinkRecord = new HyperlinkRecord();
+        hyperlinkRecord.newUrlLink();
+        hyperlinkRecord.setAddress("https://easyexcel.opensource.alibaba.com/");
+        hyperlinkRecord.setFirstRow(16);
+        hyperlinkRecord.setLastRow(17);
+        hyperlinkRecord.setFirstColumn(18);
+        hyperlinkRecord.setLastColumn(19);
+        HyperlinkRecordHandler hyperlinkHandler = new HyperlinkRecordHandler();
+        payload.put("hyperlink_record_handler_support_disabled",
+            Boolean.valueOf(hyperlinkHandler.support(listenerRecordContext, hyperlinkRecord)));
+        listenerRecordContext.readWorkbookHolder().getExtraReadSet().add(CellExtraTypeEnum.HYPERLINK);
+        payload.put("hyperlink_record_handler_support_enabled",
+            Boolean.valueOf(hyperlinkHandler.support(listenerRecordContext, hyperlinkRecord)));
+        hyperlinkHandler.processRecord(listenerRecordContext, hyperlinkRecord);
+        payload.put("hyperlink_record_handler_address",
+            listenerRecordContext.xlsReadSheetHolder().getCellExtra().getText());
+        payload.put("hyperlink_record_handler_first_row",
+            listenerRecordContext.xlsReadSheetHolder().getCellExtra().getFirstRowIndex());
+        payload.put("hyperlink_record_handler_last_row",
+            listenerRecordContext.xlsReadSheetHolder().getCellExtra().getLastRowIndex());
+        payload.put("hyperlink_record_handler_first_column",
+            listenerRecordContext.xlsReadSheetHolder().getCellExtra().getFirstColumnIndex());
+        payload.put("hyperlink_record_handler_last_column",
+            listenerRecordContext.xlsReadSheetHolder().getCellExtra().getLastColumnIndex());
+        payload.put("hyperlink_record_handler_serialized", unsignedBytes(hyperlinkRecord.serialize()));
+
+        TextObjectRecord textObjectRecord = new TextObjectRecord();
+        textObjectRecord.setStr(new HSSFRichTextString("txo-comment"));
+        TextObjectRecordHandler textObjectHandler = new TextObjectRecordHandler();
+        payload.put("text_object_record_handler_support_enabled",
+            Boolean.valueOf(textObjectHandler.support(listenerRecordContext, textObjectRecord)));
+        textObjectHandler.processRecord(listenerRecordContext, textObjectRecord);
+        payload.put("text_object_record_handler_text",
+            listenerRecordContext.xlsReadSheetHolder().getObjectCacheMap().get(Integer.valueOf(15)));
+        payload.put("text_object_record_handler_temp_cleared",
+            Boolean.valueOf(listenerRecordContext.xlsReadSheetHolder().getTempObjectIndex() == null));
+        payload.put("text_object_record_handler_serialized", unsignedBytes(textObjectRecord.serialize()));
+        listenerRecordContext.readWorkbookHolder().getExtraReadSet().remove(CellExtraTypeEnum.COMMENT);
+        payload.put("text_object_record_handler_support_disabled",
+            Boolean.valueOf(textObjectHandler.support(listenerRecordContext, textObjectRecord)));
+        listenerRecordContext.readWorkbookHolder().getExtraReadSet().add(CellExtraTypeEnum.COMMENT);
+
+        listenerRecordContext.xlsReadSheetHolder().getCellMap().clear();
+        DummyRecordHandler dummyHandler = new DummyRecordHandler();
+        MissingCellDummyRecord missingCellRecord = new MissingCellDummyRecord(22, 23);
+        dummyHandler.processRecord(listenerRecordContext, missingCellRecord);
+        ReadCellData<?> missingCell =
+            (ReadCellData<?>)listenerRecordContext.xlsReadSheetHolder().getCellMap().get(Integer.valueOf(23));
+        payload.put("dummy_record_handler_missing_cell_present", Boolean.valueOf(missingCell != null));
+        payload.put("dummy_record_handler_missing_cell_type", missingCell.getType().name());
+        payload.put("dummy_record_handler_missing_cell_row", missingCell.getRowIndex());
+        payload.put("dummy_record_handler_missing_cell_column", missingCell.getColumnIndex());
+
+        ReadCellData<?> existingCell = ReadCellData.newInstance("existing", 22, 24);
+        listenerRecordContext.xlsReadSheetHolder().getCellMap().put(Integer.valueOf(24), existingCell);
+        dummyHandler.processRecord(listenerRecordContext, new MissingCellDummyRecord(22, 24));
+        payload.put("dummy_record_handler_existing_cell_preserved",
+            Boolean.valueOf(listenerRecordContext.xlsReadSheetHolder().getCellMap().get(Integer.valueOf(24))
+                == existingCell));
+
+        dummyHandler.processRecord(listenerRecordContext, new LastCellOfRowDummyRecord(22, 24));
+        payload.put("dummy_record_handler_end_row_index",
+            listenerRecordContext.readRowHolder().getRowIndex());
+        payload.put("dummy_record_handler_cell_map_cleared",
+            Boolean.valueOf(listenerRecordContext.xlsReadSheetHolder().getCellMap().isEmpty()));
+        payload.put("dummy_record_handler_row_type_reset",
+            listenerRecordContext.xlsReadSheetHolder().getTempRowType().name());
+
         new EofRecordHandler().processRecord(listenerRecordContext, EOFRecord.instance);
         payload.put("eof_record_handler_sheet_ended",
             listenerRecordContext.readSheetHolder().getEnded());
@@ -702,6 +801,30 @@ public final class JavaGoldenExporter {
             .setPackageRelationshipCollectionMap(new HashMap<Integer, org.apache.poi.openxml4j.opc.PackageRelationshipCollection>());
         xlsxContext.currentSheet(new ReadSheet(Integer.valueOf(0), "XlsxContext"));
         payload.put("xlsx_context_sheet_no", xlsxContext.xlsxReadSheetHolder().getSheetNo());
+
+        AbstractXlsxTagHandler abstractXlsxTagHandler = new AbstractXlsxTagHandler() {};
+        XlsxTagHandler xlsxTagHandler = abstractXlsxTagHandler;
+        payload.put("xlsx_tag_handler_interface", Boolean.valueOf(XlsxTagHandler.class.isInterface()));
+        payload.put("abstract_xlsx_tag_handler_is_abstract",
+            Boolean.valueOf(java.lang.reflect.Modifier.isAbstract(AbstractXlsxTagHandler.class.getModifiers())));
+        payload.put("abstract_xlsx_tag_handler_support_default",
+            Boolean.valueOf(xlsxTagHandler.support(xlsxContext)));
+        xlsxContext.xlsxReadSheetHolder().setTempData(new StringBuilder("seed"));
+        int beforeNoop = xlsxContext.xlsxReadSheetHolder().getTempData().length();
+        xlsxTagHandler.startElement(xlsxContext, "c", new AttributesImpl());
+        xlsxTagHandler.characters(xlsxContext, new char[] {'x'}, 0, 1);
+        xlsxTagHandler.endElement(xlsxContext, "c");
+        payload.put("abstract_xlsx_tag_handler_noop_preserved",
+            Boolean.valueOf(xlsxContext.xlsxReadSheetHolder().getTempData().length() == beforeNoop));
+
+        AbstractCellValueTagHandler abstractCellValueTagHandler = new AbstractCellValueTagHandler() {};
+        payload.put("abstract_cell_value_tag_handler_is_abstract",
+            Boolean.valueOf(java.lang.reflect.Modifier.isAbstract(AbstractCellValueTagHandler.class.getModifiers())));
+        xlsxContext.xlsxReadSheetHolder().setTempData(new StringBuilder());
+        char[] slicedCharacters = new char[] {'a', 'b', 'c', 'd', 'e'};
+        abstractCellValueTagHandler.characters(xlsxContext, slicedCharacters, 1, 3);
+        payload.put("abstract_cell_value_tag_handler_text",
+            xlsxContext.xlsxReadSheetHolder().getTempData().toString());
 
         Path out = outDir.resolve("excel_analyser_lifecycle.contract.json");
         String json = JSON.toJSONString(payload, JSONWriter.Feature.PrettyFormat);
@@ -2935,6 +3058,15 @@ public final class JavaGoldenExporter {
             list.add(c);
         }
         return list;
+    }
+
+    /** Convert Java's signed bytes to stable JSON integers in the range 0..255. */
+    private static List<Integer> unsignedBytes(byte[] bytes) {
+        List<Integer> values = new ArrayList<Integer>(bytes.length);
+        for (byte value : bytes) {
+            values.add(Integer.valueOf(value & 0xFF));
+        }
+        return values;
     }
 
     /**

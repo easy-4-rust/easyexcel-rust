@@ -68,6 +68,29 @@ impl FillConfig {
     pub const fn has_init(&self) -> bool {
         self.has_init
     }
+
+    /// Java `getDirection`。
+    #[must_use]
+    pub const fn get_direction(&self) -> Option<crate::core::WriteDirection> { self.direction }
+    /// Java `setDirection`。
+    pub const fn set_direction(&mut self, value: Option<crate::core::WriteDirection>) {
+        self.direction = value;
+    }
+    /// Java `getForceNewRow`。
+    #[must_use]
+    pub const fn get_force_new_row(&self) -> bool { self.force_new_row }
+    /// Java `setForceNewRow`。
+    pub const fn set_force_new_row(&mut self, value: bool) { self.force_new_row = value; }
+    /// Java `getAutoStyle`。
+    #[must_use]
+    pub const fn get_auto_style(&self) -> bool { self.auto_style }
+    /// Java `setAutoStyle`。
+    pub const fn set_auto_style(&mut self, value: bool) { self.auto_style = value; }
+    /// Java `isHasInit`。
+    #[must_use]
+    pub const fn is_has_init(&self) -> bool { self.has_init }
+    /// Java `setHasInit`。
+    pub const fn set_has_init(&mut self, value: bool) { self.has_init = value; }
 }
 
 impl Default for FillConfig {
@@ -75,4 +98,3 @@ impl Default for FillConfig {
         Self::new()
     }
 }
-

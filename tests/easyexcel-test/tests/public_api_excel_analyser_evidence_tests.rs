@@ -8,9 +8,11 @@ use easyexcel::analysis::v03::handlers::bof_record_handler::BOF_SID;
 use easyexcel::analysis::v03::handlers::bound_sheet_record_handler::{
     BOUND_SHEET_SID, BoundSheetRecordHandler,
 };
+use easyexcel::analysis::v03::handlers::dummy_record_handler::DummyRecordEvent;
 use easyexcel::analysis::v03::handlers::formula_record_handler::{
     FORMULA_SID, FormulaCachedType, FormulaRecordHandler,
 };
+use easyexcel::analysis::v03::handlers::hyperlink_record_handler::HyperlinkRecordHandler;
 use easyexcel::analysis::v03::handlers::label_record_handler::{LABEL_SID, LabelRecordHandler};
 use easyexcel::analysis::v03::handlers::label_sst_record_handler::{
     LABEL_SST_SID, LabelSstCell, LabelSstRecordHandler,
@@ -20,9 +22,16 @@ use easyexcel::analysis::v03::handlers::obj_record_handler::{OBJ_SID, ObjRecordH
 use easyexcel::analysis::v03::handlers::rk_record_handler::{RK_SID, RkRecordHandler};
 use easyexcel::analysis::v03::handlers::sst_record_handler::{SST_SID, SstRecordHandler};
 use easyexcel::analysis::v03::handlers::string_record_handler::{STRING_SID, StringRecordHandler};
+use easyexcel::analysis::v03::handlers::text_object_record_handler::{
+    TEXT_OBJECT_SID, TextObjectRecordHandler,
+};
 use easyexcel::analysis::v03::xls_list_sheet_listener::XlsListSheetListener;
 use easyexcel::analysis::v03::xls_sax_analyser::XlsSaxAnalyser;
 use easyexcel::analysis::v03::{IgnorableXlsRecordHandler, XlsRecordDispatcher, XlsRecordHandler};
+use easyexcel::analysis::v07::XlsxSaxAnalyser;
+use easyexcel::analysis::v07::handlers::abstract_cell_value_tag_handler::AbstractCellValueTagHandler;
+use easyexcel::analysis::v07::handlers::abstract_xlsx_tag_handler::AbstractXlsxTagHandler;
+use easyexcel::analysis::v07::handlers::xlsx_tag_handler::XlsxTagHandler;
 use easyexcel::analysis::{
     ExcelAnalyser, ExcelAnalyserImpl, ExcelReadExecutor, ExcelReadExecutorKind,
 };
@@ -46,6 +55,12 @@ struct ExcelAnalyserContract {
     analysis_context_same: bool,
     analysis_all_succeeded: bool,
     finish_twice_succeeded: bool,
+    xlsx_sax_analyser_class: String,
+    xlsx_sax_analyser_shared_strings_part_name: String,
+    xlsx_sax_analyser_sheet_count: usize,
+    xlsx_sax_analyser_sheet_no: usize,
+    xlsx_sax_analyser_sheet_name: String,
+    xlsx_sax_analyser_execute_succeeded: bool,
     csv_executor_class: String,
     csv_executor_sheet_count: usize,
     csv_executor_sheet_no: usize,
@@ -106,6 +121,27 @@ struct ExcelAnalyserContract {
     rk_record_handler_column: usize,
     obj_record_handler_comment_object_id: u32,
     obj_record_handler_non_comment_ignored: bool,
+    hyperlink_record_handler_support_disabled: bool,
+    hyperlink_record_handler_support_enabled: bool,
+    hyperlink_record_handler_address: String,
+    hyperlink_record_handler_first_row: u32,
+    hyperlink_record_handler_last_row: u32,
+    hyperlink_record_handler_first_column: usize,
+    hyperlink_record_handler_last_column: usize,
+    hyperlink_record_handler_serialized: Vec<u8>,
+    text_object_record_handler_support_enabled: bool,
+    text_object_record_handler_support_disabled: bool,
+    text_object_record_handler_text: String,
+    text_object_record_handler_temp_cleared: bool,
+    text_object_record_handler_serialized: Vec<u8>,
+    dummy_record_handler_missing_cell_present: bool,
+    dummy_record_handler_missing_cell_type: String,
+    dummy_record_handler_missing_cell_row: u32,
+    dummy_record_handler_missing_cell_column: usize,
+    dummy_record_handler_existing_cell_preserved: bool,
+    dummy_record_handler_end_row_index: u32,
+    dummy_record_handler_cell_map_cleared: bool,
+    dummy_record_handler_row_type_reset: String,
     xls_sax_analyser_class: String,
     xls_sax_analyser_sheet_count: usize,
     xls_sax_analyser_execute_succeeded: bool,
@@ -114,6 +150,12 @@ struct ExcelAnalyserContract {
     xlsx_context_workbook_type: String,
     xlsx_context_sheet_before_null: bool,
     xlsx_context_sheet_no: i32,
+    xlsx_tag_handler_interface: bool,
+    abstract_xlsx_tag_handler_is_abstract: bool,
+    abstract_xlsx_tag_handler_support_default: bool,
+    abstract_xlsx_tag_handler_noop_preserved: bool,
+    abstract_cell_value_tag_handler_is_abstract: bool,
+    abstract_cell_value_tag_handler_text: String,
 }
 
 fn contract() -> ExcelAnalyserContract {
@@ -129,6 +171,28 @@ fn java_input() -> PathBuf {
 
 fn java_xls_input() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/golden/artifacts/excel_analyser_api.xls")
+}
+
+fn biff_records(serialized: &[u8]) -> Vec<(u16, &[u8])> {
+    let mut records = Vec::new();
+    let mut offset = 0usize;
+    while offset < serialized.len() {
+        assert!(
+            serialized.len() - offset >= 4,
+            "truncated BIFF record header"
+        );
+        let sid = u16::from_le_bytes([serialized[offset], serialized[offset + 1]]);
+        let length = usize::from(u16::from_le_bytes([
+            serialized[offset + 2],
+            serialized[offset + 3],
+        ]));
+        let body_start = offset + 4;
+        let body_end = body_start + length;
+        assert!(body_end <= serialized.len(), "truncated BIFF record body");
+        records.push((sid, &serialized[body_start..body_end]));
+        offset = body_end;
+    }
+    records
 }
 
 #[derive(Default)]
@@ -220,6 +284,37 @@ fn excel_analyser_direct_constructor_executor_context_and_finish_match_java()
         contract.implementation_class,
         "com.alibaba.excel.analysis.ExcelAnalyserImpl"
     );
+
+    let mut xlsx_sax_analyser = XlsxSaxAnalyser::from_path(
+        java_input(),
+        ReadOptions {
+            head_row_number: 1,
+            ..ReadOptions::default()
+        },
+    )?;
+    assert!(
+        contract
+            .xlsx_sax_analyser_class
+            .ends_with("XlsxSaxAnalyser")
+    );
+    assert_eq!(
+        XlsxSaxAnalyser::SHARED_STRINGS_PART_NAME,
+        contract.xlsx_sax_analyser_shared_strings_part_name
+    );
+    assert_eq!(
+        xlsx_sax_analyser.sheet_list().len(),
+        contract.xlsx_sax_analyser_sheet_count
+    );
+    assert_eq!(
+        xlsx_sax_analyser.sheet_list()[0].sheet_no(),
+        contract.xlsx_sax_analyser_sheet_no
+    );
+    assert_eq!(
+        xlsx_sax_analyser.sheet_list()[0].sheet_name(),
+        contract.xlsx_sax_analyser_sheet_name
+    );
+    xlsx_sax_analyser.execute()?;
+    assert!(contract.xlsx_sax_analyser_execute_succeeded);
 
     let csv_input = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/golden/artifacts/excel_read_executor_api.csv");
@@ -592,6 +687,153 @@ fn excel_analyser_direct_constructor_executor_context_and_finish_match_java()
     );
     assert!(contract.obj_record_handler_non_comment_ignored);
 
+    let hyperlink_records = biff_records(&contract.hyperlink_record_handler_serialized);
+    assert_eq!(hyperlink_records.len(), 1);
+    let (hyperlink_sid, hyperlink_body) = hyperlink_records[0];
+    let mut disabled_hyperlink = HyperlinkRecordHandler::new(false);
+    assert_eq!(
+        disabled_hyperlink.support(),
+        contract.hyperlink_record_handler_support_disabled
+    );
+    XlsRecordHandler::process_record(&mut disabled_hyperlink, hyperlink_sid, hyperlink_body);
+    assert!(disabled_hyperlink.last_extra.is_none());
+    let mut hyperlink_handler = HyperlinkRecordHandler::new(true);
+    assert_eq!(
+        hyperlink_handler.support(),
+        contract.hyperlink_record_handler_support_enabled
+    );
+    XlsRecordHandler::process_record(&mut hyperlink_handler, hyperlink_sid, hyperlink_body);
+    let hyperlink_extra = hyperlink_handler
+        .last_extra
+        .as_ref()
+        .expect("POI hyperlink record must decode");
+    assert_eq!(
+        hyperlink_extra.text(),
+        Some(contract.hyperlink_record_handler_address.as_str())
+    );
+    assert_eq!(
+        (
+            hyperlink_extra.first_row_index(),
+            hyperlink_extra.last_row_index(),
+            hyperlink_extra.first_column_index(),
+            hyperlink_extra.last_column_index(),
+        ),
+        (
+            contract.hyperlink_record_handler_first_row,
+            contract.hyperlink_record_handler_last_row,
+            contract.hyperlink_record_handler_first_column,
+            contract.hyperlink_record_handler_last_column,
+        )
+    );
+
+    let text_object_records = biff_records(&contract.text_object_record_handler_serialized);
+    assert_eq!(
+        text_object_records.first().map(|record| record.0),
+        Some(TEXT_OBJECT_SID)
+    );
+    let mut text_object_handler = TextObjectRecordHandler::new();
+    assert_eq!(
+        text_object_handler.support(),
+        contract.text_object_record_handler_support_enabled
+    );
+    text_object_handler.begin_text_object(
+        contract.obj_record_handler_comment_object_id,
+        text_object_records[0].1,
+    );
+    for (sid, body) in text_object_records.iter().skip(1) {
+        if *sid == easyexcel_xls::biff8::record_sid::CONTINUE_SID
+            && text_object_handler
+                .get(contract.obj_record_handler_comment_object_id)
+                .is_none()
+        {
+            assert!(text_object_handler.consume_continue(body));
+        }
+    }
+    assert_eq!(
+        text_object_handler.get(contract.obj_record_handler_comment_object_id),
+        Some(contract.text_object_record_handler_text.as_str())
+    );
+    assert!(contract.text_object_record_handler_temp_cleared);
+
+    let mut comment_options = ReadOptions::default();
+    comment_options
+        .extra_read
+        .insert(easyexcel::CellExtraType::Comment);
+    let mut text_object_dispatcher = XlsRecordDispatcher::new(&comment_options);
+    text_object_dispatcher.process_record(OBJ_SID, &comment_obj_payload)?;
+    for (sid, body) in &text_object_records {
+        text_object_dispatcher.process_record(*sid, body)?;
+    }
+    let mut note_payload = vec![20, 0, 21, 0, 0, 0];
+    note_payload.extend_from_slice(
+        &u16::try_from(contract.obj_record_handler_comment_object_id)
+            .expect("Java object id fits BIFF u16")
+            .to_le_bytes(),
+    );
+    text_object_dispatcher.process_record(0x001C, &note_payload)?;
+    let (_, comment_extra) = text_object_dispatcher
+        .state()
+        .extras()
+        .last()
+        .expect("TXO text must reach NOTE extra");
+    assert_eq!(
+        comment_extra.text(),
+        Some(contract.text_object_record_handler_text.as_str())
+    );
+
+    let mut disabled_text_object_dispatcher = XlsRecordDispatcher::new(&ReadOptions::default());
+    disabled_text_object_dispatcher.process_record(OBJ_SID, &comment_obj_payload)?;
+    disabled_text_object_dispatcher
+        .process_record(text_object_records[0].0, text_object_records[0].1)?;
+    assert_eq!(
+        disabled_text_object_dispatcher
+            .state()
+            .skipped_record_count()
+            > 0,
+        !contract.text_object_record_handler_support_disabled
+    );
+
+    let mut dummy_dispatcher = XlsRecordDispatcher::new(&ReadOptions::default());
+    dummy_dispatcher.process_record(0x0201, &[22, 0, 24, 0, 0, 0])?;
+    let mut occupied_missing = vec![1];
+    occupied_missing.extend_from_slice(&22u32.to_le_bytes());
+    occupied_missing.extend_from_slice(&24u32.to_le_bytes());
+    dummy_dispatcher.process_record(u16::MAX, &occupied_missing)?;
+    assert_eq!(
+        dummy_dispatcher.state().last_dummy_event().is_none(),
+        contract.dummy_record_handler_existing_cell_preserved
+    );
+
+    let mut missing = vec![1];
+    missing.extend_from_slice(&22u32.to_le_bytes());
+    missing.extend_from_slice(&23u32.to_le_bytes());
+    dummy_dispatcher.process_record(u16::MAX, &missing)?;
+    let missing_cell = match dummy_dispatcher.state().last_dummy_event() {
+        Some(DummyRecordEvent::MissingCell(cell)) => cell,
+        other => panic!("expected missing-cell event, got {other:?}"),
+    };
+    assert_eq!(
+        (missing_cell.row, missing_cell.column),
+        (
+            contract.dummy_record_handler_missing_cell_row,
+            contract.dummy_record_handler_missing_cell_column,
+        )
+    );
+    assert!(contract.dummy_record_handler_missing_cell_present);
+    assert_eq!(contract.dummy_record_handler_missing_cell_type, "EMPTY");
+
+    let mut end_row = vec![0];
+    end_row.extend_from_slice(&22u32.to_le_bytes());
+    dummy_dispatcher.process_record(u16::MAX, &end_row)?;
+    assert_eq!(
+        dummy_dispatcher.state().last_dummy_event(),
+        Some(&DummyRecordEvent::EndRow {
+            row: contract.dummy_record_handler_end_row_index,
+        })
+    );
+    assert!(contract.dummy_record_handler_cell_map_cleared);
+    assert_eq!(contract.dummy_record_handler_row_type_reset, "EMPTY");
+
     let mut execute_workbook = ReadWorkbook::new();
     execute_workbook
         .set_file(java_xls_input())
@@ -658,6 +900,26 @@ fn excel_analyser_direct_constructor_executor_context_and_finish_match_java()
             .inner()
             .sheet_no,
         contract.xlsx_context_sheet_no
+    );
+
+    let mut abstract_handler = AbstractXlsxTagHandler::new();
+    assert!(contract.xlsx_tag_handler_interface);
+    assert!(contract.abstract_xlsx_tag_handler_is_abstract);
+    assert_eq!(
+        abstract_handler.support(),
+        contract.abstract_xlsx_tag_handler_support_default
+    );
+    abstract_handler.start_element("c", "r=A1");
+    abstract_handler.characters("x");
+    abstract_handler.end_element("c");
+    assert!(contract.abstract_xlsx_tag_handler_noop_preserved);
+
+    let mut abstract_cell_value_handler = AbstractCellValueTagHandler::new();
+    assert!(contract.abstract_cell_value_tag_handler_is_abstract);
+    abstract_cell_value_handler.characters("bcd");
+    assert_eq!(
+        abstract_cell_value_handler.temp_data,
+        contract.abstract_cell_value_tag_handler_text
     );
     Ok(())
 }

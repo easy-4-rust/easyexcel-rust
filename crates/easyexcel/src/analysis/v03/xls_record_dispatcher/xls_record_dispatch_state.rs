@@ -1,6 +1,7 @@
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 Observable result of running Java-compatible BIFF handler dispatch.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct XlsRecordDispatchState {
+    last_dummy_event: Option<DummyRecordEvent>,
     total_record_count: usize,
     handled_record_count: usize,
     unknown_record_count: usize,
@@ -24,6 +25,11 @@ pub struct XlsRecordDispatchState {
 }
 
 impl XlsRecordDispatchState {
+    /// Returns the latest POI-compatible missing-cell or end-row event.
+    #[must_use]
+    pub const fn last_dummy_event(&self) -> Option<&DummyRecordEvent> {
+        self.last_dummy_event.as_ref()
+    }
     /// Number of physical BIFF records presented to the dispatcher.
     #[must_use]
     /// 对应 Java：无直接对应对象；Rust 架构扩展。

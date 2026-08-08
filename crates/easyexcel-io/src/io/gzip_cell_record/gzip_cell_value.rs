@@ -60,16 +60,34 @@ pub enum GzipCellValue {
         /// 批注正文。
         text: String,
     },
+    /// 带完整 Java `CommentData` JSON 元数据的嵌套值。
+    CommentMetadata {
+        /// 被批注修饰的原始单元格值。
+        value: Box<Self>,
+        /// 由上层 easyexcel crate 编解码的版本化 JSON 元数据。
+        metadata: Vec<u8>,
+    },
     /// 图片字节。
     Image(Vec<u8>),
     /// 已展平的富文本。
     RichText(String),
+    /// 带完整字体区间元数据的富文本 JSON。
+    RichTextMetadata(Vec<u8>),
     /// 单元格值及多张图片。
     Images {
         /// 被图片修饰的原始单元格值。
         value: Box<Self>,
         /// 图片二进制内容。
         images: Vec<Vec<u8>>,
+    },
+    /// 单元格值、多张图片及其 Java 锚点/类型元数据。
+    ImagesMetadata {
+        /// 被图片修饰的原始单元格值。
+        value: Box<Self>,
+        /// 图片二进制内容。
+        images: Vec<Vec<u8>>,
+        /// 由上层 easyexcel crate 编解码的图片元数据 JSON。
+        metadata: Vec<u8>,
     },
     /// Stateful writer journal cell decorated with a deduplicated style id.
     Styled {

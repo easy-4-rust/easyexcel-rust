@@ -15,3 +15,4 @@ pub(crate) use biff8_link_table::Biff8LinkTable;
 
 include!("ptg/builtin_functions_to_parser.rs");
 include!("ptg/parser_impl_to_tests.rs");
+include!("ptg/decode_formula_rpn.rs");

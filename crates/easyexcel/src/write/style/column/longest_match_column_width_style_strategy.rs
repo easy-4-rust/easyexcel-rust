@@ -115,7 +115,9 @@ fn data_length(context: &WriteCellContext) -> Option<u16> {
     }
     // Java unwraps WriteCellData list; Images/Comment wrap a scalar value.
     let value = match &context.value {
-        CellValue::Comment { value, .. } | CellValue::Images { value, .. } => value.as_ref(),
+        CellValue::Comment { value, .. }
+        | CellValue::CommentWithMetadata { value, .. }
+        | CellValue::Images { value, .. } => value.as_ref(),
         other => other,
     };
     match value.data_type() {

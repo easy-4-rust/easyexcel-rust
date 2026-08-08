@@ -89,6 +89,73 @@ impl Head {
     pub const fn force_name(&self) -> bool {
         self.force_name
     }
+
+    /// Java `getColumnIndex` 别名。
+    #[must_use]
+    pub fn get_column_index(&self) -> Option<i32> { self.column_index }
+    /// Java `setColumnIndex`。
+    pub fn set_column_index(&mut self, value: Option<i32>) { self.column_index = value; }
+    /// Java `getField` 的后端中立映射；Rust 以静态字段名替代反射 `Field`。
+    #[must_use]
+    pub fn get_field(&self) -> Option<&str> { self.field_name.as_deref() }
+    /// Java `setField` 的后端中立映射。
+    pub fn set_field(&mut self, value: Option<String>) { self.field_name = value; }
+    /// Java `getFieldName` 别名。
+    #[must_use]
+    pub fn get_field_name(&self) -> Option<&str> { self.field_name.as_deref() }
+    /// Java `setFieldName`。
+    pub fn set_field_name(&mut self, value: Option<String>) { self.field_name = value; }
+    /// Java `getHeadNameList` 别名。
+    #[must_use]
+    pub fn get_head_name_list(&self) -> &[String] { &self.head_name_list }
+    /// Java `setHeadNameList`。
+    pub fn set_head_name_list(&mut self, value: Vec<String>) { self.head_name_list = value; }
+    /// Java `getForceIndex` 别名。
+    #[must_use]
+    pub const fn get_force_index(&self) -> bool { self.force_index }
+    /// Java `setForceIndex`。
+    pub const fn set_force_index(&mut self, value: bool) { self.force_index = value; }
+    /// Java `getForceName` 别名。
+    #[must_use]
+    pub const fn get_force_name(&self) -> bool { self.force_name }
+    /// Java `setForceName`。
+    pub const fn set_force_name(&mut self, value: bool) { self.force_name = value; }
+    /// Java `getColumnWidthProperty`。
+    #[must_use]
+    pub const fn get_column_width_property(&self) -> Option<&ColumnWidthProperty> {
+        self.column_width_property.as_ref()
+    }
+    /// Java `setColumnWidthProperty`。
+    pub fn set_column_width_property(&mut self, value: Option<ColumnWidthProperty>) {
+        self.column_width_property = value;
+    }
+    /// Java `getLoopMergeProperty`。
+    #[must_use]
+    pub const fn get_loop_merge_property(&self) -> Option<&LoopMergeProperty> {
+        self.loop_merge_property.as_ref()
+    }
+    /// Java `setLoopMergeProperty`。
+    pub fn set_loop_merge_property(&mut self, value: Option<LoopMergeProperty>) {
+        self.loop_merge_property = value;
+    }
+    /// Java `getHeadStyleProperty`。
+    #[must_use]
+    pub const fn get_head_style_property(&self) -> Option<&StyleProperty> {
+        self.head_style_property.as_ref()
+    }
+    /// Java `setHeadStyleProperty`。
+    pub fn set_head_style_property(&mut self, value: Option<StyleProperty>) {
+        self.head_style_property = value;
+    }
+    /// Java `getHeadFontProperty`。
+    #[must_use]
+    pub const fn get_head_font_property(&self) -> Option<&FontProperty> {
+        self.head_font_property.as_ref()
+    }
+    /// Java `setHeadFontProperty`。
+    pub fn set_head_font_property(&mut self, value: Option<FontProperty>) {
+        self.head_font_property = value;
+    }
 }
 
 #[cfg(test)]

@@ -9,7 +9,7 @@
       "name": "easyexcel",
       "snapshots": [
         {
-          "count": 10903,
+          "count": 10905,
           "items": [
             {
               "id": "easyexcel:a634f50520650be7cb8c",
@@ -2882,6 +2882,11 @@
               "signature": "impl<const N: usize> easyexcel::converters::into_excel_cell::IntoExcelCell for [u8; N]"
             },
             {
+              "id": "easyexcel:6307d314e55a59fbb869",
+              "kind": "const",
+              "signature": "pub const easyexcel::analysis::v07::xlsx_sax_analyser::XlsxSaxAnalyser::SHARED_STRINGS_PART_NAME: &'static str"
+            },
+            {
               "id": "easyexcel:7971a0d217deaabd5502",
               "kind": "const",
               "signature": "pub const easyexcel::constant::ANNOTATION_DEFINE_STYLE: i32"
@@ -3170,6 +3175,11 @@
               "id": "easyexcel:fa841562f49ebaa6d4d7",
               "kind": "function",
               "signature": "pub const fn easyexcel::analysis::v03::xls_record_dispatcher::XlsRecordDispatchState::last_boolean_cell(&self) -> core::option::Option<easyexcel::analysis::v03::handlers::bool_err_record_handler::BoolCell>"
+            },
+            {
+              "id": "easyexcel:66c3c532b22919765877",
+              "kind": "function",
+              "signature": "pub const fn easyexcel::analysis::v03::xls_record_dispatcher::XlsRecordDispatchState::last_dummy_event(&self) -> core::option::Option<&easyexcel::analysis::v03::handlers::dummy_record_handler::DummyRecordEvent>"
             },
             {
               "id": "easyexcel:1b181608c6d06da5a813",
@@ -54530,7 +54540,7 @@
           "mode": "default"
         },
         {
-          "count": 10903,
+          "count": 10905,
           "items": [
             {
               "id": "easyexcel:a634f50520650be7cb8c",
@@ -57403,6 +57413,11 @@
               "signature": "impl<const N: usize> easyexcel::converters::into_excel_cell::IntoExcelCell for [u8; N]"
             },
             {
+              "id": "easyexcel:6307d314e55a59fbb869",
+              "kind": "const",
+              "signature": "pub const easyexcel::analysis::v07::xlsx_sax_analyser::XlsxSaxAnalyser::SHARED_STRINGS_PART_NAME: &'static str"
+            },
+            {
               "id": "easyexcel:7971a0d217deaabd5502",
               "kind": "const",
               "signature": "pub const easyexcel::constant::ANNOTATION_DEFINE_STYLE: i32"
@@ -57691,6 +57706,11 @@
               "id": "easyexcel:fa841562f49ebaa6d4d7",
               "kind": "function",
               "signature": "pub const fn easyexcel::analysis::v03::xls_record_dispatcher::XlsRecordDispatchState::last_boolean_cell(&self) -> core::option::Option<easyexcel::analysis::v03::handlers::bool_err_record_handler::BoolCell>"
+            },
+            {
+              "id": "easyexcel:66c3c532b22919765877",
+              "kind": "function",
+              "signature": "pub const fn easyexcel::analysis::v03::xls_record_dispatcher::XlsRecordDispatchState::last_dummy_event(&self) -> core::option::Option<&easyexcel::analysis::v03::handlers::dummy_record_handler::DummyRecordEvent>"
             },
             {
               "id": "easyexcel:1b181608c6d06da5a813",
@@ -109054,13 +109074,13 @@
     }
   ],
   "rust_repo": {
-    "git_sha": "ad6092264acea2c83c63dca98ef40a2ab1143242",
+    "git_sha": "b4bea63988751cdac9e039c6ab4d04edff60e043",
     "name": "easyexcel-rust"
   },
   "schema_version": 1,
   "summary": {
-    "all_feature_items": 10903,
-    "default_items": 10903,
+    "all_feature_items": 10905,
+    "default_items": 10905,
     "packages": 1
   }
 }

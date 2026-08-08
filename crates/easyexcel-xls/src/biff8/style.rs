@@ -1,9 +1,9 @@
 //! BIFF8 workbook-level FONT / XF / palette registry.
 //!
 //! Maps Java `EasyExcel` / POI HSSF style knobs (`WriteCellStyle`, `WriteFont`,
-//! `IndexedColors`, `CellStyle` builder) onto FONT + XF records. Borders,
-//! custom number formats beyond date/datetime, rich-text runs, and conditional
-//! formatting remain unsupported for Minimal BIFF8.
+//! `IndexedColors`, `CellStyle` builder) onto FONT + XF records, including
+//! four-side border style/color and custom number formats. Rich-text runs and
+//! conditional formatting are emitted by their dedicated workbook paths.
 
 use std::collections::HashMap;
 

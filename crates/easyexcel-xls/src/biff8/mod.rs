@@ -9,6 +9,7 @@ pub mod event_record;
 mod format;
 mod numeric;
 pub mod ptg;
+mod protection;
 pub mod record_sid;
 pub mod record_stream;
 pub mod string;
@@ -31,6 +32,7 @@ pub use numeric::{
     load_numeric_displays, load_numeric_displays_with_password, parse_format_record,
     scan_numeric_cells,
 };
+pub use protection::legacy_password_hash;
 pub use style::{
     Biff8BorderStyle, Biff8Color, Biff8FillPattern, Biff8HorizontalAlignment, Biff8NumberFormat,
     Biff8StyleRequest, Biff8StyleTable, Biff8VerticalAlignment,

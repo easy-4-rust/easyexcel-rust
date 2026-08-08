@@ -13,6 +13,8 @@ pub use crate::enums::enum_cell_extra_type::CellExtraType;
 pub struct CellExtra {
     extra_type: CellExtraType,
     text: Option<String>,
+    row_index: Option<u32>,
+    column_index: Option<usize>,
     first_row_index: u32,
     last_row_index: u32,
     first_column_index: usize,
@@ -35,11 +37,41 @@ impl CellExtra {
         Self {
             extra_type,
             text,
+            row_index: Some(first_row_index),
+            column_index: Some(first_column_index),
             first_row_index,
             last_row_index,
             first_column_index,
             last_column_index,
         }
+    }
+
+    /// 创建单单元格额外信息。对应 Java 四参数构造器。
+    #[must_use]
+    pub const fn for_cell(
+        extra_type: CellExtraType,
+        text: Option<String>,
+        row_index: u32,
+        column_index: usize,
+    ) -> Self {
+        Self::new(extra_type, text, row_index, row_index, column_index, column_index)
+    }
+
+    /// 从 `A1` 或 `A1:B2` 范围创建额外信息。对应 Java 字符串范围构造器。
+    pub fn from_range(
+        extra_type: CellExtraType,
+        text: Option<String>,
+        range: &str,
+    ) -> Result<Self, String> {
+        let mut ranges = range.split(':');
+        let first = ranges.next().ok_or_else(|| "cell range is empty".to_owned())?;
+        let last = ranges.next().unwrap_or(first);
+        if ranges.next().is_some() {
+            return Err(format!("invalid cell range: {range}"));
+        }
+        let (first_row, first_column) = parse_cell_reference(first)?;
+        let (last_row, last_column) = parse_cell_reference(last)?;
+        Ok(Self::new(extra_type, text, first_row, last_row, first_column, last_column))
     }
 
     /// Returns the extra-data kind. (Java `getType()`)
@@ -82,4 +114,60 @@ impl CellExtra {
     pub const fn last_column_index(&self) -> usize {
         self.last_column_index
     }
+
+    /// Java `getType` 别名。
+    #[must_use] pub const fn get_type(&self) -> CellExtraType { self.extra_type }
+    /// Java `setType`。
+    pub const fn set_type(&mut self, value: CellExtraType) { self.extra_type = value; }
+    /// Java `getText` 别名。
+    #[must_use] pub fn get_text(&self) -> Option<&str> { self.text.as_deref() }
+    /// Java `setText`。
+    pub fn set_text(&mut self, value: Option<String>) { self.text = value; }
+    /// Java `AbstractCell#getRowIndex`。
+    #[must_use] pub const fn get_row_index(&self) -> Option<u32> { self.row_index }
+    /// Java `AbstractCell#setRowIndex`。
+    pub const fn set_row_index(&mut self, value: Option<u32>) { self.row_index = value; }
+    /// Java `AbstractCell#getColumnIndex`。
+    #[must_use] pub const fn get_column_index(&self) -> Option<usize> { self.column_index }
+    /// Java `AbstractCell#setColumnIndex`。
+    pub const fn set_column_index(&mut self, value: Option<usize>) { self.column_index = value; }
+    /// Java `getFirstRowIndex` 别名。
+    #[must_use] pub const fn get_first_row_index(&self) -> u32 { self.first_row_index }
+    /// Java `setFirstRowIndex`。
+    pub const fn set_first_row_index(&mut self, value: u32) { self.first_row_index = value; }
+    /// Java `getLastRowIndex` 别名。
+    #[must_use] pub const fn get_last_row_index(&self) -> u32 { self.last_row_index }
+    /// Java `setLastRowIndex`。
+    pub const fn set_last_row_index(&mut self, value: u32) { self.last_row_index = value; }
+    /// Java `getFirstColumnIndex` 别名。
+    #[must_use] pub const fn get_first_column_index(&self) -> usize { self.first_column_index }
+    /// Java `setFirstColumnIndex`。
+    pub const fn set_first_column_index(&mut self, value: usize) { self.first_column_index = value; }
+    /// Java `getLastColumnIndex` 别名。
+    #[must_use] pub const fn get_last_column_index(&self) -> usize { self.last_column_index }
+    /// Java `setLastColumnIndex`。
+    pub const fn set_last_column_index(&mut self, value: usize) { self.last_column_index = value; }
+}
+
+fn parse_cell_reference(reference: &str) -> Result<(u32, usize), String> {
+    let reference = reference.trim().trim_start_matches('$');
+    let mut column = 0usize;
+    let mut letters = 0usize;
+    let bytes = reference.as_bytes();
+    while letters < bytes.len() && bytes[letters].is_ascii_alphabetic() {
+        column = column
+            .checked_mul(26)
+            .and_then(|value| value.checked_add(usize::from(bytes[letters].to_ascii_uppercase() - b'A' + 1)))
+            .ok_or_else(|| format!("cell column overflows: {reference}"))?;
+        letters += 1;
+        if letters < bytes.len() && bytes[letters] == b'$' { letters += 1; }
+    }
+    if column == 0 || letters == bytes.len() {
+        return Err(format!("invalid cell reference: {reference}"));
+    }
+    let row = reference[letters..]
+        .parse::<u32>()
+        .map_err(|_| format!("invalid cell row: {reference}"))?;
+    if row == 0 { return Err(format!("cell row must start at 1: {reference}")); }
+    Ok((row - 1, column - 1))
 }

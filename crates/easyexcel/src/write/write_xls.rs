@@ -59,14 +59,14 @@ where
         options.template_file.as_deref(),
         options.template_bytes.as_deref(),
     ) {
-        write_xls_onto_template::<T, I>(path, None, options, rows, handlers)?;
-        after_workbook(handlers, &workbook_context)?;
-        if !workbook_context.mutation_plan().is_empty()? {
-            return Err(ExcelError::Unsupported(
-                "workbook handler mutations on XLS with_template output are not supported"
-                    .to_owned(),
-            ));
-        }
+        write_xls_onto_template::<T, I>(
+            path,
+            None,
+            options,
+            rows,
+            handlers,
+            &workbook_context,
+        )?;
         return Ok(());
     }
 
@@ -110,14 +110,14 @@ where
         options.template_file.as_deref(),
         options.template_bytes.as_deref(),
     ) {
-        write_xls_onto_template::<T, I>(logical_path, Some(&mut output), options, rows, handlers)?;
-        after_workbook(handlers, &workbook_context)?;
-        if !workbook_context.mutation_plan().is_empty()? {
-            return Err(ExcelError::Unsupported(
-                "workbook handler mutations on XLS with_template output are not supported"
-                    .to_owned(),
-            ));
-        }
+        write_xls_onto_template::<T, I>(
+            logical_path,
+            Some(&mut output),
+            options,
+            rows,
+            handlers,
+            &workbook_context,
+        )?;
         return Ok(());
     }
 

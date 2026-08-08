@@ -4,6 +4,10 @@ pub(crate) struct TypedRowConsumer<'a, T> {
 }
 
 impl<T: ExcelRow> RowConsumer for TypedRowConsumer<'_, T> {
+    fn requires_present_columns(&self) -> bool {
+        T::schema().is_empty()
+    }
+
     fn process(
         &mut self,
         sheet_no: usize,
@@ -35,4 +39,3 @@ impl<T: ExcelRow> RowConsumer for TypedRowConsumer<'_, T> {
         self.listener.do_after_all_analysed(context)
     }
 }
-

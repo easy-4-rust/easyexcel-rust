@@ -133,6 +133,10 @@ struct Globals {
     xfs: Vec<XfInfo>,
     /// (name, stream byte offset, visibility, `is_worksheet`).
     boundsheets: Vec<BoundSheet>,
+    /// 公式解码热路径直接借用的 Sheet 名称表。
+    sheet_names: Vec<String>,
+    /// EXTERNSHEET ixti 到内部 Sheet 范围的映射。
+    extern_sheets: Vec<(u16, u16)>,
 }
 
 struct BoundSheet {
@@ -178,6 +182,7 @@ fn parse_workbook_stream(buf: &[u8], decrypted: bool) -> Result<Workbook> {
                 globals.sst = sst::parse_sst(&rec.data, &rec.continue_breaks);
             }
             biff::BOUNDSHEET => parse_boundsheet(&rec, &mut globals),
+            biff::EXTERNSHEET => parse_externsheet(&rec, &mut globals),
             _ => {}
         }
     }
@@ -293,12 +298,28 @@ fn parse_boundsheet(rec: &RawRecord, g: &mut Globals) {
         _ => Visibility::Visible,
     };
     let (name, _) = biff::parse_short_unicode_string(d, 6);
+    g.sheet_names.push(name.clone());
     g.boundsheets.push(BoundSheet {
         name,
         pos,
         visibility,
         is_worksheet: sheet_type == 0,
     });
+}
+
+fn parse_externsheet(rec: &RawRecord, globals: &mut Globals) {
+    if rec.data.len() < 2 { return; }
+    let count = usize::from(biff::u16le(&rec.data, 0));
+    let mut cursor = 2usize;
+    for _ in 0..count {
+        if cursor + 6 > rec.data.len() { break; }
+        // iSupBook 位于前两字节；内部 SUPBOOK 的 Sheet 范围由后四字节给出。
+        globals.extern_sheets.push((
+            biff::u16le(&rec.data, cursor + 2),
+            biff::u16le(&rec.data, cursor + 4),
+        ));
+        cursor += 6;
+    }
 }
 
 /// Build interned styles from the XF list, returning xf-index -> style-index.
@@ -416,7 +437,7 @@ fn parse_worksheet(buf: &[u8], start: usize, g: &Globals, xf_to_style: &[u32], s
             }
             biff::MULBLANK => parse_mulblank(&rec, xf_to_style, sheet),
             biff::FORMULA => {
-                if let Some((r, c, xf, cell, is_str)) = parse_formula(&rec.data) {
+                if let Some((r, c, xf, cell, is_str)) = parse_formula(&rec.data, g) {
                     sheet.set(r, c, cell);
                     apply_style(sheet, r, c, xf, xf_to_style);
                     if is_str {
@@ -509,9 +530,8 @@ fn parse_mulblank(rec: &RawRecord, xf_to_style: &[u32], sheet: &mut Sheet) {
 
 /// Parse a FORMULA record. Returns (row, col, xf, cell, `result_is_string`).
 /// The cached value is decoded from the 8-byte result field. We store the
-/// formula with a placeholder expr (RPN-to-text decoding is out of scope —
-/// see the PARITY note in the writer).
-fn parse_formula(d: &[u8]) -> Option<(u32, u32, u16, Cell, bool)> {
+/// 表达式通过 BIFF8 Ptg 栈恢复，并使用 EXTERNSHEET/BOUNDSHEET 解析跨 Sheet 引用。
+fn parse_formula(d: &[u8], globals: &Globals) -> Option<(u32, u32, u16, Cell, bool)> {
     if d.len() < 20 {
         return None;
     }
@@ -534,11 +554,19 @@ fn parse_formula(d: &[u8]) -> Option<(u32, u32, u16, Cell, bool)> {
     } else {
         CellValue::Number(biff::f64le(d, 6))
     };
-    let cell = Cell::Formula {
-        // PARITY: BIFF stores RPN tokens, not text; we don't decode them.
-        expr: String::new(),
-        cached,
+    let expression = if d.len() >= 22 {
+        let token_length = usize::from(biff::u16le(d, 20));
+        d.get(22..22usize.checked_add(token_length)?)
+            .and_then(|tokens| crate::biff8::ptg::decode_formula_rpn(
+                tokens,
+                &globals.sheet_names,
+                &globals.extern_sheets,
+            ))
+            .unwrap_or_default()
+    } else {
+        String::new()
     };
+    let cell = Cell::Formula { expr: expression, cached };
     Some((row, col, xf, cell, is_string))
 }
 

@@ -19,12 +19,10 @@
 //! | `sheet.createRow(...).createCell(...).setCellValue(...)` | [`Biff8TemplatePackage::set_cell`] |
 //! | POI keeps unedited records | unchanged BIFF records copied verbatim |
 //!
-//! # Still unsupported
-//!
-//! Scalar placeholders and the existing value-only collection replacement are
-//! handled here. Structural collection expansion (`forceNewRow` / horizontal
-//! fill) still needs BIFF row insertion and formula/range repair beyond this
-//! implementation. `CryptoAPI` password input/output uses call-scoped credentials.
+//! Scalar/collection placeholders, `forceNewRow`, horizontal fill, style copy,
+//! formula/range repair and call-scoped `CryptoAPI` password input/output are
+//! implemented by this package. Unmodified BIFF records and OLE streams remain
+//! byte-preserved.
 //!
 //! For `.xls` cell append (Java `withTemplate` + `doWrite`), use this package
 //! via the writer facade instead of OOXML fill.
@@ -37,17 +35,20 @@ use cfb::CompoundFile;
 use easyexcel_io::{Error as ExcelError, Result};
 
 use super::encode::{
-    BLANK, BOF, BOOLERR, BOUNDSHEET, DIMENSION, DT_WORKSHEET, EOF, FILEPASS, FORMULA, LABEL,
-    LABELSST, MAX_RECORD_DATA, MERGECELLS, NUMBER, RK, SST, XF_GENERAL, encode_rk,
+    BLANK, BOF, BOOLERR, BOUNDSHEET, DIMENSION, DT_WORKSHEET, EOF, FILEPASS, FONT, FORMULA, LABEL,
+    LABELSST, MAX_RECORD_DATA, MERGECELLS, MSODRAWINGGROUP, NUMBER, RK, SST, SUPBOOK, XF,
+    WINDOW2, XF_GENERAL, EXTERNSHEET, encode_rk,
     encode_unicode_string, pack_merge_range,
 };
 use super::record_sid::{
     CHART_AI_SID, CONDITIONAL_FORMATTING_HEADER_SID, CONDITIONAL_FORMATTING_RULE_SID,
     DATA_VALIDATION_SID, EXTERNAL_SHEET_SID, HYPERLINK_SID, MSO_DRAWING_SID, NAME_SID, NOTE_SID,
-    ROW_SID, SUP_BOOK_SID,
+    OBJECT_PROTECT_SID, OBJ_SID, PASSWORD_SID, PROTECT_SID, RICH_STRING_SID, ROW_SID,
+    SCENARIO_PROTECT_SID, SUP_BOOK_SID, TEXT_OBJECT_SID,
 };
 use super::{
-    Biff8Cell, Biff8Merge, Biff8Value, decrypt_crypto_api_workbook_stream,
+    Biff8Cell, Biff8Chart, Biff8Comment, Biff8Hyperlink, Biff8HyperlinkKind, Biff8Merge, Biff8Value,
+    decrypt_crypto_api_workbook_stream, legacy_password_hash,
     encrypt_crypto_api_workbook_stream, prepare_crypto_api_encryption,
 };
 

@@ -57,6 +57,39 @@ impl RowData {
         }
     }
 
+    /// 使用事件读取器已经收集的全部组成部分直接构造一行。
+    ///
+    /// 对应 Java：`ReadRowHolder` 到 `ModelBuildEventListener` 的内部交接。
+    /// 该入口避免 [`Self::new`] 先构造一份连续列集合、随后又被真实
+    /// `present_columns` 覆盖的重复分配。
+    #[doc(hidden)]
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn from_stream_parts(
+        sheet_name: impl Into<String>,
+        row_index: u32,
+        cells: Vec<CellValue>,
+        headers: Arc<HashMap<String, usize>>,
+        formulas: HashMap<usize, FormulaData>,
+        display_values: HashMap<usize, String>,
+        decimal_values: HashMap<usize, BigDecimal>,
+        present_columns: HashSet<usize>,
+        read_default_return: ReadDefaultReturn,
+        use_1904_windowing: bool,
+    ) -> Self {
+        Self {
+            sheet_name: sheet_name.into(),
+            row_index,
+            cells,
+            headers,
+            formulas,
+            display_values,
+            decimal_values,
+            present_columns,
+            read_default_return,
+            use_1904_windowing,
+        }
+    }
+
     /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Attaches formula metadata indexed by zero-based physical column. (Java `CellData.formulaData`)
     #[must_use]
     pub fn with_formulas(mut self, formulas: HashMap<usize, FormulaData>) -> Self {

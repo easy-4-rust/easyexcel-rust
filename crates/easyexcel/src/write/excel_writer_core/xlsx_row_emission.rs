@@ -252,6 +252,48 @@ fn write_data_row(
     .map(|_| ())
 }
 
+/// 无 Row/Cell Handler 且无需 stateful journal 时的直接写入路径。
+///
+/// 对应 Java：`ExcelWriteAddExecutor#addOneRowOfDataToExcel` 的无用户
+/// Handler 分支。该路径不会构造 `WriteRowContext`、`WriteCellContext` 或
+/// `JournalRow`，但保留 converter 样式、注解、图片布局和物理列映射。
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn write_data_row_fast(
+    worksheet: &mut Worksheet,
+    row_index: u32,
+    columns: &[(usize, usize, &'static ExcelColumn)],
+    cells: &[WriteCellData],
+    style: SheetStyleContext<'_>,
+    image_layout: &ImageLayout,
+) -> Result<()> {
+    for (physical_index, schema_index, metadata) in columns {
+        let cell_data = cells.get(*schema_index);
+        let effective_value;
+        let value = match cell_data {
+            Some(cell) if cell.is_plain() => cell.value(),
+            Some(cell) => {
+                effective_value = cell.effective_value();
+                &effective_value
+            }
+            None => &CellValue::Empty,
+        };
+        let format_context = style.column(metadata);
+        let format_context = cell_data.map_or(format_context, |cell| {
+            format_context.with_converted_cell(cell)
+        });
+        write_cell(
+            worksheet,
+            row_index,
+            to_column(*physical_index)?,
+            metadata,
+            value,
+            format_context,
+            image_layout,
+        )?;
+    }
+    Ok(())
+}
+
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn write_data_row_with_handlers(
@@ -567,6 +609,7 @@ fn write_cell(
         && matches!(
             value,
             CellValue::Comment { .. }
+                | CellValue::CommentWithMetadata { .. }
                 | CellValue::Image(_)
                 | CellValue::Images { .. }
                 | CellValue::RichText(_)
@@ -815,6 +858,26 @@ fn write_cell(
             )?;
             generation::insert_note(worksheet, row_index, column, text).map_err(format_error)?;
         }
+        CellValue::CommentWithMetadata { value, comment } => {
+            write_cell(
+                worksheet,
+                row_index,
+                column,
+                metadata,
+                value,
+                style,
+                image_layout,
+            )?;
+            generation::insert_note_with_metadata(
+                worksheet,
+                row_index,
+                column,
+                &comment.note_text(),
+                comment.get_author(),
+                xlsx_comment_movement(comment.get_anchor().get_anchor_type()),
+            )
+            .map_err(format_error)?;
+        }
         CellValue::Image(bytes) => {
             generation::insert_image_fit_to_cell(worksheet, row_index, column, bytes, true)
                 .map_err(format_error)?;
@@ -838,6 +901,24 @@ fn write_cell(
         }
     }
     Ok(())
+}
+
+const fn xlsx_comment_movement(
+    value: Option<crate::core::AnchorType>,
+) -> Option<generation::ObjectMovement> {
+    match value {
+        Some(crate::core::AnchorType::MoveAndResize)
+        | Some(crate::core::AnchorType::DontMoveDoResize) => {
+            Some(generation::ObjectMovement::MoveAndSizeWithCells)
+        }
+        Some(crate::core::AnchorType::MoveDontResize) => {
+            Some(generation::ObjectMovement::MoveButDontSizeWithCells)
+        }
+        Some(crate::core::AnchorType::DontMoveAndResize) => {
+            Some(generation::ObjectMovement::DontMoveOrSizeWithCells)
+        }
+        None => None,
+    }
 }
 
 fn xlsx_hyperlink_target(address: &str, hyperlink_type: HyperlinkType) -> String {

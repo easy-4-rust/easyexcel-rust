@@ -25,11 +25,45 @@ impl CsvRichTextString {
         &self.value
     }
 
+    /// Java `RichTextString#getString` 兼容入口。
+    #[must_use]
+    pub fn get_string(&self) -> &str {
+        self.as_str()
+    }
+
     /// 对应 Java：com.alibaba.excel.metadata.csv.CsvRichTextString。 返回 Unicode 标量数量。
     #[must_use]
     pub fn len(&self) -> usize {
         self.value.chars().count()
     }
+
+    /// Java `RichTextString#length` 兼容入口，按 UTF-16 单元计数。
+    #[must_use]
+    pub fn length(&self) -> usize {
+        self.value.encode_utf16().count()
+    }
+
+    /// CSV 无法保存格式 run，固定返回零。
+    #[must_use]
+    pub const fn num_formatting_runs(&self) -> usize {
+        0
+    }
+
+    /// CSV 无格式 run，任意查询均返回 `None`。
+    #[must_use]
+    pub const fn index_of_formatting_run(&self, _index: usize) -> Option<usize> {
+        None
+    }
+    /// Java `getIndexOfFormattingRun()` returns zero for CSV.
+    pub const fn get_index_of_formatting_run(&self, _index: usize) -> usize { 0 }
+    /// Java `getFontOfFormattingRun()` has no CSV font backing.
+    pub const fn get_font_of_formatting_run(&self, _index: usize) -> Option<u16> { None }
+
+    /// CSV 对字体应用采取 Java 实现相同的 no-op 语义。
+    pub const fn apply_font(&mut self, _start: usize, _end: usize, _font_index: u16) {}
+
+    /// 清理格式在 CSV 中是 no-op。
+    pub const fn clear_formatting(&mut self) {}
 
     /// 对应 Java：com.alibaba.excel.metadata.csv.CsvRichTextString。 返回文本是否为空。
     #[must_use]

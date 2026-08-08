@@ -2,6 +2,8 @@
 
 use std::fmt;
 
+use crate::read::metadata::ReadBasicParameter;
+
 /// 对应 Java：`ReadSheet extends ReadBasicParameter`.
 ///
 /// Rust keeps the sheet identity fields used by SAX executors and
@@ -9,6 +11,8 @@ use std::fmt;
 /// Java `ReadBasicParameter` remain on [`crate::ReadOptions`].
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ReadSheet {
+    /// Java 父类 `ReadBasicParameter` 的完整参数。
+    parameter: ReadBasicParameter,
     /// Zero-based sheet index. (Java `ReadSheet.sheetNo`)
     sheet_no: usize,
     /// Whether `sheet_no` was explicitly configured.
@@ -35,6 +39,7 @@ impl ReadSheet {
     #[must_use]
     pub fn new(sheet_no: usize) -> Self {
         Self {
+            parameter: ReadBasicParameter::default(),
             sheet_no,
             sheet_no_explicit: true,
             sheet_name: String::new(),
@@ -47,6 +52,7 @@ impl ReadSheet {
     #[must_use]
     pub fn with_name(sheet_no: usize, sheet_name: impl Into<String>) -> Self {
         Self {
+            parameter: ReadBasicParameter::default(),
             sheet_no,
             sheet_no_explicit: true,
             sheet_name: sheet_name.into(),
@@ -72,6 +78,12 @@ impl ReadSheet {
     /// 对应 Java：com.alibaba.excel.read.metadata.ReadSheet。
     pub const fn sheet_no(&self) -> usize {
         self.sheet_no
+    }
+
+    /// Java `getSheetNo`，保留 `null` 与 0 的区别。
+    #[must_use]
+    pub const fn get_sheet_no(&self) -> Option<i32> {
+        if self.sheet_no_explicit { Some(self.sheet_no as i32) } else { None }
     }
 
     /// Returns whether a sheet number was explicitly configured.
@@ -104,6 +116,9 @@ impl ReadSheet {
         &self.sheet_name
     }
 
+    /// Java `getSheetName` 别名。
+    #[must_use] pub fn get_sheet_name(&self) -> &str { &self.sheet_name }
+
     /// 对应 Java：com.alibaba.excel.read.metadata.ReadSheet。 Sets the worksheet name. (Java `setSheetName(String)`)
     pub fn set_sheet_name(&mut self, sheet_name: impl Into<String>) -> &mut Self {
         self.sheet_name = sheet_name.into();
@@ -124,6 +139,7 @@ impl ReadSheet {
     /// Mirrors `ReadBasicParameter.setHeadRowNumber(Integer)`.
     pub fn set_head_row_number(&mut self, head_row_number: u32) -> &mut Self {
         self.head_row_number = Some(head_row_number);
+        self.parameter.head_row_number = head_row_number;
         self
     }
 
@@ -141,6 +157,7 @@ impl ReadSheet {
     /// Mirrors `ReadBasicParameter.setUseScientificFormat(Boolean)`.
     pub fn set_use_scientific_format(&mut self, enabled: bool) -> &mut Self {
         self.use_scientific_format = Some(enabled);
+        self.parameter.basic_parameter.use_scientific_format = Some(enabled);
         self
     }
 
@@ -148,10 +165,15 @@ impl ReadSheet {
     /// (Java `copyBasicParameter(ReadSheet other)`)
     ///
     pub fn copy_basic_parameter(&mut self, other: &ReadSheet) -> &mut Self {
+        self.parameter = other.parameter.clone();
         self.head_row_number = other.head_row_number;
-        self.use_scientific_format = other.use_scientific_format;
         self
     }
+
+    /// 返回 Java 父类读取参数。
+    #[must_use] pub const fn get_read_basic_parameter(&self) -> &ReadBasicParameter { &self.parameter }
+    /// 返回可变 Java 父类读取参数。
+    pub const fn get_read_basic_parameter_mut(&mut self) -> &mut ReadBasicParameter { &mut self.parameter }
 }
 
 impl fmt::Display for ReadSheet {

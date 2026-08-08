@@ -125,6 +125,30 @@ pub trait ExcelRow: Sized {
         }
         Ok((original, converted))
     }
+
+    /// 将选中列直接写入调用方提供的可复用缓冲区。
+    ///
+    /// 这是 Rust 流式写入热路径的扩展：语义与
+    /// [`Self::to_excel_write_row_selected`] 完全相同，但允许派生实现复用
+    /// `Vec` 容量，避免每行重新分配两组单元格容器。手写实现无需修改，默认
+    /// 实现会兼容性地接管原方法返回的容器。
+    ///
+    /// # Errors
+    ///
+    /// 字段转换失败时返回与普通写入路径相同的定位错误。
+    fn write_excel_row_into(
+        &self,
+        converters: &ConverterRegistry,
+        selected_schema_indexes: Option<&[usize]>,
+        original_cells: &mut Vec<CellValue>,
+        converted_cells: &mut Vec<WriteCellData>,
+    ) -> Result<()> {
+        let (original, converted) =
+            self.to_excel_write_row_selected(converters, selected_schema_indexes)?;
+        *original_cells = original;
+        *converted_cells = converted;
+        Ok(())
+    }
 }
 
 impl<T> ExcelRow for Option<T>
@@ -182,6 +206,28 @@ where
             || Ok((Vec::new(), Vec::new())),
             |row| row.to_excel_write_row_selected(converters, selected_schema_indexes),
         )
+    }
+
+    fn write_excel_row_into(
+        &self,
+        converters: &ConverterRegistry,
+        selected_schema_indexes: Option<&[usize]>,
+        original_cells: &mut Vec<CellValue>,
+        converted_cells: &mut Vec<WriteCellData>,
+    ) -> Result<()> {
+        match self.as_ref() {
+            Some(row) => row.write_excel_row_into(
+                converters,
+                selected_schema_indexes,
+                original_cells,
+                converted_cells,
+            ),
+            None => {
+                original_cells.clear();
+                converted_cells.clear();
+                Ok(())
+            }
+        }
     }
 }
 

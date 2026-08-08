@@ -4,8 +4,9 @@ use crate::core::cell_value::CellValue;
 use crate::core::enum_cell_data_type::CellDataType;
 use crate::core::excel_column::ExcelColumn;
 use crate::{
-    WriteCellHandle, WriteContext, WriteHolderContext, WriteSheetHolderView, WriteTableHolderView,
-    WriteWorkbookHolderView,
+    DateTimeFormatProperty, ExcelContentProperty, FontProperty, Head, NumberFormatProperty,
+    StyleProperty, WriteCellHandle, WriteContext, WriteHolderContext, WriteSheetHolderView,
+    WriteTableHolderView, WriteWorkbookHolderView,
 };
 
 /// 私有：转换前原始值的三态缓存（对应旧实现 `Option<CellValue>` 加构造默认）。
@@ -44,6 +45,10 @@ pub struct WriteCellContext {
     pub column: Option<&'static ExcelColumn>,
     /// Header label at this level, when this is a header cell.
     pub head_name: Option<String>,
+    /// 完整表头元数据。对应 Java `headData`，不把它降级为单一显示字符串。
+    pub resolved_head_data: Option<Head>,
+    /// 完整内容属性。对应 Java `excelContentProperty`。
+    pub resolved_excel_content_property: Option<ExcelContentProperty>,
     /// Whether this is a header cell.
     pub is_head: bool,
     /// Relative row index within head or content (Java `relativeRowIndex`).
@@ -96,6 +101,10 @@ impl WriteCellContext {
         &self.cell
     }
 
+    /// Java `getCell` 别名。
+    #[must_use]
+    pub const fn get_cell(&self) -> &WriteCellHandle { &self.cell }
+
     /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Creates a cell handler context before cell conversion callbacks run.
     #[must_use]
     pub fn new(
@@ -117,6 +126,8 @@ impl WriteCellContext {
             field: None,
             column: None,
             head_name: None,
+            resolved_head_data: None,
+            resolved_excel_content_property: None,
             is_head: false,
             relative_row_index: None,
             original_value: None,
@@ -143,6 +154,22 @@ impl WriteCellContext {
             Some(column.field)
         };
         self.pending_original_field_type = column.field_type;
+        self.resolved_excel_content_property = Some(ExcelContentProperty {
+            content_style_property: column.content_style.map(StyleProperty::new),
+            content_font_property: column.content_font_style.map(FontProperty::build),
+            date_time_format_property: DateTimeFormatProperty::build(
+                column.effective_date_time_format(),
+                column.use_1904_windowing,
+            ),
+            number_format_property: NumberFormatProperty::build(
+                column.effective_number_format(),
+                column.number_rounding_mode,
+            ),
+            date_time_format: column.effective_date_time_format(),
+            number_format: column.effective_number_format(),
+            field_name: Some(column.field.to_owned()),
+            converter_key: None,
+        });
         self.column = Some(column);
         self
     }
@@ -186,8 +213,17 @@ impl WriteCellContext {
     /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Marks a header cell and records its current label.
     #[must_use]
     pub fn with_head(mut self, head_name: impl Into<String>) -> Self {
+        let head_name = head_name.into();
         self.is_head = true;
-        self.head_name = Some(head_name.into());
+        self.head_name = Some(head_name.clone());
+        self.resolved_head_data = Head::new(
+            i32::from(self.column_index),
+            self.field.map(str::to_owned),
+            vec![head_name],
+            self.column.is_some_and(|column| column.index.is_some()),
+            true,
+        )
+        .ok();
         self
     }
 
@@ -341,6 +377,9 @@ impl WriteCellContext {
     pub const fn write_workbook_holder(&self) -> Option<&WriteWorkbookHolderView> {
         self.holders.workbook()
     }
+    /// Java `getWriteWorkbookHolder` 别名。
+    #[must_use]
+    pub const fn get_write_workbook_holder(&self) -> Option<&WriteWorkbookHolderView> { self.holders.workbook() }
 
     /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Returns the active sheet holder view.
     ///
@@ -354,6 +393,9 @@ impl WriteCellContext {
             .sheet()
             .expect("cell contexts always carry a sheet holder")
     }
+    /// Java `getWriteSheetHolder` 别名。
+    #[must_use]
+    pub fn get_write_sheet_holder(&self) -> &WriteSheetHolderView { self.write_sheet_holder() }
 
     /// Returns the active table holder view for table callbacks.
     #[must_use]
@@ -361,12 +403,137 @@ impl WriteCellContext {
     pub const fn write_table_holder(&self) -> Option<&WriteTableHolderView> {
         self.holders.table()
     }
+    /// Java `getWriteTableHolder` 别名。
+    #[must_use]
+    pub const fn get_write_table_holder(&self) -> Option<&WriteTableHolderView> { self.holders.table() }
 
     /// Returns all holder views captured for this callback.
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。
     pub const fn write_context(&self) -> &WriteHolderContext {
         &self.holders
+    }
+    /// Java `getWriteContext` 别名。
+    #[must_use]
+    pub const fn get_write_context(&self) -> &WriteHolderContext { &self.holders }
+
+    /// 返回物理行号，语义对应 Java `getRowIndex`。
+    #[must_use]
+    pub const fn get_row_index(&self) -> u32 { self.row_index }
+    /// 设置物理行号并重建后端中立单元格句柄。
+    pub fn set_row_index(&mut self, value: u32) {
+        self.row_index = value;
+        self.cell = WriteCellHandle::new(value, self.column_index, self.value.clone());
+    }
+    /// 返回物理列号，语义对应 Java `getColumnIndex`。
+    #[must_use]
+    pub const fn get_column_index(&self) -> u16 { self.column_index }
+    /// 设置物理列号并重建后端中立单元格句柄。
+    pub fn set_column_index(&mut self, value: u16) {
+        self.column_index = value;
+        self.cell = WriteCellHandle::new(self.row_index, value, self.value.clone());
+    }
+    /// 替换回调单元格句柄。
+    pub fn set_cell(&mut self, cell: WriteCellHandle) {
+        self.row_index = cell.row_index();
+        self.column_index = cell.column_index();
+        self.cell = cell;
+    }
+    /// 返回已转换单元格列表。
+    #[must_use]
+    pub fn cell_data_list(&self) -> &[CellValue] { &self.cell_data_list }
+    /// Java `getCellDataList` 别名。
+    #[must_use]
+    pub fn get_cell_data_list(&self) -> &[CellValue] { &self.cell_data_list }
+    /// 替换已转换单元格列表。
+    pub fn set_cell_data_list(&mut self, value: Vec<CellValue>) { self.cell_data_list = value; }
+    /// 替换首个转换单元格；空列表会自动创建第一项。
+    pub fn set_first_cell_data(&mut self, value: CellValue) {
+        if let Some(first) = self.cell_data_list.first_mut() { *first = value; } else { self.cell_data_list.push(value); }
+    }
+    /// Java `getFirstCellData` 别名。
+    #[must_use]
+    pub fn get_first_cell_data(&self) -> Option<&CellValue> { self.cell_data_list.first() }
+    /// 返回是否为表头单元格。
+    #[must_use]
+    pub const fn head(&self) -> bool { self.is_head }
+    /// Java `getHead` 别名。
+    #[must_use]
+    pub const fn get_head(&self) -> bool { self.is_head }
+    /// 设置是否为表头单元格。
+    pub const fn set_head(&mut self, value: bool) { self.is_head = value; }
+    /// 返回表头文本。
+    #[must_use]
+    pub fn head_data(&self) -> Option<&Head> { self.resolved_head_data.as_ref() }
+    /// Java `getHeadData` 别名。
+    #[must_use]
+    pub fn get_head_data(&self) -> Option<&Head> { self.resolved_head_data.as_ref() }
+    /// 设置表头文本。
+    pub fn set_head_data(&mut self, value: Option<Head>) {
+        self.head_name = value
+            .as_ref()
+            .and_then(|head| head.head_name_list().last().cloned());
+        self.resolved_head_data = value;
+    }
+    /// 返回静态内容属性。
+    #[must_use]
+    pub const fn excel_content_property(&self) -> Option<&ExcelContentProperty> { self.resolved_excel_content_property.as_ref() }
+    /// Java `getExcelContentProperty` 别名。
+    #[must_use]
+    pub const fn get_excel_content_property(&self) -> Option<&ExcelContentProperty> { self.resolved_excel_content_property.as_ref() }
+    /// 设置静态内容属性。
+    pub fn set_excel_content_property(&mut self, value: Option<ExcelContentProperty>) { self.resolved_excel_content_property = value; }
+    /// 返回原始值。
+    #[must_use]
+    pub const fn get_original_value(&self) -> Option<&CellValue> { self.original_value.as_ref() }
+    /// 设置原始值。
+    pub fn set_original_value(&mut self, value: Option<CellValue>) { self.original_value = value; }
+    /// 返回原始字段类型名称。
+    #[must_use]
+    pub const fn original_field_class(&self) -> Option<&'static str> { self.original_field_type }
+    /// Java `getOriginalFieldClass` 别名。
+    #[must_use]
+    pub const fn get_original_field_class(&self) -> Option<&'static str> { self.original_field_type }
+    /// 设置原始字段类型名称。
+    pub const fn set_original_field_class(&mut self, value: Option<&'static str>) { self.original_field_type = value; }
+    /// 返回相对行号。
+    #[must_use]
+    pub const fn relative_row_index(&self) -> Option<usize> { self.relative_row_index }
+    /// Java `getRelativeRowIndex` 别名。
+    #[must_use]
+    pub const fn get_relative_row_index(&self) -> Option<usize> { self.relative_row_index }
+    /// 设置相对行号。
+    pub const fn set_relative_row_index(&mut self, value: Option<usize>) { self.relative_row_index = value; }
+    /// 返回目标单元格类型。
+    #[must_use]
+    pub const fn target_cell_data_type(&self) -> Option<CellDataType> { self.target_cell_data_type }
+    /// Java `getTargetCellDataType` 别名。
+    #[must_use]
+    pub const fn get_target_cell_data_type(&self) -> Option<CellDataType> { self.target_cell_data_type }
+    /// 设置目标单元格类型。
+    pub const fn set_target_cell_data_type(&mut self, value: Option<CellDataType>) { self.target_cell_data_type = value; }
+    /// 返回忽略样式填充开关。
+    #[must_use]
+    pub const fn ignore_fill_style(&self) -> bool { self.ignore_fill_style }
+    /// Java `getIgnoreFillStyle` 别名。
+    #[must_use]
+    pub const fn get_ignore_fill_style(&self) -> bool { self.ignore_fill_style }
+    /// 设置忽略样式填充开关。
+    pub const fn set_ignore_fill_style(&mut self, value: bool) { self.ignore_fill_style = value; }
+    /// 替换全部 holder 视图。
+    pub fn set_write_context(&mut self, value: WriteHolderContext) { self.holders = value; }
+    /// 替换 workbook holder 视图。
+    pub fn set_write_workbook_holder(&mut self, value: WriteWorkbookHolderView) {
+        self.holders = std::mem::take(&mut self.holders).with_workbook(value);
+    }
+    /// 替换 sheet holder 视图。
+    pub fn set_write_sheet_holder(&mut self, value: WriteSheetHolderView) {
+        self.sheet_name = value.sheet_name().to_owned();
+        self.holders = std::mem::take(&mut self.holders).with_sheet(value);
+    }
+    /// 替换 table holder 视图。
+    pub fn set_write_table_holder(&mut self, value: WriteTableHolderView) {
+        self.holders = std::mem::take(&mut self.holders).with_table(value);
     }
 }
 

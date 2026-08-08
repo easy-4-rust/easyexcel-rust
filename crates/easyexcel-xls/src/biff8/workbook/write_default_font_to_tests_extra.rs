@@ -83,6 +83,12 @@ fn write_worksheet(
     link_table: &super::ptg::Biff8LinkTable,
 ) {
     write_bof(out, DT_WORKSHEET);
+    if let Some(password_hash) = sheet.protection_password_hash {
+        record(out, PROTECT, &1_u16.to_le_bytes());
+        record(out, OBJECTPROTECT, &1_u16.to_le_bytes());
+        record(out, SCENPROTECT, &1_u16.to_le_bytes());
+        record(out, PASSWORD, &password_hash.to_le_bytes());
+    }
     let (max_row, max_col) = sheet.dimensions();
     {
         let mut data = Vec::new();

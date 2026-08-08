@@ -3,11 +3,10 @@
 //! See also [`DateTimeFormatProperty`] and [`NumberFormatProperty`] for the
 //! annotation-driven format metadata that Java stores on this type.
 
-use crate::core::excel_cell_style::ExcelCellStyle;
-use crate::core::excel_font_style::ExcelFontStyle;
-
 use super::date_time_format_property::DateTimeFormatProperty;
+use super::font_property::FontProperty;
 use super::number_format_property::NumberFormatProperty;
+use super::style_property::StyleProperty;
 
 /// 对应 Java：`ExcelContentProperty`.
 ///
@@ -19,9 +18,9 @@ use super::number_format_property::NumberFormatProperty;
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ExcelContentProperty {
     /// Content cell style. (Java `contentStyleProperty`)
-    pub content_style_property: Option<ExcelCellStyle>,
+    pub content_style_property: Option<StyleProperty>,
     /// Content font style. (Java `contentFontProperty`)
-    pub content_font_property: Option<ExcelFontStyle>,
+    pub content_font_property: Option<FontProperty>,
     /// Optional date-time format metadata. (Java `dateTimeFormatProperty`)
     pub date_time_format_property: Option<DateTimeFormatProperty>,
     /// Optional number format metadata. (Java `numberFormatProperty`)
@@ -30,6 +29,10 @@ pub struct ExcelContentProperty {
     pub date_time_format: Option<&'static str>,
     /// Optional number format string. (Java `numberFormatProperty.format`)
     pub number_format: Option<&'static str>,
+    /// Rust 后端中立的反射字段标识。对应 Java `field`。
+    pub field_name: Option<String>,
+    /// Rust 后端中立的 converter 注册键。对应 Java `converter`。
+    pub converter_key: Option<String>,
 }
 
 impl ExcelContentProperty {
@@ -41,5 +44,58 @@ impl ExcelContentProperty {
         number_format_property: None,
         date_time_format: None,
         number_format: None,
+        field_name: None,
+        converter_key: None,
     };
+
+    /// 创建 Java 默认对象。
+    #[must_use]
+    pub const fn new() -> Self { Self::EMPTY }
+
+    /// Java `getContentStyleProperty`。
+    #[must_use]
+    pub const fn get_content_style_property(&self) -> Option<&StyleProperty> {
+        self.content_style_property.as_ref()
+    }
+    /// Java `setContentStyleProperty`。
+    pub fn set_content_style_property(&mut self, value: Option<StyleProperty>) {
+        self.content_style_property = value;
+    }
+    /// Java `getContentFontProperty`。
+    #[must_use]
+    pub const fn get_content_font_property(&self) -> Option<&FontProperty> {
+        self.content_font_property.as_ref()
+    }
+    /// Java `setContentFontProperty`。
+    pub fn set_content_font_property(&mut self, value: Option<FontProperty>) {
+        self.content_font_property = value;
+    }
+    /// Java `getDateTimeFormatProperty`。
+    #[must_use]
+    pub const fn get_date_time_format_property(&self) -> Option<&DateTimeFormatProperty> {
+        self.date_time_format_property.as_ref()
+    }
+    /// Java `setDateTimeFormatProperty`。
+    pub fn set_date_time_format_property(&mut self, value: Option<DateTimeFormatProperty>) {
+        self.date_time_format_property = value;
+    }
+    /// Java `getNumberFormatProperty`。
+    #[must_use]
+    pub const fn get_number_format_property(&self) -> Option<&NumberFormatProperty> {
+        self.number_format_property.as_ref()
+    }
+    /// Java `setNumberFormatProperty`。
+    pub fn set_number_format_property(&mut self, value: Option<NumberFormatProperty>) {
+        self.number_format_property = value;
+    }
+    /// Java `getField` 的后端中立映射。
+    #[must_use]
+    pub fn get_field(&self) -> Option<&str> { self.field_name.as_deref() }
+    /// Java `setField` 的后端中立映射。
+    pub fn set_field(&mut self, value: Option<String>) { self.field_name = value; }
+    /// Java `getConverter` 的后端中立映射。
+    #[must_use]
+    pub fn get_converter(&self) -> Option<&str> { self.converter_key.as_deref() }
+    /// Java `setConverter` 的后端中立映射。
+    pub fn set_converter(&mut self, value: Option<String>) { self.converter_key = value; }
 }

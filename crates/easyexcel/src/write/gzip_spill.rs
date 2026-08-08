@@ -19,6 +19,12 @@ use easyexcel_io::{
     GzipCellValue,
 };
 
+#[derive(serde::Serialize, serde::Deserialize)]
+struct SpillImageMetadata {
+    image_type: Option<crate::core::ImageType>,
+    anchor: crate::core::ClientAnchorData,
+}
+
 pub use easyexcel_io::io::gzip_record::{GZIP_MAGIC, file_has_gzip_magic};
 
 include!("gzip_spill/gzip_spill_snapshot.rs");
@@ -76,11 +82,35 @@ fn to_spill_value(value: &CellValue) -> Result<GzipCellValue> {
             value: Box::new(to_spill_value(value)?),
             text: text.clone(),
         },
+        CellValue::CommentWithMetadata { value, comment } => {
+            GzipCellValue::CommentMetadata {
+                value: Box::new(to_spill_value(value)?),
+                metadata: serde_json::to_vec(comment).map_err(|error| {
+                    ExcelError::Format(format!("cannot serialize comment journal metadata: {error}"))
+                })?,
+            }
+        }
         CellValue::Image(bytes) => GzipCellValue::Image(bytes.clone()),
-        CellValue::RichText(rich) => GzipCellValue::RichText(rich.text_string().to_owned()),
-        CellValue::Images { value, images } => GzipCellValue::Images {
+        CellValue::RichText(rich) => GzipCellValue::RichTextMetadata(
+            serde_json::to_vec(rich).map_err(|error| {
+                ExcelError::Format(format!("cannot serialize rich-text journal metadata: {error}"))
+            })?,
+        ),
+        CellValue::Images { value, images } => GzipCellValue::ImagesMetadata {
             value: Box::new(to_spill_value(value)?),
             images: images.iter().map(|image| image.image().to_vec()).collect(),
+            metadata: serde_json::to_vec(
+                &images
+                    .iter()
+                    .map(|image| SpillImageMetadata {
+                        image_type: image.get_image_type(),
+                        anchor: image.get_anchor(),
+                    })
+                    .collect::<Vec<_>>(),
+            )
+            .map_err(|error| {
+                ExcelError::Format(format!("cannot serialize image journal metadata: {error}"))
+            })?,
         },
     })
 }
@@ -139,12 +169,49 @@ fn from_spill_value(value: GzipCellValue) -> Result<CellValue> {
             value: Box::new(from_spill_value(*value)?),
             text,
         },
+        GzipCellValue::CommentMetadata { value, metadata } => {
+            CellValue::CommentWithMetadata {
+                value: Box::new(from_spill_value(*value)?),
+                comment: serde_json::from_slice(&metadata).map_err(|error| {
+                    ExcelError::Format(format!("invalid comment journal metadata: {error}"))
+                })?,
+            }
+        }
         GzipCellValue::Image(bytes) => CellValue::Image(bytes),
         GzipCellValue::RichText(text) => CellValue::RichText(RichTextStringData::new(text)),
+        GzipCellValue::RichTextMetadata(metadata) => CellValue::RichText(
+            serde_json::from_slice(&metadata).map_err(|error| {
+                ExcelError::Format(format!("invalid rich-text journal metadata: {error}"))
+            })?,
+        ),
         GzipCellValue::Images { value, images } => CellValue::Images {
             value: Box::new(from_spill_value(*value)?),
             images: images.into_iter().map(ImageData::new).collect(),
         },
+        GzipCellValue::ImagesMetadata { value, images, metadata } => {
+            let decoded: Vec<SpillImageMetadata> = serde_json::from_slice(&metadata).map_err(|error| {
+                ExcelError::Format(format!("invalid image journal metadata: {error}"))
+            })?;
+            if decoded.len() != images.len() {
+                return Err(ExcelError::Format(
+                    "image journal metadata count does not match image count".to_owned(),
+                ));
+            }
+            CellValue::Images {
+                value: Box::new(from_spill_value(*value)?),
+                images: images
+                    .into_iter()
+                    .zip(decoded)
+                    .map(|(bytes, metadata)| {
+                        let mut image = ImageData::new(bytes).anchor(metadata.anchor);
+                        if let Some(image_type) = metadata.image_type {
+                            image = image.image_type(image_type);
+                        }
+                        image
+                    })
+                    .collect(),
+            }
+        }
         GzipCellValue::Styled { .. } | GzipCellValue::JournalMetadata { .. } => {
             return Err(ExcelError::Format(
                 "stateful journal metadata used as a scalar spill value".to_owned(),

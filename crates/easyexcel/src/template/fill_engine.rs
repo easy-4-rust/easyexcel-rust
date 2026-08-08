@@ -103,7 +103,9 @@ fn template_cell_value(value: &CellValue) -> TemplateCellValue {
         }
         CellValue::Error(value) => TemplateCellValue::Error(value.clone()),
         CellValue::Formula(value) => TemplateCellValue::Formula(value.clone()),
-        CellValue::Comment { value, .. } | CellValue::Images { value, .. } => {
+        CellValue::Comment { value, .. }
+        | CellValue::CommentWithMetadata { value, .. }
+        | CellValue::Images { value, .. } => {
             template_cell_value(value)
         }
     }

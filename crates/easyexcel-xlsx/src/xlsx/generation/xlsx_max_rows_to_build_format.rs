@@ -430,6 +430,28 @@ pub fn insert_note(worksheet: &mut Worksheet, row: u32, column: u16, text: &str)
         .map_err(xlsxwriter_error)
 }
 
+/// 插入带原作者与对象移动语义的单元格批注。
+pub fn insert_note_with_metadata(
+    worksheet: &mut Worksheet,
+    row: u32,
+    column: u16,
+    text: &str,
+    author: Option<&str>,
+    movement: Option<ObjectMovement>,
+) -> Result<()> {
+    let mut note = Note::new(text).add_author_prefix(false);
+    if let Some(author) = author {
+        note = note.set_author(author);
+    }
+    if let Some(movement) = movement {
+        note = note.set_object_movement(movement);
+    }
+    worksheet
+        .insert_note(row, column, &note)
+        .map(|_| ())
+        .map_err(xlsxwriter_error)
+}
+
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 从内存图片创建 XLSX 图片对象。
 ///
 /// # Errors
@@ -528,4 +550,3 @@ pub fn new_format() -> Format {
 pub fn build_format(spec: &FormatSpec) -> Format {
     apply_format_spec(Format::new(), spec)
 }
-

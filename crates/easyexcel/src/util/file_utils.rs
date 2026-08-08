@@ -4,12 +4,17 @@
 
 #![allow(dead_code)]
 
-use std::io;
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 
 use easyexcel_io::io::file_utils::NamedTempFile;
 
 use crate::core::excel_error::ExcelError;
+
+/// Java `FileUtils.POI_FILES` 常量。
+pub const POI_FILES: &str = "poifiles";
+/// Java `FileUtils.EX_CACHE` 常量。
+pub const EX_CACHE: &str = "excache";
 
 /// 打开输入文件。对应 Java：`FileUtils#openInputStream`。
 ///
@@ -27,6 +32,64 @@ pub fn open_input_stream(path: &Path) -> io::Result<std::fs::File> {
 /// 目标无法创建或写入时返回文件 I/O 错误。
 pub fn write_to_file(path: &Path, data: &[u8]) -> Result<(), ExcelError> {
     easyexcel_io::io::file_utils::write_to_file(path, data).map_err(ExcelError::from)
+}
+
+/// 对应 Java：`FileUtils.writeToFile(File, InputStream)`，覆盖目标文件。
+///
+/// # Errors
+///
+/// 输入读取、父目录创建或目标写入失败时返回错误。
+pub fn write_reader_to_file<R: Read>(
+    path: &Path,
+    input: &mut R,
+) -> Result<(), ExcelError> {
+    write_reader_to_file_with_append(path, input, false)
+}
+
+/// 对应 Java：`FileUtils.writeToFile(File, InputStream, boolean)`。
+///
+/// # Errors
+///
+/// 输入读取、父目录创建或目标写入失败时返回错误。
+pub fn write_reader_to_file_with_append<R: Read>(
+    path: &Path,
+    input: &mut R,
+    append: bool,
+) -> Result<(), ExcelError> {
+    if let Some(parent) = path.parent().filter(|parent| !parent.as_os_str().is_empty()) {
+        std::fs::create_dir_all(parent)?;
+    }
+    let mut output = std::fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .append(append)
+        .truncate(!append)
+        .open(path)?;
+    io::copy(input, &mut output)?;
+    output.flush()?;
+    Ok(())
+}
+
+/// 对应 Java：`FileUtils.readFileToByteArray(File)`。
+///
+/// # Errors
+///
+/// 文件不存在、不可读或读取失败时返回 I/O 错误。
+pub fn read_file_to_byte_array(path: &Path) -> io::Result<Vec<u8>> {
+    std::fs::read(path)
+}
+
+/// 对应 Java：`FileUtils.createTmpFile(String)`。
+///
+/// `file_name` 作为临时文件名前缀，并在配置的临时目录下创建由 RAII 管理的文件。
+///
+/// # Errors
+///
+/// 临时目录或文件无法创建时返回 I/O 错误。
+pub fn create_tmp_file(file_name: &str) -> io::Result<NamedTempFile> {
+    let directory = get_temp_file_prefix();
+    std::fs::create_dir_all(&directory)?;
+    tempfile::Builder::new().prefix(file_name).tempfile_in(directory)
 }
 
 /// 对应 Java：com.alibaba.excel.util.FileUtils。 在配置的缓存目录中创建临时文件。

@@ -309,8 +309,8 @@ where
     /// - CSV templates are rejected (`csv cannot use template.`), matching Java.
     /// - **XLS templates:** record-preserving BIFF8 overlay via
     ///   `easyexcel-xls::biff8::Biff8TemplatePackage` (unmodified records kept;
-    ///   new cells appended as LABEL/NUMBER). Creating sheets absent from the
-    ///   template remains unsupported.
+    ///   new cells appended as LABEL/NUMBER). Sheets absent from the template
+    ///   are created as record-valid BIFF8 worksheet substreams.
     /// - **Default (XLSX):** styles and merges are preserved via ZIP/OOXML append
     ///   (`styles.xml` + `mergeCells` kept; new rows appended to `sheetData`).
     ///   Creating a sheet absent from the template adds an empty worksheet part

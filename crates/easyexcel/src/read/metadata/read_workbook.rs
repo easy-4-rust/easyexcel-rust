@@ -22,6 +22,8 @@ use crate::ReadOptions;
 /// the Java-shaped getters/setters as thin pass-throughs.
 #[derive(Debug, Clone)]
 pub struct ReadWorkbook {
+    /// Java 父类 `ReadBasicParameter`。
+    parameter: crate::read::metadata::ReadBasicParameter,
     /// Input workbook path. (Java `ReadWorkbook.file`)
     file: Option<PathBuf>,
     /// Backing configuration. (Java `ReadWorkbook` getter surface)
@@ -30,6 +32,14 @@ pub struct ReadWorkbook {
     excel_type: Option<crate::support::ExcelTypeEnum>,
     /// Whether an owned input is closed after analysis.
     auto_close_stream: bool,
+    /// 后端中立输入流字节。
+    input_stream: Option<Vec<u8>>,
+    /// Java nullable 配置覆盖。
+    auto_close_stream_override: Option<bool>,
+    ignore_empty_row_override: Option<bool>,
+    mandatory_use_input_stream: Option<bool>,
+    use_default_listener: Option<bool>,
+    xlsx_sax_parser_factory_name: Option<String>,
 }
 
 impl ReadWorkbook {
@@ -37,10 +47,17 @@ impl ReadWorkbook {
     #[must_use]
     pub fn new() -> Self {
         Self {
+            parameter: crate::read::metadata::ReadBasicParameter::new(),
             file: None,
             options: ReadOptions::default(),
             excel_type: None,
             auto_close_stream: true,
+            input_stream: None,
+            auto_close_stream_override: None,
+            ignore_empty_row_override: None,
+            mandatory_use_input_stream: None,
+            use_default_listener: None,
+            xlsx_sax_parser_factory_name: None,
         }
     }
 
@@ -83,6 +100,7 @@ impl ReadWorkbook {
     /// 对应 Java：com.alibaba.excel.read.metadata.ReadWorkbook。 Sets the ignore-empty-row flag. (Java `setIgnoreEmptyRow(Boolean)`)
     pub fn set_ignore_empty_row(&mut self, value: bool) -> &mut Self {
         self.options.ignore_empty_row = value;
+        self.ignore_empty_row_override = Some(value);
         self
     }
 
@@ -98,6 +116,7 @@ impl ReadWorkbook {
     /// retain caller ownership independently of this metadata value.
     pub fn set_auto_close_stream(&mut self, value: bool) -> &mut Self {
         self.auto_close_stream = value;
+        self.auto_close_stream_override = Some(value);
         self
     }
 
@@ -148,6 +167,7 @@ impl ReadWorkbook {
     /// 对应 Java：com.alibaba.excel.read.metadata.ReadWorkbook。 Sets the head row number. (Java `setHeadRowNumber(Integer)`)
     pub fn set_head_row_number(&mut self, value: u32) -> &mut Self {
         self.options.head_row_number = value;
+        self.parameter.head_row_number = value;
         self
     }
 
@@ -183,6 +203,117 @@ impl ReadWorkbook {
     pub const fn options(&self) -> &ReadOptions {
         &self.options
     }
+
+    /// 返回 Java 父类参数。
+    #[must_use]
+    pub const fn get_read_basic_parameter(&self) -> &crate::read::metadata::ReadBasicParameter {
+        &self.parameter
+    }
+
+    /// 返回可变 Java 父类参数。
+    pub const fn get_read_basic_parameter_mut(&mut self) -> &mut crate::read::metadata::ReadBasicParameter {
+        &mut self.parameter
+    }
+
+    /// Java `getFile` 别名。
+    #[must_use]
+    pub fn get_file(&self) -> Option<&Path> { self.file() }
+    /// Java `getExcelType` 别名。
+    #[must_use]
+    pub const fn get_excel_type(&self) -> Option<crate::support::ExcelTypeEnum> {
+        self.excel_type
+    }
+    /// Java `getInputStream` 的后端中立字节表示。
+    #[must_use]
+    pub fn get_input_stream(&self) -> Option<&[u8]> { self.input_stream.as_deref() }
+    /// Java `setInputStream`。
+    pub fn set_input_stream(&mut self, value: Option<Vec<u8>>) -> &mut Self {
+        self.input_stream = value;
+        self
+    }
+    /// Java nullable `getAutoCloseStream`。
+    #[must_use]
+    pub const fn get_auto_close_stream(&self) -> Option<bool> {
+        self.auto_close_stream_override
+    }
+    /// Java nullable `getIgnoreEmptyRow`。
+    #[must_use]
+    pub const fn get_ignore_empty_row(&self) -> Option<bool> {
+        self.ignore_empty_row_override
+    }
+    /// Java nullable `getMandatoryUseInputStream`。
+    #[must_use]
+    pub const fn get_mandatory_use_input_stream(&self) -> Option<bool> {
+        self.mandatory_use_input_stream
+    }
+    /// Java `setMandatoryUseInputStream`。
+    pub const fn set_mandatory_use_input_stream(&mut self, value: bool) -> &mut Self {
+        self.mandatory_use_input_stream = Some(value);
+        self
+    }
+    /// Java `getCharset` 别名。
+    #[must_use]
+    pub const fn get_charset(&self) -> &crate::CsvCharset { &self.options.charset }
+    /// Java `getCustomObject` 别名。
+    #[must_use]
+    pub fn get_custom_object(&self) -> Option<&crate::CustomReadObject> {
+        self.options.custom_object.as_ref()
+    }
+    /// Java `getPassword` 别名。
+    #[must_use]
+    pub fn get_password(&self) -> Option<&str> { self.options.password.as_deref() }
+    /// Java `getReadCache` 别名。
+    #[must_use]
+    pub const fn get_read_cache(&self) -> crate::ReadCacheMode { self.options.read_cache }
+    /// Java `getReadCacheSelector` 别名。
+    #[must_use]
+    pub fn get_read_cache_selector(&self) -> Option<&crate::StoredReadCacheSelector> {
+        self.options.read_cache_selector.as_ref()
+    }
+    /// Java `getReadDefaultReturn`。
+    #[must_use]
+    pub const fn get_read_default_return(&self) -> crate::ReadDefaultReturn {
+        self.options.read_default_return
+    }
+    /// Java `setReadDefaultReturn`。
+    pub const fn set_read_default_return(&mut self, value: crate::ReadDefaultReturn) -> &mut Self {
+        self.options.read_default_return = value;
+        self
+    }
+    /// Java `getExtraReadSet`。
+    #[must_use]
+    pub fn get_extra_read_set(&self) -> &std::collections::HashSet<crate::CellExtraType> {
+        &self.options.extra_read
+    }
+    /// Java `setExtraReadSet`。
+    pub fn set_extra_read_set(
+        &mut self,
+        value: std::collections::HashSet<crate::CellExtraType>,
+    ) -> &mut Self {
+        self.options.extra_read = value;
+        self
+    }
+    /// Java nullable `getUseDefaultListener`。
+    #[must_use]
+    pub const fn get_use_default_listener(&self) -> Option<bool> { self.use_default_listener }
+    /// Java `setUseDefaultListener`。
+    pub const fn set_use_default_listener(&mut self, value: bool) -> &mut Self {
+        self.use_default_listener = Some(value);
+        self
+    }
+    /// Java `getXlsxSAXParserFactoryName`。
+    #[must_use]
+    pub fn get_xlsx_sax_parser_factory_name(&self) -> Option<&str> {
+        self.xlsx_sax_parser_factory_name.as_deref()
+    }
+    /// Java `setXlsxSAXParserFactoryName`。
+    pub fn set_xlsx_sax_parser_factory_name(
+        &mut self,
+        value: Option<String>,
+    ) -> &mut Self {
+        self.xlsx_sax_parser_factory_name = value;
+        self
+    }
 }
 
 impl Default for ReadWorkbook {
@@ -193,11 +324,19 @@ impl Default for ReadWorkbook {
 
 impl From<ReadOptions> for ReadWorkbook {
     fn from(options: ReadOptions) -> Self {
+        let parameter = crate::read::metadata::ReadBasicParameter::from_options(&options);
         Self {
+            parameter,
             file: None,
             options,
             excel_type: None,
             auto_close_stream: true,
+            input_stream: None,
+            auto_close_stream_override: None,
+            ignore_empty_row_override: None,
+            mandatory_use_input_stream: None,
+            use_default_listener: None,
+            xlsx_sax_parser_factory_name: None,
         }
     }
 }

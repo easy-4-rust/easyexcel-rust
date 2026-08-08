@@ -11,11 +11,12 @@ use easyexcel_io::{Error, Result};
 use zip::CompressionMethod;
 
 use super::ooxml_package::{OoxmlPackage, OoxmlZipEntry};
-use super::package::resolve_target;
+use super::package::{relationship_part_name, resolve_target};
 use super::template_styles::{merge_compiled_styles, merge_compiled_styles_onto};
 use super::template_xml::{
     TemplateCellValue, TemplateMergeRange, append_sparse_rows, apply_column_widths,
-    apply_merge_ranges, attribute_value, cell_style_index, escape_xml, worksheet_max_row,
+    apply_merge_ranges, apply_sheet_protection, attribute_value, cell_style_index, escape_xml,
+    set_cell_value, worksheet_max_row,
 };
 
 const WORKBOOK_PATH: &str = "xl/workbook.xml";
@@ -228,6 +229,198 @@ impl OoxmlTemplatePackage {
             xml = apply_merge_ranges(&xml, merge_ranges)?;
         }
         entry.bytes = xml.into_bytes();
+        Ok(())
+    }
+
+    /// 在模板工作表中新增或替换一个单元格值。
+    ///
+    /// # Errors
+    ///
+    /// 工作表不存在、坐标无效或工作表 XML 损坏时返回错误。
+    pub fn set_cell(
+        &mut self,
+        sheet_name: &str,
+        row_index: u32,
+        column_index: u16,
+        value: &TemplateCellValue,
+    ) -> Result<()> {
+        let path = self.worksheet_path_by_name(sheet_name)?;
+        let entry = self.entry_mut(&path)?;
+        let xml = String::from_utf8(std::mem::take(&mut entry.bytes))
+            .map_err(|error| Error::Xlsx(error.to_string()))?;
+        entry.bytes = set_cell_value(&xml, row_index, column_index, value)?.into_bytes();
+        Ok(())
+    }
+
+    /// 为模板工作表添加兼容 Excel 的传统密码保护。
+    ///
+    /// # Errors
+    ///
+    /// 工作表不存在或工作表 XML 损坏时返回错误。
+    pub fn protect_sheet(&mut self, sheet_name: &str, password: &str) -> Result<()> {
+        let path = self.worksheet_path_by_name(sheet_name)?;
+        let entry = self.entry_mut(&path)?;
+        let xml = String::from_utf8(std::mem::take(&mut entry.bytes))
+            .map_err(|error| Error::Xlsx(error.to_string()))?;
+        entry.bytes = apply_sheet_protection(&xml, password)?.into_bytes();
+        Ok(())
+    }
+
+    /// 将一个编译工作簿中的单个图表移植到模板工作表，同时保留原包未知部件。
+    ///
+    /// 已存在 drawing 时追加 anchor/relationship；不存在时创建新的 drawing 部件。
+    ///
+    /// # Errors
+    ///
+    /// 编译工作簿缺少图表关系、目标工作表不存在或 OOXML 关系损坏时返回错误。
+    pub fn import_chart(&mut self, compiled_xlsx: &[u8], sheet_name: &str) -> Result<()> {
+        let source = Self::from_bytes(compiled_xlsx)?;
+        let source_sheet_path = source.worksheet_path_by_name(sheet_name)?;
+        let source_sheet_xml = source.entry_xml(&source_sheet_path)?;
+        let source_drawing_id = drawing_relationship_id(&source_sheet_xml)
+            .ok_or_else(|| Error::Xlsx("compiled chart worksheet has no drawing".to_owned()))?;
+        let source_sheet_rels_path = relationship_part_name(&source_sheet_path);
+        let source_sheet_rels = source.entry_xml(&source_sheet_rels_path)?;
+        let source_drawing_target = relationship_target(&source_sheet_rels, &source_drawing_id)
+            .ok_or_else(|| Error::Xlsx("compiled chart drawing relationship is missing".to_owned()))?;
+        let source_drawing_path = resolve_target(&source_sheet_path, &source_drawing_target)?;
+        let source_drawing_xml = source.entry_xml(&source_drawing_path)?;
+        let source_anchor = chart_anchor(&source_drawing_xml)
+            .ok_or_else(|| Error::Xlsx("compiled drawing has no chart anchor".to_owned()))?;
+        let source_anchor_chart_id = drawing_chart_relationship_id(&source_anchor)
+            .ok_or_else(|| Error::Xlsx("compiled chart anchor has no relationship id".to_owned()))?;
+        let source_drawing_rels_path = relationship_part_name(&source_drawing_path);
+        let source_drawing_rels = source.entry_xml(&source_drawing_rels_path)?;
+        let source_chart_target = relationship_target(&source_drawing_rels, &source_anchor_chart_id)
+            .ok_or_else(|| Error::Xlsx("compiled drawing chart relationship is missing".to_owned()))?;
+        let source_chart_path = resolve_target(&source_drawing_path, &source_chart_target)?;
+        let source_chart = source
+            .entries
+            .iter()
+            .find(|entry| entry.name.eq_ignore_ascii_case(&source_chart_path))
+            .ok_or_else(|| Error::Xlsx("compiled chart part is missing".to_owned()))?
+            .bytes
+            .clone();
+
+        let chart_number = next_part_number(&self.entries, "xl/charts/chart", ".xml");
+        let chart_path = format!("xl/charts/chart{chart_number}.xml");
+        let target_sheet_path = self.worksheet_path_by_name(sheet_name)?;
+        let target_sheet_rels_path = relationship_part_name(&target_sheet_path);
+        let target_sheet_xml = self.entry_xml(&target_sheet_path)?;
+
+        self.entries.push(OoxmlZipEntry {
+            name: chart_path.clone(),
+            is_dir: false,
+            compression: CompressionMethod::Deflated,
+            unix_mode: None,
+            bytes: source_chart,
+        });
+
+        if let Some(target_drawing_id) = drawing_relationship_id(&target_sheet_xml) {
+            let target_sheet_rels = self.entry_xml(&target_sheet_rels_path)?;
+            let target_drawing_target = relationship_target(&target_sheet_rels, &target_drawing_id)
+                .ok_or_else(|| Error::Xlsx("template drawing relationship is missing".to_owned()))?;
+            let target_drawing_path = resolve_target(&target_sheet_path, &target_drawing_target)?;
+            let target_drawing_rels_path = relationship_part_name(&target_drawing_path);
+            let mut target_drawing_rels = self.entry_xml(&target_drawing_rels_path)?;
+            let new_chart_id = next_relationship_id(&target_drawing_rels);
+            let imported_anchor = source_anchor.replace(
+                &format!("r:id=\"{source_anchor_chart_id}\""),
+                &format!("r:id=\"{new_chart_id}\""),
+            );
+            let drawing_entry = self.entry_mut(&target_drawing_path)?;
+            let drawing_xml = String::from_utf8(std::mem::take(&mut drawing_entry.bytes))
+                .map_err(|error| Error::Xlsx(error.to_string()))?;
+            drawing_entry.bytes = insert_before_close_tag(
+                &drawing_xml,
+                "</xdr:wsDr>",
+                &imported_anchor,
+            )?
+            .into_bytes();
+            let relationship = format!(
+                "<Relationship Id=\"{new_chart_id}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart\" Target=\"../charts/chart{chart_number}.xml\"/>"
+            );
+            target_drawing_rels = insert_before_close_tag(
+                &target_drawing_rels,
+                "</Relationships>",
+                &relationship,
+            )?;
+            self.entry_mut(&target_drawing_rels_path)?.bytes = target_drawing_rels.into_bytes();
+        } else {
+            let drawing_number = next_part_number(&self.entries, "xl/drawings/drawing", ".xml");
+            let drawing_path = format!("xl/drawings/drawing{drawing_number}.xml");
+            let drawing_rels_path = relationship_part_name(&drawing_path);
+            let drawing_xml = source_drawing_xml.replace(
+                &format!("r:id=\"{source_anchor_chart_id}\""),
+                "r:id=\"rId1\"",
+            );
+            let drawing_rels = format!(
+                concat!(
+                    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>",
+                    "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">",
+                    "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart\" ",
+                    "Target=\"../charts/chart{chart_number}.xml\"/>",
+                    "</Relationships>"
+                )
+            );
+            self.entries.push(OoxmlZipEntry {
+                name: drawing_path.clone(),
+                is_dir: false,
+                compression: CompressionMethod::Deflated,
+                unix_mode: None,
+                bytes: drawing_xml.into_bytes(),
+            });
+            self.entries.push(OoxmlZipEntry {
+                name: drawing_rels_path,
+                is_dir: false,
+                compression: CompressionMethod::Deflated,
+                unix_mode: None,
+                bytes: drawing_rels.into_bytes(),
+            });
+
+            let mut sheet_rels = self.entry_xml(&target_sheet_rels_path).unwrap_or_else(|_| {
+                concat!(
+                    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>",
+                    "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"></Relationships>"
+                )
+                .to_owned()
+            });
+            let drawing_id = next_relationship_id(&sheet_rels);
+            let relationship = format!(
+                "<Relationship Id=\"{drawing_id}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing\" Target=\"../drawings/drawing{drawing_number}.xml\"/>"
+            );
+            sheet_rels = insert_before_close_tag(&sheet_rels, "</Relationships>", &relationship)?;
+            if let Ok(entry) = self.entry_mut(&target_sheet_rels_path) {
+                entry.bytes = sheet_rels.into_bytes();
+            } else {
+                self.entries.push(OoxmlZipEntry {
+                    name: target_sheet_rels_path,
+                    is_dir: false,
+                    compression: CompressionMethod::Deflated,
+                    unix_mode: None,
+                    bytes: sheet_rels.into_bytes(),
+                });
+            }
+            let sheet_entry = self.entry_mut(&target_sheet_path)?;
+            let sheet_xml = String::from_utf8(std::mem::take(&mut sheet_entry.bytes))
+                .map_err(|error| Error::Xlsx(error.to_string()))?;
+            sheet_entry.bytes = insert_before_close_tag(
+                &sheet_xml,
+                "</worksheet>",
+                &format!("<drawing r:id=\"{drawing_id}\"/>"),
+            )?
+            .into_bytes();
+            ensure_content_type_override(
+                &mut self.entries,
+                &format!("/{drawing_path}"),
+                "application/vnd.openxmlformats-officedocument.drawing+xml",
+            )?;
+        }
+        ensure_content_type_override(
+            &mut self.entries,
+            &format!("/{chart_path}"),
+            "application/vnd.openxmlformats-officedocument.drawingml.chart+xml",
+        )?;
         Ok(())
     }
 
@@ -501,6 +694,79 @@ fn insert_before_close_tag(xml: &str, close_tag: &str, fragment: &str) -> Result
         .find(close_tag)
         .ok_or_else(|| Error::Xlsx(format!("template XML is missing {close_tag}")))?;
     Ok(format!("{}{}{}", &xml[..index], fragment, &xml[index..]))
+}
+
+fn drawing_relationship_id(sheet_xml: &str) -> Option<String> {
+    xml_elements(sheet_xml, "drawing")
+        .next()
+        .and_then(|element| attribute_value(element, "r:id"))
+        .map(ToOwned::to_owned)
+}
+
+fn drawing_chart_relationship_id(anchor_xml: &str) -> Option<String> {
+    xml_elements(anchor_xml, "c:chart")
+        .next()
+        .or_else(|| xml_elements(anchor_xml, "chart").next())
+        .and_then(|element| attribute_value(element, "r:id"))
+        .map(ToOwned::to_owned)
+}
+
+fn relationship_target(relationships_xml: &str, relationship_id: &str) -> Option<String> {
+    xml_elements(relationships_xml, "Relationship")
+        .find(|element| attribute_value(element, "Id") == Some(relationship_id))
+        .and_then(|element| attribute_value(element, "Target"))
+        .map(ToOwned::to_owned)
+}
+
+fn chart_anchor(drawing_xml: &str) -> Option<String> {
+    for tag in ["xdr:twoCellAnchor", "xdr:oneCellAnchor", "xdr:absoluteAnchor"] {
+        let open = format!("<{tag}");
+        let Some(start) = drawing_xml.find(&open) else {
+            continue;
+        };
+        let close = format!("</{tag}>");
+        let end = drawing_xml[start..].find(&close)? + start + close.len();
+        return Some(drawing_xml[start..end].to_owned());
+    }
+    None
+}
+
+fn next_part_number(entries: &[OoxmlZipEntry], prefix: &str, suffix: &str) -> usize {
+    entries
+        .iter()
+        .filter_map(|entry| {
+            entry
+                .name
+                .strip_prefix(prefix)?
+                .strip_suffix(suffix)?
+                .parse::<usize>()
+                .ok()
+        })
+        .max()
+        .unwrap_or(0)
+        .saturating_add(1)
+}
+
+fn ensure_content_type_override(
+    entries: &mut [OoxmlZipEntry],
+    part_name: &str,
+    content_type: &str,
+) -> Result<()> {
+    let entry = entries
+        .iter_mut()
+        .find(|entry| entry.name.eq_ignore_ascii_case(CONTENT_TYPES_PATH))
+        .ok_or_else(|| Error::Xlsx("template missing [Content_Types].xml".to_owned()))?;
+    let xml = String::from_utf8(std::mem::take(&mut entry.bytes))
+        .map_err(|error| Error::Xlsx(error.to_string()))?;
+    if xml.contains(&format!("PartName=\"{part_name}\"")) {
+        entry.bytes = xml.into_bytes();
+        return Ok(());
+    }
+    let override_tag = format!(
+        "<Override PartName=\"{part_name}\" ContentType=\"{content_type}\"/>"
+    );
+    entry.bytes = insert_before_close_tag(&xml, "</Types>", &override_tag)?.into_bytes();
+    Ok(())
 }
 
 fn blank_worksheet_with_inherited_format(entries: &[OoxmlZipEntry]) -> Vec<u8> {

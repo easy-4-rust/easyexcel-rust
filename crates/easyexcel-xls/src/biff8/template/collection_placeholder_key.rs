@@ -122,14 +122,40 @@ fn encode_cell_record(row: u16, col: u8, xf: u16, value: &Biff8Value) -> Result<
             Ok(RawRecord { typ: LABEL, data })
         }
         Biff8Value::RichText(rich) => {
-            let encoded = encode_unicode_string(&rich.text);
-            if data.len() + encoded.len() > MAX_RECORD_DATA {
+            let units = rich.text.encode_utf16().collect::<Vec<_>>();
+            let compressed = units.iter().all(|unit| *unit <= 0xFF);
+            data.extend_from_slice(
+                &u16::try_from(units.len())
+                    .map_err(|_| ExcelError::Xls("BIFF8 rich text exceeds 65535 UTF-16 units".to_owned()))?
+                    .to_le_bytes(),
+            );
+            // XLUnicodeString grbit: bit0=16-bit chars, bit3=rich-text runs。
+            data.push(u8::from(!compressed) | 0x08);
+            data.extend_from_slice(
+                &u16::try_from(rich.runs.len())
+                    .map_err(|_| ExcelError::Xls("too many BIFF8 rich-text runs".to_owned()))?
+                    .to_le_bytes(),
+            );
+            if compressed {
+                data.extend(units.into_iter().map(|unit| u8::try_from(unit).unwrap_or(b'?')));
+            } else {
+                for unit in units {
+                    data.extend_from_slice(&unit.to_le_bytes());
+                }
+            }
+            for &(start, font_index) in &rich.runs {
+                data.extend_from_slice(&start.to_le_bytes());
+                data.extend_from_slice(&font_index.to_le_bytes());
+            }
+            if data.len() > MAX_RECORD_DATA {
                 return Err(ExcelError::Xls(
-                    "xls template LABEL cell exceeds BIFF record size".to_owned(),
+                    "xls template RSTRING cell exceeds BIFF record size".to_owned(),
                 ));
             }
-            data.extend_from_slice(&encoded);
-            Ok(RawRecord { typ: LABEL, data })
+            Ok(RawRecord {
+                typ: RICH_STRING_SID,
+                data,
+            })
         }
     }
 }

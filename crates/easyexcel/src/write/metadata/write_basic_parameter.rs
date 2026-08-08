@@ -1,6 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.write.metadata.WriteBasicParameter`.
 
 use crate::core::ConverterRegistry;
+use crate::metadata::BasicParameter;
 
 /// 对应 Java：`WriteBasicParameter extends BasicParameter`.
 ///
@@ -13,6 +14,8 @@ use crate::core::ConverterRegistry;
 /// preserved.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct WriteBasicParameter {
+    /// Java 父类 `BasicParameter` 的完整字段。
+    pub basic_parameter: BasicParameter,
     /// Mirrors `WriteBasicParameter.relativeHeadRowIndex`.
     pub relative_head_row_index: Option<i32>,
     /// Mirrors `WriteBasicParameter.needHead`.
@@ -36,6 +39,10 @@ pub struct WriteBasicParameter {
 }
 
 impl WriteBasicParameter {
+    /// 返回 Java 父类参数。
+    #[must_use] pub const fn get_basic_parameter(&self) -> &BasicParameter { &self.basic_parameter }
+    /// 返回可变 Java 父类参数。
+    pub const fn get_basic_parameter_mut(&mut self) -> &mut BasicParameter { &mut self.basic_parameter }
     /// Returns whether a header row is required. (Java `getNeedHead()`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.metadata.WriteBasicParameter。
@@ -69,6 +76,44 @@ impl WriteBasicParameter {
     /// 对应 Java：com.alibaba.excel.write.metadata.WriteBasicParameter。
     pub const fn get_order_by_include_column(&self) -> Option<bool> {
         self.order_by_include_column
+    }
+
+    pub const fn set_need_head(&mut self, value: Option<bool>) { self.need_head = value; }
+    pub const fn set_relative_head_row_index(&mut self, value: Option<i32>) {
+        self.relative_head_row_index = value;
+    }
+    pub const fn set_automatic_merge_head(&mut self, value: Option<bool>) {
+        self.automatic_merge_head = value;
+    }
+    pub const fn set_use_default_style(&mut self, value: Option<bool>) {
+        self.use_default_style = value;
+    }
+    pub const fn set_order_by_include_column(&mut self, value: Option<bool>) {
+        self.order_by_include_column = value;
+    }
+    #[must_use] pub fn get_exclude_column_indexes(&self) -> Option<&[usize]> {
+        self.exclude_column_indexes.as_deref()
+    }
+    pub fn set_exclude_column_indexes(&mut self, value: Option<Vec<usize>>) {
+        self.exclude_column_indexes = value;
+    }
+    #[must_use] pub fn get_exclude_column_field_names(&self) -> Option<&[String]> {
+        self.exclude_column_field_names.as_deref()
+    }
+    pub fn set_exclude_column_field_names(&mut self, value: Option<Vec<String>>) {
+        self.exclude_column_field_names = value;
+    }
+    #[must_use] pub fn get_include_column_indexes(&self) -> Option<&[usize]> {
+        self.include_column_indexes.as_deref()
+    }
+    pub fn set_include_column_indexes(&mut self, value: Option<Vec<usize>>) {
+        self.include_column_indexes = value;
+    }
+    #[must_use] pub fn get_include_column_field_names(&self) -> Option<&[String]> {
+        self.include_column_field_names.as_deref()
+    }
+    pub fn set_include_column_field_names(&mut self, value: Option<Vec<String>>) {
+        self.include_column_field_names = value;
     }
 }
 

@@ -13,7 +13,7 @@ use crate::core::write_font::WriteFont;
 /// Java exposes `textString`, `writeFont`, `intervalFontList` via Lombok
 /// accessors. Rust preserves the same fields and offers builder-style
 /// `apply_font` / `apply_font_range` setters matching the Java semantics.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct RichTextStringData {
     text_string: String,
     write_font: Option<WriteFont>,
@@ -58,11 +58,26 @@ impl RichTextStringData {
         self
     }
 
+    /// 设置富文本原始字符串。
+    pub fn set_text_string(&mut self, value: impl Into<String>) { self.text_string = value.into(); }
+
+    /// 设置整串字体。
+    pub fn set_write_font(&mut self, value: Option<WriteFont>) { self.write_font = value; }
+
+    /// 替换全部区间字体。
+    pub fn set_interval_font_list(&mut self, value: impl IntoIterator<Item = IntervalFont>) {
+        self.interval_font_list = value.into_iter().collect();
+    }
+
     /// 对应 Java：com.alibaba.excel.metadata.data.RichTextStringData。 Returns the underlying text. (Java `getTextString()`)
     #[must_use]
     pub fn text_string(&self) -> &str {
         &self.text_string
     }
+
+    /// Java `getTextString` 兼容别名。
+    #[must_use]
+    pub fn get_text_string(&self) -> &str { self.text_string() }
 
     /// Returns the optional whole-string font. (Java `getWriteFont()`)
     #[must_use]
@@ -71,11 +86,19 @@ impl RichTextStringData {
         self.write_font.as_ref()
     }
 
+    /// Java `getWriteFont` 兼容别名。
+    #[must_use]
+    pub const fn get_write_font(&self) -> Option<&WriteFont> { self.write_font() }
+
     /// 对应 Java：com.alibaba.excel.metadata.data.RichTextStringData。 Returns interval fonts in application order. (Java `getIntervalFontList()`)
     #[must_use]
     pub fn interval_fonts(&self) -> &[IntervalFont] {
         &self.interval_font_list
     }
+
+    /// Java `getIntervalFontList` 兼容别名。
+    #[must_use]
+    pub fn get_interval_font_list(&self) -> &[IntervalFont] { self.interval_fonts() }
 }
 
 impl IntoExcelCell for RichTextStringData {

@@ -9,6 +9,8 @@ use super::super::xls_record_handler::XlsRecordHandler;
 /// 对应 Java：`TextObjectRecordHandler`.
 #[derive(Debug, Default)]
 pub struct TextObjectRecordHandler {
+    /// Whether comment extras are enabled. (Java `support`)
+    enabled: Option<bool>,
     /// shapeId → comment text. (Java `objectCacheMap`)
     pub object_cache: HashMap<u32, String>,
     pending_object_id: Option<u32>,
@@ -23,14 +25,34 @@ impl TextObjectRecordHandler {
         Self::default()
     }
 
+    /// Creates a handler configured from Java `extraReadSet.contains(COMMENT)`.
+    pub(crate) fn new_with_enabled(enabled: bool) -> Self {
+        Self {
+            enabled: Some(enabled),
+            ..Self::default()
+        }
+    }
+
+    /// 对应 Java：`TextObjectRecordHandler.support`。
+    #[must_use]
+    pub fn support(&self) -> bool {
+        self.enabled.unwrap_or(true)
+    }
+
     /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler。 Java `TextObjectRecordHandler.processRecord`.
     pub fn process_text(&mut self, object_id: u32, text: String) {
+        if !self.support() {
+            return;
+        }
         self.object_cache.insert(object_id, text);
     }
 
     /// Starts a TXO continuation sequence for the object id captured from the
     /// immediately preceding comment OBJ record.
     pub fn begin_text_object(&mut self, object_id: u32, txo: &[u8]) {
+        if !self.support() {
+            return;
+        }
         let Some(length) = txo
             .get(10..12)
             .and_then(|bytes| bytes.try_into().ok())
@@ -51,6 +73,9 @@ impl TextObjectRecordHandler {
     /// Consumes one CONTINUE record belonging to the pending TXO text.
     /// Returns `true` when the record was owned by this handler.
     pub fn consume_continue(&mut self, data: &[u8]) -> bool {
+        if !self.support() {
+            return false;
+        }
         let Some(object_id) = self.pending_object_id else {
             return false;
         };
@@ -96,10 +121,14 @@ impl TextObjectRecordHandler {
 pub use easyexcel_xls::biff8::record_sid::TEXT_OBJECT_SID;
 
 impl XlsRecordHandler for TextObjectRecordHandler {
+    fn support(&self) -> bool {
+        TextObjectRecordHandler::support(self)
+    }
+
     /// Java `TextObjectRecordHandler.processRecord` — parses `TxO` (0x01B6)
     /// to extract shapeId + linked Continue record text.
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
-        if record_sid != TEXT_OBJECT_SID && record_sid != CONTINUE_SID {
+        if !self.support() || (record_sid != TEXT_OBJECT_SID && record_sid != CONTINUE_SID) {
             return;
         }
         match easyexcel_xls::biff8::event_record::decode_text_object_fragment(

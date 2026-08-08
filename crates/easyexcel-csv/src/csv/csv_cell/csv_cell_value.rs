@@ -15,6 +15,24 @@ pub trait CsvCellValue: Debug + Clone + PartialEq + Sized {
     /// 从公式文本创建值。
     fn from_csv_formula(value: String) -> Self;
 
+    /// 从布尔值创建单元格值。
+    fn from_csv_bool(value: bool) -> Self;
+
+    /// 从数字创建单元格值。
+    fn from_csv_number(value: f64) -> Self;
+
+    /// 从 Excel 错误码创建单元格值。
+    fn from_csv_error(value: u8) -> Self;
+
+    /// 返回底层数字。
+    fn csv_number(&self) -> Option<f64>;
+
+    /// 返回底层布尔值。
+    fn csv_bool(&self) -> Option<bool>;
+
+    /// 返回错误码。
+    fn csv_error(&self) -> Option<u8>;
+
     /// 返回数字负载分类。
     fn csv_numeric_cell_type(&self) -> Option<Self::NumericCellType>;
 
@@ -35,6 +53,30 @@ impl CsvCellValue for ModelCellValue {
         Self::Text(value)
     }
 
+    fn from_csv_bool(value: bool) -> Self {
+        Self::Bool(value)
+    }
+
+    fn from_csv_number(value: f64) -> Self {
+        Self::Number(value)
+    }
+
+    fn from_csv_error(value: u8) -> Self {
+        Self::Error(easyexcel_model::CellError::from_biff_code(value))
+    }
+
+    fn csv_number(&self) -> Option<f64> {
+        if let Self::Number(value) = self { Some(*value) } else { None }
+    }
+
+    fn csv_bool(&self) -> Option<bool> {
+        if let Self::Bool(value) = self { Some(*value) } else { None }
+    }
+
+    fn csv_error(&self) -> Option<u8> {
+        if let Self::Error(value) = self { Some(value.biff_code()) } else { None }
+    }
+
     fn csv_numeric_cell_type(&self) -> Option<Self::NumericCellType> {
         matches!(self, Self::Number(_)).then_some(CsvNumericCellType::Number)
     }
@@ -43,4 +85,3 @@ impl CsvCellValue for ModelCellValue {
         self.to_display_string()
     }
 }
-

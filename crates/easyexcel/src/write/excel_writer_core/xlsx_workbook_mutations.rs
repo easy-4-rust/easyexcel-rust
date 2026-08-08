@@ -163,6 +163,65 @@ pub(crate) fn apply_xlsx_mutations(
     Ok(())
 }
 
+/// 将 handler 的后端中立修改计划直接应用到保留未知部件的 OOXML 模板包。
+pub(crate) fn apply_xlsx_template_mutations(
+    package: &mut crate::write::template_write::TemplatePackage,
+    plan: &WriteMutationPlan,
+) -> Result<()> {
+    for mutation in plan.snapshot()? {
+        match mutation {
+            WriteMutation::SetCell {
+                sheet_name,
+                row_index,
+                column_index,
+                value,
+            } => {
+                let value = crate::write::template_write::template_cell_value(&value)?;
+                package.set_cell(&sheet_name, row_index, column_index, &value)?;
+            }
+            WriteMutation::ProtectSheet {
+                sheet_name,
+                password,
+            } => package.protect_sheet(&sheet_name, &password)?,
+            WriteMutation::AddMerge {
+                sheet_name,
+                range,
+            } => package.apply_sheet_layout(&sheet_name, &[], &[range])?,
+            WriteMutation::AddChart(chart) => add_chart_to_template(package, &chart)?,
+        }
+    }
+    Ok(())
+}
+
+fn add_chart_to_template(
+    package: &mut crate::write::template_write::TemplatePackage,
+    mutation: &crate::ChartMutation,
+) -> Result<()> {
+    let mut compiler = generation::new_workbook();
+    let mut sheet_names = package.sheet_names()?;
+    for range in mutation.series.iter().flat_map(|series| {
+        std::iter::once(&series.values).chain(series.categories.iter())
+    }) {
+        if !sheet_names.iter().any(|name| name == &range.sheet_name) {
+            sheet_names.push(range.sheet_name.clone());
+        }
+    }
+    if !sheet_names.iter().any(|name| name == &mutation.sheet_name) {
+        sheet_names.push(mutation.sheet_name.clone());
+    }
+    for sheet_name in &sheet_names {
+        compiler
+            .add_worksheet()
+            .set_name(sheet_name)
+            .map_err(format_error)?;
+    }
+    add_chart(&mut compiler, mutation)?;
+    let bytes = generation::serialize_workbook(&mut compiler).map_err(ExcelError::from)?;
+    package
+        .import_chart(&bytes, &mutation.sheet_name)
+        .map_err(ExcelError::from)
+}
+
 fn add_chart(workbook: &mut Workbook, mutation: &crate::ChartMutation) -> Result<()> {
     if mutation.series.is_empty() {
         return Err(ExcelError::Format(
@@ -286,20 +345,72 @@ fn write_mutation_cell(
             &generation::new_format(),
         )
         .map_err(format_error),
-        CellValue::Hyperlink { text, .. } | CellValue::HyperlinkWithMetadata { text, .. } => {
-            generation::write_string(worksheet, row_index, column_index, text)
-                .map_err(format_error)
-        }
-        CellValue::Comment { value, .. } | CellValue::Images { value, .. } => {
-            write_mutation_cell(worksheet, row_index, column_index, value)
-        }
-        CellValue::RichText(value) => generation::write_string(
+        CellValue::Hyperlink { url, text } => generation::write_url_with_options(
             worksheet,
             row_index,
             column_index,
-            value.text_string(),
+            url,
+            text,
+            &generation::new_format(),
         )
         .map_err(format_error),
+        CellValue::HyperlinkWithMetadata {
+            address,
+            text,
+            hyperlink_type,
+            ..
+        } => {
+            if *hyperlink_type == HyperlinkType::None {
+                generation::write_string(worksheet, row_index, column_index, text)
+                    .map_err(format_error)
+            } else {
+                generation::write_url_with_options(
+                    worksheet,
+                    row_index,
+                    column_index,
+                    &xlsx_hyperlink_target(address, *hyperlink_type),
+                    text,
+                    &generation::new_format(),
+                )
+                .map_err(format_error)
+            }
+        }
+        CellValue::Comment { value, text } => {
+            write_mutation_cell(worksheet, row_index, column_index, value)?;
+            generation::insert_note(worksheet, row_index, column_index, text).map_err(format_error)
+        }
+        CellValue::CommentWithMetadata { value, comment } => {
+            write_mutation_cell(worksheet, row_index, column_index, value)?;
+            generation::insert_note_with_metadata(
+                worksheet,
+                row_index,
+                column_index,
+                &comment.note_text(),
+                comment.get_author(),
+                xlsx_comment_movement(comment.get_anchor().get_anchor_type()),
+            )
+            .map_err(format_error)
+        }
+        CellValue::Images { value, images } => {
+            write_mutation_cell(worksheet, row_index, column_index, value)?;
+            for image in images {
+                insert_image_data(
+                    worksheet,
+                    row_index,
+                    column_index,
+                    image,
+                    &ImageLayout::default(),
+                )?;
+            }
+            Ok(())
+        }
+        CellValue::RichText(value) => write_rich_text(
+            worksheet,
+            row_index,
+            column_index,
+            value,
+            &generation::new_format(),
+        ),
         CellValue::Image(_) => Err(ExcelError::Unsupported(
             "workbook handler image mutations require an explicit image anchor".to_owned(),
         )),

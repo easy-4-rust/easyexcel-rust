@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deterministic cargo-public-api snapshots for Rust facade crates."""
+"""Generate deterministic cargo-public-api snapshots for all published workspace crates."""
 
 from __future__ import annotations
 
@@ -19,6 +19,17 @@ def output(command: list[str], cwd: Path) -> str:
             f"command failed ({process.returncode}): {' '.join(command)}\n{process.stderr.strip()}"
         )
     return process.stdout.strip()
+
+
+def published_workspace_packages(repo: Path) -> list[str]:
+    """发现 workspace 中可发布 crate，避免只快照 facade 而漏掉重导出来源。"""
+    metadata = json.loads(output(["cargo", "metadata", "--no-deps", "--format-version", "1"], repo))
+    workspace_members = set(metadata["workspace_members"])
+    return sorted(
+        package["name"]
+        for package in metadata["packages"]
+        if package["id"] in workspace_members and package.get("publish", ["crates-io"]) != []
+    )
 
 
 def api_kind(signature: str) -> str:
@@ -94,7 +105,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    packages = args.package or ["easyexcel"]
+    packages = args.package or published_workspace_packages(args.rust_root)
     manifest = build_manifest(args.rust_root, packages)
     rendered = canonical_json(manifest)
     if args.check:

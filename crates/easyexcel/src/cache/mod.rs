@@ -17,6 +17,7 @@
 //! Legacy XLS reads use the `easyexcel-xls` BIFF engine and do not consult these selectors.
 
 mod file_cache;
+mod ehcache;
 mod map_cache;
 mod moka_cache;
 mod read_cache;
@@ -24,6 +25,7 @@ pub mod selector;
 mod xls_cache;
 
 pub use file_cache::FileCache;
+pub use ehcache::Ehcache;
 pub use map_cache::MapCache;
 pub use moka_cache::MokaCache;
 pub use read_cache::ReadCache;

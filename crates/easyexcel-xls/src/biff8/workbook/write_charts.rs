@@ -2,26 +2,124 @@
 ///
 /// 记录骨架逐项对齐 POI 5.2.5 `HSSFChart#createBarChart`；系列、AI 区域、
 /// 锚点和图表类型由当前工作簿模型动态生成。
-fn write_charts(
+pub(crate) fn write_charts(
     out: &mut Vec<u8>,
     charts: &[Biff8Chart],
     link_table: &super::ptg::Biff8LinkTable,
 ) {
-    for chart in charts {
-        write_chart_drawing(out, chart);
+    write_charts_with_drawing_ids(out, charts, link_table, 1, 2);
+}
+
+/// 以调用方分配的 Escher drawing/object ID 写入一组图表。
+pub(crate) fn write_charts_with_drawing_ids(
+    out: &mut Vec<u8>,
+    charts: &[Biff8Chart],
+    link_table: &super::ptg::Biff8LinkTable,
+    first_drawing_id: u16,
+    first_object_id: u16,
+) {
+    for (index, chart) in charts.iter().enumerate() {
+        let offset = u16::try_from(index).unwrap_or(u16::MAX);
+        let drawing_id = first_drawing_id.saturating_add(offset);
+        let object_id = first_object_id.saturating_add(offset);
+        write_chart_drawing(out, chart, drawing_id, object_id);
         write_chart_substream(out, chart, link_table);
     }
 }
 
-fn chart_drawing_group() -> Vec<u8> {
-    hex_bytes(
-        "0F0000F052000000000006F01800000001080000020000000200000001000000\
-         010000000300000033000BF012000000BF0008000800810109000008C0014000\
-         000840001EF1100000000D0000080C00000817000008F7000010",
-    )
+/// 将图表 shape 追加到工作表已有的 DG/SPGR 容器。
+pub(crate) fn write_appended_charts(
+    out: &mut Vec<u8>,
+    charts: &[Biff8Chart],
+    link_table: &super::ptg::Biff8LinkTable,
+    drawing_id: u16,
+    first_shape_id: u32,
+    first_object_id: u16,
+) {
+    for (index, chart) in charts.iter().enumerate() {
+        let offset_u32 = u32::try_from(index).unwrap_or(u32::MAX);
+        let offset_u16 = u16::try_from(index).unwrap_or(u16::MAX);
+        let shape_id = first_shape_id.saturating_add(offset_u32);
+        let shape = chart_shape_container(chart, drawing_id, shape_id);
+        record(out, MSODRAWING, &shape);
+        record(
+            out,
+            OBJ,
+            &chart_object_record(first_object_id.saturating_add(offset_u16)),
+        );
+        write_chart_substream(out, chart, link_table);
+    }
 }
 
-fn write_chart_drawing(out: &mut Vec<u8>, chart: &Biff8Chart) {
+/// 返回追加图表 shape container 的长度。
+pub(crate) fn appended_chart_shape_len(chart: &Biff8Chart, drawing_id: u16, shape_id: u32) -> usize {
+    chart_shape_container(chart, drawing_id, shape_id).len()
+}
+
+pub(crate) fn chart_drawing_group() -> Vec<u8> {
+    chart_drawing_group_for_range(1, 1)
+}
+
+/// 构造覆盖连续 drawing id 的 DGG container。
+pub(crate) fn chart_drawing_group_for_range(first_drawing_id: u16, count: usize) -> Vec<u8> {
+    let count = count.max(1);
+    let count_u32 = u32::try_from(count).unwrap_or(u32::MAX);
+    let mut dgg_payload = Vec::with_capacity(16 + count * 8);
+    let last_drawing = u32::from(first_drawing_id)
+        .saturating_add(count_u32.saturating_sub(1));
+    dgg_payload.extend_from_slice(
+        &last_drawing
+            .saturating_add(1)
+            .saturating_mul(1_024)
+            .saturating_add(1)
+            .to_le_bytes(),
+    );
+    dgg_payload.extend_from_slice(&count_u32.saturating_add(1).to_le_bytes());
+    dgg_payload.extend_from_slice(&count_u32.saturating_mul(2).to_le_bytes());
+    dgg_payload.extend_from_slice(&count_u32.to_le_bytes());
+    for offset in 0..count {
+        let drawing_id = u32::from(first_drawing_id)
+            .saturating_add(u32::try_from(offset).unwrap_or(u32::MAX));
+        dgg_payload.extend_from_slice(&drawing_id.to_le_bytes());
+        dgg_payload.extend_from_slice(&3_u32.to_le_bytes());
+    }
+    let suffix = hex_bytes(
+        "33000BF012000000BF0008000800810109000008C0014000000840001EF1100000000D0000080C00000817000008F7000010",
+    );
+    let dgg_len = u32::try_from(dgg_payload.len()).unwrap_or(u32::MAX);
+    let container_len = 8_u32.saturating_add(dgg_len)
+        .saturating_add(u32::try_from(suffix.len()).unwrap_or(u32::MAX));
+    let mut output = Vec::with_capacity(8 + usize::try_from(container_len).unwrap_or(0));
+    output.extend_from_slice(&0x000Fu16.to_le_bytes());
+    output.extend_from_slice(&0xF000u16.to_le_bytes());
+    output.extend_from_slice(&container_len.to_le_bytes());
+    output.extend_from_slice(&0u16.to_le_bytes());
+    output.extend_from_slice(&0xF006u16.to_le_bytes());
+    output.extend_from_slice(&dgg_len.to_le_bytes());
+    output.extend_from_slice(&dgg_payload);
+    output.extend_from_slice(&suffix);
+    output
+}
+
+fn write_chart_drawing(
+    out: &mut Vec<u8>,
+    chart: &Biff8Chart,
+    drawing_id: u16,
+    object_id: u16,
+) {
+    let root_shape_id = u32::from(drawing_id).saturating_mul(1_024);
+    let chart_shape_id = root_shape_id.saturating_add(2);
+    let drawing = chart_drawing_bytes(chart, drawing_id, root_shape_id, chart_shape_id);
+    record(out, MSODRAWING, &drawing);
+    record(out, OBJ, &chart_object_record(object_id));
+}
+
+fn chart_drawing_bytes(
+    chart: &Biff8Chart,
+    drawing_id: u16,
+    root_shape_id: u32,
+    chart_shape_id: u32,
+) -> Vec<u8> {
     let mut drawing = hex_bytes(
         "0F0002F0C0000000100008F00800000002000000020400000F0003F0A8000000\
          0F0004F028000000010009F01000000000000000000000000000000000000000\
@@ -31,6 +129,7 @@ fn write_chart_drawing(out: &mut Vec<u8>, chart: &Biff8Chart) {
          BF0300000800000010F01200000000000400C0020A00F4000E0066012000E900\
          000011F000000000",
     );
+    patch_chart_escher_ids(&mut drawing, drawing_id, root_shape_id, chart_shape_id);
     let mut anchor = Vec::with_capacity(18);
     anchor.extend_from_slice(&0u16.to_le_bytes());
     anchor.extend_from_slice(&u16::from(chart.first_column).to_le_bytes());
@@ -42,12 +141,51 @@ fn write_chart_drawing(out: &mut Vec<u8>, chart: &Biff8Chart) {
     anchor.extend_from_slice(&chart.last_row.to_le_bytes());
     anchor.extend_from_slice(&0u16.to_le_bytes());
     drawing[174..192].copy_from_slice(&anchor);
-    record(out, MSODRAWING, &drawing);
-    record(
-        out,
-        OBJ,
-        &hex_bytes("1500120005000200116000000000B80387030000000000000000"),
+    drawing
+}
+
+fn chart_object_record(object_id: u16) -> Vec<u8> {
+    let mut object = hex_bytes("1500120005000200116000000000B80387030000000000000000");
+    object[6..8].copy_from_slice(&object_id.to_le_bytes());
+    object
+}
+
+fn chart_shape_container(chart: &Biff8Chart, drawing_id: u16, shape_id: u32) -> Vec<u8> {
+    let full = chart_drawing_bytes(
+        chart,
+        drawing_id,
+        u32::from(drawing_id).saturating_mul(1_024),
+        shape_id,
     );
+    let offsets = (0..full.len().saturating_sub(8))
+        .filter(|offset| u16::from_le_bytes([full[offset + 2], full[offset + 3]]) == 0xF004)
+        .collect::<Vec<_>>();
+    let Some(offset) = offsets.get(1).copied() else { return Vec::new(); };
+    let length = u32::from_le_bytes([
+        full[offset + 4], full[offset + 5], full[offset + 6], full[offset + 7],
+    ]);
+    let end = offset.saturating_add(8).saturating_add(usize::try_from(length).unwrap_or(0));
+    full[offset..end.min(full.len())].to_vec()
+}
+
+fn patch_chart_escher_ids(
+    drawing: &mut [u8],
+    drawing_id: u16,
+    root_shape_id: u32,
+    chart_shape_id: u32,
+) {
+    let mut shape_index = 0usize;
+    for offset in 0..drawing.len().saturating_sub(8) {
+        let record_type = u16::from_le_bytes([drawing[offset + 2], drawing[offset + 3]]);
+        if record_type == 0xF008 && offset.saturating_add(16) <= drawing.len() {
+            drawing[offset..offset + 2].copy_from_slice(&(drawing_id << 4).to_le_bytes());
+            drawing[offset + 12..offset + 16].copy_from_slice(&chart_shape_id.to_le_bytes());
+        } else if record_type == 0xF00A && offset.saturating_add(12) <= drawing.len() {
+            let shape_id = if shape_index == 0 { root_shape_id } else { chart_shape_id };
+            drawing[offset + 8..offset + 12].copy_from_slice(&shape_id.to_le_bytes());
+            shape_index = shape_index.saturating_add(1);
+        }
+    }
 }
 
 fn write_chart_substream(

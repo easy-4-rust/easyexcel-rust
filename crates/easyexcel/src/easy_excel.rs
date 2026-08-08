@@ -270,16 +270,11 @@ impl EasyExcel {
         crate::write::ExcelWriterTableBuilder::new()
     }
 
-    /// 对应 Java：com.alibaba.excel.EasyExcel。 Fills scalar `{key}` placeholders in an existing XLSX template.
-    ///
-    /// Legacy `.xls` templates return typed `ExcelError::Unsupported`
-    /// (`legacy XLS template fill is not supported`). Java maps this to
-    /// `ExcelWriter.fill` on `HSSFWorkbook`; Rust fill remains OOXML-only.
-    /// Use [`Self::write`] / `with_template` for `.xls` cell append instead.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Fills scalar `{key}` placeholders in an existing XLSX or BIFF8 XLS template.
     ///
     /// # Errors
     ///
-    /// Returns an I/O, Unsupported, or package format error.
+    /// Returns an I/O or package format error.
     pub fn fill_template(
         template: impl AsRef<Path>,
         output: impl AsRef<Path>,
@@ -288,14 +283,11 @@ impl EasyExcel {
         fill_xlsx_template(template.as_ref(), output.as_ref(), data)
     }
 
-    /// 对应 Java：com.alibaba.excel.EasyExcel。 Expands a collection in an existing XLSX template.
-    ///
-    /// XLS (`.xls`) collection fill is not supported — returns
-    /// `ExcelError::Unsupported` with `legacy XLS template fill is not supported`.
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Expands a collection in an existing XLSX or BIFF8 XLS template.
     ///
     /// # Errors
     ///
-    /// Returns an I/O, Unsupported, or OOXML package error.
+    /// Returns an I/O or workbook package error.
     pub fn fill_template_list(
         template: impl AsRef<Path>,
         output: impl AsRef<Path>,
@@ -305,15 +297,11 @@ impl EasyExcel {
         fill_xlsx_template_list(template.as_ref(), output.as_ref(), data, config)
     }
 
-    /// 对应 Java：com.alibaba.excel.EasyExcel。 Loads an XLSX template for repeated Java-style `fill` calls.
-    ///
-    /// XLS (`.xls`) stateful template writers are rejected with
-    /// `legacy XLS template fill is not supported` (use [`Self::fill_template`] for
-    /// scalar `.xls` fill).
+    /// 对应 Java：com.alibaba.excel.EasyExcel。 Loads an XLSX or BIFF8 XLS template for repeated Java-style `fill` calls.
     ///
     /// # Errors
     ///
-    /// Returns an I/O, Unsupported, or OOXML package error when the template cannot be read.
+    /// Returns an I/O or workbook package error when the template cannot be read.
     pub fn template_writer(
         template: impl AsRef<Path>,
         output: impl Into<PathBuf>,

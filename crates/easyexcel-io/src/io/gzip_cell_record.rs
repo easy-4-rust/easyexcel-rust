@@ -111,11 +111,20 @@ fn encode_cell(out: &mut Vec<u8>, value: &GzipCellValue) -> Result<()> {
             write_str(out, text)?;
             encode_cell(out, value)?;
         }
+        GzipCellValue::CommentMetadata { value, metadata } => {
+            out.push(18);
+            write_bytes(out, metadata)?;
+            encode_cell(out, value)?;
+        }
         GzipCellValue::Image(bytes) => {
             out.push(12);
             write_bytes(out, bytes)?;
         }
         GzipCellValue::RichText(text) => write_tagged_string(out, 13, text)?,
+        GzipCellValue::RichTextMetadata(metadata) => {
+            out.push(20);
+            write_bytes(out, metadata)?;
+        }
         GzipCellValue::Images { value, images } => {
             out.push(14);
             encode_cell(out, value)?;
@@ -127,6 +136,19 @@ fn encode_cell(out: &mut Vec<u8>, value: &GzipCellValue) -> Result<()> {
             for image in images {
                 write_bytes(out, image)?;
             }
+        }
+        GzipCellValue::ImagesMetadata { value, images, metadata } => {
+            out.push(19);
+            encode_cell(out, value)?;
+            write_u32(
+                out,
+                u32::try_from(images.len())
+                    .map_err(|_| Error::Other("image list exceeds u32".to_owned()))?,
+            );
+            for image in images {
+                write_bytes(out, image)?;
+            }
+            write_bytes(out, metadata)?;
         }
         GzipCellValue::Styled { value, style_id } => {
             out.push(15);
@@ -200,6 +222,24 @@ fn decode_cell(buf: &[u8], cursor: &mut usize) -> Result<GzipCellValue> {
             relative_last_row: read_optional(buf, cursor, i32::from_le_bytes)?,
             relative_last_col: read_optional(buf, cursor, i32::from_le_bytes)?,
         },
+        18 => GzipCellValue::CommentMetadata {
+            metadata: read_bytes(buf, cursor)?,
+            value: Box::new(decode_cell(buf, cursor)?),
+        },
+        19 => {
+            let value = Box::new(decode_cell(buf, cursor)?);
+            let count = read_u32(buf, cursor)? as usize;
+            let mut images = Vec::with_capacity(count);
+            for _ in 0..count {
+                images.push(read_bytes(buf, cursor)?);
+            }
+            GzipCellValue::ImagesMetadata {
+                value,
+                images,
+                metadata: read_bytes(buf, cursor)?,
+            }
+        }
+        20 => GzipCellValue::RichTextMetadata(read_bytes(buf, cursor)?),
         other => {
             return Err(Error::Other(format!(
                 "unknown gzip spill cell tag: {other}"

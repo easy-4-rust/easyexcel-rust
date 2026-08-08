@@ -5,7 +5,7 @@
 /// Java retains the POI numeric codes (2..=7). Rust drops them and maps to
 /// `rust_xlsxwriter::Image` automatically; the enum is preserved for API
 /// completeness.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 /// 对应 Java：com.alibaba.excel.metadata.data.ImageData.ImageType。
 pub enum ImageType {
     /// Extended Windows metafile.

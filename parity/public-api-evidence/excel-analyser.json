@@ -53,6 +53,25 @@
         "com.alibaba.excel.analysis.v03.XlsSaxAnalyser#execute()V",
         "com.alibaba.excel.analysis.v03.XlsSaxAnalyser#processRecord(Lorg/apache/poi/hssf/record/Record;)V",
         "com.alibaba.excel.analysis.v03.XlsSaxAnalyser#sheetList()Ljava/util/List;",
+        "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser",
+        "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#<init>(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/io/InputStream;)V",
+        "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#FIELD:SHARED_STRINGS_PART_NAMELorg/apache/poi/openxml4j/opc/PackagePartName;",
+        "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#execute()V",
+        "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#sheetList()Ljava/util/List;",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler#<init>()V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler#characters(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;[CII)V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#<init>()V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#characters(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;[CII)V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#endElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;)V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#startElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;Lorg/xml/sax/Attributes;)V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#support(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;)Z",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#characters(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;[CII)V",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#endElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;)V",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#startElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;Lorg/xml/sax/Attributes;)V",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#support(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;)Z",
         "com.alibaba.excel.analysis.v03.IgnorableXlsRecordHandler",
         "com.alibaba.excel.analysis.v03.XlsRecordHandler",
         "com.alibaba.excel.analysis.v03.XlsRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
@@ -109,7 +128,18 @@
         "com.alibaba.excel.analysis.v03.handlers.RkRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
         "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler",
         "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler#<init>()V",
-        "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V"
+        "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler",
+        "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler#<init>()V",
+        "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler#support(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)Z",
+        "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler",
+        "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler#<init>()V",
+        "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler#support(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)Z",
+        "com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler",
+        "com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler#<init>()V",
+        "com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V"
       ],
       "rust_ids": [
         "easyexcel:651d9943362f8712eb6b",
@@ -216,7 +246,37 @@
         "easyexcel:513d3aa81f99918e096d",
         "easyexcel:ecc975b72f35713dd2b0",
         "easyexcel:2ad39bf8a2d7cd4ee77d",
-        "easyexcel:e53aaf08a5900d0a2717"
+        "easyexcel:e53aaf08a5900d0a2717",
+        "easyexcel:588c8b8c7a0338bb14fa",
+        "easyexcel:2559e8ea5d71a7775bc7",
+        "easyexcel:763e13f7d394768c29e5",
+        "easyexcel:0c64371e096a179f4362",
+        "easyexcel:f6bc91043b06709623f0",
+        "easyexcel:22ce63a964f61d6f86f6",
+        "easyexcel:6a6c0873fcb90e57dff3",
+        "easyexcel:5a151d799ed13bd579b2",
+        "easyexcel:acdbb64f72789de8ab13",
+        "easyexcel:d4e1baa95fa782813acb",
+        "easyexcel:df8cdc775740b74651ba",
+        "easyexcel:ef75d783260aa52e6b70",
+        "easyexcel:cc73c2a9698e90206c2c",
+        "easyexcel:6307d314e55a59fbb869",
+        "easyexcel:8b8d712eb991773d715d",
+        "easyexcel:ba7c0eda2f61bd910b08",
+        "easyexcel:ac817361c069e3eefd3b",
+        "easyexcel:1ee767feeeaf855d3e75",
+        "easyexcel:18a2c992601386d87223",
+        "easyexcel:037314b6c9939cf795b0",
+        "easyexcel:709d7fe9867cb1bc7bde",
+        "easyexcel:d9ae70fc3bc43bf34f40",
+        "easyexcel:f769f1abab21a0f8628d",
+        "easyexcel:21b485444fb5c25d1493",
+        "easyexcel:5972f0c8557da8891e01",
+        "easyexcel:10bd2c696e37bff22292",
+        "easyexcel:78d60bedba974ab565c2",
+        "easyexcel:dcf8b5bfb3bf119635de",
+        "easyexcel:9431f6909c74742e3f89",
+        "easyexcel:6bdb8958fe3bb5d5cf7d"
       ],
       "profiles": [
         "stable-default-features",
@@ -277,6 +337,22 @@
           "sha256": "516adea7ef69cd3d306cfeb69b1a09e953586600c8b5a0a631447834043e100e"
         },
         {
+          "path": "crates/easyexcel/src/analysis/v07/xlsx_sax_analyser.rs",
+          "sha256": "fbb753b6f54b0a515ba4c27aea41debac6912d2ceba854b4a59aecf8259965fa"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v07/handlers/abstract_xlsx_tag_handler.rs",
+          "sha256": "02f5d4e53b613f4aac0f204fb0da72b3d0d4c87d5f2f47fa950e53ced9a6c393"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v07/handlers/abstract_cell_value_tag_handler.rs",
+          "sha256": "602ba6db2104849297d511803f5f8ee1595a1fe15ccd49cb2d3f102be3d5a3a6"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v07/handlers/xlsx_tag_handler.rs",
+          "sha256": "d1f271c8db758365076e8d5f480d33cad36dd55faaef0fe03efac9998d766b13"
+        },
+        {
           "path": "crates/easyexcel/src/analysis/v03/ignorable_xls_record_handler.rs",
           "sha256": "bb6777b9424e9736be8211d29d14f7bb25dcb6607d521e0e45fbeaf1117dab2c"
         },
@@ -349,12 +425,36 @@
           "sha256": "c2a5bbdd39240118abc4bf8488580009f5b8589233478db98e758854520fbfa9"
         },
         {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/rk_record_handler.rs",
+          "sha256": "37e369464edd113b4ede72236e9a90cbb4970e698c2b606b10966805cd7c1f68"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/obj_record_handler.rs",
+          "sha256": "1b15888d402f84b3a0e5eda922fb162addd1c3fa1f52657276424668fe0f1761"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/hyperlink_record_handler.rs",
+          "sha256": "b4df52e8f489b6bc177705a99c30dd5e61b20608e525c052ba8a23fd2796e99b"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/text_object_record_handler.rs",
+          "sha256": "79f888ba72e1948cfd9110ca84fdf3532da4f60eda02788e40a5c47b39e3b8d5"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/dummy_record_handler.rs",
+          "sha256": "9cec6a514a2a4a2fbf65e1ca147aeb09e93728a46e16df2d264114db7f641f67"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/dummy_record_handler/dummy_record_event.rs",
+          "sha256": "fd12672fcf17a18dc65d4dba71392bf4b9393e2cae581eb1a3231cabeaefe269"
+        },
+        {
           "path": "crates/easyexcel/src/analysis/v03/xls_record_dispatcher.rs",
-          "sha256": "147f08e19bccc0c4ef1302db199a73c17100199684b8ecf5e6966db8623e133a"
+          "sha256": "f72f3c1a6745ef46c2eefc942855d6c521d1e0264ca88dd1e001658a16c5077c"
         },
         {
           "path": "crates/easyexcel/src/analysis/v03/xls_record_dispatcher/xls_record_dispatch_state.rs",
-          "sha256": "cda7bd76315d153454478ee1970108d329987dc3326b9cfd871b4dab03d0626c"
+          "sha256": "01d5cf94afb28ab76efd9f750e76617c171c4274b6b681fcf1fc79bdfbb52019"
         },
 
         {
@@ -371,7 +471,7 @@
         },
         {
           "path": "tests/easyexcel-test/tests/public_api_excel_analyser_evidence_tests.rs",
-          "sha256": "5f4d7e2051a4e76cb2e05bbcb4a166299ba447ed46336cfb2fb49d5fab2127fd"
+          "sha256": "d12ce5104da16856bb1cb1ee815687188c4f9654e7348dda7caf85bba02bbf32"
         }
       ]
     },
@@ -427,6 +527,25 @@
         "com.alibaba.excel.analysis.v03.XlsSaxAnalyser#execute()V",
         "com.alibaba.excel.analysis.v03.XlsSaxAnalyser#processRecord(Lorg/apache/poi/hssf/record/Record;)V",
         "com.alibaba.excel.analysis.v03.XlsSaxAnalyser#sheetList()Ljava/util/List;",
+        "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser",
+        "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#<init>(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/io/InputStream;)V",
+        "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#FIELD:SHARED_STRINGS_PART_NAMELorg/apache/poi/openxml4j/opc/PackagePartName;",
+        "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#execute()V",
+        "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#sheetList()Ljava/util/List;",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler#<init>()V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler#characters(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;[CII)V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#<init>()V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#characters(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;[CII)V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#endElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;)V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#startElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;Lorg/xml/sax/Attributes;)V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#support(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;)Z",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#characters(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;[CII)V",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#endElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;)V",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#startElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;Lorg/xml/sax/Attributes;)V",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#support(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;)Z",
         "com.alibaba.excel.analysis.v03.IgnorableXlsRecordHandler",
         "com.alibaba.excel.analysis.v03.XlsRecordHandler",
         "com.alibaba.excel.analysis.v03.XlsRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
@@ -483,7 +602,18 @@
         "com.alibaba.excel.analysis.v03.handlers.RkRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
         "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler",
         "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler#<init>()V",
-        "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V"
+        "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler",
+        "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler#<init>()V",
+        "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler#support(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)Z",
+        "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler",
+        "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler#<init>()V",
+        "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler#support(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)Z",
+        "com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler",
+        "com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler#<init>()V",
+        "com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V"
       ],
       "rust_ids": [
         "easyexcel:651d9943362f8712eb6b",
@@ -590,7 +720,37 @@
         "easyexcel:513d3aa81f99918e096d",
         "easyexcel:ecc975b72f35713dd2b0",
         "easyexcel:2ad39bf8a2d7cd4ee77d",
-        "easyexcel:e53aaf08a5900d0a2717"
+        "easyexcel:e53aaf08a5900d0a2717",
+        "easyexcel:588c8b8c7a0338bb14fa",
+        "easyexcel:2559e8ea5d71a7775bc7",
+        "easyexcel:763e13f7d394768c29e5",
+        "easyexcel:0c64371e096a179f4362",
+        "easyexcel:f6bc91043b06709623f0",
+        "easyexcel:22ce63a964f61d6f86f6",
+        "easyexcel:6a6c0873fcb90e57dff3",
+        "easyexcel:5a151d799ed13bd579b2",
+        "easyexcel:acdbb64f72789de8ab13",
+        "easyexcel:d4e1baa95fa782813acb",
+        "easyexcel:df8cdc775740b74651ba",
+        "easyexcel:ef75d783260aa52e6b70",
+        "easyexcel:cc73c2a9698e90206c2c",
+        "easyexcel:6307d314e55a59fbb869",
+        "easyexcel:8b8d712eb991773d715d",
+        "easyexcel:ba7c0eda2f61bd910b08",
+        "easyexcel:ac817361c069e3eefd3b",
+        "easyexcel:1ee767feeeaf855d3e75",
+        "easyexcel:18a2c992601386d87223",
+        "easyexcel:037314b6c9939cf795b0",
+        "easyexcel:709d7fe9867cb1bc7bde",
+        "easyexcel:d9ae70fc3bc43bf34f40",
+        "easyexcel:f769f1abab21a0f8628d",
+        "easyexcel:21b485444fb5c25d1493",
+        "easyexcel:5972f0c8557da8891e01",
+        "easyexcel:10bd2c696e37bff22292",
+        "easyexcel:78d60bedba974ab565c2",
+        "easyexcel:dcf8b5bfb3bf119635de",
+        "easyexcel:9431f6909c74742e3f89",
+        "easyexcel:6bdb8958fe3bb5d5cf7d"
       ],
       "commands": [
         [
@@ -630,6 +790,22 @@
         {
           "path": "crates/easyexcel/src/analysis/v03/xls_sax_analyser.rs",
           "sha256": "516adea7ef69cd3d306cfeb69b1a09e953586600c8b5a0a631447834043e100e"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v07/xlsx_sax_analyser.rs",
+          "sha256": "fbb753b6f54b0a515ba4c27aea41debac6912d2ceba854b4a59aecf8259965fa"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v07/handlers/abstract_xlsx_tag_handler.rs",
+          "sha256": "02f5d4e53b613f4aac0f204fb0da72b3d0d4c87d5f2f47fa950e53ced9a6c393"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v07/handlers/abstract_cell_value_tag_handler.rs",
+          "sha256": "602ba6db2104849297d511803f5f8ee1595a1fe15ccd49cb2d3f102be3d5a3a6"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v07/handlers/xlsx_tag_handler.rs",
+          "sha256": "d1f271c8db758365076e8d5f480d33cad36dd55faaef0fe03efac9998d766b13"
         },
         {
           "path": "crates/easyexcel/src/analysis/v03/ignorable_xls_record_handler.rs",
@@ -704,12 +880,36 @@
           "sha256": "c2a5bbdd39240118abc4bf8488580009f5b8589233478db98e758854520fbfa9"
         },
         {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/rk_record_handler.rs",
+          "sha256": "37e369464edd113b4ede72236e9a90cbb4970e698c2b606b10966805cd7c1f68"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/obj_record_handler.rs",
+          "sha256": "1b15888d402f84b3a0e5eda922fb162addd1c3fa1f52657276424668fe0f1761"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/hyperlink_record_handler.rs",
+          "sha256": "b4df52e8f489b6bc177705a99c30dd5e61b20608e525c052ba8a23fd2796e99b"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/text_object_record_handler.rs",
+          "sha256": "79f888ba72e1948cfd9110ca84fdf3532da4f60eda02788e40a5c47b39e3b8d5"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/dummy_record_handler.rs",
+          "sha256": "9cec6a514a2a4a2fbf65e1ca147aeb09e93728a46e16df2d264114db7f641f67"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/dummy_record_handler/dummy_record_event.rs",
+          "sha256": "fd12672fcf17a18dc65d4dba71392bf4b9393e2cae581eb1a3231cabeaefe269"
+        },
+        {
           "path": "crates/easyexcel/src/analysis/v03/xls_record_dispatcher.rs",
-          "sha256": "147f08e19bccc0c4ef1302db199a73c17100199684b8ecf5e6966db8623e133a"
+          "sha256": "f72f3c1a6745ef46c2eefc942855d6c521d1e0264ca88dd1e001658a16c5077c"
         },
         {
           "path": "crates/easyexcel/src/analysis/v03/xls_record_dispatcher/xls_record_dispatch_state.rs",
-          "sha256": "cda7bd76315d153454478ee1970108d329987dc3326b9cfd871b4dab03d0626c"
+          "sha256": "01d5cf94afb28ab76efd9f750e76617c171c4274b6b681fcf1fc79bdfbb52019"
         },
 
         {
@@ -726,11 +926,11 @@
         },
         {
           "path": "tests/easyexcel-test/tests/public_api_excel_analyser_evidence_tests.rs",
-          "sha256": "5f4d7e2051a4e76cb2e05bbcb4a166299ba447ed46336cfb2fb49d5fab2127fd"
+          "sha256": "d12ce5104da16856bb1cb1ee815687188c4f9654e7348dda7caf85bba02bbf32"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/excel_analyser_lifecycle.contract.json",
-          "sha256": "abecd30226e61a7b1689452b2829a188d38ee386a6c827087f4a4027eaaf1beb"
+          "sha256": "205640ad74c31b3b37d7740a3b9fa0283ee751d2a90ba032bfef3bbd20df8ac4"
         }
       ]
     },
@@ -786,6 +986,25 @@
         "com.alibaba.excel.analysis.v03.XlsSaxAnalyser#execute()V",
         "com.alibaba.excel.analysis.v03.XlsSaxAnalyser#processRecord(Lorg/apache/poi/hssf/record/Record;)V",
         "com.alibaba.excel.analysis.v03.XlsSaxAnalyser#sheetList()Ljava/util/List;",
+        "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser",
+        "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#<init>(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/io/InputStream;)V",
+        "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#FIELD:SHARED_STRINGS_PART_NAMELorg/apache/poi/openxml4j/opc/PackagePartName;",
+        "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#execute()V",
+        "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#sheetList()Ljava/util/List;",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler#<init>()V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler#characters(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;[CII)V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#<init>()V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#characters(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;[CII)V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#endElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;)V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#startElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;Lorg/xml/sax/Attributes;)V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#support(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;)Z",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#characters(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;[CII)V",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#endElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;)V",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#startElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;Lorg/xml/sax/Attributes;)V",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#support(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;)Z",
         "com.alibaba.excel.analysis.v03.IgnorableXlsRecordHandler",
         "com.alibaba.excel.analysis.v03.XlsRecordHandler",
         "com.alibaba.excel.analysis.v03.XlsRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
@@ -842,7 +1061,18 @@
         "com.alibaba.excel.analysis.v03.handlers.RkRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
         "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler",
         "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler#<init>()V",
-        "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V"
+        "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler",
+        "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler#<init>()V",
+        "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler#support(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)Z",
+        "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler",
+        "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler#<init>()V",
+        "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler#support(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)Z",
+        "com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler",
+        "com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler#<init>()V",
+        "com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V"
       ],
       "rust_ids": [
         "easyexcel:651d9943362f8712eb6b",
@@ -949,7 +1179,37 @@
         "easyexcel:513d3aa81f99918e096d",
         "easyexcel:ecc975b72f35713dd2b0",
         "easyexcel:2ad39bf8a2d7cd4ee77d",
-        "easyexcel:e53aaf08a5900d0a2717"
+        "easyexcel:e53aaf08a5900d0a2717",
+        "easyexcel:588c8b8c7a0338bb14fa",
+        "easyexcel:2559e8ea5d71a7775bc7",
+        "easyexcel:763e13f7d394768c29e5",
+        "easyexcel:0c64371e096a179f4362",
+        "easyexcel:f6bc91043b06709623f0",
+        "easyexcel:22ce63a964f61d6f86f6",
+        "easyexcel:6a6c0873fcb90e57dff3",
+        "easyexcel:5a151d799ed13bd579b2",
+        "easyexcel:acdbb64f72789de8ab13",
+        "easyexcel:d4e1baa95fa782813acb",
+        "easyexcel:df8cdc775740b74651ba",
+        "easyexcel:ef75d783260aa52e6b70",
+        "easyexcel:cc73c2a9698e90206c2c",
+        "easyexcel:6307d314e55a59fbb869",
+        "easyexcel:8b8d712eb991773d715d",
+        "easyexcel:ba7c0eda2f61bd910b08",
+        "easyexcel:ac817361c069e3eefd3b",
+        "easyexcel:1ee767feeeaf855d3e75",
+        "easyexcel:18a2c992601386d87223",
+        "easyexcel:037314b6c9939cf795b0",
+        "easyexcel:709d7fe9867cb1bc7bde",
+        "easyexcel:d9ae70fc3bc43bf34f40",
+        "easyexcel:f769f1abab21a0f8628d",
+        "easyexcel:21b485444fb5c25d1493",
+        "easyexcel:5972f0c8557da8891e01",
+        "easyexcel:10bd2c696e37bff22292",
+        "easyexcel:78d60bedba974ab565c2",
+        "easyexcel:dcf8b5bfb3bf119635de",
+        "easyexcel:9431f6909c74742e3f89",
+        "easyexcel:6bdb8958fe3bb5d5cf7d"
       ],
       "commands": [
         [
@@ -989,6 +1249,22 @@
         {
           "path": "crates/easyexcel/src/analysis/v03/xls_sax_analyser.rs",
           "sha256": "516adea7ef69cd3d306cfeb69b1a09e953586600c8b5a0a631447834043e100e"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v07/xlsx_sax_analyser.rs",
+          "sha256": "fbb753b6f54b0a515ba4c27aea41debac6912d2ceba854b4a59aecf8259965fa"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v07/handlers/abstract_xlsx_tag_handler.rs",
+          "sha256": "02f5d4e53b613f4aac0f204fb0da72b3d0d4c87d5f2f47fa950e53ced9a6c393"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v07/handlers/abstract_cell_value_tag_handler.rs",
+          "sha256": "602ba6db2104849297d511803f5f8ee1595a1fe15ccd49cb2d3f102be3d5a3a6"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v07/handlers/xlsx_tag_handler.rs",
+          "sha256": "d1f271c8db758365076e8d5f480d33cad36dd55faaef0fe03efac9998d766b13"
         },
         {
           "path": "crates/easyexcel/src/analysis/v03/ignorable_xls_record_handler.rs",
@@ -1063,12 +1339,36 @@
           "sha256": "c2a5bbdd39240118abc4bf8488580009f5b8589233478db98e758854520fbfa9"
         },
         {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/rk_record_handler.rs",
+          "sha256": "37e369464edd113b4ede72236e9a90cbb4970e698c2b606b10966805cd7c1f68"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/obj_record_handler.rs",
+          "sha256": "1b15888d402f84b3a0e5eda922fb162addd1c3fa1f52657276424668fe0f1761"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/hyperlink_record_handler.rs",
+          "sha256": "b4df52e8f489b6bc177705a99c30dd5e61b20608e525c052ba8a23fd2796e99b"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/text_object_record_handler.rs",
+          "sha256": "79f888ba72e1948cfd9110ca84fdf3532da4f60eda02788e40a5c47b39e3b8d5"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/dummy_record_handler.rs",
+          "sha256": "9cec6a514a2a4a2fbf65e1ca147aeb09e93728a46e16df2d264114db7f641f67"
+        },
+        {
+          "path": "crates/easyexcel/src/analysis/v03/handlers/dummy_record_handler/dummy_record_event.rs",
+          "sha256": "fd12672fcf17a18dc65d4dba71392bf4b9393e2cae581eb1a3231cabeaefe269"
+        },
+        {
           "path": "crates/easyexcel/src/analysis/v03/xls_record_dispatcher.rs",
-          "sha256": "147f08e19bccc0c4ef1302db199a73c17100199684b8ecf5e6966db8623e133a"
+          "sha256": "f72f3c1a6745ef46c2eefc942855d6c521d1e0264ca88dd1e001658a16c5077c"
         },
         {
           "path": "crates/easyexcel/src/analysis/v03/xls_record_dispatcher/xls_record_dispatch_state.rs",
-          "sha256": "cda7bd76315d153454478ee1970108d329987dc3326b9cfd871b4dab03d0626c"
+          "sha256": "01d5cf94afb28ab76efd9f750e76617c171c4274b6b681fcf1fc79bdfbb52019"
         },
 
         {
@@ -1081,15 +1381,15 @@
         },
         {
           "path": "scripts/java-golden-export/src/main/java/com/alibaba/easyexcel/golden/JavaGoldenExporter.java",
-          "sha256": "ab75bf585e5a97f444c07dff996365e1e17753c432d1fbf027365e94a1e3568c"
+          "sha256": "790dbc84da0e6b4f200616e9228696c79bb9b3ef4ed9b39a6cd8019f351cf529"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/excel_analyser_lifecycle.contract.json",
-          "sha256": "abecd30226e61a7b1689452b2829a188d38ee386a6c827087f4a4027eaaf1beb"
+          "sha256": "205640ad74c31b3b37d7740a3b9fa0283ee751d2a90ba032bfef3bbd20df8ac4"
         },
         {
           "path": "tests/easyexcel-test/tests/public_api_excel_analyser_evidence_tests.rs",
-          "sha256": "5f4d7e2051a4e76cb2e05bbcb4a166299ba447ed46336cfb2fb49d5fab2127fd"
+          "sha256": "d12ce5104da16856bb1cb1ee815687188c4f9654e7348dda7caf85bba02bbf32"
         }
       ]
     }

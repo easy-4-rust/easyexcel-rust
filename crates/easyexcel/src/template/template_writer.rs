@@ -37,6 +37,8 @@ pub struct ExcelTemplateWriter<'a> {
     pub(crate) finished: bool,
     pub(crate) auto_close_stream: bool,
     pub(crate) collection_column_styles: BTreeMap<usize, u32>,
+    /// Stateful BIFF8 backend when the template is an OLE `.xls` workbook.
+    pub(crate) xls: Option<crate::write::xls_adapter::Biff8TemplatePackage>,
 }
 
 impl std::fmt::Debug for ExcelTemplateWriter<'_> {
@@ -53,6 +55,7 @@ impl std::fmt::Debug for ExcelTemplateWriter<'_> {
             .field("sheets", &self.sheets)
             .field("finished", &self.finished)
             .field("auto_close_stream", &self.auto_close_stream)
+            .field("xls", &self.xls.is_some())
             .finish()
     }
 }
@@ -65,10 +68,7 @@ impl ExcelTemplateWriter<'static> {
     /// Returns an I/O or OOXML package error when the template cannot be read.
     /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub fn new(template: impl AsRef<Path>, output: impl Into<PathBuf>) -> Result<Self> {
-        Ok(Self::from_entries(
-            TemplateOutput::Path(output.into()),
-            load_entries(template.as_ref())?,
-        ))
+        Self::from_template_path(TemplateOutput::Path(output.into()), template.as_ref())
     }
 
     /// Loads a template from a Java-style input stream and writes to a path.
@@ -81,14 +81,13 @@ impl ExcelTemplateWriter<'static> {
     ///
     /// Returns an I/O or OOXML package error when the template cannot be read.
     /// 对应 Java：com.alibaba.excel.ExcelWriter。
-    pub fn from_reader<R>(template: R, output: impl Into<PathBuf>) -> Result<Self>
+    pub fn from_reader<R>(mut template: R, output: impl Into<PathBuf>) -> Result<Self>
     where
         R: Read,
     {
-        Ok(Self::from_entries(
-            TemplateOutput::Path(output.into()),
-            load_entries_from_reader(Box::new(template))?,
-        ))
+        let mut bytes = Vec::new();
+        template.read_to_end(&mut bytes)?;
+        Self::from_template_bytes(TemplateOutput::Path(output.into()), &bytes)
     }
 }
 
@@ -102,6 +101,49 @@ impl<'a> ExcelTemplateWriter<'a> {
             finished: false,
             auto_close_stream: true,
             collection_column_styles: BTreeMap::new(),
+            xls: None,
+        }
+    }
+
+    fn from_xls(
+        output: TemplateOutput<'a>,
+        xls: crate::write::xls_adapter::Biff8TemplatePackage,
+    ) -> Self {
+        Self {
+            output,
+            entries: Vec::new(),
+            sheets: Vec::new(),
+            next_collection_order: 0,
+            finished: false,
+            auto_close_stream: true,
+            collection_column_styles: BTreeMap::new(),
+            xls: Some(xls),
+        }
+    }
+
+    fn from_template_path(output: TemplateOutput<'a>, template: &Path) -> Result<Self> {
+        if easyexcel_io::Format::detect_path(template)? == easyexcel_io::Format::Xls {
+            return Ok(Self::from_xls(
+                output,
+                crate::write::xls_adapter::Biff8TemplatePackage::from_path(template)?,
+            ));
+        }
+        Ok(Self::from_entries(output, load_entries(template)?))
+    }
+
+    fn from_template_bytes(output: TemplateOutput<'a>, bytes: &[u8]) -> Result<Self> {
+        match easyexcel_io::Format::from_magic(bytes) {
+            easyexcel_io::Format::Xls => Ok(Self::from_xls(
+                output,
+                crate::write::xls_adapter::Biff8TemplatePackage::from_bytes(bytes)?,
+            )),
+            easyexcel_io::Format::Xlsx => Ok(Self::from_entries(
+                output,
+                load_entries_from_reader(Box::new(std::io::Cursor::new(bytes.to_vec())))?,
+            )),
+            _ => Err(ExcelError::Unsupported(
+                "template must be an XLSX or BIFF8 XLS workbook".to_owned(),
+            )),
         }
     }
 
@@ -118,10 +160,7 @@ impl<'a> ExcelTemplateWriter<'a> {
     where
         W: Write,
     {
-        Ok(Self::from_entries(
-            TemplateOutput::Borrowed(output),
-            load_entries(template.as_ref())?,
-        ))
+        Self::from_template_path(TemplateOutput::Borrowed(output), template.as_ref())
     }
 
     /// Loads a stream template and writes to a caller-owned output stream.
@@ -130,15 +169,14 @@ impl<'a> ExcelTemplateWriter<'a> {
     ///
     /// Returns an I/O or OOXML package error when the template cannot be read.
     /// 对应 Java：com.alibaba.excel.ExcelWriter。
-    pub fn from_reader_to_writer<R, W>(template: R, output: &'a mut W) -> Result<Self>
+    pub fn from_reader_to_writer<R, W>(mut template: R, output: &'a mut W) -> Result<Self>
     where
         R: Read,
         W: Write,
     {
-        Ok(Self::from_entries(
-            TemplateOutput::Borrowed(output),
-            load_entries_from_reader(Box::new(template))?,
-        ))
+        let mut bytes = Vec::new();
+        template.read_to_end(&mut bytes)?;
+        Self::from_template_bytes(TemplateOutput::Borrowed(output), &bytes)
     }
 
     /// Loads a path template and writes to an explicitly closeable stream.
@@ -157,10 +195,7 @@ impl<'a> ExcelTemplateWriter<'a> {
     where
         W: Write + 'a,
     {
-        Ok(Self::from_entries(
-            TemplateOutput::Owned(Box::new(output)),
-            load_entries(template.as_ref())?,
-        ))
+        Self::from_template_path(TemplateOutput::Owned(Box::new(output)), template.as_ref())
     }
 
     /// Loads a stream template and writes to an explicitly closeable stream.
@@ -170,17 +205,16 @@ impl<'a> ExcelTemplateWriter<'a> {
     /// Returns an I/O or OOXML package error when the template cannot be read.
     /// 对应 Java：com.alibaba.excel.ExcelWriter。
     pub fn from_reader_to_output_stream<R, W>(
-        template: R,
+        mut template: R,
         output: ExcelOutputStream<W>,
     ) -> Result<Self>
     where
         R: Read,
         W: Write + 'a,
     {
-        Ok(Self::from_entries(
-            TemplateOutput::Owned(Box::new(output)),
-            load_entries_from_reader(Box::new(template))?,
-        ))
+        let mut bytes = Vec::new();
+        template.read_to_end(&mut bytes)?;
+        Self::from_template_bytes(TemplateOutput::Owned(Box::new(output)), &bytes)
     }
 
     /// Controls whether an owned output stream is closed by [`Self::finish`].
@@ -219,6 +253,15 @@ impl<'a> ExcelTemplateWriter<'a> {
         data: &TemplateData,
     ) -> Result<&mut Self> {
         self.ensure_open()?;
+        if self.xls.is_some() {
+            let sheet_name = self.resolve_xls_sheet_name(sheet)?;
+            let values = template_text_values(data);
+            self.xls
+                .as_mut()
+                .expect("XLS backend checked")
+                .replace_scalar_placeholders_on_sheet(Some(&sheet_name), &values)?;
+            return Ok(self);
+        }
         self.sheet_state_mut(sheet)
             .scalar
             .values
@@ -256,6 +299,26 @@ impl<'a> ExcelTemplateWriter<'a> {
         if data.rows().is_empty() {
             return Ok(self);
         }
+        if self.xls.is_some() {
+            let sheet_name = self.resolve_xls_sheet_name(sheet)?;
+            let rows = data
+                .rows()
+                .iter()
+                .map(template_text_values)
+                .collect::<Vec<_>>();
+            self.xls
+                .as_mut()
+                .expect("XLS backend checked")
+                .fill_collection_placeholders(
+                    Some(&sheet_name),
+                    data.name(),
+                    &rows,
+                    matches!(config.get_direction(), FillDirection::Horizontal),
+                    config.get_force_new_row(),
+                    config.get_auto_style(),
+                )?;
+            return Ok(self);
+        }
         let order = self.next_collection_order;
         self.next_collection_order = self.next_collection_order.saturating_add(1);
         let column_styles = self.collection_column_styles.clone();
@@ -275,6 +338,9 @@ impl<'a> ExcelTemplateWriter<'a> {
         compiled_xlsx: &[u8],
         columns: &[usize],
     ) -> Result<()> {
+        if self.xls.is_some() {
+            return Ok(());
+        }
         if columns.is_empty() {
             return Ok(());
         }
@@ -325,6 +391,18 @@ impl<'a> ExcelTemplateWriter<'a> {
         rows: impl IntoIterator<Item = Vec<CellValue>>,
     ) -> Result<&mut Self> {
         self.ensure_open()?;
+        if self.xls.is_some() {
+            let sheet_name = self.resolve_xls_sheet_name(sheet)?;
+            let rows = rows
+                .into_iter()
+                .map(|row| row.into_iter().enumerate().collect::<Vec<_>>())
+                .collect::<Vec<_>>();
+            self.xls
+                .as_mut()
+                .expect("XLS backend checked")
+                .append_rows(&sheet_name, &rows)?;
+            return Ok(self);
+        }
         self.sheet_state_mut(sheet).appended_rows.extend(rows);
         Ok(self)
     }
@@ -344,6 +422,30 @@ impl<'a> ExcelTemplateWriter<'a> {
         range: MergeRange,
     ) -> Result<&mut Self> {
         self.ensure_open()?;
+        if self.xls.is_some() {
+            let sheet_name = self.resolve_xls_sheet_name(sheet)?;
+            self.xls
+                .as_mut()
+                .expect("XLS backend checked")
+                .add_merge_range(
+                    &sheet_name,
+                    crate::write::xls_adapter::Biff8Merge {
+                        first_row: u16::try_from(range.first_row).map_err(|_| {
+                            ExcelError::Format("BIFF8 supports at most 65536 rows".to_owned())
+                        })?,
+                        last_row: u16::try_from(range.last_row).map_err(|_| {
+                            ExcelError::Format("BIFF8 supports at most 65536 rows".to_owned())
+                        })?,
+                        first_col: u8::try_from(range.first_column).map_err(|_| {
+                            ExcelError::Format("BIFF8 supports at most 256 columns".to_owned())
+                        })?,
+                        last_col: u8::try_from(range.last_column).map_err(|_| {
+                            ExcelError::Format("BIFF8 supports at most 256 columns".to_owned())
+                        })?,
+                    },
+                )?;
+            return Ok(self);
+        }
         let entries = std::mem::take(&mut self.entries);
         let package = easyexcel_xlsx::OoxmlPackage::from_entries(entries);
         let mut package = easyexcel_xlsx::OoxmlTemplatePackage::from_package(package);
@@ -382,6 +484,15 @@ impl<'a> ExcelTemplateWriter<'a> {
     pub fn finish(&mut self) -> Result<()> {
         if self.finished {
             return Ok(());
+        }
+        if let Some(xls) = self.xls.as_ref() {
+            let bytes = xls.to_bytes()?;
+            self.finished = true;
+            return write_template_bytes_to_output(
+                &mut self.output,
+                &bytes,
+                self.auto_close_stream,
+            );
         }
         for sheet in self.resolved_sheet_fills()? {
             replace_collection_fills_in_sheet(
@@ -423,6 +534,20 @@ impl<'a> ExcelTemplateWriter<'a> {
         }
         self.sheets.push(PendingSheetFill::new(sheet.clone()));
         self.sheets.last_mut().expect("sheet state was just pushed")
+    }
+
+    fn resolve_xls_sheet_name(&self, sheet: &TemplateSheet) -> Result<String> {
+        let names = self
+            .xls
+            .as_ref()
+            .ok_or_else(|| ExcelError::Format("template writer has no XLS backend".to_owned()))?
+            .sheet_names();
+        match sheet {
+            TemplateSheet::First => names.first().cloned(),
+            TemplateSheet::Index(index) => names.get(*index).cloned(),
+            TemplateSheet::Name(name) => names.iter().find(|candidate| *candidate == name).cloned(),
+        }
+        .ok_or_else(|| ExcelError::SheetNotFound(format!("template sheet {sheet:?}")))
     }
 
     /// 对应 Java：com.alibaba.excel.ExcelWriter。
@@ -561,13 +686,11 @@ fn template_text_values(data: &TemplateData) -> BTreeMap<String, String> {
 
 /// 对应 Java：com.alibaba.excel.ExcelWriter。
 pub(crate) fn load_entries(path: &Path) -> Result<Vec<TemplateEntry>> {
-    // Scalar `.xls` fill is handled by [`fill_xlsx_template`] before ZIP load.
-    // Stateful ExcelTemplateWriter / collection fill stay OOXML-only.
+    // 这是 OOXML entry 级内部入口；公共 ExcelTemplateWriter 会在此之前
+    // 选择 BIFF8 backend，因此不能把 XLS 能力误报为“尚未实现”。
     if easyexcel_io::Format::from_path(path) == Some(easyexcel_io::Format::Xls) {
-        return Err(ExcelError::Unsupported(
-            // Java: ExcelWriter.fill on HSSFWorkbook. Rust fill is OOXML-only;
-            // use with_template + doWrite (Biff8TemplatePackage) for .xls cells.
-            "legacy XLS template fill is not supported".to_owned(),
+        return Err(ExcelError::Format(
+            "BIFF8 templates must be opened through ExcelTemplateWriter".to_owned(),
         ));
     }
     Ok(easyexcel_xlsx::OoxmlPackage::from_path(path)?.into_entries())
@@ -588,6 +711,33 @@ pub(crate) use easyexcel_xlsx::{normalize_workbook_target, workbook_sheets, xml_
 /// 对应 Java：com.alibaba.excel.ExcelWriter。
 pub(crate) fn write_entries(path: &Path, entries: &[TemplateEntry]) -> Result<()> {
     Ok(easyexcel_xlsx::OoxmlPackage::from_entries(entries.to_vec()).save_to_path(path)?)
+}
+
+fn write_template_bytes_to_output(
+    output: &mut TemplateOutput<'_>,
+    bytes: &[u8],
+    auto_close_stream: bool,
+) -> Result<()> {
+    match output {
+        TemplateOutput::Path(path) => {
+            if let Some(parent) = path.parent()
+                && !parent.as_os_str().is_empty()
+            {
+                std::fs::create_dir_all(parent)?;
+            }
+            std::fs::write(path, bytes).map_err(ExcelError::from)
+        }
+        TemplateOutput::Borrowed(writer) => {
+            easyexcel_io::write_all_and_flush(*writer, bytes).map_err(ExcelError::from)
+        }
+        TemplateOutput::Owned(writer) => {
+            easyexcel_io::write_all_and_flush(writer.as_mut(), bytes).map_err(ExcelError::from)?;
+            if auto_close_stream {
+                writer.close().map_err(ExcelError::from)?;
+            }
+            Ok(())
+        }
+    }
 }
 
 /// 对应 Java：com.alibaba.excel.ExcelWriter。

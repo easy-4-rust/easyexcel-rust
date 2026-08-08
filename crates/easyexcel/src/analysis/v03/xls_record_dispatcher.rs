@@ -14,7 +14,7 @@ use super::handlers::bool_err_record_handler::{BOOL_ERR_SID, BoolCell, BoolErrRe
 use super::handlers::bound_sheet_record_handler::{
     BOUND_SHEET_SID, BoundSheetEntry, BoundSheetRecordHandler,
 };
-use super::handlers::dummy_record_handler::DummyRecordHandler;
+use super::handlers::dummy_record_handler::{DummyRecordEvent, DummyRecordHandler};
 use super::handlers::eof_record_handler::{EOF_SID, EofRecordHandler};
 use super::handlers::formula_record_handler::{FORMULA_SID, FormulaCell, FormulaRecordHandler};
 use super::handlers::hyperlink_record_handler::HyperlinkRecordHandler;
@@ -99,7 +99,9 @@ impl XlsRecordDispatcher {
             rk: RkRecordHandler::new(),
             sst: SstRecordHandler::new(),
             string: StringRecordHandler::new(),
-            text_object: TextObjectRecordHandler::new(),
+            text_object: TextObjectRecordHandler::new_with_enabled(
+                options.extra_read.contains(&CellExtraType::Comment),
+            ),
             sheet_selector: options.sheet.clone(),
             next_sheet_index: 0,
             ignore_record: false,
@@ -113,6 +115,7 @@ impl XlsRecordDispatcher {
         let hyperlink_enabled = self.hyperlink.enabled;
         let merge_enabled = self.merge_cells.enabled;
         let note_enabled = self.note.enabled;
+        let text_object_enabled = self.text_object.support();
         let sheet_selector = self.sheet_selector.clone();
         let auto_trim = self.auto_trim;
         *self = Self {
@@ -135,7 +138,7 @@ impl XlsRecordDispatcher {
             rk: RkRecordHandler::new(),
             sst: SstRecordHandler::new(),
             string: StringRecordHandler::new(),
-            text_object: TextObjectRecordHandler::new(),
+            text_object: TextObjectRecordHandler::new_with_enabled(text_object_enabled),
             sheet_selector,
             next_sheet_index: 0,
             ignore_record: false,
@@ -208,7 +211,10 @@ impl XlsRecordDispatcher {
                 self.bound_sheet.process_record(record_sid, data);
                 self.state.bound_sheets = self.bound_sheet.ordered_sheets();
             }
-            DUMMY_RECORD_SID => self.dummy.process_record(record_sid, data),
+            DUMMY_RECORD_SID => {
+                self.dummy.process_record(record_sid, data);
+                self.state.last_dummy_event = self.dummy.take_event();
+            }
             EOF_SID => {
                 self.state.eof_count += 1;
                 self.eof.process_record(record_sid, data);
@@ -216,6 +222,9 @@ impl XlsRecordDispatcher {
             FORMULA_SID => {
                 self.formula.process_record(record_sid, data);
                 self.state.last_formula_cell = self.formula.last_cell.clone();
+                if let Some(cell) = self.formula.last_cell.as_ref() {
+                    self.dummy.observe_cell(cell.column);
+                }
             }
             HYPERLINK_SID => {
                 if !self.hyperlink.support() {
@@ -237,10 +246,14 @@ impl XlsRecordDispatcher {
                 self.label
                     .process_record_with_auto_trim(record_sid, data, self.auto_trim);
                 self.state.last_label_cell = self.label.last_cell.clone();
+                if let Some(cell) = self.label.last_cell.as_ref() {
+                    self.dummy.observe_cell(cell.column);
+                }
             }
             LABEL_SST_SID => {
                 self.label_sst.process_record(record_sid, data);
                 if let Some(reference) = self.label_sst.last_reference {
+                    self.dummy.observe_cell(reference.column);
                     let cell = LabelSstRecordHandler::process_label_sst(
                         reference.row,
                         reference.column,
@@ -304,6 +317,10 @@ impl XlsRecordDispatcher {
                 self.try_finalize_continuable_record(false)?;
             }
             TEXT_OBJECT_SID => {
+                if !self.text_object.support() {
+                    self.state.skipped_record_count += 1;
+                    return Ok(());
+                }
                 if let Some(object_id) = self.obj.temp_object_index.take() {
                     self.text_object.begin_text_object(object_id, data);
                 } else {
@@ -331,21 +348,33 @@ impl XlsRecordDispatcher {
     fn dispatch_blank(&mut self, record_sid: u16, data: &[u8]) {
         self.blank.process_record(record_sid, data);
         self.state.last_blank_cell = self.blank.last_cell;
+        if let Some(cell) = self.blank.last_cell {
+            self.dummy.observe_cell(cell.column);
+        }
     }
 
     fn dispatch_bool(&mut self, record_sid: u16, data: &[u8]) {
         self.bool_err.process_record(record_sid, data);
         self.state.last_boolean_cell = self.bool_err.last_cell;
+        if let Some(cell) = self.bool_err.last_cell {
+            self.dummy.observe_cell(cell.column);
+        }
     }
 
     fn dispatch_number(&mut self, record_sid: u16, data: &[u8]) {
         self.number.process_record(record_sid, data);
         self.state.last_number_cell = self.number.last_cell.clone();
+        if let Some(cell) = self.number.last_cell.as_ref() {
+            self.dummy.observe_cell(cell.column);
+        }
     }
 
     fn dispatch_rk(&mut self, record_sid: u16, data: &[u8]) {
         self.rk.process_record(record_sid, data);
         self.state.last_rk_cell = self.rk.last_cell;
+        if let Some(cell) = self.rk.last_cell {
+            self.dummy.observe_cell(cell.column);
+        }
     }
 
     fn should_read_sheet(&self, index: usize) -> bool {

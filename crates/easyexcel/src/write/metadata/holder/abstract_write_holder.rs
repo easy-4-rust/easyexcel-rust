@@ -9,8 +9,13 @@ use crate::core::ExcelFontStyle;
 use crate::core::ExcelWriteMetadata;
 
 use crate::core::ExcelWriteHeadProperty;
+use crate::metadata::AbstractHolder;
 use crate::write::WriteHolder;
 use crate::write::metadata::WriteBasicParameter;
+use crate::write::handler::chain::cell_handler_execution_chain::CellHandlerExecutionChain;
+use crate::write::handler::chain::row_handler_execution_chain::RowHandlerExecutionChain;
+use crate::write::handler::chain::sheet_handler_execution_chain::SheetHandlerExecutionChain;
+use crate::write::handler::chain::workbook_handler_execution_chain::WorkbookHandlerExecutionChain;
 
 /// 对应 Java：com.alibaba.excel.write.metadata.holder.AbstractWriteHolder。 对应 Java：`AbstractWriteHolder extends AbstractHolder implements WriteHolder`.
 ///
@@ -21,9 +26,23 @@ use crate::write::metadata::WriteBasicParameter;
 // 语义敏感：needHead/useDefaultStyle/automaticMergeHead 等布尔字段与 Java
 // `AbstractWriteHolder` 一一对应，合并会破坏 1:1 可追溯性。
 #[allow(clippy::struct_excessive_bools)]
-#[derive(Debug, Clone)]
 /// 对应 Java：com.alibaba.excel.write.metadata.holder.AbstractWriteHolder。
 pub struct AbstractWriteHolder {
+    abstract_holder: AbstractHolder,
+    /// Java 继承后的 workbook handler 链。
+    pub workbook_handler_execution_chain: WorkbookHandlerExecutionChain,
+    /// Java 当前 Holder 自有 workbook handler 链。
+    pub own_workbook_handler_execution_chain: WorkbookHandlerExecutionChain,
+    /// Java 继承后的 sheet handler 链。
+    pub sheet_handler_execution_chain: SheetHandlerExecutionChain,
+    /// Java 当前 Holder 自有 sheet handler 链。
+    pub own_sheet_handler_execution_chain: SheetHandlerExecutionChain,
+    /// Java row handler 链。
+    pub row_handler_execution_chain: RowHandlerExecutionChain,
+    /// Java cell handler 链。
+    pub cell_handler_execution_chain: CellHandlerExecutionChain,
+    /// Java Holder 原始 handler 注册表。
+    pub write_handler_list: Vec<Box<dyn crate::WriteHandler>>,
     /// Mirrors `AbstractWriteHolder.needHead`.
     pub need_head: bool,
     /// Mirrors `AbstractWriteHolder.relativeHeadRowIndex`.
@@ -59,6 +78,14 @@ pub struct AbstractWriteHolder {
 impl Default for AbstractWriteHolder {
     fn default() -> Self {
         Self {
+            abstract_holder: AbstractHolder::default(),
+            workbook_handler_execution_chain: WorkbookHandlerExecutionChain::new(),
+            own_workbook_handler_execution_chain: WorkbookHandlerExecutionChain::new(),
+            sheet_handler_execution_chain: SheetHandlerExecutionChain::new(),
+            own_sheet_handler_execution_chain: SheetHandlerExecutionChain::new(),
+            row_handler_execution_chain: RowHandlerExecutionChain::new(),
+            cell_handler_execution_chain: CellHandlerExecutionChain::new(),
+            write_handler_list: Vec::new(),
             need_head: true,
             relative_head_row_index: 0,
             use_default_style: true,
@@ -79,6 +106,141 @@ impl Default for AbstractWriteHolder {
 }
 
 impl AbstractWriteHolder {
+    /// 返回 Java 父类 Holder。
+    #[must_use] pub const fn abstract_holder(&self) -> &AbstractHolder { &self.abstract_holder }
+    /// 返回可变 Java 父类 Holder。
+    pub const fn abstract_holder_mut(&mut self) -> &mut AbstractHolder { &mut self.abstract_holder }
+    /// 返回是否写表头。
+    #[must_use]
+    pub const fn get_need_head(&self) -> bool { self.need_head }
+    /// 设置是否写表头。
+    pub const fn set_need_head(&mut self, value: bool) { self.need_head = value; }
+    /// 返回表头相对起始行。
+    #[must_use]
+    pub const fn get_relative_head_row_index(&self) -> i32 { self.relative_head_row_index }
+    /// 设置表头相对起始行。
+    pub const fn set_relative_head_row_index(&mut self, value: i32) { self.relative_head_row_index = value; }
+    /// 返回解析后的写表头属性。
+    #[must_use]
+    pub const fn get_excel_write_head_property(&self) -> &ExcelWriteHeadProperty { &self.excel_write_head_property }
+    /// 返回是否使用默认样式。
+    #[must_use]
+    pub const fn get_use_default_style(&self) -> bool { self.use_default_style }
+    /// 设置是否使用默认样式。
+    pub const fn set_use_default_style(&mut self, value: bool) { self.use_default_style = value; }
+    /// 返回是否自动合并表头。
+    #[must_use]
+    pub const fn get_automatic_merge_head(&self) -> bool { self.automatic_merge_head }
+    /// 设置是否自动合并表头。
+    pub const fn set_automatic_merge_head(&mut self, value: bool) { self.automatic_merge_head = value; }
+    /// 返回排除列索引。
+    #[must_use]
+    pub const fn get_exclude_column_indexes(&self) -> Option<&HashSet<usize>> { self.exclude_column_indexes.as_ref() }
+    /// 设置排除列索引；`None` 保留 Java null 语义。
+    pub fn set_exclude_column_indexes(&mut self, value: Option<HashSet<usize>>) { self.exclude_column_indexes = value; }
+    /// 返回排除字段名。
+    #[must_use]
+    pub const fn get_exclude_column_field_names(&self) -> Option<&HashSet<String>> { self.exclude_column_field_names.as_ref() }
+    /// 设置排除字段名。
+    pub fn set_exclude_column_field_names(&mut self, value: Option<HashSet<String>>) { self.exclude_column_field_names = value; }
+    /// 返回包含列索引。
+    #[must_use]
+    pub const fn get_include_column_indexes(&self) -> Option<&HashSet<usize>> { self.include_column_indexes.as_ref() }
+    /// 设置包含列索引。
+    pub fn set_include_column_indexes(&mut self, value: Option<HashSet<usize>>) { self.include_column_indexes = value; }
+    /// 返回包含字段名。
+    #[must_use]
+    pub const fn get_include_column_field_names(&self) -> Option<&HashSet<String>> { self.include_column_field_names.as_ref() }
+    /// 设置包含字段名。
+    pub fn set_include_column_field_names(&mut self, value: Option<HashSet<String>>) { self.include_column_field_names = value; }
+    /// 返回是否按 include 顺序输出。
+    #[must_use]
+    pub const fn get_order_by_include_column(&self) -> bool { self.order_by_include_column }
+    /// 设置是否按 include 顺序输出。
+    pub const fn set_order_by_include_column(&mut self, value: bool) { self.order_by_include_column = value; }
+    /// 替换 converter 注册表。
+    pub fn set_converter_map(&mut self, value: ConverterRegistry) { self.converter_map = value; }
+    /// Java `getHeadStyle`。
+    #[must_use] pub const fn get_head_style(&self) -> Option<ExcelCellStyle> { self.head_style }
+    /// Java `setHeadStyle`。
+    pub const fn set_head_style(&mut self, value: Option<ExcelCellStyle>) { self.head_style = value; }
+    /// Java `getContentStyle`。
+    #[must_use] pub const fn get_content_style(&self) -> Option<ExcelCellStyle> { self.content_style }
+    /// Java `setContentStyle`。
+    pub const fn set_content_style(&mut self, value: Option<ExcelCellStyle>) { self.content_style = value; }
+    /// Java `getHeadFontStyle`。
+    #[must_use] pub const fn get_head_font_style(&self) -> Option<ExcelFontStyle> { self.head_font_style }
+    /// Java `setHeadFontStyle`。
+    pub const fn set_head_font_style(&mut self, value: Option<ExcelFontStyle>) { self.head_font_style = value; }
+    /// Java `getContentFontStyle`。
+    #[must_use] pub const fn get_content_font_style(&self) -> Option<ExcelFontStyle> { self.content_font_style }
+    /// Java `setContentFontStyle`。
+    pub const fn set_content_font_style(&mut self, value: Option<ExcelFontStyle>) { self.content_font_style = value; }
+
+    /// Java `getWorkbookHandlerExecutionChain`。
+    #[must_use]
+    pub const fn get_workbook_handler_execution_chain(&self) -> &WorkbookHandlerExecutionChain {
+        &self.workbook_handler_execution_chain
+    }
+    /// Java `setWorkbookHandlerExecutionChain`。
+    pub fn set_workbook_handler_execution_chain(&mut self, value: WorkbookHandlerExecutionChain) {
+        self.workbook_handler_execution_chain = value;
+    }
+    /// Java `getOwnWorkbookHandlerExecutionChain`。
+    #[must_use]
+    pub const fn get_own_workbook_handler_execution_chain(&self) -> &WorkbookHandlerExecutionChain {
+        &self.own_workbook_handler_execution_chain
+    }
+    /// Java `setOwnWorkbookHandlerExecutionChain`。
+    pub fn set_own_workbook_handler_execution_chain(&mut self, value: WorkbookHandlerExecutionChain) {
+        self.own_workbook_handler_execution_chain = value;
+    }
+    /// Java `getSheetHandlerExecutionChain`。
+    #[must_use]
+    pub const fn get_sheet_handler_execution_chain(&self) -> &SheetHandlerExecutionChain {
+        &self.sheet_handler_execution_chain
+    }
+    /// Java `setSheetHandlerExecutionChain`。
+    pub fn set_sheet_handler_execution_chain(&mut self, value: SheetHandlerExecutionChain) {
+        self.sheet_handler_execution_chain = value;
+    }
+    /// Java `getOwnSheetHandlerExecutionChain`。
+    #[must_use]
+    pub const fn get_own_sheet_handler_execution_chain(&self) -> &SheetHandlerExecutionChain {
+        &self.own_sheet_handler_execution_chain
+    }
+    /// Java `setOwnSheetHandlerExecutionChain`。
+    pub fn set_own_sheet_handler_execution_chain(&mut self, value: SheetHandlerExecutionChain) {
+        self.own_sheet_handler_execution_chain = value;
+    }
+    /// Java `getRowHandlerExecutionChain`。
+    #[must_use]
+    pub const fn get_row_handler_execution_chain(&self) -> &RowHandlerExecutionChain {
+        &self.row_handler_execution_chain
+    }
+    /// Java `setRowHandlerExecutionChain`。
+    pub fn set_row_handler_execution_chain(&mut self, value: RowHandlerExecutionChain) {
+        self.row_handler_execution_chain = value;
+    }
+    /// Java `getCellHandlerExecutionChain`。
+    #[must_use]
+    pub const fn get_cell_handler_execution_chain(&self) -> &CellHandlerExecutionChain {
+        &self.cell_handler_execution_chain
+    }
+    /// Java `setCellHandlerExecutionChain`。
+    pub fn set_cell_handler_execution_chain(&mut self, value: CellHandlerExecutionChain) {
+        self.cell_handler_execution_chain = value;
+    }
+    /// Java `getWriteHandlerList`。
+    #[must_use]
+    pub fn get_write_handler_list(&self) -> &[Box<dyn crate::WriteHandler>] {
+        &self.write_handler_list
+    }
+    /// Java `setWriteHandlerList`。
+    pub fn set_write_handler_list(&mut self, value: Vec<Box<dyn crate::WriteHandler>>) {
+        self.write_handler_list = value;
+    }
+
     /// 对应 Java：com.alibaba.excel.write.metadata.holder.AbstractWriteHolder。 Resolves Java nullable write parameters against an optional parent.
     ///
     /// A missing collection inherits the parent collection, while an explicit
@@ -91,6 +253,18 @@ impl AbstractWriteHolder {
     ) -> Self {
         let defaults = Self::default();
         Self {
+            abstract_holder: AbstractHolder::from_parameter(
+                &parameter.basic_parameter,
+                parent.map(|holder| &holder.abstract_holder),
+                parent.map_or(crate::HolderEnum::Workbook, |holder| holder.abstract_holder.holder_type),
+            ),
+            workbook_handler_execution_chain: WorkbookHandlerExecutionChain::new(),
+            own_workbook_handler_execution_chain: WorkbookHandlerExecutionChain::new(),
+            sheet_handler_execution_chain: SheetHandlerExecutionChain::new(),
+            own_sheet_handler_execution_chain: SheetHandlerExecutionChain::new(),
+            row_handler_execution_chain: RowHandlerExecutionChain::new(),
+            cell_handler_execution_chain: CellHandlerExecutionChain::new(),
+            write_handler_list: Vec::new(),
             need_head: parameter
                 .need_head
                 .or_else(|| parent.map(|holder| holder.need_head))
@@ -167,6 +341,58 @@ impl AbstractWriteHolder {
         self.excel_write_head_property =
             ExcelWriteHeadProperty::from_head(None, head_clazz, head, metadata);
     }
+
+    /// Java `needHead()`。
+    #[must_use]
+    pub const fn need_head(&self) -> bool { self.need_head }
+    /// Java `relativeHeadRowIndex()`。
+    #[must_use]
+    pub const fn relative_head_row_index(&self) -> i32 { self.relative_head_row_index }
+    /// Java `automaticMergeHead()`。
+    #[must_use]
+    pub const fn automatic_merge_head(&self) -> bool { self.automatic_merge_head }
+    /// Java `orderByIncludeColumn()`。
+    #[must_use]
+    pub const fn order_by_include_column(&self) -> bool { self.order_by_include_column }
+    /// Java `ignore(String, Integer)`。
+    #[must_use]
+    pub fn ignore(&self, field_name: Option<&str>, column_index: Option<usize>) -> bool {
+        WriteHolder::ignore(self, field_name, column_index)
+    }
+    /// Java `excelWriteHeadProperty()`。
+    #[must_use]
+    pub const fn excel_write_head_property(&self) -> &ExcelWriteHeadProperty {
+        &self.excel_write_head_property
+    }
+    /// Java `includeColumnIndexes()`。
+    #[must_use]
+    pub const fn include_column_indexes(&self) -> Option<&HashSet<usize>> {
+        self.include_column_indexes.as_ref()
+    }
+    /// Java `includeColumnFieldNames()`。
+    #[must_use]
+    pub const fn include_column_field_names(&self) -> Option<&HashSet<String>> {
+        self.include_column_field_names.as_ref()
+    }
+    /// Java `excludeColumnIndexes()`。
+    #[must_use]
+    pub const fn exclude_column_indexes(&self) -> Option<&HashSet<usize>> {
+        self.exclude_column_indexes.as_ref()
+    }
+    /// Java `excludeColumnFieldNames()`。
+    #[must_use]
+    pub const fn exclude_column_field_names(&self) -> Option<&HashSet<String>> {
+        self.exclude_column_field_names.as_ref()
+    }
+}
+
+impl std::ops::Deref for AbstractWriteHolder {
+    type Target = AbstractHolder;
+    fn deref(&self) -> &Self::Target { &self.abstract_holder }
+}
+
+impl std::ops::DerefMut for AbstractWriteHolder {
+    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.abstract_holder }
 }
 
 impl WriteHolder for AbstractWriteHolder {

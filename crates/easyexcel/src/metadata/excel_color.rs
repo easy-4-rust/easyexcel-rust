@@ -6,7 +6,7 @@
 /// Java uses POI `IndexedColors` short codes; Rust encodes both forms into a
 /// single `ExcelColor` enum and offers `java_or_rgb` to apply the historical
 /// rule "`<= 64` is a palette index".
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 /// 对应 Java：com.alibaba.excel.enums.poi.IndexedColors。
 pub enum ExcelColor {
     /// A Java `EasyExcel` / Apache POI indexed palette color. (Java `IndexedColors.shortValue`)

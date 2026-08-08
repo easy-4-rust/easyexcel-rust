@@ -10,6 +10,7 @@ pub(crate) fn write_xlsx_onto_template_package<T, I>(
     options: &WriteOptions,
     rows: I,
     handlers: &mut [Box<dyn WriteHandler>],
+    workbook_context: &WriteWorkbookContext,
 ) -> Result<()>
 where
     T: ExcelRow,
@@ -26,6 +27,8 @@ where
     if options.use_legacy_template_seed {
         let mut workbook = easyexcel_xlsx::xlsx::generation::new_workbook();
         write_sheet_onto_template::<T, I>(&mut workbook, options, rows, handlers)?;
+        after_workbook(handlers, workbook_context)?;
+        apply_xlsx_mutations(&mut workbook, workbook_context.mutation_plan())?;
         return match output {
             Some(writer) => {
                 save_workbook_to_writer(&mut workbook, writer, options.password.as_deref())
@@ -61,11 +64,12 @@ where
         append_rows.len(),
         &absent_rows,
     )?;
-    let holder_scope = HandlerHolderScope::new_resolved::<T>(
+    let holder_scope = HandlerHolderScope::new_resolved_with_plan::<T>(
         path,
         i32::try_from(target_index).unwrap_or(i32::MAX),
         None,
         &write_options,
+        workbook_context.mutation_plan().clone(),
     )?;
     let sheet_context = holder_scope.sheet(WriteSheetContext::new(&target_name));
     before_sheet(handlers, &sheet_context)?;
@@ -109,6 +113,8 @@ where
         &absent_rows,
     )?;
     after_sheet(handlers, &sheet_context)?;
+    after_workbook(handlers, workbook_context)?;
+    apply_xlsx_template_mutations(&mut package, workbook_context.mutation_plan())?;
     save_template_package(&package, path, output, options.password.as_deref())
 }
 

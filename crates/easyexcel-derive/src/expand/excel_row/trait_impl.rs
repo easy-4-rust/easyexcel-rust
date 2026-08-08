@@ -103,6 +103,21 @@ pub(super) fn render_trait_impl(
             fn to_excel_write_row_selected(&self, converters: &#crate_path::ConverterRegistry, selected_schema_indexes: ::core::option::Option<&[usize]>) -> #crate_path::Result<(::std::vec::Vec<#crate_path::CellValue>, ::std::vec::Vec<#crate_path::WriteCellData>)> {
                 Ok((::std::vec![#(#selected_original_writers),*], ::std::vec![#(#selected_registered_write_cell_data),*]))
             }
+            fn write_excel_row_into(
+                &self,
+                converters: &#crate_path::ConverterRegistry,
+                selected_schema_indexes: ::core::option::Option<&[usize]>,
+                original_cells: &mut ::std::vec::Vec<#crate_path::CellValue>,
+                converted_cells: &mut ::std::vec::Vec<#crate_path::WriteCellData>,
+            ) -> #crate_path::Result<()> {
+                original_cells.clear();
+                converted_cells.clear();
+                original_cells.reserve(Self::schema().len());
+                converted_cells.reserve(Self::schema().len());
+                #(original_cells.push(#selected_original_writers);)*
+                #(converted_cells.push(#selected_registered_write_cell_data);)*
+                Ok(())
+            }
         }
     }
 }

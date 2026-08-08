@@ -16,6 +16,11 @@ include!("row_consumer/read_flow.rs");
 include!("row_consumer/source_row_metadata.rs");
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) trait RowConsumer {
+    /// 返回消费者是否区分“源 XML 中不存在”与“显式空单元格”。
+    fn requires_present_columns(&self) -> bool {
+        true
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn process(
         &mut self,
@@ -71,13 +76,18 @@ where
         return Ok(ReadFlow::Continue);
     }
 
-    let row = RowData::new(sheet_name, row_index, cells, Arc::clone(headers))
-        .with_formulas(formulas)
-        .with_display_values(display_values)
-        .with_decimal_values(decimal_values)
-        .with_present_columns(present_columns)
-        .with_read_default_return(options.read_default_return)
-        .with_use_1904_windowing(options.use_1904_windowing);
+    let row = RowData::from_stream_parts(
+        sheet_name,
+        row_index,
+        cells,
+        Arc::clone(headers),
+        formulas,
+        display_values,
+        decimal_values,
+        present_columns,
+        options.read_default_return,
+        options.use_1904_windowing,
+    );
     match T::from_row_with_converters(&row, &options.converters) {
         Ok(data) => {
             let result = listener.invoke(data, &context);

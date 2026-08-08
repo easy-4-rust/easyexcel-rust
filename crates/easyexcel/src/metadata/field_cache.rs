@@ -39,4 +39,13 @@ impl FieldCache {
     pub fn index_field_map(&self) -> &BTreeMap<i32, FieldWrapper> {
         &self.index_field_map
     }
+
+    /// Java `getSortedFieldMap` 别名。
+    #[must_use] pub fn get_sorted_field_map(&self) -> &BTreeMap<i32, FieldWrapper> { &self.sorted_field_map }
+    /// Java `setSortedFieldMap`。
+    pub fn set_sorted_field_map(&mut self, value: BTreeMap<i32, FieldWrapper>) { self.sorted_field_map = value; }
+    /// Java `getIndexFieldMap` 别名。
+    #[must_use] pub fn get_index_field_map(&self) -> &BTreeMap<i32, FieldWrapper> { &self.index_field_map }
+    /// Java `setIndexFieldMap`。
+    pub fn set_index_field_map(&mut self, value: BTreeMap<i32, FieldWrapper>) { self.index_field_map = value; }
 }

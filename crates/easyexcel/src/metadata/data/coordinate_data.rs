@@ -5,7 +5,7 @@
 /// Java uses boxed `Integer`; Rust uses `Option` to express "unspecified" with
 /// zero overhead. All four absolute and four relative coordinates follow the
 /// Java semantic where zero defers to the relative coordinate.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[allow(clippy::struct_field_names)]
 /// 对应 Java：com.alibaba.excel.metadata.data.CoordinateData。
 pub struct CoordinateData {
@@ -155,4 +155,21 @@ impl CoordinateData {
     pub const fn get_relative_last_column_index(self) -> Option<i32> {
         self.relative_last_column_index
     }
+
+    /// Java `setFirstRowIndex`。
+    pub const fn set_first_row_index(&mut self, value: Option<u32>) { self.first_row_index = value; }
+    /// Java `setFirstColumnIndex`。
+    pub const fn set_first_column_index(&mut self, value: Option<u16>) { self.first_column_index = value; }
+    /// Java `setLastRowIndex`。
+    pub const fn set_last_row_index(&mut self, value: Option<u32>) { self.last_row_index = value; }
+    /// Java `setLastColumnIndex`。
+    pub const fn set_last_column_index(&mut self, value: Option<u16>) { self.last_column_index = value; }
+    /// Java `setRelativeFirstRowIndex`。
+    pub const fn set_relative_first_row_index(&mut self, value: Option<i32>) { self.relative_first_row_index = value; }
+    /// Java `setRelativeFirstColumnIndex`。
+    pub const fn set_relative_first_column_index(&mut self, value: Option<i32>) { self.relative_first_column_index = value; }
+    /// Java `setRelativeLastRowIndex`。
+    pub const fn set_relative_last_row_index(&mut self, value: Option<i32>) { self.relative_last_row_index = value; }
+    /// Java `setRelativeLastColumnIndex`。
+    pub const fn set_relative_last_column_index(&mut self, value: Option<i32>) { self.relative_last_column_index = value; }
 }

@@ -43,6 +43,19 @@ impl DateTimeFormatProperty {
     pub const fn use1904windowing(&self) -> bool {
         self.use1904windowing
     }
+
+    /// Java `getFormat` 别名。
+    #[must_use]
+    pub fn get_format(&self) -> &str { &self.format }
+    /// Java `setFormat`。
+    pub fn set_format(&mut self, value: impl Into<String>) { self.format = value.into(); }
+    /// Java `getUse1904windowing` 别名。
+    #[must_use]
+    pub const fn get_use_1904windowing(&self) -> bool { self.use1904windowing }
+    /// Java `setUse1904windowing`。
+    pub const fn set_use_1904windowing(&mut self, value: bool) {
+        self.use1904windowing = value;
+    }
 }
 
 #[cfg(test)]

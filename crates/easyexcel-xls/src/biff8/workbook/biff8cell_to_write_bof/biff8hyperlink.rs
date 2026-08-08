@@ -35,7 +35,7 @@ impl Biff8Hyperlink {
     ];
 
     #[allow(clippy::too_many_arguments)]
-    pub(super) fn new_range(
+    pub(crate) fn new_range(
         first_row: u16,
         last_row: u16,
         first_col: u8,
@@ -72,7 +72,7 @@ impl Biff8Hyperlink {
     }
 
     /// Encodes the HLINK payload used by Apache POI's `newUrlLink` path.
-    fn encode_record_data(&self) -> Vec<u8> {
+    pub(crate) fn encode_record_data(&self) -> Vec<u8> {
         let label = nul_terminated_utf16(&self.label);
         let mut data = Vec::with_capacity(80 + (label.len() + self.url.len()) * 2);
         data.extend_from_slice(&self.first_row.to_le_bytes());

@@ -11,6 +11,18 @@ pub fn new_array_list<T>() -> Vec<T> {
     Vec::new()
 }
 
+/// 对应 Java：`ListUtils.newArrayList(Iterable)` 与 `newArrayList(Iterator)`。
+#[must_use]
+pub fn new_array_list_from_iter<T>(values: impl IntoIterator<Item = T>) -> Vec<T> {
+    values.into_iter().collect()
+}
+
+/// 对应 Java：`ListUtils.newArrayList(E...)`；Rust 切片元素按值克隆。
+#[must_use]
+pub fn new_array_list_from_slice<T: Clone>(values: &[T]) -> Vec<T> {
+    values.to_vec()
+}
+
 /// 对应 Java：com.alibaba.excel.util.ListUtils。 Mirrors `com.alibaba.excel.util.ListUtils#newArrayListWithCapacity`.
 #[must_use]
 pub fn new_array_list_with_capacity<T>(capacity: usize) -> Vec<T> {

@@ -7,7 +7,7 @@ use crate::core::rich_text_string_data::RichTextStringData;
 ///
 /// Rust uses composition for the anchor (same pattern as [`crate::ImageData`])
 /// so `ClientAnchorData` stays `Copy`/`Default` without inheritance bookkeeping.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct CommentData {
     author: Option<String>,
     rich_text_string_data: Option<RichTextStringData>,
@@ -61,11 +61,19 @@ impl CommentData {
         self.author.as_deref()
     }
 
+    /// Java `setAuthor` 原位 setter。
+    pub fn set_author(&mut self, value: Option<String>) { self.author = value; }
+
     /// Returns the rich-text body. (Java `getRichTextStringData()`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.metadata.data.CommentData。
     pub const fn get_rich_text_string_data(&self) -> Option<&RichTextStringData> {
         self.rich_text_string_data.as_ref()
+    }
+
+    /// Java `setRichTextStringData` 原位 setter。
+    pub fn set_rich_text_string_data(&mut self, value: Option<RichTextStringData>) {
+        self.rich_text_string_data = value;
     }
 
     /// Returns the client anchor.
@@ -74,6 +82,9 @@ impl CommentData {
     pub const fn get_anchor(&self) -> ClientAnchorData {
         self.anchor
     }
+
+    /// 设置继承的客户端锚点数据。
+    pub const fn set_anchor(&mut self, value: ClientAnchorData) { self.anchor = value; }
 
     /// 对应 Java：com.alibaba.excel.metadata.data.CommentData。 Returns plain note text for writer backends that only accept a string.
     #[must_use]

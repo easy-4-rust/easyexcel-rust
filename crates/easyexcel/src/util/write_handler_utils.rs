@@ -7,8 +7,8 @@
 use std::path::PathBuf;
 
 use crate::{
-    CellValue, ExcelColumn, ExcelError, Result, WriteCellContext, WriteContext, WriteHandler,
-    WriteRowContext, WriteSheetContext, WriteWorkbookContext,
+    CellValue, ExcelColumn, ExcelContentProperty, ExcelError, Head, Result, WriteCellContext,
+    WriteContext, WriteHandler, WriteRowContext, WriteSheetContext, WriteWorkbookContext,
 };
 
 /// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Creates a workbook callback context from the live Java-style write context.
@@ -42,6 +42,27 @@ pub fn before_workbook_create(
     Ok(())
 }
 
+/// 对应 Java：`WriteHandlerUtils.beforeWorkbookCreate(writeContext, runOwnWriteHandler)`。
+///
+/// `run_own_write_handler=false` 时执行父 Holder 已继承的处理链；为 `true` 时只执行
+/// 当前 Holder 自己注册的处理链，避免 Java 两阶段调用在 Rust 中被错误地合并或重复执行。
+///
+/// # Errors
+///
+/// 当所选处理链中的任一 handler 返回错误时，该错误会被原样传播。
+pub fn before_workbook_create_with_run_own(
+    inherited_handlers: &mut [Box<dyn WriteHandler>],
+    own_handlers: &mut [Box<dyn WriteHandler>],
+    context: &WriteWorkbookContext,
+    run_own_write_handler: bool,
+) -> Result<()> {
+    if run_own_write_handler {
+        before_workbook_create(own_handlers, context)
+    } else {
+        before_workbook_create(inherited_handlers, context)
+    }
+}
+
 /// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Dispatches Java `afterWorkbookCreate`.
 ///
 /// # Errors
@@ -55,6 +76,26 @@ pub fn after_workbook_create(
         handler.after_workbook_create(context)?;
     }
     Ok(())
+}
+
+/// 对应 Java：`WriteHandlerUtils.afterWorkbookCreate(writeContext, runOwnWriteHandler)`。
+///
+/// 根据 `run_own_write_handler` 精确选择当前 Holder 或继承处理链。
+///
+/// # Errors
+///
+/// 当所选处理链中的任一 handler 返回错误时，该错误会被原样传播。
+pub fn after_workbook_create_with_run_own(
+    inherited_handlers: &mut [Box<dyn WriteHandler>],
+    own_handlers: &mut [Box<dyn WriteHandler>],
+    context: &WriteWorkbookContext,
+    run_own_write_handler: bool,
+) -> Result<()> {
+    if run_own_write_handler {
+        after_workbook_create(own_handlers, context)
+    } else {
+        after_workbook_create(inherited_handlers, context)
+    }
 }
 
 /// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Dispatches Java `afterWorkbookDispose`.
@@ -107,6 +148,26 @@ pub fn before_sheet_create(
     Ok(())
 }
 
+/// 对应 Java：`WriteHandlerUtils.beforeSheetCreate(writeContext, runOwnWriteHandler)`。
+///
+/// 根据 `run_own_write_handler` 精确选择当前 Holder 或继承处理链。
+///
+/// # Errors
+///
+/// 当所选处理链中的任一 handler 返回错误时，该错误会被原样传播。
+pub fn before_sheet_create_with_run_own(
+    inherited_handlers: &mut [Box<dyn WriteHandler>],
+    own_handlers: &mut [Box<dyn WriteHandler>],
+    context: &WriteSheetContext,
+    run_own_write_handler: bool,
+) -> Result<()> {
+    if run_own_write_handler {
+        before_sheet_create(own_handlers, context)
+    } else {
+        before_sheet_create(inherited_handlers, context)
+    }
+}
+
 /// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Dispatches Java `afterSheetCreate`.
 ///
 /// # Errors
@@ -120,6 +181,26 @@ pub fn after_sheet_create(
         handler.after_sheet_create(context)?;
     }
     Ok(())
+}
+
+/// 对应 Java：`WriteHandlerUtils.afterSheetCreate(writeContext, runOwnWriteHandler)`。
+///
+/// 根据 `run_own_write_handler` 精确选择当前 Holder 或继承处理链。
+///
+/// # Errors
+///
+/// 当所选处理链中的任一 handler 返回错误时，该错误会被原样传播。
+pub fn after_sheet_create_with_run_own(
+    inherited_handlers: &mut [Box<dyn WriteHandler>],
+    own_handlers: &mut [Box<dyn WriteHandler>],
+    context: &WriteSheetContext,
+    run_own_write_handler: bool,
+) -> Result<()> {
+    if run_own_write_handler {
+        after_sheet_create(own_handlers, context)
+    } else {
+        after_sheet_create(inherited_handlers, context)
+    }
 }
 
 /// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Creates a row callback context from the live Java-style write context.
@@ -230,6 +311,42 @@ pub fn create_cell_write_handler_context(
         value,
     )
     .with_write_context(write_context))
+}
+
+/// 对应 Java：`WriteHandlerUtils.createCellWriteHandlerContext(...)` 的完整元数据形态。
+///
+/// 与简化入口不同，本函数保留 `Head` 和 `ExcelContentProperty` 对象，并允许调用方
+/// 提供转换后的完整 cell-data 列表，避免公共 Handler API 只能看到表头字符串。
+///
+/// # Errors
+///
+/// 当前写入上下文尚未选择 Sheet 时返回错误。
+#[allow(clippy::too_many_arguments)]
+pub fn create_cell_write_handler_context_with_metadata(
+    write_context: &dyn WriteContext,
+    row_index: u32,
+    column_index: u16,
+    relative_row_index: Option<usize>,
+    head: Option<Head>,
+    excel_content_property: Option<ExcelContentProperty>,
+    cell_data_list: Vec<CellValue>,
+    value: CellValue,
+) -> Result<WriteCellContext> {
+    let mut context = create_cell_write_handler_context(
+        write_context,
+        row_index,
+        column_index,
+        relative_row_index,
+        head.is_some(),
+        head.as_ref()
+            .and_then(|head| head.head_name_list().last().cloned()),
+        None,
+        value,
+    )?;
+    context.set_head_data(head);
+    context.set_excel_content_property(excel_content_property);
+    context.set_cell_data_list(cell_data_list);
+    Ok(context)
 }
 
 /// 对应 Java：com.alibaba.excel.util.WriteHandlerUtils。 Creates a compatibility cell callback context from a worksheet name.

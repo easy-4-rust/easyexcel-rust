@@ -175,6 +175,33 @@ impl TemplatePackage {
             .map_err(ExcelError::from)
     }
 
+    /// 在保留未知 OOXML 部件的前提下新增或替换指定单元格。
+    pub(crate) fn set_cell(
+        &mut self,
+        sheet_name: &str,
+        row_index: u32,
+        column_index: u16,
+        value: &TemplateCellValue,
+    ) -> Result<()> {
+        self.entries
+            .set_cell(sheet_name, row_index, column_index, value)
+            .map_err(ExcelError::from)
+    }
+
+    /// 为指定模板工作表写入 OOXML 工作表保护。
+    pub(crate) fn protect_sheet(&mut self, sheet_name: &str, password: &str) -> Result<()> {
+        self.entries
+            .protect_sheet(sheet_name, password)
+            .map_err(ExcelError::from)
+    }
+
+    /// 将编译工作簿中的图表部件导入指定模板工作表。
+    pub(crate) fn import_chart(&mut self, compiled_xlsx: &[u8], sheet_name: &str) -> Result<()> {
+        self.entries
+            .import_chart(compiled_xlsx, sheet_name)
+            .map_err(ExcelError::from)
+    }
+
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 Serializes the package to owned XLSX bytes.
     ///
     /// # Errors
@@ -281,7 +308,7 @@ pub(crate) fn resolve_package_target(
     easyexcel_xlsx::resolve_sheet_target(sheet_names, sheet_index, sheet_name)
 }
 
-fn template_cell_value(value: &CellValue) -> Result<TemplateCellValue> {
+pub(crate) fn template_cell_value(value: &CellValue) -> Result<TemplateCellValue> {
     Ok(match value {
         CellValue::Empty | CellValue::Image(_) => TemplateCellValue::Empty,
         CellValue::String(text)
@@ -304,7 +331,9 @@ fn template_cell_value(value: &CellValue) -> Result<TemplateCellValue> {
             TemplateCellValue::Date(datetime.format("%Y-%m-%dT%H:%M:%S").to_string())
         }
         CellValue::Formula(formula) => TemplateCellValue::Formula(formula.clone()),
-        CellValue::Comment { value, .. } | CellValue::Images { value, .. } => {
+        CellValue::Comment { value, .. }
+        | CellValue::CommentWithMetadata { value, .. }
+        | CellValue::Images { value, .. } => {
             return template_cell_value(value);
         }
     })

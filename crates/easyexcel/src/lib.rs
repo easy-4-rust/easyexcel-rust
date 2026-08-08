@@ -6,6 +6,7 @@
 //! 拆分到独立文件（每个类型一个 `.rs`，命名 1:1 对应 Java 类）。
 
 pub mod analysis;
+pub mod annotation;
 pub mod cache;
 pub mod constant;
 pub mod context;
@@ -42,7 +43,7 @@ mod into_sheet_selector;
 mod write_type_helpers;
 
 pub use crate::cache::{
-    EternalReadCacheSelector, FileCache, MapCache, MokaCache, ReadCache, ReadCacheSelector,
+    Ehcache, EternalReadCacheSelector, FileCache, MapCache, MokaCache, ReadCache, ReadCacheSelector,
     SimpleReadCacheSelector, XlsCache,
 };
 pub use crate::core::{
@@ -99,8 +100,15 @@ pub use crate::core::{
     write_template_analysis_cell_type_enum, write_type_enum,
 };
 pub use crate::metadata::GlobalConfiguration;
+pub use crate::annotation::{ExcelIgnore, ExcelIgnoreUnannotated, ExcelProperty};
+pub use crate::annotation::format::{DateTimeFormat, NumberFormat};
+pub use crate::annotation::write::style::{
+    ColumnWidth, ContentFontStyle, ContentLoopMerge, ContentRowHeight, ContentStyle,
+    HeadFontStyle, HeadRowHeight, HeadStyle, OnceAbsoluteMerge,
+};
 pub use crate::read::{
     CompatibleExcelReaderBuilder, CompatibleExcelReaderSheetBuilder, ExcelLocale, ExcelReader,
+    ParallelMapReadListener,
     apply_global_configuration_to_read_options, global_configuration_from_read_options,
 };
 pub use crate::template::{

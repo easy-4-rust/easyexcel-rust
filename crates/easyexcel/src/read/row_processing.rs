@@ -81,6 +81,7 @@ pub(crate) fn read_sheet(
     options: &ReadOptions,
     consumer: &mut dyn RowConsumer,
 ) -> Result<ReadFlow> {
+    let dispatch_plan = crate::read::read_dispatch_plan::ReadDispatchPlan::compile(consumer);
     let mut current_index = None;
     let mut current_cells = Vec::new();
     let mut current_formulas = HashMap::new();
@@ -137,7 +138,9 @@ pub(crate) fn read_sheet(
         if current_cells.len() <= column {
             current_cells.resize(column + 1, CellValue::Empty);
         }
-        current_present_columns.insert(column);
+        if dispatch_plan.retain_present_columns() {
+            current_present_columns.insert(column);
+        }
         current_cells[column] = cell.value;
         if let Some(formula) = cell.formula {
             current_formulas.insert(column, formula);

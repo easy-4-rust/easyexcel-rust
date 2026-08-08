@@ -46,7 +46,6 @@ python3 scripts/generate_java_public_api.py \
     --check
 python3 scripts/generate_rust_public_api.py \
     --rust-root "$REPO_ROOT" \
-    --package easyexcel \
     --output docs/rust-public-api.json \
     --check
 
