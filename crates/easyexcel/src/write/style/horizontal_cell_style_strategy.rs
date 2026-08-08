@@ -105,12 +105,16 @@ impl HorizontalCellStyleStrategy {
     pub const fn head_style(&self) -> ExcelCellStyle {
         self.head_style
     }
+    #[must_use] pub const fn get_head_write_cell_style(&self) -> ExcelCellStyle { self.head_style() }
+    pub const fn set_head_write_cell_style(&mut self, value: ExcelCellStyle) { self.head_style = value; }
 
     /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。 Returns the configured content styles. (Java `getContentWriteCellStyleList()`)
     #[must_use]
     pub fn content_styles(&self) -> &[ExcelCellStyle] {
         &self.content_styles
     }
+    #[must_use] pub fn get_content_write_cell_style_list(&self) -> &[ExcelCellStyle] { self.content_styles() }
+    pub fn set_content_write_cell_style_list(&mut self, value: Vec<ExcelCellStyle>) { self.content_styles = value; }
 }
 
 impl AbstractCellStyleStrategy for HorizontalCellStyleStrategy {

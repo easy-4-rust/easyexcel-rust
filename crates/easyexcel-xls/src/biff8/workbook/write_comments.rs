@@ -15,7 +15,7 @@ pub(crate) fn write_comments(out: &mut Vec<u8>, comments: &[Biff8Comment]) {
         let formatting = comment_formatting_continue(comment);
         record(out, TXO, &comment_txo(&comment.text, formatting.len()));
         write_comment_text_continue(out, &comment.text);
-        record(out, CONTINUE, &formatting);
+        write_comment_formatting_continues(out, &formatting);
     }
     for (index, comment) in comments.iter().enumerate() {
         let shape_id = 1_025u16.saturating_add(u16::try_from(index).unwrap_or(u16::MAX));
@@ -40,7 +40,7 @@ pub(crate) fn write_appended_comments(
         let formatting = comment_formatting_continue(comment);
         record(out, TXO, &comment_txo(&comment.text, formatting.len()));
         write_comment_text_continue(out, &comment.text);
-        record(out, CONTINUE, &formatting);
+        write_comment_formatting_continues(out, &formatting);
     }
     for (index, comment) in comments.iter().enumerate() {
         let shape_id = first_shape_id.saturating_add(u32::try_from(index).unwrap_or(u32::MAX));
@@ -249,6 +249,14 @@ fn comment_formatting_continue(comment: &Biff8Comment) -> Vec<u8> {
         data.extend_from_slice(&0u32.to_le_bytes());
     }
     data
+}
+
+fn write_comment_formatting_continues(out: &mut Vec<u8>, formatting: &[u8]) {
+    // TXO 格式记录由固定 8 字节 run 组成，CONTINUE 必须只在 run 边界切分。
+    let chunk_size = MAX_RECORD_DATA - (MAX_RECORD_DATA % 8);
+    for chunk in formatting.chunks(chunk_size) {
+        record(out, CONTINUE, chunk);
+    }
 }
 
 fn comment_note(comment: &Biff8Comment, shape_id: u16) -> Vec<u8> {

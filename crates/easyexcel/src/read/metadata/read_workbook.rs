@@ -56,7 +56,7 @@ impl ReadWorkbook {
             auto_close_stream_override: None,
             ignore_empty_row_override: None,
             mandatory_use_input_stream: None,
-            use_default_listener: None,
+            use_default_listener: Some(true),
             xlsx_sax_parser_factory_name: None,
         }
     }
@@ -299,6 +299,7 @@ impl ReadWorkbook {
     /// Java `setUseDefaultListener`。
     pub const fn set_use_default_listener(&mut self, value: bool) -> &mut Self {
         self.use_default_listener = Some(value);
+        self.options.use_default_listener = value;
         self
     }
     /// Java `getXlsxSAXParserFactoryName`。
@@ -306,13 +307,23 @@ impl ReadWorkbook {
     pub fn get_xlsx_sax_parser_factory_name(&self) -> Option<&str> {
         self.xlsx_sax_parser_factory_name.as_deref()
     }
+    /// Java `getXlsxSAXParserFactoryName()` 原始缩写兼容入口。
+    #[must_use]
+    pub fn get_xlsx_saxparser_factory_name(&self) -> Option<&str> {
+        self.get_xlsx_sax_parser_factory_name()
+    }
     /// Java `setXlsxSAXParserFactoryName`。
     pub fn set_xlsx_sax_parser_factory_name(
         &mut self,
         value: Option<String>,
     ) -> &mut Self {
         self.xlsx_sax_parser_factory_name = value;
+        self.options.xlsx_sax_parser_factory_name = self.xlsx_sax_parser_factory_name.clone();
         self
+    }
+    /// Java `setXlsxSAXParserFactoryName()` 原始缩写兼容入口。
+    pub fn set_xlsx_saxparser_factory_name(&mut self, value: Option<String>) -> &mut Self {
+        self.set_xlsx_sax_parser_factory_name(value)
     }
 }
 
@@ -325,6 +336,8 @@ impl Default for ReadWorkbook {
 impl From<ReadOptions> for ReadWorkbook {
     fn from(options: ReadOptions) -> Self {
         let parameter = crate::read::metadata::ReadBasicParameter::from_options(&options);
+        let use_default_listener = options.use_default_listener;
+        let xlsx_sax_parser_factory_name = options.xlsx_sax_parser_factory_name.clone();
         Self {
             parameter,
             file: None,
@@ -335,8 +348,8 @@ impl From<ReadOptions> for ReadWorkbook {
             auto_close_stream_override: None,
             ignore_empty_row_override: None,
             mandatory_use_input_stream: None,
-            use_default_listener: None,
-            xlsx_sax_parser_factory_name: None,
+            use_default_listener: Some(use_default_listener),
+            xlsx_sax_parser_factory_name,
         }
     }
 }

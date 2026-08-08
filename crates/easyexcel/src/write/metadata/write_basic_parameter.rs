@@ -36,9 +36,21 @@ pub struct WriteBasicParameter {
     pub order_by_include_column: Option<bool>,
     /// Mirrors `WriteBasicParameter.converters` (custom-registered converters).
     pub converters: ConverterRegistry,
+    /// Handler 类型/注册键列表；实际可变实例由 writer 的共享处理链持有。
+    pub custom_write_handler_list: Vec<String>,
 }
 
 impl WriteBasicParameter {
+    /// 返回自定义 Handler 注册键。对应 Java `getCustomWriteHandlerList()`。
+    #[must_use]
+    pub fn get_custom_write_handler_list(&self) -> &[String] {
+        &self.custom_write_handler_list
+    }
+
+    /// 替换自定义 Handler 注册键。对应 Java `setCustomWriteHandlerList(...)`。
+    pub fn set_custom_write_handler_list(&mut self, value: Vec<String>) {
+        self.custom_write_handler_list = value;
+    }
     /// 返回 Java 父类参数。
     #[must_use] pub const fn get_basic_parameter(&self) -> &BasicParameter { &self.basic_parameter }
     /// 返回可变 Java 父类参数。

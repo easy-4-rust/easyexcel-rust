@@ -197,6 +197,20 @@ where
         self
     }
 
+    /// 控制是否安装默认模型构建监听器。对应 Java：`useDefaultListener(Boolean)`。
+    #[must_use]
+    pub const fn use_default_listener(mut self, enabled: bool) -> Self {
+        self.options.use_default_listener = enabled;
+        self
+    }
+
+    /// 设置 XLSX SAX 解析器工厂名。对应 Java：`xlsxSAXParserFactoryName(String)`。
+    #[must_use]
+    pub fn xlsx_saxparser_factory_name(mut self, name: impl Into<String>) -> Self {
+        self.options.xlsx_sax_parser_factory_name = Some(name.into());
+        self
+    }
+
     /// Sets the first physical data row to dispatch, zero-based and inclusive.
     ///
     /// Configured header rows are still analysed for name-based mapping.

@@ -20,7 +20,7 @@ pub use data_formatter::{
     java_compat_format_code, java_plain_extreme_format, java_scientific_format,
     resolve_builtin_format_code,
 };
-pub use excel_general_number_format::format_general;
+pub use excel_general_number_format::{format_general, format_general_with_options};
 pub use excel_locale::ExcelLocale;
 pub use number_utils::{
     EXCEL_MATH_CONTEXT_PRECISION, NonFiniteNumber, NumberFormatError, NumberRoundingMode,

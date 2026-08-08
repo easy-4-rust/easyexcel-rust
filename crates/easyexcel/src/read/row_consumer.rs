@@ -4,9 +4,11 @@ use crate::core::{
     AnalysisContext, CellExtra, CellValue, ExcelRow, FormulaData, ReadListener, Result, RowData,
 };
 use crate::read::read_helpers::{
-    analysis_context, header_map, is_empty_read_cell, listener_error, listener_result,
-    trim_string_cells,
+    analysis_context, header_map, is_empty_read_cell, trim_string_cells,
 };
+#[cfg(test)]
+use crate::read::read_helpers::listener_result;
+use crate::read::processor::default_analysis_event_processor::DefaultAnalysisEventProcessor;
 use crate::read::read_options::ReadOptions;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -69,8 +71,11 @@ where
         if row_index + 1 == options.head_row_number {
             *headers = Arc::clone(&current_headers);
         }
-        let result = listener.invoke_head(&current_headers, &context);
-        return listener_result(result, listener, &context);
+        return DefaultAnalysisEventProcessor::dispatch_head(
+            listener,
+            &current_headers,
+            &context,
+        );
     }
     if options.ignore_empty_row && cells.iter().all(is_empty_read_cell) {
         return Ok(ReadFlow::Continue);
@@ -90,10 +95,9 @@ where
     );
     match T::from_row_with_converters(&row, &options.converters) {
         Ok(data) => {
-            let result = listener.invoke(data, &context);
-            listener_result(result, listener, &context)
+            DefaultAnalysisEventProcessor::dispatch_data(listener, data, &context)
         }
-        Err(error) => listener_error(error, listener, &context),
+        Err(error) => DefaultAnalysisEventProcessor::dispatch_error(listener, error, &context),
     }
 }
 

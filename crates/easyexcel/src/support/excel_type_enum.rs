@@ -17,6 +17,22 @@ pub enum ExcelTypeEnum {
 }
 
 impl ExcelTypeEnum {
+    /// 返回文件魔数。CSV 没有固定魔数。对应 Java：`getMagic()`。
+    #[must_use]
+    pub const fn magic(self) -> &'static [u8] {
+        match self {
+            Self::Xlsx => &[0x50, 0x4b, 0x03, 0x04],
+            Self::Xls => &[0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1],
+            Self::Csv => &[],
+        }
+    }
+
+    /// Java `getMagic()` 兼容别名。
+    #[must_use]
+    pub const fn get_magic(self) -> &'static [u8] {
+        self.magic()
+    }
+
     /// Returns the file extension. (Java `getValue()`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.support.ExcelTypeEnum。

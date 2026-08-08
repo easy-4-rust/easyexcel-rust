@@ -55,6 +55,10 @@ pub struct ReadOptions {
     pub read_cache: ReadCacheMode,
     /// Optional Java-style cache selector overriding [`Self::read_cache`].
     pub read_cache_selector: Option<StoredReadCacheSelector>,
+    /// 是否注册 Java 默认模型构建监听器。
+    pub use_default_listener: bool,
+    /// XLSX SAX 解析器工厂名称；保留 Java 配置语义供后端选择。
+    pub xlsx_sax_parser_factory_name: Option<String>,
 }
 
 impl PartialEq for ReadOptions {
@@ -75,6 +79,8 @@ impl PartialEq for ReadOptions {
             && self.charset == other.charset
             && self.read_cache == other.read_cache
             && self.read_cache_selector == other.read_cache_selector
+            && self.use_default_listener == other.use_default_listener
+            && self.xlsx_sax_parser_factory_name == other.xlsx_sax_parser_factory_name
     }
 }
 
@@ -101,6 +107,8 @@ impl Default for ReadOptions {
             converters: load_default_read_converter(),
             read_cache: ReadCacheMode::default(),
             read_cache_selector: None,
+            use_default_listener: true,
+            xlsx_sax_parser_factory_name: None,
         }
     }
 }

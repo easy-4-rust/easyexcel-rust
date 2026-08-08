@@ -11,6 +11,9 @@ use super::{CsvCellValue, CsvRow};
 #[derive(Debug, Clone, PartialEq)]
 pub struct CsvSheet<V: CsvCellValue = ModelCellValue> {
     name: String,
+    csv_workbook_id: Option<usize>,
+    out: String,
+    csv_printer_initialized: bool,
     row_cache_count: usize,
     last_row_index: Option<u32>,
     row_cache: VecDeque<CsvRow<V>>,
@@ -22,6 +25,9 @@ impl<V: CsvCellValue> CsvSheet<V> {
     pub fn new(name: impl Into<String>) -> Self {
         Self {
             name: name.into(),
+            csv_workbook_id: None,
+            out: String::new(),
+            csv_printer_initialized: false,
             row_cache_count: 100,
             last_row_index: None,
             row_cache: VecDeque::with_capacity(100),
@@ -39,6 +45,19 @@ impl<V: CsvCellValue> CsvSheet<V> {
     pub fn get_sheet_name(&self) -> &str {
         self.name()
     }
+
+    /// 返回父工作簿稳定身份。对应 Java Lombok `getCsvWorkbook`。
+    #[must_use] pub const fn get_csv_workbook(&self) -> Option<usize> { self.csv_workbook_id }
+    /// 设置父工作簿稳定身份，避免 Rust 自引用结构。
+    pub const fn set_csv_workbook(&mut self, value: Option<usize>) { self.csv_workbook_id = value; }
+    /// 返回输出缓冲。对应 Java Lombok `getOut`。
+    #[must_use] pub fn get_out(&self) -> &str { &self.out }
+    /// 设置输出缓冲。对应 Java Lombok `setOut`。
+    pub fn set_out(&mut self, value: impl Into<String>) { self.out = value.into(); }
+    /// 返回 CSV printer 初始化状态的后端中立映射。
+    #[must_use] pub const fn get_csv_printer(&self) -> bool { self.csv_printer_initialized }
+    /// 设置 CSV printer 初始化状态的后端中立映射。
+    pub const fn set_csv_printer(&mut self, value: bool) { self.csv_printer_initialized = value; }
 
     /// 返回 Java `CsvSheet#getRowCacheCount` 对应的有界缓存行数。
     #[must_use]
@@ -104,6 +123,21 @@ impl<V: CsvCellValue> CsvSheet<V> {
     /// 返回当前缓存窗口的可变引用，避免调用方通过整体替换破坏行号单调性。
     pub fn row_cache_mut(&mut self) -> &mut VecDeque<CsvRow<V>> {
         &mut self.row_cache
+    }
+    /// 替换缓存窗口。对应 Java Lombok `setRowCache`。
+    pub fn set_row_cache(&mut self, value: VecDeque<CsvRow<V>>) {
+        self.row_cache = value;
+        self.last_row_index = self.row_cache.back().map(CsvRow::row_index);
+    }
+
+    /// 在缓存达到阈值时返回可冲刷行。对应 Java `printData()`。
+    #[must_use]
+    pub fn print_data(&mut self) -> Vec<CsvRow<V>> {
+        if self.row_cache.len() >= self.row_cache_count {
+            self.drain_flushable_rows()
+        } else {
+            Vec::new()
+        }
     }
 
     /// 按行号返回缓存行，语义对应 Java `CsvSheet#getRow`。
@@ -244,4 +278,83 @@ impl<V: CsvCellValue> CsvSheet<V> {
     pub const fn shift_rows(&mut self, _start: u32, _end: u32, _count: i32) {}
     pub const fn shift_columns(&mut self, _start: u16, _end: u16, _count: i32) {}
     pub fn row_iterator(&self) -> impl Iterator<Item = &CsvRow<V>> { self.rows() }
+    pub const fn add_merged_region_unsafe(&mut self) -> usize { 0 }
+    #[must_use] pub const fn get_merged_region(&self, _index: usize) -> Option<&str> { None }
+    #[must_use] pub const fn get_merged_regions(&self) -> Vec<&str> { Vec::new() }
+    pub const fn remove_merged_region(&mut self, _index: usize) {}
+    pub const fn remove_merged_regions(&mut self, _indexes: &[usize]) {}
+    pub const fn validate_merged_regions(&self) {}
+
+    /// CSV 不保存列样式、轮廓、分页符或窗格。
+    #[must_use] pub const fn get_column_style(&self, _column: usize) -> Option<&str> { None }
+    #[must_use] pub const fn get_column_width_in_pixels(&self, _column: usize) -> f32 { 0.0 }
+    #[must_use] pub const fn get_column_outline_level(&self, _column: usize) -> u8 { 0 }
+    #[must_use] pub const fn get_column_breaks(&self) -> Vec<usize> { Vec::new() }
+    #[must_use] pub const fn get_row_breaks(&self) -> Vec<usize> { Vec::new() }
+    #[must_use] pub const fn is_column_broken(&self, _column: usize) -> bool { false }
+    #[must_use] pub const fn is_row_broken(&self, _row: usize) -> bool { false }
+    #[must_use] pub const fn get_pane_information(&self) -> Option<&str> { None }
+    pub const fn set_column_break(&mut self, _column: usize) {}
+    pub const fn remove_column_break(&mut self, _column: usize) {}
+    pub const fn set_row_break(&mut self, _row: usize) {}
+    pub const fn remove_row_break(&mut self, _row: usize) {}
+    pub const fn group_column(&mut self, _from: usize, _to: usize) {}
+    pub const fn ungroup_column(&mut self, _from: usize, _to: usize) {}
+    pub const fn group_row(&mut self, _from: usize, _to: usize) {}
+    pub const fn ungroup_row(&mut self, _from: usize, _to: usize) {}
+    pub const fn set_column_group_collapsed(&mut self, _column: usize, _collapsed: bool) {}
+    pub const fn set_row_group_collapsed(&mut self, _row: usize, _collapsed: bool) {}
+    pub const fn set_column_hidden(&mut self, _column: usize, _hidden: bool) {}
+    pub const fn set_default_column_style(&mut self, _column: usize, _style: Option<&str>) {}
+    pub const fn auto_size_column(&mut self, _column: usize, _use_merged_cells: bool) {}
+    pub const fn create_split_pane(&mut self, _x_split: usize, _y_split: usize, _left: usize, _top: usize) {}
+    pub const fn show_in_pane(&mut self, _top_row: usize, _left_column: usize) {}
+
+    /// Java CSV Sheet 的打印/显示 no-op 状态。
+    #[must_use] pub const fn is_display_gridlines(&self) -> bool { false }
+    #[must_use] pub const fn is_display_row_col_headings(&self) -> bool { false }
+    #[must_use] pub const fn is_print_row_and_column_headings(&self) -> bool { false }
+    #[must_use] pub const fn get_autobreaks(&self) -> bool { false }
+    #[must_use] pub const fn get_display_guts(&self) -> bool { false }
+    #[must_use] pub const fn get_fit_to_page(&self) -> bool { false }
+    #[must_use] pub const fn get_row_sums_below(&self) -> bool { false }
+    #[must_use] pub const fn get_row_sums_right(&self) -> bool { false }
+    #[must_use] pub const fn get_scenario_protect(&self) -> bool { false }
+    #[must_use] pub const fn get_protect(&self) -> bool { false }
+    pub const fn set_display_gridlines(&mut self, _value: bool) {}
+    pub const fn set_display_row_col_headings(&mut self, _value: bool) {}
+    pub const fn set_print_row_and_column_headings(&mut self, _value: bool) {}
+    pub const fn set_autobreaks(&mut self, _value: bool) {}
+    pub const fn set_display_guts(&mut self, _value: bool) {}
+    pub const fn set_fit_to_page(&mut self, _value: bool) {}
+    pub const fn set_row_sums_below(&mut self, _value: bool) {}
+    pub const fn set_row_sums_right(&mut self, _value: bool) {}
+    pub const fn set_margin(&mut self, _margin: usize, _size: f64) {}
+    pub const fn set_auto_filter(&mut self, _range: &str) {}
+    pub const fn set_repeating_columns(&mut self, _range: Option<&str>) {}
+    pub const fn set_repeating_rows(&mut self, _range: Option<&str>) {}
+    #[must_use] pub const fn get_repeating_columns(&self) -> Option<&str> { None }
+    #[must_use] pub const fn get_repeating_rows(&self) -> Option<&str> { None }
+    #[must_use] pub const fn get_active_cell(&self) -> Option<&str> { None }
+    pub const fn set_active_cell(&mut self, _reference: &str) {}
+
+    #[must_use] pub const fn get_cell_comments(&self) -> Vec<&str> { Vec::new() }
+    #[must_use] pub const fn get_cell_comment(&self, _reference: &str) -> Option<&str> { None }
+    #[must_use] pub const fn get_hyperlink_list(&self) -> Vec<&str> { Vec::new() }
+    #[must_use] pub const fn get_data_validations(&self) -> Vec<&str> { Vec::new() }
+    pub const fn add_validation_data(&mut self, _validation: &str) {}
+    #[must_use] pub const fn get_drawing_patriarch(&self) -> Option<&str> { None }
+    /// Java CSV 返回 `null`。
+    #[must_use] pub const fn create_drawing_patriarch(&mut self) -> Option<()> { None }
+    /// Java CSV 返回 `null`。
+    #[must_use] pub const fn set_array_formula(&mut self, _formula: &str, _range: &str) -> Option<()> { None }
+    /// Java CSV 返回 `null`。
+    #[must_use] pub const fn remove_array_formula(&mut self, _row: u32, _column: u16) -> Option<()> { None }
+    /// Java CSV 返回 `null`。
+    #[must_use] pub const fn get_hyperlink(&self, _row: u32, _column: u16) -> Option<()> { None }
+    #[must_use] pub const fn get_sheet_conditional_formatting(&self) -> Option<&str> { None }
+    #[must_use] pub const fn get_data_validation_helper(&self) -> Option<&str> { None }
+    #[must_use] pub const fn get_print_setup(&self) -> Option<&str> { None }
+    #[must_use] pub const fn get_header(&self) -> Option<&str> { None }
+    #[must_use] pub const fn get_footer(&self) -> Option<&str> { None }
 }

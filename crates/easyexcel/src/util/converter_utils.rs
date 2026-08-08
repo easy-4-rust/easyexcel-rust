@@ -108,7 +108,31 @@ where
 /// 对应 Java：com.alibaba.excel.util.ConverterUtils。 Mirrors `com.alibaba.excel.util.ConverterUtils#defaultClassGeneric`.
 #[must_use]
 pub fn default_class_generic(_type_id: TypeId) -> Option<TypeId> {
-    None
+    Some(TypeId::of::<String>())
+}
+
+/// Java `convertToStringMap(Map<Integer, ReadCellData<?>>, AnalysisContext)` 的稀疏列语义。
+///
+/// 缺失列和 `EMPTY` 单元格显式写入 `None`，其余单元格使用已解析显示值。
+pub fn convert_read_cells_to_string_map(
+    cells: &std::collections::BTreeMap<usize, crate::ReadCellData>,
+) -> Result<std::collections::BTreeMap<usize, Option<String>>, ExcelError> {
+    let mut result = std::collections::BTreeMap::new();
+    let mut index = 0usize;
+    for (column, cell) in cells {
+        while index < *column {
+            result.insert(index, None);
+            index = index.saturating_add(1);
+        }
+        let value = if cell.cell_type() == crate::CellDataType::Empty {
+            None
+        } else {
+            Some(convert_to_java_object(cell.string_value(), TypeId::of::<String>())?)
+        };
+        result.insert(*column, value);
+        index = column.saturating_add(1);
+    }
+    Ok(result)
 }
 
 #[cfg(test)]

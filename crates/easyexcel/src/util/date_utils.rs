@@ -182,10 +182,22 @@ impl DateUtils {
         is_a_date_format(format_index, format_string)
     }
 
+    /// Java 名称 `isADateFormat` 的机械 snake_case 兼容入口。
+    #[must_use]
+    pub fn is_adate_format(format_index: i32, format_string: Option<&str>) -> bool {
+        Self::is_a_date_format(format_index, format_string)
+    }
+
     /// 绕过 Java ThreadLocal 缓存执行日期格式判断。
     #[must_use]
     pub fn is_a_date_format_uncached(format_index: i32, format_string: Option<&str>) -> bool {
         is_a_date_format_uncached(format_index, format_string)
+    }
+
+    /// Java 名称 `isADateFormatUncached` 的机械 snake_case 兼容入口。
+    #[must_use]
+    pub fn is_adate_format_uncached(format_index: i32, format_string: Option<&str>) -> bool {
+        Self::is_a_date_format_uncached(format_index, format_string)
     }
 
     /// 判断内建格式编号是否为 Excel 内部日期格式。

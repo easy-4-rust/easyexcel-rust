@@ -133,6 +133,8 @@ impl ExcelHeadProperty {
     pub fn head_clazz(&self) -> Option<&str> {
         self.head_clazz.as_deref()
     }
+    #[must_use] pub fn get_head_clazz(&self) -> Option<&str> { self.head_clazz() }
+    pub fn set_head_clazz(&mut self, value: Option<String>) { self.head_clazz = value; }
 
     /// Returns the header kind. (Java `getHeadKind()`)
     #[must_use]
@@ -140,6 +142,8 @@ impl ExcelHeadProperty {
     pub const fn head_kind(&self) -> HeadKind {
         self.head_kind
     }
+    #[must_use] pub const fn get_head_kind(&self) -> HeadKind { self.head_kind() }
+    pub const fn set_head_kind(&mut self, value: HeadKind) { self.head_kind = value; }
 
     /// Returns the header row count. (Java `getHeadRowNumber()`)
     #[must_use]
@@ -152,5 +156,10 @@ impl ExcelHeadProperty {
     #[must_use]
     pub fn head_map(&self) -> &BTreeMap<i32, Head> {
         &self.head_map
+    }
+    #[must_use] pub fn get_head_map(&self) -> &BTreeMap<i32, Head> { self.head_map() }
+    pub fn set_head_map(&mut self, value: BTreeMap<i32, Head>) {
+        self.head_map = value;
+        self.init_head_row_number();
     }
 }

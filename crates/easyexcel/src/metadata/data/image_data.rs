@@ -46,6 +46,9 @@ impl ImageData {
     pub fn image(&self) -> &[u8] {
         &self.image
     }
+    #[must_use] pub fn get_image(&self) -> &[u8] { self.image() }
+    pub fn set_image(&mut self, value: Vec<u8>) { self.image = value; }
+    pub const fn set_image_type(&mut self, value: Option<ImageType>) { self.image_type = value; }
 
     /// Returns the optional image-type metadata. (Java `getImageType()`)
     #[must_use]

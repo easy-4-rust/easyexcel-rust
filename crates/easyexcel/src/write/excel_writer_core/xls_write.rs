@@ -726,6 +726,12 @@ fn add_biff8_cell_metadata(
                 .get_rich_text_string_data()
                 .map(|rich| resolve_biff8_rich_text_runs(rich, &mut book.styles))
                 .transpose()?;
+            if formatting_runs.as_ref().is_some_and(|runs| runs.len() > 8_190) {
+                return Err(ExcelError::Unsupported(
+                    "legacy XLS comment rich text exceeds the TXO 65535-byte formatting limit"
+                        .to_owned(),
+                ));
+            }
             let mut comment = Biff8Comment::new(
                 u16::try_from(row).map_err(|_| {
                     ExcelError::Format("BIFF8 comment row exceeds 65535".to_owned())
@@ -852,7 +858,13 @@ pub(crate) fn cell_value_to_biff8_styled(
     styles: &mut Biff8StyleTable,
     format_ctx: CellFormatContext<'_>,
 ) -> Result<Biff8Cell> {
-    let cell = if let CellValue::RichText(rich) = value {
+    let styled_value = match value {
+        CellValue::Comment { value, .. }
+        | CellValue::CommentWithMetadata { value, .. }
+        | CellValue::Images { value, .. } => value.as_ref(),
+        value => value,
+    };
+    let cell = if let CellValue::RichText(rich) = styled_value {
         let runs = resolve_biff8_rich_text_runs(rich, styles)?;
         Biff8Cell::general(Biff8Value::RichText(Biff8RichText::new(
             // 富文本区间使用原始 UTF-16 坐标；裁剪文本会让 Java

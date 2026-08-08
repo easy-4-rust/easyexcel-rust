@@ -32,6 +32,17 @@ impl ByteOrderMarkEnum {
         self.engine_value().bytes()
     }
 
+    /// 返回 BOM 字节。对应 Java：`getByteOrderMark()`。
+    #[must_use]
+    pub const fn get_byte_order_mark(self) -> &'static [u8] {
+        self.bytes()
+    }
+
+    /// 返回按对应字符集解码后的 BOM 前缀。所有 Unicode BOM 均为 U+FEFF。
+    /// 对应 Java：`getStringPrefix()`。
+    #[must_use]
+    pub const fn get_string_prefix(self) -> &'static str { "\u{feff}" }
+
     /// Canonical charset name matched against the BOM.
     #[must_use]
     /// 对应 Java：com.alibaba.excel.enums.ByteOrderMarkEnum。

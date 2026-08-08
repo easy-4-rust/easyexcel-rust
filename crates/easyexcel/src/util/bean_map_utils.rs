@@ -8,6 +8,26 @@ use std::collections::BTreeMap;
 
 use crate::{CellValue, ConverterRegistry, ExcelError, ExcelRow};
 
+/// CGLIB 命名策略兼容对象。
+///
+/// 对应 Java：`BeanMapUtils.EasyExcelNamingPolicy`。Rust 不生成 CGLIB
+/// 类，但保留确定的 tag 与全局实例语义。
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+pub struct EasyExcelNamingPolicy;
+
+impl EasyExcelNamingPolicy {
+    /// Java `INSTANCE` 单例。
+    pub const INSTANCE: Self = Self;
+
+    /// 创建命名策略，对应公共无参构造器。
+    #[must_use]
+    pub const fn new() -> Self { Self }
+
+    /// 返回 Java 覆盖的 CGLIB 名称 tag。
+    #[must_use]
+    pub const fn tag(&self) -> &'static str { "ByEasyExcelCGLIB" }
+}
+
 /// 对应 Java：BeanMap.getPropertyType。 Field-name view of an [`ExcelRow`].
 ///
 /// Values are the converted write values used by the actual writer pipeline.

@@ -232,14 +232,9 @@ pub fn java_scientific_format(value: f64, decimal_separator: char) -> String {
 /// 对应 Java：com.alibaba.excel.metadata.format.DataFormatter。 Formats a numeric value using a built-in or custom Excel format
 /// code. (Java `DataFormatter.formatRawCellContents(...)`)
 ///
-/// The real formatting happens in `easyexcel-reader` via `ssfmt`; this
-/// stub exists for 1:1 Java API parity and applies only the POI-compatible
-/// orphan-decimal cleanup when a pre-formatted string is supplied through
-/// tests that call [`java_compat_display`] directly.
-#[allow(dead_code)]
 #[must_use]
-pub fn format_raw_cell_contents(_value: f64, _format_code: &str) -> Option<String> {
-    None
+pub fn format_raw_cell_contents(value: f64, format_code: &str) -> Option<String> {
+    format_with_code(value, format_code, false, &Locale::default())
 }
 
 #[cfg(test)]

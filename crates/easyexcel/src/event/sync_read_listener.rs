@@ -25,6 +25,7 @@ impl SyncReadListener {
     pub fn list(&self) -> &[crate::CellValue] {
         &self.list
     }
+    #[must_use] pub fn get_list(&self) -> &[crate::CellValue] { self.list() }
 
     /// 对应 Java：com.alibaba.excel.event.SyncReadListener。 Sets the list. (Java `setList(List)`)
     pub fn set_list(&mut self, list: Vec<crate::CellValue>) {

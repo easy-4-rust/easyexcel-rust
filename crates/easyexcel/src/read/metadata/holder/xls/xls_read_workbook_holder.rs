@@ -101,6 +101,10 @@ impl XlsReadWorkbookHolder {
     pub fn set_poifs_file_system(&mut self, value: Option<Vec<u8>>) { self.poifs_file_system = value; }
     #[must_use] pub const fn get_format_tracking_hssf_listener(&self) -> bool { self.format_tracking_listener }
     pub const fn set_format_tracking_hssf_listener(&mut self, value: bool) { self.format_tracking_listener = value; }
+    /// Java `getFormatTrackingHSSFListener()` 原始缩写兼容入口。
+    #[must_use] pub const fn get_format_tracking_hssflistener(&self) -> bool { self.format_tracking_listener }
+    /// Java `setFormatTrackingHSSFListener()` 原始缩写兼容入口。
+    pub const fn set_format_tracking_hssflistener(&mut self, value: bool) { self.format_tracking_listener = value; }
 }
 
 impl Deref for XlsReadWorkbookHolder {

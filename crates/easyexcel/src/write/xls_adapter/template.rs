@@ -85,10 +85,18 @@ impl Biff8TemplatePackage {
             let mut mapped = Vec::with_capacity(row.len());
             for (column, value) in row {
                 mapped.push((*column, self.template_cell(value)?));
-                collect_template_decorations(&mut decorations, row_index, *column, value)?;
+                let formatting_runs = self.comment_formatting_runs(value)?;
+                collect_template_decorations(
+                    &mut decorations,
+                    row_index,
+                    *column,
+                    value,
+                    formatting_runs,
+                )?;
             }
             mapped_rows.push(mapped);
         }
+        self.flush_rich_text_fonts()?;
         let next_row = self.inner
             .append_rows(sheet_name, &mapped_rows)
             .map_err(ExcelError::from)?;
@@ -146,12 +154,15 @@ impl Biff8TemplatePackage {
                         .set_cell(&sheet_name, row_index, usize::from(column_index), &cell)
                         .map_err(ExcelError::from)?;
                     let mut decorations = Vec::new();
+                    let formatting_runs = self.comment_formatting_runs(&value)?;
                     collect_template_decorations(
                         &mut decorations,
                         row_index,
                         usize::from(column_index),
                         &value,
+                        formatting_runs,
                     )?;
+                    self.flush_rich_text_fonts()?;
                     let mut comments = Vec::new();
                     for decoration in decorations {
                         match decoration {
@@ -331,9 +342,43 @@ impl Biff8TemplatePackage {
     }
 
     fn template_cell(&mut self, value: &CellValue) -> Result<Biff8Cell> {
+        if let CellValue::Comment { value, .. }
+        | CellValue::CommentWithMetadata { value, .. }
+        | CellValue::Images { value, .. } = value
+        {
+            return self.template_cell(value);
+        }
         let CellValue::RichText(rich) = value else {
             return cell_value_to_template_cell(value);
         };
+        let runs = self.resolve_rich_text_runs(rich)?;
+        self.flush_rich_text_fonts()?;
+        Ok(Biff8Cell::general(Biff8Value::RichText(
+            Biff8RichText::new(rich.text_string().to_owned(), runs),
+        )))
+    }
+
+    fn comment_formatting_runs(&mut self, value: &CellValue) -> Result<Option<Vec<(u16, u16)>>> {
+        let CellValue::CommentWithMetadata { comment, .. } = value else {
+            return Ok(None);
+        };
+        let runs = comment
+            .get_rich_text_string_data()
+            .map(|rich| self.resolve_rich_text_runs(rich))
+            .transpose()?;
+        if runs.as_ref().is_some_and(|runs| runs.len() > 8_190) {
+            return Err(ExcelError::Unsupported(
+                "legacy XLS comment rich text exceeds the TXO 65535-byte formatting limit"
+                    .to_owned(),
+            ));
+        }
+        Ok(runs)
+    }
+
+    fn resolve_rich_text_runs(
+        &mut self,
+        rich: &crate::RichTextStringData,
+    ) -> Result<Vec<(u16, u16)>> {
         let intervals = rich
             .interval_fonts()
             .iter()
@@ -371,6 +416,10 @@ impl Biff8TemplatePackage {
             }
             utf16_start = utf16_start.saturating_add(segment.text.encode_utf16().count());
         }
+        Ok(runs)
+    }
+
+    fn flush_rich_text_fonts(&mut self) -> Result<()> {
         let fonts = self.rich_text_styles.custom_fonts();
         let new_fonts = fonts
             .get(self.emitted_rich_text_fonts..)
@@ -379,9 +428,7 @@ impl Biff8TemplatePackage {
             .append_custom_fonts(new_fonts)
             .map_err(ExcelError::from)?;
         self.emitted_rich_text_fonts = fonts.len();
-        Ok(Biff8Cell::general(Biff8Value::RichText(
-            Biff8RichText::new(rich.text_string().to_owned(), runs),
-        )))
+        Ok(())
     }
 }
 
@@ -450,6 +497,7 @@ fn collect_template_decorations(
     row: u32,
     column: usize,
     value: &CellValue,
+    formatting_runs: Option<Vec<(u16, u16)>>,
 ) -> Result<()> {
     match value {
         CellValue::Hyperlink { url, text } => target.push(TemplateDecoration::Hyperlink {
@@ -522,7 +570,7 @@ fn collect_template_decorations(
             let anchor = comment.get_anchor();
             let (first_row, last_row, first_col, last_col) =
                 resolve_template_hyperlink_range(row, column, anchor.get_coordinates())?;
-            let value = Biff8Comment::new(cell_row, cell_column, text, author).with_anchor(
+            let mut value = Biff8Comment::new(cell_row, cell_column, text, author).with_anchor(
                 u16::try_from(first_row).map_err(|_| {
                     ExcelError::Format("BIFF8 comment first row exceeds 65535".to_owned())
                 })?,
@@ -540,6 +588,9 @@ fn collect_template_decorations(
                 anchor.get_bottom().map(template_comment_offset),
                 anchor.get_left().map(template_comment_offset),
             );
+            if let Some(formatting_runs) = formatting_runs {
+                value = value.with_formatting_runs(formatting_runs);
+            }
             target.push(TemplateDecoration::Comment(value));
         }
         _ => {}

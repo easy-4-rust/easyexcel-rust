@@ -1,15 +1,64 @@
 //! 对应 Java：`com.alibaba.excel.metadata.format.ExcelGeneralNumberFormat`.
 //!
-//! Java's 81-line class formats numbers in Excel's "General" format.
-//! Rust delegates to `ssfmt::format` with format code `"General"`.
+//! Java's class formats numbers in Excel's "General" format and permits
+//! callers to disable scientific notation.
+
+use crate::format::data_formatter::{
+    excel_display_number, is_scientific_magnitude, java_plain_extreme_format,
+    java_scientific_format,
+};
 
 /// Formats a number in Excel "General" format. (Java
 /// `ExcelGeneralNumberFormat.format(Object, StringBuffer, FieldPosition)`)
-#[allow(dead_code)]
 #[must_use]
 /// 对应 Java：com.alibaba.excel.metadata.format.ExcelGeneralNumberFormat。
 pub fn format_general(value: f64) -> String {
-    format!("{value}")
+    format_general_with_options(value, true, '.')
+}
+
+/// 使用 Java `ExcelGeneralNumberFormat` 的科学计数与 locale 选项格式化。
+#[must_use]
+pub fn format_general_with_options(
+    value: f64,
+    use_scientific_format: bool,
+    decimal_separator: char,
+) -> String {
+    if !value.is_finite() {
+        return value.to_string();
+    }
+    let value = excel_display_number(value);
+    let absolute = value.abs();
+    if is_scientific_magnitude(value) {
+        return if use_scientific_format {
+            java_scientific_format(value, decimal_separator)
+        } else {
+            java_plain_extreme_format(value)
+        };
+    }
+    if value.floor() == value || absolute >= 1E10 {
+        return format!("{value:.0}");
+    }
+
+    // Java 先舍入到十位有效数字，再交给 `#.##########`。
+    let integer_digits = if absolute < 1.0 {
+        0
+    } else {
+        absolute.log10().floor().max(0.0) as usize + 1
+    };
+    let fraction_digits = 10_usize.saturating_sub(integer_digits).min(10);
+    let mut rendered = format!("{value:.fraction_digits$}");
+    if rendered.contains('.') {
+        while rendered.ends_with('0') {
+            rendered.pop();
+        }
+        if rendered.ends_with('.') {
+            rendered.pop();
+        }
+    }
+    if decimal_separator != '.' {
+        rendered = rendered.replace('.', &decimal_separator.to_string());
+    }
+    rendered
 }
 
 #[cfg(test)]

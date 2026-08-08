@@ -8,6 +8,7 @@ use super::{CsvCell, CsvCellStyle, CsvCellValue};
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 具有零基行号和稀疏单元格集合的 CSV 行。
 #[derive(Debug, Clone, PartialEq)]
 pub struct CsvRow<V: CsvCellValue = ModelCellValue> {
+    csv_workbook_id: Option<usize>,
     row_index: u32,
     cells: Vec<CsvCell<V>>,
     cell_style: Option<CsvCellStyle>,
@@ -21,6 +22,7 @@ impl<V: CsvCellValue> CsvRow<V> {
     /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn new(row_index: u32) -> Self {
         Self {
+            csv_workbook_id: None,
             row_index,
             cells: Vec::new(),
             cell_style: None,
@@ -35,10 +37,19 @@ impl<V: CsvCellValue> CsvRow<V> {
     pub const fn row_index(&self) -> u32 {
         self.row_index
     }
+    /// 返回父工作簿稳定身份。对应 Java Lombok `getCsvWorkbook`。
+    #[must_use] pub const fn get_csv_workbook(&self) -> Option<usize> { self.csv_workbook_id }
+    /// 设置父工作簿稳定身份。
+    pub const fn set_csv_workbook(&mut self, value: Option<usize>) { self.csv_workbook_id = value; }
 
     /// 设置零基行号，语义对应 Java Lombok `setRowIndex` / `setRowNum`。
     pub const fn set_row_index(&mut self, row_index: u32) {
         self.row_index = row_index;
+    }
+
+    /// 设置零基行号。对应 Java：`CsvRow#setRowNum`。
+    pub const fn set_row_num(&mut self, row_num: u32) {
+        self.set_row_index(row_num);
     }
 
     /// Java `Row#getRowNum` 兼容别名。
@@ -52,6 +63,12 @@ impl<V: CsvCellValue> CsvRow<V> {
     #[must_use]
     pub fn cells(&self) -> &[CsvCell<V>] {
         &self.cells
+    }
+
+    /// 返回单元格列表。对应 Java Lombok：`CsvRow#getCellList`。
+    #[must_use]
+    pub fn get_cell_list(&self) -> &[CsvCell<V>] {
+        self.cells()
     }
 
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 按逻辑列查询单元格。
@@ -109,6 +126,11 @@ impl<V: CsvCellValue> CsvRow<V> {
         self.cell_style = Some(style);
     }
 
+    /// 设置行样式。对应 Java：`CsvRow#setRowStyle`。
+    pub fn set_row_style(&mut self, style: CsvCellStyle) {
+        self.set_cell_style(style);
+    }
+
     /// 返回行级样式。
     #[must_use]
     pub const fn cell_style(&self) -> Option<&CsvCellStyle> {
@@ -160,6 +182,28 @@ impl<V: CsvCellValue> CsvRow<V> {
 
     /// Java `cellIterator()` 兼容入口。
     pub fn cell_iterator(&self) -> impl Iterator<Item = &CsvCell<V>> { self.iter() }
+
+    /// CSV 不维护分组层级。对应 Java：`CsvRow#getOutlineLevel`。
+    #[must_use]
+    pub const fn get_outline_level(&self) -> i32 { 0 }
+
+    /// Java CSV 实现为空操作，不移动单元格。
+    pub const fn shift_cells_right(
+        &mut self,
+        _first_shift_column_index: u16,
+        _last_shift_column_index: u16,
+        _step: u16,
+    ) {
+    }
+
+    /// Java CSV 实现为空操作，不移动单元格。
+    pub const fn shift_cells_left(
+        &mut self,
+        _first_shift_column_index: u16,
+        _last_shift_column_index: u16,
+        _step: u16,
+    ) {
+    }
 
     /// 返回单元格迭代器，语义对应 Java `cellIterator` / `iterator`。
     pub fn iter(&self) -> impl Iterator<Item = &CsvCell<V>> {

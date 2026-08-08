@@ -1,19 +1,63 @@
-//! Java `PositionUtils` 兼容入口。
+//! Java `com.alibaba.excel.util.PositionUtils` 兼容实现。
 
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 读取 OOXML `<row r="…">` 的一基行号。
+/// 根据 OOXML `row` 标签的一基行号返回零基行号。
+///
+/// 当标签缺失时，保持 Java `getRowByRowTagt(String, Integer)` 的递增
+/// 语义：`before == null` 从 `0` 开始，否则返回 `before + 1`。
 #[must_use]
-pub fn get_row_by_row_tagt(row_tag: &str) -> u32 {
-    easyexcel_xlsx::parse_xlsx_row_number(row_tag).map_or(0, |row| row + 1)
+pub fn get_row_by_row_tagt(row_tagt: Option<&str>, before: Option<i32>) -> i32 {
+    row_tagt.map_or_else(
+        || before.unwrap_or(-1).saturating_add(1),
+        |value| {
+            value
+                .parse::<i32>()
+                .expect("row tag must contain an unsigned decimal row number")
+                .saturating_sub(1)
+        },
+    )
 }
 
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 从 A1 引用读取零基行号。
+/// 从 A1 引用读取零基行号。
+///
+/// 对应 Java `getRow(String)`；引用缺失返回 `-1`。无尾随数字的非法引用
+/// 与 Java `Integer.parseUnsignedInt("")` 一样触发 panic，而不是静默返回 0。
 #[must_use]
-pub fn get_row(cell_ref: &str) -> u32 {
-    easyexcel_model::addr::row_from_a1(cell_ref)
+pub fn get_row(current_cell_index: Option<&str>) -> i32 {
+    let Some(reference) = current_cell_index else {
+        return -1;
+    };
+    let digit_start = reference
+        .char_indices()
+        .rev()
+        .find_map(|(index, value)| (!value.is_ascii_digit()).then_some(index + value.len_utf8()))
+        .unwrap_or(0);
+    reference[digit_start..]
+        .parse::<u32>()
+        .expect("cell reference must end with an unsigned decimal row number")
+        .saturating_sub(1) as i32
 }
 
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 从 A1 引用读取零基列号。
+/// 从 A1 引用读取零基列号。
+///
+/// 对应 Java `getCol(String, Integer)`；引用缺失时按 `before` 递增，支持
+/// `$A$1`、大小写列名以及只含列名的输入。
 #[must_use]
-pub fn get_col(cell_ref: &str) -> u32 {
-    easyexcel_model::addr::column_from_a1(cell_ref)
+pub fn get_col(current_cell_index: Option<&str>, before: Option<i32>) -> i32 {
+    let Some(reference) = current_cell_index else {
+        return before.unwrap_or(-1).saturating_add(1);
+    };
+    let mut column = 0_i32;
+    for value in reference.trim_start_matches('$').chars() {
+        if value == '$' || value.is_ascii_digit() {
+            break;
+        }
+        let upper = value.to_ascii_uppercase();
+        if !upper.is_ascii_uppercase() {
+            break;
+        }
+        column = column
+            .saturating_mul(26)
+            .saturating_add(i32::from(upper as u8 - b'A' + 1));
+    }
+    column - 1
 }

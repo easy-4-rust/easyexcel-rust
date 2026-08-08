@@ -3,6 +3,7 @@
 //! Java uses reflection to resolve fields. Rust delegates the field-name algorithm to
 //! `easyexcel-utils` and resolves fields from derive-generated [`ExcelRow`] metadata.
 
+use std::any::{Any, TypeId};
 use std::borrow::Cow;
 
 use crate::core::{ExcelColumn, ExcelRow};
@@ -22,6 +23,12 @@ pub fn resolve_cglib_field_name(name: &str) -> Cow<'_, str> {
 #[must_use]
 pub fn get_field<T: ExcelRow>(field_name: &str) -> Option<&'static ExcelColumn> {
     T::schema().iter().find(|column| column.field == field_name)
+}
+
+/// 返回动态字段值的 Rust 类型键；`None` 对应 Java `NullObject.class`。
+#[must_use]
+pub fn get_field_class(value: Option<&dyn Any>) -> Option<TypeId> {
+    value.map(Any::type_id)
 }
 
 #[cfg(test)]

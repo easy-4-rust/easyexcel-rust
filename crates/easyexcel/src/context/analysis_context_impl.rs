@@ -2,7 +2,8 @@
 
 use std::collections::HashSet;
 
-use crate::core::{AnalysisContext, CustomReadObject, ExcelError, Result};
+use crate::core::{AnalysisContext, CellValue, CustomReadObject, ExcelError, Result};
+use crate::HolderEnum;
 use crate::support::ExcelTypeEnum;
 
 use crate::ReadOptions;
@@ -98,11 +99,21 @@ impl AnalysisContextImpl {
         &self.read_workbook_holder
     }
 
+    /// 返回可变工作簿 Holder。
+    pub const fn read_workbook_holder_mut(&mut self) -> &mut ReadWorkbookHolder {
+        &mut self.read_workbook_holder
+    }
+
     /// Returns the active sheet holder. (Java `readSheetHolder()`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.context.AnalysisContextImpl。
     pub const fn read_sheet_holder(&self) -> Option<&ReadSheetHolder> {
         self.read_sheet_holder.as_ref()
+    }
+
+    /// 返回可变当前工作表 Holder。
+    pub const fn read_sheet_holder_mut(&mut self) -> Option<&mut ReadSheetHolder> {
+        self.read_sheet_holder.as_mut()
     }
 
     /// Returns the active row holder. (Java `readRowHolder()`)
@@ -112,9 +123,30 @@ impl AnalysisContextImpl {
         self.read_row_holder.as_ref()
     }
 
+    /// 返回可变当前行 Holder。
+    pub const fn read_row_holder_mut(&mut self) -> Option<&mut ReadRowHolder> {
+        self.read_row_holder.as_mut()
+    }
+
     /// 对应 Java：com.alibaba.excel.context.AnalysisContextImpl。 Sets the active row holder. (Java `readRowHolder(ReadRowHolder)`)
     pub fn set_read_row_holder(&mut self, read_row_holder: ReadRowHolder) {
         self.read_row_holder = Some(read_row_holder);
+    }
+
+    /// 返回 Java `currentReadHolder()` 当前所处层级。
+    #[must_use]
+    pub const fn current_read_holder_type(&self) -> HolderEnum {
+        if self.read_sheet_holder.is_some() {
+            HolderEnum::Sheet
+        } else {
+            HolderEnum::Workbook
+        }
+    }
+
+    /// Java `currentReadHolder()` 兼容别名。
+    #[must_use]
+    pub const fn current_read_holder(&self) -> HolderEnum {
+        self.current_read_holder_type()
     }
 
     /// 对应 Java：com.alibaba.excel.context.AnalysisContextImpl。 Returns the custom read object. (Java `getCustom()`)
@@ -122,6 +154,9 @@ impl AnalysisContextImpl {
     pub fn custom(&self) -> Option<&CustomReadObject> {
         self.inner.custom_object()
     }
+    /// Java `getCustom()` 兼容入口。
+    #[must_use]
+    pub fn get_custom(&self) -> Option<&CustomReadObject> { self.custom() }
 
     /// 对应 Java：com.alibaba.excel.context.AnalysisContextImpl。 Returns the event processor. (Java `analysisEventProcessor()`)
     pub fn analysis_event_processor(&mut self) -> &mut dyn AnalysisEventProcessor {
@@ -152,16 +187,43 @@ impl AnalysisContextImpl {
         self.read_row_holder.as_ref().map(|holder| holder.row_index)
     }
 
+    /// Java `getCurrentRowNum()` 兼容别名。
+    #[must_use]
+    pub fn get_current_row_num(&self) -> Option<i32> { self.current_row_num() }
+
+    /// 对应 Java `getTotalCount()`；该值与 Java 一样可能只是近似值。
+    #[must_use]
+    pub fn total_count(&self) -> Option<i32> {
+        self.read_sheet_holder
+            .as_ref()
+            .and_then(ReadSheetHolder::get_total)
+    }
+
+    /// Java `getTotalCount()` 兼容别名。
+    #[must_use]
+    pub fn get_total_count(&self) -> Option<i32> { self.total_count() }
+
+    /// 对应 Java `getCurrentRowAnalysisResult()`。
+    #[must_use]
+    pub fn current_row_analysis_result(&self) -> Option<&CellValue> {
+        self.read_row_holder
+            .as_ref()
+            .and_then(ReadRowHolder::get_current_row_analysis_result)
+    }
+
+    /// Java `getCurrentRowAnalysisResult()` 兼容别名。
+    #[must_use]
+    pub fn get_current_row_analysis_result(&self) -> Option<&CellValue> {
+        self.current_row_analysis_result()
+    }
+
     /// 对应 Java：`@Deprecated interrupt()`.
     ///
     /// # Errors
     ///
-    /// Always returns `ExcelError::Unsupported` — Rust listeners use
-    /// [`crate::core::ReadListener::has_next`] instead.
+    /// 与 Java 一样立即抛出 `ExcelAnalysisException("interrupt error")`。
     pub fn interrupt(&self) -> Result<()> {
-        Err(ExcelError::Unsupported(
-            "AnalysisContextImpl.interrupt is deprecated; use ReadListener::has_next".to_owned(),
-        ))
+        Err(ExcelError::Format("interrupt error".to_owned()))
     }
 }
 

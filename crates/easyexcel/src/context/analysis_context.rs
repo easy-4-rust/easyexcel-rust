@@ -75,6 +75,9 @@ impl AnalysisContext {
     pub fn custom<T: Any>(&self) -> Option<&T> {
         self.custom_object.as_ref()?.downcast_ref()
     }
+    /// Java `getCustom()` 的类型安全兼容入口。
+    #[must_use]
+    pub fn get_custom<T: Any>(&self) -> Option<&T> { self.custom() }
 
     /// 对应 Java：com.alibaba.excel.context.AnalysisContext。 Returns a context carrying the supplied custom read object.
     #[must_use]

@@ -320,6 +320,12 @@ pub fn load_default_read_converter() -> ConverterRegistry {
     registry
 }
 
+/// 加载全部默认读取转换器。对应 Java：`DefaultConverterLoader#loadAllConverter`。
+#[must_use]
+pub fn load_all_converter() -> ConverterRegistry {
+    load_default_read_converter()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

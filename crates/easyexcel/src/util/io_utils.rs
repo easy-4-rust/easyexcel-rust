@@ -16,3 +16,21 @@ use crate::core::excel_error::ExcelError;
 pub fn copy(reader: &mut dyn Read, writer: &mut dyn Write) -> Result<u64, ExcelError> {
     easyexcel_io::io::io_utils::copy(reader, writer).map_err(ExcelError::from)
 }
+
+/// 读取输入流的全部剩余字节。对应 Java：`IoUtils#toByteArray(InputStream)`。
+pub fn to_byte_array(reader: &mut dyn Read) -> Result<Vec<u8>, ExcelError> {
+    let mut bytes = Vec::new();
+    reader.read_to_end(&mut bytes)?;
+    Ok(bytes)
+}
+
+/// 按声明长度读取输入流。若提前结束则返回 I/O 错误。
+/// 对应 Java：`IoUtils#toByteArray(InputStream, int)`。
+pub fn to_byte_array_with_size(
+    reader: &mut dyn Read,
+    size: usize,
+) -> Result<Vec<u8>, ExcelError> {
+    let mut bytes = vec![0_u8; size];
+    reader.read_exact(&mut bytes)?;
+    Ok(bytes)
+}

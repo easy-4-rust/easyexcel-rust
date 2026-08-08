@@ -37,7 +37,7 @@ impl XlsxReadWorkbookHolder {
             inner: ReadWorkbookHolder::from_options(options),
             data_format_data_cache: HashMap::new(),
             package_relationship_collection_map: HashMap::new(),
-            sax_parser_factory_name: None,
+            sax_parser_factory_name: options.xlsx_sax_parser_factory_name.clone(),
             opc_package: None,
             styles_table: Vec::new(),
         }

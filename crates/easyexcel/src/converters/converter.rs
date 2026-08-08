@@ -12,6 +12,8 @@
 //! with `TypeId`) and the two conversion methods. `supportJavaTypeKey` is
 //! implicit in the generic parameter `T`.
 
+use std::any::TypeId;
+
 use crate::core::enum_cell_data_type::CellDataType;
 use crate::core::excel_error::ExcelError;
 use crate::core::read_converter_context::ReadConverterContext;
@@ -28,6 +30,14 @@ use crate::write::write_cell_data::WriteCellData;
 /// `ConverterRegistry::register::<T, _>` call.
 #[allow(clippy::missing_errors_doc)]
 pub trait Converter<T> {
+    /// 返回 Java `supportJavaTypeKey()` 对应的 Rust 类型键。
+    fn support_java_type_key(&self) -> TypeId
+    where
+        T: 'static,
+    {
+        TypeId::of::<T>()
+    }
+
     /// Returns the source cell type supported when this converter is registered globally.
     ///
     /// Java `EasyExcel` requires global read converters to expose this key.
@@ -37,11 +47,21 @@ pub trait Converter<T> {
         CellDataType::String
     }
 
+    /// Java `supportExcelTypeKey()` 兼容别名。
+    fn support_excel_type_key(&self) -> CellDataType {
+        self.support_excel_type()
+    }
+
     /// Converts an Excel cell into a Rust field value. (Java `convertToJavaData(ReadConverterContext)`)
     fn convert_to_rust_data(&self, _context: &ReadConverterContext<'_>) -> Result<T, ExcelError> {
         Err(ExcelError::Unsupported(
             "custom converter does not support reading".to_owned(),
         ))
+    }
+
+    /// Java `convertToJavaData(ReadConverterContext)` 兼容入口。
+    fn convert_to_java_data(&self, context: &ReadConverterContext<'_>) -> Result<T, ExcelError> {
+        self.convert_to_rust_data(context)
     }
 
     /// Converts a Rust field value into an Excel cell. (Java `convertToExcelData(WriteConverterContext)`)

@@ -12,7 +12,7 @@ pub use builtin_formats::{
     get_builtin_format_for_locale, switch_builtin_formats, switch_builtin_formats_for_locale,
     switch_builtin_formats_map,
 };
-pub use easy_excel_constants::EXCEL_MATH_CONTEXT_PRECISION;
+pub use easy_excel_constants::{EasyExcelConstants, EXCEL_MATH_CONTEXT_PRECISION};
 pub use excel_xml_constants::{
     ATTRIBUTE_LOCATION, ATTRIBUTE_R, ATTRIBUTE_REF, ATTRIBUTE_RID, ATTRIBUTE_S, ATTRIBUTE_T,
     CELL_FORMULA_TAG, CELL_INLINE_STRING_VALUE_TAG, CELL_RANGE_SPLIT, CELL_TAG, CELL_VALUE_TAG,
@@ -27,4 +27,5 @@ pub use excel_xml_constants::{
 };
 pub use order_constant::{
     ANNOTATION_DEFINE_STYLE, DEFAULT_DEFINE_STYLE, DEFAULT_ORDER, DEFINE_STYLE, FILL_STYLE,
+    OrderConstant,
 };

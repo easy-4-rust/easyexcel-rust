@@ -31,11 +31,10 @@ impl<T: ExcelRow> RowConsumer for TypedRowConsumer<'_, T> {
     }
 
     fn extra(&mut self, extra: &CellExtra, context: &AnalysisContext) -> Result<ReadFlow> {
-        let result = self.listener.extra(extra, context);
-        listener_result(result, self.listener, context)
+        DefaultAnalysisEventProcessor::dispatch_extra(self.listener, extra, context)
     }
 
     fn after(&mut self, context: &AnalysisContext) -> Result<()> {
-        self.listener.do_after_all_analysed(context)
+        DefaultAnalysisEventProcessor::dispatch_end_sheet(self.listener, context)
     }
 }

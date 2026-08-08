@@ -1,44 +1,91 @@
 //! 对应 Java：`com.alibaba.excel.read.processor.DefaultAnalysisEventProcessor`.
 //!
-//! # 架构差异（对象数据一致性例外，见 docs/migration/对象级对照表.md）
-//!
-//! Java 的 `DefaultAnalysisEventProcessor`（168 行）是读取事件分发中枢：
-//! `endRow`→`dealData`（行类型判断、`invoke`/`invokeHead` 分发、`hasNext`
-//! 停机检查、`onException` 异常路由）、`extra`→`dealExtra`（`CellExtra`
-//! 监听分发）、`endSheet`→`doAfterAllAnalysed`、`buildHead`（表头列映射
-//! 构建）。其依赖 `AnalysisContext.readRowHolder()/currentReadHolder()`
-//! 的 Java holder 体系。
-//!
-//! Rust 读取管线**没有 holder 体系**：`AnalysisContext` 仅携带精简事件
-//! 上下文，Java 事件处理器的全部语义由读取管线内联实现并 100% 覆盖——
-//! 行分发/表头判断/`invokeHead`/`invoke`/停机/异常路由在
-//! `read/row_consumer.rs::RowConsumer` + `process_row_with_metadata`，
-//! `CellExtra` 监听分发在 `RowConsumer::extra`，`doAfterAllAnalysed` 在
-//! `RowConsumer::after`，表头列映射在 `read/row_processing.rs`。因此本
-//! 对象保持 no-op 空实现（Java 事件处理器模式 → Rust 内联管线的形态差异），
-//! 不是语义缺失；读取功能由 62 个测试套件全绿验证。
+//! Rust 的 Holder 与用户模型采用静态类型，因此三个 Java trait 方法仍只接收
+//! 轻量 `AnalysisContext`；真实行、extra、结束事件通过本类型的类型化分发方法
+//! 进入 Listener。读取管线直接调用这些方法，避免出现只有同名对象、实际链路
+//! 却绕过它的假兼容。
 
-use crate::core::AnalysisContext;
+use std::collections::HashMap;
+
+use crate::core::{AnalysisContext, CellExtra, ExcelError, ReadListener, Result};
+use crate::read::row_consumer::ReadFlow;
 use crate::read::processor::analysis_event_processor::AnalysisEventProcessor;
 
 /// 默认分析事件处理器，对应 Java `DefaultAnalysisEventProcessor`。
 ///
-/// 事件语义由读取管线内联实现（见模块注释的架构差异说明），本对象为
-/// Java 事件处理器形态的 Rust 占位——保持 trait 契约可调用。
+/// 类型化入口承担 Java `dealData`、`dealExtra`、异常路由、`hasNext` 与
+/// `doAfterAllAnalysed` 的实际生产调用。
 #[derive(Debug, Clone, Default)]
 pub struct DefaultAnalysisEventProcessor;
 
+impl DefaultAnalysisEventProcessor {
+    /// 分发表头事件并执行 Java `hasNext`/`onException` 路由。
+    pub(crate) fn dispatch_head<T>(
+        listener: &mut dyn ReadListener<T>,
+        head: &HashMap<String, usize>,
+        context: &AnalysisContext,
+    ) -> Result<ReadFlow> {
+        let result = listener.invoke_head(head, context);
+        Self::dispatch_result(result, listener, context)
+    }
+
+    /// 分发已经转换完成的数据行。
+    pub(crate) fn dispatch_data<T>(
+        listener: &mut dyn ReadListener<T>,
+        data: T,
+        context: &AnalysisContext,
+    ) -> Result<ReadFlow> {
+        let result = listener.invoke(data, context);
+        Self::dispatch_result(result, listener, context)
+    }
+
+    /// 将模型转换错误送入全部 Listener 都遵循的异常策略。
+    pub(crate) fn dispatch_error<T>(
+        listener: &mut dyn ReadListener<T>,
+        error: ExcelError,
+        context: &AnalysisContext,
+    ) -> Result<ReadFlow> {
+        crate::read::read_helpers::listener_error(error, listener, context)
+    }
+
+    /// 分发 comment/hyperlink/merge 等 extra 元数据。
+    pub(crate) fn dispatch_extra<T>(
+        listener: &mut dyn ReadListener<T>,
+        extra: &CellExtra,
+        context: &AnalysisContext,
+    ) -> Result<ReadFlow> {
+        let result = listener.extra(extra, context);
+        Self::dispatch_result(result, listener, context)
+    }
+
+    /// 分发工作表结束事件。
+    pub(crate) fn dispatch_end_sheet<T>(
+        listener: &mut dyn ReadListener<T>,
+        context: &AnalysisContext,
+    ) -> Result<()> {
+        listener.do_after_all_analysed(context)
+    }
+
+    fn dispatch_result<T>(
+        result: Result<()>,
+        listener: &mut dyn ReadListener<T>,
+        context: &AnalysisContext,
+    ) -> Result<ReadFlow> {
+        crate::read::read_helpers::listener_result(result, listener, context)
+    }
+}
+
 impl AnalysisEventProcessor for DefaultAnalysisEventProcessor {
     fn extra(&mut self, _: &AnalysisContext) {
-        // Java 的 extra 分发已由 RowConsumer::extra 在实际读取链路中执行。
+        // 无类型的 Java 兼容入口；生产链使用 dispatch_extra。
     }
 
     fn end_row(&mut self, _: &AnalysisContext) {
-        // Java 的表头/数据行分发已由 RowConsumer 与 row_processing 执行。
+        // 无行负载的 Java 兼容入口；生产链使用 dispatch_head/dispatch_data。
     }
 
     fn end_sheet(&mut self, _: &AnalysisContext) {
-        // Java 的 doAfterAllAnalysed 已由 RowConsumer::after 执行。
+        // 无 Listener 的 Java 兼容入口；生产链使用 dispatch_end_sheet。
     }
 }
 

@@ -96,6 +96,8 @@ impl CsvCellStyle {
     pub const fn get_font_index(&self) -> usize { self.font_index() }
     /// Java `getFontIndexAsInt()` 兼容别名。
     pub const fn get_font_index_as_int(&self) -> usize { self.font_index() }
+    /// Java CSV 实现为空操作。
+    pub const fn set_font(&mut self, _font: Option<()>) {}
 
     /// CSV 不保存隐藏标志。
     #[must_use]

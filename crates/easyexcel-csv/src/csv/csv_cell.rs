@@ -34,6 +34,7 @@ pub enum CsvCellType {
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 CSV 工作簿中的一个有类型单元格。
 #[derive(Debug, Clone, PartialEq)]
 pub struct CsvCell<V: CsvCellValue = ModelCellValue> {
+    csv_workbook_id: Option<usize>,
     column_index: u16,
     row_index: u32,
     value: V,
@@ -51,6 +52,7 @@ impl<V: CsvCellValue> CsvCell<V> {
     /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub const fn new(column_index: u16) -> Self {
         Self {
+            csv_workbook_id: None,
             column_index,
             row_index: 0,
             value: V::EMPTY,
@@ -77,6 +79,12 @@ impl<V: CsvCellValue> CsvCell<V> {
     pub const fn column_index(&self) -> u16 {
         self.column_index
     }
+    /// 返回父工作簿稳定身份。对应 Java Lombok `getCsvWorkbook`。
+    #[must_use] pub const fn get_csv_workbook(&self) -> Option<usize> { self.csv_workbook_id }
+    /// 设置父工作簿稳定身份。
+    pub const fn set_csv_workbook(&mut self, value: Option<usize>) { self.csv_workbook_id = value; }
+    /// 返回父行的零基行号。对应 Java Lombok `getCsvRow` 的稳定身份映射。
+    #[must_use] pub const fn get_csv_row(&self) -> u32 { self.row_index }
     pub const fn get_column_index(&self) -> u16 { self.column_index() }
 
     /// 返回有类型值。
@@ -267,7 +275,17 @@ impl<V: CsvCellValue> CsvCell<V> {
 
     /// CSV 不承载批注和超链接；与 Java CSV 适配器的 no-op 语义一致。
     pub const fn remove_cell_comment(&mut self) {}
+    /// Java CSV 返回 `null`。
+    #[must_use] pub const fn get_cell_comment(&self) -> Option<()> { None }
+    /// Java CSV 为空操作。
+    pub const fn set_cell_comment(&mut self, _comment: Option<()>) {}
     pub const fn remove_hyperlink(&mut self) {}
+    /// Java CSV 返回 `null`。
+    #[must_use] pub const fn get_hyperlink(&self) -> Option<()> { None }
+    /// Java CSV 为空操作。
+    pub const fn set_hyperlink(&mut self, _hyperlink: Option<()>) {}
+    /// Java CSV 返回 `null`，因为 CSV 不支持数组公式。
+    #[must_use] pub const fn get_array_formula_range(&self) -> Option<()> { None }
     pub const fn set_as_active_cell(&mut self) {}
     pub const fn is_part_of_array_formula_group_java(&self) -> bool {
         self.is_part_of_array_formula_group()

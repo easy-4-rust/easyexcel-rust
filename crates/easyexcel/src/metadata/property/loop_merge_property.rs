@@ -25,12 +25,14 @@ impl LoopMergeProperty {
     pub const fn each_row(&self) -> u32 {
         self.each_row
     }
+    #[must_use] pub const fn get_each_row(&self) -> u32 { self.each_row() }
     /// Returns `columnExtend`. (Java `getColumnExtend()`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.metadata.property.LoopMergeProperty。
     pub const fn column_extend(&self) -> u16 {
         self.column_extend
     }
+    #[must_use] pub const fn get_column_extend(&self) -> u16 { self.column_extend() }
 }
 
 #[cfg(test)]

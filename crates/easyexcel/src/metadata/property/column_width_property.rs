@@ -20,4 +20,6 @@ impl ColumnWidthProperty {
     pub const fn width(&self) -> u16 {
         self.width
     }
+    #[must_use] pub const fn get_width(&self) -> u16 { self.width() }
+    pub const fn set_width(&mut self, value: u16) { self.width = value; }
 }

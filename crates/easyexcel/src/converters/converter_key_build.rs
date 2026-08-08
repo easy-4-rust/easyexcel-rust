@@ -45,6 +45,10 @@ impl ConverterKey {
     pub const fn cell_data_type(&self) -> Option<CellDataType> {
         self.cell_data_type
     }
+    /// Java Lombok `getCellDataTypeEnum`。
+    #[must_use] pub const fn get_cell_data_type_enum(&self) -> Option<CellDataType> { self.cell_data_type }
+    /// Java Lombok `setCellDataTypeEnum`。
+    pub const fn set_cell_data_type_enum(&mut self, value: Option<CellDataType>) { self.cell_data_type = value; }
 }
 
 /// 对应 Java：com.alibaba.excel.converters.ConverterKeyBuild。 Builds Java's `(Class, CellDataTypeEnum)` key for Rust type `T`.

@@ -22,6 +22,12 @@ pub struct ReadConverterContext<'a> {
 }
 
 impl<'a> ReadConverterContext<'a> {
+    /// 替换读取单元格数据。对应 Java Lombok setter。
+    pub const fn set_read_cell_data(&mut self, value: Option<&'a CellValue>) { self.cell = value; }
+    /// 替换字段内容属性。对应 Java Lombok setter。
+    pub const fn set_content_property(&mut self, value: &'a ExcelColumn) { self.column = value; }
+    /// 替换分析上下文。对应 Java Lombok setter。
+    pub const fn set_analysis_context(&mut self, value: &'a ConvertContext) { self.context = value; }
     /// Creates a read conversion context. (Java `@AllArgsConstructor`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.converters.ReadConverterContext。
@@ -92,6 +98,12 @@ impl<'a> ReadConverterContext<'a> {
         self.cell
     }
 
+    /// 返回读取单元格数据。对应 Java：`getReadCellData()`。
+    #[must_use]
+    pub const fn get_read_cell_data(&self) -> Option<&'a CellValue> {
+        self.cell()
+    }
+
     /// Returns formula metadata when the source cell contains a formula. (Java `ReadCellData.getFormulaData()`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.converters.ReadConverterContext。
@@ -120,11 +132,23 @@ impl<'a> ReadConverterContext<'a> {
         self.column
     }
 
+    /// 返回字段内容属性。对应 Java：`getContentProperty()`。
+    #[must_use]
+    pub const fn get_content_property(&self) -> &'a ExcelColumn {
+        self.column()
+    }
+
     /// Returns the resolved row, column, field, and format information. (Java `getAnalysisContext()`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.converters.ReadConverterContext。
     pub const fn convert_context(&self) -> &'a ConvertContext {
         self.context
+    }
+
+    /// 返回分析上下文的轻量等价物。对应 Java：`getAnalysisContext()`。
+    #[must_use]
+    pub const fn get_analysis_context(&self) -> &'a ConvertContext {
+        self.convert_context()
     }
 }
 

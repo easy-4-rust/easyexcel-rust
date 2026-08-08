@@ -106,8 +106,12 @@ impl<'a> WriteTableHolder<'a> {
     pub fn set_write_table(&mut self, value: WriteTable) { self.table_no = value.table_no; self.write_table = value; }
     /// Java `getParentWriteSheetHolder` 的稳定身份映射。
     #[must_use] pub const fn get_parent_write_sheet_holder_id(&self) -> Option<usize> { self.parent_write_sheet_holder_id }
+    /// Java 命名兼容入口；Rust 使用稳定身份而不是自引用。
+    #[must_use] pub const fn get_parent_write_sheet_holder(&self) -> Option<usize> { self.parent_write_sheet_holder_id }
     /// Java `setParentWriteSheetHolder` 的稳定身份映射。
     pub const fn set_parent_write_sheet_holder_id(&mut self, value: Option<usize>) { self.parent_write_sheet_holder_id = value; }
+    /// Java 命名兼容入口；Rust 使用稳定身份而不是自引用。
+    pub const fn set_parent_write_sheet_holder(&mut self, value: Option<usize>) { self.parent_write_sheet_holder_id = value; }
     /// Java `holderType`。
     #[must_use] pub const fn holder_type(&self) -> HolderEnum { HolderEnum::Table }
 }

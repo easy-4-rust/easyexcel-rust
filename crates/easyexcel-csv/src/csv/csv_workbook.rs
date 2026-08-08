@@ -8,6 +8,7 @@ use super::{CsvCellStyle, CsvCellValue, CsvCharset, CsvDataFormat, CsvSheet};
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 CSV 输出的单工作表逻辑工作簿。
 #[derive(Debug, Clone, PartialEq)]
 pub struct CsvWorkbook<V: CsvCellValue = ModelCellValue> {
+    out: String,
     locale: String,
     use_1904_windowing: bool,
     use_scientific_format: bool,
@@ -29,6 +30,7 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
         with_bom: bool,
     ) -> Self {
         Self {
+            out: String::new(),
             locale: locale.into(),
             use_1904_windowing,
             use_scientific_format,
@@ -46,6 +48,10 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
         &self.locale
     }
     pub fn get_locale(&self) -> &str { self.locale() }
+    /// 返回后端中立输出缓冲。对应 Java Lombok `getOut`。
+    pub fn get_out(&self) -> &str { &self.out }
+    /// 替换后端中立输出缓冲。对应 Java Lombok `setOut`。
+    pub fn set_out(&mut self, value: impl Into<String>) { self.out = value.into(); }
 
     /// 设置 Java Lombok `setLocale` 对应的区域标记。
     pub fn set_locale(&mut self, locale: impl Into<String>) {
@@ -85,11 +91,15 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
         self.use_1904_windowing
     }
     pub const fn get_use_1904_windowing(&self) -> bool { self.use_1904_windowing() }
+    /// Java Lombok 原始字段拼写兼容入口。
+    pub const fn get_use1904windowing(&self) -> bool { self.use_1904_windowing() }
 
     /// 设置 Java Lombok `setUse1904windowing` 对应的日期系统。
     pub const fn set_use_1904_windowing(&mut self, use_1904_windowing: bool) {
         self.use_1904_windowing = use_1904_windowing;
     }
+    /// Java Lombok 原始字段拼写兼容入口。
+    pub const fn set_use1904windowing(&mut self, value: bool) { self.use_1904_windowing = value; }
 
     /// 返回是否使用科学计数法。
     #[must_use]
@@ -269,4 +279,66 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
     pub const fn set_sheet_hidden(&mut self, _index: usize, _hidden: bool) {}
     pub const fn set_force_formula_recalculation(&mut self, _value: bool) {}
     pub fn iterator(&self) -> impl Iterator<Item = &CsvSheet<V>> { self.sheets() }
+    pub fn sheet_iterator(&self) -> impl Iterator<Item = &CsvSheet<V>> { self.sheets() }
+
+    /// Java `getCellStyleAt`。
+    #[must_use]
+    pub fn get_cell_style_at(&self, index: usize) -> Option<&CsvCellStyle> {
+        self.cell_style(index)
+    }
+    #[must_use] pub fn get_csv_cell_style_list(&self) -> &[CsvCellStyle] { self.cell_styles() }
+    pub fn set_csv_cell_style_list(&mut self, value: Vec<CsvCellStyle>) { self.cell_styles = value; }
+    pub fn set_csv_data_format(&mut self, value: CsvDataFormat) { self.data_format = value; }
+    pub fn set_csv_sheet(&mut self, value: Option<CsvSheet<V>>) { self.sheet = value; }
+
+    /// CSV 不保存名称、图片、字体或打印区域。
+    #[must_use] pub const fn get_all_names(&self) -> Vec<&str> { Vec::new() }
+    #[must_use] pub const fn get_names(&self, _name: &str) -> Vec<&str> { Vec::new() }
+    #[must_use] pub const fn get_all_pictures(&self) -> Vec<&[u8]> { Vec::new() }
+    #[must_use] pub const fn get_print_area(&self, _sheet_index: usize) -> Option<&str> { None }
+    #[must_use] pub const fn get_font_at(&self, _index: usize) -> Option<&str> { None }
+    #[must_use] pub const fn find_font(&self) -> Option<&str> { None }
+    #[must_use] pub const fn get_sheet_visibility(&self, _sheet_index: usize) -> &'static str { "VISIBLE" }
+    #[must_use] pub const fn get_spreadsheet_version(&self) -> &'static str { "EXCEL2007" }
+    pub const fn set_sheet_visibility(&mut self, _sheet_index: usize, _visibility: &str) {}
+    pub const fn set_print_area(&mut self, _sheet_index: usize, _reference: &str) {}
+    pub const fn remove_print_area(&mut self, _sheet_index: usize) {}
+    pub const fn flush_data(&mut self) {}
+
+    /// 删除唯一工作表；越界与 Java 一样产生可见错误。
+    pub fn remove_sheet_at(&mut self, index: usize) -> Result<()> {
+        if index != 0 || self.sheet.is_none() {
+            return Err(Error::Unsupported("CSV exists only in one sheet".to_owned()));
+        }
+        self.sheet = None;
+        Ok(())
+    }
+
+    pub fn clone_sheet(&mut self, _index: usize) -> Result<&mut CsvSheet<V>> {
+        Err(Error::Unsupported("CSV cannot clone sheet".to_owned()))
+    }
+    pub fn add_picture(&mut self, _data: &[u8], _picture_type: i32) -> Result<usize> {
+        Err(Error::Unsupported("CSV cannot add picture".to_owned()))
+    }
+    pub fn add_ole_package(&mut self, _data: &[u8], _label: &str) -> Result<()> {
+        Err(Error::Unsupported("CSV cannot add OLE package".to_owned()))
+    }
+    pub fn create_name(&mut self, _name: &str) -> Result<()> {
+        Err(Error::Unsupported("CSV cannot create workbook names".to_owned()))
+    }
+    pub fn link_external_workbook(&mut self, _name: &str) -> Result<usize> {
+        Err(Error::Unsupported("CSV cannot link external workbook".to_owned()))
+    }
+    pub const fn remove_name(&mut self, _name: &str) {}
+    pub const fn set_missing_cell_policy(&mut self, _policy: u8) {}
+    /// Java CSV 为空操作。
+    pub const fn add_tool_pack(&mut self) {}
+    /// Java CSV 返回 `null`。
+    #[must_use] pub const fn create_evaluation_workbook(&self) -> Option<()> { None }
+    /// Java CSV 返回 `null`。
+    #[must_use] pub const fn get_creation_helper(&self) -> Option<()> { None }
+    /// Java CSV 返回 `null`。
+    #[must_use] pub const fn get_cell_reference_type(&self) -> Option<()> { None }
+    /// Java CSV 为空操作。
+    pub const fn set_cell_reference_type(&mut self, _value: Option<()>) {}
 }

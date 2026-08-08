@@ -173,8 +173,12 @@ impl<'a> WriteSheetHolder<'a> {
     }
     /// Java `getParentWriteWorkbookHolder` 的稳定身份映射。
     #[must_use] pub const fn get_parent_write_workbook_holder_id(&self) -> Option<usize> { self.parent_write_workbook_holder_id }
+    /// Java 命名兼容入口；Rust 使用稳定身份而不是自引用。
+    #[must_use] pub const fn get_parent_write_workbook_holder(&self) -> Option<usize> { self.parent_write_workbook_holder_id }
     /// Java `setParentWriteWorkbookHolder` 的稳定身份映射。
     pub const fn set_parent_write_workbook_holder_id(&mut self, value: Option<usize>) { self.parent_write_workbook_holder_id = value; }
+    /// Java 命名兼容入口；Rust 使用稳定身份而不是自引用。
+    pub const fn set_parent_write_workbook_holder(&mut self, value: Option<usize>) { self.parent_write_workbook_holder_id = value; }
     /// Java `getWriteLastRowTypeEnum`。
     #[must_use] pub const fn get_write_last_row_type_enum(&self) -> WriteLastRowTypeEnum { self.write_last_row_type_enum }
     /// Java `setWriteLastRowTypeEnum`。
@@ -184,6 +188,19 @@ impl<'a> WriteSheetHolder<'a> {
         self.sheet_last_row_index = sheet_last_row_index;
         self.cached_sheet_last_row_index = cached_sheet_last_row_index;
         self.cached_sheet_has_row_zero = cached_sheet_has_row_zero;
+    }
+    /// 返回当前 Sheet 元数据。对应 Java Lombok `getSheet()`。
+    #[must_use] pub const fn get_sheet(&self) -> &WriteSheet { &self.write_sheet }
+    /// 替换当前 Sheet 元数据。对应 Java Lombok `setSheet()`。
+    pub fn set_sheet(&mut self, value: WriteSheet) { self.set_write_sheet(value); }
+    /// 返回缓存 Sheet 的最后行状态。对应 Java `getCachedSheet()` 的后端中立映射。
+    #[must_use] pub const fn get_cached_sheet(&self) -> (i32, bool) {
+        (self.cached_sheet_last_row_index, self.cached_sheet_has_row_zero)
+    }
+    /// 替换缓存 Sheet 的最后行状态。对应 Java `setCachedSheet()`。
+    pub const fn set_cached_sheet(&mut self, last_row_index: i32, has_row_zero: bool) {
+        self.cached_sheet_last_row_index = last_row_index;
+        self.cached_sheet_has_row_zero = has_row_zero;
     }
     /// Java `getNewRowIndexAndStartDoWrite`，完整复现三态游标推进。
     pub fn get_new_row_index_and_start_do_write(&mut self) -> i32 {

@@ -29,6 +29,7 @@ pub struct WriteCellData {
     hyperlink_data: Option<HyperlinkData>,
     formula_data: Option<FormulaData>,
     write_cell_style: Option<ExcelCellStyle>,
+    origin_cell_style: Option<ExcelCellStyle>,
     data_format_data: Option<DataFormatData>,
 }
 
@@ -75,6 +76,7 @@ impl WriteCellData {
             && self.hyperlink_data.is_none()
             && self.formula_data.is_none()
             && self.write_cell_style.is_none()
+            && self.origin_cell_style.is_none()
             && self.data_format_data.is_none()
     }
 
@@ -90,6 +92,7 @@ impl WriteCellData {
             hyperlink_data: None,
             formula_data: None,
             write_cell_style: None,
+            origin_cell_style: None,
             data_format_data: None,
         }
     }
@@ -247,6 +250,57 @@ impl WriteCellData {
     /// 对应 Java：com.alibaba.excel.metadata.data.WriteCellData。 Replaces the logical cell style. (Java `setWriteCellStyle(...)`)
     pub fn set_write_cell_style(&mut self, style: Option<ExcelCellStyle>) {
         self.write_cell_style = style;
+    }
+
+    /// 返回后端原始样式。对应 Java：`getOriginCellStyle()`。
+    #[must_use]
+    pub const fn get_origin_cell_style(&self) -> Option<&ExcelCellStyle> {
+        self.origin_cell_style.as_ref()
+    }
+
+    /// 设置后端原始样式。对应 Java：`setOriginCellStyle(CellStyle)`。
+    pub const fn set_origin_cell_style(&mut self, style: Option<ExcelCellStyle>) {
+        self.origin_cell_style = style;
+    }
+
+    /// 返回富文本值。对应 Java：`getRichTextStringDataValue()`。
+    #[must_use]
+    pub fn get_rich_text_string_data_value(&self) -> Option<&RichTextStringData> {
+        match &self.value {
+            CellValue::RichText(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// 设置富文本值。对应 Java：`setRichTextStringDataValue(...)`。
+    pub fn set_rich_text_string_data_value(&mut self, value: Option<RichTextStringData>) {
+        if let Some(value) = value {
+            self.value = CellValue::RichText(value);
+            self.declared_type = Some(crate::CellDataType::RichTextString);
+        } else if matches!(self.value, CellValue::RichText(_)) {
+            self.value = CellValue::Empty;
+            self.declared_type = None;
+        }
+    }
+
+    /// 返回日期时间值。对应 Java：`getDateValue()`。
+    #[must_use]
+    pub const fn get_date_value(&self) -> Option<&NaiveDateTime> {
+        match &self.value {
+            CellValue::DateTime(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// 设置日期时间值。对应 Java：`setDateValue(LocalDateTime)`。
+    pub fn set_date_value(&mut self, value: Option<NaiveDateTime>) {
+        if let Some(value) = value {
+            self.value = CellValue::DateTime(value);
+            self.declared_type = Some(crate::CellDataType::Date);
+        } else if matches!(self.value, CellValue::DateTime(_)) {
+            self.value = CellValue::Empty;
+            self.declared_type = None;
+        }
     }
 
     /// Returns a mutable style, creating it when absent.
