@@ -1,7 +1,7 @@
 //! 单进程读写场景执行。
 
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::{cell::RefCell, rc::Rc};
 
 use easyexcel::{AnalysisContext, EasyExcel, ReadListener};
 
@@ -91,17 +91,16 @@ pub(crate) fn read(
         }
         (u64::try_from(rows.len())?, checksum.finish())
     } else {
-        let state = Arc::new(Mutex::new(EventState::default()));
-        let builder = EasyExcel::read::<BenchmarkRow, _>(path, EventListener(Arc::clone(&state)));
+        let state = Rc::new(RefCell::new(EventState::default()));
+        let builder = EasyExcel::read::<BenchmarkRow, _>(path, EventListener(Rc::clone(&state)));
         if scenario.format == "xls" {
             builder.all_sheets().do_read()?;
         } else {
             builder.do_read()?;
         }
-        let state = Arc::try_unwrap(state)
+        let state = Rc::try_unwrap(state)
             .map_err(|_| "event listener state still shared")?
-            .into_inner()
-            .map_err(|_| "event listener state poisoned")?;
+            .into_inner();
         (state.rows, state.checksum.finish())
     };
     Ok(OperationResult {
@@ -139,13 +138,11 @@ struct EventState {
     checksum: RowChecksum,
 }
 
-struct EventListener(Arc<Mutex<EventState>>);
+struct EventListener(Rc<RefCell<EventState>>);
 
 impl ReadListener<BenchmarkRow> for EventListener {
     fn invoke(&mut self, data: BenchmarkRow, _context: &AnalysisContext) -> easyexcel::Result<()> {
-        let mut state = self.0.lock().map_err(|_| {
-            easyexcel::ExcelError::Format("benchmark checksum state poisoned".to_owned())
-        })?;
+        let mut state = self.0.borrow_mut();
         state.rows += 1;
         state.checksum.update(&data);
         Ok(())

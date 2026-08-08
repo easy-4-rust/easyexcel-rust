@@ -5,9 +5,13 @@
 ## 结论（诚实）
 
 **仍未达到严格 100%（含 JVM 旧缓存 stress、xls 写细节、large07 全量、Fill composite / FillAnnotation 样式断言）。**
+`scripts/verify-java-parity-gates.sh` 现在对 `gap`、`mapped_unverified` 和
+`partial_unverified` 全部 fail-closed；当前 335 个 Java 源测试清单中仍有
+333 个 `mapped_unverified`、2 个 `partial_unverified`，所以三重门禁按设计失败，
+不能把“存在同名 Rust 测试”当作行为或 Java golden 等价证明。
 本轮将 Java golden **103 → 110**（门槛 ≥108），补齐仍缺格式变体与 Fill complex。  
 **P0-3（core 缺类 STRING 读写产物）判定 DONE / 饱和**——见下方清单。  
-无本机 JDK 时 `cargo test -p easyexcel --test java_golden_tests` 仍绿（缺文件硬失败，禁止 soft-skip）。  
+无本机 JDK 时 `cargo test -p easyexcel-test --test java_golden_tests` 仍绿（缺文件硬失败，禁止 soft-skip）。
 新增用例均为**全表** `rows` 对照；`ofNoRows = 0`。
 
 ## P0-3 DONE：core 类 STRING 覆盖清单
@@ -92,6 +96,6 @@
 
 ```bash
 ./scripts/export-java-golden.sh   # 可选：有 JDK 时刷新
-cargo test -p easyexcel --test java_golden_tests
+cargo test -p easyexcel-test --test java_golden_tests
 # expected: all passed；*.expected.json ≥ 108；ofNoRows = 0
 ```

@@ -11,12 +11,15 @@ pub(crate) fn effective_sheet_name(options: &WriteOptions) -> String {
     }
 }
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
-pub(crate) fn validate_stateful_backend(is_csv: bool, password: Option<&str>) -> Result<()> {
+pub(crate) fn validate_stateful_backend(
+    is_csv: bool,
+    _is_xls: bool,
+    password: Option<&str>,
+) -> Result<()> {
     match (is_csv, password.is_some()) {
         (true, true) => Err(ExcelError::Unsupported(
             "password protection is not supported for CSV".to_owned(),
         )),
-        // XLS password is now supported via BIFF8 RC4 (Phase 5.3)
         _ => Ok(()),
     }
 }

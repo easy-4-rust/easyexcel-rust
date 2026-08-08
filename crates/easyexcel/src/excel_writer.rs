@@ -21,16 +21,17 @@ use crate::write::excel_writer_core::{
     after_workbook_create, append_csv_rows, append_rows_to_biff8_sheet,
     apply_annotation_column_widths, apply_biff8_column_widths,
     apply_biff8_once_absolute_merge_property, apply_handler_column_widths,
-    apply_once_absolute_merge_property, apply_template_holder_layout, apply_xlsx_mutations,
-    automatic_dynamic_head_merge_ranges, before_sheet, before_workbook,
+    apply_once_absolute_merge_property, apply_template_holder_layout, apply_xls_mutations,
+    apply_xlsx_mutations, automatic_dynamic_head_merge_ranges, before_sheet, before_workbook,
     collect_handler_once_absolute_merges, collect_once_absolute_merges,
     collect_template_append_rows, create_csv_record_writer, create_stateful_csv_writer,
     finish_csv_record_writer, format_error, handlers_request_auto_width, head_rows_for_schema,
-    merge_range_to_biff8, relative_head_start_row, run_own_workbook_callbacks,
-    run_template_handler_callbacks, save_template_package, save_workbook, save_workbook_to_writer,
-    save_xls_book, set_xlsx_column_width_chars, sort_handlers, take_captured_output,
-    template_append_cell_styles, template_append_row_heights, validate_excel_row_schema,
-    validate_stateful_backend, validate_stateful_schema, write_sheet_to_workbook_with_gzip,
+    merge_range_to_biff8, relative_head_start_row, replay_stateful_sheet_journal,
+    run_own_workbook_callbacks, run_template_handler_callbacks, save_template_package,
+    save_workbook, save_workbook_to_writer, save_xls_book, set_xlsx_column_width_chars,
+    sort_handlers, take_captured_output, template_append_cell_styles, template_append_row_heights,
+    validate_excel_row_schema, validate_stateful_backend, validate_stateful_schema,
+    write_sheet_to_workbook_with_gzip,
 };
 use crate::write::handler::default_write_handler_loader::DefaultWriteHandlerLoader;
 use crate::write::handler_execution_scope::{
@@ -40,6 +41,7 @@ use crate::write::metadata::write_table::WriteTable as MirroredWriteTable;
 use crate::write::shared_write_handler::{
     SharedWriteHandler, StatefulSheetState, boxed_handlers, share_handlers,
 };
+use crate::write::write_backend_selection::WriteBackendSelection;
 use crate::write::write_options::WriteOptions;
 use crate::write::write_progress::WriteProgress;
 use crate::write::write_sheet::WriteSheet;
@@ -74,11 +76,14 @@ pub struct ExcelWriter {
     auto_close_stream: bool,
     write_excel_on_exception: bool,
     password: Option<String>,
+    biff8_macro_policy: crate::Biff8MacroPolicy,
     converters: ConverterRegistry,
+    has_custom_converters: bool,
     /// Workbook-level spill preference from the builder. (Java SXSSF `setCompressTempFiles`)
     compress_temp_files: bool,
     /// Workbook-level constant-memory default from the builder.
     default_constant_memory: bool,
+    backend_selection: WriteBackendSelection,
     template_file: Option<PathBuf>,
     template_bytes: Option<Vec<u8>>,
     /// First-write markers for sheets present in a `withTemplate` package.

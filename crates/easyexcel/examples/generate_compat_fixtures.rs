@@ -15,6 +15,10 @@
 //! - `07-legacy.xls` — Minimal BIFF8 write
 //! - `08-data.csv` — CSV write
 //! - `09-freeze.xls` — BIFF8 with frozen header row (`freeze_head` → PANE)
+//! - `10-chart-bar.xls` — generated BIFF8 Bar chart
+//! - `11-chart-line.xls` — generated BIFF8 Line chart
+//! - `12-chart-pie.xls` — generated BIFF8 Pie chart
+//! - `13-chart-multiple.xls` — two generated BIFF8 charts in one sheet
 //!
 //! Run from the repository root:
 //!
@@ -26,9 +30,10 @@ use std::path::PathBuf;
 
 use chrono::NaiveDate;
 use easyexcel::{
-    CellStyle, CellValue, ConvertContext, ConverterRegistry, EasyExcel, ExcelColumn, ExcelRow,
-    ExcelWriteMetadata, FromExcelCell, IntoExcelCell, MergeRange, ReadConverterContext, Result,
-    RowData, TemplateData, WriteCellData,
+    CellStyle, CellValue, ChartMutation, ChartRange, ChartSeries, ChartType, ConvertContext,
+    ConverterRegistry, EasyExcel, ExcelColumn, ExcelRow, ExcelWriteMetadata, FromExcelCell,
+    IntoExcelCell, MergeRange, ReadConverterContext, Result, RowData, TemplateData, WriteCellData,
+    WriteHandler, WriteWorkbookContext,
 };
 
 #[derive(Debug, Clone, ExcelRow)]
@@ -72,6 +77,47 @@ struct ImageRow {
     image: WriteCellData,
 }
 
+struct GeneratedChartHandler(ChartType);
+
+impl WriteHandler for GeneratedChartHandler {
+    fn after_workbook_dispose(&mut self, context: &WriteWorkbookContext) -> Result<()> {
+        let mut chart = ChartMutation::new("Data", self.0, 1, 5, 18, 13)
+            .with_title("Scores")
+            .with_series(
+                ChartSeries::new(ChartRange::new("Data", 1, 3, 10, 3))
+                    .with_name("Score")
+                    .with_categories(ChartRange::new("Data", 1, 1, 10, 1)),
+            );
+        if self.0 != ChartType::Pie {
+            chart = chart.with_series(
+                ChartSeries::new(ChartRange::new("Data", 1, 0, 10, 0))
+                    .with_name("ID")
+                    .with_categories(ChartRange::new("Data", 1, 1, 10, 1)),
+            );
+        }
+        context.add_chart(chart)
+    }
+}
+
+struct MultipleGeneratedChartHandler;
+
+impl WriteHandler for MultipleGeneratedChartHandler {
+    fn after_workbook_dispose(&mut self, context: &WriteWorkbookContext) -> Result<()> {
+        for (kind, first_row) in [(ChartType::Bar, 1), (ChartType::Line, 20)] {
+            context.add_chart(
+                ChartMutation::new("Data", kind, first_row, 5, first_row + 16, 13)
+                    .with_title(format!("{kind:?}"))
+                    .with_series(
+                        ChartSeries::new(ChartRange::new("Data", 1, 3, 10, 3))
+                            .with_name("Score")
+                            .with_categories(ChartRange::new("Data", 1, 1, 10, 1)),
+                    ),
+            )?;
+        }
+        Ok(())
+    }
+}
+
 fn main() -> easyexcel::Result<()> {
     let out = std::env::args()
         .nth(1)
@@ -90,8 +136,9 @@ fn main() -> easyexcel::Result<()> {
     //    migration; CARGO_MANIFEST_DIR here is the easyexcel crate.
     let fixtures_root = manifest_dir()
         .parent()
-        .expect("easyexcel crate has a workspace parent")
-        .join("easyexcel-test/tests/fixtures");
+        .and_then(std::path::Path::parent)
+        .expect("easyexcel crate has a workspace root")
+        .join("tests/easyexcel-test/tests/fixtures");
     let template = fixtures_root.join("demo/fill/simple.xlsx");
     if !template.exists() {
         return Err(missing_fixture(&template.display().to_string()));
@@ -155,6 +202,26 @@ fn main() -> easyexcel::Result<()> {
         .freeze_head(true)
         .do_write(demo_rows(10))?;
     println!("{}", frozen_xls.display());
+
+    // 10-12. Native BIFF8 charts created through the backend-neutral Handler API.
+    for (name, kind) in [
+        ("10-chart-bar.xls", ChartType::Bar),
+        ("11-chart-line.xls", ChartType::Line),
+        ("12-chart-pie.xls", ChartType::Pie),
+    ] {
+        let chart_path = out.join(name);
+        EasyExcel::write::<DemoRow>(&chart_path)
+            .sheet("Data")
+            .register_write_handler(GeneratedChartHandler(kind))
+            .do_write(demo_rows(10))?;
+        println!("{}", chart_path.display());
+    }
+    let multiple_charts = out.join("13-chart-multiple.xls");
+    EasyExcel::write::<DemoRow>(&multiple_charts)
+        .sheet("Data")
+        .register_write_handler(MultipleGeneratedChartHandler)
+        .do_write(demo_rows(10))?;
+    println!("{}", multiple_charts.display());
 
     // 8. CSV write.
     let csv = out.join("08-data.csv");

@@ -32,6 +32,7 @@ fn default_options_and_helpers_are_deterministic() {
             loop_merges: Vec::new(),
             dynamic_head: None,
             password: None,
+            biff8_macro_policy: crate::Biff8MacroPolicy::Preserve,
             charset: CsvCharset::default(),
             with_bom: true,
             auto_close_stream: true,
@@ -341,4 +342,3 @@ fn table_holder_runs_supplementary_callbacks_then_own_parent_row_chain() -> Resu
     );
     Ok(())
 }
-

@@ -12,10 +12,11 @@ pub use builtin_formats::{
     builtin_format_code, get_builtin_format, switch_builtin_formats,
 };
 pub use data_formatter::{
-    SpreadsheetLocale, excel_display_number, format_raw_cell_contents, format_with_code,
-    is_date_format_code, is_scientific_magnitude, java_compat_date_format_code,
-    java_compat_display, java_compat_format_code, java_plain_extreme_format,
-    java_scientific_format, resolve_builtin_format_code,
+    CompiledExcelFormat, SpreadsheetLocale, compile_format_code, excel_display_number,
+    format_raw_cell_contents, format_with_code, format_with_compiled, is_date_format_code,
+    is_scientific_magnitude, java_compat_date_format_code, java_compat_display,
+    java_compat_format_code, java_plain_extreme_format, java_scientific_format,
+    resolve_builtin_format_code,
 };
 pub use excel_general_number_format::format_general;
 pub use excel_locale::ExcelLocale;

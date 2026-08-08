@@ -2,8 +2,7 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Biff8DecodedContinuableRecord {
     /// 按 BIFF 索引顺序排列的共享字符串。
-    SharedStrings(Vec<String>),
+    SharedStrings(Vec<crate::xls::Biff8SstString>),
     /// 一个完整的 Unicode 字符串。
     UnicodeString(String),
 }
-

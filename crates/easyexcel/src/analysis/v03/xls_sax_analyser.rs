@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use crate::core::{AnalysisContext, ExcelError, ExcelRow, ReadListener, Result};
 
-use crate::analysis::excel_read_executor::ExcelReadExecutor;
+use crate::analysis::excel_read_executor::{ExcelReadExecutor, NoopDynamicReadListener};
 use crate::analysis::v03::xls_list_sheet_listener::XlsListSheetListener;
 use crate::analysis::v03::xls_record_dispatcher::{XlsRecordDispatchState, XlsRecordDispatcher};
 use crate::context::{DefaultXlsReadContext, ReadSheet, XlsReadContext};
@@ -39,16 +39,28 @@ impl XlsSaxAnalyser {
     /// # Errors
     ///
     /// Returns when the workbook cannot be opened or contains no sheets.
-    pub fn new(
+    pub fn new(xls_read_context: DefaultXlsReadContext) -> Result<Self> {
+        let path = xls_read_context.file().ok_or_else(|| {
+            ExcelError::Format("XlsReadContext does not contain an input file".to_owned())
+        })?;
+        let path = path.to_path_buf();
+        let options = xls_read_context.options().clone();
+        Self::from_context_and_input(xls_read_context, path, options)
+    }
+
+    fn from_context_and_input(
         mut xls_read_context: DefaultXlsReadContext,
-        path: impl Into<PathBuf>,
+        path: PathBuf,
         options: ReadOptions,
     ) -> Result<Self> {
-        let path = path.into();
         let sheet_list = {
             let mut listener =
-                XlsListSheetListener::new(&mut xls_read_context, &path, options.clone());
-            listener.execute()?.to_vec()
+                XlsListSheetListener::from_path(&mut xls_read_context, &path, options.clone());
+            match listener.execute() {
+                Ok(()) | Err(ExcelError::AnalysisStop(_)) => {}
+                Err(error) => return Err(error),
+            }
+            listener.sheet_list().to_vec()
         };
         if sheet_list.is_empty() {
             return Err(ExcelError::Format("Can not find any sheet!".to_owned()));
@@ -70,8 +82,10 @@ impl XlsSaxAnalyser {
     ///
     /// Propagates [`Self::new`] failures.
     pub fn from_path(path: impl Into<PathBuf>, options: ReadOptions) -> Result<Self> {
-        let context = DefaultXlsReadContext::new(&options);
-        Self::new(context, path, options)
+        let path = path.into();
+        let mut context = DefaultXlsReadContext::new(&options);
+        context.bind_input(path, options);
+        Self::new(context)
     }
 
     /// 对应 Java：com.alibaba.excel.analysis.v03.XlsSaxAnalyser。 Returns the bound workbook path.
@@ -111,8 +125,11 @@ impl XlsSaxAnalyser {
     }
 
     fn dispatch_workbook_records(&mut self) -> Result<()> {
-        let workbook = easyexcel_xls::biff8::record_stream::read_workbook_stream(&self.path)
-            .map_err(ExcelError::from)?;
+        let workbook = easyexcel_xls::biff8::record_stream::read_workbook_stream_with_password(
+            &self.path,
+            self.options.password.as_deref(),
+        )
+        .map_err(ExcelError::from)?;
         self.record_dispatcher.reset();
         easyexcel_xls::biff8::record_stream::walk_biff_records(&workbook, |record_sid, data| {
             self.process_record(record_sid, data)
@@ -133,7 +150,7 @@ impl XlsSaxAnalyser {
         L: ReadListener<T>,
     {
         let options = self.options.clone();
-        self.execute::<T, L>(&options, listener)
+        ExcelReadExecutor::execute_with_listener::<T, L>(self, &options, listener)
     }
 
     fn execute_with_options<T, L>(&mut self, options: &ReadOptions, listener: &mut L) -> Result<()>
@@ -171,7 +188,15 @@ impl ExcelReadExecutor for XlsSaxAnalyser {
         &self.sheet_list
     }
 
-    fn execute<T, L>(&mut self, options: &ReadOptions, listener: &mut L) -> Result<()>
+    fn execute(&mut self) -> Result<()> {
+        let options = self.options.clone();
+        self.execute_with_options::<crate::core::DynamicRow, _>(
+            &options,
+            &mut NoopDynamicReadListener,
+        )
+    }
+
+    fn execute_with_listener<T, L>(&mut self, options: &ReadOptions, listener: &mut L) -> Result<()>
     where
         T: ExcelRow,
         L: ReadListener<T>,
@@ -247,6 +272,22 @@ mod tests {
     }
 
     #[test]
+    fn java_shaped_constructor_reads_input_from_context() -> Result<()> {
+        let file = write_java_multisheet_xls();
+        let mut workbook = crate::read::metadata::ReadWorkbook::new();
+        workbook.set_file(file.path());
+        let context = DefaultXlsReadContext::from_read_workbook(
+            &workbook,
+            crate::support::ExcelTypeEnum::Xls,
+        );
+
+        let analyser = XlsSaxAnalyser::new(context)?;
+        assert_eq!(analyser.path(), file.path());
+        assert_eq!(analyser.sheet_list().len(), 6);
+        Ok(())
+    }
+
+    #[test]
     fn execute_with_listener_delegates_to_read_xls() -> Result<()> {
         let file = write_java_multisheet_xls();
         let options = ReadOptions {
@@ -271,8 +312,15 @@ mod tests {
         };
         let mut analyser =
             XlsSaxAnalyser::from_path(file.path(), options.clone()).expect("analyser");
+        ExcelReadExecutor::execute(&mut analyser)?;
+        assert!(analyser.last_error().is_none());
+
         let mut listener = CollectingListener::default();
-        ExcelReadExecutor::execute::<DynamicRow, _>(&mut analyser, &options, &mut listener)?;
+        ExcelReadExecutor::execute_with_listener::<DynamicRow, _>(
+            &mut analyser,
+            &options,
+            &mut listener,
+        )?;
         assert!(!listener.rows.is_empty());
         assert!(analyser.last_error().is_none());
         Ok(())

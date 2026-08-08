@@ -5,6 +5,8 @@ pub enum Biff8Value {
     Blank,
     /// Shared string (interned into SST on serialize).
     Text(String),
+    /// 带 FONT run 的共享字符串。
+    RichText(Biff8RichText),
     /// IEEE754 number (also used for Excel date serials).
     Number(f64),
     /// Boolean.
@@ -14,4 +16,3 @@ pub enum Biff8Value {
     /// `Excel` / `LibreOffice` recalculate on load.
     Formula(String),
 }
-

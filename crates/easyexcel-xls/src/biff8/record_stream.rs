@@ -13,6 +13,15 @@ use easyexcel_io::{Error as ExcelError, Result};
 ///
 /// 文件、OLE2 容器或 Workbook 流无法读取时返回错误。
 pub fn read_workbook_stream(path: &Path) -> Result<Vec<u8>> {
+    read_workbook_stream_with_password(path, None)
+}
+
+/// 读取 BIFF Workbook stream，并在存在 `FILEPASS` 时使用调用方密码解密。
+///
+/// # Errors
+///
+/// 文件、OLE2 容器或 Workbook 流无法读取，或密码缺失/错误时返回错误。
+pub fn read_workbook_stream_with_password(path: &Path, password: Option<&str>) -> Result<Vec<u8>> {
     let file = File::open(path)?;
     let mut compound = CompoundFile::open(file)
         .map_err(|error| ExcelError::Xls(format!("invalid XLS compound document: {error}")))?;
@@ -24,6 +33,17 @@ pub fn read_workbook_stream(path: &Path) -> Result<Vec<u8>> {
         })?;
     let mut workbook = Vec::new();
     stream.read_to_end(&mut workbook)?;
+    let mut has_filepass = false;
+    walk_biff_records(&workbook, |sid, _| {
+        has_filepass |= sid == super::record_sid::FILE_PASS_SID;
+        Ok(())
+    })?;
+    if has_filepass {
+        let password = password.ok_or_else(|| {
+            ExcelError::PasswordProtected("legacy XLS (BIFF8) CryptoAPI RC4".to_owned())
+        })?;
+        return super::decrypt_crypto_api_workbook_stream(&workbook, password);
+    }
     Ok(workbook)
 }
 

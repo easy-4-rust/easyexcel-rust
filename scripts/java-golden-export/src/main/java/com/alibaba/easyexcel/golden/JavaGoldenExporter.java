@@ -1,6 +1,8 @@
 package com.alibaba.easyexcel.golden;
 
 import java.io.File;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
@@ -12,6 +14,8 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,22 +24,82 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.EasyExcelFactory;
 import com.alibaba.excel.ExcelWriter;
+import com.alibaba.excel.context.AnalysisContext;
+import com.alibaba.excel.event.AnalysisEventListener;
 import com.alibaba.excel.enums.CellDataTypeEnum;
 import com.alibaba.excel.enums.ReadDefaultReturnEnum;
 import com.alibaba.excel.enums.WriteDirectionEnum;
 import com.alibaba.excel.metadata.data.FormulaData;
+import com.alibaba.excel.metadata.data.ReadCellData;
 import com.alibaba.excel.metadata.data.WriteCellData;
+import com.alibaba.excel.read.metadata.ReadSheet;
+import com.alibaba.excel.read.metadata.ReadWorkbook;
 import com.alibaba.excel.support.ExcelTypeEnum;
 import com.alibaba.excel.util.DateUtils;
+import com.alibaba.excel.write.ExcelBuilder;
+import com.alibaba.excel.write.ExcelBuilderImpl;
+import com.alibaba.excel.analysis.ExcelAnalyser;
+import com.alibaba.excel.analysis.ExcelAnalyserImpl;
+import com.alibaba.excel.analysis.csv.CsvExcelReadExecutor;
+import com.alibaba.excel.analysis.v03.XlsListSheetListener;
+import com.alibaba.excel.analysis.v03.XlsRecordHandler;
+import com.alibaba.excel.analysis.v03.XlsSaxAnalyser;
+import com.alibaba.excel.analysis.v03.IgnorableXlsRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.AbstractXlsRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.BoundSheetRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.BlankRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.BoolErrRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.EofRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.FormulaRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.IndexRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.LabelRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.LabelSstRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.MergeCellsRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.NoteRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.NumberRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.RkRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.SstRecordHandler;
+import com.alibaba.excel.analysis.v03.handlers.StringRecordHandler;
+import com.alibaba.excel.context.csv.DefaultCsvReadContext;
+import com.alibaba.excel.context.xls.DefaultXlsReadContext;
+import com.alibaba.excel.context.xlsx.DefaultXlsxReadContext;
+import com.alibaba.excel.enums.CellExtraTypeEnum;
+import com.alibaba.excel.exception.ExcelAnalysisStopException;
 import com.alibaba.excel.write.merge.LoopMergeStrategy;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.excel.write.metadata.WriteTable;
+import com.alibaba.excel.write.metadata.WriteWorkbook;
 import com.alibaba.excel.write.metadata.fill.FillConfig;
 import com.alibaba.excel.write.metadata.style.WriteCellStyle;
 import com.alibaba.excel.write.metadata.style.WriteFont;
+import org.apache.poi.hssf.record.BoundSheetRecord;
+import org.apache.poi.hssf.record.BlankRecord;
+import org.apache.poi.hssf.record.BoolErrRecord;
+import org.apache.poi.hssf.record.CommonObjectDataSubRecord;
+import org.apache.poi.hssf.record.EOFRecord;
+import org.apache.poi.hssf.record.FormulaRecord;
+import org.apache.poi.hssf.record.IndexRecord;
+import org.apache.poi.hssf.record.LabelRecord;
+import org.apache.poi.hssf.record.LabelSSTRecord;
+import org.apache.poi.hssf.record.MergeCellsRecord;
+import org.apache.poi.hssf.record.NoteRecord;
+import org.apache.poi.hssf.record.NumberRecord;
+import org.apache.poi.hssf.record.ObjRecord;
+import org.apache.poi.hssf.record.RecordFactory;
+import org.apache.poi.hssf.record.RecordInputStream;
+import org.apache.poi.hssf.record.SSTRecord;
+import org.apache.poi.hssf.record.RKRecord;
+import org.apache.poi.hssf.record.StringRecord;
+import org.apache.poi.hssf.record.UnknownRecord;
+import org.apache.poi.hssf.record.common.UnicodeString;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
 import com.alibaba.excel.write.style.column.SimpleColumnWidthStyleStrategy;
 import com.alibaba.excel.write.style.row.SimpleRowHeightStyleStrategy;
@@ -84,7 +148,13 @@ public final class JavaGoldenExporter {
         Path artifactDir = outDir.resolve("artifacts");
         Files.createDirectories(artifactDir);
 
+        writeFacadeApiContract(outDir);
+
         List<ExportSpec> specs = buildSpecs(fixturesDir, artifactDir);
+        writeExcelReaderContract(artifactDir.resolve("simple_data.xlsx"), outDir);
+        writeExcelWriterContract(artifactDir, outDir);
+        writeExcelBuilderContract(artifactDir, outDir);
+        writeExcelAnalyserContract(artifactDir, outDir);
         for (ExportSpec spec : specs) {
             Map<String, Object> payload = exportOne(spec);
             Path out = outDir.resolve(spec.outName);
@@ -92,6 +162,678 @@ public final class JavaGoldenExporter {
             Files.write(out, (json + "\n").getBytes(StandardCharsets.UTF_8));
             System.out.println("Wrote " + out + " (row_count=" + payload.get("row_count") + ")");
         }
+    }
+
+    /**
+     * Export lifecycle and fluent-return observations for Java's public {@code ExcelWriter} API.
+     *
+     * @param artifactDir output directory for throw-away workbook probes
+     * @param outDir golden output directory
+     * @throws Exception when a write/fill operation or contract write fails
+     */
+    private static void writeExcelWriterContract(Path artifactDir, Path outDir) throws Exception {
+        Map<String, Object> payload = new LinkedHashMap<String, Object>();
+        payload.put("authority", "com.alibaba:easyexcel:4.0.3");
+
+        Path writeOutput = artifactDir.resolve("excel_writer_api.xlsx");
+        WriteWorkbook directWorkbook = new WriteWorkbook();
+        directWorkbook.setFile(writeOutput.toFile());
+        directWorkbook.setExcelType(ExcelTypeEnum.XLSX);
+        directWorkbook.setNeedHead(Boolean.FALSE);
+        ExcelWriter writer = new ExcelWriter(directWorkbook);
+        payload.put("direct_constructor", writer.getClass().getName());
+
+        WriteSheet writeSheet = EasyExcel.writerSheet(Integer.valueOf(0), "Data")
+            .needHead(Boolean.FALSE)
+            .build();
+        WriteTable writeTable = EasyExcel.writerTable(Integer.valueOf(0))
+            .needHead(Boolean.FALSE)
+            .build();
+        List<List<String>> rows = Collections.singletonList(Collections.singletonList("row"));
+        AtomicInteger writeSupplierCalls = new AtomicInteger();
+        payload.put("write_collection_returns_self", writer == writer.write(rows, writeSheet));
+        payload.put("write_supplier_returns_self", writer == writer.write(() -> {
+            writeSupplierCalls.incrementAndGet();
+            return rows;
+        }, writeSheet));
+        payload.put("write_table_returns_self", writer == writer.write(rows, writeSheet, writeTable));
+        payload.put("write_supplier_table_returns_self", writer == writer.write(() -> {
+            writeSupplierCalls.incrementAndGet();
+            return rows;
+        }, writeSheet, writeTable));
+        payload.put("write_supplier_calls", Integer.valueOf(writeSupplierCalls.get()));
+        Object firstContext = writer.writeContext();
+        Object secondContext = writer.writeContext();
+        payload.put("write_context_class", firstContext.getClass().getName());
+        payload.put("write_context_same", Boolean.valueOf(firstContext == secondContext));
+        writer.finish();
+        writer.close();
+        payload.put("finish_then_close", Boolean.TRUE);
+
+        Path template = artifactDir.resolve("excel_writer_fill_template.xlsx");
+        EasyExcel.write(template.toFile())
+            .head(Collections.singletonList(Collections.singletonList("value")))
+            .sheet("Fill")
+            .doWrite(Collections.singletonList(Collections.singletonList("{name}")));
+        Path fillOutput = artifactDir.resolve("excel_writer_fill_api.xlsx");
+        ExcelWriter fillWriter = EasyExcel.write(fillOutput.toFile())
+            .withTemplate(template.toFile())
+            .build();
+        WriteSheet fillSheet = EasyExcel.writerSheet("Fill").build();
+        Map<String, Object> fillData = Collections.<String, Object>singletonMap("name", "filled");
+        FillConfig fillConfig = FillConfig.builder()
+            .direction(WriteDirectionEnum.VERTICAL)
+            .forceNewRow(Boolean.FALSE)
+            .autoStyle(Boolean.TRUE)
+            .build();
+        AtomicInteger fillSupplierCalls = new AtomicInteger();
+        payload.put("fill_object_returns_self", fillWriter == fillWriter.fill(fillData, fillSheet));
+        payload.put("fill_config_returns_self", fillWriter == fillWriter.fill(fillData, fillConfig, fillSheet));
+        payload.put("fill_supplier_returns_self", fillWriter == fillWriter.fill(() -> {
+            fillSupplierCalls.incrementAndGet();
+            return fillData;
+        }, fillSheet));
+        payload.put("fill_supplier_config_returns_self", fillWriter == fillWriter.fill(() -> {
+            fillSupplierCalls.incrementAndGet();
+            return fillData;
+        }, fillConfig, fillSheet));
+        payload.put("fill_supplier_calls", Integer.valueOf(fillSupplierCalls.get()));
+        fillWriter.finish();
+
+        Path out = outDir.resolve("excel_writer_lifecycle.contract.json");
+        String json = JSON.toJSONString(payload, JSONWriter.Feature.PrettyFormat);
+        Files.write(out, (json + "\n").getBytes(StandardCharsets.UTF_8));
+        System.out.println("Wrote " + out);
+    }
+
+    /**
+     * Export observable semantics for every public {@code ExcelBuilder} method.
+     *
+     * @param artifactDir output directory for workbook probes
+     * @param outDir golden output directory
+     * @throws Exception when a builder operation or contract write fails
+     */
+    @SuppressWarnings("deprecation")
+    private static void writeExcelBuilderContract(Path artifactDir, Path outDir) throws Exception {
+        Map<String, Object> payload = new LinkedHashMap<String, Object>();
+        payload.put("authority", "com.alibaba:easyexcel:4.0.3");
+
+        Path writeOutput = artifactDir.resolve("excel_builder_api.xlsx");
+        WriteWorkbook workbook = new WriteWorkbook();
+        workbook.setFile(writeOutput.toFile());
+        workbook.setExcelType(ExcelTypeEnum.XLSX);
+        workbook.setNeedHead(Boolean.FALSE);
+        ExcelBuilder builder = new ExcelBuilderImpl(workbook);
+        payload.put("implementation_class", builder.getClass().getName());
+
+        WriteSheet sheet = EasyExcel.writerSheet(Integer.valueOf(0), "Builder")
+            .needHead(Boolean.FALSE)
+            .build();
+        WriteTable table = EasyExcel.writerTable(Integer.valueOf(0))
+            .needHead(Boolean.FALSE)
+            .build();
+        builder.addContent(
+            Collections.singletonList(Collections.singletonList("builder-two-arg")),
+            sheet);
+        builder.addContent(
+            Collections.singletonList(Collections.singletonList("builder-three-arg")),
+            sheet,
+            table);
+        payload.put("add_content_two_arg", Boolean.TRUE);
+        payload.put("add_content_three_arg", Boolean.TRUE);
+        Object firstContext = builder.writeContext();
+        Object secondContext = builder.writeContext();
+        payload.put("write_context_class", firstContext.getClass().getName());
+        payload.put("write_context_same", Boolean.valueOf(firstContext == secondContext));
+        builder.merge(0, 0, 0, 1);
+        builder.finish(false);
+        payload.put("finish_false_output_exists", Boolean.valueOf(Files.exists(writeOutput)));
+        try (org.apache.poi.ss.usermodel.Workbook observed =
+                 org.apache.poi.ss.usermodel.WorkbookFactory.create(Files.newInputStream(writeOutput))) {
+            org.apache.poi.ss.usermodel.Sheet observedSheet = observed.getSheet("Builder");
+            payload.put("merge_after_add_range",
+                observedSheet.getMergedRegion(0).formatAsString());
+        }
+
+        Path template = artifactDir.resolve("excel_builder_fill_template.xlsx");
+        EasyExcel.write(template.toFile())
+            .head(Collections.singletonList(Collections.singletonList("value")))
+            .sheet("Fill")
+            .doWrite(Collections.singletonList(Collections.singletonList("{name}")));
+        Path fillOutput = artifactDir.resolve("excel_builder_fill_api.xlsx");
+        WriteWorkbook fillWorkbook = new WriteWorkbook();
+        fillWorkbook.setFile(fillOutput.toFile());
+        fillWorkbook.setExcelType(ExcelTypeEnum.XLSX);
+        fillWorkbook.setTemplateFile(template.toFile());
+        ExcelBuilder fillBuilder = new ExcelBuilderImpl(fillWorkbook);
+        fillBuilder.fill(
+            Collections.<String, Object>singletonMap("name", "builder-filled"),
+            FillConfig.builder().autoStyle(Boolean.TRUE).build(),
+            EasyExcel.writerSheet("Fill").build());
+        fillBuilder.merge(0, 0, 0, 1);
+        fillBuilder.finish(false);
+        payload.put("fill_output_exists", Boolean.valueOf(Files.exists(fillOutput)));
+        try (org.apache.poi.ss.usermodel.Workbook observed =
+                 org.apache.poi.ss.usermodel.WorkbookFactory.create(Files.newInputStream(fillOutput))) {
+            payload.put("template_merge_after_fill_range",
+                observed.getSheet("Fill").getMergedRegion(0).formatAsString());
+        }
+
+        Path exceptionalOutput = artifactDir.resolve("excel_builder_exception.xlsx");
+        WriteWorkbook exceptionalWorkbook = new WriteWorkbook();
+        exceptionalWorkbook.setFile(exceptionalOutput.toFile());
+        exceptionalWorkbook.setExcelType(ExcelTypeEnum.XLSX);
+        exceptionalWorkbook.setNeedHead(Boolean.FALSE);
+        ExcelBuilder exceptionalBuilder = new ExcelBuilderImpl(exceptionalWorkbook);
+        exceptionalBuilder.addContent(
+            Collections.singletonList(Collections.singletonList("discarded")),
+            sheet);
+        exceptionalBuilder.finish(true);
+        payload.put("finish_true_output_exists", Boolean.valueOf(Files.exists(exceptionalOutput)));
+        payload.put("finish_true_output_size", Long.valueOf(Files.size(exceptionalOutput)));
+
+        Path missingTemplateOutput = artifactDir.resolve("excel_builder_missing_template.xlsx");
+        WriteWorkbook missingTemplateWorkbook = new WriteWorkbook();
+        missingTemplateWorkbook.setFile(missingTemplateOutput.toFile());
+        ExcelBuilder missingTemplateBuilder = new ExcelBuilderImpl(missingTemplateWorkbook);
+        try {
+            missingTemplateBuilder.fill(
+                Collections.<String, Object>singletonMap("name", "unused"),
+                new FillConfig(),
+                EasyExcel.writerSheet("Sheet1").build());
+            payload.put("fill_without_template_error", "<none>");
+        } catch (RuntimeException error) {
+            payload.put("fill_without_template_error", error.getMessage());
+        }
+
+        Path out = outDir.resolve("excel_builder_lifecycle.contract.json");
+        String json = JSON.toJSONString(payload, JSONWriter.Feature.PrettyFormat);
+        Files.write(out, (json + "\n").getBytes(StandardCharsets.UTF_8));
+        System.out.println("Wrote " + out);
+    }
+
+    /**
+     * Export direct {@code ExcelAnalyserImpl(ReadWorkbook)} lifecycle semantics.
+     *
+     * @param artifactDir output directory for the input workbook
+     * @param outDir golden output directory
+     * @throws Exception when construction, analysis, or contract writing fails
+     */
+    private static void writeExcelAnalyserContract(Path artifactDir, Path outDir) throws Exception {
+        Path input = artifactDir.resolve("excel_analyser_api.xlsx");
+        EasyExcel.write(input.toFile())
+            .head(Collections.singletonList(Collections.singletonList("value")))
+            .sheet("Analyser")
+            .doWrite(Collections.singletonList(Collections.singletonList("analysed")));
+
+        ReadWorkbook workbook = new ReadWorkbook();
+        workbook.setFile(input.toFile());
+        workbook.setExcelType(ExcelTypeEnum.XLSX);
+        ExcelAnalyser analyser = new ExcelAnalyserImpl(workbook);
+        Map<String, Object> payload = new LinkedHashMap<String, Object>();
+        payload.put("authority", "com.alibaba:easyexcel:4.0.3");
+        payload.put("implementation_class", analyser.getClass().getName());
+        payload.put("executor_class", analyser.excelExecutor().getClass().getName());
+        payload.put("executor_sheet_count", Integer.valueOf(analyser.excelExecutor().sheetList().size()));
+        Object firstContext = analyser.analysisContext();
+        Object secondContext = analyser.analysisContext();
+        payload.put("analysis_context_class", firstContext.getClass().getName());
+        payload.put("analysis_context_same", Boolean.valueOf(firstContext == secondContext));
+        analyser.analysis(null, Boolean.TRUE);
+        payload.put("analysis_all_succeeded", Boolean.TRUE);
+        analyser.finish();
+        analyser.finish();
+        payload.put("finish_twice_succeeded", Boolean.TRUE);
+
+        Path csvInput = artifactDir.resolve("excel_read_executor_api.csv");
+        Files.write(csvInput, "value\ncsv-row\n".getBytes(StandardCharsets.UTF_8));
+        ReadWorkbook csvWorkbook = new ReadWorkbook();
+        csvWorkbook.setFile(csvInput.toFile());
+        csvWorkbook.setExcelType(ExcelTypeEnum.CSV);
+        csvWorkbook.setHeadRowNumber(Integer.valueOf(1));
+        DefaultCsvReadContext csvContext =
+            new DefaultCsvReadContext(csvWorkbook, ExcelTypeEnum.CSV);
+        csvContext.csvReadWorkbookHolder().setReadAll(Boolean.TRUE);
+        CsvExcelReadExecutor csvExecutor = new CsvExcelReadExecutor(csvContext);
+        payload.put("csv_executor_class", csvExecutor.getClass().getName());
+        payload.put("csv_executor_sheet_count", Integer.valueOf(csvExecutor.sheetList().size()));
+        payload.put("csv_executor_sheet_no", csvExecutor.sheetList().get(0).getSheetNo());
+        payload.put("csv_executor_sheet_name", csvExecutor.sheetList().get(0).getSheetName());
+        csvExecutor.execute();
+        payload.put("csv_executor_execute_succeeded", Boolean.TRUE);
+        payload.put("csv_context_sheet_no", csvContext.csvReadSheetHolder().getSheetNo());
+        payload.put("csv_context_parser_initialized",
+            Boolean.valueOf(csvContext.csvReadWorkbookHolder().getCsvParser() != null));
+        csvContext.csvReadWorkbookHolder().getCsvParser().close();
+
+        ReadWorkbook listenerRecordWorkbook = new ReadWorkbook();
+        listenerRecordWorkbook.setExcelType(ExcelTypeEnum.XLS);
+        listenerRecordWorkbook.setAutoTrim(Boolean.TRUE);
+        DefaultXlsReadContext listenerRecordContext =
+            new DefaultXlsReadContext(listenerRecordWorkbook, ExcelTypeEnum.XLS);
+        XlsListSheetListener recordListener = new XlsListSheetListener(listenerRecordContext);
+        payload.put("xls_list_listener_class", recordListener.getClass().getName());
+        payload.put("xls_list_listener_need_read_sheet",
+            listenerRecordContext.xlsReadWorkbookHolder().getNeedReadSheet());
+        int beforeKnownRecord = listenerRecordContext.xlsReadWorkbookHolder()
+            .getBoundSheetRecordList().size();
+        recordListener.processRecord(new BoundSheetRecord("Manual"));
+        int afterKnownRecord = listenerRecordContext.xlsReadWorkbookHolder()
+            .getBoundSheetRecordList().size();
+        recordListener.processRecord(new NumberRecord());
+        payload.put("xls_list_listener_known_record_delta",
+            Integer.valueOf(afterKnownRecord - beforeKnownRecord));
+        payload.put("xls_list_listener_unknown_record_ignored",
+            Boolean.valueOf(listenerRecordContext.xlsReadWorkbookHolder()
+                .getBoundSheetRecordList().size() == afterKnownRecord));
+
+        XlsRecordHandler recordHandler = new BoundSheetRecordHandler();
+        BoundSheetRecord handlerRecord = new BoundSheetRecord("HandlerSheet");
+        payload.put("xls_record_handler_interface", Boolean.valueOf(XlsRecordHandler.class.isInterface()));
+        payload.put("xls_record_handler_support",
+            Boolean.valueOf(recordHandler.support(listenerRecordContext, handlerRecord)));
+        payload.put("abstract_xls_record_handler_is_abstract",
+            Boolean.valueOf(java.lang.reflect.Modifier.isAbstract(AbstractXlsRecordHandler.class.getModifiers())));
+        payload.put("abstract_xls_record_handler_support_default",
+            Boolean.valueOf(new BoundSheetRecordHandler().support(listenerRecordContext, handlerRecord)));
+        int beforeHandlerRecord = listenerRecordContext.xlsReadWorkbookHolder()
+            .getBoundSheetRecordList().size();
+        recordHandler.processRecord(listenerRecordContext, handlerRecord);
+        payload.put("xls_record_handler_process_delta",
+            Integer.valueOf(listenerRecordContext.xlsReadWorkbookHolder()
+                .getBoundSheetRecordList().size() - beforeHandlerRecord));
+        payload.put("ignorable_xls_record_handler_marker",
+            Boolean.valueOf(IgnorableXlsRecordHandler.class.isAssignableFrom(recordHandler.getClass())));
+
+        listenerRecordContext.currentSheet(new ReadSheet(Integer.valueOf(0), "HandlerSheet"));
+        BlankRecord blankRecord = new BlankRecord();
+        blankRecord.setRow(2);
+        blankRecord.setColumn((short)3);
+        new BlankRecordHandler().processRecord(listenerRecordContext, blankRecord);
+        payload.put("blank_record_handler_cell_present",
+            Boolean.valueOf(listenerRecordContext.xlsReadSheetHolder().getCellMap().containsKey(Integer.valueOf(3))));
+
+        BoolErrRecord boolRecord = new BoolErrRecord();
+        boolRecord.setRow(4);
+        boolRecord.setColumn((short)5);
+        boolRecord.setValue(true);
+        new BoolErrRecordHandler().processRecord(listenerRecordContext, boolRecord);
+        payload.put("bool_err_record_handler_cell_present",
+            Boolean.valueOf(listenerRecordContext.xlsReadSheetHolder().getCellMap().containsKey(Integer.valueOf(5))));
+
+        IndexRecord indexRecord = new IndexRecord();
+        indexRecord.setLastRowAdd1(77);
+        new IndexRecordHandler().processRecord(listenerRecordContext, indexRecord);
+        payload.put("index_record_handler_total_rows",
+            listenerRecordContext.readSheetHolder().getApproximateTotalRowNumber());
+
+        listenerRecordContext.readWorkbookHolder().getExtraReadSet().add(CellExtraTypeEnum.MERGE);
+        MergeCellsRecordHandler mergeHandler = new MergeCellsRecordHandler();
+        MergeCellsRecord mergeRecord = new MergeCellsRecord(
+            new CellRangeAddress[] {new CellRangeAddress(0, 1, 0, 1)}, 0, 1);
+        payload.put("merge_cells_record_handler_support",
+            Boolean.valueOf(mergeHandler.support(listenerRecordContext, mergeRecord)));
+        mergeHandler.processRecord(listenerRecordContext, mergeRecord);
+        payload.put("merge_cells_record_handler_first_row",
+            listenerRecordContext.xlsReadSheetHolder().getCellExtra().getFirstRowIndex());
+        payload.put("merge_cells_record_handler_last_row",
+            listenerRecordContext.xlsReadSheetHolder().getCellExtra().getLastRowIndex());
+        payload.put("merge_cells_record_handler_first_column",
+            listenerRecordContext.xlsReadSheetHolder().getCellExtra().getFirstColumnIndex());
+        payload.put("merge_cells_record_handler_last_column",
+            listenerRecordContext.xlsReadSheetHolder().getCellExtra().getLastColumnIndex());
+
+        listenerRecordContext.readWorkbookHolder().getExtraReadSet().add(CellExtraTypeEnum.COMMENT);
+        listenerRecordContext.xlsReadSheetHolder().getObjectCacheMap().put(Integer.valueOf(9), "note-text");
+        NoteRecordHandler noteHandler = new NoteRecordHandler();
+        NoteRecord noteRecord = new NoteRecord();
+        noteRecord.setRow(3);
+        noteRecord.setColumn(4);
+        noteRecord.setShapeId(9);
+        payload.put("note_record_handler_support",
+            Boolean.valueOf(noteHandler.support(listenerRecordContext, noteRecord)));
+        noteHandler.processRecord(listenerRecordContext, noteRecord);
+        payload.put("note_record_handler_text",
+            listenerRecordContext.xlsReadSheetHolder().getCellExtra().getText());
+        payload.put("note_record_handler_row",
+            listenerRecordContext.xlsReadSheetHolder().getCellExtra().getFirstRowIndex());
+        payload.put("note_record_handler_column",
+            listenerRecordContext.xlsReadSheetHolder().getCellExtra().getFirstColumnIndex());
+
+        byte[] labelText = "label-text".getBytes(StandardCharsets.ISO_8859_1);
+        byte[] labelBytes = new byte[4 + 9 + labelText.length];
+        labelBytes[0] = 0x04;
+        labelBytes[1] = 0x02;
+        labelBytes[2] = (byte)(9 + labelText.length);
+        labelBytes[4] = 5;
+        labelBytes[6] = 6;
+        labelBytes[10] = (byte)labelText.length;
+        labelBytes[12] = 0;
+        System.arraycopy(labelText, 0, labelBytes, 13, labelText.length);
+        RecordInputStream labelInput = new RecordInputStream(new ByteArrayInputStream(labelBytes));
+        labelInput.nextRecord();
+        LabelRecord labelRecord = (LabelRecord)RecordFactory.createSingleRecord(labelInput);
+        new LabelRecordHandler().processRecord(listenerRecordContext, labelRecord);
+        ReadCellData<?> labelCell =
+            (ReadCellData<?>)listenerRecordContext.xlsReadSheetHolder().getCellMap().get(Integer.valueOf(6));
+        payload.put("label_record_handler_text", labelCell.getStringValue());
+        payload.put("label_record_handler_row", labelCell.getRowIndex());
+        payload.put("label_record_handler_column", labelCell.getColumnIndex());
+        payload.put("label_record_handler_row_type",
+            listenerRecordContext.xlsReadSheetHolder().getTempRowType().name());
+
+        SSTRecord sstRecord = new SSTRecord();
+        int sharedIndex = sstRecord.addString(new UnicodeString("  shared  "));
+        new SstRecordHandler().processRecord(listenerRecordContext, sstRecord);
+        payload.put("sst_record_handler_cache_present",
+            Boolean.valueOf(listenerRecordContext.readWorkbookHolder().getReadCache() != null));
+        payload.put("sst_record_handler_text",
+            listenerRecordContext.readWorkbookHolder().getReadCache().get(sharedIndex));
+
+        LabelSSTRecord labelSstRecord = new LabelSSTRecord();
+        labelSstRecord.setRow(7);
+        labelSstRecord.setColumn((short)8);
+        labelSstRecord.setXFIndex((short)0);
+        labelSstRecord.setSSTIndex(sharedIndex);
+        new LabelSstRecordHandler().processRecord(listenerRecordContext, labelSstRecord);
+        ReadCellData<?> labelSstCell =
+            (ReadCellData<?>)listenerRecordContext.xlsReadSheetHolder().getCellMap().get(Integer.valueOf(8));
+        payload.put("label_sst_record_handler_text", labelSstCell.getStringValue());
+        payload.put("label_sst_record_handler_row", labelSstCell.getRowIndex());
+        payload.put("label_sst_record_handler_column", labelSstCell.getColumnIndex());
+        payload.put("label_sst_record_handler_row_type",
+            listenerRecordContext.xlsReadSheetHolder().getTempRowType().name());
+
+        listenerRecordContext.readWorkbookHolder().setReadCache(null);
+        LabelSSTRecord missingSstRecord = new LabelSSTRecord();
+        missingSstRecord.setRow(9);
+        missingSstRecord.setColumn((short)10);
+        missingSstRecord.setXFIndex((short)0);
+        missingSstRecord.setSSTIndex(99);
+        new LabelSstRecordHandler().processRecord(listenerRecordContext, missingSstRecord);
+        ReadCellData<?> missingSstCell =
+            (ReadCellData<?>)listenerRecordContext.xlsReadSheetHolder().getCellMap().get(Integer.valueOf(10));
+        payload.put("label_sst_record_handler_missing_cache_empty",
+            Boolean.valueOf(missingSstCell.getType() == CellDataTypeEnum.EMPTY));
+
+        FormulaRecord stringFormulaRecord = new FormulaRecord();
+        stringFormulaRecord.setRow(11);
+        stringFormulaRecord.setColumn((short)12);
+        stringFormulaRecord.setXFIndex((short)0);
+        stringFormulaRecord.setCachedResultTypeString();
+        new FormulaRecordHandler().processRecord(listenerRecordContext, stringFormulaRecord);
+        ReadCellData<?> pendingFormulaCell =
+            (ReadCellData<?>)listenerRecordContext.xlsReadSheetHolder().getTempCellData();
+        payload.put("formula_record_handler_string_pending",
+            Boolean.valueOf(pendingFormulaCell != null));
+        payload.put("formula_record_handler_row", pendingFormulaCell.getRowIndex());
+        payload.put("formula_record_handler_column", pendingFormulaCell.getColumnIndex());
+        payload.put("formula_record_handler_type", pendingFormulaCell.getType().name());
+
+        StringRecord formulaStringRecord = new StringRecord();
+        formulaStringRecord.setString("  formula-text  ");
+        new StringRecordHandler().processRecord(listenerRecordContext, formulaStringRecord);
+        ReadCellData<?> completedFormulaCell =
+            (ReadCellData<?>)listenerRecordContext.xlsReadSheetHolder().getCellMap().get(Integer.valueOf(12));
+        payload.put("string_record_handler_text", completedFormulaCell.getStringValue());
+        payload.put("string_record_handler_formula_completed",
+            Boolean.valueOf(listenerRecordContext.xlsReadSheetHolder().getTempCellData() == null));
+        payload.put("string_record_handler_cell_present",
+            Boolean.valueOf(completedFormulaCell != null));
+
+        int beforeOrphanString = listenerRecordContext.xlsReadSheetHolder().getCellMap().size();
+        StringRecord orphanStringRecord = new StringRecord();
+        orphanStringRecord.setString("orphan");
+        new StringRecordHandler().processRecord(listenerRecordContext, orphanStringRecord);
+        payload.put("string_record_handler_without_formula_ignored",
+            Boolean.valueOf(listenerRecordContext.xlsReadSheetHolder().getCellMap().size() == beforeOrphanString));
+
+        byte[] rkBytes = new byte[] {
+            0x7E, 0x02, 10, 0,
+            13, 0, 14, 0, 0, 0,
+            (byte)0xAA, 0, 0, 0
+        };
+        RecordInputStream rkInput = new RecordInputStream(new ByteArrayInputStream(rkBytes));
+        rkInput.nextRecord();
+        RKRecord rkRecord = (RKRecord)RecordFactory.createSingleRecord(rkInput);
+        new RkRecordHandler().processRecord(listenerRecordContext, rkRecord);
+        ReadCellData<?> rkCell =
+            (ReadCellData<?>)listenerRecordContext.xlsReadSheetHolder().getCellMap().get(Integer.valueOf(14));
+        payload.put("rk_record_handler_cell_present", Boolean.valueOf(rkCell != null));
+        payload.put("rk_record_handler_type", rkCell.getType().name());
+        payload.put("rk_record_handler_row", rkCell.getRowIndex());
+        payload.put("rk_record_handler_column", rkCell.getColumnIndex());
+
+        CommonObjectDataSubRecord commentObject = new CommonObjectDataSubRecord();
+        commentObject.setObjectType(CommonObjectDataSubRecord.OBJECT_TYPE_COMMENT);
+        commentObject.setObjectId(15);
+        ObjRecord objRecord = new ObjRecord();
+        objRecord.addSubRecord(commentObject);
+        new ObjRecordHandler().processRecord(listenerRecordContext, objRecord);
+        payload.put("obj_record_handler_comment_object_id",
+            listenerRecordContext.xlsReadSheetHolder().getTempObjectIndex());
+
+        CommonObjectDataSubRecord rectangleObject = new CommonObjectDataSubRecord();
+        rectangleObject.setObjectType(CommonObjectDataSubRecord.OBJECT_TYPE_RECTANGLE);
+        rectangleObject.setObjectId(99);
+        ObjRecord nonCommentObjRecord = new ObjRecord();
+        nonCommentObjRecord.addSubRecord(rectangleObject);
+        new ObjRecordHandler().processRecord(listenerRecordContext, nonCommentObjRecord);
+        payload.put("obj_record_handler_non_comment_ignored",
+            Boolean.valueOf(Integer.valueOf(15).equals(
+                listenerRecordContext.xlsReadSheetHolder().getTempObjectIndex())));
+
+        new EofRecordHandler().processRecord(listenerRecordContext, EOFRecord.instance);
+        payload.put("eof_record_handler_sheet_ended",
+            listenerRecordContext.readSheetHolder().getEnded());
+
+        Path xlsInput = artifactDir.resolve("excel_analyser_api.xls");
+        EasyExcel.write(xlsInput.toFile())
+            .excelType(ExcelTypeEnum.XLS)
+            .head(Collections.singletonList(Collections.singletonList("value")))
+            .sheet("AnalyserXls")
+            .doWrite(Collections.singletonList(Collections.singletonList("analysed")));
+        ReadWorkbook xlsWorkbook = new ReadWorkbook();
+        xlsWorkbook.setFile(xlsInput.toFile());
+        xlsWorkbook.setExcelType(ExcelTypeEnum.XLS);
+        DefaultXlsReadContext xlsContext =
+            new DefaultXlsReadContext(xlsWorkbook, ExcelTypeEnum.XLS);
+        XlsListSheetListener xlsListSheetListener = new XlsListSheetListener(xlsContext);
+        try (POIFSFileSystem fileSystem = new POIFSFileSystem(xlsInput.toFile())) {
+            xlsContext.xlsReadWorkbookHolder().setPoifsFileSystem(fileSystem);
+            boolean stopped = false;
+            try {
+                xlsListSheetListener.execute();
+            } catch (ExcelAnalysisStopException expected) {
+                stopped = true;
+            }
+            payload.put("xls_list_listener_execute_stopped", Boolean.valueOf(stopped));
+        }
+        payload.put("xls_list_listener_execute_sheet_count",
+            Integer.valueOf(xlsContext.xlsReadWorkbookHolder().getActualSheetDataList().size()));
+
+        ReadWorkbook saxWorkbook = new ReadWorkbook();
+        saxWorkbook.setFile(xlsInput.toFile());
+        saxWorkbook.setExcelType(ExcelTypeEnum.XLS);
+        DefaultXlsReadContext saxContext =
+            new DefaultXlsReadContext(saxWorkbook, ExcelTypeEnum.XLS);
+        saxContext.xlsReadWorkbookHolder().setReadAll(Boolean.TRUE);
+        try (POIFSFileSystem fileSystem = new POIFSFileSystem(xlsInput.toFile())) {
+            saxContext.xlsReadWorkbookHolder().setPoifsFileSystem(fileSystem);
+            XlsSaxAnalyser saxAnalyser = new XlsSaxAnalyser(saxContext);
+            payload.put("xls_sax_analyser_class", saxAnalyser.getClass().getName());
+            payload.put("xls_sax_analyser_sheet_count", Integer.valueOf(saxAnalyser.sheetList().size()));
+            saxAnalyser.execute();
+            payload.put("xls_sax_analyser_execute_succeeded", Boolean.TRUE);
+            NumberRecord numberRecord = new NumberRecord();
+            numberRecord.setRow(6);
+            numberRecord.setColumn((short)7);
+            numberRecord.setXFIndex((short)0);
+            numberRecord.setValue(12.5D);
+            new NumberRecordHandler().processRecord(saxContext, numberRecord);
+            payload.put("number_record_handler_cell_present",
+                Boolean.valueOf(saxContext.xlsReadSheetHolder().getCellMap().containsKey(Integer.valueOf(7))));
+            int saxBeforeKnownRecord = saxContext.xlsReadWorkbookHolder().getBoundSheetRecordList().size();
+            saxAnalyser.processRecord(new BoundSheetRecord("ManualSax"));
+            int saxAfterKnownRecord = saxContext.xlsReadWorkbookHolder().getBoundSheetRecordList().size();
+            saxAnalyser.processRecord(new UnknownRecord(0x0FFF, new byte[0]));
+            payload.put("xls_sax_analyser_known_record_delta",
+                Integer.valueOf(saxAfterKnownRecord - saxBeforeKnownRecord));
+            payload.put("xls_sax_analyser_unknown_record_ignored",
+                Boolean.valueOf(saxContext.xlsReadWorkbookHolder()
+                    .getBoundSheetRecordList().size() == saxAfterKnownRecord));
+        }
+        payload.put("xls_context_workbook_type",
+            xlsContext.xlsReadWorkbookHolder().getExcelType().name());
+        payload.put("xls_context_sheet_before_null",
+            Boolean.valueOf(xlsContext.xlsReadSheetHolder() == null));
+        xlsContext.currentSheet(new ReadSheet(Integer.valueOf(0), "XlsContext"));
+        payload.put("xls_context_sheet_no", xlsContext.xlsReadSheetHolder().getSheetNo());
+
+        ReadWorkbook xlsxWorkbook = new ReadWorkbook();
+        xlsxWorkbook.setExcelType(ExcelTypeEnum.XLSX);
+        DefaultXlsxReadContext xlsxContext =
+            new DefaultXlsxReadContext(xlsxWorkbook, ExcelTypeEnum.XLSX);
+        payload.put("xlsx_context_workbook_type",
+            xlsxContext.xlsxReadWorkbookHolder().getExcelType().name());
+        payload.put("xlsx_context_sheet_before_null",
+            Boolean.valueOf(xlsxContext.xlsxReadSheetHolder() == null));
+        xlsxContext.xlsxReadWorkbookHolder()
+            .setPackageRelationshipCollectionMap(new HashMap<Integer, org.apache.poi.openxml4j.opc.PackageRelationshipCollection>());
+        xlsxContext.currentSheet(new ReadSheet(Integer.valueOf(0), "XlsxContext"));
+        payload.put("xlsx_context_sheet_no", xlsxContext.xlsxReadSheetHolder().getSheetNo());
+
+        Path out = outDir.resolve("excel_analyser_lifecycle.contract.json");
+        String json = JSON.toJSONString(payload, JSONWriter.Feature.PrettyFormat);
+        Files.write(out, (json + "\n").getBytes(StandardCharsets.UTF_8));
+        System.out.println("Wrote " + out);
+    }
+
+    /**
+     * Export lifecycle observations for Java's public {@code ExcelReader} methods.
+     *
+     * @param workbook Java-generated workbook used by every reader instance
+     * @param outDir golden output directory
+     * @throws Exception when a reader operation or contract write fails
+     */
+    @SuppressWarnings("deprecation")
+    private static void writeExcelReaderContract(Path workbook, Path outDir) throws Exception {
+        AnalysisEventListener<Object> listener = new AnalysisEventListener<Object>() {
+            @Override
+            public void invoke(Object data, AnalysisContext context) {
+                // The contract observes lifecycle and return identity, not row values.
+            }
+
+            @Override
+            public void doAfterAllAnalysed(AnalysisContext context) {
+                // The contract observes lifecycle and return identity, not row values.
+            }
+        };
+        ReadSheet sheet = EasyExcel.readSheet(Integer.valueOf(0)).build();
+        Map<String, Object> payload = new LinkedHashMap<String, Object>();
+        payload.put("authority", "com.alibaba:easyexcel:4.0.3");
+
+        ReadWorkbook directWorkbook = new ReadWorkbook();
+        directWorkbook.setFile(workbook.toFile());
+        directWorkbook.setCustomReadListenerList(Arrays.asList(listener));
+        com.alibaba.excel.ExcelReader directReader = new com.alibaba.excel.ExcelReader(directWorkbook);
+        payload.put("direct_constructor", directReader.getClass().getName());
+        directReader.finish();
+
+        com.alibaba.excel.ExcelReader contextReader = EasyExcel.read(workbook.toFile(), listener).build();
+        payload.put("reader_class", contextReader.getClass().getName());
+        payload.put("analysis_context_class", contextReader.analysisContext().getClass().getName());
+        payload.put("get_analysis_context_same", contextReader.analysisContext() == contextReader.getAnalysisContext());
+        payload.put("excel_executor_class", contextReader.excelExecutor().getClass().getName());
+        contextReader.finish();
+        contextReader.close();
+        payload.put("finish_then_close", Boolean.TRUE);
+
+        com.alibaba.excel.ExcelReader deprecatedReader = EasyExcel.read(workbook.toFile(), listener).build();
+        deprecatedReader.read();
+        deprecatedReader.finish();
+        payload.put("deprecated_read", Boolean.TRUE);
+
+        com.alibaba.excel.ExcelReader allReader = EasyExcel.read(workbook.toFile(), listener).build();
+        allReader.readAll();
+        allReader.finish();
+        payload.put("read_all", Boolean.TRUE);
+
+        com.alibaba.excel.ExcelReader listReader = EasyExcel.read(workbook.toFile(), listener).build();
+        payload.put("read_list_returns_self", listReader == listReader.read(Arrays.asList(sheet)));
+        listReader.finish();
+
+        com.alibaba.excel.ExcelReader varargsReader = EasyExcel.read(workbook.toFile(), listener).build();
+        payload.put("read_varargs_returns_self", varargsReader == varargsReader.read(sheet));
+        varargsReader.finish();
+
+        Path out = outDir.resolve("excel_reader_lifecycle.contract.json");
+        String json = JSON.toJSONString(payload, JSONWriter.Feature.PrettyFormat);
+        Files.write(out, (json + "\n").getBytes(StandardCharsets.UTF_8));
+        System.out.println("Wrote " + out);
+    }
+
+    /**
+     * Export observable return types for Java's static facade overloads.
+     *
+     * @param outDir golden output directory
+     * @throws Exception when the contract cannot be written
+     */
+    private static void writeFacadeApiContract(Path outDir) throws Exception {
+        Map<String, Object> payload = new LinkedHashMap<String, Object>();
+        payload.put("authority", "com.alibaba:easyexcel:4.0.3");
+        payload.put("easy_excel_class", new EasyExcel().getClass().getName());
+        payload.put("easy_excel_factory_class", new EasyExcelFactory().getClass().getName());
+        payload.put("easy_excel_superclass", EasyExcel.class.getSuperclass().getName());
+
+        Map<String, String> methods = new LinkedHashMap<String, String>();
+        File file = new File("facade-contract.xlsx");
+        ByteArrayInputStream input = new ByteArrayInputStream(new byte[0]);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        AnalysisEventListener<Object> listener = new AnalysisEventListener<Object>() {
+            @Override
+            public void invoke(Object data, AnalysisContext context) {
+                // Contract probe only; no read is executed.
+            }
+
+            @Override
+            public void doAfterAllAnalysed(AnalysisContext context) {
+                // Contract probe only; no read is executed.
+            }
+        };
+        methods.put("read()", EasyExcel.read().getClass().getName());
+        methods.put("read(File)", EasyExcel.read(file).getClass().getName());
+        methods.put("read(File,ReadListener)", EasyExcel.read(file, listener).getClass().getName());
+        methods.put("read(File,Class,ReadListener)", EasyExcel.read(file, Object.class, listener).getClass().getName());
+        methods.put("read(InputStream)", EasyExcel.read(input).getClass().getName());
+        methods.put("read(InputStream,ReadListener)", EasyExcel.read(new ByteArrayInputStream(new byte[0]), listener).getClass().getName());
+        methods.put("read(InputStream,Class,ReadListener)", EasyExcel.read(new ByteArrayInputStream(new byte[0]), Object.class, listener).getClass().getName());
+        methods.put("read(String)", EasyExcel.read(file.getPath()).getClass().getName());
+        methods.put("read(String,ReadListener)", EasyExcel.read(file.getPath(), listener).getClass().getName());
+        methods.put("read(String,Class,ReadListener)", EasyExcel.read(file.getPath(), Object.class, listener).getClass().getName());
+        methods.put("readSheet()", EasyExcel.readSheet().getClass().getName());
+        methods.put("readSheet(Integer)", EasyExcel.readSheet(Integer.valueOf(1)).getClass().getName());
+        methods.put("readSheet(Integer,String)", EasyExcel.readSheet(Integer.valueOf(1), "Data").getClass().getName());
+        methods.put("readSheet(String)", EasyExcel.readSheet("Data").getClass().getName());
+        methods.put("write()", EasyExcel.write().getClass().getName());
+        methods.put("write(File)", EasyExcel.write(file).getClass().getName());
+        methods.put("write(File,Class)", EasyExcel.write(file, Object.class).getClass().getName());
+        methods.put("write(OutputStream)", EasyExcel.write(output).getClass().getName());
+        methods.put("write(OutputStream,Class)", EasyExcel.write(output, Object.class).getClass().getName());
+        methods.put("write(String)", EasyExcel.write(file.getPath()).getClass().getName());
+        methods.put("write(String,Class)", EasyExcel.write(file.getPath(), Object.class).getClass().getName());
+        methods.put("writerSheet()", EasyExcel.writerSheet().getClass().getName());
+        methods.put("writerSheet(Integer)", EasyExcel.writerSheet(Integer.valueOf(1)).getClass().getName());
+        methods.put("writerSheet(Integer,String)", EasyExcel.writerSheet(Integer.valueOf(1), "Data").getClass().getName());
+        methods.put("writerSheet(String)", EasyExcel.writerSheet("Data").getClass().getName());
+        methods.put("writerTable()", EasyExcel.writerTable().getClass().getName());
+        methods.put("writerTable(Integer)", EasyExcel.writerTable(Integer.valueOf(1)).getClass().getName());
+        payload.put("methods", methods);
+
+        Path out = outDir.resolve("facade_api.contract.json");
+        String json = JSON.toJSONString(payload, JSONWriter.Feature.PrettyFormat);
+        Files.write(out, (json + "\n").getBytes(StandardCharsets.UTF_8));
+        System.out.println("Wrote " + out);
     }
 
     /**

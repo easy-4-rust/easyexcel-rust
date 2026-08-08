@@ -236,9 +236,9 @@ impl ExcelWriterTableBuilder {
         self.do_write(supplier())
     }
 
-    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Convenience setter that records a head style without emitting a
-    /// no-op. Provided for parity with Java's chainable setters.
-    pub fn head_style_record(&mut self, _style: CellStyle) -> &mut Self {
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterTableBuilder。 Mutably records a head style for callers using Java-style setters.
+    pub fn head_style_record(&mut self, style: CellStyle) -> &mut Self {
+        self.table.options.head_style = style;
         self
     }
 }
@@ -560,6 +560,7 @@ mod tests {
         assert_eq!(builder.handler_count(), 2);
         let built = builder.build();
         assert!(built.options().order_by_include_column);
+        assert_eq!(built.options().head_style, CellStyle::new());
         assert_eq!(
             built.options().exclude_column_field_names,
             vec!["skip".to_owned()]

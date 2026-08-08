@@ -25,6 +25,16 @@ impl Biff8TemplatePackage {
             .map_err(ExcelError::from)
     }
 
+    /// 对应 Java：`HSSFWorkbook(templateStream)` + 调用级 BIFF8 密码。 从字节加载模板。
+    pub fn from_bytes_with_password(bytes: &[u8], password: Option<&str>) -> Result<Self> {
+        let Some(password) = password else {
+            return Self::from_bytes(bytes);
+        };
+        easyexcel_xls::biff8::Biff8TemplatePackage::from_bytes_with_password(bytes, Some(password))
+            .map(|inner| Self { inner })
+            .map_err(ExcelError::from)
+    }
+
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 从文件加载模板。
     pub fn from_path(path: &Path) -> Result<Self> {
         easyexcel_xls::biff8::Biff8TemplatePackage::from_path(path)
@@ -83,14 +93,25 @@ impl Biff8TemplatePackage {
             .map_err(ExcelError::from)
     }
 
-    /// 对应 Java：无直接对应对象；Rust 架构扩展。 使用中立文本行替换 BIFF8 集合占位符。
-    pub fn replace_collection_placeholders(
+    /// 对应 Java：`ExcelWriteFillExecutor#doFill`。 按工作表和 `FillConfig` 扩展集合占位符。
+    pub fn fill_collection_placeholders(
         &mut self,
+        sheet_name: Option<&str>,
         collection_name: Option<&str>,
         rows: &[BTreeMap<String, String>],
+        horizontal: bool,
+        force_new_row: bool,
+        auto_style: bool,
     ) -> Result<usize> {
         self.inner
-            .replace_collection_placeholders(collection_name, rows)
+            .fill_collection_placeholders(
+                sheet_name,
+                collection_name,
+                rows,
+                horizontal,
+                force_new_row,
+                auto_style,
+            )
             .map_err(ExcelError::from)
     }
 
@@ -99,9 +120,46 @@ impl Biff8TemplatePackage {
         self.inner.save_to_path(path).map_err(ExcelError::from)
     }
 
-    /// 对应 Java：无直接对应对象；Rust 架构扩展。 保存到输出流。
-    pub fn save_to_writer(&self, output: &mut dyn Write) -> Result<()> {
-        self.inner.save_to_writer(output).map_err(ExcelError::from)
+    /// 对应 Java：`HSSFWorkbook#write` + BIFF8 密码。 保存到文件。
+    pub fn save_to_path_with_password(&self, path: &Path, password: Option<&str>) -> Result<()> {
+        self.inner
+            .save_to_path_with_password(path, password)
+            .map_err(ExcelError::from)
+    }
+
+    /// 按密码与 VBA 策略保存 BIFF8 模板。
+    pub fn save_to_path_with_password_and_macro_policy(
+        &self,
+        path: &Path,
+        password: Option<&str>,
+        policy: &crate::Biff8MacroPolicy,
+    ) -> Result<()> {
+        let bytes = self
+            .inner
+            .to_bytes_with_password_and_macro_policy(password, policy)
+            .map_err(ExcelError::from)?;
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(path, bytes).map_err(ExcelError::from)
+    }
+
+    /// 按密码与 VBA 策略保存到调用方输出流。
+    pub fn save_to_writer_with_password_and_macro_policy(
+        &self,
+        output: &mut dyn Write,
+        password: Option<&str>,
+        policy: &crate::Biff8MacroPolicy,
+    ) -> Result<()> {
+        let bytes = self
+            .inner
+            .to_bytes_with_password_and_macro_policy(password, policy)
+            .map_err(ExcelError::from)?;
+        output.write_all(&bytes)?;
+        output.flush()?;
+        Ok(())
     }
 }
 
@@ -111,6 +169,7 @@ fn cell_value_to_template_cell(value: &CellValue) -> Result<Biff8Cell> {
         CellValue::String(text)
         | CellValue::Error(text)
         | CellValue::Hyperlink { text, .. }
+        | CellValue::HyperlinkWithMetadata { text, .. }
         | CellValue::Formula(text) => Biff8Value::Text(text.clone()),
         CellValue::RichText(rich) => Biff8Value::Text(rich.text_string().to_owned()),
         CellValue::Bool(flag) => Biff8Value::Bool(*flag),

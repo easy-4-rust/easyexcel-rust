@@ -16,7 +16,7 @@
 
         let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
         builder.fill(&DynamicRow::default(), FillConfig::new(), &sheet)?;
-        builder.finish(false)?;
+        builder.finish()?;
         assert!(builder.finished_via_fill());
         Ok(())
     }
@@ -51,9 +51,9 @@
         );
     }
 
-/// `fill` on a legacy XLS writer is rejected before the executor runs.
+    /// `fill` on a legacy XLS writer reaches the real executor wiring gate.
     #[test]
-    fn fill_legacy_xls_is_rejected() {
+    fn fill_legacy_xls_is_not_blanket_rejected() {
         let mut builder = ExcelBuilderImpl::from_options(
             "legacy.xls",
             WriteOptions {
@@ -65,10 +65,10 @@
         let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
         let error = builder
             .fill(&DynamicRow::default(), FillConfig::new(), &sheet)
-            .expect_err("legacy XLS fill must fail");
+            .expect_err("an unwired executor must remain visible");
         assert_eq!(
             error.to_string(),
-            "unsupported operation: legacy XLS template fill is not supported"
+            "unsupported operation: template fill executor is not wired; build through easyexcel::builder_from_writer"
         );
     }
 
@@ -139,7 +139,7 @@
         builder
             .fill(&DynamicRow::default(), FillConfig::new(), &sheet)
             .expect("second fill succeeds");
-        builder.finish(false).expect("finish via fill delegate");
+        builder.finish().expect("finish via fill delegate");
         assert!(builder.finished_via_fill());
     }
 
@@ -269,7 +269,6 @@
         let mut builder = ExcelBuilderImpl::from_options(&path, WriteOptions::default());
         let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
         builder.add_content([], &sheet)?;
-        builder.finish(true)?;
+        builder.finish_on_exception()?;
         Ok(())
     }
-

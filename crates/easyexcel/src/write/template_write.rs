@@ -284,9 +284,10 @@ pub(crate) fn resolve_package_target(
 fn template_cell_value(value: &CellValue) -> Result<TemplateCellValue> {
     Ok(match value {
         CellValue::Empty | CellValue::Image(_) => TemplateCellValue::Empty,
-        CellValue::String(text) | CellValue::Error(text) | CellValue::Hyperlink { text, .. } => {
-            TemplateCellValue::Text(text.clone())
-        }
+        CellValue::String(text)
+        | CellValue::Error(text)
+        | CellValue::Hyperlink { text, .. }
+        | CellValue::HyperlinkWithMetadata { text, .. } => TemplateCellValue::Text(text.clone()),
         CellValue::RichText(rich) => TemplateCellValue::Text(rich.text_string().to_owned()),
         CellValue::Bool(flag) => TemplateCellValue::Bool(*flag),
         CellValue::Int(number) => TemplateCellValue::Number(number.to_string()),

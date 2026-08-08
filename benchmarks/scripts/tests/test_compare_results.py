@@ -53,6 +53,24 @@ class CompareResultsContractTest(unittest.TestCase):
         self.assertEqual(100.0, summary["median"])
         self.assertEqual(0.0, summary["coefficient_of_variation"])
 
+    def test_bootstrap_ratio_is_deterministic(self) -> None:
+        first = COMPARE.bootstrap_median_ratio(
+            [100.0] * 7, [100.0] * 7, seed="same-scenario", iterations=100
+        )
+        second = COMPARE.bootstrap_median_ratio(
+            [100.0] * 7, [100.0] * 7, seed="same-scenario", iterations=100
+        )
+        self.assertEqual(first, second)
+        self.assertEqual(1.0, first["median_ratio"])
+        self.assertEqual(1.0, first["confidence_lower_bound"])
+
+    def test_bootstrap_ratio_exposes_slow_runtime(self) -> None:
+        ratio = COMPARE.bootstrap_median_ratio(
+            [80.0] * 7, [100.0] * 7, seed="slow-rust", iterations=100
+        )
+        self.assertAlmostEqual(0.8, ratio["median_ratio"])
+        self.assertAlmostEqual(0.8, ratio["confidence_lower_bound"])
+
     def test_wrong_spec_and_unknown_git_sha_are_rejected(self) -> None:
         failures: list[str] = []
         result = {

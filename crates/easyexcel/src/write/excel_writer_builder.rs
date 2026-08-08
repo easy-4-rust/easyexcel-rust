@@ -18,6 +18,7 @@ use crate::{ExcelOutputStream, ExcelWriter};
 pub struct ExcelWriterBuilder {
     write_workbook: WriteWorkbook,
     handlers: Vec<Box<dyn WriteHandler>>,
+    memory_selection: Option<bool>,
 }
 
 impl ExcelWriterBuilder {
@@ -27,6 +28,7 @@ impl ExcelWriterBuilder {
         Self {
             write_workbook: WriteWorkbook::new(),
             handlers: Vec::new(),
+            memory_selection: None,
         }
     }
 
@@ -41,6 +43,13 @@ impl ExcelWriterBuilder {
     #[must_use]
     pub fn excel_type(mut self, excel_type: ExcelTypeEnum) -> Self {
         self.write_workbook.set_excel_type(excel_type);
+        self
+    }
+
+    /// 设置 BIFF8 模板的 VBA 项目策略；默认原样保留且从不执行宏。
+    #[must_use]
+    pub fn biff8_macro_policy(mut self, policy: crate::Biff8MacroPolicy) -> Self {
+        self.write_workbook.options.biff8_macro_policy = policy;
         self
     }
 
@@ -74,6 +83,7 @@ impl ExcelWriterBuilder {
     #[must_use]
     pub fn in_memory(mut self, enabled: bool) -> Self {
         self.write_workbook.set_in_memory(enabled);
+        self.memory_selection = Some(enabled);
         self
     }
 
@@ -216,10 +226,16 @@ impl ExcelWriterBuilder {
         let path = self.write_workbook.output_file.ok_or_else(|| {
             ExcelError::Format("ExcelWriterBuilder.file must be set before build()".to_owned())
         })?;
-        Ok(ExcelWriter::with_handlers_and_options(
+        let selection = match self.memory_selection {
+            None => crate::WriteBackendSelection::AutoUndecided,
+            Some(true) => crate::WriteBackendSelection::ExplicitInMemory,
+            Some(false) => crate::WriteBackendSelection::ExplicitStreaming,
+        };
+        Ok(ExcelWriter::with_handlers_and_options_and_selection(
             path,
             self.handlers,
             self.write_workbook.options,
+            selection,
         ))
     }
 

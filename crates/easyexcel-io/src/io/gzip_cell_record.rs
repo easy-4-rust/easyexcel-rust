@@ -80,6 +80,32 @@ fn encode_cell(out: &mut Vec<u8>, value: &GzipCellValue) -> Result<()> {
             write_str(out, url)?;
             write_str(out, text)?;
         }
+        GzipCellValue::TypedHyperlink {
+            address,
+            text,
+            kind,
+            first_row,
+            first_col,
+            last_row,
+            last_col,
+            relative_first_row,
+            relative_first_col,
+            relative_last_row,
+            relative_last_col,
+        } => {
+            out.push(17);
+            write_str(out, address)?;
+            write_str(out, text)?;
+            out.push(*kind);
+            write_optional(out, *first_row, u32::to_le_bytes);
+            write_optional(out, *first_col, u16::to_le_bytes);
+            write_optional(out, *last_row, u32::to_le_bytes);
+            write_optional(out, *last_col, u16::to_le_bytes);
+            write_optional(out, *relative_first_row, i32::to_le_bytes);
+            write_optional(out, *relative_first_col, i32::to_le_bytes);
+            write_optional(out, *relative_last_row, i32::to_le_bytes);
+            write_optional(out, *relative_last_col, i32::to_le_bytes);
+        }
         GzipCellValue::Comment { value, text } => {
             out.push(11);
             write_str(out, text)?;
@@ -100,6 +126,21 @@ fn encode_cell(out: &mut Vec<u8>, value: &GzipCellValue) -> Result<()> {
             );
             for image in images {
                 write_bytes(out, image)?;
+            }
+        }
+        GzipCellValue::Styled { value, style_id } => {
+            out.push(15);
+            write_u32(out, *style_id);
+            encode_cell(out, value)?;
+        }
+        GzipCellValue::JournalMetadata { row_height } => {
+            out.push(16);
+            match row_height {
+                Some(height) => {
+                    out.push(1);
+                    out.extend_from_slice(&height.to_le_bytes());
+                }
+                None => out.push(0),
             }
         }
     }
@@ -137,6 +178,28 @@ fn decode_cell(buf: &[u8], cursor: &mut usize) -> Result<GzipCellValue> {
             }
             GzipCellValue::Images { value, images }
         }
+        15 => GzipCellValue::Styled {
+            style_id: read_u32(buf, cursor)?,
+            value: Box::new(decode_cell(buf, cursor)?),
+        },
+        16 => GzipCellValue::JournalMetadata {
+            row_height: (read_u8(buf, cursor)? != 0)
+                .then(|| read_exact(buf, cursor).map(u16::from_le_bytes))
+                .transpose()?,
+        },
+        17 => GzipCellValue::TypedHyperlink {
+            address: read_str(buf, cursor)?,
+            text: read_str(buf, cursor)?,
+            kind: read_u8(buf, cursor)?,
+            first_row: read_optional(buf, cursor, u32::from_le_bytes)?,
+            first_col: read_optional(buf, cursor, u16::from_le_bytes)?,
+            last_row: read_optional(buf, cursor, u32::from_le_bytes)?,
+            last_col: read_optional(buf, cursor, u16::from_le_bytes)?,
+            relative_first_row: read_optional(buf, cursor, i32::from_le_bytes)?,
+            relative_first_col: read_optional(buf, cursor, i32::from_le_bytes)?,
+            relative_last_row: read_optional(buf, cursor, i32::from_le_bytes)?,
+            relative_last_col: read_optional(buf, cursor, i32::from_le_bytes)?,
+        },
         other => {
             return Err(Error::Other(format!(
                 "unknown gzip spill cell tag: {other}"
@@ -152,6 +215,19 @@ fn write_tagged_string(out: &mut Vec<u8>, tag: u8, value: &str) -> Result<()> {
 
 fn write_u32(out: &mut Vec<u8>, value: u32) {
     out.extend_from_slice(&value.to_le_bytes());
+}
+
+fn write_optional<T, const N: usize>(
+    out: &mut Vec<u8>,
+    value: Option<T>,
+    encode: impl FnOnce(T) -> [u8; N],
+) {
+    if let Some(value) = value {
+        out.push(1);
+        out.extend_from_slice(&encode(value));
+    } else {
+        out.push(0);
+    }
 }
 
 fn write_str(out: &mut Vec<u8>, value: &str) -> Result<()> {
@@ -178,6 +254,16 @@ fn read_u8(buf: &[u8], cursor: &mut usize) -> Result<u8> {
 
 fn read_u32(buf: &[u8], cursor: &mut usize) -> Result<u32> {
     Ok(u32::from_le_bytes(read_exact(buf, cursor)?))
+}
+
+fn read_optional<T, const N: usize>(
+    buf: &[u8],
+    cursor: &mut usize,
+    decode: impl FnOnce([u8; N]) -> T,
+) -> Result<Option<T>> {
+    (read_u8(buf, cursor)? != 0)
+        .then(|| read_exact(buf, cursor).map(decode))
+        .transpose()
 }
 
 fn read_exact<const N: usize>(buf: &[u8], cursor: &mut usize) -> Result<[u8; N]> {
@@ -226,6 +312,26 @@ mod tests {
             GzipCellValue::Images {
                 value: Box::new(GzipCellValue::Bool(true)),
                 images: vec![vec![1, 2, 3], vec![4, 5]],
+            },
+            GzipCellValue::Styled {
+                value: Box::new(GzipCellValue::Text("styled".to_owned())),
+                style_id: 3,
+            },
+            GzipCellValue::JournalMetadata {
+                row_height: Some(22),
+            },
+            GzipCellValue::TypedHyperlink {
+                address: "'Other Sheet'!A1".to_owned(),
+                text: "place".to_owned(),
+                kind: 2,
+                first_row: Some(4),
+                first_col: Some(2),
+                last_row: None,
+                last_col: None,
+                relative_first_row: Some(-1),
+                relative_first_col: None,
+                relative_last_row: Some(1),
+                relative_last_col: Some(3),
             },
         ];
         let encoded = encode_row(&values).expect("encode row");

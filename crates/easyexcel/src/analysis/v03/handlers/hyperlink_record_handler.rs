@@ -60,7 +60,7 @@ impl XlsRecordHandler for HyperlinkRecordHandler {
         }
         if let Some(range) = easyexcel_xls::biff8::event_record::decode_cell_range(data) {
             self.process_hyperlink(
-                None,
+                easyexcel_xls::biff8::event_record::decode_hyperlink_address(data),
                 range.first_row,
                 range.last_row,
                 range.first_column,

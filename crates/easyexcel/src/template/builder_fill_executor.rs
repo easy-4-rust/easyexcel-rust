@@ -9,11 +9,13 @@ use std::io::Cursor;
 use std::path::{Path, PathBuf};
 
 use crate::core::{
-    ExcelError, Result, WriteDirection, WriteFillConfig, WriteFillExecutor, WriteFillSheet,
+    CellValue, ExcelError, Result, WriteDirection, WriteFillConfig, WriteFillExecutor,
+    WriteFillSheet,
 };
 
 use crate::{
-    ExcelTemplateWriter, FillConfig, FillDirection, FillWrapper, TemplateData, TemplateSheet,
+    ExcelTemplateWriter, FillConfig, FillDirection, FillWrapper, MergeRange, TemplateData,
+    TemplateSheet,
 };
 
 /// Stateful template fill executor for [`crate::write::ExcelBuilderImpl`].
@@ -21,7 +23,11 @@ use crate::{
 /// 对应 Java：`ExcelWriteFillExecutor` backed by the same loaded XLSX
 /// package as [`ExcelTemplateWriter`].
 pub struct BuilderFillExecutor {
-    inner: ExcelTemplateWriter<'static>,
+    inner: Option<ExcelTemplateWriter<'static>>,
+    xls: Option<crate::write::xls_adapter::Biff8TemplatePackage>,
+    output: PathBuf,
+    password: Option<String>,
+    finished: bool,
 }
 
 /// 由类型注解和写 handler 编译出的模板集合填充样式。
@@ -41,16 +47,45 @@ impl BuilderFillExecutor {
         template_bytes: Option<Vec<u8>>,
         output: PathBuf,
     ) -> Result<Self> {
-        let inner = if let Some(path) = template_file {
-            ExcelTemplateWriter::new(path, output)?
+        Self::new_with_password(template_file, template_bytes, output, None)
+    }
+
+    pub(crate) fn new_with_password(
+        template_file: Option<PathBuf>,
+        template_bytes: Option<Vec<u8>>,
+        output: PathBuf,
+        password: Option<String>,
+    ) -> Result<Self> {
+        let bytes = if let Some(path) = template_file {
+            std::fs::read(path)?
         } else if let Some(bytes) = template_bytes {
-            ExcelTemplateWriter::from_reader(Cursor::new(bytes), output)?
+            bytes
         } else {
             return Err(ExcelError::Unsupported(
                 "with_template requires a template file or template bytes".to_owned(),
             ));
         };
-        Ok(Self { inner })
+        if crate::write::xls_adapter::looks_like_xls(&bytes) {
+            let xls = crate::write::xls_adapter::Biff8TemplatePackage::from_bytes_with_password(
+                &bytes,
+                password.as_deref(),
+            )?;
+            return Ok(Self {
+                inner: None,
+                xls: Some(xls),
+                output,
+                password,
+                finished: false,
+            });
+        }
+        let inner = ExcelTemplateWriter::from_reader(Cursor::new(bytes), output.clone())?;
+        Ok(Self {
+            inner: Some(inner),
+            xls: None,
+            output,
+            password,
+            finished: false,
+        })
     }
 
     pub(crate) fn with_compiled_styles(
@@ -58,12 +93,12 @@ impl BuilderFillExecutor {
         template_bytes: Option<Vec<u8>>,
         output: PathBuf,
         styles: Option<CompiledTemplateFillStyles>,
+        password: Option<String>,
     ) -> Result<Self> {
-        let mut executor = Self::new(template_file, template_bytes, output)?;
-        if let Some(styles) = styles {
-            executor
-                .inner
-                .import_collection_styles(&styles.workbook, &styles.columns)?;
+        let mut executor =
+            Self::new_with_password(template_file, template_bytes, output, password)?;
+        if let (Some(styles), Some(inner)) = (styles, executor.inner.as_mut()) {
+            inner.import_collection_styles(&styles.workbook, &styles.columns)?;
         }
         Ok(executor)
     }
@@ -78,7 +113,11 @@ impl BuilderFillExecutor {
         output: impl Into<PathBuf>,
     ) -> Result<Self> {
         Ok(Self {
-            inner: ExcelTemplateWriter::new(template, output)?,
+            inner: Some(ExcelTemplateWriter::new(template, output.into())?),
+            xls: None,
+            output: PathBuf::new(),
+            password: None,
+            finished: false,
         })
     }
 }
@@ -105,12 +144,14 @@ pub(crate) fn create_builder_fill_executor_with_styles(
     template_bytes: Option<Vec<u8>>,
     output: PathBuf,
     styles: Option<CompiledTemplateFillStyles>,
+    password: Option<String>,
 ) -> Result<Box<dyn WriteFillExecutor>> {
     Ok(Box::new(BuilderFillExecutor::with_compiled_styles(
         template_file,
         template_bytes,
         output,
         styles,
+        password,
     )?))
 }
 
@@ -121,13 +162,64 @@ impl WriteFillExecutor for BuilderFillExecutor {
         fill_config: WriteFillConfig,
         sheet: WriteFillSheet,
     ) -> Result<()> {
+        if self.finished {
+            return Err(ExcelError::Unsupported(
+                "template writer already finished".to_owned(),
+            ));
+        }
+        if let Some(xls) = self.xls.as_mut() {
+            if let Some(scalar) = data.downcast_ref::<TemplateData>() {
+                let values = scalar
+                    .values()
+                    .iter()
+                    .map(|(key, value)| (key.clone(), value.as_text()))
+                    .collect();
+                xls.replace_scalar_placeholders(&values)?;
+                return Ok(());
+            }
+            if let Some(collection) = data.downcast_ref::<FillWrapper>() {
+                let rows = collection
+                    .rows()
+                    .iter()
+                    .map(|row| {
+                        row.values()
+                            .iter()
+                            .map(|(key, value)| (key.clone(), value.as_text()))
+                            .collect()
+                    })
+                    .collect::<Vec<_>>();
+                let sheet_name = if let Some(index) = sheet.sheet_index {
+                    xls.sheet_names().get(index).cloned().ok_or_else(|| {
+                        ExcelError::Format(format!("sheet index {index} does not exist"))
+                    })?
+                } else {
+                    sheet.sheet_name.clone()
+                };
+                xls.fill_collection_placeholders(
+                    Some(&sheet_name),
+                    collection.name(),
+                    &rows,
+                    matches!(fill_config.direction, Some(WriteDirection::Horizontal)),
+                    fill_config.force_new_row,
+                    fill_config.auto_style,
+                )?;
+                return Ok(());
+            }
+            return Err(ExcelError::Format(format!(
+                "fill data must be TemplateData or FillWrapper, got {}",
+                std::any::type_name_of_val(data)
+            )));
+        }
+        let inner = self.inner.as_mut().ok_or_else(|| {
+            ExcelError::Format("template fill executor has no active backend".to_owned())
+        })?;
         let template_sheet = to_template_sheet(&sheet);
         if let Some(scalar) = data.downcast_ref::<TemplateData>() {
-            self.inner.fill_on_sheet(&template_sheet, scalar)?;
+            inner.fill_on_sheet(&template_sheet, scalar)?;
             return Ok(());
         }
         if let Some(collection) = data.downcast_ref::<FillWrapper>() {
-            self.inner.fill_list_on_sheet(
+            inner.fill_list_on_sheet(
                 &template_sheet,
                 collection,
                 to_template_fill_config(fill_config),
@@ -140,9 +232,89 @@ impl WriteFillExecutor for BuilderFillExecutor {
         )))
     }
 
-    fn finish(&mut self, _on_exception: bool) -> Result<()> {
-        self.inner.finish()
+    fn write_rows(&mut self, rows: Vec<Vec<CellValue>>, sheet: WriteFillSheet) -> Result<()> {
+        if self.finished {
+            return Err(ExcelError::Unsupported(
+                "template writer already finished".to_owned(),
+            ));
+        }
+        if let Some(xls) = self.xls.as_mut() {
+            let sheet_name = resolve_xls_sheet_name(xls, &sheet)?;
+            let sparse_rows = rows
+                .into_iter()
+                .map(|row| row.into_iter().enumerate().collect::<Vec<_>>())
+                .collect::<Vec<_>>();
+            xls.append_rows(&sheet_name, &sparse_rows)?;
+            return Ok(());
+        }
+        self.inner
+            .as_mut()
+            .ok_or_else(|| ExcelError::Format("template fill executor has no backend".to_owned()))?
+            .write_rows_on_sheet(&to_template_sheet(&sheet), rows)?;
+        Ok(())
     }
+
+    fn add_merge(&mut self, range: MergeRange, sheet: WriteFillSheet) -> Result<()> {
+        if self.finished {
+            return Err(ExcelError::Unsupported(
+                "template writer already finished".to_owned(),
+            ));
+        }
+        if let Some(xls) = self.xls.as_mut() {
+            let sheet_name = resolve_xls_sheet_name(xls, &sheet)?;
+            xls.add_merge_range(
+                &sheet_name,
+                easyexcel_xls::biff8::Biff8Merge {
+                    first_row: u16::try_from(range.first_row).map_err(|_| {
+                        ExcelError::Format("BIFF8 supports at most 65536 rows".to_owned())
+                    })?,
+                    last_row: u16::try_from(range.last_row).map_err(|_| {
+                        ExcelError::Format("BIFF8 supports at most 65536 rows".to_owned())
+                    })?,
+                    first_col: u8::try_from(range.first_column).map_err(|_| {
+                        ExcelError::Format("BIFF8 supports at most 256 columns".to_owned())
+                    })?,
+                    last_col: u8::try_from(range.last_column).map_err(|_| {
+                        ExcelError::Format("BIFF8 supports at most 256 columns".to_owned())
+                    })?,
+                },
+            )?;
+            return Ok(());
+        }
+        self.inner
+            .as_mut()
+            .ok_or_else(|| ExcelError::Format("template fill executor has no backend".to_owned()))?
+            .add_merge_on_sheet(&to_template_sheet(&sheet), range)?;
+        Ok(())
+    }
+
+    fn finish(&mut self, _on_exception: bool) -> Result<()> {
+        if self.finished {
+            return Ok(());
+        }
+        self.finished = true;
+        if let Some(xls) = self.xls.as_ref() {
+            return xls.save_to_path_with_password(&self.output, self.password.as_deref());
+        }
+        self.inner
+            .as_mut()
+            .ok_or_else(|| ExcelError::Format("template fill executor has no backend".to_owned()))?
+            .finish()
+    }
+}
+
+fn resolve_xls_sheet_name(
+    xls: &crate::write::xls_adapter::Biff8TemplatePackage,
+    sheet: &WriteFillSheet,
+) -> Result<String> {
+    if let Some(index) = sheet.sheet_index {
+        return xls
+            .sheet_names()
+            .get(index)
+            .cloned()
+            .ok_or_else(|| ExcelError::Format(format!("sheet index {index} does not exist")));
+    }
+    Ok(sheet.sheet_name.clone())
 }
 
 fn to_template_sheet(sheet: &WriteFillSheet) -> TemplateSheet {

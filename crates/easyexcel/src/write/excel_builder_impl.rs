@@ -11,7 +11,7 @@ use crate::core::{
 use crate::write::builder::excel_writer_table_builder::merge_table_options;
 use crate::write::excel_builder::{ExcelBuilder, FillConfig};
 use crate::write::executor::excel_write_fill_executor::ExcelWriteFillExecutor;
-use crate::write::metadata::WriteTable;
+use crate::write::metadata::{WriteTable, WriteWorkbook};
 use crate::{ExcelWriter, MergeRange, WriteOptions, WriteSheet};
 
 /// Concrete builder implementation delegating to [`ExcelWriter`].
@@ -20,12 +20,24 @@ use crate::{ExcelWriter, MergeRange, WriteOptions, WriteSheet};
 pub struct ExcelBuilderImpl {
     writer: ExcelWriter,
     logical_path: PathBuf,
-    pending_merges: Vec<MergeRange>,
     context: WriteContextImpl,
     fill_executor: Option<Box<dyn WriteFillExecutor>>,
     finished_via_fill: bool,
     fill_session_active: bool,
 }
+
+impl std::fmt::Debug for ExcelBuilderImpl {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("ExcelBuilderImpl")
+            .field("logical_path", &self.logical_path)
+            .field("has_fill_executor", &self.fill_executor.is_some())
+            .field("finished_via_fill", &self.finished_via_fill)
+            .field("fill_session_active", &self.fill_session_active)
+            .finish_non_exhaustive()
+    }
+}
+
 impl ExcelBuilderImpl {
     /// 对应 Java：com.alibaba.excel.write.ExcelBuilderImpl。 Creates a builder from a stateful writer. (Java `new ExcelBuilderImpl(WriteWorkbook)`)
     #[must_use]
@@ -35,7 +47,6 @@ impl ExcelBuilderImpl {
             context: WriteContextImpl::new(&logical_path),
             writer,
             logical_path,
-            pending_merges: Vec::new(),
             fill_executor: None,
             finished_via_fill: false,
             fill_session_active: false,
@@ -50,6 +61,224 @@ impl ExcelBuilderImpl {
             ExcelWriter::with_handlers_and_options(&logical_path, Vec::new(), options),
             logical_path,
         )
+    }
+
+    /// 使用 Java `ExcelWriter(WriteWorkbook)` 的配置创建写入器。
+    ///
+    /// 模板输入会在这里接入真实的 XLSX/XLS 填充执行器，因此随后可以直接调用
+    /// [`Self::fill`]，无需调用方再执行额外的 wiring 步骤。
+    ///
+    /// 对应 Java：`com.alibaba.excel.ExcelWriter#ExcelWriter(WriteWorkbook)`。
+    ///
+    /// # Errors
+    ///
+    /// 未配置输出文件，或模板文件/字节无法加载时返回错误。
+    pub fn from_write_workbook(write_workbook: WriteWorkbook) -> Result<Self> {
+        let path = write_workbook.output_file.clone().ok_or_else(|| {
+            ExcelError::Format(
+                "WriteWorkbook.file must be set before constructing ExcelWriter".to_owned(),
+            )
+        })?;
+        let mut options = write_workbook.options;
+        options.excel_type = Some(write_workbook.excel_type);
+        let writer = ExcelWriter::with_handlers_and_options(&path, Vec::new(), options);
+        crate::excel_builder::fill_builder_from_writer(writer)
+    }
+
+    /// 向工作表写入一批数据，并返回当前写入器以支持链式调用。
+    ///
+    /// 对应 Java：`ExcelWriter#write(Collection, WriteSheet)`。
+    ///
+    /// # Errors
+    ///
+    /// 写入器已结束、Handler 执行失败或数据无法编码时返回错误。
+    pub fn write<T, I>(&mut self, data: I, write_sheet: &WriteSheet<T>) -> Result<&mut Self>
+    where
+        T: ExcelRow,
+        I: IntoIterator<Item = T>,
+    {
+        <Self as ExcelBuilder>::add_content(self, data, write_sheet)?;
+        Ok(self)
+    }
+
+    /// 惰性获取一批数据后写入工作表。
+    ///
+    /// `supplier` 恰好调用一次；其错误与 panic 不会被重复求值。
+    /// 对应 Java：`ExcelWriter#write(Supplier, WriteSheet)`。
+    ///
+    /// # Errors
+    ///
+    /// 写入器已结束、Handler 执行失败或数据无法编码时返回错误。
+    pub fn write_with_supplier<T, I, F>(
+        &mut self,
+        supplier: F,
+        write_sheet: &WriteSheet<T>,
+    ) -> Result<&mut Self>
+    where
+        T: ExcelRow,
+        I: IntoIterator<Item = T>,
+        F: FnOnce() -> I,
+    {
+        self.write(supplier(), write_sheet)
+    }
+
+    /// 使用独立的 Table Holder 配置写入一批数据。
+    ///
+    /// 对应 Java：`ExcelWriter#write(Collection, WriteSheet, WriteTable)`。
+    ///
+    /// # Errors
+    ///
+    /// 写入器已结束、Handler 执行失败或数据无法编码时返回错误。
+    pub fn write_with_table<T, I>(
+        &mut self,
+        data: I,
+        write_sheet: &WriteSheet<T>,
+        write_table: &WriteTable,
+    ) -> Result<&mut Self>
+    where
+        T: ExcelRow,
+        I: IntoIterator<Item = T>,
+    {
+        <Self as ExcelBuilder>::add_content_with_table(self, data, write_sheet, write_table)?;
+        Ok(self)
+    }
+
+    /// 惰性获取一批数据后通过独立的 Table Holder 写入。
+    ///
+    /// `supplier` 恰好调用一次。
+    /// 对应 Java：`ExcelWriter#write(Supplier, WriteSheet, WriteTable)`。
+    ///
+    /// # Errors
+    ///
+    /// 写入器已结束、Handler 执行失败或数据无法编码时返回错误。
+    pub fn write_with_table_supplier<T, I, F>(
+        &mut self,
+        supplier: F,
+        write_sheet: &WriteSheet<T>,
+        write_table: &WriteTable,
+    ) -> Result<&mut Self>
+    where
+        T: ExcelRow,
+        I: IntoIterator<Item = T>,
+        F: FnOnce() -> I,
+    {
+        self.write_with_table(supplier(), write_sheet, write_table)
+    }
+
+    /// 使用 Java 默认 `FillConfig` 填充模板并返回当前写入器。
+    ///
+    /// 对应 Java：`ExcelWriter#fill(Object, WriteSheet)`。
+    ///
+    /// # Errors
+    ///
+    /// 未配置模板、CSV 不支持填充或模板处理失败时返回错误。
+    pub fn fill_default(
+        &mut self,
+        data: &dyn Any,
+        write_sheet: &WriteSheet<DynamicRow>,
+    ) -> Result<&mut Self> {
+        self.fill(data, FillConfig::default(), write_sheet)
+    }
+
+    /// 使用显式配置填充模板并返回当前写入器。
+    ///
+    /// 对应 Java：`ExcelWriter#fill(Object, FillConfig, WriteSheet)`。
+    ///
+    /// # Errors
+    ///
+    /// 未配置模板、CSV 不支持填充或模板处理失败时返回错误。
+    pub fn fill(
+        &mut self,
+        data: &dyn Any,
+        fill_config: FillConfig,
+        write_sheet: &WriteSheet<DynamicRow>,
+    ) -> Result<&mut Self> {
+        <Self as ExcelBuilder>::fill(self, data, fill_config, write_sheet)?;
+        Ok(self)
+    }
+
+    /// 惰性获取对象后使用默认配置填充模板。
+    ///
+    /// `supplier` 恰好调用一次。
+    /// 对应 Java：`ExcelWriter#fill(Supplier, WriteSheet)`。
+    ///
+    /// # Errors
+    ///
+    /// 未配置模板、CSV 不支持填充或模板处理失败时返回错误。
+    pub fn fill_with_supplier<F>(
+        &mut self,
+        supplier: F,
+        write_sheet: &WriteSheet<DynamicRow>,
+    ) -> Result<&mut Self>
+    where
+        F: FnOnce() -> Box<dyn Any>,
+    {
+        let data = supplier();
+        self.fill_default(data.as_ref(), write_sheet)
+    }
+
+    /// 惰性获取对象后使用显式配置填充模板。
+    ///
+    /// `supplier` 恰好调用一次。
+    /// 对应 Java：`ExcelWriter#fill(Supplier, FillConfig, WriteSheet)`。
+    ///
+    /// # Errors
+    ///
+    /// 未配置模板、CSV 不支持填充或模板处理失败时返回错误。
+    pub fn fill_with_config_supplier<F>(
+        &mut self,
+        supplier: F,
+        fill_config: FillConfig,
+        write_sheet: &WriteSheet<DynamicRow>,
+    ) -> Result<&mut Self>
+    where
+        F: FnOnce() -> Box<dyn Any>,
+    {
+        let data = supplier();
+        self.fill(data.as_ref(), fill_config, write_sheet)
+    }
+
+    /// 返回整个写入生命周期中稳定的上下文对象。
+    ///
+    /// 后续 `write`/`fill` 会原位更新其当前 Sheet/Table Holder；重复调用返回
+    /// 同一实例。
+    /// 对应 Java：`ExcelWriter#writeContext()`。
+    #[must_use]
+    pub fn write_context(&self) -> &dyn WriteContext {
+        &self.context
+    }
+
+    /// 正常结束写入；重复调用保持幂等。
+    ///
+    /// 对应 Java：`ExcelWriter#finish()`。
+    ///
+    /// # Errors
+    ///
+    /// 输出、关闭流或 Handler 收尾失败时返回错误。
+    pub fn finish(&mut self) -> Result<()> {
+        <Self as ExcelBuilder>::finish(self, false)
+    }
+
+    /// 异常路径结束写入，遵循 `writeExcelOnException` 配置。
+    ///
+    /// 对应 Java：`ExcelBuilderImpl#finishOnException()`。
+    ///
+    /// # Errors
+    ///
+    /// 输出、关闭流或 Handler 收尾失败时返回错误。
+    pub fn finish_on_exception(&mut self) -> Result<()> {
+        <Self as ExcelBuilder>::finish(self, true)
+    }
+
+    /// `Closeable.close()` 的幂等别名。
+    ///
+    /// 对应 Java：`ExcelWriter#close()`。
+    ///
+    /// # Errors
+    ///
+    /// 与 [`Self::finish`] 相同。
+    pub fn close(&mut self) -> Result<()> {
+        self.finish()
     }
 
     /// 对应 Java：com.alibaba.excel.write.ExcelBuilderImpl。 Returns the underlying writer for Java-style `ExcelWriter` facades.
@@ -122,7 +351,6 @@ impl ExcelBuilderImpl {
         } else {
             write_sheet.options().clone()
         };
-        options.merge_ranges.append(&mut self.pending_merges);
         let sheet_name = if options.auto_trim {
             easyexcel_utils::string_utils::java_trim(&options.sheet_name).to_owned()
         } else {
@@ -130,8 +358,39 @@ impl ExcelBuilderImpl {
         };
         options.sheet_name.clone_from(&sheet_name);
         self.update_current_holder::<T>(&options, write_table.map(WriteTable::table_no))?;
-        let sheet = WriteSheet::from_options(options);
-        self.writer.write(data, &sheet).map(|_| ())
+        if self.writer.has_template_configured()
+            && let Some(delegate) = self.fill_executor.as_mut()
+        {
+            let effective_options =
+                crate::write::excel_writer_core::with_default_write_converters(&options);
+            let rows = data
+                .into_iter()
+                .map(|row| {
+                    if row.is_absent_row() {
+                        Ok(Vec::new())
+                    } else {
+                        row.to_row_with_converters(&effective_options.converters)
+                    }
+                })
+                .collect::<Result<Vec<_>>>()?;
+            delegate.write_rows(
+                rows,
+                WriteFillSheet {
+                    sheet_name: options.sheet_name.clone(),
+                    sheet_index: options.sheet_index,
+                },
+            )?;
+            self.fill_session_active = true;
+            return Ok(());
+        }
+        if let Some(table) = write_table {
+            self.writer
+                .write_with_table(data, write_sheet, table)
+                .map(|_| ())
+        } else {
+            let sheet = WriteSheet::from_options(options);
+            self.writer.write(data, &sheet).map(|_| ())
+        }
     }
 
     fn finish_resources(&mut self, on_exception: bool) -> Result<()> {
@@ -146,7 +405,15 @@ impl ExcelBuilderImpl {
             return Ok(());
         }
         if on_exception {
-            self.writer.finish_on_exception()
+            let uses_output_path = self.writer.uses_output_path();
+            self.writer.finish_on_exception()?;
+            if uses_output_path {
+                // Java `WriteContextImpl` 在构造阶段已经打开目标
+                // `FileOutputStream`；异常结束时默认不写工作簿，但文件仍存在且
+                // 长度为 0。Rust 延迟打开输出，因此在这里补齐相同可观察语义。
+                std::fs::File::create(&self.logical_path)?;
+            }
+            Ok(())
         } else {
             self.writer.finish()
         }
@@ -191,9 +458,36 @@ impl ExcelBuilder for ExcelBuilderImpl {
         first_col: u16,
         last_col: u16,
     ) -> Result<()> {
-        self.pending_merges
-            .push(MergeRange::new(first_row, last_row, first_col, last_col));
-        Ok(())
+        let sheet_context = self.context.sheet_context().ok_or_else(|| {
+            ExcelError::Format(
+                "ExcelBuilder.merge requires a current worksheet; call add_content first"
+                    .to_owned(),
+            )
+        })?;
+        let sheet_name = sheet_context.sheet_name().to_owned();
+        let sheet_index = sheet_context
+            .write_sheet_holder()
+            .sheet_no()
+            .and_then(|value| usize::try_from(value).ok());
+        let range = MergeRange::new(first_row, last_row, first_col, last_col);
+        if self.writer.has_template_configured() {
+            let delegate = self.fill_executor.as_mut().ok_or_else(|| {
+                ExcelError::Unsupported(
+                    "template merge executor is not wired; build through easyexcel::builder_from_writer"
+                        .to_owned(),
+                )
+            })?;
+            delegate.add_merge(
+                range,
+                WriteFillSheet {
+                    sheet_name,
+                    sheet_index,
+                },
+            )?;
+            self.fill_session_active = true;
+            return Ok(());
+        }
+        self.writer.add_deferred_merge(sheet_name, range)
     }
 
     fn write_context(&self) -> &dyn WriteContext {
@@ -212,11 +506,6 @@ impl ExcelBuilder for ExcelBuilderImpl {
         }
         if self.writer.is_csv() {
             return Err(csv_fill_unsupported_error());
-        }
-        if self.writer.is_xls() {
-            return Err(ExcelError::Unsupported(
-                "legacy XLS template fill is not supported".to_owned(),
-            ));
         }
         let mut holder_options = write_sheet.options().clone();
         holder_options.sheet_name = if holder_options.auto_trim {
@@ -265,7 +554,7 @@ mod tests_extra {
         let path = directory.path().join("finish-no-executor.xlsx");
         let mut builder = ExcelBuilderImpl::from_options(&path, WriteOptions::default());
         builder.fill_session_active = true;
-        builder.finish(false)?;
+        builder.finish()?;
         assert!(path.exists());
         Ok(())
     }

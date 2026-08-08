@@ -25,6 +25,7 @@ pub mod property;
 pub mod style;
 pub(crate) mod template_write;
 pub mod vertical_alignment;
+pub mod write_backend_selection;
 /// Java `com.alibaba.excel.write` package-compatible API paths.
 pub mod write_csv;
 pub mod write_options;
@@ -90,6 +91,10 @@ pub use write_xls::{write_xls, write_xls_to_writer, write_xls_with_handlers};
 #[allow(unused_imports)]
 pub use xlsx_write::{write_xlsx, write_xlsx_to_writer, write_xlsx_with_handlers};
 
+pub use crate::context::chart_mutation::{self, ChartMutation};
+pub use crate::context::chart_range::{self, ChartRange};
+pub use crate::context::chart_series::{self, ChartSeries};
+pub use crate::context::chart_type::{self, ChartType};
 pub use crate::context::write_backend_handle;
 pub use crate::context::write_backend_handle::{WriteCellHandle, WriteRowHandle};
 pub use crate::context::write_cell_context;
@@ -105,7 +110,7 @@ pub use crate::context::write_fill_executor::{
     fill_requires_template_error,
 };
 pub use crate::context::write_handler;
-pub use crate::context::write_handler::WriteHandler;
+pub use crate::context::write_handler::{WriteHandler, WriteHandlerCapability};
 pub use crate::context::write_holder_context;
 pub use crate::context::write_holder_context::{
     WriteHolderContext, WriteSheetHolderView, WriteTableHolderView, WriteWorkbookHolderView,
@@ -118,3 +123,4 @@ pub use crate::context::write_workbook_context;
 pub use crate::context::write_workbook_context::WriteWorkbookContext;
 pub use crate::metadata::data::write_cell_data;
 pub use crate::metadata::data::write_cell_data::WriteCellData;
+pub use write_backend_selection::WriteBackendSelection;

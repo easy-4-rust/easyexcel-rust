@@ -10,6 +10,7 @@ publish = false
 
 [dev-dependencies]
 easyexcel.workspace = true
+easyexcel-xls.workspace = true
 bigdecimal.workspace = true
 calamine.workspace = true
 chrono.workspace = true
@@ -18,6 +19,7 @@ serde.workspace = true
 serde_json.workspace = true
 tempfile.workspace = true
 zip.workspace = true
+cfb.workspace = true
 
 [lints]
 workspace = true

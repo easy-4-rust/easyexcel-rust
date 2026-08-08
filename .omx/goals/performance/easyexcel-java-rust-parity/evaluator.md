@@ -5,10 +5,10 @@
 
 ## Evaluator Command
 ```sh
-python3 benchmarks/scripts/compare_results.py --spec benchmarks/spec/benchmark-suite-v1.json --baseline benchmarks/baselines/release-linux-x64.json --require-baseline --output benchmarks/results/release/report.json benchmarks/results/release/raw-results.jsonl
+python3 benchmarks/scripts/compare_results.py --spec benchmarks/spec/benchmark-suite-v1.json --profile release --baseline benchmarks/baselines/release-linux-x64.json --require-baseline --output benchmarks/results/release/report.json benchmarks/results/release/raw-results.jsonl
 ```
 
 ## Pass/Fail Contract
-PASS 当 checksum 与双向重读 100% 通过、变异系数不超过 10%、各实现相对自身稳定基线 median 吞吐下降不超过 10%、RSS 增长不超过 15%，且 release 并发矩阵与 30 分钟压力测试完成
+release 矩阵完整；checksum 与跨读 100%；CV<=10%；Rust 自身吞吐回退<=10%、RSS<=15%；xlsx-stream-write/xlsx-event-read worker 1/2/4 Rust/Java 中位比>=1.00 且 95% CI 下界>=0.95，worker 8/16 中位比>=0.90；30 分钟 70/30 soak 通过
 
 This evaluator must exist and produce concrete pass/fail evidence before the performance goal can be completed.

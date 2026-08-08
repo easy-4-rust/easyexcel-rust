@@ -7,5 +7,7 @@ pub mod xls_record_dispatcher;
 pub mod xls_record_handler;
 pub mod xls_sax_analyser;
 
+pub use ignorable_xls_record_handler::IgnorableXlsRecordHandler;
 pub use xls_record_dispatcher::{XlsRecordDispatchState, XlsRecordDispatcher};
+pub use xls_record_handler::XlsRecordHandler;
 pub use xls_sax_analyser::XlsSaxAnalyser;

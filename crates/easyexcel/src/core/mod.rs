@@ -89,6 +89,7 @@ pub use crate::write::write_fill_executor::{
 pub use crate::write::write_holder_context::{
     WriteHolderContext, WriteSheetHolderView, WriteTableHolderView, WriteWorkbookHolderView,
 };
+pub use crate::write::{ChartMutation, ChartRange, ChartSeries, ChartType};
 
 // metadata 子包重导出
 pub use crate::metadata::property::{
@@ -119,7 +120,7 @@ mod tests;
 // 补充缺失的重导出
 pub use crate::converters::custom_read_object::CustomReadObject;
 pub use crate::enums::enum_read_default_return::ReadDefaultReturn;
-pub use crate::write::write_handler::WriteHandler;
+pub use crate::write::write_handler::{WriteHandler, WriteHandlerCapability};
 pub use crate::write::write_row_context::WriteRowContext;
 pub use crate::write::write_sheet_context::WriteSheetContext;
 pub use crate::write::write_workbook_context::WriteWorkbookContext;

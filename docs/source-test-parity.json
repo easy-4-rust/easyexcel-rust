@@ -7,12 +7,13 @@
     "test_root": "."
   },
   "rust": {
-    "git_sha": "30ac6719736414f53d09771b69dd6dce9196ac7b",
+    "git_sha": "ad6092264acea2c83c63dca98ef40a2ab1143242",
     "test_root": "tests/easyexcel-test/tests"
   },
   "summary": {
     "java_tests": 335,
-    "mapped_unverified": 335
+    "mapped_unverified": 333,
+    "partial_unverified": 2
   },
   "fixture_sets": [
     {
@@ -2127,7 +2128,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_phase5_xls_features_1to1_tests.rs",
-          "line": 66,
+          "line": 76,
           "function": "t22_write_image03",
           "reference_kind": "unique_class_name",
           "coverage": "mapped",
@@ -2261,7 +2262,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 184,
+          "line": 183,
           "function": "t01_read_and_write07",
           "reference_kind": "unique_class_name",
           "coverage": "mapped",
@@ -2278,23 +2279,29 @@
         "annotation_line": 55,
         "method_line": 56
       },
-      "status": "mapped_unverified",
+      "status": "partial_unverified",
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 191,
+          "line": 190,
           "function": "t02_read_and_write03",
           "reference_kind": "unique_class_name",
-          "coverage": "mapped",
-          "verification": "not_run"
+          "coverage": "partial",
+          "verification": "not_run",
+          "limitations": [
+            "Rust rejects BIFF8 password output until a POI-compatible `FILEPASS` implementation exists."
+          ]
         },
         {
           "path": "tests/easyexcel-test/tests/core_phase5_xls_features_1to1_tests.rs",
-          "line": 29,
+          "line": 32,
           "function": "t02_read_and_write03",
           "reference_kind": "unique_class_name",
-          "coverage": "mapped",
-          "verification": "not_run"
+          "coverage": "partial",
+          "verification": "not_run",
+          "limitations": [
+            "Rust rejects BIFF8 password output instead of producing Java HSSF encryption."
+          ]
         }
       ]
     },
@@ -2328,15 +2335,18 @@
         "annotation_line": 65,
         "method_line": 66
       },
-      "status": "mapped_unverified",
+      "status": "partial_unverified",
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 208,
+          "line": 209,
           "function": "t04_read_and_write_stream03",
           "reference_kind": "unique_class_name",
-          "coverage": "mapped",
-          "verification": "not_run"
+          "coverage": "partial",
+          "verification": "not_run",
+          "limitations": [
+            "Rust rejects BIFF8 password output until a POI-compatible `FILEPASS` implementation exists."
+          ]
         }
       ]
     },
@@ -2352,9 +2362,9 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 184,
-          "function": "t01_read_and_write07",
+          "path": "tests/easyexcel-test/tests/java_full_parity_tests_cases/temp_path_to_encrypt_t04_stream_xls.rs",
+          "line": 436,
+          "function": "exception_t01_read_and_write_xlsx",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
           "verification": "not_run"
@@ -2373,9 +2383,9 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 191,
-          "function": "t02_read_and_write03",
+          "path": "tests/easyexcel-test/tests/java_full_parity_tests_cases/temp_path_to_encrypt_t04_stream_xls.rs",
+          "line": 442,
+          "function": "exception_t02_read_and_write_xls",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
           "verification": "not_run"
@@ -2395,7 +2405,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 323,
+          "line": 325,
           "function": "t03_read_and_write_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2416,7 +2426,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 329,
+          "line": 331,
           "function": "t11_read_and_write07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2437,7 +2447,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 335,
+          "line": 337,
           "function": "t12_read_and_write03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2458,7 +2468,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 341,
+          "line": 343,
           "function": "t21_read_and_write07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2479,7 +2489,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 347,
+          "line": 349,
           "function": "t22_read_and_write03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2878,7 +2888,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 429,
+          "line": 431,
           "function": "t01_read07",
           "reference_kind": "unique_class_name",
           "coverage": "mapped",
@@ -2899,7 +2909,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 435,
+          "line": 438,
           "function": "t02_read03",
           "reference_kind": "unique_class_name",
           "coverage": "mapped",
@@ -2907,7 +2917,7 @@
         },
         {
           "path": "tests/easyexcel-test/tests/core_phase5_xls_features_1to1_tests.rs",
-          "line": 109,
+          "line": 252,
           "function": "t02_read03",
           "reference_kind": "unique_class_name",
           "coverage": "mapped",
@@ -2928,7 +2938,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 443,
+          "line": 525,
           "function": "t03_read",
           "reference_kind": "unique_class_name",
           "coverage": "mapped",

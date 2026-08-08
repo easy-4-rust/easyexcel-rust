@@ -1,5 +1,6 @@
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 Global write flags copied from [`WriteOptions`] for cell emission.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[allow(clippy::struct_excessive_bools)]
 pub(crate) struct WriteGlobalFlags {
     /// Automatic trim for sheet names and string cells.
     auto_trim: bool,
@@ -7,6 +8,8 @@ pub(crate) struct WriteGlobalFlags {
     use_1904_windowing: bool,
     /// Whether scientific notation is used for extreme General-format numbers.
     use_scientific_format: bool,
+    /// 是否使用严格常量内存工作表。
+    constant_memory: bool,
 }
 
 impl From<&WriteOptions> for WriteGlobalFlags {
@@ -15,7 +18,18 @@ impl From<&WriteOptions> for WriteGlobalFlags {
             auto_trim: options.auto_trim,
             use_1904_windowing: options.use_1904_windowing,
             use_scientific_format: options.use_scientific_format,
+            constant_memory: options.constant_memory || options.compress_temp_files,
         }
     }
 }
 
+impl WriteGlobalFlags {
+    pub(crate) const fn for_biff8_mutation(use_1904_windowing: bool) -> Self {
+        Self {
+            auto_trim: false,
+            use_1904_windowing,
+            use_scientific_format: false,
+            constant_memory: false,
+        }
+    }
+}

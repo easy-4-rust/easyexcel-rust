@@ -89,6 +89,45 @@ class RunMatrixContractTest(unittest.TestCase):
         temp_dir = invoke.call_args.kwargs["temp_dir"]
         self.assertIn("/java/rust-worker-0/tmp", str(temp_dir))
 
+    @mock.patch.object(RUN_MATRIX, "verify_written_output")
+    @mock.patch.object(RUN_MATRIX, "run_worker")
+    def test_verified_sample_output_is_removed_after_cross_runtime_reread(
+        self, run_worker: mock.Mock, verify_written_output: mock.Mock
+    ) -> None:
+        scenario = {
+            "id": "xlsx-stream-write",
+            "format": "xlsx",
+            "operation": "write",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "output.xlsx"
+            output.write_bytes(b"verified workbook")
+            run_worker.return_value = {
+                "_output_path": str(output),
+                "correctness": {},
+                "success": True,
+                "errors": 0,
+            }
+            verify_written_output.return_value = (10, "checksum")
+
+            results = RUN_MATRIX.run_group(
+                "rust",
+                arguments(Path(directory) / "results"),
+                scenario,
+                10,
+                1,
+                0,
+                None,
+                None,
+                True,
+            )
+
+            self.assertFalse(output.exists())
+            self.assertEqual(10, results[0]["correctness"]["observed_rows"])
+            self.assertEqual("checksum", results[0]["correctness"]["checksum"])
+            self.assertTrue(results[0]["correctness"]["rereadable"])
+            self.assertNotIn("_output_path", results[0])
+
 
 if __name__ == "__main__":
     unittest.main()

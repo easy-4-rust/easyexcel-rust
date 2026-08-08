@@ -2,6 +2,7 @@
 //! and `com.alibaba.excel.converters.DefaultConverterLoader`.
 
 use std::any::{Any, TypeId, type_name};
+use std::collections::HashMap;
 use std::fmt;
 use std::sync::Arc;
 
@@ -30,7 +31,9 @@ include!("converter_registry/typed_converter.rs");
 #[derive(Clone, Default)]
 pub struct ConverterRegistry {
     pub(crate) converters: Vec<Arc<dyn ErasedConverter>>,
+    read_lookup: HashMap<ConverterKey, usize>,
     requested_write_type: Option<CellDataType>,
+    standard_read_only: bool,
 }
 
 impl ConverterRegistry {
@@ -41,12 +44,14 @@ impl ConverterRegistry {
         T: 'static,
         C: Converter<T> + Send + Sync + 'static,
     {
-        self.converters.push(Arc::new(TypedConverter::<T, C> {
+        self.standard_read_only = false;
+        let converter: Arc<dyn ErasedConverter> = Arc::new(TypedConverter::<T, C> {
             converter,
             write_target_type: None,
             accepts_null: false,
             marker: std::marker::PhantomData,
-        }));
+        });
+        self.push_converter(converter);
     }
 
     /// 对应 Java：com.alibaba.excel.converters.ConverterKeyBuild。 Registers a converter under Java's `(class, targetCellDataType)` write key.
@@ -55,12 +60,14 @@ impl ConverterRegistry {
         T: 'static,
         C: Converter<T> + Send + Sync + 'static,
     {
-        self.converters.push(Arc::new(TypedConverter::<T, C> {
+        self.standard_read_only = false;
+        let converter: Arc<dyn ErasedConverter> = Arc::new(TypedConverter::<T, C> {
             converter,
             write_target_type: Some(target),
             accepts_null: false,
             marker: std::marker::PhantomData,
-        }));
+        });
+        self.push_converter(converter);
     }
 
     /// 对应 Java：com.alibaba.excel.converters.ConverterKeyBuild。 Registers Java's `NullableObjectConverter<T>` under the normal read/write key.
@@ -72,12 +79,14 @@ impl ConverterRegistry {
         T: 'static,
         C: NullableObjectConverter<T> + Send + Sync + 'static,
     {
-        self.converters.push(Arc::new(TypedConverter::<T, C> {
+        self.standard_read_only = false;
+        let converter: Arc<dyn ErasedConverter> = Arc::new(TypedConverter::<T, C> {
             converter,
             write_target_type: None,
             accepts_null: true,
             marker: std::marker::PhantomData,
-        }));
+        });
+        self.push_converter(converter);
     }
 
     /// 对应 Java：com.alibaba.excel.converters.ConverterKeyBuild。 Registers a nullable converter under a target Excel cell type.
@@ -86,12 +95,14 @@ impl ConverterRegistry {
         T: 'static,
         C: NullableObjectConverter<T> + Send + Sync + 'static,
     {
-        self.converters.push(Arc::new(TypedConverter::<T, C> {
+        self.standard_read_only = false;
+        let converter: Arc<dyn ErasedConverter> = Arc::new(TypedConverter::<T, C> {
             converter,
             write_target_type: Some(target),
             accepts_null: true,
             marker: std::marker::PhantomData,
-        }));
+        });
+        self.push_converter(converter);
     }
 
     /// Returns a registry where `overrides` take precedence over this registry.
@@ -100,10 +111,14 @@ impl ConverterRegistry {
     pub fn merged_with(&self, overrides: &Self) -> Self {
         let mut converters = self.converters.clone();
         converters.extend(overrides.converters.iter().cloned());
-        Self {
+        let mut registry = Self {
             converters,
+            read_lookup: HashMap::new(),
             requested_write_type: overrides.requested_write_type.or(self.requested_write_type),
-        }
+            standard_read_only: self.standard_read_only && overrides.converters.is_empty(),
+        };
+        registry.rebuild_read_lookup();
+        registry
     }
 
     /// 对应 Java：com.alibaba.excel.converters.ConverterKeyBuild。 Returns a clone selecting Java's target cell type for this write pass.
@@ -134,12 +149,16 @@ impl ConverterRegistry {
             .cell()
             .map_or(CellDataType::Empty, CellValue::data_type);
         let requested_key = ConverterKey::of::<T>(Some(data_type));
-        let Some(converter) = self.converters.iter().rev().find(|converter| {
-            ConverterKey::new(
-                converter.target_type_id(),
-                Some(converter.support_excel_type()),
-            ) == requested_key
-        }) else {
+        let converter_index = self.read_lookup.get(&requested_key).copied().or_else(|| {
+            // 测试和 crate 内部扩展可能直接填充 converters；公开注册路径始终命中索引。
+            self.converters.iter().rposition(|converter| {
+                ConverterKey::new(
+                    converter.target_type_id(),
+                    Some(converter.support_excel_type()),
+                ) == requested_key
+            })
+        });
+        let Some(converter) = converter_index.and_then(|index| self.converters.get(index)) else {
             return Ok(None);
         };
         if data_type == CellDataType::Empty && !converter.accepts_null() {
@@ -217,6 +236,43 @@ impl ConverterRegistry {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.converters.is_empty()
+    }
+
+    /// 返回该注册表是否仍是框架构造的原始默认读转换器集合。
+    ///
+    /// 该标记供 derive 代码选择等价的静态转换快路径；任何用户注册或合并都会
+    /// 使其失效。它不是由调用者设置的配置项。
+    #[doc(hidden)]
+    #[must_use]
+    pub const fn is_standard_read_only(&self) -> bool {
+        self.standard_read_only
+    }
+
+    pub(crate) fn mark_standard_read_only(&mut self) {
+        self.standard_read_only = true;
+    }
+
+    fn push_converter(&mut self, converter: Arc<dyn ErasedConverter>) {
+        let index = self.converters.len();
+        let key = ConverterKey::new(
+            converter.target_type_id(),
+            Some(converter.support_excel_type()),
+        );
+        self.converters.push(converter);
+        self.read_lookup.insert(key, index);
+    }
+
+    fn rebuild_read_lookup(&mut self) {
+        self.read_lookup.clear();
+        for (index, converter) in self.converters.iter().enumerate() {
+            self.read_lookup.insert(
+                ConverterKey::new(
+                    converter.target_type_id(),
+                    Some(converter.support_excel_type()),
+                ),
+                index,
+            );
+        }
     }
 }
 

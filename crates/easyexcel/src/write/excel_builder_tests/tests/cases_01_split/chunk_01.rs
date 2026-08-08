@@ -61,12 +61,11 @@
     }
 
 #[test]
-    fn excel_builder_merge_is_applied_on_next_add_content() -> Result<()> {
+    fn excel_builder_merge_is_applied_to_current_sheet_immediately() -> Result<()> {
         let directory = tempdir()?;
         let path = directory.path().join("builder-merge.xlsx");
         let sheet = WriteSheet::<DynamicRow>::new("Sheet1");
         let mut builder = ExcelBuilderImpl::from_options(&path, WriteOptions::default());
-        builder.merge(0, 0, 0, 1)?;
         builder
             .add_content(
                 [DynamicRow::new({
@@ -77,8 +76,15 @@
                 &sheet,
             )
             .expect("add_content should succeed");
-        builder.finish(false)?;
-        assert!(path.exists());
+        builder.merge(0, 0, 0, 1)?;
+        builder.finish()?;
+        let entries = easyexcel_xlsx::OoxmlPackage::from_path(&path)?.into_entries();
+        let sheet = entries
+            .iter()
+            .find(|entry| entry.name == "xl/worksheets/sheet1.xml")
+            .and_then(|entry| std::str::from_utf8(&entry.bytes).ok())
+            .expect("builder worksheet");
+        assert!(sheet.contains("mergeCell ref=\"A1:B1\""));
         Ok(())
     }
 
@@ -199,7 +205,7 @@
                 .collect::<Vec<_>>(),
             vec![Some("b"), Some("c"), Some("a")]
         );
-        builder.finish(false)?;
+        builder.finish()?;
         assert!(path.exists());
         Ok(())
     }
@@ -341,4 +347,3 @@
         assert!(!writer.has_template_configured());
         Ok(())
     }
-

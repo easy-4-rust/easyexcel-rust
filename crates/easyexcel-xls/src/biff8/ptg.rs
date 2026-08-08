@@ -6,10 +6,12 @@
 //!
 //! 支持：A1 风格引用（含 `$` 绝对/相对）、区域引用、算术/比较/文本运算符、
 //! 内建函数（257 个，`[MS-XLS] 2.5.198.7` 索引）、字符串/布尔/错误常量、
-//! 百分比、一元正负号、空参数（tMissArg）。暂不支持：跨工作表 3D 引用
-//! （返回类型化错误）。
+//! 百分比、一元正负号、空参数（tMissArg），以及工作簿内 3D 单元格/区域引用。
 
 use easyexcel_io::Error as ExcelError;
+
+mod biff8_link_table;
+pub(crate) use biff8_link_table::Biff8LinkTable;
 
 include!("ptg/builtin_functions_to_parser.rs");
 include!("ptg/parser_impl_to_tests.rs");

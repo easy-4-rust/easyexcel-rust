@@ -32,8 +32,23 @@ impl ExcelWriter {
     #[must_use]
     pub fn with_handlers_and_options(
         path: impl Into<PathBuf>,
+        handlers: Vec<Box<dyn WriteHandler>>,
+        options: WriteOptions,
+    ) -> Self {
+        let selection = if options.constant_memory || options.compress_temp_files {
+            crate::write::WriteBackendSelection::ExplicitStreaming
+        } else {
+            crate::write::WriteBackendSelection::InMemory
+        };
+        Self::with_handlers_and_options_and_selection(path, handlers, options, selection)
+    }
+
+    /// 使用显式状态机创建 Stateful writer。
+    pub(crate) fn with_handlers_and_options_and_selection(
+        path: impl Into<PathBuf>,
         mut handlers: Vec<Box<dyn WriteHandler>>,
         options: WriteOptions,
+        backend_selection: crate::write::WriteBackendSelection,
     ) -> Self {
         let path = path.into();
         let excel_type = effective_write_type(&path, &options);
@@ -44,6 +59,7 @@ impl ExcelWriter {
         let converters =
             crate::converters::default_converter_loader::load_default_write_converter()
                 .merged_with(&options.converters);
+        let has_custom_converters = !options.converters.is_empty();
         let workbook_handlers = share_handlers(handlers);
         let current_effective_handlers = HandlerExecutionScope::root(&workbook_handlers).effective;
         Self {
@@ -71,9 +87,12 @@ impl ExcelWriter {
             auto_close_stream: options.auto_close_stream,
             write_excel_on_exception: options.write_excel_on_exception,
             password: options.password,
+            biff8_macro_policy: options.biff8_macro_policy,
             converters,
+            has_custom_converters,
             compress_temp_files: options.compress_temp_files,
             default_constant_memory: options.constant_memory || options.compress_temp_files,
+            backend_selection,
             template_file: options.template_file,
             template_bytes: options.template_bytes,
             template_pending_rows: HashMap::new(),
@@ -91,8 +110,32 @@ impl ExcelWriter {
     pub fn with_output_stream<W>(
         logical_path: impl Into<PathBuf>,
         output: ExcelOutputStream<W>,
+        handlers: Vec<Box<dyn WriteHandler>>,
+        options: WriteOptions,
+    ) -> Self
+    where
+        W: Write + Send + 'static,
+    {
+        let selection = if options.constant_memory || options.compress_temp_files {
+            crate::write::WriteBackendSelection::ExplicitStreaming
+        } else {
+            crate::write::WriteBackendSelection::InMemory
+        };
+        Self::with_output_stream_and_selection(
+            logical_path,
+            output,
+            handlers,
+            options,
+            selection,
+        )
+    }
+
+    pub(crate) fn with_output_stream_and_selection<W>(
+        logical_path: impl Into<PathBuf>,
+        output: ExcelOutputStream<W>,
         mut handlers: Vec<Box<dyn WriteHandler>>,
         options: WriteOptions,
+        backend_selection: crate::write::WriteBackendSelection,
     ) -> Self
     where
         W: Write + Send + 'static,
@@ -106,6 +149,7 @@ impl ExcelWriter {
         let converters =
             crate::converters::default_converter_loader::load_default_write_converter()
                 .merged_with(&options.converters);
+        let has_custom_converters = !options.converters.is_empty();
         let workbook_handlers = share_handlers(handlers);
         let current_effective_handlers = HandlerExecutionScope::root(&workbook_handlers).effective;
         let write_output = output.clone();
@@ -135,9 +179,12 @@ impl ExcelWriter {
             auto_close_stream: options.auto_close_stream,
             write_excel_on_exception: options.write_excel_on_exception,
             password: options.password,
+            biff8_macro_policy: options.biff8_macro_policy,
             converters,
+            has_custom_converters,
             compress_temp_files: options.compress_temp_files,
             default_constant_memory: options.constant_memory || options.compress_temp_files,
+            backend_selection,
             template_file: options.template_file,
             template_bytes: options.template_bytes,
             template_pending_rows: HashMap::new(),
@@ -219,13 +266,14 @@ impl ExcelWriter {
             ));
         }
         validate_excel_row_schema::<T>()?;
-        self.start()?;
         let sheet_name = self
             .resolve_sheet_name(sheet.options())
             .unwrap_or_else(|| sheet.options().sheet_name.clone());
         self.ensure_sheet_annotation_handlers::<T>(&sheet_name, sheet.options())?;
         let handler_scope = self.sheet_handler_scope(&sheet_name);
         let mut handlers = handler_scope.effective_boxed();
+        self.ensure_backend_for_write::<T>(sheet.options(), &handlers)?;
+        self.start()?;
         if self.is_csv() {
             self.write_csv_batch::<T, I>(rows, sheet, &mut handlers, false, false, false, None)?;
         } else if self.is_xls() {
@@ -265,11 +313,11 @@ impl ExcelWriter {
             ));
         }
         validate_excel_row_schema::<T>()?;
-        self.start()?;
         let sheet_name = self
             .resolve_sheet_name(sheet.options())
             .unwrap_or_else(|| sheet.options().sheet_name.clone());
         let is_initialized = self.sheets.contains_key(&sheet_name);
+        let had_handlers = !handlers.is_empty();
         if is_initialized && !handlers.is_empty() && !self.sheet_handlers.contains_key(&sheet_name)
         {
             return Err(ExcelError::Unsupported(format!(
@@ -283,14 +331,156 @@ impl ExcelWriter {
                 )));
             }
             let own_handlers = share_handlers(handlers);
-            if !is_initialized {
-                let parent = self.workbook_handler_scope();
-                let scope = HandlerExecutionScope::child(&own_handlers, &parent);
-                run_own_workbook_callbacks(&scope, &self.path)?;
-            }
             self.sheet_handlers.insert(sheet_name.clone(), own_handlers);
         }
+        self.ensure_sheet_annotation_handlers::<T>(&sheet_name, sheet.options())?;
+        let scope = self.sheet_handler_scope(&sheet_name);
+        let effective = scope.effective_boxed();
+        self.ensure_backend_for_write::<T>(sheet.options(), &effective)?;
+        self.start()?;
+        if !is_initialized && had_handlers {
+            run_own_workbook_callbacks(&scope, &self.path)?;
+        }
         self.write(rows, sheet)
+    }
+
+    /// 返回 Stateful writer 当前的后端状态。
+    #[must_use]
+    pub const fn backend_selection(&self) -> crate::WriteBackendSelection {
+        self.backend_selection
+    }
+
+    /// 将 Java `ExcelBuilder.merge(...)` 产生的区域加入当前工作簿修改计划。
+    ///
+    /// 自动流式 writer 会先用已保留的 journal 晋升到内存后端，以保证保存
+    /// 阶段仍能执行随机访问修改；显式流式模式继续 fail-closed。
+    pub(crate) fn add_deferred_merge(
+        &mut self,
+        sheet_name: impl Into<String>,
+        range: crate::MergeRange,
+    ) -> Result<()> {
+        if self.is_csv() {
+            return Err(ExcelError::Unsupported(
+                "csv does not support merged regions".to_owned(),
+            ));
+        }
+        match self.backend_selection {
+            crate::WriteBackendSelection::AutoStreaming => {
+                self.promote_auto_streaming_to_memory()?;
+            }
+            crate::WriteBackendSelection::ExplicitStreaming => {
+                return Err(ExcelError::Unsupported(
+                    "explicit constant-memory writer cannot add a merged region after rows were written"
+                        .to_owned(),
+                ));
+            }
+            crate::WriteBackendSelection::Promoting => {
+                return Err(ExcelError::Unsupported(
+                    "automatic streaming backend promotion is already in progress".to_owned(),
+                ));
+            }
+            _ => {}
+        }
+        self.mutation_plan.add_merge(sheet_name, range)
+    }
+
+    fn ensure_backend_for_write<T>(
+        &mut self,
+        options: &WriteOptions,
+        handlers: &[Box<dyn WriteHandler>],
+    ) -> Result<()>
+    where
+        T: ExcelRow,
+    {
+        if self.is_csv() || self.is_xls() {
+            if self.backend_selection == crate::WriteBackendSelection::AutoUndecided {
+                self.backend_selection = crate::WriteBackendSelection::InMemory;
+            }
+            return Ok(());
+        }
+        let has_template = crate::write::template_write::has_template(
+            self.template_file.as_deref(),
+            self.template_bytes.as_deref(),
+        );
+        let configuration_safe = !self.has_custom_converters
+            && options.converters.is_empty()
+            && crate::write::builder::excel_writer_builder::stateful_streaming_configuration_is_safe::<T>(
+                options,
+                handlers,
+                has_template,
+            );
+        let safe = configuration_safe
+            && crate::write::builder::excel_writer_builder::stateful_constant_memory_is_safe::<T>(
+                options,
+                handlers,
+                has_template,
+            );
+        match self.backend_selection {
+            crate::WriteBackendSelection::AutoUndecided if safe => {
+                self.backend_selection = crate::WriteBackendSelection::AutoStreaming;
+                self.default_constant_memory = true;
+                // AutoStreaming 始终保留磁盘 journal，以便后续能力冲突时晋升。
+                self.compress_temp_files = true;
+                Ok(())
+            }
+            crate::WriteBackendSelection::AutoUndecided => {
+                self.backend_selection = crate::WriteBackendSelection::InMemory;
+                Ok(())
+            }
+            crate::WriteBackendSelection::ExplicitStreaming if !configuration_safe => {
+                Err(ExcelError::Unsupported(
+                    "explicit constant-memory writer encountered a handler or sheet option that requires random access"
+                        .to_owned(),
+                ))
+            }
+            crate::WriteBackendSelection::AutoStreaming if !safe && self.sheets.is_empty() => {
+                self.backend_selection = crate::WriteBackendSelection::InMemory;
+                self.default_constant_memory = false;
+                self.compress_temp_files = false;
+                Ok(())
+            }
+            crate::WriteBackendSelection::AutoStreaming if !safe => {
+                self.promote_auto_streaming_to_memory()
+            }
+            crate::WriteBackendSelection::Promoting => Err(ExcelError::Unsupported(
+                "automatic streaming backend promotion is already in progress".to_owned(),
+            )),
+            _ => Ok(()),
+        }
+    }
+
+    fn promote_auto_streaming_to_memory(&mut self) -> Result<()> {
+        self.backend_selection = crate::WriteBackendSelection::Promoting;
+        let mut spills = std::mem::take(&mut self.gzip_spills);
+        let mut workbook = easyexcel_xlsx::xlsx::generation::new_workbook();
+        let mut ordered_sheets = self.sheet_indexes.iter().collect::<Vec<_>>();
+        ordered_sheets.sort_by_key(|(index, _)| **index);
+        for (_, sheet_name) in ordered_sheets {
+            let state = self.sheets.get(sheet_name).ok_or_else(|| {
+                ExcelError::Format(format!(
+                    "stateful journal is missing sheet state for '{sheet_name}'"
+                ))
+            })?;
+            let mut reader = spills
+                .remove(sheet_name)
+                .map(crate::write::gzip_spill::GzipSheetDataWriter::finish)
+                .transpose()?;
+            replay_stateful_sheet_journal(&mut workbook, state, reader.as_mut())?;
+        }
+        if !spills.is_empty() {
+            return Err(ExcelError::Format(
+                "stateful journal contains sheets absent from the workbook index".to_owned(),
+            ));
+        }
+        self.workbook = workbook;
+        for state in self.sheets.values_mut() {
+            state.options.constant_memory = false;
+            state.options.compress_temp_files = false;
+        }
+        self.default_constant_memory = false;
+        self.compress_temp_files = false;
+        self.backend_selection = crate::WriteBackendSelection::InMemory;
+        Ok(())
     }
 
     fn workbook_handler_scope(&self) -> HandlerExecutionScope {
@@ -615,6 +805,12 @@ impl ExcelWriter {
     #[must_use]
     pub fn output_path(&self) -> &std::path::Path {
         &self.path
+    }
+
+    /// 返回该 writer 是否直接拥有文件路径输出，而非调用方提供的流。
+    #[must_use]
+    pub(crate) fn uses_output_path(&self) -> bool {
+        self.output_stream.is_none()
     }
 
 }

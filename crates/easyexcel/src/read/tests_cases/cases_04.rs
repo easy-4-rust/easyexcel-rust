@@ -101,7 +101,14 @@ fn public_reader_streams_all_sheets_and_reports_invalid_workbooks() -> Result<()
     let mut metadata = XlsxRowMetadata::new(source.reader()?)?;
     assert!(
         metadata
-            .display_cells("Missing", false, false, ssfmt::Locale::default())
+            .display_cells(
+                "Missing",
+                false,
+                false,
+                ssfmt::Locale::default(),
+                true,
+                None,
+            )
             .is_err()
     );
 

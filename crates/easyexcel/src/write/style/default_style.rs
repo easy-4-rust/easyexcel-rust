@@ -37,6 +37,18 @@ impl Default for DefaultStyle {
 }
 
 impl WriteHandler for DefaultStyle {
+    fn backend_capability(&self) -> crate::WriteHandlerCapability {
+        crate::WriteHandlerCapability::StreamingSafe
+    }
+
+    fn requires_row_context(&self) -> bool {
+        false
+    }
+
+    fn requires_cell_context(&self) -> bool {
+        false
+    }
+
     fn order(&self) -> i32 {
         0
     }

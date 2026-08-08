@@ -7,11 +7,14 @@ use easyexcel_io::Result;
 use easyexcel_model::model::Workbook;
 
 mod biff;
+mod biff8_sst_string;
 mod reader;
 mod sst;
 mod writer;
 
-pub use reader::read;
+pub use biff8_sst_string::Biff8SstString;
+pub use reader::{read, read_with_password};
+pub use sst::parse_sst_rich;
 pub use writer::write;
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 Read an XLS workbook from a path.
@@ -20,8 +23,17 @@ pub use writer::write;
 ///
 /// 文件无法打开，或 OLE2/BIFF8 内容无效时返回错误。
 pub fn read_path(path: &std::path::Path) -> Result<Workbook> {
+    read_path_with_password(path, None)
+}
+
+/// 从路径读取 XLS，并在存在 `FILEPASS` 时使用调用方密码解密。
+///
+/// # Errors
+///
+/// 文件无法打开、OLE2/BIFF8 内容无效、未提供密码或密码错误时返回错误。
+pub fn read_path_with_password(path: &std::path::Path, password: Option<&str>) -> Result<Workbook> {
     let file = std::fs::File::open(path)?;
-    read(file)
+    read_with_password(file, password)
 }
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 Write a workbook to an XLS file at `path`.

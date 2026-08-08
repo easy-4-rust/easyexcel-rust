@@ -43,6 +43,18 @@ impl Default for FillStyleCellWriteHandler {
 }
 
 impl WriteHandler for FillStyleCellWriteHandler {
+    fn backend_capability(&self) -> crate::WriteHandlerCapability {
+        crate::WriteHandlerCapability::StreamingSafe
+    }
+
+    fn requires_row_context(&self) -> bool {
+        false
+    }
+
+    fn requires_cell_context(&self) -> bool {
+        false
+    }
+
     fn before_cell(&mut self, _context: &mut WriteCellContext) -> crate::core::Result<()> {
         // `easyexcel-template` consults `ignoreFillStyle` when emitting
         // each cell. The handler is preserved here for parity.

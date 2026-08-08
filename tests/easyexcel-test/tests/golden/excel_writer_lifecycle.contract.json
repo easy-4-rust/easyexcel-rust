@@ -1,0 +1,17 @@
+{
+	"authority":"com.alibaba:easyexcel:4.0.3",
+	"direct_constructor":"com.alibaba.excel.ExcelWriter",
+	"write_collection_returns_self":true,
+	"write_supplier_returns_self":true,
+	"write_table_returns_self":true,
+	"write_supplier_table_returns_self":true,
+	"write_supplier_calls":2,
+	"write_context_class":"com.alibaba.excel.context.WriteContextImpl",
+	"write_context_same":true,
+	"finish_then_close":true,
+	"fill_object_returns_self":true,
+	"fill_config_returns_self":true,
+	"fill_supplier_returns_self":true,
+	"fill_supplier_config_returns_self":true,
+	"fill_supplier_calls":2
+}

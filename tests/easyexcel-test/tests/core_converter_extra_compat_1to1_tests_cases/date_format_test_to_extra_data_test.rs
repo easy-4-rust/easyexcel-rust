@@ -179,22 +179,15 @@ mod encrypt_data_test {
     }
 
     /// Java `EncryptDataTest#t01ReadAndWrite07`.
-    /// Java: `com.alibaba.easyexcel.test.core.exception.ExceptionDataTest#t01ReadAndWrite07`
     #[test]
     fn t01_read_and_write07() {
         assert_encrypt_read_and_write(&temp_path("encrypt07.xlsx"));
     }
 
-    /// Java `EncryptDataTest#t02ReadAndWrite03` — password on legacy XLS is Unsupported (visible).
-    /// Java: `com.alibaba.easyexcel.test.core.exception.ExceptionDataTest#t02ReadAndWrite03`
+    /// Java `EncryptDataTest#t02ReadAndWrite03`.
     #[test]
     fn t02_read_and_write03() {
-        let path = temp_path("encrypt03.xls");
-        EasyExcel::write::<EncryptData>(&path)
-            .password("123456")
-            .sheet("Sheet1")
-            .do_write(encrypt_data())
-            .expect("XLS encrypt must succeed (Phase 5.3)");
+        assert_encrypt_read_and_write(&temp_path("encrypt03.xls"));
     }
 
     /// Java `EncryptDataTest#t03ReadAndWriteStream07`.
@@ -203,15 +196,10 @@ mod encrypt_data_test {
         assert_encrypt_read_and_write(&temp_path("encryptOutputStream07.xlsx"));
     }
 
-    /// Java `EncryptDataTest#t04ReadAndWriteStream03` — password on legacy XLS is Unsupported.
+    /// Java `EncryptDataTest#t04ReadAndWriteStream03`.
     #[test]
     fn t04_read_and_write_stream03() {
-        let path = temp_path("encryptOutputStream03.xls");
-        EasyExcel::write::<EncryptData>(&path)
-            .password("123456")
-            .sheet("Sheet1")
-            .do_write(encrypt_data())
-            .expect("XLS encrypt must succeed (Phase 5.3)");
+        assert_encrypt_read_and_write(&temp_path("encryptOutputStream03.xls"));
     }
 }
 
@@ -430,12 +418,92 @@ mod extra_data_test {
         assert_extra_xlsx(&require_fixture("demo/extra.xlsx"));
     }
 
-    /// Java `ExtraDataTest#t02Read03` — XLS extraRead unsupported in Rust; assert readable.
+    /// Java `ExtraDataTest#t02Read03` — Java-produced BIFF8 hyperlink and merge
+    /// records reach the public listener with their real address/range.
     #[test]
     fn t02_read03() {
         let path = require_fixture("demo/extra.xls");
-        let rows = EasyExcel::read_dynamic_sync(&path).do_read_sync().unwrap();
-        assert!(!rows.is_empty(), "Java extra.xls fixture must yield rows");
+        struct XlsExtraListener {
+            hyperlink_count: std::sync::Arc<std::sync::atomic::AtomicUsize>,
+            merge_count: std::sync::Arc<std::sync::atomic::AtomicUsize>,
+            comment_count: std::sync::Arc<std::sync::atomic::AtomicUsize>,
+        }
+        impl ReadListener<ExtraData> for XlsExtraListener {
+            fn invoke(&mut self, _data: ExtraData, _ctx: &AnalysisContext) -> Result<()> {
+                Ok(())
+            }
+
+            fn extra(&mut self, extra: &CellExtra, _ctx: &AnalysisContext) -> Result<()> {
+                match extra.extra_type() {
+                    CellExtraType::Hyperlink => {
+                        match extra.text() {
+                            Some("Sheet1!A1") => {
+                                assert_eq!(extra.first_row_index(), 1);
+                                assert_eq!(extra.first_column_index(), 0);
+                            }
+                            Some("Sheet2!A1") => {
+                                assert_eq!(
+                                    (
+                                        extra.first_row_index(),
+                                        extra.last_row_index(),
+                                        extra.first_column_index(),
+                                        extra.last_column_index(),
+                                    ),
+                                    (2, 3, 0, 1)
+                                );
+                            }
+                            other => panic!("unexpected Java XLS hyperlink: {other:?}"),
+                        }
+                        self.hyperlink_count
+                            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    }
+                    CellExtraType::Merge => {
+                        assert_eq!(
+                            (
+                                extra.first_row_index(),
+                                extra.last_row_index(),
+                                extra.first_column_index(),
+                                extra.last_column_index(),
+                            ),
+                            (5, 6, 0, 1)
+                        );
+                        self.merge_count
+                            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    }
+                    CellExtraType::Comment => {
+                        assert_eq!(extra.text(), Some("批注的内容"));
+                        assert_eq!(extra.first_row_index(), 4);
+                        assert_eq!(extra.first_column_index(), 0);
+                        self.comment_count
+                            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    }
+                }
+                Ok(())
+            }
+        }
+        let hyperlink_count = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let merge_count = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let comment_count = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        EasyExcel::read::<ExtraData, _>(
+            path,
+            XlsExtraListener {
+                hyperlink_count: std::sync::Arc::clone(&hyperlink_count),
+                merge_count: std::sync::Arc::clone(&merge_count),
+                comment_count: std::sync::Arc::clone(&comment_count),
+            },
+        )
+        .extra_read(CellExtraType::Hyperlink)
+        .extra_read(CellExtraType::Merge)
+        .extra_read(CellExtraType::Comment)
+        .sheet(0usize)
+        .do_read()
+        .unwrap();
+        assert_eq!(
+            hyperlink_count.load(std::sync::atomic::Ordering::SeqCst),
+            2
+        );
+        assert_eq!(merge_count.load(std::sync::atomic::Ordering::SeqCst), 1);
+        assert_eq!(comment_count.load(std::sync::atomic::Ordering::SeqCst), 1);
     }
 
     /// Java `ExtraDataTest#t03Read` — extraRelationships.xlsx hyperlinks.

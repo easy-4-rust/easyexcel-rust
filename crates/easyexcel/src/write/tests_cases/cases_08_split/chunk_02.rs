@@ -20,8 +20,7 @@ fn stateful_writer_supports_multiple_sheets_and_idempotent_finish() -> Result<()
         .loop_merge(MirroredLoopMergeStrategy::new(2, 1, 0)?);
     let second = WriteSheet::<EveryCell>::new("Archive")
         .sheet_index(9)
-        .need_head(false)
-        .constant_memory(true);
+        .need_head(false);
     assert_eq!(first.options().sheet_name, "Users");
     assert_eq!(first.options().sheet_index, Some(7));
     assert!(first.options().freeze_head);
@@ -32,7 +31,7 @@ fn stateful_writer_supports_multiple_sheets_and_idempotent_finish() -> Result<()
     assert!(first.options().content_styles[0].wrap_text);
     assert_eq!(first.options().loop_merges.len(), 1);
     assert!(!second.options().need_head);
-    assert!(second.options().constant_memory);
+    assert!(!second.options().constant_memory);
 
     let mut writer = ExcelWriter::with_handlers(&path, handlers);
     assert!(!writer.is_finished());
@@ -313,4 +312,3 @@ fn stateful_csv_appends_batches_with_one_head_and_one_sheet_lifecycle() -> Resul
     }
     Ok(())
 }
-

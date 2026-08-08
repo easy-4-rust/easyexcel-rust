@@ -177,6 +177,78 @@ impl Parser<'_> {
                     Ok(())
                 }
             }
+            Some(LexTok::Ref3d {
+                first_sheet,
+                last_sheet,
+                row,
+                col,
+                row_rel,
+                col_rel,
+            }) => {
+                if matches!(self.peek(), Some(LexTok::Colon)) {
+                    self.next();
+                    match self.next() {
+                        Some(LexTok::Ref {
+                            row: row2,
+                            col: col2,
+                            row_rel: row2_rel,
+                            col_rel: col2_rel,
+                        }) => {
+                            self.out.push(RpnTok::Area3d(
+                                first_sheet,
+                                last_sheet,
+                                row,
+                                row2,
+                                col,
+                                col2,
+                                row_rel,
+                                row2_rel,
+                                col_rel,
+                                col2_rel,
+                            ));
+                            Ok(())
+                        }
+                        Some(LexTok::Ref3d {
+                            first_sheet: second_first,
+                            last_sheet: second_last,
+                            row: row2,
+                            col: col2,
+                            row_rel: row2_rel,
+                            col_rel: col2_rel,
+                        }) if second_first.eq_ignore_ascii_case(&first_sheet)
+                            && second_last.eq_ignore_ascii_case(&last_sheet) =>
+                        {
+                            self.out.push(RpnTok::Area3d(
+                                first_sheet,
+                                last_sheet,
+                                row,
+                                row2,
+                                col,
+                                col2,
+                                row_rel,
+                                row2_rel,
+                                col_rel,
+                                col2_rel,
+                            ));
+                            Ok(())
+                        }
+                        Some(other) => Err(self.err(&format!(
+                            "3D 区域引用后应为同一工作表范围的单元格引用，得到 {other:?}"
+                        ))),
+                        None => Err(self.err("3D 区域引用缺少结束单元格")),
+                    }
+                } else {
+                    self.out.push(RpnTok::Ref3d(
+                        first_sheet,
+                        last_sheet,
+                        row,
+                        col,
+                        row_rel,
+                        col_rel,
+                    ));
+                    Ok(())
+                }
+            }
             Some(LexTok::Name(name)) => {
                 // 必须为函数调用
                 if !matches!(self.peek(), Some(LexTok::LParen)) {
@@ -261,6 +333,20 @@ impl Parser<'_> {
 ///
 /// 语法错误、未知函数或不受支持的引用风格时返回 [`ExcelError::Xls`]。
 pub fn encode_formula_rpn(formula: &str) -> Result<Vec<u8>, ExcelError> {
+    encode_formula_rpn_with_links(formula, None)
+}
+
+pub(super) fn encode_formula_rpn_with_link_table(
+    formula: &str,
+    links: &Biff8LinkTable,
+) -> Result<Vec<u8>, ExcelError> {
+    encode_formula_rpn_with_links(formula, Some(links))
+}
+
+fn encode_formula_rpn_with_links(
+    formula: &str,
+    links: Option<&Biff8LinkTable>,
+) -> Result<Vec<u8>, ExcelError> {
     let expr = formula.strip_prefix('=').unwrap_or(formula);
     let tokens = tokenize(expr)?;
     let mut parser = Parser {
@@ -272,12 +358,16 @@ pub fn encode_formula_rpn(formula: &str) -> Result<Vec<u8>, ExcelError> {
     let rpn = parser.parse()?;
     let mut out = Vec::new();
     for tok in rpn {
-        encode_token(&tok, &mut out)?;
+        encode_token(&tok, &mut out, links)?;
     }
     Ok(out)
 }
 
-fn encode_token(tok: &RpnTok, out: &mut Vec<u8>) -> Result<(), ExcelError> {
+fn encode_token(
+    tok: &RpnTok,
+    out: &mut Vec<u8>,
+    links: Option<&Biff8LinkTable>,
+) -> Result<(), ExcelError> {
     match tok {
         RpnTok::Int(v) => {
             // tInt (0x1E)：2 字节有符号短整型
@@ -335,6 +425,25 @@ fn encode_token(tok: &RpnTok, out: &mut Vec<u8>) -> Result<(), ExcelError> {
             }
             out.extend_from_slice(&col_field.to_le_bytes());
         }
+        RpnTok::Ref3d(first_sheet, last_sheet, row, col, row_rel, col_rel) => {
+            let links = links.ok_or_else(|| {
+                format_error(first_sheet, "3D 引用需要工作簿级 LinkTable")
+            })?;
+            let ixti = links.ixti(first_sheet, last_sheet).ok_or_else(|| {
+                format_error(first_sheet, "3D 引用未在工作簿 LinkTable 中注册")
+            })?;
+            out.push(0x3a);
+            out.extend_from_slice(&ixti.to_le_bytes());
+            out.extend_from_slice(&row.to_le_bytes());
+            let mut col_field = *col;
+            if *row_rel {
+                col_field |= 0x8000;
+            }
+            if *col_rel {
+                col_field |= 0x4000;
+            }
+            out.extend_from_slice(&col_field.to_le_bytes());
+        }
         RpnTok::Area(
             rw_first,
             rw_last,
@@ -365,6 +474,45 @@ fn encode_token(tok: &RpnTok, out: &mut Vec<u8>) -> Result<(), ExcelError> {
                 cl |= 0x4000;
             }
             out.extend_from_slice(&cl.to_le_bytes());
+        }
+        RpnTok::Area3d(
+            first_sheet,
+            last_sheet,
+            rw_first,
+            rw_last,
+            col_first,
+            col_last,
+            rw_first_rel,
+            rw_last_rel,
+            col_first_rel,
+            col_last_rel,
+        ) => {
+            let links = links.ok_or_else(|| {
+                format_error(first_sheet, "3D 区域引用需要工作簿级 LinkTable")
+            })?;
+            let ixti = links.ixti(first_sheet, last_sheet).ok_or_else(|| {
+                format_error(first_sheet, "3D 区域引用未在工作簿 LinkTable 中注册")
+            })?;
+            out.push(0x3b);
+            out.extend_from_slice(&ixti.to_le_bytes());
+            out.extend_from_slice(&rw_first.to_le_bytes());
+            out.extend_from_slice(&rw_last.to_le_bytes());
+            let mut first_col = *col_first;
+            if *rw_first_rel {
+                first_col |= 0x8000;
+            }
+            if *col_first_rel {
+                first_col |= 0x4000;
+            }
+            out.extend_from_slice(&first_col.to_le_bytes());
+            let mut last_col = *col_last;
+            if *rw_last_rel {
+                last_col |= 0x8000;
+            }
+            if *col_last_rel {
+                last_col |= 0x4000;
+            }
+            out.extend_from_slice(&last_col.to_le_bytes());
         }
         RpnTok::Func(base, ifunc) => {
             // tFunc (0x21/0x41/0x61)：ptg + UShort(ifunc)，3 字节

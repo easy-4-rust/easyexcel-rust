@@ -286,6 +286,14 @@ def run_group(
             result["correctness"]["rereadable"] = True
             result["success"] = observed_rows == rows
             result["errors"] = 0 if result["success"] else 1
+            # The measured JSON already retains the exact final byte count and
+            # both runtimes have reopened the file successfully. Keeping one
+            # multi-megabyte workbook per worker/trial would make the release
+            # matrix consume tens of gigabytes and can invalidate a run by
+            # exhausting its filesystem. Preserve fixtures, hashes, GC logs,
+            # and result records, but discard verified per-sample outputs.
+            if result["success"]:
+                output_path.unlink()
     else:
         for result in results:
             result.pop("_output_path", None)

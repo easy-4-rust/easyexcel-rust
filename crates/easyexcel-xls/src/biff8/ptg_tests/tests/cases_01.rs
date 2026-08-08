@@ -121,6 +121,32 @@
     }
 
     #[test]
+    fn three_dimensional_refs_use_link_table_ixti() {
+        let formulas = [
+            "Sheet2!A1",
+            "'销售 数据'!$B$2:$C$3",
+            "Sheet1:Sheet2!A1",
+        ];
+        let links = Biff8LinkTable::from_formulas(
+            &["Sheet1".to_owned(), "Sheet2".to_owned(), "销售 数据".to_owned()],
+            &formulas,
+        );
+        assert_eq!(
+            encode_formula_rpn_with_link_table(formulas[0], &links).unwrap(),
+            vec![0x3a, 0, 0, 0, 0, 0, 0xc0]
+        );
+        assert_eq!(
+            encode_formula_rpn_with_link_table(formulas[1], &links).unwrap(),
+            vec![0x3b, 1, 0, 1, 0, 2, 0, 1, 0, 2, 0]
+        );
+        assert_eq!(links.supbook_payload(), [3, 0, 1, 4]);
+        assert_eq!(
+            links.externsheet_payload(),
+            vec![3, 0, 0, 0, 1, 0, 1, 0, 0, 0, 2, 0, 2, 0, 0, 0, 0, 0, 1, 0]
+        );
+    }
+
+    #[test]
     fn countif_cetab_index_is_encoded() {
         // COUNTIF=346 (0x015a)，固定 2 参数 → tFunc(0x21+0x20=0x41) + UShort
         let rpn = enc("COUNTIF(A1:A10,\">5\")");

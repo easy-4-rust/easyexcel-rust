@@ -30,8 +30,13 @@ impl XlsxNumberFormat {
         self.code().is_some_and(is_date_format_code)
     }
 
-    fn display(
+    fn compile(&self) -> Option<CompiledExcelFormat> {
+        self.code().and_then(compile_format_code)
+    }
+
+    fn display_compiled(
         &self,
+        compiled: Option<&CompiledExcelFormat>,
         value: f64,
         date_1904: bool,
         use_scientific_format: bool,
@@ -44,8 +49,6 @@ impl XlsxNumberFormat {
                 java_plain_extreme_format(value)
             });
         }
-        self.code()
-            .and_then(|code| format_with_code(value, code, date_1904, locale))
+        compiled.map(|compiled| format_with_compiled(value, compiled, date_1904, locale))
     }
 }
-

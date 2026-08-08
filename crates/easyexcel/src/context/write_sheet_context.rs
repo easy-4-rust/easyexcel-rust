@@ -1,7 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.write.handler.context.SheetWriteHandlerContext`.
 
-use crate::Result;
 use crate::WriteContext;
+use crate::{ChartMutation, Result};
 
 use super::write_mutation_plan::WriteMutationPlan;
 
@@ -91,17 +91,32 @@ impl WriteSheetContext {
     /// 对应 Java：com.alibaba.excel.write.handler.context.SheetWriteHandlerContext。 Attaches all holder views and the resolved Java `currentWriteHolder()` state.
     #[must_use]
     pub fn with_resolved_holder_context(
-        mut self,
+        self,
         workbook: WriteWorkbookHolderView,
         sheet_no: i32,
         table_no: Option<i32>,
         current_holder_state: crate::WriteContextHolderState,
     ) -> Self {
+        self.with_shared_resolved_holder_context(
+            workbook,
+            sheet_no,
+            table_no,
+            std::sync::Arc::new(current_holder_state),
+        )
+    }
+
+    pub(crate) fn with_shared_resolved_holder_context(
+        mut self,
+        workbook: WriteWorkbookHolderView,
+        sheet_no: i32,
+        table_no: Option<i32>,
+        current_holder_state: std::sync::Arc<crate::WriteContextHolderState>,
+    ) -> Self {
         let sheet = WriteSheetHolderView::new(&self.sheet_name).with_sheet_no(sheet_no);
         self.holders = WriteHolderContext::new()
             .with_workbook(workbook)
             .with_sheet(sheet)
-            .with_current_holder_state(current_holder_state);
+            .with_shared_current_holder_state(current_holder_state);
         if let Some(table_no) = table_no {
             self.holders = self
                 .holders
@@ -154,6 +169,24 @@ impl WriteSheetContext {
     pub fn protect_sheet(&self, password: impl Into<String>) -> Result<()> {
         self.mutations
             .protect_sheet(self.sheet_name.clone(), password)
+    }
+
+    /// 请求在保存前向当前工作表添加图表。
+    ///
+    /// 传入对象的 `sheet_name` 必须与当前回调工作表一致，避免 Handler
+    /// 无意修改其他 Sheet。
+    ///
+    /// # Errors
+    ///
+    /// 工作表名称不一致或共享修改计划不可用时返回错误。
+    pub fn add_chart(&self, chart: ChartMutation) -> Result<()> {
+        if chart.sheet_name != self.sheet_name {
+            return Err(crate::ExcelError::Format(format!(
+                "chart sheet '{}' does not match handler sheet '{}'",
+                chart.sheet_name, self.sheet_name
+            )));
+        }
+        self.mutations.add_chart(chart)
     }
 
     pub(crate) fn with_mutation_plan(mut self, mutations: WriteMutationPlan) -> Self {

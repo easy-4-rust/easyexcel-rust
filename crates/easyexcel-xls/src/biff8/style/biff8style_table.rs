@@ -16,6 +16,12 @@ pub struct Biff8StyleTable {
 }
 
 impl Biff8StyleTable {
+    /// 分配或复用 FONT，并返回 BIFF8 字体索引。
+    /// 对应 Java：`HSSFWorkbook#createFont` 与字体表去重。
+    pub fn resolve_font_index(&mut self, request: &Biff8StyleRequest) -> u16 {
+        self.ensure_font(request)
+    }
+
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 Resolves an XF index for `request`, preserving `base_xf` number format
     /// (`XF_GENERAL` / `XF_DATE` / `XF_DATETIME`).
     pub fn resolve_xf(&mut self, request: &Biff8StyleRequest, base_xf: u16) -> u16 {
@@ -31,6 +37,10 @@ impl Biff8StyleTable {
         let font_index = self.ensure_font(request);
         let fill_fg_icv = self.resolve_color(request.fill_foreground_color, 0x40);
         let fill_bg_icv = self.resolve_color(request.fill_background_color, ICV_PATTERN_BG_DEFAULT);
+        let border_left_icv = self.resolve_color(request.border_left_color, ICV_AUTO);
+        let border_right_icv = self.resolve_color(request.border_right_color, ICV_AUTO);
+        let border_top_icv = self.resolve_color(request.border_top_color, ICV_AUTO);
+        let border_bottom_icv = self.resolve_color(request.border_bottom_color, ICV_AUTO);
         let key = XfKey {
             font_index,
             ifmt,
@@ -44,6 +54,14 @@ impl Biff8StyleTable {
             fill_pattern: request.fill_pattern.map_or(0, Biff8FillPattern::code),
             fill_fg_icv,
             fill_bg_icv,
+            border_left: request.border_left.map_or(0, Biff8BorderStyle::code),
+            border_right: request.border_right.map_or(0, Biff8BorderStyle::code),
+            border_top: request.border_top.map_or(0, Biff8BorderStyle::code),
+            border_bottom: request.border_bottom.map_or(0, Biff8BorderStyle::code),
+            border_left_icv,
+            border_right_icv,
+            border_top_icv,
+            border_bottom_icv,
         };
         if let Some(existing) = self.xf_cache.get(&key) {
             return *existing;
@@ -57,6 +75,14 @@ impl Biff8StyleTable {
             key.fill_pattern,
             key.fill_fg_icv,
             key.fill_bg_icv,
+            key.border_left,
+            key.border_right,
+            key.border_top,
+            key.border_bottom,
+            key.border_left_icv,
+            key.border_right_icv,
+            key.border_top_icv,
+            key.border_bottom_icv,
         );
         // 语义敏感：自定义 XF 数量远小于 u16 上限，保留 as 以对齐 BIFF8 索引。
         #[allow(clippy::cast_possible_truncation)]
@@ -195,4 +221,3 @@ impl Biff8StyleTable {
         }
     }
 }
-

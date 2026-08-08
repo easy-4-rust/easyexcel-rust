@@ -7,7 +7,7 @@ use easyexcel_io::{Error as ExcelError, Result};
 /// # Errors
 ///
 /// SST 元数据或分段字符串损坏时返回错误。
-pub fn decode_sst_segments(segments: &[Vec<u8>]) -> Result<Vec<String>> {
+pub fn decode_sst_segments(segments: &[Vec<u8>]) -> Result<Vec<crate::xls::Biff8SstString>> {
     let mut cursor = SegmentCursor::new(segments);
     let _total = cursor.read_u32("SST total string count")?;
     let unique = usize::try_from(cursor.read_u32("SST unique string count")?)
@@ -62,7 +62,7 @@ impl<'a> SegmentCursor<'a> {
         }
     }
 
-    fn read_rich_extended_string(&mut self, index: usize) -> Result<String> {
+    fn read_rich_extended_string(&mut self, index: usize) -> Result<crate::xls::Biff8SstString> {
         let context = format!("SST string {index}");
         let character_count = self.read_u16(&format!("{context} character count"))? as usize;
         let flags = self.read_u8_plain(&format!("{context} flags"))?;
@@ -79,14 +79,15 @@ impl<'a> SegmentCursor<'a> {
         };
 
         let value = self.read_characters(character_count, flags & 0x01 != 0, context.as_str())?;
-        self.skip_plain(
-            rich_run_count.checked_mul(4).ok_or_else(|| {
-                ExcelError::Xls(format!("{context} rich-run byte count overflow"))
-            })?,
-            &format!("{context} rich runs"),
-        )?;
+        let mut formatting_runs = Vec::with_capacity(rich_run_count);
+        for _ in 0..rich_run_count {
+            formatting_runs.push((
+                self.read_u16(&format!("{context} rich-run character index"))?,
+                self.read_u16(&format!("{context} rich-run font index"))?,
+            ));
+        }
         self.skip_plain(extension_size, &format!("{context} extension"))?;
-        Ok(value)
+        Ok(crate::xls::Biff8SstString::new(value, formatting_runs))
     }
 
     fn read_characters(
@@ -210,7 +211,13 @@ mod tests {
         body.push(1);
         body.extend_from_slice(&[0x60, 0x4F, 0x7D, 0x59]);
 
-        assert_eq!(decode_sst_segments(&[body])?, vec!["one", "你好"]);
+        assert_eq!(
+            decode_sst_segments(&[body])?,
+            vec![
+                crate::xls::Biff8SstString::new("one".to_owned(), Vec::new()),
+                crate::xls::Biff8SstString::new("你好".to_owned(), Vec::new()),
+            ]
+        );
         Ok(())
     }
 
@@ -224,7 +231,13 @@ mod tests {
         first.extend_from_slice(b"ab");
         let second = vec![1, 0x60, 0x4F, 0x7D, 0x59];
 
-        assert_eq!(decode_sst_segments(&[first, second])?, vec!["ab你好"]);
+        assert_eq!(
+            decode_sst_segments(&[first, second])?,
+            vec![crate::xls::Biff8SstString::new(
+                "ab你好".to_owned(),
+                Vec::new()
+            )]
+        );
         Ok(())
     }
 
@@ -241,7 +254,13 @@ mod tests {
         first.extend_from_slice(&[0, 0]);
         let second = vec![1, 0, 0xAA, 0xBB];
 
-        assert_eq!(decode_sst_segments(&[first, second])?, vec!["x"]);
+        assert_eq!(
+            decode_sst_segments(&[first, second])?,
+            vec![crate::xls::Biff8SstString::new(
+                "x".to_owned(),
+                vec![(0, 1)]
+            )]
+        );
         Ok(())
     }
 

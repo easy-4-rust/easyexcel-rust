@@ -29,6 +29,17 @@ pub struct WriteCellData {
 }
 
 impl WriteCellData {
+    /// 返回该单元格是否仅包含标量值、没有样式或附加对象。
+    #[must_use]
+    pub fn is_plain(&self) -> bool {
+        self.image_data_list.is_empty()
+            && self.comment_data.is_none()
+            && self.hyperlink_data.is_none()
+            && self.formula_data.is_none()
+            && self.write_cell_style.is_none()
+            && self.data_format_data.is_none()
+    }
+
     /// Creates decorated cell data from a scalar value. (Java `WriteCellData(WriteCellData)`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.metadata.data.WriteCellData。
@@ -215,12 +226,17 @@ impl WriteCellData {
             value = CellValue::Formula(formula.formula_value().to_owned());
         }
         if let Some(link) = &self.hyperlink_data {
-            let url = link.get_address().unwrap_or("").to_owned();
+            let address = link.get_address().unwrap_or("").to_owned();
             let text = match &value {
                 CellValue::String(s) => s.clone(),
                 other => other.as_text(),
             };
-            value = CellValue::Hyperlink { url, text };
+            value = CellValue::HyperlinkWithMetadata {
+                address,
+                text,
+                hyperlink_type: link.get_hyperlink_type(),
+                coordinates: link.get_coordinates(),
+            };
         }
         if let Some(comment) = &self.comment_data {
             value = CellValue::Comment {

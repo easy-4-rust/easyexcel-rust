@@ -8,9 +8,9 @@ use std::path::Path;
 
 use crate::core::{ExcelError, ExcelRow, Result, WriteHandler, WriteWorkbookContext};
 use crate::write::excel_writer_core::{
-    HandlerHolderScope, after_workbook, after_workbook_create, before_workbook, sort_handlers,
-    validate_excel_row_schema, with_default_write_converters, write_sheet_to_biff8_book,
-    write_xls_onto_template,
+    HandlerHolderScope, after_workbook, after_workbook_create, apply_xls_mutations,
+    before_workbook, sort_handlers, validate_excel_row_schema, with_default_write_converters,
+    write_sheet_to_biff8_book, write_xls_onto_template,
 };
 use crate::write::write_options::WriteOptions;
 use crate::write::xls_adapter::Biff8Book;
@@ -32,7 +32,7 @@ where
 ///
 /// When [`WriteOptions`] carries a template, uses
 /// the `easyexcel-xls` BIFF8 template engine (Java `withTemplate` + `doWrite` on HSSF).
-/// Password protection remains [`ExcelError::Unsupported`].
+/// Password protection uses BIFF8 `CryptoAPI` for generated and template output.
 ///
 /// # Errors
 ///
@@ -61,16 +61,23 @@ where
     ) {
         write_xls_onto_template::<T, I>(path, None, options, rows, handlers)?;
         after_workbook(handlers, &workbook_context)?;
+        if !workbook_context.mutation_plan().is_empty()? {
+            return Err(ExcelError::Unsupported(
+                "workbook handler mutations on XLS with_template output are not supported"
+                    .to_owned(),
+            ));
+        }
         return Ok(());
     }
 
     let mut book = Biff8Book::default();
     #[rustfmt::skip]
-    let holder_scope = HandlerHolderScope::new_resolved::<T>(path, i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX), None, options)?;
+    let holder_scope = HandlerHolderScope::new_resolved_with_plan::<T>(path, i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX), None, options, workbook_context.mutation_plan().clone())?;
     write_sheet_to_biff8_book::<T, I>(&mut book, options, rows, handlers, Some(&holder_scope))?;
+    after_workbook(handlers, &workbook_context)?;
+    apply_xls_mutations(&mut book, workbook_context.mutation_plan())?;
     book.save_to_path_with_password(path, options.password.as_deref())
         .map_err(ExcelError::from)?;
-    after_workbook(handlers, &workbook_context)?;
     Ok(())
 }
 
@@ -105,19 +112,27 @@ where
     ) {
         write_xls_onto_template::<T, I>(logical_path, Some(&mut output), options, rows, handlers)?;
         after_workbook(handlers, &workbook_context)?;
+        if !workbook_context.mutation_plan().is_empty()? {
+            return Err(ExcelError::Unsupported(
+                "workbook handler mutations on XLS with_template output are not supported"
+                    .to_owned(),
+            ));
+        }
         return Ok(());
     }
 
     let mut book = Biff8Book::default();
-    let holder_scope = HandlerHolderScope::new_resolved::<T>(
+    let holder_scope = HandlerHolderScope::new_resolved_with_plan::<T>(
         logical_path,
         i32::try_from(options.sheet_index.unwrap_or(0)).unwrap_or(i32::MAX),
         None,
         options,
+        workbook_context.mutation_plan().clone(),
     )?;
     write_sheet_to_biff8_book::<T, I>(&mut book, options, rows, handlers, Some(&holder_scope))?;
-    book.write_to_and_flush(&mut output)?;
     after_workbook(handlers, &workbook_context)?;
+    apply_xls_mutations(&mut book, workbook_context.mutation_plan())?;
+    book.write_to_with_password(&mut output, options.password.as_deref())?;
     Ok(())
 }
 
@@ -129,6 +144,14 @@ mod tests {
     use crate::write::write_options::WriteOptions;
     use std::collections::BTreeMap;
     use std::io::{Cursor, Read};
+
+    struct SetCellAfterWorkbook;
+
+    impl WriteHandler for SetCellAfterWorkbook {
+        fn after_workbook(&mut self, context: &WriteWorkbookContext) -> Result<()> {
+            context.set_cell("Sheet1", 5, 2, crate::CellValue::Float(123.456_789))
+        }
+    }
 
     fn dynamic_row() -> DynamicRow {
         let mut values = BTreeMap::new();
@@ -206,6 +229,45 @@ mod tests {
         let w2 = window2.expect("WINDOW2 必须存在");
         let window_options = u16::from_le_bytes([w2[0], w2[1]]);
         assert_eq!(window_options & 0x0008, 0x0008, "WINDOW2 fFrozen 位置位");
+    }
+
+    #[test]
+    fn workbook_handler_cell_mutation_is_applied_before_xls_save() {
+        let options = WriteOptions {
+            need_head: false,
+            ..WriteOptions::default()
+        };
+        let mut output = Cursor::new(Vec::<u8>::new());
+        let mut handlers: Vec<Box<dyn WriteHandler>> = vec![Box::new(SetCellAfterWorkbook)];
+        write_xls_to_writer::<DynamicRow, _, _>(
+            std::path::Path::new("logical.xls"),
+            &mut output,
+            &options,
+            vec![dynamic_row()],
+            &mut handlers,
+        )
+        .expect("write with mutation");
+
+        let mut cfb =
+            cfb::CompoundFile::open(Cursor::new(output.get_ref().as_slice())).expect("valid cfb");
+        let mut stream = cfb.open_stream("Workbook").expect("Workbook stream");
+        let mut bytes = Vec::new();
+        stream.read_to_end(&mut bytes).expect("read Workbook");
+        let mut found = false;
+        let mut offset = 0;
+        while offset + 4 <= bytes.len() {
+            let sid = u16::from_le_bytes([bytes[offset], bytes[offset + 1]]);
+            let length = usize::from(u16::from_le_bytes([bytes[offset + 2], bytes[offset + 3]]));
+            if sid == 0x0203 && length == 14 {
+                let payload = &bytes[offset + 4..offset + 18];
+                let row = u16::from_le_bytes([payload[0], payload[1]]);
+                let column = u16::from_le_bytes([payload[2], payload[3]]);
+                let value = f64::from_le_bytes(payload[6..14].try_into().expect("number"));
+                found |= row == 5 && column == 2 && (value - 123.456_789).abs() < f64::EPSILON;
+            }
+            offset += 4 + length;
+        }
+        assert!(found, "handler mutation NUMBER record must be present");
     }
 }
 

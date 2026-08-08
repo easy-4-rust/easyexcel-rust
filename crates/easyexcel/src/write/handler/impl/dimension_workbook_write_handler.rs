@@ -34,6 +34,18 @@ impl Default for DimensionWorkbookWriteHandler {
 }
 
 impl crate::core::WriteHandler for DimensionWorkbookWriteHandler {
+    fn backend_capability(&self) -> crate::WriteHandlerCapability {
+        crate::WriteHandlerCapability::StreamingSafe
+    }
+
+    fn requires_row_context(&self) -> bool {
+        false
+    }
+
+    fn requires_cell_context(&self) -> bool {
+        false
+    }
+
     fn after_workbook(&mut self, context: &WriteWorkbookContext) -> crate::core::Result<()> {
         // `rust_xlsxwriter` writes the dimension automatically based on
         // the worksheet bounds. The shim records the path for parity.

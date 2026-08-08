@@ -37,6 +37,14 @@ impl ExcelWriter {
         self.template_bytes.as_deref()
     }
 
+    /// 返回当前工作簿写密码，供模板填充执行器沿用同一调用级配置。
+    ///
+    /// 对应 Java：`WriteWorkbookHolder#getWriteWorkbook().getPassword()`。
+    #[must_use]
+    pub(crate) fn password(&self) -> Option<&str> {
+        self.password.as_deref()
+    }
+
     /// 对应 Java：`WriteWorkbookHolder.getTempTemplateInputStream() != null`。 Marks the writer finished without persisting workbook output.
     ///
     /// Used when a [`WriteFillExecutor`] already wrote the filled package.
@@ -86,10 +94,11 @@ impl ExcelWriter {
             result = Err(error);
         }
         if !self.mutation_plan.is_empty()?
-            && (self.is_csv() || self.is_xls() || self.template_package.is_some())
+            && (self.is_csv() || self.xls_template.is_some() || self.template_package.is_some())
         {
             result = Err(ExcelError::Unsupported(
-                "workbook handler mutations currently require generated XLSX output".to_owned(),
+                "workbook handler mutations are not supported for CSV or template output"
+                    .to_owned(),
             ));
         }
         if self.is_csv() {
@@ -114,49 +123,15 @@ impl ExcelWriter {
                 }
             }
         } else if write_excel && self.is_xls() {
-            let save_result = if let Some(package) = self.xls_template.take() {
-                if let Some(output) = self.output_stream.as_mut() {
-                    package.save_to_writer(output.as_mut())
-                } else {
-                    package.save_to_path(&self.path)
-                }
-            } else if let Some(output) = self.output_stream.as_mut() {
-                self.xls_book
-                    .write_to(output.as_mut())
-                    .map_err(ExcelError::from)
-            } else {
-                save_xls_book(&self.xls_book, &self.path)
-            };
-            if let Err(error) = save_result {
-                result = Err(error);
-            }
-        } else if write_excel {
-            if self.template_package.is_none()
-                && let Err(error) = apply_xlsx_mutations(&mut self.workbook, &self.mutation_plan)
+            if let Err(error) = apply_xls_mutations(&mut self.xls_book, &self.mutation_plan)
+                .and_then(|()| self.save_xls_output())
             {
                 result = Err(error);
             }
-            let save_result = if let Some(package) = self.template_package.take() {
-                save_template_package(
-                    &package,
-                    &self.path,
-                    self.output_stream
-                        .as_mut()
-                        .map(|output| output.as_mut() as &mut (dyn Write + Send)),
-                    self.password.as_deref(),
-                )
-            } else if let Some(output) = self.output_stream.as_mut() {
-                save_workbook_to_writer(
-                    &mut self.workbook,
-                    output.as_mut(),
-                    self.password.as_deref(),
-                )
-            } else {
-                save_workbook(&mut self.workbook, &self.path, self.password.as_deref())
-            };
-            if let Err(error) = save_result {
-                result = Err(error);
-            }
+        } else if write_excel
+            && let Err(error) = self.save_xlsx_output()
+        {
+            result = Err(error);
         }
         if self.auto_close_stream
             && let Some(close) = self.close_stream.take()
@@ -165,6 +140,95 @@ impl ExcelWriter {
             result = Err(ExcelError::Io(error));
         }
         result
+    }
+
+    fn save_xlsx_output(&mut self) -> Result<()> {
+        let deferred_merge_package = if self.template_package.is_none() {
+            apply_xlsx_mutations(&mut self.workbook, &self.mutation_plan)?;
+            self.build_deferred_merge_package()?
+        } else {
+            None
+        };
+        if let Some(package) = self.template_package.take() {
+            return save_template_package(
+                &package,
+                &self.path,
+                self.output_stream
+                    .as_mut()
+                    .map(|output| output.as_mut() as &mut (dyn Write + Send)),
+                self.password.as_deref(),
+            );
+        }
+        if let Some(package) = deferred_merge_package.as_ref() {
+            return save_template_package(
+                package,
+                &self.path,
+                self.output_stream
+                    .as_mut()
+                    .map(|output| output.as_mut() as &mut (dyn Write + Send)),
+                self.password.as_deref(),
+            );
+        }
+        if let Some(output) = self.output_stream.as_mut() {
+            save_workbook_to_writer(
+                &mut self.workbook,
+                output.as_mut(),
+                self.password.as_deref(),
+            )
+        } else {
+            save_workbook(&mut self.workbook, &self.path, self.password.as_deref())
+        }
+    }
+
+    fn build_deferred_merge_package(
+        &mut self,
+    ) -> Result<Option<crate::write::template_write::TemplatePackage>> {
+        let merges = self.mutation_plan.merge_ranges()?;
+        if merges.is_empty() {
+            return Ok(None);
+        }
+        let bytes = generation::serialize_workbook(&mut self.workbook).map_err(ExcelError::from)?;
+        let mut package = crate::write::template_write::TemplatePackage::from_bytes(&bytes)?;
+        for (sheet_name, range) in merges {
+            package.apply_sheet_layout(&sheet_name, &[], &[range])?;
+        }
+        Ok(Some(package))
+    }
+
+    fn save_xls_output(&mut self) -> Result<()> {
+        if let Some(package) = self.xls_template.take() {
+            return if let Some(output) = self.output_stream.as_mut() {
+                package.save_to_writer_with_password_and_macro_policy(
+                    output.as_mut(),
+                    self.password.as_deref(),
+                    &self.biff8_macro_policy,
+                )
+            } else {
+                package.save_to_path_with_password_and_macro_policy(
+                    &self.path,
+                    self.password.as_deref(),
+                    &self.biff8_macro_policy,
+                )
+            };
+        }
+        if let Some(output) = self.output_stream.as_mut() {
+            return if self.password.is_some() {
+                self.xls_book
+                    .write_to_with_password(output.as_mut(), self.password.as_deref())
+                    .map_err(ExcelError::from)
+            } else {
+                self.xls_book
+                    .write_to(output.as_mut())
+                    .map_err(ExcelError::from)
+            };
+        }
+        if self.password.is_some() {
+            self.xls_book
+                .save_to_path_with_password(&self.path, self.password.as_deref())
+                .map_err(ExcelError::from)
+        } else {
+            save_xls_book(&self.xls_book, &self.path)
+        }
     }
 
     /// Returns whether [`Self::finish`] completed successfully.
@@ -238,7 +302,7 @@ impl ExcelWriter {
         if self.started {
             return Ok(());
         }
-        validate_stateful_backend(self.is_csv(), self.password.as_deref())?;
+        validate_stateful_backend(self.is_csv(), self.is_xls(), self.password.as_deref())?;
         if crate::write::template_write::has_template(
             self.template_file.as_deref(),
             self.template_bytes.as_deref(),
@@ -259,7 +323,11 @@ impl ExcelWriter {
                         "xls with_template requires an OLE .xls workbook".to_owned(),
                     ));
                 }
-                let package = crate::write::xls_adapter::Biff8TemplatePackage::from_bytes(&bytes)?;
+                let package =
+                    crate::write::xls_adapter::Biff8TemplatePackage::from_bytes_with_password(
+                        &bytes,
+                        self.password.as_deref(),
+                    )?;
                 for (index, name) in package.sheet_names().into_iter().enumerate() {
                     let next_row = package.next_row_for_sheet(&name)?;
                     self.sheet_indexes.insert(index, name.clone());

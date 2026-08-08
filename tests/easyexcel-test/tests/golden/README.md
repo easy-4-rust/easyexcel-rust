@@ -17,7 +17,7 @@ Implementation: `scripts/java-golden-export` (Maven `exec:java` →
 `com.alibaba.easyexcel.golden.JavaGoldenExporter`).
 
 Committed `*.expected.json` (and `artifacts/`) must be enough for
-`cargo test -p easyexcel --test java_golden_tests` **without** a local JDK.
+`cargo test -p easyexcel-test --test java_golden_tests` **without** a local JDK.
 Missing goldens **fail** the test (no soft-skip); re-run the script above.
 
 Current count: **≥100** (currently **103**, ofNoRows=0; see `docs/test-parity-status.md`).

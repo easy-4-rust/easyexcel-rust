@@ -3,7 +3,16 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use easyexcel::read::ReadOptions;
 use easyexcel::{CellValue, ExcelRow, RowData};
+
+#[test]
+fn java_facade_and_factory_alias_are_constructible() {
+    let facade = easyexcel::EasyExcel::new();
+    let factory = easyexcel::EasyExcelFactory::new();
+
+    assert_eq!(facade, factory);
+}
 
 #[derive(Debug, PartialEq, ExcelRow)]
 struct FacadeRow {
@@ -73,4 +82,31 @@ fn keeps_java_formats_and_signed_defaults_independent() {
         ignored: NoDefault("manual"),
     };
     assert_eq!(ignored.ignored.0, "manual");
+}
+
+#[derive(Debug, PartialEq, ExcelRow)]
+struct FormattedStringRow {
+    #[excel(property, index = 0)]
+    value: String,
+}
+
+#[test]
+fn default_registry_preserves_formatted_numeric_text_for_string_fields() -> easyexcel::Result<()> {
+    // 对应 Java StringNumberConverter：读取到 String 字段时优先使用 DataFormatter 的显示值。
+    let source = RowData::new(
+        "Sheet1",
+        1,
+        vec![CellValue::Float(24.2)],
+        Arc::new(HashMap::new()),
+    )
+    .with_display_values(HashMap::from([(0, "24.20".to_owned())]));
+    let options = ReadOptions::default();
+
+    assert_eq!(
+        FormattedStringRow::from_row_with_converters(&source, &options.converters)?,
+        FormattedStringRow {
+            value: "24.20".to_owned()
+        }
+    );
+    Ok(())
 }

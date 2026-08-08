@@ -190,9 +190,31 @@ impl Biff8Book {
     ///
     /// Returns I/O or CFB construction errors.
     pub fn to_cfb_bytes(&self) -> Result<Vec<u8>> {
+        self.to_cfb_bytes_with_password(None)
+    }
+
+    /// 使用与 Java `EasyExcel`/POI 5.2.5 一致的 BIFF8 RC4 `CryptoAPI` 密码写出。
+    ///
+    /// # Errors
+    ///
+    /// 随机源、BIFF8 加密、I/O 或 CFB 构造失败时返回错误。
+    pub fn to_cfb_bytes_with_password(&self, password: Option<&str>) -> Result<Vec<u8>> {
+        self.validate_generated_charts()?;
         // 写入前对全部工作表公式求值，得到缓存值表（借用 xls 求值引擎）
         let caches = super::cached::recalc_cached_values(&self.sheets);
-        let stream = build_workbook_stream(self, &caches);
+        let stream = if let Some(password) = password {
+            let encryption = super::encrypt::prepare_crypto_api_encryption(password)
+                .map_err(ExcelError::Xls)?;
+            let plain = build_workbook_stream_with_filepass(
+                self,
+                &caches,
+                Some(encryption.filepass_payload()),
+            );
+            super::encrypt::encrypt_crypto_api_workbook_stream(&plain, &encryption)
+                .map_err(ExcelError::Xls)?
+        } else {
+            build_workbook_stream(self, &caches)
+        };
         let mut mem = Cursor::new(Vec::<u8>::new());
         {
             #[rustfmt::skip]
@@ -216,6 +238,59 @@ impl Biff8Book {
         Ok(mem.into_inner())
     }
 
+    fn validate_generated_charts(&self) -> Result<()> {
+        let sheet_names = self
+            .sheets
+            .iter()
+            .map(|sheet| sheet.name.as_str())
+            .collect::<std::collections::HashSet<_>>();
+        for sheet in &self.sheets {
+            for chart in &sheet.charts {
+                for text in chart
+                    .title
+                    .iter()
+                    .chain(chart.series.iter().filter_map(|series| series.name.as_ref()))
+                {
+                    if text.contains('\0') || text.encode_utf16().count() > usize::from(u8::MAX) {
+                        return Err(ExcelError::Xls(
+                            "BIFF8 chart titles and series names must contain at most 255 UTF-16 units and no NUL"
+                                .to_owned(),
+                        ));
+                    }
+                }
+                if chart.last_row < chart.first_row || chart.last_column < chart.first_column {
+                    return Err(ExcelError::Xls(
+                        "BIFF8 chart anchor end must not precede its start".to_owned(),
+                    ));
+                }
+                if chart.series.is_empty() {
+                    return Err(ExcelError::Xls(
+                        "BIFF8 chart requires at least one data series".to_owned(),
+                    ));
+                }
+                for range in chart.series.iter().flat_map(|series| {
+                    series.categories.iter().chain(std::iter::once(&series.values))
+                }) {
+                    if range.last_row < range.first_row
+                        || range.last_column < range.first_column
+                    {
+                        return Err(ExcelError::Xls(format!(
+                            "BIFF8 chart range on sheet '{}' is reversed",
+                            range.sheet_name
+                        )));
+                    }
+                    if !sheet_names.contains(range.sheet_name.as_str()) {
+                        return Err(ExcelError::Xls(format!(
+                            "BIFF8 chart range sheet '{}' does not exist",
+                            range.sheet_name
+                        )));
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 Writes the CFB bytes to `writer`.
     ///
     /// # Errors
@@ -224,6 +299,22 @@ impl Biff8Book {
     pub fn write_to<W: Write>(&self, mut writer: W) -> Result<()> {
         let bytes = self.to_cfb_bytes()?;
         writer.write_all(&bytes)?;
+        Ok(())
+    }
+
+    /// 将可选密码保护的 CFB 工作簿写入调用方提供的 writer。
+    ///
+    /// # Errors
+    ///
+    /// 序列化、密码加密或输出失败时返回错误。
+    pub fn write_to_with_password<W: Write>(
+        &self,
+        mut writer: W,
+        password: Option<&str>,
+    ) -> Result<()> {
+        let bytes = self.to_cfb_bytes_with_password(password)?;
+        writer.write_all(&bytes)?;
+        writer.flush()?;
         Ok(())
     }
 
@@ -254,19 +345,18 @@ impl Biff8Book {
         Ok(())
     }
 
-    /// 对应 Java：无直接对应对象；Rust 架构扩展。 将 BIFF8/OLE2 工作簿写入路径，并可选应用兼容层 RC4 加密。
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 将可选密码保护的 BIFF8/OLE2 工作簿写入路径。
     ///
     /// # Errors
     ///
-    /// 工作簿序列化、随机盐生成、加密或目标文件写入失败时返回错误。
+    /// 父目录、随机源、BIFF8/CFB 序列化或输出失败时返回错误。
     pub fn save_to_path_with_password(&self, path: &Path, password: Option<&str>) -> Result<()> {
-        let Some(password) = password else {
-            return self.save_to_path(path);
-        };
-        let bytes = self.to_cfb_bytes()?;
-        let (encrypted, _, _) = super::encrypt::encrypt_biff8_stream(&bytes, password)
-            .map_err(easyexcel_io::Error::Other)?;
-        easyexcel_io::io::file_utils::write_to_file(path, &encrypted)
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            std::fs::create_dir_all(parent)?;
+        }
+        let mut file = std::fs::File::create(path)?;
+        self.write_to_with_password(&mut file, password)
     }
 }
-

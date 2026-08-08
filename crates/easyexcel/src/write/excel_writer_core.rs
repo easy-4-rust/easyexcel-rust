@@ -12,7 +12,7 @@ pub use crate::core::{
     AnchorType, CacheLocation, CellValue, Converter, ConverterRegistry, CsvCharset,
     ExcelBorderStyle, ExcelCellStyle, ExcelColor, ExcelColumn, ExcelDataFormat, ExcelError,
     ExcelFillPattern, ExcelFontScript, ExcelFontStyle, ExcelHorizontalAlignment, ExcelRow,
-    ExcelUnderline, ExcelVerticalAlignment, ExcelWriteMetadata, Holder, ImageData,
+    ExcelUnderline, ExcelVerticalAlignment, ExcelWriteMetadata, Holder, HyperlinkType, ImageData,
     NullableObjectConverter, Result, RichTextStringData, WriteCellContext, WriteCellData,
     WriteContextHolderState, WriteFont, WriteHandler, WriteHolderContext, WriteRowContext,
     WriteSheetContext, WriteSheetHolderView, WriteTableHolderView, WriteWorkbookContext,
@@ -40,9 +40,10 @@ use crate::write::image_layout::ImageLayout;
 use crate::write::shared_write_handler::StatefulSheetState;
 use crate::write::sheet_style_context::{CellFormatContext, SheetStyleContext};
 use crate::write::xls_adapter::{
-    Biff8Book, Biff8Cell, Biff8Color, Biff8FillPattern, Biff8Merge, Biff8Sheet, Biff8StyleRequest,
-    Biff8StyleTable, Biff8Value, apply_excel_cell_style, apply_excel_font_style,
-    date_to_excel_serial_with_windowing, datetime_to_excel_serial_with_windowing,
+    Biff8Book, Biff8Cell, Biff8Chart, Biff8ChartKind, Biff8ChartRange, Biff8ChartSeries,
+    Biff8Color, Biff8FillPattern, Biff8HyperlinkKind, Biff8Merge, Biff8RichText, Biff8Sheet,
+    Biff8StyleRequest, Biff8StyleTable, Biff8Value, apply_excel_cell_style, apply_excel_font_style,
+    apply_write_font, date_to_excel_serial_with_windowing, datetime_to_excel_serial_with_windowing,
     writer_horizontal_alignment, writer_vertical_alignment,
 };
 

@@ -481,4 +481,37 @@ mod template_data_test {
             dynamic.len()
         );
     }
+
+    /// Java HSSF：明文/加密 XLS 模板均可按调用级密码解密、修改并重新加密。
+    #[test]
+    fn t02_read_and_write03_with_password() {
+        let template = require_fixture("template/template03.xls");
+        let encrypted = temp_path("template03_encrypted.xls");
+        EasyExcel::write::<TemplateData>(&encrypted)
+            .with_template(&template)
+            .password("123456")
+            .sheet("Sheet1")
+            .do_write(template_data())
+            .unwrap();
+        let rows = EasyExcel::read_sync::<TemplateData>(&encrypted)
+            .password("123456")
+            .head_row_number(3)
+            .do_read_sync()
+            .unwrap();
+        assert_eq!(rows.len(), 2);
+
+        let rewritten = temp_path("template03_reencrypted.xls");
+        EasyExcel::write::<TemplateData>(&rewritten)
+            .with_template(&encrypted)
+            .password("123456")
+            .sheet("Sheet1")
+            .do_write(template_data())
+            .unwrap();
+        let rows = EasyExcel::read_dynamic_sync(&rewritten)
+            .password("123456")
+            .head_row_number(0)
+            .do_read_sync()
+            .unwrap();
+        assert!(!rows.is_empty());
+    }
 }

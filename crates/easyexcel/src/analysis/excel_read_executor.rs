@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use crate::core::{ExcelRow, ReadListener, Result};
+use crate::core::{AnalysisContext, DynamicRow, ExcelRow, ReadListener, Result};
 use crate::support::ExcelTypeEnum;
 
 use crate::ReadOptions;
@@ -19,18 +19,37 @@ pub trait ExcelReadExecutor {
     /// Returns discovered worksheets. (Java `sheetList()`)
     fn sheet_list(&self) -> &[ReadSheet];
 
-    /// Executes the read with Rust's typed listener and current options.
-    ///
-    /// Java retrieves erased listeners and sheet parameters from
-    /// `ReadWorkbook`; Rust makes those dependencies explicit.
+    /// 读取当前工作簿。对应 Java：`ExcelReadExecutor#execute()`。
     ///
     /// # Errors
     ///
     /// 当工作簿解析（SAX/记录读取）失败时返回 `ExcelError`。
-    fn execute<T, L>(&mut self, options: &ReadOptions, listener: &mut L) -> Result<()>
+    fn execute(&mut self) -> Result<()>;
+
+    /// 使用 Rust 类型化监听器执行读取；这是对 Java 上下文内监听器的显式扩展。
+    ///
+    /// # Errors
+    ///
+    /// 当工作簿解析（SAX/记录读取）失败时返回 `ExcelError`。
+    fn execute_with_listener<T, L>(
+        &mut self,
+        options: &ReadOptions,
+        listener: &mut L,
+    ) -> Result<()>
     where
         T: ExcelRow,
         L: ReadListener<T>;
+}
+
+/// Java 无参 `execute()` 使用工作簿上下文中已注册的监听器；该监听器用于没有显式
+/// Rust 监听器时仍完整驱动解析器和生命周期。
+#[derive(Default)]
+pub(crate) struct NoopDynamicReadListener;
+
+impl ReadListener<DynamicRow> for NoopDynamicReadListener {
+    fn invoke(&mut self, _data: DynamicRow, _context: &AnalysisContext) -> Result<()> {
+        Ok(())
+    }
 }
 
 include!("excel_read_executor/excel_read_executor_kind.rs");

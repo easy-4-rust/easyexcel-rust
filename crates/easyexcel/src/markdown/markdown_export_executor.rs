@@ -224,7 +224,9 @@ fn read_workbook(path: &Path, format: Format, password: Option<&str>) -> Result<
         Format::Xlsx => {
             easyexcel_xlsx::read_path_with_password(path, password).map_err(ExcelError::from)
         }
-        Format::Xls => easyexcel_xls::read_path(path).map_err(ExcelError::from),
+        Format::Xls => {
+            easyexcel_xls::read_path_with_password(path, password).map_err(ExcelError::from)
+        }
         Format::Csv => {
             easyexcel_csv::read_csv(File::open(path)?, &easyexcel_csv::CsvReadOptions::default())
                 .map_err(ExcelError::from)

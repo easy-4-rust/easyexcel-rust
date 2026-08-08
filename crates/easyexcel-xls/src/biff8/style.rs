@@ -20,6 +20,8 @@ include!("style/biff8vertical_alignment.rs");
 
 include!("style/biff8fill_pattern.rs");
 
+include!("style/biff8_border_style.rs");
+
 include!("style/biff8style_request.rs");
 
 include!("style/biff8number_format.rs");
@@ -44,6 +46,14 @@ struct XfKey {
     fill_pattern: u8,
     fill_fg_icv: u16,
     fill_bg_icv: u16,
+    border_left: u8,
+    border_right: u8,
+    border_top: u8,
+    border_bottom: u8,
+    border_left_icv: u16,
+    border_right_icv: u16,
+    border_top_icv: u16,
+    border_bottom_icv: u16,
 }
 
 /// Workbook-global FONT / XF allocator shared by all sheets.
@@ -209,5 +219,33 @@ mod tests {
         assert_eq!(font_index_for_slot(0), 0);
         assert_eq!(font_index_for_slot(4), 5);
         assert_eq!(font_index_for_slot(5), 6);
+    }
+
+    #[test]
+    fn border_styles_and_colours_are_packed_into_xf() {
+        let mut table = Biff8StyleTable::default();
+        let request = Biff8StyleRequest {
+            border_left: Some(Biff8BorderStyle::Thin),
+            border_right: Some(Biff8BorderStyle::Medium),
+            border_top: Some(Biff8BorderStyle::Dashed),
+            border_bottom: Some(Biff8BorderStyle::Double),
+            border_left_color: Some(Biff8Color::Indexed(10)),
+            border_right_color: Some(Biff8Color::Indexed(11)),
+            border_top_color: Some(Biff8Color::Indexed(12)),
+            border_bottom_color: Some(Biff8Color::Indexed(13)),
+            ..Biff8StyleRequest::default()
+        };
+        let _ = table.resolve_xf(&request, XF_GENERAL);
+        let xf = table.custom_xfs()[0];
+        let brd1 = u32::from_le_bytes(xf[10..14].try_into().expect("brd1"));
+        let brd2 = u32::from_le_bytes(xf[14..18].try_into().expect("brd2"));
+        assert_eq!(brd1 & 0x0F, 1);
+        assert_eq!((brd1 >> 4) & 0x0F, 2);
+        assert_eq!((brd1 >> 8) & 0x0F, 3);
+        assert_eq!((brd1 >> 12) & 0x0F, 6);
+        assert_eq!((brd1 >> 16) & 0x7F, 10);
+        assert_eq!((brd1 >> 23) & 0x7F, 11);
+        assert_eq!(brd2 & 0x7F, 12);
+        assert_eq!((brd2 >> 7) & 0x7F, 13);
     }
 }

@@ -237,14 +237,15 @@ fn facade_borrowed_xlsx_stream_is_real_and_remains_caller_owned() -> Result<()> 
         .do_write([Value("biff8".to_owned())])?;
     // OLE/CFB compound-document signature (D0 CF 11 E0).
     assert!(xls_stream.bytes.starts_with(&[0xD0, 0xCF, 0x11, 0xE0]));
-    // Phase 5.3: XLS password is now supported via BIFF8 RC4
+    let mut encrypted_xls_stream = FacadeProbeWrite::default();
+    EasyExcel::write::<Value>("response.xls")
+        .password("123456")
+        .to_writer(&mut encrypted_xls_stream)
+        .do_write([Value("encrypted".to_owned())])?;
     assert!(
-        EasyExcel::write::<Value>("response.xls")
-            .password("123456")
-            .to_writer(&mut FacadeProbeWrite::default())
-            .do_write([Value("encrypted".to_owned())])
-            .is_ok()
+        encrypted_xls_stream
+            .bytes
+            .starts_with(&[0xD0, 0xCF, 0x11, 0xE0])
     );
     Ok(())
 }
-

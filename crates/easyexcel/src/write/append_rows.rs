@@ -2,7 +2,7 @@
 //!
 //! 对应 Java：`com.alibaba.excel.write.executor.ExcelWriteAddExecutor`（追加写入口）。
 
-use crate::core::{ExcelError, ExcelRow, ExcelWriteMetadata, Result, WriteCellData, WriteHandler};
+use crate::core::{ExcelError, ExcelRow, ExcelWriteMetadata, Result, WriteHandler};
 use easyexcel_xlsx::xlsx::generation::{self, Worksheet};
 
 use crate::write::excel_writer_core::{
@@ -73,7 +73,7 @@ where
     )
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 /// 对应 Java：com.alibaba.excel.write.executor.ExcelWriteAddExecutor。
 pub(crate) fn append_rows_to_worksheet_with_gzip_and_context<T, I>(
     worksheet: &mut Worksheet,
@@ -110,7 +110,7 @@ where
                 .collect::<Vec<_>>();
             &schema_head
         };
-        write_dynamic_headers_with_handlers(
+        let mut final_head_rows = write_dynamic_headers_with_handlers(
             worksheet,
             &columns,
             head,
@@ -128,11 +128,22 @@ where
             for head_row in row_index..row_index + head_rows {
                 generation::set_row_height(worksheet, head_row, height).map_err(format_error)?;
             }
+            for row in &mut final_head_rows {
+                row.row_height = Some(height);
+            }
+        }
+        if let Some(spill) = gzip_spill.as_mut() {
+            for row in &final_head_rows {
+                spill.write_journal_row(row)?;
+            }
         }
         row_index += head_rows;
     }
     for row in rows {
         if row.is_absent_row() {
+            if let Some(spill) = gzip_spill.as_mut() {
+                spill.write_journal_row(&crate::write::gzip_spill::JournalRow::empty())?;
+            }
             row_index = row_index
                 .checked_add(1)
                 .ok_or_else(|| ExcelError::Format("XLSX row overflow".to_owned()))?;
@@ -152,19 +163,12 @@ where
             row_index,
             &columns,
         )?;
-        if let Some(spill) = gzip_spill.as_mut() {
-            let values = cells
-                .iter()
-                .map(WriteCellData::effective_value)
-                .collect::<Vec<_>>();
-            spill.write_row(&values)?;
-        }
         let dynamic_columns = dynamic_columns_for_row(T::schema().is_empty(), cells.len(), options);
         let row_columns = dynamic_columns.as_deref().unwrap_or(&columns);
         let style = (!options.content_styles.is_empty())
             .then(|| &options.content_styles[data_index % options.content_styles.len()]);
         apply_loop_merges(worksheet, row_index, data_index, &loop_merges)?;
-        write_data_row_with_handlers(
+        let mut final_row = write_data_row_with_handlers(
             worksheet,
             row_index,
             data_index,
@@ -177,6 +181,13 @@ where
             &image_layout,
             holder_scope,
         )?;
+        // journal 必须记录 Handler 执行后的最终物理单元格，晋升时不得重跑回调。
+        if final_row.row_height.is_none() {
+            final_row.row_height = content_height;
+        }
+        if let Some(spill) = gzip_spill.as_mut() {
+            spill.write_journal_row(&final_row)?;
+        }
         row_index += 1;
         data_index += 1;
     }

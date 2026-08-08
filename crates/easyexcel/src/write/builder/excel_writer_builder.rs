@@ -28,6 +28,13 @@ pub struct ExcelWriterBuilder<T> {
     pub(crate) options: WriteOptions,
     pub(crate) handlers: Vec<Box<dyn WriteHandler>>,
     pub(crate) marker: PhantomData<T>,
+    pub(crate) memory_selection: WriteMemorySelection,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum WriteMemorySelection {
+    Auto,
+    Explicit,
 }
 
 impl<T> ExcelWriterBuilder<T>
@@ -41,6 +48,7 @@ where
             options: WriteOptions::default(),
             handlers: Vec::new(),
             marker: PhantomData,
+            memory_selection: WriteMemorySelection::Auto,
         }
     }
 
@@ -50,6 +58,13 @@ where
     /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。
     pub const fn excel_type(mut self, excel_type: crate::support::ExcelTypeEnum) -> Self {
         self.options.excel_type = Some(excel_type);
+        self
+    }
+
+    /// 设置 BIFF8 模板的 VBA 项目策略；默认原样保留且从不执行宏。
+    #[must_use]
+    pub fn biff8_macro_policy(mut self, policy: crate::Biff8MacroPolicy) -> Self {
+        self.options.biff8_macro_policy = policy;
         self
     }
 
@@ -387,7 +402,36 @@ where
     /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Builds a stateful writer for multiple `.write(rows, &sheet)` calls.
     #[must_use]
     pub fn build(self) -> ExcelWriter {
-        ExcelWriter::with_handlers_and_options(self.path, self.handlers, self.options)
+        let backend_selection = self.stateful_backend_selection();
+        ExcelWriter::with_handlers_and_options_and_selection(
+            self.path,
+            self.handlers,
+            self.options,
+            backend_selection,
+        )
+    }
+
+    pub(crate) const fn stateful_backend_selection(&self) -> crate::WriteBackendSelection {
+        match self.memory_selection {
+            WriteMemorySelection::Auto => crate::WriteBackendSelection::AutoUndecided,
+            WriteMemorySelection::Explicit if self.options.constant_memory => {
+                crate::WriteBackendSelection::ExplicitStreaming
+            }
+            WriteMemorySelection::Explicit => crate::WriteBackendSelection::ExplicitInMemory,
+        }
+    }
+
+    fn resolve_automatic_memory_selection(
+        &mut self,
+        excel_type: crate::support::ExcelTypeEnum,
+        has_template: bool,
+    ) {
+        if self.memory_selection == WriteMemorySelection::Auto
+            && excel_type == crate::support::ExcelTypeEnum::Xlsx
+            && stateful_constant_memory_is_safe::<T>(&self.options, &self.handlers, has_template)
+        {
+            self.options.constant_memory = true;
+        }
     }
 
     /// Selects constant-memory output.
@@ -395,6 +439,21 @@ where
     /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。
     pub const fn constant_memory(mut self, enabled: bool) -> Self {
         self.options.constant_memory = enabled;
+        self.memory_selection = WriteMemorySelection::Explicit;
+        self
+    }
+
+    /// Selects Java's `inMemory` behavior explicitly.
+    ///
+    /// `true` keeps the full workbook available for random-access handlers;
+    /// `false` forces SXSSF-style constant-memory output. Without either this
+    /// method or [`Self::constant_memory`], safe one-shot scalar XLSX writes use
+    /// constant memory from the first batch, while advanced/random-access writes
+    /// stay in memory.
+    #[must_use]
+    pub const fn in_memory(mut self, enabled: bool) -> Self {
+        self.options.constant_memory = !enabled;
+        self.memory_selection = WriteMemorySelection::Explicit;
         self
     }
 
@@ -431,6 +490,7 @@ where
         let has_template =
             self.options.template_file.is_some() || self.options.template_bytes.is_some();
         let excel_type = effective_write_type(&self.path, &self.options);
+        self.resolve_automatic_memory_selection(excel_type, has_template);
         self.handlers
             .extend(DefaultWriteHandlerLoader::load_default_handler_for(
                 self.options.use_default_style,
@@ -442,7 +502,7 @@ where
                     "csv cannot use template.".to_owned(),
                 ));
             }
-            write_csv_with_handlers::<T, I>(
+            write_csv_with_handlers::<T, _>(
                 Path::new(&self.path),
                 &self.options,
                 rows,
@@ -451,14 +511,14 @@ where
         } else if is_xls_write(&self.path, &self.options) {
             // Java: EasyExcel.write(...).excelType(ExcelTypeEnum.XLS).sheet().doWrite(...)
             // Minimal BIFF8; with_template uses the easyexcel-xls record-preserving engine.
-            write_xls_with_handlers::<T, I>(
+            write_xls_with_handlers::<T, _>(
                 Path::new(&self.path),
                 &self.options,
                 rows,
                 &mut self.handlers,
             )
         } else {
-            write_xlsx_with_handlers::<T, I>(
+            write_xlsx_with_handlers::<T, _>(
                 Path::new(&self.path),
                 &self.options,
                 rows,
@@ -572,5 +632,152 @@ where
     {
         let data = supplier();
         self.do_fill_with_config(&data, fill_config)
+    }
+}
+
+pub(crate) fn stateful_constant_memory_is_safe<T>(
+    options: &WriteOptions,
+    handlers: &[Box<dyn WriteHandler>],
+    has_template: bool,
+) -> bool
+where
+    T: ExcelRow,
+{
+    if !stateful_streaming_configuration_is_safe::<T>(options, handlers, has_template) {
+        return false;
+    }
+
+    T::schema().iter().all(|column| {
+        column.field_type.is_some_and(is_streaming_scalar_type)
+            && column.loop_merge.is_none()
+            && column.image_path.is_none()
+            && column.comment.is_none()
+            && column.hyperlink.is_none()
+            && column.formula.is_none()
+            && column.data_validation.is_none()
+            && column.conditional_format.is_none()
+            && !column.auto_filter
+    })
+}
+
+pub(crate) fn stateful_streaming_configuration_is_safe<T>(
+    options: &WriteOptions,
+    handlers: &[Box<dyn WriteHandler>],
+    has_template: bool,
+) -> bool
+where
+    T: ExcelRow,
+{
+    !(has_template
+        || handlers
+            .iter()
+            .any(|handler| !handler.backend_capability().is_streaming_safe())
+        || options.auto_width
+        || !options.merge_ranges.is_empty()
+        || !options.loop_merges.is_empty()
+        || T::write_metadata().once_absolute_merge.is_some())
+}
+
+fn is_streaming_scalar_type(field_type: &str) -> bool {
+    let compact = field_type.replace(' ', "");
+    if let Some(inner) = compact
+        .strip_prefix("Option<")
+        .and_then(|value| value.strip_suffix('>'))
+    {
+        return is_streaming_scalar_type(inner);
+    }
+    matches!(
+        compact.as_str(),
+        "String"
+            | "bool"
+            | "i8"
+            | "i16"
+            | "i32"
+            | "i64"
+            | "i128"
+            | "isize"
+            | "u8"
+            | "u16"
+            | "u32"
+            | "u64"
+            | "u128"
+            | "usize"
+            | "f32"
+            | "f64"
+            | "NaiveDate"
+            | "NaiveDateTime"
+            | "BigDecimal"
+            | "BigInt"
+    ) || compact.ends_with("::NaiveDate")
+        || compact.ends_with("::NaiveDateTime")
+        || compact.ends_with("::BigDecimal")
+        || compact.ends_with("::BigInt")
+}
+
+#[cfg(test)]
+mod automatic_memory_tests {
+    use std::io::Read;
+
+    use super::*;
+
+    #[derive(crate::ExcelRow)]
+    struct ScalarRow {
+        id: i64,
+        name: String,
+    }
+
+    struct ProbeHandler;
+    impl WriteHandler for ProbeHandler {}
+
+    #[test]
+    fn plain_xlsx_automatically_selects_constant_memory() {
+        let mut builder = ExcelWriterBuilder::<ScalarRow>::new("auto.xlsx".into());
+        builder.resolve_automatic_memory_selection(crate::support::ExcelTypeEnum::Xlsx, false);
+        assert!(builder.options.constant_memory);
+    }
+
+    #[test]
+    fn advanced_or_explicit_writes_do_not_get_overridden_by_auto_selection() {
+        let mut with_handler = ExcelWriterBuilder::<ScalarRow>::new("handler.xlsx".into())
+            .register_write_handler(ProbeHandler);
+        with_handler.resolve_automatic_memory_selection(crate::support::ExcelTypeEnum::Xlsx, false);
+        assert!(!with_handler.options.constant_memory);
+
+        let mut explicit_in_memory =
+            ExcelWriterBuilder::<ScalarRow>::new("memory.xlsx".into()).in_memory(true);
+        explicit_in_memory
+            .resolve_automatic_memory_selection(crate::support::ExcelTypeEnum::Xlsx, false);
+        assert!(!explicit_in_memory.options.constant_memory);
+    }
+
+    #[test]
+    fn streaming_scalar_type_filter_rejects_image_like_fields() {
+        assert!(is_streaming_scalar_type("Option<chrono::NaiveDate>"));
+        assert!(is_streaming_scalar_type("String"));
+        assert!(!is_streaming_scalar_type("Vec<u8>"));
+        assert!(!is_streaming_scalar_type("DynamicValue"));
+    }
+
+    #[test]
+    fn default_one_shot_write_uses_streaming_xlsx_package()
+    -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let directory = tempfile::tempdir()?;
+        let path = directory.path().join("automatic-streaming.xlsx");
+        ExcelWriterBuilder::<ScalarRow>::new(path.clone()).do_write((0..100).map(|id| {
+            ScalarRow {
+                id: i64::from(id),
+                name: format!("row-{id}"),
+            }
+        }))?;
+
+        let mut archive = zip::ZipArchive::new(std::fs::File::open(path)?)?;
+        assert!(archive.by_name("xl/sharedStrings.xml").is_err());
+        let mut worksheet = String::new();
+        archive
+            .by_name("xl/worksheets/sheet1.xml")?
+            .read_to_string(&mut worksheet)?;
+        assert!(worksheet.contains("t=\"inlineStr\""));
+        assert!(worksheet.contains("row-99"));
+        Ok(())
     }
 }

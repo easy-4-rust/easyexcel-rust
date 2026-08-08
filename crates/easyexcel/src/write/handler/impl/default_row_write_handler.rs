@@ -37,6 +37,18 @@ impl Default for DefaultRowWriteHandler {
 }
 
 impl WriteHandler for DefaultRowWriteHandler {
+    fn backend_capability(&self) -> crate::WriteHandlerCapability {
+        crate::WriteHandlerCapability::StreamingSafe
+    }
+
+    fn requires_row_context(&self) -> bool {
+        false
+    }
+
+    fn requires_cell_context(&self) -> bool {
+        false
+    }
+
     fn before_sheet(&mut self, _context: &WriteSheetContext) -> crate::core::Result<()> {
         // The actual freeze is performed in [`crate::ExcelWriter::write`]
         // by inspecting `WriteOptions.freeze_head`.

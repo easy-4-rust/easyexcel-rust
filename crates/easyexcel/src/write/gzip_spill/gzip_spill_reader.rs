@@ -2,6 +2,7 @@
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub struct GzipSpillReader {
     inner: EngineSpillReader,
+    styles: Vec<JournalCellStyle>,
 }
 
 impl GzipSpillReader {
@@ -22,8 +23,46 @@ impl GzipSpillReader {
         self.inner
             .next_row()
             .map_err(ExcelError::from)?
-            .map(|row| row.into_iter().map(from_spill_value).collect())
+            .map(|row| {
+                row.into_iter()
+                    .filter_map(|value| match value {
+                        GzipCellValue::JournalMetadata { .. } => None,
+                        GzipCellValue::Styled { value, .. } => Some(from_spill_value(*value)),
+                        value => Some(from_spill_value(value)),
+                    })
+                    .collect()
+            })
             .transpose()
     }
-}
 
+    /// 解码 Stateful journal 行，并恢复去重样式及最终行高。
+    pub(crate) fn next_journal_row(&mut self) -> Result<Option<JournalRow>> {
+        let Some(values) = self.inner.next_row().map_err(ExcelError::from)? else {
+            return Ok(None);
+        };
+        let mut row_height = None;
+        let mut cells = Vec::with_capacity(values.len());
+        for value in values {
+            match value {
+                GzipCellValue::JournalMetadata { row_height: height } => row_height = height,
+                GzipCellValue::Styled { value, style_id } => {
+                    let style = self
+                        .styles
+                        .get(usize::try_from(style_id).unwrap_or(usize::MAX))
+                        .cloned()
+                        .ok_or_else(|| {
+                            ExcelError::Format(format!(
+                                "stateful journal references missing style {style_id}"
+                            ))
+                        })?;
+                    cells.push(JournalCell {
+                        value: from_spill_value(*value)?,
+                        style: Some(style),
+                    });
+                }
+                value => cells.push(JournalCell::plain(from_spill_value(value)?)),
+            }
+        }
+        Ok(Some(JournalRow { cells, row_height }))
+    }
+}

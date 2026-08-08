@@ -6,6 +6,7 @@ use crate::context::read_sheet::ReadSheet;
 use crate::context::xlsx::xlsx_read_context::XlsxReadContext;
 use crate::read::holder::xlsx::xlsx_read_sheet_holder::XlsxReadSheetHolder;
 use crate::read::holder::xlsx::xlsx_read_workbook_holder::XlsxReadWorkbookHolder;
+use crate::read::metadata::ReadWorkbook;
 use crate::support::ExcelTypeEnum;
 
 /// 对应 Java：`DefaultXlsxReadContext extends AnalysisContextImpl implements XlsxReadContext`.
@@ -24,6 +25,22 @@ impl DefaultXlsxReadContext {
     pub fn new(options: &ReadOptions) -> Self {
         Self {
             inner: AnalysisContextImpl::new(ExcelTypeEnum::Xlsx, options),
+            xlsx_read_workbook_holder: XlsxReadWorkbookHolder::from_options(options),
+            xlsx_read_sheet_holder: None,
+        }
+    }
+
+    /// 使用 Java `ReadWorkbook` 与实际格式创建 XLSX 读取上下文。
+    ///
+    /// 对应 Java：`DefaultXlsxReadContext(ReadWorkbook, ExcelTypeEnum)`。
+    #[must_use]
+    pub fn from_read_workbook(
+        read_workbook: &ReadWorkbook,
+        actual_excel_type: ExcelTypeEnum,
+    ) -> Self {
+        let options = read_workbook.options();
+        Self {
+            inner: AnalysisContextImpl::new(actual_excel_type, options),
             xlsx_read_workbook_holder: XlsxReadWorkbookHolder::from_options(options),
             xlsx_read_sheet_holder: None,
         }

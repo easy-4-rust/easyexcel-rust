@@ -89,7 +89,10 @@ impl FromExcelCell for RichTextStringData {
         cell: Option<&CellValue>,
         _context: &ConvertContext,
     ) -> Result<Self, ExcelError> {
-        Ok(Self::new(cell.map_or_else(String::new, CellValue::as_text)))
+        Ok(match cell {
+            Some(CellValue::RichText(value)) => value.clone(),
+            _ => Self::new(cell.map_or_else(String::new, CellValue::as_text)),
+        })
     }
 }
 
@@ -120,5 +123,25 @@ mod tests_extra {
             .apply_font_range(1, 3, font);
         assert!(value.write_font().is_some());
         assert_eq!(value.interval_fonts().len(), 1);
+    }
+
+    #[test]
+    fn from_excel_cell_preserves_rich_text_metadata() {
+        let value =
+            RichTextStringData::new("hello").apply_font_range(1, 4, WriteFont::new().bold(true));
+        let cell = CellValue::RichText(value.clone());
+        let context = ConvertContext {
+            sheet_name: "Sheet1".to_owned(),
+            row_index: 0,
+            column_index: Some(0),
+            field: "value",
+            format: None,
+            date_time_format: None,
+            number_format: None,
+            use_1904_windowing: false,
+        };
+        let decoded = RichTextStringData::from_excel_cell(Some(&cell), &context)
+            .expect("rich text conversion");
+        assert_eq!(decoded, value);
     }
 }

@@ -100,7 +100,20 @@ impl<'a> SstCursor<'a> {
 ///
 /// `data` is the merged SST+CONTINUE payload; `breaks` are the byte offsets
 /// where each CONTINUE block started (from [`biff::RawRecord::continue_breaks`]).
+#[must_use]
 pub fn parse_sst(data: &[u8], breaks: &[usize]) -> Vec<String> {
+    parse_sst_rich(data, breaks)
+        .into_iter()
+        .map(|value| value.text)
+        .collect()
+}
+
+/// 解析 SST 及其富文本格式 run，不丢弃 BIFF8 FONT 索引。
+///
+/// `formatting_runs` 的字符位置与 Java `HSSFRichTextString` 一样按 UTF-16
+/// code unit 计数。phonetic 扩展仍被跳过，因为它不属于可见富文本样式。
+#[must_use]
+pub fn parse_sst_rich(data: &[u8], breaks: &[usize]) -> Vec<super::Biff8SstString> {
     let mut out = Vec::new();
     if data.len() < 8 {
         return out;
@@ -125,18 +138,19 @@ pub fn parse_sst(data: &[u8], breaks: &[usize]) -> Vec<String> {
         let c_run = if rich { cur.u16() as usize } else { 0 };
         let cch_ext = if ext { cur.u32() as usize } else { 0 };
 
-        let s = cur.read_chars(cch, compressed);
-        out.push(s);
+        let text = cur.read_chars(cch, compressed);
 
-        // Skip the rich-text run formatting (4 bytes each) and the phonetic
-        // extended blob; these may also cross boundaries but carry no fresh
-        // grbit, so a flat skip is correct.
-        if rich {
-            cur.skip(c_run * 4);
+        let mut formatting_runs = Vec::with_capacity(c_run);
+        for _ in 0..c_run {
+            if cur.remaining() < 4 {
+                break;
+            }
+            formatting_runs.push((cur.u16(), cur.u16()));
         }
         if ext {
             cur.skip(cch_ext);
         }
+        out.push(super::Biff8SstString::new(text, formatting_runs));
     }
 
     out
@@ -145,6 +159,7 @@ pub fn parse_sst(data: &[u8], breaks: &[usize]) -> Vec<String> {
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 Build SST record bytes (the record body, *without* the 4-byte BIFF header),
 /// splitting into the SST record plus CONTINUE records as needed. Returns a
 /// fully-framed byte stream: `[SST hdr][body...][CONTINUE hdr][more]...`.
+#[must_use]
 pub fn build_sst_records(strings: &[String], total_refs: u32) -> Vec<u8> {
     // First serialize the logical payload: 8-byte header then each string.
     // Then we re-frame it into <=8224-byte record chunks, inserting a fresh
@@ -316,6 +331,27 @@ mod tests {
 
         let parsed = parse_sst(&data, &[brk]);
         assert_eq!(parsed, vec!["abcd".to_string()]);
+    }
+
+    #[test]
+    fn rich_sst_preserves_utf16_run_offsets_and_font_indexes() {
+        let mut data = Vec::new();
+        data.extend_from_slice(&1u32.to_le_bytes());
+        data.extend_from_slice(&1u32.to_le_bytes());
+        data.extend_from_slice(&4u16.to_le_bytes());
+        data.push(0x08); // compressed + rich-text runs
+        data.extend_from_slice(&2u16.to_le_bytes());
+        data.extend_from_slice(b"abcd");
+        data.extend_from_slice(&0u16.to_le_bytes());
+        data.extend_from_slice(&5u16.to_le_bytes());
+        data.extend_from_slice(&2u16.to_le_bytes());
+        data.extend_from_slice(&6u16.to_le_bytes());
+
+        let parsed = parse_sst_rich(&data, &[]);
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed[0].text, "abcd");
+        assert_eq!(parsed[0].formatting_runs, vec![(0, 5), (2, 6)]);
+        assert_eq!(parse_sst(&data, &[]), vec!["abcd"]);
     }
 
     #[test]

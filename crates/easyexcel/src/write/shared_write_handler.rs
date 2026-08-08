@@ -3,11 +3,11 @@
 //! 对应 Java：`com.alibaba.excel` 写入路径的 Handler 共享包装（内部类型）。
 
 use std::collections::HashSet;
-use std::sync::{Arc, Mutex};
+use std::{cell::RefCell, rc::Rc};
 
 use crate::core::{
     ExcelCellStyle, ExcelColumn, ExcelWriteMetadata, Result, WriteCellContext, WriteHandler,
-    WriteRowContext, WriteSheetContext, WriteWorkbookContext,
+    WriteHandlerCapability, WriteRowContext, WriteSheetContext, WriteWorkbookContext,
 };
 use crate::event::NotRepeatExecutor;
 
@@ -31,46 +31,61 @@ impl NotRepeatExecutor for SharedHandlerUniqueValue {
 /// lightweight handle while all callbacks still mutate the original handler.
 #[derive(Clone)]
 pub(crate) struct SharedWriteHandler {
-    inner: Arc<Mutex<Box<dyn WriteHandler>>>,
+    inner: Rc<RefCell<Box<dyn WriteHandler>>>,
     order: i32,
     unique_value: Option<SharedHandlerUniqueValue>,
+    requires_row_context: bool,
+    requires_cell_context: bool,
+    backend_capability: WriteHandlerCapability,
 }
 
 impl SharedWriteHandler {
     // 语义敏感：对应 Java Handler 在单线程写入链内的共享设计，`Box<dyn WriteHandler>`
-    // 本身不要求 Send/Sync，Arc<Mutex<>> 仅为生命周期共享，无需线程安全约束。
-    #[allow(clippy::arc_with_non_send_sync)]
+    // 本身不要求 Send/Sync，写入链也只在当前线程顺序执行；Rc<RefCell<>> 既保留
+    // Java parent handler 的共享实例语义，又避免每个 row/cell callback 获取 OS mutex。
     /// 对应 Java：com.alibaba.excel。
     pub(crate) fn new(handler: Box<dyn WriteHandler>) -> Self {
         let order = handler.order();
         let unique_value = handler
             .as_not_repeat_executor()
             .map(|executor| SharedHandlerUniqueValue(executor.unique_value().to_owned()));
+        let requires_row_context = handler.requires_row_context();
+        let requires_cell_context = handler.requires_cell_context();
+        let backend_capability = handler.backend_capability();
         Self {
-            inner: Arc::new(Mutex::new(handler)),
+            inner: Rc::new(RefCell::new(handler)),
             order,
             unique_value,
+            requires_row_context,
+            requires_cell_context,
+            backend_capability,
         }
     }
     /// 对应 Java：com.alibaba.excel。
     pub(crate) fn with_mut<R>(&self, action: impl FnOnce(&mut dyn WriteHandler) -> R) -> R {
-        let mut handler = self
-            .inner
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut handler = self.inner.borrow_mut();
         action(handler.as_mut())
     }
     /// 对应 Java：com.alibaba.excel。
     pub(crate) fn with_ref<R>(&self, action: impl FnOnce(&dyn WriteHandler) -> R) -> R {
-        let handler = self
-            .inner
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let handler = self.inner.borrow();
         action(handler.as_ref())
     }
 }
 
 impl WriteHandler for SharedWriteHandler {
+    fn backend_capability(&self) -> WriteHandlerCapability {
+        self.backend_capability
+    }
+
+    fn requires_row_context(&self) -> bool {
+        self.requires_row_context
+    }
+
+    fn requires_cell_context(&self) -> bool {
+        self.requires_cell_context
+    }
+
     fn order(&self) -> i32 {
         self.order
     }

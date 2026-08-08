@@ -291,6 +291,14 @@ enum LexTok {
         row_rel: bool,
         col_rel: bool,
     },
+    Ref3d {
+        first_sheet: String,
+        last_sheet: String,
+        row: u16,
+        col: u16,
+        row_rel: bool,
+        col_rel: bool,
+    },
     Colon,
     Name(String),
     LParen,
@@ -428,7 +436,7 @@ fn scan_error_constant(chars: &[char], i: &mut usize, expr: &str) -> Result<u8, 
 }
 
 /// 扫描标识符（引用/布尔常量/函数名），`i` 停在标识符之后。
-fn scan_identifier(chars: &[char], i: &mut usize, expr: &str) -> Result<LexTok, ExcelError> {
+fn scan_identifier(chars: &[char], i: &mut usize) -> LexTok {
     let n = chars.len();
     let start = *i;
     while *i < n
@@ -442,26 +450,86 @@ fn scan_identifier(chars: &[char], i: &mut usize, expr: &str) -> Result<LexTok, 
     let text: String = chars[start..*i].iter().collect();
     let upper = text.to_ascii_uppercase();
     if upper == "TRUE" {
-        return Ok(LexTok::Bool(true));
+        return LexTok::Bool(true);
     }
     if upper == "FALSE" {
-        return Ok(LexTok::Bool(false));
+        return LexTok::Bool(false);
     }
     if let Some((row, col, row_rel, col_rel)) = parse_reference(&text) {
-        return Ok(LexTok::Ref {
+        return LexTok::Ref {
             row,
             col,
             row_rel,
             col_rel,
-        });
+        };
     }
-    if text.contains('!') {
-        return Err(format_error(
-            expr,
-            "暂不支持跨工作表引用（如 Sheet2!A1），请使用同表引用",
-        ));
+    LexTok::Name(upper)
+}
+
+/// 尝试扫描 `Sheet2!A1`、`'销售 数据'!$A$1` 或 `Sheet1:Sheet3!A1`。
+fn scan_3d_reference(
+    chars: &[char],
+    i: &mut usize,
+    expr: &str,
+) -> Result<Option<LexTok>, ExcelError> {
+    let start = *i;
+    let mut sheet_spec = String::new();
+    if chars.get(*i) == Some(&'\'') {
+        *i += 1;
+        let mut closed = false;
+        while *i < chars.len() {
+            if chars[*i] == '\'' {
+                if chars.get(*i + 1) == Some(&'\'') {
+                    sheet_spec.push('\'');
+                    *i += 2;
+                } else {
+                    *i += 1;
+                    closed = true;
+                    break;
+                }
+            } else {
+                sheet_spec.push(chars[*i]);
+                *i += 1;
+            }
+        }
+        if !closed {
+            return Err(format_error(expr, "工作表名称缺少结束单引号"));
+        }
+    } else {
+        while *i < chars.len()
+            && (chars[*i].is_ascii_alphanumeric()
+                || matches!(chars[*i], '_' | '.' | ':' | '$'))
+        {
+            sheet_spec.push(chars[*i]);
+            *i += 1;
+        }
     }
-    Ok(LexTok::Name(upper))
+    if chars.get(*i) != Some(&'!') {
+        *i = start;
+        return Ok(None);
+    }
+    *i += 1;
+    let reference_start = *i;
+    while *i < chars.len() && (chars[*i].is_ascii_alphanumeric() || chars[*i] == '$') {
+        *i += 1;
+    }
+    let reference: String = chars[reference_start..*i].iter().collect();
+    let (row, col, row_rel, col_rel) = parse_reference(&reference).ok_or_else(|| {
+        format_error(expr, &format!("非法跨工作表单元格引用 {sheet_spec}!{reference}"))
+    })?;
+    let (first_sheet, last_sheet) = if let Some((first, last)) = sheet_spec.split_once(':') {
+        (first.to_owned(), last.to_owned())
+    } else {
+        (sheet_spec.clone(), sheet_spec)
+    };
+    Ok(Some(LexTok::Ref3d {
+        first_sheet,
+        last_sheet,
+        row,
+        col,
+        row_rel,
+        col_rel,
+    }))
 }
 
 /// 前一个令牌是否期待操作数（用于区分一元/二元 `+` `-`）。
@@ -493,9 +561,19 @@ fn tokenize(expr: &str) -> Result<Vec<LexTok>, ExcelError> {
                 let value = scan_number(&chars, &mut i, expr)?;
                 out.push(LexTok::Number(value));
             }
-            'A'..='Z' | 'a'..='z' | '_' | '$' | '\\' => {
-                let tok = scan_identifier(&chars, &mut i, expr)?;
+            '\'' => {
+                let tok = scan_3d_reference(&chars, &mut i, expr)?.ok_or_else(|| {
+                    format_error(expr, "单引号名称后必须是跨工作表引用")
+                })?;
                 out.push(tok);
+            }
+            'A'..='Z' | 'a'..='z' | '_' | '$' | '\\' => {
+                if let Some(tok) = scan_3d_reference(&chars, &mut i, expr)? {
+                    out.push(tok);
+                } else {
+                    let tok = scan_identifier(&chars, &mut i);
+                    out.push(tok);
+                }
             }
             '#' => {
                 let code = scan_error_constant(&chars, &mut i, expr)?;
@@ -591,7 +669,20 @@ enum RpnTok {
     Bool(bool),
     Err(u8),
     Ref(u16, u16, bool, bool),
+    Ref3d(String, String, u16, u16, bool, bool),
     Area(u16, u16, u16, u16, bool, bool, bool, bool),
+    Area3d(
+        String,
+        String,
+        u16,
+        u16,
+        u16,
+        u16,
+        bool,
+        bool,
+        bool,
+        bool,
+    ),
     Func(u8, u16),
     FuncVar(u8, u8, u16),
     MissArg,
@@ -607,4 +698,3 @@ struct Parser<'a> {
     formula: &'a str,
     out: Vec<RpnTok>,
 }
-

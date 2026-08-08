@@ -2,7 +2,7 @@
 
 use std::sync::{Arc, Mutex};
 
-use crate::{CellValue, ExcelError, Result};
+use crate::{CellValue, ChartMutation, ExcelError, MergeRange, Result};
 
 use super::write_mutation::WriteMutation;
 
@@ -53,6 +53,18 @@ impl WriteMutationPlan {
         })
     }
 
+    pub(crate) fn add_chart(&self, chart: ChartMutation) -> Result<()> {
+        self.push(WriteMutation::AddChart(chart))
+    }
+
+    /// 记录一个在保存前应用的工作表合并区域。
+    pub(crate) fn add_merge(&self, sheet_name: impl Into<String>, range: MergeRange) -> Result<()> {
+        self.push(WriteMutation::AddMerge {
+            sheet_name: sheet_name.into(),
+            range,
+        })
+    }
+
     pub(crate) fn snapshot(&self) -> Result<Vec<WriteMutation>> {
         self.mutations
             .lock()
@@ -65,6 +77,18 @@ impl WriteMutationPlan {
             .lock()
             .map(|mutations| mutations.is_empty())
             .map_err(|_| ExcelError::Format("write mutation plan lock poisoned".to_owned()))
+    }
+
+    /// 返回所有工作表合并修改，供 XLSX 在序列化后以 OOXML 元数据方式应用。
+    pub(crate) fn merge_ranges(&self) -> Result<Vec<(String, MergeRange)>> {
+        Ok(self
+            .snapshot()?
+            .into_iter()
+            .filter_map(|mutation| match mutation {
+                WriteMutation::AddMerge { sheet_name, range } => Some((sheet_name, range)),
+                _ => None,
+            })
+            .collect())
     }
 
     fn push(&self, mutation: WriteMutation) -> Result<()> {

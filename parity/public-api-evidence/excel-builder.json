@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "evidence": [
+    {
+      "id": "excel-builder.compile.v1",
+      "kind": "compile_probe",
+      "java_ids": [
+        "com.alibaba.excel.write.ExcelBuilder",
+        "com.alibaba.excel.write.ExcelBuilder#addContent(Ljava/util/Collection;Lcom/alibaba/excel/write/metadata/WriteSheet;)V",
+        "com.alibaba.excel.write.ExcelBuilder#addContent(Ljava/util/Collection;Lcom/alibaba/excel/write/metadata/WriteSheet;Lcom/alibaba/excel/write/metadata/WriteTable;)V",
+        "com.alibaba.excel.write.ExcelBuilder#fill(Ljava/lang/Object;Lcom/alibaba/excel/write/metadata/fill/FillConfig;Lcom/alibaba/excel/write/metadata/WriteSheet;)V",
+        "com.alibaba.excel.write.ExcelBuilder#finish(Z)V",
+        "com.alibaba.excel.write.ExcelBuilder#merge(IIII)V",
+        "com.alibaba.excel.write.ExcelBuilder#writeContext()Lcom/alibaba/excel/context/WriteContext;",
+        "com.alibaba.excel.write.ExcelBuilderImpl",
+        "com.alibaba.excel.write.ExcelBuilderImpl#<init>(Lcom/alibaba/excel/write/metadata/WriteWorkbook;)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#addContent(Ljava/util/Collection;Lcom/alibaba/excel/write/metadata/WriteSheet;)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#addContent(Ljava/util/Collection;Lcom/alibaba/excel/write/metadata/WriteSheet;Lcom/alibaba/excel/write/metadata/WriteTable;)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#fill(Ljava/lang/Object;Lcom/alibaba/excel/write/metadata/fill/FillConfig;Lcom/alibaba/excel/write/metadata/WriteSheet;)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#finish(Z)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#merge(IIII)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#writeContext()Lcom/alibaba/excel/context/WriteContext;"
+      ],
+      "rust_ids": [
+        "easyexcel:061aa6f983700f725dfc",
+        "easyexcel:3ab060c3324d684dbea0",
+        "easyexcel:bf0af246070ae3dbc72f",
+        "easyexcel:bf56c77c849a014c0698",
+        "easyexcel:5d79eb1ddf278cbc8c25",
+        "easyexcel:bd336b8046432b36ac40",
+        "easyexcel:2657d57257140dd5e12e",
+        "easyexcel:33b1c0862ad6388f3f14",
+        "easyexcel:2be0b8efa5fea60c5c67",
+        "easyexcel:c8fc1e08306fa392a22d",
+        "easyexcel:5d0187881bcc1ca1fe9f",
+        "easyexcel:5f2809812c53d2ae9094",
+        "easyexcel:f75c8e93192cc4c9d65b",
+        "easyexcel:5552a0039e513e89003a",
+        "easyexcel:4e11602d4ddeebeb32d5"
+      ],
+      "profiles": [
+        "stable-default-features",
+        "stable-all-features"
+      ],
+      "commands": [
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel-test",
+          "--test",
+          "public_api_excel_builder_evidence_tests",
+          "--no-run"
+        ],
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel-test",
+          "--all-features",
+          "--test",
+          "public_api_excel_builder_evidence_tests",
+          "--no-run"
+        ]
+      ],
+      "source_files": [
+        {
+          "path": "crates/easyexcel/src/write/excel_builder.rs",
+          "sha256": "f0935db872fa7dfd564addb9eaa7bae02cd86ed4a7c40ea72d55d2bec90193af"
+        },
+        {
+          "path": "crates/easyexcel/src/write/excel_builder_impl.rs",
+          "sha256": "ad2c26cc0ebbf75278935d7f5c5c4d5584c395af7a81c62183af33ad5422c33b"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/public_api_excel_builder_evidence_tests.rs",
+          "sha256": "78ca7ec8acada1e01907d1779d5fbb288dbfab0ac03968d856a03485ddda9e87"
+        }
+      ]
+    },
+    {
+      "id": "excel-builder.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.write.ExcelBuilder",
+        "com.alibaba.excel.write.ExcelBuilder#addContent(Ljava/util/Collection;Lcom/alibaba/excel/write/metadata/WriteSheet;)V",
+        "com.alibaba.excel.write.ExcelBuilder#addContent(Ljava/util/Collection;Lcom/alibaba/excel/write/metadata/WriteSheet;Lcom/alibaba/excel/write/metadata/WriteTable;)V",
+        "com.alibaba.excel.write.ExcelBuilder#fill(Ljava/lang/Object;Lcom/alibaba/excel/write/metadata/fill/FillConfig;Lcom/alibaba/excel/write/metadata/WriteSheet;)V",
+        "com.alibaba.excel.write.ExcelBuilder#finish(Z)V",
+        "com.alibaba.excel.write.ExcelBuilder#merge(IIII)V",
+        "com.alibaba.excel.write.ExcelBuilder#writeContext()Lcom/alibaba/excel/context/WriteContext;",
+        "com.alibaba.excel.write.ExcelBuilderImpl",
+        "com.alibaba.excel.write.ExcelBuilderImpl#<init>(Lcom/alibaba/excel/write/metadata/WriteWorkbook;)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#addContent(Ljava/util/Collection;Lcom/alibaba/excel/write/metadata/WriteSheet;)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#addContent(Ljava/util/Collection;Lcom/alibaba/excel/write/metadata/WriteSheet;Lcom/alibaba/excel/write/metadata/WriteTable;)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#fill(Ljava/lang/Object;Lcom/alibaba/excel/write/metadata/fill/FillConfig;Lcom/alibaba/excel/write/metadata/WriteSheet;)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#finish(Z)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#merge(IIII)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#writeContext()Lcom/alibaba/excel/context/WriteContext;"
+      ],
+      "rust_ids": [
+        "easyexcel:061aa6f983700f725dfc",
+        "easyexcel:3ab060c3324d684dbea0",
+        "easyexcel:bf0af246070ae3dbc72f",
+        "easyexcel:bf56c77c849a014c0698",
+        "easyexcel:5d79eb1ddf278cbc8c25",
+        "easyexcel:bd336b8046432b36ac40",
+        "easyexcel:2657d57257140dd5e12e",
+        "easyexcel:33b1c0862ad6388f3f14",
+        "easyexcel:2be0b8efa5fea60c5c67",
+        "easyexcel:c8fc1e08306fa392a22d",
+        "easyexcel:5d0187881bcc1ca1fe9f",
+        "easyexcel:5f2809812c53d2ae9094",
+        "easyexcel:f75c8e93192cc4c9d65b",
+        "easyexcel:5552a0039e513e89003a",
+        "easyexcel:4e11602d4ddeebeb32d5"
+      ],
+      "commands": [
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel-test",
+          "--test",
+          "public_api_excel_builder_evidence_tests"
+        ]
+      ],
+      "source_files": [
+        {
+          "path": "crates/easyexcel/src/write/excel_builder_impl.rs",
+          "sha256": "ad2c26cc0ebbf75278935d7f5c5c4d5584c395af7a81c62183af33ad5422c33b"
+        },
+        {
+          "path": "crates/easyexcel/src/context/write_fill_executor.rs",
+          "sha256": "b7e6748aa45a0e9b238f90b245c415b789bf9f000fc272be552440e934e3aa76"
+        },
+        {
+          "path": "crates/easyexcel/src/template/builder_fill_executor.rs",
+          "sha256": "2754f07d735bd5070cb1c8dad803126a8a53f0efe83f3fdc7edcec2e9cfdf510"
+        },
+        {
+          "path": "crates/easyexcel/src/template/template_writer.rs",
+          "sha256": "812d86718c00225ae0d6ba3292d394c69cc92e12d2528ee6a5b184e6cd5c97aa"
+        },
+        {
+          "path": "crates/easyexcel/src/context/write_mutation.rs",
+          "sha256": "27322f51470fdb0ab6440af40c0d4d1709f833fbcba6a028dc3b3c397bfc8d32"
+        },
+        {
+          "path": "crates/easyexcel/src/context/write_mutation_plan.rs",
+          "sha256": "a80c7dc4c8ed6e939402213609a6fb789db9ef31c902e894dd36548bbcd99d13"
+        },
+        {
+          "path": "crates/easyexcel/src/excel_writer/write_raw_bytes_to_write_xls_batch_onto_template.rs",
+          "sha256": "7c1b28658d16a2aca1f1d367c29b72028499bf188e3e7b6e65f02efdf7914a06"
+        },
+        {
+          "path": "crates/easyexcel/src/write/excel_writer_core/xlsx_workbook_mutations.rs",
+          "sha256": "2f1ab6868a61f0239ff8e5d86dbbaead7921f32d11f3415143b5cec009e5024d"
+        },
+        {
+          "path": "crates/easyexcel/src/write/excel_writer_core/xls_write.rs",
+          "sha256": "8397f30f37b328f68b43fc77081b01982bf72df2182a63ca701dea47e00987bc"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/public_api_excel_builder_evidence_tests.rs",
+          "sha256": "78ca7ec8acada1e01907d1779d5fbb288dbfab0ac03968d856a03485ddda9e87"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/golden/excel_builder_lifecycle.contract.json",
+          "sha256": "6443668bed0b1556840ff02123498b47d20982f2db640f9225c4d7b68464d0d5"
+        }
+      ]
+    },
+    {
+      "id": "excel-builder.java-golden.v1",
+      "kind": "java_golden",
+      "java_ids": [
+        "com.alibaba.excel.write.ExcelBuilder",
+        "com.alibaba.excel.write.ExcelBuilder#addContent(Ljava/util/Collection;Lcom/alibaba/excel/write/metadata/WriteSheet;)V",
+        "com.alibaba.excel.write.ExcelBuilder#addContent(Ljava/util/Collection;Lcom/alibaba/excel/write/metadata/WriteSheet;Lcom/alibaba/excel/write/metadata/WriteTable;)V",
+        "com.alibaba.excel.write.ExcelBuilder#fill(Ljava/lang/Object;Lcom/alibaba/excel/write/metadata/fill/FillConfig;Lcom/alibaba/excel/write/metadata/WriteSheet;)V",
+        "com.alibaba.excel.write.ExcelBuilder#finish(Z)V",
+        "com.alibaba.excel.write.ExcelBuilder#merge(IIII)V",
+        "com.alibaba.excel.write.ExcelBuilder#writeContext()Lcom/alibaba/excel/context/WriteContext;",
+        "com.alibaba.excel.write.ExcelBuilderImpl",
+        "com.alibaba.excel.write.ExcelBuilderImpl#<init>(Lcom/alibaba/excel/write/metadata/WriteWorkbook;)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#addContent(Ljava/util/Collection;Lcom/alibaba/excel/write/metadata/WriteSheet;)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#addContent(Ljava/util/Collection;Lcom/alibaba/excel/write/metadata/WriteSheet;Lcom/alibaba/excel/write/metadata/WriteTable;)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#fill(Ljava/lang/Object;Lcom/alibaba/excel/write/metadata/fill/FillConfig;Lcom/alibaba/excel/write/metadata/WriteSheet;)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#finish(Z)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#merge(IIII)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#writeContext()Lcom/alibaba/excel/context/WriteContext;"
+      ],
+      "rust_ids": [
+        "easyexcel:061aa6f983700f725dfc",
+        "easyexcel:3ab060c3324d684dbea0",
+        "easyexcel:bf0af246070ae3dbc72f",
+        "easyexcel:bf56c77c849a014c0698",
+        "easyexcel:5d79eb1ddf278cbc8c25",
+        "easyexcel:bd336b8046432b36ac40",
+        "easyexcel:2657d57257140dd5e12e",
+        "easyexcel:33b1c0862ad6388f3f14",
+        "easyexcel:2be0b8efa5fea60c5c67",
+        "easyexcel:c8fc1e08306fa392a22d",
+        "easyexcel:5d0187881bcc1ca1fe9f",
+        "easyexcel:5f2809812c53d2ae9094",
+        "easyexcel:f75c8e93192cc4c9d65b",
+        "easyexcel:5552a0039e513e89003a",
+        "easyexcel:4e11602d4ddeebeb32d5"
+      ],
+      "commands": [
+        [
+          "./scripts/export-java-golden.sh",
+          "--check"
+        ],
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel-test",
+          "--test",
+          "public_api_excel_builder_evidence_tests"
+        ]
+      ],
+      "source_files": [
+        {
+          "path": "scripts/java-golden-export/src/main/java/com/alibaba/easyexcel/golden/JavaGoldenExporter.java",
+          "sha256": "ab75bf585e5a97f444c07dff996365e1e17753c432d1fbf027365e94a1e3568c"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/golden/excel_builder_lifecycle.contract.json",
+          "sha256": "6443668bed0b1556840ff02123498b47d20982f2db640f9225c4d7b68464d0d5"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/public_api_excel_builder_evidence_tests.rs",
+          "sha256": "78ca7ec8acada1e01907d1779d5fbb288dbfab0ac03968d856a03485ddda9e87"
+        }
+      ]
+    }
+  ]
+}

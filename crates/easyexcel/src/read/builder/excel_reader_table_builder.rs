@@ -1,39 +1,27 @@
-//! 对应 Java：`com.alibaba.excel.read.builder.ExcelReaderTableBuilder`.
+//! Pre-4.x `ExcelReaderTableBuilder` source-compatibility metadata.
 //!
-//! Java signature (5 members):
-//! ```java
-//! public class ExcelReaderTableBuilder
-//!     extends AbstractExcelReaderParameterBuilder<ExcelReaderTableBuilder, ReadTable> {
-//!     private ReadTable readTable;
-//!     public ExcelReaderTableBuilder();
-//!     public ExcelReaderTableBuilder(ExcelReader excelReader);
-//!     public ExcelReaderTableBuilder tableNo(Integer tableNo);
-//!     public ReadTable build();
-//!     protected ReadTable parameter();
-//! }
-//! ```
+//! This class is absent from the pinned Java `EasyExcel` 4.0.3 source tree and
+//! therefore does not count toward the 4.0.3 parity inventory.
 
 use crate::core::ReadListener;
 
 use crate::read::excel_reader::ExcelReader;
 use crate::read::metadata::read_table::ReadTable;
 
-/// 对应 Java：`ExcelReaderTableBuilder extends AbstractExcelReaderParameterBuilder`.
+/// Pre-4.x compatibility metadata; this type is absent from Java `EasyExcel`
+/// 4.0.3 and is not part of the 4.0.3 parity surface.
 ///
-/// Rust: table-level configuration is sparse in this port because
-/// `ReadTable` is an in-memory struct (the Java type itself is
-/// minimal). The builder here mostly carries `head_row_number` and
-/// `use_scientific_format` for parity with the sheet builder.
+/// It remains available for downstream source compatibility, but it does not
+/// bind or execute an [`ExcelReader`]. Use [`super::excel_reader_sheet_builder::ExcelReaderSheetBuilder`]
+/// for executable per-sheet configuration.
+#[deprecated(note = "absent from EasyExcel 4.0.3; use ExcelReaderSheetBuilder")]
 #[derive(Debug, Clone, Default)]
 pub struct ExcelReaderTableBuilder {
     /// Mirrors `ExcelReaderTableBuilder.tableNo`.
     pub table_no: Option<i32>,
-    /// Mirrors `AbstractExcelReaderParameterBuilder.headRowNumber`.
-    pub head_row_number: Option<i32>,
-    /// Mirrors `AbstractExcelReaderParameterBuilder.useScientificFormat`.
-    pub use_scientific_format: Option<bool>,
 }
 
+#[allow(deprecated)]
 impl ExcelReaderTableBuilder {
     /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderTableBuilder。 Creates an empty table builder. (Java `ExcelReaderTableBuilder()`)
     #[must_use]
@@ -74,26 +62,11 @@ impl ExcelReaderTableBuilder {
     pub fn build(&self) -> ReadTable {
         ReadTable::with_table_no(self.table_no.unwrap_or(0))
     }
-
-    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderTableBuilder。 Sets the head row number. (Java
-    /// `AbstractExcelReaderParameterBuilder.headRowNumber(Integer)`)
-    #[must_use]
-    pub fn head_row_number(mut self, head_row_number: i32) -> Self {
-        self.head_row_number = Some(head_row_number);
-        self
-    }
-
-    /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderTableBuilder。 Toggles scientific-format coercion. (Java
-    /// `AbstractExcelReaderParameterBuilder.useScientificFormat(Boolean)`)
-    #[must_use]
-    pub fn use_scientific_format(mut self, enabled: bool) -> Self {
-        self.use_scientific_format = Some(enabled);
-        self
-    }
 }
 
 #[cfg(test)]
 mod tests {
+    #![allow(deprecated)]
     use std::io::Write;
 
     use crate::core::{AnalysisContext, DynamicRow, ReadListener, Result};
@@ -147,22 +120,10 @@ mod tests {
 
         let builder = ExcelReaderTableBuilder::with_excel_reader(&reader);
         assert_eq!(builder.table_no, None);
-        assert_eq!(builder.head_row_number, None);
-        assert_eq!(builder.use_scientific_format, None);
 
         // 未设置 tableNo 时默认 0（对应 Java：ReadTable 默认 tableNo）
         let table = ExcelReaderTableBuilder::new().build();
         assert_eq!(table.table_no(), 0);
         Ok(())
-    }
-
-    #[test]
-    fn table_builder_stores_parameter_builder_knobs() {
-        // 对应 Java：AbstractExcelReaderParameterBuilder 继承方法
-        let builder = ExcelReaderTableBuilder::new()
-            .head_row_number(2)
-            .use_scientific_format(true);
-        assert_eq!(builder.head_row_number, Some(2));
-        assert_eq!(builder.use_scientific_format, Some(true));
     }
 }

@@ -11,6 +11,12 @@ pub struct Biff8Sheet {
     pub row_heights: BTreeMap<u16, u16>,
     /// Merged regions (Java `addMergedRegion` / `MergedCellsTable`).
     pub merges: Vec<Biff8Merge>,
+    /// Cell hyperlinks emitted as BIFF8 HLINK records.
+    pub hyperlinks: Vec<Biff8Hyperlink>,
+    /// 单元格批注；序列化为 MSODRAWING/OBJ/TXO/CONTINUE/NOTE 记录组。
+    pub comments: Vec<Biff8Comment>,
+    /// 内嵌 BIFF8 图表。
+    pub charts: Vec<Biff8Chart>,
     /// Frozen panes as `(rows, cols)` — Java `Sheet.createFreezePane(row, col)`,
     /// emitted as a `PANE` record + `WINDOW2` fFrozen flags.
     pub freeze: Option<(u16, u16)>,
@@ -30,10 +36,20 @@ impl Biff8Sheet {
             column_widths: BTreeMap::new(),
             row_heights: BTreeMap::new(),
             merges: Vec::new(),
+            hyperlinks: Vec::new(),
+            comments: Vec::new(),
+            charts: Vec::new(),
             freeze: None,
             next_row: 0,
             next_data_index: 0,
         }
+    }
+
+    /// 添加已经完成坐标与系列校验的内嵌图表。
+    ///
+    /// 对应 Java：`HSSFPatriarch#createChart(ClientAnchor)`。
+    pub fn add_chart(&mut self, chart: Biff8Chart) {
+        self.charts.push(chart);
     }
 
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 Validates a format-neutral row index against BIFF8 limits.
@@ -129,6 +145,101 @@ impl Biff8Sheet {
         Ok(())
     }
 
+    /// Adds a URL hyperlink attached to one cell.
+    ///
+    /// 对应 Java：`HSSFCell#setHyperlink(Hyperlink)` / `HyperlinkRecord`。
+    ///
+    /// # Errors
+    ///
+    /// Returns a BIFF8 format error for invalid coordinates, embedded NULs, or
+    /// a link whose encoded HLINK payload exceeds the BIFF8 record limit.
+    pub fn add_hyperlink(
+        &mut self,
+        row: u32,
+        col: usize,
+        url: impl Into<String>,
+        label: impl Into<String>,
+    ) -> Result<()> {
+        self.add_typed_hyperlink(
+            row,
+            row,
+            col,
+            col,
+            url,
+            label,
+            Biff8HyperlinkKind::Url,
+        )
+    }
+
+    /// 添加带类型和覆盖范围的 BIFF8 超链接。
+    ///
+    /// 对应 Java：`HSSFCell#setHyperlink(Hyperlink)` 以及 POI
+    /// `Hyperlink#setFirstRow/setLastRow/setFirstColumn/setLastColumn`。
+    ///
+    /// # Errors
+    ///
+    /// 坐标越界、范围倒置、文本包含 NUL 或 HLINK 记录超过 BIFF8 上限时返回错误。
+    #[allow(clippy::too_many_arguments)]
+    pub fn add_typed_hyperlink(
+        &mut self,
+        first_row: u32,
+        last_row: u32,
+        first_col: usize,
+        last_col: usize,
+        address: impl Into<String>,
+        label: impl Into<String>,
+        kind: Biff8HyperlinkKind,
+    ) -> Result<()> {
+        let hyperlink = Biff8Hyperlink::new_range(
+            checked_row_index(first_row)?,
+            checked_row_index(last_row)?,
+            checked_column_index(first_col)?,
+            checked_column_index(last_col)?,
+            address.into(),
+            label.into(),
+            kind,
+        )?;
+        self.hyperlinks.push(hyperlink);
+        Ok(())
+    }
+
+    /// 添加单元格批注。
+    ///
+    /// 对应 Java：`HSSFCell#setCellComment(HSSFComment)`。
+    ///
+    /// # Errors
+    ///
+    /// 坐标越界、文本或作者包含 NUL、文本超过 BIFF8 TXO 长度时返回错误。
+    pub fn add_comment(
+        &mut self,
+        row: u32,
+        col: usize,
+        text: impl Into<String>,
+        author: impl Into<String>,
+    ) -> Result<()> {
+        let text = text.into();
+        let author = author.into();
+        if text.contains('\0') || author.contains('\0') {
+            return Err(ExcelError::Xls(
+                "BIFF8 comment text and author cannot contain NUL".to_owned(),
+            ));
+        }
+        if text.encode_utf16().count() > usize::from(u16::MAX)
+            || author.encode_utf16().count() > usize::from(u16::MAX)
+        {
+            return Err(ExcelError::Xls(
+                "BIFF8 comment text or author exceeds 65535 UTF-16 units".to_owned(),
+            ));
+        }
+        self.comments.push(Biff8Comment::new(
+            checked_row_index(row)?,
+            checked_column_index(col)?,
+            text,
+            author,
+        ));
+        Ok(())
+    }
+
     /// Returns exclusive `(max_row, max_col)` for the DIMENSION record.
     fn dimensions(&self) -> (u32, u16) {
         let mut max_row = 0u32;
@@ -144,4 +255,3 @@ impl Biff8Sheet {
         (max_row, max_col)
     }
 }
-

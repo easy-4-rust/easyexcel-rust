@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use crate::core::{AnalysisContext, ExcelError, ExcelRow, ReadListener, Result};
 
-use crate::analysis::excel_read_executor::ExcelReadExecutor;
+use crate::analysis::excel_read_executor::{ExcelReadExecutor, NoopDynamicReadListener};
 use crate::context::{DefaultXlsxReadContext, ReadSheet, XlsxReadContext};
 use crate::read::list_xlsx_sheets;
 use crate::{ReadOptions, read_xlsx};
@@ -123,7 +123,7 @@ impl XlsxSaxAnalyser {
         L: ReadListener<T>,
     {
         let options = self.options.clone();
-        self.execute::<T, L>(&options, listener)
+        ExcelReadExecutor::execute_with_listener::<T, L>(self, &options, listener)
     }
 
     fn execute_with_options<T, L>(&mut self, options: &ReadOptions, listener: &mut L) -> Result<()>
@@ -159,7 +159,15 @@ impl ExcelReadExecutor for XlsxSaxAnalyser {
         &self.sheet_list
     }
 
-    fn execute<T, L>(&mut self, options: &ReadOptions, listener: &mut L) -> Result<()>
+    fn execute(&mut self) -> Result<()> {
+        let options = self.options.clone();
+        self.execute_with_options::<crate::core::DynamicRow, _>(
+            &options,
+            &mut NoopDynamicReadListener,
+        )
+    }
+
+    fn execute_with_listener<T, L>(&mut self, options: &ReadOptions, listener: &mut L) -> Result<()>
     where
         T: ExcelRow,
         L: ReadListener<T>,
@@ -234,8 +242,15 @@ mod tests {
         };
         let mut analyser =
             XlsxSaxAnalyser::from_path(file.path(), options.clone()).expect("analyser");
+        ExcelReadExecutor::execute(&mut analyser)?;
+        assert!(analyser.last_error().is_none());
+
         let mut listener = CollectingListener::default();
-        ExcelReadExecutor::execute::<DynamicRow, _>(&mut analyser, &options, &mut listener)?;
+        ExcelReadExecutor::execute_with_listener::<DynamicRow, _>(
+            &mut analyser,
+            &options,
+            &mut listener,
+        )?;
         assert_eq!(listener.rows.len(), 1);
         assert!(analyser.last_error().is_none());
         Ok(())

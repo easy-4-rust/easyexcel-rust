@@ -8,6 +8,7 @@ use chrono::{NaiveDate, NaiveDateTime};
 use crate::core::enum_cell_data_type::CellDataType;
 use crate::core::image_data::ImageData;
 use crate::core::rich_text_string_data::RichTextStringData;
+use crate::core::{CoordinateData, HyperlinkType};
 
 /// 对应 Java：com.alibaba.excel.metadata.data.`CellData<T>`。 A backend-neutral Excel cell value.
 ///
@@ -43,6 +44,17 @@ pub enum CellValue {
         url: String,
         /// Displayed cell text.
         text: String,
+    },
+    /// Java `HyperlinkData` 的完整超链接类型及覆盖坐标。
+    HyperlinkWithMetadata {
+        /// 链接目标。
+        address: String,
+        /// 显示文本。
+        text: String,
+        /// URL、文档、邮件、文件或 NONE 类型。
+        hyperlink_type: HyperlinkType,
+        /// 绝对/相对覆盖范围；写入时相对当前单元格求值。
+        coordinates: CoordinateData,
     },
     /// A value decorated with an Excel cell note/comment.
     Comment {
@@ -84,7 +96,7 @@ impl CellValue {
             Self::Decimal(value) => value.to_string(),
             Self::Date(value) => value.format("%Y-%m-%d").to_string(),
             Self::DateTime(value) => value.format("%Y-%m-%d %H:%M:%S").to_string(),
-            Self::Hyperlink { text, .. } => text.clone(),
+            Self::Hyperlink { text, .. } | Self::HyperlinkWithMetadata { text, .. } => text.clone(),
             Self::RichText(value) => value.text_string().to_owned(),
             Self::Comment { value, .. } | Self::Images { value, .. } => value.as_text(),
         }
@@ -95,7 +107,9 @@ impl CellValue {
     pub fn data_type(&self) -> CellDataType {
         match self {
             Self::Empty => CellDataType::Empty,
-            Self::String(_) | Self::Hyperlink { .. } => CellDataType::String,
+            Self::String(_) | Self::Hyperlink { .. } | Self::HyperlinkWithMetadata { .. } => {
+                CellDataType::String
+            }
             Self::Bool(_) => CellDataType::Boolean,
             Self::Int(_) | Self::Float(_) | Self::Decimal(_) => CellDataType::Number,
             Self::Date(_) | Self::DateTime(_) => CellDataType::Date,

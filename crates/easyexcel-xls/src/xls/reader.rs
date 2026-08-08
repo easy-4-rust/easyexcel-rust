@@ -24,6 +24,15 @@ use crate::biff8::builtin_format_code;
 ///
 /// 输入不是有效 OLE2 容器、缺少 Workbook 流或 BIFF8 记录损坏时返回错误。
 pub fn read<R: Read + Seek>(reader: R) -> Result<Workbook> {
+    read_with_password(reader, None)
+}
+
+/// 从 seekable reader 读取 XLS，并使用调用方密码解密 BIFF8 `CryptoAPI` 工作簿。
+///
+/// # Errors
+///
+/// 输入无效、加密类型不支持、未提供密码或密码错误时返回错误。
+pub fn read_with_password<R: Read + Seek>(reader: R, password: Option<&str>) -> Result<Workbook> {
     let mut cf = cfb::CompoundFile::open(reader)
         .map_err(|e| Error::Cfb(format!("not a valid OLE2 file: {e}")))?;
 
@@ -66,9 +75,33 @@ pub fn read<R: Read + Seek>(reader: R) -> Result<Workbook> {
         }
     }
 
-    let mut wb = parse_workbook_stream(&wb_bytes)?;
+    let has_filepass = contains_filepass(&wb_bytes);
+    let (workbook_stream, decrypted) = if has_filepass {
+        let password = password.ok_or_else(|| {
+            Error::PasswordProtected("legacy XLS (BIFF8) CryptoAPI RC4".to_owned())
+        })?;
+        (
+            crate::biff8::decrypt_crypto_api_workbook_stream(&wb_bytes, password)?,
+            true,
+        )
+    } else {
+        (wb_bytes, false)
+    };
+    let mut wb = parse_workbook_stream(&workbook_stream, decrypted)?;
     wb.opaque = opaque;
     Ok(wb)
+}
+
+fn contains_filepass(workbook_stream: &[u8]) -> bool {
+    for record in Records::new(workbook_stream) {
+        if record.typ == biff::FILEPASS {
+            return true;
+        }
+        if record.typ == biff::EOF {
+            return false;
+        }
+    }
+    false
 }
 
 fn pick_workbook_stream(names: &[String]) -> Option<String> {
@@ -109,7 +142,7 @@ struct BoundSheet {
     is_worksheet: bool,
 }
 
-fn parse_workbook_stream(buf: &[u8]) -> Result<Workbook> {
+fn parse_workbook_stream(buf: &[u8], decrypted: bool) -> Result<Workbook> {
     let mut records = Records::new(buf);
 
     // The first record must be a BOF for the globals substream.
@@ -130,9 +163,11 @@ fn parse_workbook_stream(buf: &[u8]) -> Result<Workbook> {
         match rec.typ {
             biff::EOF => break,
             biff::FILEPASS => {
-                return Err(Error::PasswordProtected(
-                    "legacy XLS (BIFF8) RC4/XOR encryption; not supported".to_string(),
-                ));
+                if !decrypted {
+                    return Err(Error::PasswordProtected(
+                        "legacy XLS (BIFF8) CryptoAPI RC4".to_owned(),
+                    ));
+                }
             }
             biff::DATEMODE if rec.data.len() >= 2 && biff::u16le(&rec.data, 0) == 1 => {
                 globals.date_system = DateSystem::Date1904;
@@ -576,7 +611,7 @@ mod tests {
             );
             bytes.extend_from_slice(&payload);
         }
-        let workbook = parse_workbook_stream(&bytes).expect("parse workbook globals");
+        let workbook = parse_workbook_stream(&bytes, false).expect("parse workbook globals");
         assert!(workbook.sheets.is_empty());
     }
 
@@ -622,6 +657,39 @@ mod tests {
         assert_eq!(s.value(1, 2), CellValue::Number(12.34));
         assert_eq!(s.value(2, 0), CellValue::Number(99.0));
         assert_eq!(s.merged.len(), 1);
+    }
+
+    #[test]
+    fn reads_crypto_api_workbook_with_call_scoped_password() {
+        use crate::biff8::{Biff8Book, Biff8Cell, Biff8Value};
+
+        let mut source = Biff8Book::default();
+        source
+            .create_sheet("Data")
+            .expect("create sheet")
+            .cells
+            .insert(
+                (0, 0),
+                Biff8Cell::general(Biff8Value::Text("encrypted".to_owned())),
+            );
+        let bytes = source
+            .to_cfb_bytes_with_password(Some("123456"))
+            .expect("encrypt workbook");
+
+        assert!(matches!(
+            read(Cursor::new(&bytes)),
+            Err(Error::PasswordProtected(_))
+        ));
+        assert!(matches!(
+            read_with_password(Cursor::new(&bytes), Some("wrong")),
+            Err(Error::WrongPassword)
+        ));
+        let workbook =
+            read_with_password(Cursor::new(&bytes), Some("123456")).expect("decrypt workbook");
+        assert_eq!(
+            workbook.sheets[0].value(0, 0),
+            CellValue::Text("encrypted".to_owned())
+        );
     }
 
     #[test]

@@ -33,7 +33,21 @@ pub fn load_numeric_displays(
     date_1904: bool,
     locale: &SpreadsheetLocale,
 ) -> Result<Biff8SheetDisplays> {
-    let workbook = super::record_stream::read_workbook_stream(path)?;
+    load_numeric_displays_with_password(path, date_1904, locale, None)
+}
+
+/// 从 `.xls` 加载数字显示文本，并使用调用方密码解密 BIFF8 `CryptoAPI` 输入。
+///
+/// # Errors
+///
+/// OLE/CFB、Workbook 流或密码验证失败时返回错误。
+pub fn load_numeric_displays_with_password(
+    path: &Path,
+    date_1904: bool,
+    locale: &SpreadsheetLocale,
+    password: Option<&str>,
+) -> Result<Biff8SheetDisplays> {
+    let workbook = super::record_stream::read_workbook_stream_with_password(path, password)?;
     Ok(format_numeric_displays(&workbook, date_1904, locale))
 }
 

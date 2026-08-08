@@ -21,7 +21,7 @@ use crate::{ReadOptions, SheetSelector};
 /// 对应 Java：`com.alibaba.excel.ExcelReader`.
 pub struct ExcelReader<T, L> {
     analyser: ExcelAnalyserImpl,
-    listener: L,
+    listener: Option<L>,
     marker: PhantomData<T>,
 }
 
@@ -40,7 +40,7 @@ where
     pub fn new(path: impl Into<PathBuf>, options: ReadOptions, listener: L) -> Result<Self> {
         Ok(Self {
             analyser: ExcelAnalyserImpl::from_path(path, options)?,
-            listener,
+            listener: Some(listener),
             marker: PhantomData,
         })
     }
@@ -56,7 +56,7 @@ where
     ) -> Result<Self> {
         Ok(Self {
             analyser: ExcelAnalyserImpl::from_temporary_input(path, temporary_input, options)?,
-            listener,
+            listener: Some(listener),
             marker: PhantomData,
         })
     }
@@ -74,8 +74,16 @@ where
     ///
     /// 当任一工作表的 SAX/记录解析失败，或读取已完成（`finish()` 之后）时返回
     /// [`ExcelError`]。
+    ///
+    /// # Panics
+    ///
+    /// 内部 listener 被 `into_listener` 提前取走而调用方仍继续读取时会 panic。
     pub fn read_all(&mut self) -> Result<()> {
-        ExcelAnalyser::analysis::<T, L>(&mut self.analyser, &mut self.listener)
+        let listener = self
+            .listener
+            .as_mut()
+            .expect("ExcelReader listener is present until into_listener");
+        ExcelAnalyser::analysis_with_listener::<T, L>(&mut self.analyser, listener)
     }
 
     /// 对应 Java：com.alibaba.excel.ExcelReader。 Deprecated Java `read()` alias for [`Self::read_all`].
@@ -93,8 +101,12 @@ where
         T: Clone,
         M: ReadListener<T>,
     {
-        let mut listeners = CompositeReadListener::new(&mut self.listener, listener);
-        ExcelAnalyser::analysis::<T, _>(&mut self.analyser, &mut listeners)
+        let primary = self
+            .listener
+            .as_mut()
+            .expect("ExcelReader listener is present until into_listener");
+        let mut listeners = CompositeReadListener::new(primary, listener);
+        ExcelAnalyser::analysis_with_listener::<T, _>(&mut self.analyser, &mut listeners)
     }
 
     /// 对应 Java：com.alibaba.excel.ExcelReader。 Parses the supplied worksheets. (Java `read(ReadSheet...)`)
@@ -103,8 +115,16 @@ where
     ///
     /// 当 `sheets` 为空、未解析出工作簿类型，或任一工作表的解析失败时返回
     /// [`ExcelError`]。
+    ///
+    /// # Panics
+    ///
+    /// 内部 listener 被 `into_listener` 提前取走而调用方仍继续读取时会 panic。
     pub fn read(&mut self, sheets: &[ReadSheet]) -> Result<&mut Self> {
-        Self::read_sheets_with_listener(&mut self.analyser, &mut self.listener, sheets)?;
+        let listener = self
+            .listener
+            .as_mut()
+            .expect("ExcelReader listener is present until into_listener");
+        Self::read_sheets_with_listener(&mut self.analyser, listener, sheets)?;
         Ok(self)
     }
     /// 对应 Java：com.alibaba.excel.ExcelReader。
@@ -117,7 +137,11 @@ where
         T: Clone,
         M: ReadListener<T>,
     {
-        let mut listeners = CompositeReadListener::new(&mut self.listener, listener);
+        let primary = self
+            .listener
+            .as_mut()
+            .expect("ExcelReader listener is present until into_listener");
+        let mut listeners = CompositeReadListener::new(primary, listener);
         Self::read_sheets_with_listener(&mut self.analyser, &mut listeners, sheets)?;
         Ok(self)
     }
@@ -180,7 +204,7 @@ where
                             crate::ScientificFormatMode::Plain
                         }
                     });
-            ExcelAnalyser::analysis::<T, _>(analyser, listener)?;
+            ExcelAnalyser::analysis_with_listener::<T, _>(analyser, listener)?;
         }
         Ok(())
     }
@@ -212,6 +236,17 @@ where
     /// 对应 Java：com.alibaba.excel.ExcelReader。 Java `Closeable.close()` alias. Finishing is idempotent.
     pub fn close(&mut self) {
         self.finish();
+    }
+
+    /// Consumes the reader after finishing and returns its listener.
+    ///
+    /// This crate-internal handoff lets synchronous facade builders collect
+    /// rows while still routing through the same analyser/executor lifecycle.
+    pub(crate) fn into_listener(mut self) -> L {
+        self.finish();
+        self.listener
+            .take()
+            .expect("ExcelReader listener can only be taken once")
     }
 }
 

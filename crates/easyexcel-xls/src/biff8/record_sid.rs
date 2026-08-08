@@ -12,6 +12,11 @@ pub const EOF_SID: u16 = 0x000A;
 /// CALCMODE 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const CALC_MODE_SID: u16 = 0x000D;
+/// EXTERNSHEET 记录 SID。
+/// 对应 Java：POI `ExternSheetRecord`。
+pub const EXTERNAL_SHEET_SID: u16 = 0x0017;
+/// LBL/NAME 记录 SID。
+pub const NAME_SID: u16 = 0x0018;
 /// NOTE 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const NOTE_SID: u16 = 0x001C;
@@ -72,6 +77,9 @@ pub const INTERFACE_END_SID: u16 = 0x00E2;
 /// MERGECELLS 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const MERGE_CELLS_SID: u16 = 0x00E5;
+/// MSODRAWINGGROUP 记录 SID。
+/// 对应 Java：POI `DrawingGroupRecord`。
+pub const MSO_DRAWING_GROUP_SID: u16 = 0x00EB;
 /// MSODRAWING 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const MSO_DRAWING_SID: u16 = 0x00EC;
@@ -87,9 +95,20 @@ pub const EXT_SST_SID: u16 = 0x00FF;
 /// `TxO` 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const TEXT_OBJECT_SID: u16 = 0x01B6;
+/// 旧式条件格式头记录 SID。
+pub const CONDITIONAL_FORMATTING_HEADER_SID: u16 = 0x01B0;
+/// 旧式条件格式规则记录 SID。
+pub const CONDITIONAL_FORMATTING_RULE_SID: u16 = 0x01B1;
+/// 工作表数据校验公共记录 SID。
+pub const DATA_VALIDATION_HEADER_SID: u16 = 0x01B2;
+/// SUPBOOK 记录 SID。
+/// 对应 Java：POI `SupBookRecord`。
+pub const SUP_BOOK_SID: u16 = 0x01AE;
 /// HYPERLINK 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const HYPERLINK_SID: u16 = 0x01B8;
+/// 单个数据校验规则记录 SID。
+pub const DATA_VALIDATION_SID: u16 = 0x01BE;
 /// BLANK 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const BLANK_SID: u16 = 0x0201;
@@ -123,6 +142,9 @@ pub const RK_SID: u16 = 0x027E;
 /// STYLE 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const STYLE_SID: u16 = 0x0293;
+/// Chart AI（数据引用公式）记录 SID。
+/// 对应 Java：POI `LinkedDataRecord`。
+pub const CHART_AI_SID: u16 = 0x1051;
 /// FORMAT 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const FORMAT_SID: u16 = 0x041E;

@@ -431,11 +431,13 @@ fn assert_exception_read_and_write(path: &std::path::Path) {
         .unwrap();
 }
 
+/// Java: `com.alibaba.easyexcel.test.core.exception.ExceptionDataTest#t01ReadAndWrite07`.
 #[test]
 fn exception_t01_read_and_write_xlsx() {
     assert_exception_read_and_write(&temp_path("exception07.xlsx"));
 }
 
+/// Java: `com.alibaba.easyexcel.test.core.exception.ExceptionDataTest#t02ReadAndWrite03`.
 #[test]
 fn exception_t02_read_and_write_xls() {
     assert_exception_read_and_write(&temp_path("exception03.xls"));
@@ -560,14 +562,7 @@ fn encrypt_t01_read_and_write_xlsx() {
 
 #[test]
 fn encrypt_t02_read_and_write_xls() {
-    // Phase 5.3: BIFF8 RC4 encryption implemented.
-    let path = temp_path("encrypt03.xls");
-    EasyExcel::write::<EncryptData>(&path)
-        .password("123456")
-        .sheet("Sheet1")
-        .do_write(encrypt_data())
-        .expect("XLS encrypt write must succeed (Phase 5.3)");
-    assert!(path.exists(), "Encrypted XLS file must exist");
+    assert_encrypt_read_and_write(&temp_path("encrypt03.xls"));
 }
 
 #[test]
@@ -577,18 +572,10 @@ fn encrypt_t03_stream_xlsx() {
 
 #[test]
 fn encrypt_t04_stream_xls() {
-    // Phase 5.3: BIFF8 RC4 encryption implemented.
-    let path = temp_path("encrypt03_stream.xls");
-    EasyExcel::write::<EncryptData>(&path)
-        .password("123456")
-        .sheet("Sheet1")
-        .do_write(encrypt_data())
-        .expect("XLS encrypt write must succeed (Phase 5.3)");
-    assert!(path.exists(), "Encrypted XLS file must exist");
+    assert_encrypt_read_and_write(&temp_path("encrypt03_stream.xls"));
 }
 
 // ============================================================================
 // ConverterDataTest (8 tests)
 // Java: com.alibaba.easyexcel.test.core.converter.ConverterDataTest
 // ============================================================================
-

@@ -77,6 +77,7 @@ impl<'a> SheetStyleContext<'a> {
             handler_cell: None,
             converted_cell: None,
             converted_data_format: None,
+            ignore_fill_style: false,
             global: self.global,
         }
     }

@@ -8,7 +8,9 @@
 
 use std::path::Path;
 
-use crate::core::{CellValue, ExcelError, ImageData, Result, RichTextStringData};
+use crate::core::{
+    CellValue, CoordinateData, ExcelError, HyperlinkType, ImageData, Result, RichTextStringData,
+};
 #[cfg(test)]
 use bigdecimal::BigDecimal;
 use chrono::{NaiveDate, NaiveDateTime};
@@ -20,6 +22,15 @@ use easyexcel_io::{
 pub use easyexcel_io::io::gzip_record::{GZIP_MAGIC, file_has_gzip_magic};
 
 include!("gzip_spill/gzip_spill_snapshot.rs");
+
+mod journal_cell_style;
+pub(crate) use journal_cell_style::JournalCellStyle;
+
+mod journal_cell;
+pub(crate) use journal_cell::JournalCell;
+
+mod journal_row;
+pub(crate) use journal_row::JournalRow;
 
 include!("gzip_spill/gzip_sheet_data_writer.rs");
 
@@ -42,6 +53,24 @@ fn to_spill_value(value: &CellValue) -> Result<GzipCellValue> {
         CellValue::Hyperlink { url, text } => GzipCellValue::Hyperlink {
             url: url.clone(),
             text: text.clone(),
+        },
+        CellValue::HyperlinkWithMetadata {
+            address,
+            text,
+            hyperlink_type,
+            coordinates,
+        } => GzipCellValue::TypedHyperlink {
+            address: address.clone(),
+            text: text.clone(),
+            kind: hyperlink_type_to_spill(*hyperlink_type),
+            first_row: coordinates.get_first_row_index(),
+            first_col: coordinates.get_first_column_index(),
+            last_row: coordinates.get_last_row_index(),
+            last_col: coordinates.get_last_column_index(),
+            relative_first_row: coordinates.get_relative_first_row_index(),
+            relative_first_col: coordinates.get_relative_first_column_index(),
+            relative_last_row: coordinates.get_relative_last_row_index(),
+            relative_last_col: coordinates.get_relative_last_column_index(),
         },
         CellValue::Comment { value, text } => GzipCellValue::Comment {
             value: Box::new(to_spill_value(value)?),
@@ -79,6 +108,33 @@ fn from_spill_value(value: GzipCellValue) -> Result<CellValue> {
         GzipCellValue::Error(text) => CellValue::Error(text),
         GzipCellValue::Formula(text) => CellValue::Formula(text),
         GzipCellValue::Hyperlink { url, text } => CellValue::Hyperlink { url, text },
+        GzipCellValue::TypedHyperlink {
+            address,
+            text,
+            kind,
+            first_row,
+            first_col,
+            last_row,
+            last_col,
+            relative_first_row,
+            relative_first_col,
+            relative_last_row,
+            relative_last_col,
+        } => CellValue::HyperlinkWithMetadata {
+            address,
+            text,
+            hyperlink_type: hyperlink_type_from_spill(kind)?,
+            coordinates: coordinate_data_from_spill(
+                first_row,
+                first_col,
+                last_row,
+                last_col,
+                relative_first_row,
+                relative_first_col,
+                relative_last_row,
+                relative_last_col,
+            ),
+        },
         GzipCellValue::Comment { value, text } => CellValue::Comment {
             value: Box::new(from_spill_value(*value)?),
             text,
@@ -89,7 +145,74 @@ fn from_spill_value(value: GzipCellValue) -> Result<CellValue> {
             value: Box::new(from_spill_value(*value)?),
             images: images.into_iter().map(ImageData::new).collect(),
         },
+        GzipCellValue::Styled { .. } | GzipCellValue::JournalMetadata { .. } => {
+            return Err(ExcelError::Format(
+                "stateful journal metadata used as a scalar spill value".to_owned(),
+            ));
+        }
     })
+}
+
+const fn hyperlink_type_to_spill(value: HyperlinkType) -> u8 {
+    match value {
+        HyperlinkType::None => 0,
+        HyperlinkType::Url => 1,
+        HyperlinkType::Document => 2,
+        HyperlinkType::Email => 3,
+        HyperlinkType::File => 4,
+    }
+}
+
+fn hyperlink_type_from_spill(value: u8) -> Result<HyperlinkType> {
+    match value {
+        0 => Ok(HyperlinkType::None),
+        1 => Ok(HyperlinkType::Url),
+        2 => Ok(HyperlinkType::Document),
+        3 => Ok(HyperlinkType::Email),
+        4 => Ok(HyperlinkType::File),
+        other => Err(ExcelError::Format(format!(
+            "invalid hyperlink type in gzip spill: {other}"
+        ))),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+const fn coordinate_data_from_spill(
+    first_row: Option<u32>,
+    first_col: Option<u16>,
+    last_row: Option<u32>,
+    last_col: Option<u16>,
+    relative_first_row: Option<i32>,
+    relative_first_col: Option<i32>,
+    relative_last_row: Option<i32>,
+    relative_last_col: Option<i32>,
+) -> CoordinateData {
+    let mut value = CoordinateData::new();
+    if let Some(index) = first_row {
+        value = value.first_row_index(index);
+    }
+    if let Some(index) = first_col {
+        value = value.first_column_index(index);
+    }
+    if let Some(index) = last_row {
+        value = value.last_row_index(index);
+    }
+    if let Some(index) = last_col {
+        value = value.last_column_index(index);
+    }
+    if let Some(index) = relative_first_row {
+        value = value.relative_first_row_index(index);
+    }
+    if let Some(index) = relative_first_col {
+        value = value.relative_first_column_index(index);
+    }
+    if let Some(index) = relative_last_row {
+        value = value.relative_last_row_index(index);
+    }
+    if let Some(index) = relative_last_col {
+        value = value.relative_last_column_index(index);
+    }
+    value
 }
 
 #[cfg(test)]
@@ -154,6 +277,14 @@ mod tests {
                 url: "https://x".to_owned(),
                 text: "link".to_owned(),
             },
+            CellValue::HyperlinkWithMetadata {
+                address: "'Other Sheet'!A1".to_owned(),
+                text: "place".to_owned(),
+                hyperlink_type: HyperlinkType::Document,
+                coordinates: CoordinateData::new()
+                    .first_row_index(4)
+                    .relative_last_column_index(2),
+            },
             CellValue::Comment {
                 value: Box::new(CellValue::Bool(true)),
                 text: "note".to_owned(),
@@ -194,6 +325,7 @@ mod tests {
         std::fs::write(&bad_path, b"not a gzip stream").expect("write");
         let mut reader = GzipSpillReader {
             inner: EngineSpillReader::open_path(bad_path, "Sheet1").expect("open"),
+            styles: Vec::new(),
         };
         let error = reader.next_row().expect_err("corrupt stream must fail");
         assert!(matches!(error, ExcelError::Io(_)));

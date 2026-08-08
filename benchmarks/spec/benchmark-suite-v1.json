@@ -55,6 +55,14 @@
     "reread_required": true,
     "max_coefficient_of_variation": 0.10,
     "max_median_throughput_regression": 0.10,
-    "max_peak_rss_regression": 0.15
+    "max_peak_rss_regression": 0.15,
+    "cross_runtime": {
+      "scenarios": ["xlsx-stream-write", "xlsx-event-read"],
+      "worker_counts": [1, 2, 4, 8, 16],
+      "high_concurrency_worker_counts": [8, 16],
+      "min_median_ratio": 1.00,
+      "min_confidence_lower_bound": 0.95,
+      "min_high_concurrency_median_ratio": 0.90
+    }
   }
 }

@@ -2,11 +2,15 @@
 pub struct XlsxCellEventReader<'a> {
     reader: XmlReader<Box<dyn BufRead + 'a>>,
     cell_formats: &'a [XlsxNumberFormat],
+    compiled_cell_formats: Vec<Option<CompiledExcelFormat>>,
     options: XlsxDisplayOptions,
     row_index: u32,
     column_index: usize,
     buffer: Vec<u8>,
     cell_buffer: Vec<u8>,
+    raw_value: String,
+    inline_value: String,
+    formula: String,
     shared_strings: &'a dyn SharedStringCacheReader,
 }
 
@@ -33,11 +37,18 @@ impl<'a> XlsxCellEventReader<'a> {
         Ok(Self {
             reader,
             cell_formats,
+            compiled_cell_formats: cell_formats
+                .iter()
+                .map(XlsxNumberFormat::compile)
+                .collect(),
             options,
             row_index: 0,
             column_index: 0,
             buffer,
             cell_buffer: Vec::with_capacity(256),
+            raw_value: String::with_capacity(32),
+            inline_value: String::with_capacity(64),
+            formula: String::with_capacity(32),
             shared_strings,
         })
     }
@@ -52,28 +63,16 @@ impl<'a> XlsxCellEventReader<'a> {
             self.buffer.clear();
             match self.reader.read_event_into(&mut self.buffer)? {
                 Event::Start(element) if element.local_name().as_ref() == b"row" => {
-                    let values = attributes(&element, self.reader.decoder())?;
-                    self.row_index = values
-                        .get("r")
-                        .map_or(Ok(self.row_index), |value| parse_row_number(value))?;
+                    self.row_index = worksheet_row_index(&element, self.row_index)?;
                     self.column_index = 0;
                 }
                 Event::Start(element) if element.local_name().as_ref() == b"c" => {
-                    let values = attributes(&element, self.reader.decoder())?;
-                    let position = values
-                        .get("r")
-                        .map_or(Ok((self.row_index, self.column_index)), |reference| {
-                            parse_a1_cell_reference(reference)
-                        })?;
-                    let style_index = values
-                        .get("s")
-                        .filter(|value| !value.is_empty())
-                        .map(|value| parse_xlsx_index(value, "style"))
-                        .transpose()?
-                        .unwrap_or_default();
-                    let cell_type = values.get("t").map(String::as_str);
+                    let (position, style_index, cell_type) = worksheet_cell_attributes(
+                        &element,
+                        (self.row_index, self.column_index),
+                    )?;
                     let (value, formula, display_value, decimal_value, date_formatted) =
-                        self.read_cell(style_index, cell_type)?;
+                        self.read_cell(style_index, position.1, cell_type)?;
                     self.row_index = position.0;
                     self.column_index = position.1.saturating_add(1);
                     return Ok(Some(XlsxCellEvent {
@@ -102,10 +101,15 @@ impl<'a> XlsxCellEventReader<'a> {
         }
     }
 
-    fn read_cell(&mut self, style_index: usize, cell_type: Option<&str>) -> Result<ParsedCell> {
-        let mut raw_value = String::new();
-        let mut inline_value = String::new();
-        let mut formula = String::new();
+    fn read_cell(
+        &mut self,
+        style_index: usize,
+        column_index: usize,
+        cell_type: Option<&str>,
+    ) -> Result<ParsedCell> {
+        self.raw_value.clear();
+        self.inline_value.clear();
+        self.formula.clear();
         let mut in_value = false;
         let mut in_formula = false;
         let mut in_text = false;
@@ -132,9 +136,9 @@ impl<'a> XlsxCellEventReader<'a> {
                         in_value,
                         in_formula,
                         in_text,
-                        &mut raw_value,
-                        &mut formula,
-                        &mut inline_value,
+                        &mut self.raw_value,
+                        &mut self.formula,
+                        &mut self.inline_value,
                     );
                 }
                 Event::CData(value) => {
@@ -146,9 +150,9 @@ impl<'a> XlsxCellEventReader<'a> {
                         in_value,
                         in_formula,
                         in_text,
-                        &mut raw_value,
-                        &mut formula,
-                        &mut inline_value,
+                        &mut self.raw_value,
+                        &mut self.formula,
+                        &mut self.inline_value,
                     );
                 }
                 Event::End(element) if element.local_name().as_ref() == b"v" => in_value = false,
@@ -158,12 +162,13 @@ impl<'a> XlsxCellEventReader<'a> {
                     phonetic_depth = phonetic_depth.saturating_sub(1);
                 }
                 Event::End(element) if element.local_name().as_ref() == b"c" => {
-                    let formula = (!formula.is_empty()).then_some(formula);
+                    let formula = (!self.formula.is_empty()).then(|| self.formula.clone());
                     return self.finish_cell(
                         style_index,
+                        column_index,
                         cell_type,
-                        &raw_value,
-                        &inline_value,
+                        &self.raw_value,
+                        &self.inline_value,
                         formula,
                     );
                 }
@@ -180,6 +185,7 @@ impl<'a> XlsxCellEventReader<'a> {
     fn finish_cell(
         &self,
         style_index: usize,
+        column_index: usize,
         cell_type: Option<&str>,
         raw_value: &str,
         inline_value: &str,
@@ -219,21 +225,88 @@ impl<'a> XlsxCellEventReader<'a> {
             }
         };
         let format = self.cell_formats.get(style_index);
-        let date_formatted =
-            number.is_some() && format.is_some_and(XlsxNumberFormat::is_date_format);
+        let compiled_format = self
+            .compiled_cell_formats
+            .get(style_index)
+            .and_then(Option::as_ref);
+        let date_formatted = number.is_some()
+            && compiled_format.is_some_and(CompiledExcelFormat::is_date_format);
         let (display_value, decimal_value) = number.map_or((None, None), |number| {
-            let decimal = number.to_string().parse::<BigDecimal>().ok();
-            let display = format.and_then(|format| {
-                format.display(
-                    number,
-                    self.options.date_1904,
-                    self.options.use_scientific_format,
-                    &self.options.locale,
-                )
-            });
+            let decimal = self
+                .options
+                .retain_decimal_values
+                // Java/POI exposes the precision-normalized numeric value rather
+                // than every binary tail digit serialized by an OOXML producer.
+                .then(|| number.to_string().parse::<BigDecimal>().ok())
+                .flatten();
+            let retain_display = self
+                .options
+                .retain_display_columns
+                .as_ref()
+                .is_none_or(|columns| columns.contains(&column_index));
+            let display = retain_display.then(|| {
+                format.and_then(|format| {
+                    format.display_compiled(
+                        compiled_format,
+                        number,
+                        self.options.date_1904,
+                        self.options.use_scientific_format,
+                        &self.options.locale,
+                    )
+                })
+            }).flatten();
             (display, decimal)
         });
         Ok((value, formula, display_value, decimal_value, date_formatted))
     }
 }
 
+fn worksheet_row_index(element: &BytesStart<'_>, fallback: u32) -> Result<u32> {
+    for attribute in element.attributes().with_checks(false) {
+        let attribute = attribute.map_err(xlsx_error)?;
+        if attribute.key.local_name().as_ref() == b"r" {
+            let value = std::str::from_utf8(attribute.value.as_ref()).map_err(xlsx_error)?;
+            return parse_row_number(value);
+        }
+    }
+    Ok(fallback)
+}
+
+fn worksheet_cell_attributes(
+    element: &BytesStart<'_>,
+    fallback: (u32, usize),
+) -> Result<((u32, usize), usize, Option<&'static str>)> {
+    let mut position = fallback;
+    let mut style_index = 0;
+    let mut cell_type = None;
+    for attribute in element.attributes().with_checks(false) {
+        let attribute = attribute.map_err(xlsx_error)?;
+        let key = attribute.key.local_name();
+        if !matches!(key.as_ref(), b"r" | b"s" | b"t") {
+            continue;
+        }
+        let value = std::str::from_utf8(attribute.value.as_ref()).map_err(xlsx_error)?;
+        match key.as_ref() {
+            b"r" => position = parse_a1_cell_reference(value)?,
+            b"s" if !value.is_empty() => style_index = parse_xlsx_index(value, "style")?,
+            b"t" => {
+                cell_type = Some(match value {
+                    "s" => "s",
+                    "inlineStr" => "inlineStr",
+                    "str" => "str",
+                    "b" => "b",
+                    "e" => "e",
+                    "d" => "d",
+                    "n" => "n",
+                    other => {
+                        return Err(Error::Xlsx(format!(
+                            "unsupported XLSX cell type: {other}"
+                        )));
+                    }
+                });
+            }
+            _ => {}
+        }
+    }
+    Ok((position, style_index, cell_type))
+}

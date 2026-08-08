@@ -6,7 +6,11 @@
 
 use std::marker::PhantomData;
 use std::path::PathBuf;
+use std::sync::Arc;
 
+use easyexcel_io::io::file_utils::TemporaryInput;
+
+use crate::ExcelReader;
 use crate::IntoSheetSelector;
 use crate::core::{
     CellExtraType, CompositeReadListener, Converter, CsvCharset, CustomReadObject, ExcelRow,
@@ -14,7 +18,7 @@ use crate::core::{
 };
 use crate::read::{
     ExcelLocale, ReadCacheMode, ReadOptions, ScientificFormatMode, SheetSelector,
-    StoredReadCacheSelector, read_csv, read_xls, read_xlsx,
+    StoredReadCacheSelector,
 };
 
 /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Event-driven reader builder.
@@ -22,6 +26,7 @@ pub struct ExcelReaderBuilder<T, L> {
     pub(crate) path: PathBuf,
     pub(crate) options: ReadOptions,
     pub(crate) listener: L,
+    pub(crate) temporary_input: Option<Arc<TemporaryInput>>,
     pub(crate) marker: PhantomData<T>,
 }
 
@@ -36,8 +41,31 @@ where
             path,
             options: ReadOptions::default(),
             listener,
+            temporary_input: None,
             marker: PhantomData,
         }
+    }
+
+    /// 从 Java 风格的非 seekable `InputStream` 与监听器构造事件读取 builder。
+    ///
+    /// 输入会物化到临时文件；guard 随 builder 移交给 reader，直至读取完成后才删除。
+    /// 对应 Java：`EasyExcelFactory.read(InputStream, Class, ReadListener)`。
+    ///
+    /// # Errors
+    ///
+    /// 输入读取或临时文件创建失败时返回 `ExcelError`。
+    pub fn from_input_stream<R>(input: R, listener: L) -> Result<Self>
+    where
+        R: std::io::Read,
+    {
+        let temporary_input = Arc::new(easyexcel_xlsx::materialize_excel_input(input)?);
+        Ok(Self {
+            path: temporary_input.path().to_path_buf(),
+            options: ReadOptions::default(),
+            listener,
+            temporary_input: Some(temporary_input),
+            marker: PhantomData,
+        })
     }
 
     /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Registers another listener after the listener supplied to
@@ -60,6 +88,7 @@ where
             path: self.path,
             options: self.options,
             listener: CompositeReadListener::new(self.listener, listener),
+            temporary_input: self.temporary_input,
             marker: PhantomData,
         }
     }
@@ -250,13 +279,57 @@ where
     /// # Errors
     ///
     /// Returns a workbook, sheet-selection, conversion, or listener error.
-    pub fn do_read(mut self) -> Result<()> {
-        if easyexcel_io::path_has_extension(&self.path, "csv") {
-            read_csv::<T, L>(&self.path, &self.options, &mut self.listener)
-        } else if easyexcel_io::path_has_extension(&self.path, "xls") {
-            read_xls::<T, L>(&self.path, &self.options, &mut self.listener)
-        } else {
-            read_xlsx::<T, L>(&self.path, &self.options, &mut self.listener)
+    pub fn do_read(self) -> Result<()> {
+        let mut reader = match self.temporary_input {
+            Some(temporary_input) => ExcelReader::from_temporary_input(
+                self.path,
+                temporary_input,
+                self.options,
+                self.listener,
+            )?,
+            None => ExcelReader::new(self.path, self.options, self.listener)?,
+        };
+        reader.read_all()
+    }
+}
+
+#[cfg(test)]
+mod unified_dispatch_tests {
+    use std::io::Write;
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    use tempfile::NamedTempFile;
+
+    use super::*;
+    use crate::core::{AnalysisContext, DynamicRow};
+
+    struct CountingListener(Arc<AtomicUsize>);
+
+    impl ReadListener<DynamicRow> for CountingListener {
+        fn invoke(&mut self, _data: DynamicRow, _context: &AnalysisContext) -> Result<()> {
+            self.0.fetch_add(1, Ordering::SeqCst);
+            Ok(())
         }
+    }
+
+    fn extensionless_csv() -> Result<NamedTempFile> {
+        let mut file = NamedTempFile::new()?;
+        writeln!(file, "name")?;
+        writeln!(file, "alice")?;
+        Ok(file)
+    }
+
+    #[test]
+    fn event_and_sync_facades_share_magic_based_executor_selection() -> Result<()> {
+        let file = extensionless_csv()?;
+        let calls = Arc::new(AtomicUsize::new(0));
+        crate::EasyExcel::read_dynamic(file.path(), CountingListener(Arc::clone(&calls)))
+            .do_read()?;
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+
+        let rows = crate::EasyExcel::read_dynamic_sync(file.path()).do_read_sync()?;
+        assert_eq!(rows.len(), 1);
+        Ok(())
     }
 }

@@ -60,6 +60,7 @@ where
             handler_cell,
             converted_cell: None,
             converted_data_format,
+            ignore_fill_style: false,
             global,
         }));
         styled_columns.push(physical_index);
@@ -152,7 +153,78 @@ pub(crate) fn apply_xlsx_mutations(
                     .map_err(format_error)?;
                 worksheet.protect_with_password(&password);
             }
+            WriteMutation::AddChart(chart) => add_chart(workbook, &chart)?,
+            // `rust_xlsxwriter::merge_range` 会重写左上角单元格；Java
+            // `Sheet.addMergedRegion` 不会。合并区域因此在工作簿序列化后由
+            // OOXML package 层只修改 `<mergeCells>` 元数据。
+            WriteMutation::AddMerge { .. } => {}
         }
+    }
+    Ok(())
+}
+
+fn add_chart(workbook: &mut Workbook, mutation: &crate::ChartMutation) -> Result<()> {
+    if mutation.series.is_empty() {
+        return Err(ExcelError::Format(
+            "chart mutation requires at least one data series".to_owned(),
+        ));
+    }
+    if mutation.last_row < mutation.first_row || mutation.last_column < mutation.first_column {
+        return Err(ExcelError::Format(
+            "chart mutation anchor end must not precede its start".to_owned(),
+        ));
+    }
+    let chart_type = match mutation.chart_type {
+        crate::ChartType::Bar => generation::ChartType::Bar,
+        crate::ChartType::Line => generation::ChartType::Line,
+        crate::ChartType::Pie => generation::ChartType::Pie,
+    };
+    let mut chart = generation::Chart::new(chart_type);
+    if let Some(title) = &mutation.title {
+        chart.title().set_name(title);
+    }
+    for source in &mutation.series {
+        validate_chart_range(&source.values)?;
+        let series = chart.add_series().set_values((
+            source.values.sheet_name.as_str(),
+            source.values.first_row,
+            source.values.first_column,
+            source.values.last_row,
+            source.values.last_column,
+        ));
+        if let Some(categories) = &source.categories {
+            validate_chart_range(categories)?;
+            series.set_categories((
+                categories.sheet_name.as_str(),
+                categories.first_row,
+                categories.first_column,
+                categories.last_row,
+                categories.last_column,
+            ));
+        }
+        if let Some(name) = &source.name {
+            series.set_name(name.as_str());
+        }
+    }
+
+    let worksheet = workbook
+        .worksheet_from_name(&mutation.sheet_name)
+        .map_err(format_error)?;
+    let width = u32::from(mutation.last_column - mutation.first_column + 1).saturating_mul(64);
+    let height = (mutation.last_row - mutation.first_row + 1).saturating_mul(20);
+    chart.set_width(width).set_height(height);
+    worksheet
+        .insert_chart(mutation.first_row, mutation.first_column, &chart)
+        .map(|_| ())
+        .map_err(format_error)
+}
+
+fn validate_chart_range(range: &crate::ChartRange) -> Result<()> {
+    if range.last_row < range.first_row || range.last_column < range.first_column {
+        return Err(ExcelError::Format(format!(
+            "chart range on sheet '{}' has an end before its start",
+            range.sheet_name
+        )));
     }
     Ok(())
 }
@@ -214,7 +286,7 @@ fn write_mutation_cell(
             &generation::new_format(),
         )
         .map_err(format_error),
-        CellValue::Hyperlink { text, .. } => {
+        CellValue::Hyperlink { text, .. } | CellValue::HyperlinkWithMetadata { text, .. } => {
             generation::write_string(worksheet, row_index, column_index, text)
                 .map_err(format_error)
         }
@@ -231,5 +303,69 @@ fn write_mutation_cell(
         CellValue::Image(_) => Err(ExcelError::Unsupported(
             "workbook handler image mutations require an explicit image anchor".to_owned(),
         )),
+    }
+}
+
+#[cfg(test)]
+mod chart_mutation_tests {
+    use std::io::{Cursor, Read};
+
+    use zip::ZipArchive;
+
+    use super::*;
+    use crate::{ChartMutation, ChartRange, ChartSeries, ChartType};
+
+    #[test]
+    fn applies_backend_neutral_bar_chart_to_xlsx() {
+        let mut workbook = generation::new_workbook();
+        let worksheet = workbook.add_worksheet();
+        worksheet.set_name("Data").expect("sheet name");
+        for row in 0..3 {
+            generation::write_string(worksheet, row, 0, format!("C{row}"))
+                .expect("category");
+            generation::write_number(worksheet, row, 1, f64::from(row + 1)).expect("value");
+        }
+
+        let plan = WriteMutationPlan::default();
+        plan.add_chart(
+            ChartMutation::new("Data", ChartType::Bar, 0, 3, 14, 10)
+                .with_title("Sales")
+                .with_series(
+                    ChartSeries::new(ChartRange::new("Data", 0, 1, 2, 1))
+                        .with_name("Amount")
+                        .with_categories(ChartRange::new("Data", 0, 0, 2, 0)),
+                ),
+        )
+        .expect("queue chart");
+        apply_xlsx_mutations(&mut workbook, &plan).expect("apply chart");
+
+        let bytes = generation::serialize_workbook(&mut workbook).expect("serialize");
+        let mut archive = ZipArchive::new(Cursor::new(bytes)).expect("xlsx zip");
+        let mut xml = String::new();
+        archive
+            .by_name("xl/charts/chart1.xml")
+            .expect("chart part")
+            .read_to_string(&mut xml)
+            .expect("chart xml");
+        assert!(xml.contains("<c:barChart>"));
+        assert!(xml.contains("Sales"));
+        assert!(xml.contains("Data!$A$1:$A$3"));
+        assert!(xml.contains("Data!$B$1:$B$3"));
+    }
+
+    #[test]
+    fn rejects_empty_chart_series() {
+        let mut workbook = generation::new_workbook();
+        workbook
+            .add_worksheet()
+            .set_name("Data")
+            .expect("sheet name");
+        let plan = WriteMutationPlan::default();
+        plan.add_chart(ChartMutation::new("Data", ChartType::Line, 0, 0, 10, 8))
+            .expect("queue chart");
+        assert!(matches!(
+            apply_xlsx_mutations(&mut workbook, &plan),
+            Err(ExcelError::Format(message)) if message.contains("at least one")
+        ));
     }
 }

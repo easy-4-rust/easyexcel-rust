@@ -26,9 +26,19 @@ use crate::markdown::{MarkdownExportBuilder, MarkdownImportBuilder};
 use crate::write::builder::excel_writer_builder::ExcelWriterBuilder;
 
 /// 对应 Java：com.alibaba.excel.EasyExcel。 Static factory matching Java `EasyExcel`'s entry point.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct EasyExcel;
 
 impl EasyExcel {
+    /// 创建 Java 兼容门面实例。
+    ///
+    /// Java 的工厂方法是静态方法，但 `EasyExcel` 与 `EasyExcelFactory` 仍公开无参构造；
+    /// Rust 保留该构造能力，同时所有实际入口继续作为关联函数使用。
+    #[must_use]
+    pub const fn new() -> Self {
+        Self
+    }
+
     /// 创建 XLS、XLSX 或 CSV 到 Markdown 的语义投影 builder。
     #[must_use]
     pub fn export_markdown(
@@ -82,6 +92,26 @@ impl EasyExcel {
         L: ReadListener<T>,
     {
         ExcelReaderBuilder::new(path.into(), listener)
+    }
+
+    /// 从 Java 风格的 `InputStream` 与监听器创建事件读取 builder。
+    ///
+    /// 对应 Java：`EasyExcelFactory.read(InputStream, ReadListener)` 与
+    /// `read(InputStream, Class, ReadListener)`；Rust 通过泛型 `T` 表达 Java 的 `Class` 参数。
+    ///
+    /// # Errors
+    ///
+    /// 输入读取或临时文件创建失败时返回 `ExcelError`。
+    pub fn read_from_input_stream<T, L, R>(
+        input: R,
+        listener: L,
+    ) -> Result<ExcelReaderBuilder<T, L>>
+    where
+        T: ExcelRow,
+        L: ReadListener<T>,
+        R: Read,
+    {
+        ExcelReaderBuilder::from_input_stream(input, listener)
     }
 
     /// 对应 Java：com.alibaba.excel.EasyExcel。 Starts a synchronous read that collects all converted rows.

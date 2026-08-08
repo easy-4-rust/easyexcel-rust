@@ -246,6 +246,7 @@
             handler_cell: None,
             converted_cell: None,
             converted_data_format: Some("0.00"),
+            ignore_fill_style: false,
             global: WriteGlobalFlags::default(),
         };
         let format = cell_format(context);
@@ -275,4 +276,3 @@
         assert!(path.exists());
         Ok(())
     }
-

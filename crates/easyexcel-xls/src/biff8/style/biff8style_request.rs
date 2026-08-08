@@ -29,6 +29,22 @@ pub struct Biff8StyleRequest {
     pub fill_foreground_color: Option<Biff8Color>,
     /// Fill background colour.
     pub fill_background_color: Option<Biff8Color>,
+    /// 左边框线型。
+    pub border_left: Option<Biff8BorderStyle>,
+    /// 右边框线型。
+    pub border_right: Option<Biff8BorderStyle>,
+    /// 上边框线型。
+    pub border_top: Option<Biff8BorderStyle>,
+    /// 下边框线型。
+    pub border_bottom: Option<Biff8BorderStyle>,
+    /// 左边框颜色。
+    pub border_left_color: Option<Biff8Color>,
+    /// 右边框颜色。
+    pub border_right_color: Option<Biff8Color>,
+    /// 上边框颜色。
+    pub border_top_color: Option<Biff8Color>,
+    /// 下边框颜色。
+    pub border_bottom_color: Option<Biff8Color>,
     /// Number format: built-in index or custom code.
     pub number_format: Option<Biff8NumberFormat>,
 }
@@ -51,7 +67,14 @@ impl Biff8StyleRequest {
                 .is_none_or(|pattern| pattern == Biff8FillPattern::None)
             && self.fill_foreground_color.is_none()
             && self.fill_background_color.is_none()
+            && self.border_left.is_none_or(|style| style == Biff8BorderStyle::None)
+            && self.border_right.is_none_or(|style| style == Biff8BorderStyle::None)
+            && self.border_top.is_none_or(|style| style == Biff8BorderStyle::None)
+            && self.border_bottom.is_none_or(|style| style == Biff8BorderStyle::None)
+            && self.border_left_color.is_none()
+            && self.border_right_color.is_none()
+            && self.border_top_color.is_none()
+            && self.border_bottom_color.is_none()
             && self.number_format.is_none()
     }
 }
-

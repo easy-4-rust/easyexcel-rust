@@ -1,0 +1,13 @@
+{
+	"authority":"com.alibaba:easyexcel:4.0.3",
+	"direct_constructor":"com.alibaba.excel.ExcelReader",
+	"reader_class":"com.alibaba.excel.ExcelReader",
+	"analysis_context_class":"com.alibaba.excel.context.xlsx.DefaultXlsxReadContext",
+	"get_analysis_context_same":true,
+	"excel_executor_class":"com.alibaba.excel.analysis.v07.XlsxSaxAnalyser",
+	"finish_then_close":true,
+	"deprecated_read":true,
+	"read_all":true,
+	"read_list_returns_self":true,
+	"read_varargs_returns_self":true
+}

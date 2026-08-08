@@ -31,7 +31,9 @@ impl ExcelReadExecutorKind {
         match excel_type {
             ExcelTypeEnum::Xlsx => XlsxSaxAnalyser::from_path(path, options).map(Self::Xlsx),
             ExcelTypeEnum::Xls => XlsSaxAnalyser::from_path(path, options).map(Self::Xls),
-            ExcelTypeEnum::Csv => Ok(Self::Csv(CsvExcelReadExecutor::from_path(path))),
+            ExcelTypeEnum::Csv => Ok(Self::Csv(CsvExcelReadExecutor::from_path_with_options(
+                path, options,
+            ))),
         }
     }
 
@@ -49,7 +51,7 @@ impl ExcelReadExecutorKind {
         T: ExcelRow,
         L: ReadListener<T>,
     {
-        ExcelReadExecutor::execute::<T, L>(self, options, listener)
+        ExcelReadExecutor::execute_with_listener::<T, L>(self, options, listener)
     }
 
     /// Returns the concrete executor variant's resolved workbook type.
@@ -79,16 +81,33 @@ impl ExcelReadExecutor for ExcelReadExecutorKind {
         }
     }
 
-    fn execute<T, L>(&mut self, options: &ReadOptions, listener: &mut L) -> Result<()>
+    fn execute(&mut self) -> Result<()> {
+        match self {
+            Self::Xlsx(executor) => ExcelReadExecutor::execute(executor),
+            Self::Xls(executor) => ExcelReadExecutor::execute(executor),
+            Self::Csv(executor) => ExcelReadExecutor::execute(executor),
+        }
+    }
+
+    fn execute_with_listener<T, L>(
+        &mut self,
+        options: &ReadOptions,
+        listener: &mut L,
+    ) -> Result<()>
     where
         T: ExcelRow,
         L: ReadListener<T>,
     {
         match self {
-            Self::Xlsx(executor) => executor.execute::<T, L>(options, listener),
-            Self::Xls(executor) => executor.execute::<T, L>(options, listener),
-            Self::Csv(executor) => executor.execute::<T, L>(options, listener),
+            Self::Xlsx(executor) => ExcelReadExecutor::execute_with_listener::<T, L>(
+                executor, options, listener,
+            ),
+            Self::Xls(executor) => ExcelReadExecutor::execute_with_listener::<T, L>(
+                executor, options, listener,
+            ),
+            Self::Csv(executor) => ExcelReadExecutor::execute_with_listener::<T, L>(
+                executor, options, listener,
+            ),
         }
     }
 }
-

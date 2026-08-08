@@ -78,6 +78,8 @@ pub struct WriteOptions {
     pub dynamic_head: Option<Vec<Vec<String>>>,
     /// 用于 ECMA-376 Agile Encryption 的 XLSX 输出密码。
     pub password: Option<String>,
+    /// BIFF8 模板中 VBA 项目的保留、删除或替换策略。
+    pub biff8_macro_policy: easyexcel_xls::biff8::Biff8MacroPolicy,
     /// 用于 CSV 输出的字符编码。
     pub charset: CsvCharset,
     /// CSV 输出是否以编码的字节顺序标记开头。
@@ -126,6 +128,7 @@ impl Default for WriteOptions {
             loop_merges: Vec::new(),
             dynamic_head: None,
             password: None,
+            biff8_macro_policy: easyexcel_xls::biff8::Biff8MacroPolicy::Preserve,
             charset: CsvCharset::default(),
             with_bom: true,
             auto_close_stream: true,

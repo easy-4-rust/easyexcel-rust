@@ -404,6 +404,7 @@ mod write_workbook_test {
 // ---------------------------------------------------------------------------
 
 mod excel_reader_table_builder_test {
+    #![allow(deprecated)]
     //! Preserves the pre-4.x `ExcelReaderTableBuilder` compatibility surface.
     use easyexcel::read::builder::excel_reader_table_builder::ExcelReaderTableBuilder;
 
@@ -434,19 +435,5 @@ mod excel_reader_table_builder_test {
     fn t04_parameter_returns_read_table07() {
         let b = ExcelReaderTableBuilder::new().table_no(4);
         assert_eq!(b.parameter().table_no(), 4);
-    }
-
-    /// Legacy Java: `headRowNumber(Integer)` inherited setter.
-    #[test]
-    fn t05_head_row_number_setter07() {
-        let b = ExcelReaderTableBuilder::new().head_row_number(1);
-        assert_eq!(b.head_row_number, Some(1));
-    }
-
-    /// Legacy Java: `useScientificFormat(Boolean)` inherited setter.
-    #[test]
-    fn t06_use_scientific_format_setter07() {
-        let b = ExcelReaderTableBuilder::new().use_scientific_format(true);
-        assert_eq!(b.use_scientific_format, Some(true));
     }
 }

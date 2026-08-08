@@ -12,6 +12,8 @@ pub struct SstRecordHandler {
     pub unique_string_count: Option<u32>,
     /// Decoded shared strings in SST index order. (Java `XlsCache`)
     pub strings: Vec<String>,
+    /// 富文本 run 与 FONT 索引，按 SST 索引顺序保存。
+    pub rich_strings: Vec<easyexcel_xls::Biff8SstString>,
 }
 
 impl SstRecordHandler {
@@ -27,15 +29,26 @@ impl SstRecordHandler {
     }
 
     /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.SstRecordHandler。 Installs a fully decoded SST after CONTINUE records have been assembled.
-    pub fn process_decoded_sst(&mut self, unique_string_count: u32, strings: Vec<String>) {
+    pub fn process_decoded_sst(
+        &mut self,
+        unique_string_count: u32,
+        strings: Vec<easyexcel_xls::Biff8SstString>,
+    ) {
         self.unique_string_count = Some(unique_string_count);
-        self.strings = strings;
+        self.strings = strings.iter().map(|value| value.text.clone()).collect();
+        self.rich_strings = strings;
     }
 
     /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.SstRecordHandler。 Resolves one SST index.
     #[must_use]
     pub fn get(&self, index: usize) -> Option<&str> {
         self.strings.get(index).map(String::as_str)
+    }
+
+    /// 返回保留 BIFF8 格式 run 的共享字符串。
+    #[must_use]
+    pub fn get_rich(&self, index: usize) -> Option<&easyexcel_xls::Biff8SstString> {
+        self.rich_strings.get(index)
     }
 }
 

@@ -11,16 +11,22 @@ where
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 Builds a stateful writer backed by the configured stream.
     #[must_use]
     pub fn build(self) -> ExcelWriter {
+        let selection = match self.builder.memory_selection {
+            None => crate::WriteBackendSelection::AutoUndecided,
+            Some(true) => crate::WriteBackendSelection::ExplicitInMemory,
+            Some(false) => crate::WriteBackendSelection::ExplicitStreaming,
+        };
         let logical_path = self
             .builder
             .write_workbook
             .output_file
             .unwrap_or_else(|| PathBuf::from("easyexcel.xlsx"));
-        ExcelWriter::with_output_stream(
+        ExcelWriter::with_output_stream_and_selection(
             logical_path,
             self.output,
             self.builder.handlers,
             self.builder.write_workbook.options,
+            selection,
         )
     }
 
@@ -53,4 +59,3 @@ where
         self.sheet().sheet_no(sheet_no).sheet_name(sheet_name)
     }
 }
-

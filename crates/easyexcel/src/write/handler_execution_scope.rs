@@ -68,9 +68,22 @@ impl HandlerExecutionScope {
 /// class metadata and resolves the field-level override from the callback.
 struct AnnotationCellStyleHandler {
     metadata: ExcelWriteMetadata,
+    requires_cell_context: bool,
 }
 
 impl WriteHandler for AnnotationCellStyleHandler {
+    fn backend_capability(&self) -> crate::WriteHandlerCapability {
+        crate::WriteHandlerCapability::StreamingSafe
+    }
+
+    fn requires_row_context(&self) -> bool {
+        false
+    }
+
+    fn requires_cell_context(&self) -> bool {
+        self.requires_cell_context
+    }
+
     fn order(&self) -> i32 {
         crate::constant::order_constant::ANNOTATION_DEFINE_STYLE
     }
@@ -136,8 +149,21 @@ where
         handlers.push(Box::new(widths));
     }
 
+    let has_cell_style = metadata.head_style.is_some()
+        || metadata.head_font_style.is_some()
+        || metadata.content_style.is_some()
+        || metadata.content_font_style.is_some()
+        || columns.iter().any(|(_, _, column)| {
+            column.head_style.is_some()
+                || column.head_font_style.is_some()
+                || column.content_style.is_some()
+                || column.content_font_style.is_some()
+        });
+    // Java 始终注册注解样式处理器，因此即使当前类型没有单元格样式，也必须
+    // 保留其数量、顺序及后续覆盖语义。能力标记仅允许写入热路径跳过空回调。
     handlers.push(Box::new(AnnotationCellStyleHandler {
         metadata: *metadata,
+        requires_cell_context: has_cell_style,
     }));
 
     if metadata.head_row_height.is_some() || metadata.content_row_height.is_some() {

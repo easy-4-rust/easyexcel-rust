@@ -50,6 +50,7 @@ This document is the release gate, not a marketing checklist. A row is marked
 | freeze panes | `freeze_head` / `freeze_panes` | implemented for XLSX and (2026-08-04) BIFF8 `.xls` via `PANE`/`WINDOW2` |
 | `doWrite(Collection)` | `do_write(IntoIterator)` | implemented |
 | streaming write | `do_write_iter(IntoIterator)` | implemented |
+| `inMemory(Boolean)` / SXSSF selection | `in_memory(bool)` / `constant_memory(bool)` plus safe automatic selection | implemented: explicit selection always wins; one-shot XLSX writes automatically use constant-memory output from the first row for scalar schemas without templates, merges, images, formulas, filters, validation, auto-width, or custom handlers; advanced/random-access writes retain the in-memory backend |
 | `ExcelWriter` multi-write lifecycle | `ExcelWriter::write` / `finish` | implemented |
 | `WriteHandler` lifecycle | ordered `WriteHandler` callbacks | implemented |
 | include/exclude columns | builder filters | implemented |
@@ -60,7 +61,7 @@ This document is the release gate, not a marketing checklist. A row is marked
 | `@ColumnWidth` / `@HeadRowHeight` / `@ContentRowHeight` | `#[excel(column_width, head_row_height, content_row_height)]` | implemented: field width overrides type width; registered width strategies override annotations for sheet cols and `ImageLayout`; explicit builder width overrides strategies |
 | `HorizontalCellStyleStrategy` | header and cycling content `CellStyle` | implemented |
 | `@HeadStyle` / `@ContentStyle` / `@HeadFontStyle` / `@ContentFontStyle` | `#[excel(head_style(...), content_style(...), head_font_style(...), content_font_style(...))]` | partial: XLSX cell/font metadata verified; Minimal BIFF8 emits basic FONT/XF/fill/align for `.xls` writes; custom HSSF palettes and full HSSF XF parity remain |
-| formulas/rich text/images/comments/hyperlinks | formula metadata, `CellExtra`, `WriteCellData`, `RichTextStringData`, `WriteFont`, `ImageData`, `CoordinateData`, and `ClientAnchorData` | partial: XLSX formula and comment/hyperlink/merge reads plus formula, Java UTF-16-indexed rich-text font runs, comment, hyperlink, single-image, and ordered `WriteCellData.imageDataList` writes are implemented; multi-image anchors support absolute/relative cell ranges, pixel margins, and all four POI movement modes; image pixel layout reads `SimpleColumnWidthStyleStrategy` / annotation / explicit widths for schema columns; EMF/WMF/PICT/DIB payload encoding and anchor resizing after backend `auto_width` changes remain pending; **BIFF8 image/comment/hyperlink records stay typed `Unsupported`** (see [XLS write capability boundary](#xls-write-capability-boundary)) |
+| formulas/rich text/images/comments/hyperlinks | formula metadata, `CellExtra`, `WriteCellData`, `RichTextStringData`, `WriteFont`, `ImageData`, `CoordinateData`, and `ClientAnchorData` | partial: XLSX formula and comment/hyperlink/merge reads plus formula, Java UTF-16-indexed rich-text font runs, comment, hyperlink, single-image, and ordered `WriteCellData.imageDataList` writes are implemented; multi-image anchors support absolute/relative cell ranges, pixel margins, and all four POI movement modes; image pixel layout reads `SimpleColumnWidthStyleStrategy` / annotation / explicit widths for schema columns; EMF/WMF/PICT/DIB payload encoding and anchor resizing after backend `auto_width` changes remain pending; BIFF8 URL hyperlink write/read and comment read are implemented, while BIFF8 image and comment writes return typed `Unsupported` (see [XLS write capability boundary](#xls-write-capability-boundary)) |
 | `OnceAbsoluteMergeStrategy` | `MergeRange` / `merge_cells` | implemented |
 | `LoopMergeStrategy` | repeating data-row merge metadata | implemented |
 | dynamic and multi-level heads | `head(Vec<Vec<String>>)` | implemented |
@@ -256,8 +257,12 @@ through the event listener without collecting rows, verifies the observed row
 count, and reports write/read time plus output size. `/usr/bin/time -l` on
 macOS or `/usr/bin/time -v` on Linux records peak RSS for the complete run. A
 smaller smoke run can be selected with the first argument, for example
-`./scripts/benchmark-million-rows.sh 1000`. The latest measured environment and
-results are recorded in [benchmarks.md](benchmarks.md).
+`./scripts/benchmark-million-rows.sh 1000`. Historical results are recorded in
+[benchmarks.md](benchmarks.md). The latest shared-model, cross-runtime cold
+sample is recorded in
+[`benchmarks/results/million-20260808/REPORT.md`](../benchmarks/results/million-20260808/REPORT.md);
+it validates both-origin cross-reading and reports RSS plus temporary disk, but
+does not replace the release suite's seven-sample stability matrix.
 
 ## XLS write capability boundary
 
@@ -275,8 +280,8 @@ parseable by LibreOffice (2026-08-04 fix, verified by
 | Header row + data rows; single / multi sheet | supported |
 | One-shot `do_write` and stateful `ExcelWriter::write` on `.xls` | supported |
 | `to_writer` / owned stream BIFF8 emission | supported |
-| Password / RC4 / XOR encryption | unsupported (typed `Unsupported`: `"password protection is not supported for legacy XLS"`) — not covered by OOXML Agile crypto |
-| Images (`CellValue::Image` / non-empty `Images`) | supported (2026-08-05 文档修正)：`Biff8Sheet::write_image` 编码 OBJ + MSODrawing（Escher BSE 容器，PNG/JPEG），`write_image_encodes_obj_and_msodrawing_records` 测试验证；模板路径图片仍为 typed `Unsupported` |
+| Password / RC4 / XOR encryption | unsupported (typed `Unsupported`: `"password protection is not supported for legacy XLS"`) — the former whole-file RC4 shim was removed because it emitted neither a valid OLE/CFB container nor a BIFF8 `FILEPASS` stream |
+| Images (`CellValue::Image` / non-empty `Images`) | unsupported (typed `Unsupported`) — the lower-level experimental `Biff8Sheet::write_image` encoder is not connected to Java-compatible cell anchors and therefore is not advertised as a public writer capability |
 | `.xls` `with_template` + `doWrite` | supported (MVP): OLE `Workbook` record overlay — unmodified BIFF records kept; new cells as LABEL/NUMBER; BoundSheet offsets repaired. Creating sheets absent from the template remains unsupported |
 | `.xls` placeholder `fill` | unsupported (typed `Unsupported`) — Java `ExcelWriter.fill` on HSSF; Rust fill stays OOXML-only |
 | Column width / row height (`COLINFO` / `ROW`) | supported |
@@ -284,7 +289,8 @@ parseable by LibreOffice (2026-08-04 fix, verified by
 | Merged cells (`MERGECELLS`) | supported |
 | Freeze panes (`freeze_head` / `freeze_panes`) | supported (2026-08-04): `PANE` record + `WINDOW2` fFrozen/fFrozenNoSplit flags — frozen header rows, frozen columns, and row+column combinations, byte-identical to xlwt `PanesRecord` layout (px/py/rwTop/colLeft/pnnAct); out-of-BIFF8-range splits (row>65535 or col>255) return a typed error like `rust_xlsxwriter::set_freeze_panes` |
 | True formula tokens | implemented (2026-08-04): BIFF8 `FORMULA` records with real `Ptg` RPN tokens — A1-style refs/areas with `$` absolute flags, arithmetic/comparison/text operators, 257 built-in functions (`[MS-XLS]` indices incl. CETAB like COUNTIF/SUMIF), strings/booleans/errors, percent, unary ops, empty args (`tMissArg`); cached results are **evaluated at write time** via the `xls` formula engine (git dependency pinned by `rev` on the `easy-4-rust/xls` fork of `zemse/xls`, MIT/Apache-2.0) — numbers/booleans/errors/strings encoded in the 8-byte result + `STRING` record like POI `FormulaEvaluator`; unsupported formulas fall back to `0` + `CALCMODE` auto-recalc. Verified: calamine reads back `A1+B1` = 5.0, LibreOffice recalculates `A1+B1`/`SUM`/`IF` correctly. Cross-sheet refs remain typed `Unsupported` |
-| Hyperlink / comment records | unsupported |
+| Hyperlink records | supported for URL write/read (`HLINK`); Java-produced document links are read with address and range. File/email-specific write monikers remain unsupported |
+| Comment records | read supported (`OBJ` → `TXO/CONTINUE` → `NOTE`, including Java-produced comment text); write returns typed `Unsupported` instead of dropping the comment |
 | Rich-text runs, charts, macros | unsupported |
 | Borders | unsupported |
 | Custom number formats | supported (2026-08-04): `ExcelDataFormat::Custom` → `FORMAT` record registered from index 164 (POI `BuiltinFormats` 27-entry code table for built-ins), `XF` ifmt wired — format code round-trips through LibreOffice/calamine display |

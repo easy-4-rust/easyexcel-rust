@@ -1262,8 +1262,10 @@ version = "0.1.3"
 dependencies = [
  "bigdecimal",
  "calamine",
+ "cfb 0.14.0",
  "chrono",
  "easyexcel",
+ "easyexcel-xls",
  "num-bigint",
  "serde",
  "serde_json",
@@ -1341,14 +1343,17 @@ dependencies = [
 name = "easyexcel-xls"
 version = "0.1.3"
 dependencies = [
+ "base64 0.23.0",
  "cfb 0.14.0",
  "chrono",
  "easyexcel-format",
  "easyexcel-formula",
  "easyexcel-io",
  "easyexcel-model",
+ "flate2",
  "getrandom 0.4.3",
  "md-5",
+ "sha1 0.10.7",
  "tempfile",
 ]
 

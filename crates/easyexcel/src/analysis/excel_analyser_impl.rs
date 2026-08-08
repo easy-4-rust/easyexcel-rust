@@ -6,17 +6,26 @@ use std::sync::Arc;
 use easyexcel_io::io::file_utils::TemporaryInput;
 
 use crate::core::{
-    AnalysisContext, CellExtra, ErrorAction, ExcelError, ExcelRow, ReadListener, Result,
+    AnalysisContext, CellExtra, DynamicRow, ErrorAction, ExcelError, ExcelRow, ReadListener, Result,
 };
 use crate::support::ExcelTypeEnum;
 
 use crate::analysis::excel_analyser::ExcelAnalyser;
 use crate::analysis::excel_read_executor::ExcelReadExecutorKind;
+use crate::read::metadata::ReadSheet;
 use crate::{ReadOptions, SheetSelector};
 
 struct ContextTrackingReadListener<'a, L> {
     delegate: &'a mut L,
     latest: &'a mut AnalysisContext,
+}
+
+struct NoopDynamicReadListener;
+
+impl ReadListener<DynamicRow> for NoopDynamicReadListener {
+    fn invoke(&mut self, _data: DynamicRow, _context: &AnalysisContext) -> Result<()> {
+        Ok(())
+    }
 }
 
 impl<L> ContextTrackingReadListener<'_, L> {
@@ -138,6 +147,34 @@ impl ExcelAnalyserImpl {
         Ok(analyser)
     }
 
+    /// 使用 Java 形状的 [`ReadWorkbook`](crate::read::metadata::ReadWorkbook)
+    /// 创建分析器并选择格式 executor。
+    ///
+    /// 对应 Java：`ExcelAnalyserImpl(ReadWorkbook)`。显式 `excelType` 优先于
+    /// 文件扩展名；未提供输入文件时与 Java 一样立即返回参数错误。
+    ///
+    /// # Errors
+    ///
+    /// 未设置文件、文件类型无法识别或格式 executor 初始化失败时返回错误。
+    pub fn from_read_workbook(read_workbook: crate::read::metadata::ReadWorkbook) -> Result<Self> {
+        let path = read_workbook.file().map(Path::to_path_buf).ok_or_else(|| {
+            ExcelError::Format("File and inputStream must be a non-null.".to_owned())
+        })?;
+        let explicit_type = read_workbook.excel_type();
+        let mut analyser = Self {
+            path: Some(path),
+            options: read_workbook.options,
+            excel_type: None,
+            excel_read_executor: None,
+            context: AnalysisContext::new("", 0, 0),
+            finished: false,
+            temporary_input: None,
+            last_error: None,
+        };
+        analyser.choice_excel_executor_with_type(explicit_type)?;
+        Ok(analyser)
+    }
+
     /// 对应 Java：com.alibaba.excel.analysis.ExcelAnalyserImpl。 Creates an analyser whose workbook path is owned by a temporary-file guard.
     ///
     /// Java accepts non-seekable `InputStream` values and deletes the
@@ -214,12 +251,23 @@ impl ExcelAnalyserImpl {
     ///
     /// Returns when no path is bound or the extension is unsupported.
     pub fn choice_excel_executor(&mut self) -> Result<()> {
+        self.choice_excel_executor_with_type(None)
+    }
+
+    fn choice_excel_executor_with_type(
+        &mut self,
+        explicit_type: Option<ExcelTypeEnum>,
+    ) -> Result<()> {
         let path = self.path.as_ref().ok_or_else(|| {
             ExcelError::Format(
                 "ExcelAnalyserImpl.choiceExcelExecutor requires a workbook path".to_owned(),
             )
         })?;
-        let excel_type = detect_excel_type(path)?;
+        let excel_type = if let Some(excel_type) = explicit_type {
+            excel_type
+        } else {
+            detect_excel_type(path)?
+        };
         self.excel_read_executor = Some(ExcelReadExecutorKind::new(
             excel_type,
             path,
@@ -298,7 +346,52 @@ impl ExcelAnalyserImpl {
 }
 
 impl ExcelAnalyser for ExcelAnalyserImpl {
-    fn analysis<T, L>(&mut self, listener: &mut L) -> Result<()>
+    fn analysis(&mut self, read_sheet_list: Option<&[ReadSheet]>, read_all: bool) -> Result<()> {
+        let mut listener = NoopDynamicReadListener;
+        if read_all {
+            self.set_sheet_selector(SheetSelector::All);
+            return self.analysis_with_listener::<DynamicRow, _>(&mut listener);
+        }
+        let Some(sheets) = read_sheet_list.filter(|sheets| !sheets.is_empty()) else {
+            let error = ExcelError::Format("Specify at least one read sheet.".to_owned());
+            self.finish();
+            self.last_error = Some(error.clone());
+            return Err(error);
+        };
+        let actual_sheets = self.excel_executor().sheet_list().to_vec();
+        let workbook_head_row_number = self.options.head_row_number;
+        let workbook_scientific_format = self.options.scientific_format;
+        for actual_sheet in actual_sheets {
+            let Some(sheet) = sheets.iter().find(|sheet| {
+                (sheet.has_sheet_no() && sheet.sheet_no() == actual_sheet.sheet_no())
+                    || (!sheet.sheet_name().is_empty()
+                        && easyexcel_utils::string_utils::equals_with_optional_java_trim(
+                            actual_sheet.sheet_name(),
+                            sheet.sheet_name(),
+                            self.options.auto_trim,
+                        ))
+            }) else {
+                continue;
+            };
+            self.set_sheet_selector(SheetSelector::Index(actual_sheet.sheet_no()));
+            self.options.head_row_number =
+                sheet.head_row_number().unwrap_or(workbook_head_row_number);
+            self.options.scientific_format =
+                sheet
+                    .use_scientific_format()
+                    .map_or(workbook_scientific_format, |enabled| {
+                        if enabled {
+                            crate::ScientificFormatMode::Scientific
+                        } else {
+                            crate::ScientificFormatMode::Plain
+                        }
+                    });
+            self.analysis_with_listener::<DynamicRow, _>(&mut listener)?;
+        }
+        Ok(())
+    }
+
+    fn analysis_with_listener<T, L>(&mut self, listener: &mut L) -> Result<()>
     where
         T: ExcelRow,
         L: ReadListener<T>,
@@ -434,7 +527,7 @@ mod tests {
         };
         let mut analyser = ExcelAnalyserImpl::from_path(file.path(), options)?;
         let mut listener = CollectingListener::default();
-        ExcelAnalyser::analysis::<DynamicRow, _>(&mut analyser, &mut listener)?;
+        ExcelAnalyser::analysis_with_listener::<DynamicRow, _>(&mut analyser, &mut listener)?;
         assert_eq!(listener.rows.len(), 1);
         assert!(analyser.last_error().is_none());
         Ok(())

@@ -2,7 +2,7 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::{CellValue, Result};
+use crate::{CellValue, ChartMutation, Result};
 use crate::{WriteContext, WriteHolderContext, WriteWorkbookHolderView};
 
 use super::write_mutation_plan::WriteMutationPlan;
@@ -93,6 +93,18 @@ impl WriteWorkbookContext {
     ) -> Result<()> {
         self.mutations
             .set_cell(sheet_name, row_index, column_index, value)
+    }
+
+    /// 请求在保存前创建一个图表。
+    ///
+    /// 对应 Java：通过 `WorkbookWriteHandlerContext` 获取 POI 工作簿后调用
+    /// `Drawing#createChart(ClientAnchor)`。
+    ///
+    /// # Errors
+    ///
+    /// 当共享修改计划不可用时返回错误。
+    pub fn add_chart(&self, chart: ChartMutation) -> Result<()> {
+        self.mutations.add_chart(chart)
     }
 
     pub(crate) const fn mutation_plan(&self) -> &WriteMutationPlan {

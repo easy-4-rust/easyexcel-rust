@@ -47,7 +47,15 @@ pub(crate) fn sort_handlers(handlers: &mut [Box<dyn WriteHandler>]) {
 
 struct NoopWriteHandler;
 
-impl WriteHandler for NoopWriteHandler {}
+impl WriteHandler for NoopWriteHandler {
+    fn requires_row_context(&self) -> bool {
+        false
+    }
+
+    fn requires_cell_context(&self) -> bool {
+        false
+    }
+}
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn begin_row_lifecycle(
     handlers: &mut [Box<dyn WriteHandler>],
@@ -137,4 +145,3 @@ pub(crate) fn after_sheet(
     }
     Ok(())
 }
-

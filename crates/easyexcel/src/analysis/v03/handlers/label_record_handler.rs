@@ -6,13 +6,16 @@ include!("label_record_handler/label_cell.rs");
 
 /// 对应 Java：`LabelRecordHandler`.
 #[derive(Debug, Default)]
-pub struct LabelRecordHandler;
+pub struct LabelRecordHandler {
+    /// 最近一次成功解析的内联字符串单元格。
+    pub last_cell: Option<LabelCell>,
+}
 
 impl LabelRecordHandler {
     /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.LabelRecordHandler。 Creates an idle handler.
     #[must_use]
     pub fn new() -> Self {
-        Self
+        Self::default()
     }
 
     /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.LabelRecordHandler。 Java `LabelRecordHandler.processRecord`.
@@ -25,23 +28,33 @@ impl LabelRecordHandler {
         };
         LabelCell { row, column, value }
     }
+
+    /// 解析物理 `LABEL` 记录，并按当前读取配置应用 Java `autoTrim` 语义。
+    pub(crate) fn process_record_with_auto_trim(
+        &mut self,
+        record_sid: u16,
+        data: &[u8],
+        auto_trim: bool,
+    ) {
+        if record_sid != LABEL_SID {
+            return;
+        }
+        if let Some((row, column, value)) =
+            easyexcel_xls::biff8::event_record::decode_label_record(data)
+        {
+            self.last_cell = Some(Self::process_label(row, column, &value, auto_trim));
+        }
+    }
 }
 
 /// BIFF `Label` record sid. (POI `LabelRecord.sid`)
 pub use easyexcel_xls::biff8::record_sid::LABEL_SID;
 
 impl XlsRecordHandler for LabelRecordHandler {
-    /// Java `LabelRecordHandler.processRecord` — parses coordinates; string body
-    /// decoding is left to a higher-level BIFF reader / [`Self::process_label`].
+    /// Java `LabelRecordHandler.processRecord` — parses coordinates and the
+    /// complete inline string. The dispatcher supplies the configured trim mode.
     fn process_record(&mut self, record_sid: u16, data: &[u8]) {
-        if record_sid != LABEL_SID {
-            return;
-        }
-        if let Some((row, column)) =
-            easyexcel_xls::biff8::event_record::decode_label_record_position(data)
-        {
-            let _ = Self::process_label(row, column, "", false);
-        }
+        self.process_record_with_auto_trim(record_sid, data, false);
     }
 }
 
@@ -71,8 +84,17 @@ mod tests_extra {
     fn process_record_gates_on_sid_and_length() {
         // 对应 Java：LabelRecordHandler.processRecord 的 sid/长度门控
         let mut handler = LabelRecordHandler::new();
-        handler.process_record(LABEL_SID, &[1, 0, 2, 0, 0, 0, 0, 0]);
-        handler.process_record(0xFFFF, &[1, 0, 2, 0, 0, 0, 0, 0]);
+        let data = [1, 0, 2, 0, 0, 0, 1, 0, 0, b'x'];
+        handler.process_record(LABEL_SID, &data);
+        assert_eq!(
+            handler.last_cell.as_ref().map(|cell| cell.value.as_str()),
+            Some("x")
+        );
+        handler.process_record(0xFFFF, &data);
         handler.process_record(LABEL_SID, &[0, 0]);
+        assert_eq!(
+            handler.last_cell.as_ref().map(|cell| cell.value.as_str()),
+            Some("x")
+        );
     }
 }

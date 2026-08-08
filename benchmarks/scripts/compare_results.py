@@ -9,6 +9,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import random
 import re
 import statistics
 from typing import Any
@@ -120,6 +121,44 @@ def summarize_concurrent_throughput(
         total_rows = sum(sample["rows"] for sample in trial_samples)
         rates.append(total_rows / (elapsed_ns / 1_000_000_000))
     return summarize(rates) if rates else None
+
+
+def trial_throughput_rates(samples: list[dict[str, Any]]) -> list[float]:
+    """Return one aggregate throughput value per concurrency trial."""
+    trials: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for sample in samples:
+        if isinstance(sample.get("trial"), int):
+            trials[sample["trial"]].append(sample)
+    rates = []
+    for trial in sorted(trials):
+        trial_samples = trials[trial]
+        elapsed_ns = max(sample["wall_time_ns"] for sample in trial_samples)
+        total_rows = sum(sample["rows"] for sample in trial_samples)
+        rates.append(total_rows / (elapsed_ns / 1_000_000_000))
+    return rates
+
+
+def bootstrap_median_ratio(
+    rust_rates: list[float], java_rates: list[float], *, seed: str, iterations: int = 10_000
+) -> dict[str, float]:
+    """Compute a deterministic independent-bootstrap CI for median Rust/Java throughput."""
+    if not rust_rates or not java_rates:
+        raise ValueError("both runtimes require at least one trial")
+    actual = statistics.median(rust_rates) / statistics.median(java_rates)
+    generator = random.Random(int(hashlib.sha256(seed.encode("utf-8")).hexdigest()[:16], 16))
+    ratios = []
+    for _ in range(iterations):
+        rust_median = statistics.median(generator.choices(rust_rates, k=len(rust_rates)))
+        java_median = statistics.median(generator.choices(java_rates, k=len(java_rates)))
+        ratios.append(rust_median / java_median if java_median else 0.0)
+    ordered = sorted(ratios)
+    return {
+        "median_ratio": actual,
+        "confidence_level": 0.95,
+        "confidence_lower_bound": ordered[int(0.025 * (len(ordered) - 1))],
+        "confidence_upper_bound": ordered[int(0.975 * (len(ordered) - 1))],
+        "bootstrap_iterations": iterations,
+    }
 
 
 def expected_matrix_groups(
@@ -322,7 +361,7 @@ def main() -> int:
             summaries[label]["concurrency_speedup"] = None
             summaries[label]["concurrency_efficiency"] = None
 
-    # Java/Rust 比值仅展示，不作为任一实现必须获胜的门禁。
+    # Java/Rust 比值与 release 发布阈值。原始 trial 先聚合 worker，再做确定性 bootstrap。
     cross_runtime_ratios: dict[str, Any] = {}
     dimensions = {
         (phase, temperature, scenario_id, fixture_origin, rows, workers)
@@ -335,13 +374,39 @@ def main() -> int:
         java = summaries.get(java_label)
         if not rust or not java:
             continue
-        rust_rate = rust["concurrent_rows_per_second"]["median"]
-        java_rate = java["concurrent_rows_per_second"]["median"]
         ratio_label = "/".join(map(str, (phase, temperature, scenario_id, fixture_origin, rows, workers)))
-        cross_runtime_ratios[ratio_label] = {
-            "rust_to_java_rows_per_second": rust_rate / java_rate if java_rate else None,
-            "java_to_rust_rows_per_second": java_rate / rust_rate if rust_rate else None,
-        }
+        ratio = bootstrap_median_ratio(
+            trial_throughput_rates(grouped[tuple(["rust", phase, temperature, scenario_id, fixture_origin, rows, workers])]),
+            trial_throughput_rates(grouped[tuple(["java", phase, temperature, scenario_id, fixture_origin, rows, workers])]),
+            seed=ratio_label,
+        )
+        ratio["rust_to_java_rows_per_second"] = ratio["median_ratio"]
+        ratio["java_to_rust_rows_per_second"] = 1 / ratio["median_ratio"] if ratio["median_ratio"] else None
+        cross_runtime_ratios[ratio_label] = ratio
+
+        cross_gate = gates.get("cross_runtime")
+        if (
+            arguments.profile == "release"
+            and cross_gate
+            and phase == "matrix"
+            and scenario_id in cross_gate["scenarios"]
+            and workers in cross_gate["worker_counts"]
+        ):
+            high_concurrency = workers in cross_gate["high_concurrency_worker_counts"]
+            minimum_ratio = (
+                cross_gate["min_high_concurrency_median_ratio"]
+                if high_concurrency
+                else cross_gate["min_median_ratio"]
+            )
+            if ratio["median_ratio"] < minimum_ratio:
+                failures.append(
+                    f"Rust/Java median throughput ratio below {minimum_ratio:.2f}: {ratio_label}"
+                )
+            if not high_concurrency and ratio["confidence_lower_bound"] < cross_gate["min_confidence_lower_bound"]:
+                failures.append(
+                    "Rust/Java throughput confidence lower bound below "
+                    f"{cross_gate['min_confidence_lower_bound']:.2f}: {ratio_label}"
+                )
 
     workload_groups: dict[tuple[str, str, int, int], list[dict[str, Any]]] = defaultdict(list)
     for result in results:

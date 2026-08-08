@@ -6,6 +6,18 @@ include!("biff8cell_to_write_bof/biff8value.rs");
 
 include!("biff8cell_to_write_bof/biff8merge.rs");
 
+include!("biff8cell_to_write_bof/biff8_hyperlink_kind.rs");
+include!("biff8cell_to_write_bof/biff8hyperlink.rs");
+
+include!("biff8cell_to_write_bof/biff8comment.rs");
+
+include!("biff8cell_to_write_bof/biff8rich_text.rs");
+
+include!("biff8cell_to_write_bof/biff8_chart_kind.rs");
+include!("biff8cell_to_write_bof/biff8_chart_range.rs");
+include!("biff8cell_to_write_bof/biff8_chart_series.rs");
+include!("biff8cell_to_write_bof/biff8_chart.rs");
+
 
 
 include!("biff8cell_to_write_bof/biff8sheet.rs");
@@ -60,8 +72,20 @@ pub fn datetime_to_excel_serial_with_windowing(
 // 超过 4GiB，usize->u32 在此场景不可能截断。
 #[allow(clippy::cast_possible_truncation)]
 fn build_workbook_stream(book: &Biff8Book, caches: &[HashMap<(u16, u8), Biff8Cached>]) -> Vec<u8> {
+    build_workbook_stream_with_filepass(book, caches, None)
+}
+
+#[allow(clippy::cast_possible_truncation)]
+fn build_workbook_stream_with_filepass(
+    book: &Biff8Book,
+    caches: &[HashMap<(u16, u8), Biff8Cached>],
+    filepass_payload: Option<&[u8]>,
+) -> Vec<u8> {
     let mut out: Vec<u8> = Vec::new();
     write_bof(&mut out, DT_GLOBALS);
+    if let Some(payload) = filepass_payload {
+        record(&mut out, FILEPASS, payload);
+    }
     record(&mut out, CODEPAGE, &1200u16.to_le_bytes());
     record(&mut out, INTERFACEHDR, &0x04B0u16.to_le_bytes());
     // BIFF8 MMS stores both the added-menu and deleted-menu counters. POI's
@@ -117,6 +141,50 @@ fn build_workbook_stream(book: &Biff8Book, caches: &[HashMap<(u16, u8), Biff8Cac
         book.sheets.clone()
     };
     let (sst_strings, sst_index, total_refs) = build_sst(&sheets);
+    let sheet_names = sheets.iter().map(|sheet| sheet.name.clone()).collect::<Vec<_>>();
+    let formulas = sheets
+        .iter()
+        .flat_map(|sheet| sheet.cells.values())
+        .filter_map(|cell| match &cell.value {
+            Biff8Value::Formula(formula) => Some(formula.as_str()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    let chart_references = sheets
+        .iter()
+        .flat_map(|sheet| sheet.charts.iter())
+        .flat_map(|chart| chart.series.iter())
+        .flat_map(|series| {
+            series
+                .categories
+                .iter()
+                .map(|range| (range.sheet_name.as_str(), range.sheet_name.as_str()))
+                .chain(std::iter::once((
+                    series.values.sheet_name.as_str(),
+                    series.values.sheet_name.as_str(),
+                )))
+        })
+        .collect::<Vec<_>>();
+    let link_table = super::ptg::Biff8LinkTable::from_formulas_and_references(
+        &sheet_names,
+        &formulas,
+        &chart_references,
+    );
+    let comment_count = sheets
+        .iter()
+        .map(|sheet| sheet.comments.len())
+        .sum::<usize>();
+    let chart_count = sheets.iter().map(|sheet| sheet.charts.len()).sum::<usize>();
+    for _ in 0..chart_count {
+        record(&mut out, MSODRAWINGGROUP, &chart_drawing_group());
+    }
+    if comment_count > 0 {
+        record(
+            &mut out,
+            MSODRAWINGGROUP,
+            &comment_drawing_group(comment_count),
+        );
+    }
 
     let mut boundsheet_patches = Vec::with_capacity(sheets.len());
     for sheet in &sheets {
@@ -127,6 +195,10 @@ fn build_workbook_stream(book: &Biff8Book, caches: &[HashMap<(u16, u8), Biff8Cac
         out.extend_from_slice(&build_sst_records(&sst_strings, total_refs));
         record(&mut out, EXTSST, &[0, 0]);
     }
+    if !link_table.is_empty() {
+        record(&mut out, SUPBOOK, &link_table.supbook_payload());
+        record(&mut out, EXTERNSHEET, &link_table.externsheet_payload());
+    }
     record(&mut out, EOF, &[]);
 
     let mut sheet_offsets = Vec::with_capacity(sheets.len());
@@ -134,7 +206,7 @@ fn build_workbook_stream(book: &Biff8Book, caches: &[HashMap<(u16, u8), Biff8Cac
         sheet_offsets.push(out.len() as u32);
         // 默认 sheet 场景（book.sheets 为空）无缓存表，回退空表
         let cache = caches.get(sheet_idx).cloned().unwrap_or_default();
-        write_worksheet(&mut out, sheet, &sst_index, &cache);
+        write_worksheet(&mut out, sheet, &sst_index, &cache, &link_table);
     }
     for (patch_off, pos) in boundsheet_patches.into_iter().zip(sheet_offsets) {
         out[patch_off..patch_off + 4].copy_from_slice(&pos.to_le_bytes());

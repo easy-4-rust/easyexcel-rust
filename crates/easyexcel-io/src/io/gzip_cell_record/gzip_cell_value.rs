@@ -28,6 +28,31 @@ pub enum GzipCellValue {
         /// 显示文本。
         text: String,
     },
+    /// Java `HyperlinkData` 的完整类型和绝对/相对范围。
+    TypedHyperlink {
+        /// 目标地址。
+        address: String,
+        /// 显示文本。
+        text: String,
+        /// 0=NONE、1=URL、2=DOCUMENT、3=EMAIL、4=FILE。
+        kind: u8,
+        /// 绝对首行。
+        first_row: Option<u32>,
+        /// 绝对首列。
+        first_col: Option<u16>,
+        /// 绝对末行。
+        last_row: Option<u32>,
+        /// 绝对末列。
+        last_col: Option<u16>,
+        /// 相对首行。
+        relative_first_row: Option<i32>,
+        /// 相对首列。
+        relative_first_col: Option<i32>,
+        /// 相对末行。
+        relative_last_row: Option<i32>,
+        /// 相对末列。
+        relative_last_col: Option<i32>,
+    },
     /// 带批注的嵌套值。
     Comment {
         /// 被批注修饰的原始单元格值。
@@ -46,5 +71,16 @@ pub enum GzipCellValue {
         /// 图片二进制内容。
         images: Vec<Vec<u8>>,
     },
+    /// Stateful writer journal cell decorated with a deduplicated style id.
+    Styled {
+        /// Underlying neutral cell value.
+        value: Box<Self>,
+        /// Index into the writer-owned style registry.
+        style_id: u32,
+    },
+    /// Stateful writer row metadata appended after the physical cells.
+    JournalMetadata {
+        /// Final row height after handler processing, when explicitly set.
+        row_height: Option<u16>,
+    },
 }
-

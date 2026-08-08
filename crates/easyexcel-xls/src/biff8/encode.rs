@@ -21,14 +21,16 @@ pub use super::record_sid::{
     BLANK_SID as BLANK, BOF_SID as BOF, BOOL_ERR_SID as BOOLERR, BOUND_SHEET_SID as BOUNDSHEET,
     CALC_MODE_SID as CALCMODE, CODE_NAME_SID as CODENAME, CODE_PAGE_SID as CODEPAGE,
     COLUMN_INFO_SID as COLINFO, CONTINUE_SID as CONTINUE, DATE_MODE_SID as DATEMODE,
-    DIMENSION_SID as DIMENSION, EOF_SID as EOF, EXT_SST_SID as EXTSST, FONT_SID as FONT,
-    FORMAT_SID as FORMAT, FORMULA_SID as FORMULA, INTERFACE_END_SID as INTERFACEEND,
-    INTERFACE_HEADER_SID as INTERFACEHDR, LABEL_SID as LABEL, LABEL_SST_SID as LABELSST,
-    MERGE_CELLS_SID as MERGECELLS, MMS_SID as MMS, MSO_DRAWING_SID as MSODRAWING,
-    MUL_BLANK_SID as MULBLANK, MUL_RK_SID as MULRK, NUMBER_SID as NUMBER, OBJ_SID as OBJ,
-    PALETTE_SID as PALETTE, PANE_SID as PANE, RK_SID as RK, ROW_SID as ROW, SST_SID as SST,
-    STRING_SID as STRING, STYLE_SID as STYLE, WINDOW2_SID as WINDOW2,
-    WRITE_ACCESS_SID as WRITEACCESS, XF_SID as XF,
+    DIMENSION_SID as DIMENSION, EOF_SID as EOF, EXT_SST_SID as EXTSST,
+    EXTERNAL_SHEET_SID as EXTERNSHEET, FILE_PASS_SID as FILEPASS, FONT_SID as FONT,
+    FORMAT_SID as FORMAT, FORMULA_SID as FORMULA, HYPERLINK_SID as HYPERLINK,
+    INTERFACE_END_SID as INTERFACEEND, INTERFACE_HEADER_SID as INTERFACEHDR, LABEL_SID as LABEL,
+    LABEL_SST_SID as LABELSST, MERGE_CELLS_SID as MERGECELLS, MMS_SID as MMS,
+    MSO_DRAWING_GROUP_SID as MSODRAWINGGROUP, MSO_DRAWING_SID as MSODRAWING,
+    MUL_BLANK_SID as MULBLANK, MUL_RK_SID as MULRK, NOTE_SID as NOTE, NUMBER_SID as NUMBER,
+    OBJ_SID as OBJ, PALETTE_SID as PALETTE, PANE_SID as PANE, RK_SID as RK, ROW_SID as ROW,
+    SST_SID as SST, STRING_SID as STRING, STYLE_SID as STYLE, SUP_BOOK_SID as SUPBOOK,
+    TEXT_OBJECT_SID as TXO, WINDOW2_SID as WINDOW2, WRITE_ACCESS_SID as WRITEACCESS, XF_SID as XF,
 };
 
 /// Workbook globals substream type.
@@ -184,6 +186,14 @@ pub fn pack_cell_xf(
     fill_pattern: u8,
     fill_fg_icv: u16,
     fill_bg_icv: u16,
+    border_left: u8,
+    border_right: u8,
+    border_top: u8,
+    border_bottom: u8,
+    border_left_icv: u16,
+    border_right_icv: u16,
+    border_top_icv: u16,
+    border_bottom_icv: u16,
 ) -> [u8; 20] {
     let mut d = [0u8; 20];
     d[0..2].copy_from_slice(&font_index.to_le_bytes());
@@ -200,9 +210,17 @@ pub fn pack_cell_xf(
     d[7] = 0; // rotation
     d[8] = 0; // indent / shrink
     d[9] = 0xF8; // XF_USED_ATTRIB — all groups used (cell XF)
-    // brd1 (bytes 10-13) left zero — no borders.
+    let brd1 = u32::from(border_left & 0x0F)
+        | (u32::from(border_right & 0x0F) << 4)
+        | (u32::from(border_top & 0x0F) << 8)
+        | (u32::from(border_bottom & 0x0F) << 12)
+        | (u32::from(border_left_icv & 0x7F) << 16)
+        | (u32::from(border_right_icv & 0x7F) << 23);
+    d[10..14].copy_from_slice(&brd1.to_le_bytes());
     // brd2 (bytes 14-17): fill pattern in bits 26-31.
-    let brd2 = u32::from(fill_pattern & 0x3F) << 26;
+    let brd2 = u32::from(border_top_icv & 0x7F)
+        | (u32::from(border_bottom_icv & 0x7F) << 7)
+        | (u32::from(fill_pattern & 0x3F) << 26);
     d[14..18].copy_from_slice(&brd2.to_le_bytes());
     // pattern colours (bytes 18-19).
     let pat = (fill_fg_icv & 0x7F) | ((fill_bg_icv & 0x7F) << 7);
@@ -407,7 +425,24 @@ mod tests {
     #[test]
     fn pack_cell_xf_solid_yellow() {
         // IndexedColors.YELLOW = 13, solid pattern = 1, valign bottom = 2.
-        let bytes = pack_cell_xf(0, 0, 0, 2, false, 1, 13, ICV_PATTERN_BG_DEFAULT);
+        let bytes = pack_cell_xf(
+            0,
+            0,
+            0,
+            2,
+            false,
+            1,
+            13,
+            ICV_PATTERN_BG_DEFAULT,
+            0,
+            0,
+            0,
+            0,
+            ICV_AUTO,
+            ICV_AUTO,
+            ICV_AUTO,
+            ICV_AUTO,
+        );
         let brd2 = u32::from_le_bytes([bytes[14], bytes[15], bytes[16], bytes[17]]);
         assert_eq!((brd2 >> 26) & 0x3F, 1);
         let pat = u16::from_le_bytes([bytes[18], bytes[19]]);
@@ -465,7 +500,9 @@ mod tests_extra {
 
     #[test]
     fn pack_cell_xf_wrap_flag_sets_alignment_bit() {
-        let xf = pack_cell_xf(0, 0, 0, 0, true, 0, 0, 0);
+        let xf = pack_cell_xf(
+            0, 0, 0, 0, true, 0, 0, 0, 0, 0, 0, 0, ICV_AUTO, ICV_AUTO, ICV_AUTO, ICV_AUTO,
+        );
         assert_eq!(xf[6] & 0x08, 0x08);
     }
 

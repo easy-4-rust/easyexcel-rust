@@ -5,15 +5,15 @@
 //! 格式无关门面可使用的 BIFF8 请求。
 
 use crate::core::{
-    ExcelCellStyle, ExcelColor, ExcelDataFormat, ExcelFillPattern, ExcelFontStyle,
-    ExcelHorizontalAlignment, ExcelVerticalAlignment,
+    ExcelBorderStyle, ExcelCellStyle, ExcelColor, ExcelDataFormat, ExcelFillPattern,
+    ExcelFontStyle, ExcelHorizontalAlignment, ExcelVerticalAlignment, WriteFont,
 };
 use crate::write::horizontal_alignment::HorizontalAlignment;
 use crate::write::vertical_alignment::VerticalAlignment;
 
 pub use easyexcel_xls::biff8::{
-    Biff8Color, Biff8FillPattern, Biff8HorizontalAlignment, Biff8NumberFormat, Biff8StyleRequest,
-    Biff8VerticalAlignment,
+    Biff8BorderStyle, Biff8Color, Biff8FillPattern, Biff8HorizontalAlignment, Biff8NumberFormat,
+    Biff8StyleRequest, Biff8VerticalAlignment,
 };
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 把 `EasyExcel` 单元格样式合并到 BIFF8 请求。
@@ -42,6 +42,22 @@ pub(crate) fn apply_excel_cell_style(request: &mut Biff8StyleRequest, style: Exc
     if let Some(color) = style.fill_background_color {
         request.fill_background_color = Some(excel_color(color));
     }
+    if let Some(border) = style.border_left {
+        request.border_left = Some(excel_border_style(border));
+    }
+    if let Some(border) = style.border_right {
+        request.border_right = Some(excel_border_style(border));
+    }
+    if let Some(border) = style.border_top {
+        request.border_top = Some(excel_border_style(border));
+    }
+    if let Some(border) = style.border_bottom {
+        request.border_bottom = Some(excel_border_style(border));
+    }
+    request.border_left_color = style.left_border_color.map(excel_color);
+    request.border_right_color = style.right_border_color.map(excel_color);
+    request.border_top_color = style.top_border_color.map(excel_color);
+    request.border_bottom_color = style.bottom_border_color.map(excel_color);
     if let Some(font) = style.font {
         apply_excel_font_style(request, font);
     }
@@ -50,6 +66,25 @@ pub(crate) fn apply_excel_cell_style(request: &mut Biff8StyleRequest, style: Exc
             ExcelDataFormat::Builtin(index) => Biff8NumberFormat::Builtin(index),
             ExcelDataFormat::Custom(code) => Biff8NumberFormat::Custom(code.to_owned()),
         });
+    }
+}
+
+const fn excel_border_style(style: ExcelBorderStyle) -> Biff8BorderStyle {
+    match style {
+        ExcelBorderStyle::None => Biff8BorderStyle::None,
+        ExcelBorderStyle::Thin => Biff8BorderStyle::Thin,
+        ExcelBorderStyle::Medium => Biff8BorderStyle::Medium,
+        ExcelBorderStyle::Dashed => Biff8BorderStyle::Dashed,
+        ExcelBorderStyle::Dotted => Biff8BorderStyle::Dotted,
+        ExcelBorderStyle::Thick => Biff8BorderStyle::Thick,
+        ExcelBorderStyle::Double => Biff8BorderStyle::Double,
+        ExcelBorderStyle::Hair => Biff8BorderStyle::Hair,
+        ExcelBorderStyle::MediumDashed => Biff8BorderStyle::MediumDashed,
+        ExcelBorderStyle::DashDot => Biff8BorderStyle::DashDot,
+        ExcelBorderStyle::MediumDashDot => Biff8BorderStyle::MediumDashDot,
+        ExcelBorderStyle::DashDotDot => Biff8BorderStyle::DashDotDot,
+        ExcelBorderStyle::MediumDashDotDot => Biff8BorderStyle::MediumDashDotDot,
+        ExcelBorderStyle::SlantDashDot => Biff8BorderStyle::SlantDashDot,
     }
 }
 
@@ -74,6 +109,31 @@ pub(crate) fn apply_excel_font_style(request: &mut Biff8StyleRequest, style: Exc
         request.bold = bold;
     }
     if let Some(color) = style.color {
+        request.font_color = Some(excel_color(color));
+    }
+}
+
+/// 把运行时 `WriteFont` 合并到 BIFF8 字体请求。
+pub(crate) fn apply_write_font(request: &mut Biff8StyleRequest, font: &WriteFont) {
+    if let Some(name) = font.get_font_name() {
+        request.font_name = Some(name.to_owned());
+    }
+    if let Some(height) = font.get_font_height_in_points() {
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        {
+            request.font_height_points = Some(height.round().clamp(1.0, 409.0) as u16);
+        }
+    }
+    if let Some(italic) = font.get_italic() {
+        request.italic = italic;
+    }
+    if let Some(strikeout) = font.get_strikeout() {
+        request.strikeout = strikeout;
+    }
+    if let Some(bold) = font.get_bold() {
+        request.bold = bold;
+    }
+    if let Some(color) = font.get_color() {
         request.font_color = Some(excel_color(color));
     }
 }

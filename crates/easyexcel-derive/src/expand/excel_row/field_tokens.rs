@@ -41,14 +41,14 @@ pub(super) fn build_field_tokens(
     let reader = quote! {
         #ident: {
             let column = &Self::schema()[#position];
-            let context = row.convert_context(column);
+            row.configure_convert_context(&mut context, column);
             #read
         }
     };
     let registered_reader = quote! {
         #ident: {
             let column = &Self::schema()[#position];
-            let context = row.convert_context(column);
+            row.configure_convert_context(&mut context, column);
             #registered_read
         }
     };

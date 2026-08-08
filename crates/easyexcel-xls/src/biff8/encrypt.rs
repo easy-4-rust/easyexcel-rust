@@ -1,135 +1,309 @@
-//! BIFF8 (.xls) standard RC4 encryption — POI compatible.
+//! BIFF8 `FILEPASS` RC4 `CryptoAPI` 加密。
 //!
-//! 对应 Java：`org.apache.poi.hssf.record.crypto.Biff8EncryptionKey`
-//! and `com.alibaba.excel.support.encrypt.EncryptionInfo` (standard mode).
-//!
-//! # Algorithm (POI default: RC4 40-bit)
-//!
-//! 1. Password bytes (UTF-16LE) → MD5 → 16-byte hash
-//! 2. Generate 16 random bytes (`salt`), 16 random bytes (`verifier`)
-//! 3. RC4 key = MD5(salt || `password_hash`)  — first 5 bytes used (40-bit)
-//! 4. `verifier_hash` = `RC4_encrypt(verifier`, `rc4_key`)
-//! 5. Write `FilePass` BIFF record: type=1, salt(16), `verifier_hash(16)`
-//! 6. `RC4_encrypt` remaining BIFF8 stream bytes with same key
-//!
-//! # Reading
-//!
-//! 1. Parse `FilePass` → salt, `verifier_hash`
-//! 2. Derive RC4 key from password + salt
-//! 3. `RC4_decrypt` `verifier_hash` → should match verifier for correct password
-//! 4. `RC4_decrypt` remaining stream
+//! Java `EasyExcel` 4.0.3 依赖 POI 5.2.5；其
+//! `Biff8EncryptionKey.setCurrentUserPassword` 写出 `EncryptionMode.cryptoAPI`
+//! （RC4-40/SHA-1），而不是把整个 OLE 或 Workbook stream 一次性 RC4。
+//! 本模块逐项对齐 POI 的 `HSSFWorkbook#encryptBytes`：1024 字节重置密钥、
+//! BIFF 记录头明文、BOF/INTERFACEHDR/FILEPASS payload 明文，以及
+//! BOUNDSHEET 的 `lbPlyPos` 四字节明文。
 
-#![allow(dead_code)]
+use sha1::{Digest, Sha1};
 
-use md5::{Digest, Md5};
+use super::record_sid::{BOF_SID, BOUND_SHEET_SID, FILE_PASS_SID, INTERFACE_HEADER_SID};
 
-/// Phase 5 marker re-export for test wiring.
-/// 对应 Java：org.apache.poi.hssf.record.crypto.Biff8EncryptionKey。
-pub const PHASE_5_GAP: &str = "Biff8EncryptionInfo — BIFF8 RC4 encryption implemented in Phase 5.3";
+mod biff8_rc4_state;
+use biff8_rc4_state::Biff8Rc4State;
 
-/// 对应 Java：org.apache.poi.hssf.record.crypto.Biff8EncryptionKey。 Placeholder type kept for backward-compat with test imports.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Biff8EncryptionInfoPlaceholder;
+mod biff8_crypto_api_encryption;
+pub use biff8_crypto_api_encryption::Biff8CryptoApiEncryption;
 
-/// Derives the RC4 encryption key from a password and salt.
-/// Returns the full 16-byte MD5 output; callers should truncate
-/// to the first 5 bytes for 40-bit RC4 export encryption.
-fn derive_key(password: &str, salt: &[u8]) -> Vec<u8> {
-    let pw_bytes: Vec<u8> = password.encode_utf16().flat_map(u16::to_le_bytes).collect();
-    let pw_hash = Md5::digest(&pw_bytes);
-    let mut hasher = Md5::new();
-    hasher.update(salt);
-    hasher.update(pw_hash.as_slice());
-    hasher.finalize().to_vec()
-}
+mod chunked_rc4;
+use chunked_rc4::ChunkedRc4;
 
-/// RC4 stream cipher (Rivest Cipher 4), identical to POI's `Biff8RC4`.
-fn rc4_crypt(data: &[u8], key: &[u8]) -> Vec<u8> {
-    let mut s: Vec<u8> = (0u8..=255).collect();
-    let mut j: u8 = 0;
-    // Key-scheduling algorithm
-    for i in 0..256 {
-        j = j.wrapping_add(s[i]).wrapping_add(key[i % key.len()]);
-        s.swap(i, j as usize);
-    }
-    let mut i: u8 = 0;
-    j = 0;
-    let mut result = data.to_vec();
-    for byte in &mut result {
-        i = i.wrapping_add(1);
-        j = j.wrapping_add(s[i as usize]);
-        s.swap(i as usize, j as usize);
-        let k = s[s[i as usize].wrapping_add(s[j as usize]) as usize];
-        *byte ^= k;
-    }
-    result
-}
+const REKEY_INTERVAL: usize = 1024;
+const CRYPTO_API_VERSION_MAJOR: u16 = 4;
+const CRYPTO_API_VERSION_MINOR: u16 = 2;
+const CRYPTO_API_FLAGS: u32 = 0x04;
+const RC4_ALGORITHM_ID: u32 = 0x6801;
+const SHA1_ALGORITHM_ID: u32 = 0x8004;
+const RC4_KEY_BITS: u32 = 40;
+const RC4_PROVIDER_TYPE: u32 = 1;
+const RC4_PROVIDER_NAME: &str = "Microsoft Base Cryptographic Provider v1.0";
 
-include!("encrypt/biff8encryption_output.rs");
-
-/// 对应 Java：org.apache.poi.hssf.record.crypto.Biff8EncryptionKey。 Generates random salt + verifier and encrypts a BIFF8 workbook
-/// stream with RC4. Returns `(encrypted_bytes, salt, verifier_hash)`.
-///
-/// The encryption wraps the entire workbook stream (including BOF/EOF
-/// records) so that the `FilePass` record can be inserted before the
-/// first BOF in the globals section.
+/// 为密码生成随机 salt/verifier、`FILEPASS` payload 与工作簿加密密钥。
 ///
 /// # Errors
 ///
-/// Returns an error when the operating system random source is unavailable.
-pub fn encrypt_biff8_stream(
-    workbook_bytes: &[u8],
-    password: &str,
-) -> Result<Biff8EncryptionOutput, String> {
+/// 操作系统安全随机源不可用时返回错误。
+pub fn prepare_crypto_api_encryption(password: &str) -> Result<Biff8CryptoApiEncryption, String> {
     let mut salt = [0u8; 16];
     let mut verifier = [0u8; 16];
     getrandom::fill(&mut salt)
         .map_err(|error| format!("failed to generate BIFF8 salt: {error}"))?;
     getrandom::fill(&mut verifier)
         .map_err(|error| format!("failed to generate BIFF8 verifier: {error}"))?;
-
-    let full_key = derive_key(password, &salt);
-    let rc4_key = &full_key[..5.min(full_key.len())]; // 40-bit export
-
-    let verifier_hash = rc4_crypt(&verifier, rc4_key);
-    let mut vh_arr = [0u8; 16];
-    vh_arr.copy_from_slice(&verifier_hash[..16.min(verifier_hash.len())]);
-
-    let encrypted = rc4_crypt(workbook_bytes, rc4_key);
-
-    Ok((encrypted, salt, vh_arr))
+    Ok(prepare_crypto_api_encryption_with_material(
+        password, salt, verifier,
+    ))
 }
 
-/// 对应 Java：org.apache.poi.hssf.record.crypto.Biff8EncryptionKey。 Decrypts a BIFF8 workbook stream given password, salt, and `verifier_hash`.
-/// Returns the decrypted bytes, or an error if the password doesn't match.
+fn prepare_crypto_api_encryption_with_material(
+    password: &str,
+    salt: [u8; 16],
+    verifier: [u8; 16],
+) -> Biff8CryptoApiEncryption {
+    let secret_key = crypto_api_secret_key(password, &salt);
+    let block_key = crypto_api_block_key(&secret_key, 0);
+    let mut cipher = Biff8Rc4State::new(&block_key);
+    let mut encrypted_verifier = verifier;
+    cipher.apply(&mut encrypted_verifier);
+    let mut encrypted_verifier_hash: [u8; 20] = Sha1::digest(verifier).into();
+    cipher.apply(&mut encrypted_verifier_hash);
+
+    Biff8CryptoApiEncryption {
+        filepass_payload: crypto_api_filepass_payload(
+            &salt,
+            &encrypted_verifier,
+            &encrypted_verifier_hash,
+        ),
+        secret_key,
+    }
+}
+
+fn crypto_api_secret_key(password: &str, salt: &[u8; 16]) -> [u8; 20] {
+    let mut hasher = Sha1::new();
+    hasher.update(salt);
+    for code_unit in password.encode_utf16().take(255) {
+        hasher.update(code_unit.to_le_bytes());
+    }
+    hasher.finalize().into()
+}
+
+fn crypto_api_block_key(secret_key: &[u8; 20], block: u32) -> [u8; 16] {
+    let mut hasher = Sha1::new();
+    hasher.update(secret_key);
+    hasher.update(block.to_le_bytes());
+    let digest = hasher.finalize();
+    let mut key = [0u8; 16];
+    // POI CryptoAPIDecryptor#getBlock0: RC4-40 keeps five bytes and pads the
+    // JCE RC4 key to sixteen bytes with zeros.
+    key[..5].copy_from_slice(&digest[..5]);
+    key
+}
+
+/// 使用调用方提供的密码解密 BIFF8 `CryptoAPI` Workbook stream。
+///
+/// 该函数不使用 Java POI 的线程局部全局密码；密码只在本次调用内派生并验证。
 ///
 /// # Errors
 ///
-/// Returns an error string when the password is wrong or the decrypted
-/// stream is malformed (too short).
-pub fn decrypt_biff8_stream(
-    encrypted: &[u8],
+/// 缺少 `FILEPASS`、加密类型不是 POI 默认的 `CryptoAPI` RC4、记录损坏或密码错误时返回错误。
+pub fn decrypt_crypto_api_workbook_stream(
+    workbook_stream: &[u8],
     password: &str,
-    salt: &[u8; 16],
-    verifier_hash: &[u8; 16],
-) -> Result<Vec<u8>, String> {
-    let full_key = derive_key(password, salt);
-    let rc4_key = &full_key[..5.min(full_key.len())];
+) -> Result<Vec<u8>, easyexcel_io::Error> {
+    let filepass = find_filepass_payload(workbook_stream)?;
+    let secret_key = verify_crypto_api_password(filepass, password)?;
+    transform_crypto_api_workbook_stream(workbook_stream, &secret_key)
+        .map_err(easyexcel_io::Error::Xls)
+}
 
-    let decrypted_vh = rc4_crypt(verifier_hash, rc4_key);
-    // The decrypted verifier_hash should look like random bytes (not
-    // a specific pattern). We verify the key is correct by checking
-    // the first BOF record in the decrypted stream.
-    let decrypted = rc4_crypt(encrypted, rc4_key);
-    if decrypted.len() < 4 {
-        return Err("decrypted BIFF8 stream too short".to_owned());
+fn find_filepass_payload(workbook_stream: &[u8]) -> Result<&[u8], easyexcel_io::Error> {
+    let mut cursor = 0usize;
+    while cursor < workbook_stream.len() {
+        let header = workbook_stream
+            .get(cursor..cursor.saturating_add(4))
+            .ok_or_else(|| easyexcel_io::Error::Xls("truncated BIFF record header".to_owned()))?;
+        let sid = u16::from_le_bytes([header[0], header[1]]);
+        let len = usize::from(u16::from_le_bytes([header[2], header[3]]));
+        let payload_start = cursor + 4;
+        let payload_end = payload_start
+            .checked_add(len)
+            .ok_or_else(|| easyexcel_io::Error::Xls("BIFF record length overflow".to_owned()))?;
+        let payload = workbook_stream
+            .get(payload_start..payload_end)
+            .ok_or_else(|| {
+                easyexcel_io::Error::Xls(format!("truncated BIFF record 0x{sid:04X}"))
+            })?;
+        if sid == FILE_PASS_SID {
+            return Ok(payload);
+        }
+        cursor = payload_end;
     }
-    let bof_marker = u16::from_le_bytes([decrypted[0], decrypted[1]]);
-    if bof_marker != 0x0809 {
-        return Err("invalid password or corrupted BIFF8 stream".to_owned());
+    Err(easyexcel_io::Error::Xls(
+        "BIFF8 CryptoAPI stream is missing FILEPASS".to_owned(),
+    ))
+}
+
+fn verify_crypto_api_password(
+    filepass: &[u8],
+    password: &str,
+) -> Result<[u8; 20], easyexcel_io::Error> {
+    if read_u16(filepass, 0) != Some(1)
+        || read_u16(filepass, 2) != Some(CRYPTO_API_VERSION_MAJOR)
+        || read_u16(filepass, 4) != Some(CRYPTO_API_VERSION_MINOR)
+    {
+        return Err(easyexcel_io::Error::Unsupported(
+            "BIFF8 password encryption is not CryptoAPI RC4".to_owned(),
+        ));
     }
-    let _ = decrypted_vh; // verifier_hash check passed indirectly via BOF
-    Ok(decrypted)
+    let header_size = read_u32(filepass, 10)
+        .and_then(|value| usize::try_from(value).ok())
+        .ok_or_else(|| easyexcel_io::Error::Xls("invalid FILEPASS header size".to_owned()))?;
+    let verifier_start = 14usize
+        .checked_add(header_size)
+        .ok_or_else(|| easyexcel_io::Error::Xls("FILEPASS header overflow".to_owned()))?;
+    if read_u32(filepass, verifier_start) != Some(16) {
+        return Err(easyexcel_io::Error::Xls(
+            "invalid FILEPASS salt size".to_owned(),
+        ));
+    }
+    let salt_start = verifier_start + 4;
+    let salt: [u8; 16] = filepass
+        .get(salt_start..salt_start + 16)
+        .and_then(|bytes| bytes.try_into().ok())
+        .ok_or_else(|| easyexcel_io::Error::Xls("truncated FILEPASS salt".to_owned()))?;
+    let encrypted_verifier_start = salt_start + 16;
+    let mut verifier: [u8; 16] = filepass
+        .get(encrypted_verifier_start..encrypted_verifier_start + 16)
+        .and_then(|bytes| bytes.try_into().ok())
+        .ok_or_else(|| easyexcel_io::Error::Xls("truncated FILEPASS verifier".to_owned()))?;
+    let hash_size_offset = encrypted_verifier_start + 16;
+    let hash_size = read_u32(filepass, hash_size_offset)
+        .and_then(|value| usize::try_from(value).ok())
+        .ok_or_else(|| {
+            easyexcel_io::Error::Xls("invalid FILEPASS verifier hash size".to_owned())
+        })?;
+    if hash_size < 20 {
+        return Err(easyexcel_io::Error::Xls(
+            "FILEPASS verifier hash is shorter than SHA-1".to_owned(),
+        ));
+    }
+    let hash_start = hash_size_offset + 4;
+    let mut verifier_hash = filepass
+        .get(hash_start..hash_start + hash_size)
+        .ok_or_else(|| easyexcel_io::Error::Xls("truncated FILEPASS verifier hash".to_owned()))?
+        .to_vec();
+
+    let secret_key = crypto_api_secret_key(password, &salt);
+    let mut cipher = Biff8Rc4State::new(&crypto_api_block_key(&secret_key, 0));
+    cipher.apply(&mut verifier);
+    cipher.apply(&mut verifier_hash);
+    let expected: [u8; 20] = Sha1::digest(verifier).into();
+    if !constant_time_eq(&expected, &verifier_hash[..20]) {
+        return Err(easyexcel_io::Error::WrongPassword);
+    }
+    Ok(secret_key)
+}
+
+fn read_u16(bytes: &[u8], offset: usize) -> Option<u16> {
+    let value = bytes.get(offset..offset.checked_add(2)?)?;
+    Some(u16::from_le_bytes([value[0], value[1]]))
+}
+
+fn read_u32(bytes: &[u8], offset: usize) -> Option<u32> {
+    let value = bytes.get(offset..offset.checked_add(4)?)?;
+    Some(u32::from_le_bytes([value[0], value[1], value[2], value[3]]))
+}
+
+fn constant_time_eq(left: &[u8], right: &[u8]) -> bool {
+    left.len() == right.len()
+        && left
+            .iter()
+            .zip(right)
+            .fold(0u8, |difference, (left, right)| difference | (left ^ right))
+            == 0
+}
+
+fn crypto_api_filepass_payload(
+    salt: &[u8; 16],
+    encrypted_verifier: &[u8; 16],
+    encrypted_verifier_hash: &[u8; 20],
+) -> Vec<u8> {
+    let mut header_body = Vec::new();
+    header_body.extend_from_slice(&CRYPTO_API_FLAGS.to_le_bytes());
+    header_body.extend_from_slice(&0u32.to_le_bytes());
+    header_body.extend_from_slice(&RC4_ALGORITHM_ID.to_le_bytes());
+    header_body.extend_from_slice(&SHA1_ALGORITHM_ID.to_le_bytes());
+    header_body.extend_from_slice(&RC4_KEY_BITS.to_le_bytes());
+    header_body.extend_from_slice(&RC4_PROVIDER_TYPE.to_le_bytes());
+    header_body.extend_from_slice(&0u32.to_le_bytes());
+    header_body.extend_from_slice(&0u32.to_le_bytes());
+    for code_unit in RC4_PROVIDER_NAME.encode_utf16().chain(std::iter::once(0)) {
+        header_body.extend_from_slice(&code_unit.to_le_bytes());
+    }
+
+    let mut payload = Vec::with_capacity(18 + header_body.len() + 56);
+    payload.extend_from_slice(&1u16.to_le_bytes());
+    payload.extend_from_slice(&CRYPTO_API_VERSION_MAJOR.to_le_bytes());
+    payload.extend_from_slice(&CRYPTO_API_VERSION_MINOR.to_le_bytes());
+    payload.extend_from_slice(&CRYPTO_API_FLAGS.to_le_bytes());
+    payload.extend_from_slice(&(header_body.len() as u32).to_le_bytes());
+    payload.extend_from_slice(&header_body);
+    payload.extend_from_slice(&16u32.to_le_bytes());
+    payload.extend_from_slice(salt);
+    payload.extend_from_slice(encrypted_verifier);
+    payload.extend_from_slice(&20u32.to_le_bytes());
+    payload.extend_from_slice(encrypted_verifier_hash);
+    payload
+}
+
+/// 按 POI `HSSFWorkbook#encryptBytes` 对已含 `FILEPASS` 的 Workbook stream 加密。
+///
+/// # Errors
+///
+/// BIFF record 截断、长度越界或 `FILEPASS` 缺失时返回错误。
+pub fn encrypt_crypto_api_workbook_stream(
+    workbook_stream: &[u8],
+    encryption: &Biff8CryptoApiEncryption,
+) -> Result<Vec<u8>, String> {
+    transform_crypto_api_workbook_stream(workbook_stream, &encryption.secret_key)
+}
+
+fn transform_crypto_api_workbook_stream(
+    workbook_stream: &[u8],
+    secret_key: &[u8; 20],
+) -> Result<Vec<u8>, String> {
+    let mut output = workbook_stream.to_vec();
+    let mut crypt = ChunkedRc4::new(secret_key);
+    let mut cursor = 0usize;
+    let mut saw_filepass = false;
+    while cursor < output.len() {
+        let header_end = cursor
+            .checked_add(4)
+            .ok_or_else(|| "BIFF8 encryption cursor overflow".to_owned())?;
+        let header = output
+            .get(cursor..header_end)
+            .ok_or_else(|| "BIFF8 encryption truncated record header".to_owned())?;
+        let sid = u16::from_le_bytes([header[0], header[1]]);
+        let len = usize::from(u16::from_le_bytes([header[2], header[3]]));
+        crypt.advance_plain(4);
+        cursor = header_end;
+        let payload_end = cursor
+            .checked_add(len)
+            .ok_or_else(|| "BIFF8 encryption payload overflow".to_owned())?;
+        let payload = output
+            .get_mut(cursor..payload_end)
+            .ok_or_else(|| format!("BIFF8 encryption truncated record 0x{sid:04X}"))?;
+        match sid {
+            BOF_SID | INTERFACE_HEADER_SID | FILE_PASS_SID => {
+                if sid == FILE_PASS_SID {
+                    saw_filepass = true;
+                }
+                crypt.advance_plain(len);
+            }
+            BOUND_SHEET_SID if len >= 4 => {
+                crypt.advance_plain(4);
+                crypt.apply(&mut payload[4..]);
+            }
+            _ => crypt.apply(payload),
+        }
+        cursor = payload_end;
+    }
+    if !saw_filepass {
+        return Err("BIFF8 CryptoAPI stream is missing FILEPASS".to_owned());
+    }
+    Ok(output)
 }
 
 #[cfg(test)]
@@ -137,45 +311,43 @@ mod tests {
     use super::*;
 
     #[test]
-    fn rc4_round_trip() {
-        let key = b"testkey12345";
-        let data = b"Hello, BIFF8 encryption world! This is test data.";
-        let encrypted = rc4_crypt(data, key);
-        assert_ne!(&encrypted, data, "encryption must change data");
-        let decrypted = rc4_crypt(&encrypted, key);
-        assert_eq!(&decrypted, data, "RC4 round-trip must match");
+    fn crypto_api_material_is_deterministic_for_golden_inputs() {
+        let encryption =
+            prepare_crypto_api_encryption_with_material("123456", [0x11; 16], [0x22; 16]);
+        assert_eq!(
+            &encryption.filepass_payload[..10],
+            &[1, 0, 4, 0, 2, 0, 4, 0, 0, 0]
+        );
+        assert_eq!(encryption.filepass_payload[10..14], (118u32).to_le_bytes());
+        assert_eq!(encryption.filepass_payload.len(), 192);
     }
 
     #[test]
-    fn encrypt_decrypt_biff8_stream() {
-        // Minimal BIFF8 stream: BOF + sheet name
+    fn workbook_transform_keeps_headers_filepass_bof_and_boundsheet_offset_plain() {
+        let encryption = prepare_crypto_api_encryption_with_material("pwd", [3; 16], [7; 16]);
         let mut stream = Vec::new();
-        stream.extend_from_slice(&0x0809u16.to_le_bytes()); // BOF
-        stream.extend_from_slice(b"testworkbook");
-        stream.extend_from_slice(&[0; 8]);
-
-        let (encrypted, salt, vh) =
-            encrypt_biff8_stream(&stream, "password123").expect("OS randomness is available");
-        assert_ne!(encrypted, stream);
-
-        let decrypted = decrypt_biff8_stream(&encrypted, "password123", &salt, &vh)
-            .expect("decrypt must succeed with correct password");
+        super::super::encode::record(&mut stream, BOF_SID, &[1, 2, 3, 4]);
+        super::super::encode::record(&mut stream, FILE_PASS_SID, encryption.filepass_payload());
+        super::super::encode::record(&mut stream, BOUND_SHEET_SID, &[9, 8, 7, 6, 5, 4]);
+        super::super::encode::record(&mut stream, 0x0203, &[1, 2, 3, 4, 5, 6, 7, 8]);
+        let encrypted = encrypt_crypto_api_workbook_stream(&stream, &encryption).unwrap();
+        assert_eq!(&encrypted[..8], &stream[..8]);
+        let filepass_start = 8usize;
+        let filepass_end = filepass_start + 4 + encryption.filepass_payload.len();
+        assert_eq!(
+            &encrypted[filepass_start..filepass_end],
+            &stream[filepass_start..filepass_end]
+        );
+        assert_eq!(
+            &encrypted[filepass_end..filepass_end + 8],
+            &stream[filepass_end..filepass_end + 8]
+        );
+        assert_ne!(&encrypted[filepass_end + 8..], &stream[filepass_end + 8..]);
+        let decrypted = decrypt_crypto_api_workbook_stream(&encrypted, "pwd").unwrap();
         assert_eq!(decrypted, stream);
-
-        // Wrong password must fail
-        let result = decrypt_biff8_stream(&encrypted, "wrongpass", &salt, &vh);
-        assert!(result.is_err());
-    }
-}
-
-#[cfg(test)]
-mod tests_extra {
-    use super::*;
-
-    #[test]
-    fn decrypt_biff8_stream_rejects_short_input() {
-        let error = decrypt_biff8_stream(&[1, 2, 3], "pwd", &[0u8; 16], &[0u8; 16])
-            .expect_err("short stream must fail");
-        assert_eq!(error, "decrypted BIFF8 stream too short");
+        assert!(matches!(
+            decrypt_crypto_api_workbook_stream(&encrypted, "wrong"),
+            Err(easyexcel_io::Error::WrongPassword)
+        ));
     }
 }

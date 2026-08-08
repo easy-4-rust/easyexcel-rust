@@ -207,19 +207,42 @@ impl RowData {
     /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Creates a conversion context for a column. (Java `ReadConverterContext` constructor)
     #[must_use]
     pub fn convert_context(&self, column: &ExcelColumn) -> ConvertContext {
-        let column_index = column
-            .index
-            .or_else(|| self.headers.get(column.leaf_name()).copied());
+        let mut context = self.convert_context_base();
+        self.configure_convert_context(&mut context, column);
+        context
+    }
+
+    /// 创建可供 derive 在同一行内复用的转换上下文基线。
+    ///
+    /// 对应 Java：`AnalysisContext` 在一行的多个字段转换期间复用 Sheet 与行号状态。
+    #[doc(hidden)]
+    #[must_use]
+    pub fn convert_context_base(&self) -> ConvertContext {
         ConvertContext {
             sheet_name: self.sheet_name.clone(),
             row_index: self.row_index,
-            column_index,
-            field: column.field,
-            format: column.format,
-            date_time_format: column.date_time_format,
-            number_format: column.number_format,
-            use_1904_windowing: column.use_1904_windowing.unwrap_or(self.use_1904_windowing),
+            column_index: None,
+            field: "",
+            format: None,
+            date_time_format: None,
+            number_format: None,
+            use_1904_windowing: self.use_1904_windowing,
         }
+    }
+
+    /// 将复用的行上下文切换到指定字段，避免为每个字段重新分配 Sheet 名称。
+    ///
+    /// 对应 Java：`AnalysisContext.currentReadHolder` 与 `ExcelContentProperty` 的逐字段切换。
+    #[doc(hidden)]
+    pub fn configure_convert_context(&self, context: &mut ConvertContext, column: &ExcelColumn) {
+        context.column_index = column
+            .index
+            .or_else(|| self.headers.get(column.leaf_name()).copied());
+        context.field = column.field;
+        context.format = column.format;
+        context.date_time_format = column.date_time_format;
+        context.number_format = column.number_format;
+        context.use_1904_windowing = column.use_1904_windowing.unwrap_or(self.use_1904_windowing);
     }
 }
 /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。

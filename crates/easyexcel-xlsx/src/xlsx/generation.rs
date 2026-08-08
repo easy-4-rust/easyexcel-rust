@@ -11,8 +11,8 @@ use chrono::{NaiveDate, NaiveDateTime};
 use easyexcel_io::{Error, Result};
 
 pub use rust_xlsxwriter::{
-    Color, Format, FormatAlign, FormatBorder, FormatPattern, FormatScript, FormatUnderline, Image,
-    Note, ObjectMovement, Workbook, Worksheet,
+    Chart, ChartType, Color, Format, FormatAlign, FormatBorder, FormatPattern, FormatScript,
+    FormatUnderline, Image, Note, ObjectMovement, Workbook, Worksheet,
 };
 
 use super::encrypt::{ReadWriteSeek, encrypt_package_to};

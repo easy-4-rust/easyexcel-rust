@@ -6,6 +6,7 @@
 use std::marker::PhantomData;
 use std::path::PathBuf;
 
+use crate::ExcelReader;
 use crate::IntoSheetSelector;
 use crate::collect_listener::{collect_listener, drain_listener};
 use crate::core::{
@@ -14,7 +15,7 @@ use crate::core::{
 };
 use crate::read::{
     ExcelLocale, ReadCacheMode, ReadOptions, ScientificFormatMode, SheetSelector,
-    StoredReadCacheSelector, read_csv, read_xls, read_xlsx,
+    StoredReadCacheSelector,
 };
 
 /// 对应 Java：`EasyExcel.readSync(...)`。 Synchronous collecting reader builder.
@@ -222,14 +223,9 @@ where
     ///
     /// Returns a workbook, sheet-selection, or row-conversion error.
     pub fn do_read_sync(self) -> Result<Vec<T>> {
-        let mut listener = collect_listener::<T>();
-        if easyexcel_io::path_has_extension(&self.path, "csv") {
-            read_csv::<T, _>(&self.path, &self.options, &mut listener)?;
-        } else if easyexcel_io::path_has_extension(&self.path, "xls") {
-            read_xls::<T, _>(&self.path, &self.options, &mut listener)?;
-        } else {
-            read_xlsx::<T, _>(&self.path, &self.options, &mut listener)?;
-        }
-        Ok(drain_listener(listener))
+        let listener = collect_listener::<T>();
+        let mut reader = ExcelReader::new(self.path, self.options, listener)?;
+        reader.read_all()?;
+        Ok(drain_listener(reader.into_listener()))
     }
 }

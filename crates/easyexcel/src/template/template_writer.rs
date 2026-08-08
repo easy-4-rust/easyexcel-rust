@@ -21,7 +21,7 @@ use crate::template::template_entry::TemplateEntry;
 use crate::template::template_output::TemplateOutput;
 #[cfg(test)]
 use crate::template::template_output::WriteSeek;
-use crate::{FillConfig, FillWrapper, TemplateData, TemplateSheet};
+use crate::{FillConfig, FillDirection, FillWrapper, MergeRange, TemplateData, TemplateSheet};
 
 /// Stateful OOXML template writer matching Java `ExcelWriter.fill` lifecycle.
 ///
@@ -329,6 +329,50 @@ impl<'a> ExcelTemplateWriter<'a> {
         Ok(self)
     }
 
+    /// 在模板包的指定工作表上立即增加一个绝对合并区域。
+    ///
+    /// 该修改在集合填充之前进入工作表 XML，因此后续 `forceNewRow`
+    /// 引发的行迁移会像 Java POI `shiftRows` 一样同步更新合并引用。
+    /// 对应 Java：`ExcelBuilderImpl#merge`。
+    ///
+    /// # Errors
+    ///
+    /// 工作表不存在、坐标非法或 OOXML 更新失败时返回错误。
+    pub(crate) fn add_merge_on_sheet(
+        &mut self,
+        sheet: &TemplateSheet,
+        range: MergeRange,
+    ) -> Result<&mut Self> {
+        self.ensure_open()?;
+        let entries = std::mem::take(&mut self.entries);
+        let package = easyexcel_xlsx::OoxmlPackage::from_entries(entries);
+        let mut package = easyexcel_xlsx::OoxmlTemplatePackage::from_package(package);
+        let result = (|| {
+            let names = package.sheet_names().map_err(ExcelError::from)?;
+            let name = match sheet {
+                TemplateSheet::First => names.first(),
+                TemplateSheet::Index(index) => names.get(*index),
+                TemplateSheet::Name(name) => names.iter().find(|candidate| *candidate == name),
+            }
+            .ok_or_else(|| ExcelError::SheetNotFound(format!("template sheet {sheet:?}")))?;
+            package
+                .apply_sheet_layout(
+                    name,
+                    &[],
+                    &[easyexcel_xlsx::xlsx::template_xml::TemplateMergeRange {
+                        first_row: range.first_row,
+                        last_row: range.last_row,
+                        first_column: range.first_column,
+                        last_column: range.last_column,
+                    }],
+                )
+                .map_err(ExcelError::from)
+        })();
+        self.entries = package.into_package().into_entries();
+        result?;
+        Ok(self)
+    }
+
     /// Writes the completed XLSX package. Repeated calls are no-ops.
     ///
     /// # Errors
@@ -488,7 +532,7 @@ fn fill_xls_template_list(
     template: &Path,
     output: &Path,
     data: &FillWrapper,
-    _config: FillConfig,
+    config: FillConfig,
 ) -> Result<()> {
     let mut pkg = crate::write::xls_adapter::Biff8TemplatePackage::from_path(template)?;
     let rows = data
@@ -496,7 +540,15 @@ fn fill_xls_template_list(
         .iter()
         .map(template_text_values)
         .collect::<Vec<_>>();
-    pkg.replace_collection_placeholders(data.name(), &rows)?;
+    let first_sheet = pkg.sheet_names().into_iter().next();
+    pkg.fill_collection_placeholders(
+        first_sheet.as_deref(),
+        data.name(),
+        &rows,
+        matches!(config.get_direction(), FillDirection::Horizontal),
+        config.get_force_new_row(),
+        config.get_auto_style(),
+    )?;
     pkg.save_to_path(output)
 }
 

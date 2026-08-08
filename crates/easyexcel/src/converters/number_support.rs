@@ -23,6 +23,16 @@ pub(crate) trait JavaNumber: Sized {
     fn to_decimal(&self) -> Result<BigDecimal, ExcelError>;
     fn java_string(&self) -> String;
 
+    fn from_i64(value: i64) -> Result<Self, ExcelError> {
+        Self::from_decimal(&BigDecimal::from(value))
+    }
+
+    fn from_f64(value: f64) -> Result<Self, ExcelError> {
+        let decimal = BigDecimal::from_str(&value.to_string())
+            .map_err(|_| ExcelError::Format(format!("invalid Java Number value {value}")))?;
+        Self::from_decimal(&decimal)
+    }
+
     fn negative(&self) -> bool {
         false
     }
@@ -38,14 +48,13 @@ where
     T: JavaNumber,
 {
     let cell = context.cell().unwrap_or(&CellValue::Empty);
-    let decimal = match cell {
-        CellValue::Decimal(value) => value.clone(),
-        CellValue::Int(value) => BigDecimal::from(*value),
-        CellValue::Float(value) if value.is_finite() => BigDecimal::from_str(&value.to_string())
-            .map_err(|_| context.convert_context().invalid(cell, "number"))?,
+    let result = match cell {
+        CellValue::Decimal(value) => T::from_decimal(value),
+        CellValue::Int(value) => T::from_i64(*value),
+        CellValue::Float(value) if value.is_finite() => T::from_f64(*value),
         other => return Err(context.convert_context().invalid(other, "number")),
     };
-    T::from_decimal(&decimal).map_err(|error| number_error(context, cell, error))
+    result.map_err(|error| number_error(context, cell, error))
 }
 
 /// 对应 Java：com.alibaba.excel.converters。
@@ -171,6 +180,11 @@ macro_rules! impl_java_integer {
                 Ok(BigDecimal::from(*self))
             }
 
+            fn from_i64(value: i64) -> Result<Self, ExcelError> {
+                #[allow(clippy::cast_possible_truncation)]
+                Ok(value as Self)
+            }
+
             fn java_string(&self) -> String {
                 self.to_string()
             }
@@ -200,6 +214,16 @@ impl JavaNumber for f32 {
     fn to_decimal(&self) -> Result<BigDecimal, ExcelError> {
         BigDecimal::from_str(&self.to_string())
             .map_err(|_| ExcelError::Format(format!("invalid Java Float value {self}")))
+    }
+
+    fn from_i64(value: i64) -> Result<Self, ExcelError> {
+        #[allow(clippy::cast_precision_loss)]
+        Ok(value as Self)
+    }
+
+    fn from_f64(value: f64) -> Result<Self, ExcelError> {
+        #[allow(clippy::cast_possible_truncation)]
+        Ok(value as Self)
     }
 
     fn java_string(&self) -> String {
@@ -236,6 +260,15 @@ impl JavaNumber for f64 {
     fn to_decimal(&self) -> Result<BigDecimal, ExcelError> {
         BigDecimal::from_str(&self.to_string())
             .map_err(|_| ExcelError::Format(format!("invalid Java Double value {self}")))
+    }
+
+    fn from_i64(value: i64) -> Result<Self, ExcelError> {
+        #[allow(clippy::cast_precision_loss)]
+        Ok(value as Self)
+    }
+
+    fn from_f64(value: f64) -> Result<Self, ExcelError> {
+        Ok(value)
     }
 
     fn java_string(&self) -> String {

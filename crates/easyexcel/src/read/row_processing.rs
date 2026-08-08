@@ -285,16 +285,22 @@ pub(crate) fn read_range(
 /// BIFF/CFB parsing belongs to `easyexcel-xls`; this adapter only preserves the
 /// facade's row metadata, formula and listener semantics.
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn read_model_sheet(
     sheet: &easyexcel_model::Sheet,
     sheet_no: usize,
     sheet_name: &str,
     options: &ReadOptions,
     sheet_displays: &HashMap<(u32, usize), String>,
+    rich_text_cells: &HashMap<(usize, u32, usize), crate::core::RichTextStringData>,
+    extras: &[&crate::core::CellExtra],
     consumer: &mut dyn RowConsumer,
 ) -> Result<ReadFlow> {
     let mut stored_rows = sheet.stored_rows().peekable();
     if stored_rows.peek().is_none() {
+        if dispatch_extras(consumer, sheet_no, sheet_name, options, extras)? == ReadFlow::Stop {
+            return Ok(ReadFlow::Stop);
+        }
         consumer.after(&analysis_context(sheet_name, sheet_no, 0, options))?;
         return Ok(ReadFlow::Continue);
     }
@@ -313,7 +319,10 @@ pub(crate) fn read_model_sheet(
         for (column, cell) in stored_row.cells() {
             let column = usize::try_from(column)
                 .map_err(|_| ExcelError::Format("XLS column index exceeds usize".to_owned()))?;
-            let (value, formula) = from_model_cell(cell);
+            let (mut value, formula) = from_model_cell(cell);
+            if let Some(rich_text) = rich_text_cells.get(&(sheet_no, row_index, column)) {
+                value = CellValue::RichText(rich_text.clone());
+            }
             if !value.is_empty() {
                 present_columns.insert(column);
             }
@@ -345,7 +354,26 @@ pub(crate) fn read_model_sheet(
             return Ok(ReadFlow::Stop);
         }
     }
+    if dispatch_extras(consumer, sheet_no, sheet_name, options, extras)? == ReadFlow::Stop {
+        return Ok(ReadFlow::Stop);
+    }
     consumer.after(&analysis_context(sheet_name, sheet_no, final_row, options))?;
+    Ok(ReadFlow::Continue)
+}
+
+fn dispatch_extras(
+    consumer: &mut dyn RowConsumer,
+    sheet_no: usize,
+    sheet_name: &str,
+    options: &ReadOptions,
+    extras: &[&crate::core::CellExtra],
+) -> Result<ReadFlow> {
+    for extra in extras {
+        let context = analysis_context(sheet_name, sheet_no, extra.first_row_index(), options);
+        if consumer.extra(extra, &context)? == ReadFlow::Stop {
+            return Ok(ReadFlow::Stop);
+        }
+    }
     Ok(ReadFlow::Continue)
 }
 

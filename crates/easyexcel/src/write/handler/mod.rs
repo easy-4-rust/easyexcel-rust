@@ -13,3 +13,4 @@ pub mod row_write_handler;
 pub mod sheet_write_handler;
 pub mod workbook_write_handler;
 pub mod write_handler;
+pub mod write_handler_capability;

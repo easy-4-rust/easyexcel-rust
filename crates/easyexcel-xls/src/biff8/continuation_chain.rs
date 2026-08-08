@@ -36,7 +36,7 @@ impl Biff8ContinuationChain {
     /// # Errors
     ///
     /// SST 元数据、字符串标志或 CONTINUE 边界损坏时返回错误。
-    pub fn decode_sst(&self) -> Result<Vec<String>> {
+    pub fn decode_sst(&self) -> Result<Vec<crate::xls::Biff8SstString>> {
         super::string::decode_sst_segments(self.segments())
     }
 

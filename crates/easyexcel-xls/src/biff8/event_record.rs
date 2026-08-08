@@ -14,6 +14,8 @@ include!("event_record/biff8formula_record.rs");
 
 include!("event_record/biff8cell_range.rs");
 
+include!("event_record/decode_hyperlink_address.rs");
+
 include!("event_record/biff8bound_sheet_record.rs");
 
 include!("event_record/biff8common_object_data.rs");
@@ -45,6 +47,31 @@ pub fn decode_label_record_position(data: &[u8]) -> Option<(u32, usize)> {
     decode_cell_position(data)
 }
 
+/// 解码 BIFF8 `LABEL` 记录的坐标与内联字符串。
+///
+/// 对应 POI：`LabelRecord(RecordInputStream)`。字符标志位为 `0` 时，
+/// 每个字节按 Unicode U+0000..U+00FF 映射；标志位为 `1` 时读取 UTF-16LE。
+#[must_use]
+pub fn decode_label_record(data: &[u8]) -> Option<(u32, usize, String)> {
+    let (row, column) = decode_cell_position(data)?;
+    let character_count = usize::from(u16::from_le_bytes(data.get(6..8)?.try_into().ok()?));
+    let unicode_flag = *data.get(8)?;
+    let raw = data.get(9..)?;
+    let value = if unicode_flag & 0x01 == 0 {
+        let bytes = raw.get(..character_count)?;
+        bytes.iter().map(|byte| char::from(*byte)).collect()
+    } else {
+        let byte_count = character_count.checked_mul(2)?;
+        let bytes = raw.get(..byte_count)?;
+        let units = bytes
+            .chunks_exact(2)
+            .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]))
+            .collect::<Vec<_>>();
+        String::from_utf16_lossy(&units)
+    };
+    Some((row, column, value))
+}
+
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 NOTE 记录的单元格坐标，并校验 BIFF8 NOTE 固定头长度。
 #[must_use]
 pub fn decode_note_record_position(data: &[u8]) -> Option<(u32, usize)> {
@@ -52,6 +79,16 @@ pub fn decode_note_record_position(data: &[u8]) -> Option<(u32, usize)> {
         return None;
     }
     decode_cell_position(data)
+}
+
+/// Decodes the shape id used to join NOTE with its preceding OBJ/TXO text.
+///
+/// 对应 Java：`NoteRecord#getShapeId()`。
+#[must_use]
+pub fn decode_note_shape_id(data: &[u8]) -> Option<u32> {
+    Some(u32::from(u16::from_le_bytes(
+        data.get(6..8)?.try_into().ok()?,
+    )))
 }
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 解码 OBJ 记录的 `ftCmo`（Common Object Data）子记录。

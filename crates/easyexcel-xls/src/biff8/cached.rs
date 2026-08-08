@@ -30,20 +30,13 @@ pub(crate) enum Biff8Cached {
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 对每个工作表求值公式，返回 `(row, col) → 缓存值` 的映射表。
 /// 与 `write_worksheet` 的 sheet 顺序一一对应。
 pub(crate) fn recalc_cached_values(sheets: &[Biff8Sheet]) -> Vec<HashMap<(u16, u8), Biff8Cached>> {
-    let mut all = Vec::with_capacity(sheets.len());
+    let mut workbook = Workbook::empty();
     for sheet in sheets {
-        all.push(recalc_sheet(sheet));
-    }
-    all
-}
-
-fn recalc_sheet(sheet: &Biff8Sheet) -> HashMap<(u16, u8), Biff8Cached> {
-    let mut workbook = Workbook::new();
-    {
-        let ws = workbook.sheet_mut(0).expect("default sheet");
+        let mut worksheet = easyexcel_model::model::Sheet::new(sheet.name.clone());
         for (&(row, col), cell) in &sheet.cells {
             let xcell = match &cell.value {
                 Biff8Value::Text(text) => Cell::Text(text.clone()),
+                Biff8Value::RichText(rich) => Cell::Text(rich.text.clone()),
                 Biff8Value::Number(number) => Cell::Number(*number),
                 Biff8Value::Bool(flag) => Cell::Bool(*flag),
                 Biff8Value::Formula(expr) => Cell::Formula {
@@ -52,21 +45,125 @@ fn recalc_sheet(sheet: &Biff8Sheet) -> HashMap<(u16, u8), Biff8Cached> {
                 },
                 Biff8Value::Blank => continue,
             };
-            ws.set(u32::from(row), u32::from(col), xcell);
+            worksheet.set(u32::from(row), u32::from(col), xcell);
         }
+        workbook.sheets.push(worksheet);
     }
     Engine::new().recalc(&mut workbook);
-    let mut cache = HashMap::new();
-    let ws = workbook.sheet_mut(0).expect("default sheet");
-    for (&(row, col), cell) in &sheet.cells {
-        if matches!(cell.value, Biff8Value::Formula(_))
-            && let Some(Cell::Formula { cached, .. }) = ws.get(u32::from(row), u32::from(col))
-            && let Some(value) = to_biff8_cached(cached)
-        {
-            cache.insert((row, col), value);
+
+    sheets
+        .iter()
+        .enumerate()
+        .map(|(sheet_index, sheet)| {
+            let mut cache = HashMap::new();
+            let worksheet = &workbook.sheets[sheet_index];
+            for (&(row, col), cell) in &sheet.cells {
+                if matches!(cell.value, Biff8Value::Formula(_))
+                    && let Some(Cell::Formula { cached, .. }) =
+                        worksheet.get(u32::from(row), u32::from(col))
+                    && let Some(value) = cached_formula_value(cached, &cell.value, &workbook)
+                {
+                    cache.insert((row, col), value);
+                }
+            }
+            cache
+        })
+        .collect()
+}
+
+fn cached_formula_value(
+    cached: &CellValue,
+    source: &Biff8Value,
+    workbook: &Workbook,
+) -> Option<Biff8Cached> {
+    let mapped = to_biff8_cached(cached);
+    if !matches!(mapped, Some(Biff8Cached::Error(0x17))) {
+        return mapped;
+    }
+    let Biff8Value::Formula(formula) = source else {
+        return mapped;
+    };
+    evaluate_3d_aggregate(formula, workbook).or(mapped)
+}
+
+fn evaluate_3d_aggregate(formula: &str, workbook: &Workbook) -> Option<Biff8Cached> {
+    let formula = formula.strip_prefix('=').unwrap_or(formula);
+    let open = formula.find('(')?;
+    let function = formula[..open].trim().to_ascii_uppercase();
+    if !matches!(
+        function.as_str(),
+        "SUM" | "AVERAGE" | "MIN" | "MAX" | "COUNT"
+    ) {
+        return None;
+    }
+    let reference = formula[open + 1..].strip_suffix(')')?.trim();
+    let bang = reference.rfind('!')?;
+    let sheet_spec = reference[..bang]
+        .trim()
+        .trim_matches('\'')
+        .replace("''", "'");
+    let (first_sheet, last_sheet) = sheet_spec.split_once(':')?;
+    let first_index = workbook
+        .sheets
+        .iter()
+        .position(|sheet| sheet.name.eq_ignore_ascii_case(first_sheet))?;
+    let last_index = workbook
+        .sheets
+        .iter()
+        .position(|sheet| sheet.name.eq_ignore_ascii_case(last_sheet))?;
+    if first_index > last_index {
+        return None;
+    }
+    let cell_spec = &reference[bang + 1..];
+    let (start, end) = cell_spec
+        .split_once(':')
+        .map_or((cell_spec, cell_spec), |(start, end)| (start, end));
+    let (start_row, start_col) = parse_a1(start)?;
+    let (end_row, end_col) = parse_a1(end)?;
+    let mut numbers = Vec::new();
+    for sheet in &workbook.sheets[first_index..=last_index] {
+        for row in start_row.min(end_row)..=start_row.max(end_row) {
+            for col in start_col.min(end_col)..=start_col.max(end_col) {
+                if let CellValue::Number(number) = sheet.value(row, col) {
+                    numbers.push(number);
+                }
+            }
         }
     }
-    cache
+    let value = match function.as_str() {
+        "SUM" => numbers.iter().sum(),
+        "AVERAGE" => numbers.iter().sum::<f64>() / numbers.len() as f64,
+        "MIN" => numbers.iter().copied().reduce(f64::min)?,
+        "MAX" => numbers.iter().copied().reduce(f64::max)?,
+        "COUNT" => numbers.len() as f64,
+        _ => return None,
+    };
+    value.is_finite().then_some(Biff8Cached::Number(value))
+}
+
+fn parse_a1(reference: &str) -> Option<(u32, u32)> {
+    let reference = reference.replace('$', "");
+    let split = reference.find(|character: char| character.is_ascii_digit())?;
+    let (column, row) = reference.split_at(split);
+    let row = row.parse::<u32>().ok()?.checked_sub(1)?;
+    let mut column_index = 0u32;
+    for character in column.bytes() {
+        if !character.is_ascii_alphabetic() {
+            return None;
+        }
+        column_index = column_index
+            .checked_mul(26)?
+            .checked_add(u32::from(character.to_ascii_uppercase() - b'A') + 1)?;
+    }
+    Some((row, column_index.checked_sub(1)?))
+}
+
+#[cfg(test)]
+fn recalc_sheet(sheet: &Biff8Sheet) -> HashMap<(u16, u8), Biff8Cached> {
+    recalc_cached_values(std::slice::from_ref(sheet))
+        .into_iter()
+        .next()
+        .unwrap_or_default()
 }
 
 fn to_biff8_cached(value: &CellValue) -> Option<Biff8Cached> {
@@ -180,5 +277,39 @@ mod tests {
         ]);
         let cache = recalc_sheet(&sheet);
         assert_eq!(cache.get(&(0, 2)), Some(&Biff8Cached::Error(0x0f))); // #VALUE!
+    }
+
+    #[test]
+    fn cross_sheet_references_are_evaluated_in_one_workbook() {
+        let source = sheet_with(&[(0, 0, Biff8Value::Number(7.0))]);
+        let mut target = Biff8Sheet::new("销售 数据");
+        target
+            .set(
+                0,
+                0,
+                Biff8Cell::general(Biff8Value::Formula("Sheet1!A1*2".to_owned())),
+            )
+            .unwrap();
+        let caches = recalc_cached_values(&[source, target]);
+        assert_eq!(caches[1].get(&(0, 0)), Some(&Biff8Cached::Number(14.0)));
+    }
+
+    #[test]
+    fn three_dimensional_sheet_range_aggregate_has_numeric_cache() {
+        let first = sheet_with(&[(0, 0, Biff8Value::Number(7.0))]);
+        let mut second = Biff8Sheet::new("销售 数据");
+        second
+            .set(0, 0, Biff8Cell::general(Biff8Value::Number(14.0)))
+            .unwrap();
+        let mut result = Biff8Sheet::new("结果");
+        result
+            .set(
+                0,
+                0,
+                Biff8Cell::general(Biff8Value::Formula("SUM('Sheet1:销售 数据'!A1)".to_owned())),
+            )
+            .unwrap();
+        let caches = recalc_cached_values(&[first, second, result]);
+        assert_eq!(caches[2].get(&(0, 0)), Some(&Biff8Cached::Number(21.0)));
     }
 }

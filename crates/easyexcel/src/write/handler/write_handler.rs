@@ -2,6 +2,7 @@
 //! capability interfaces (Workbook/Sheet/Row/CellWriteHandler) collapsed into a
 //! single trait.
 
+use super::write_handler_capability::WriteHandlerCapability;
 use crate::core::analysis_context::Result;
 use crate::core::cell_value::CellValue;
 use crate::core::excel_cell_style::ExcelCellStyle;
@@ -30,6 +31,29 @@ use crate::write::write_workbook_context::WriteWorkbookContext;
 /// Any callback may return an error to stop the write immediately.
 #[allow(clippy::missing_errors_doc)]
 pub trait WriteHandler {
+    /// 声明处理器所需的工作表访问能力。
+    ///
+    /// 自定义处理器默认未知，因此 Stateful Auto 会选择内存后端；显式流式
+    /// 模式会在首次冲突处返回错误。
+    fn backend_capability(&self) -> WriteHandlerCapability {
+        WriteHandlerCapability::Unknown
+    }
+
+    /// 返回该处理器是否需要逐行构造并接收完整回调上下文。
+    ///
+    /// 自定义处理器默认保守地返回 `true`；只有已证明没有 row hook 的内置处理器
+    /// 才覆盖为 `false`，从而允许标量流式写路径跳过无效上下文分配。
+    fn requires_row_context(&self) -> bool {
+        true
+    }
+
+    /// 返回该处理器是否需要逐单元格构造并接收完整回调上下文。
+    ///
+    /// 自定义处理器默认保守地返回 `true`，因此快路径不会跳过用户 Handler。
+    fn requires_cell_context(&self) -> bool {
+        true
+    }
+
     /// Lower orders execute first. (Java `Order.order()`)
     fn order(&self) -> i32 {
         0

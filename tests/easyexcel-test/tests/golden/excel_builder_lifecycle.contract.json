@@ -1,0 +1,15 @@
+{
+	"authority":"com.alibaba:easyexcel:4.0.3",
+	"implementation_class":"com.alibaba.excel.write.ExcelBuilderImpl",
+	"add_content_two_arg":true,
+	"add_content_three_arg":true,
+	"write_context_class":"com.alibaba.excel.context.WriteContextImpl",
+	"write_context_same":true,
+	"finish_false_output_exists":true,
+	"merge_after_add_range":"A1:B1",
+	"fill_output_exists":true,
+	"template_merge_after_fill_range":"A1:B1",
+	"finish_true_output_exists":true,
+	"finish_true_output_size":0,
+	"fill_without_template_error":"Calling the 'fill' method must use a template."
+}

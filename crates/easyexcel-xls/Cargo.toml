@@ -20,8 +20,11 @@ easyexcel-io.workspace = true
 easyexcel-model.workspace = true
 getrandom.workspace = true
 md-5.workspace = true
+sha1.workspace = true
 
 [dev-dependencies]
+base64.workspace = true
+flate2.workspace = true
 tempfile.workspace = true
 
 [lints]

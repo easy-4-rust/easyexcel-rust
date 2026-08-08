@@ -38,6 +38,14 @@ pub enum ExcelError {
     /// The requested operation is not supported by the selected engine. (Java `ExcelCommonException`)
     #[error("unsupported operation: {0}")]
     Unsupported(String),
+    /// Callers requested a normal early stop of the entire analysis.
+    /// (Java `ExcelAnalysisStopException`)
+    #[error("analysis stopped: {0}")]
+    AnalysisStop(String),
+    /// Callers requested a normal early stop of the current worksheet.
+    /// (Java `ExcelAnalysisStopSheetException`)
+    #[error("sheet analysis stopped: {0}")]
+    AnalysisStopSheet(String),
     /// 输入、输出或计算超过配置的资源上限。
     #[error("resource limit exceeded: {0}")]
     ResourceLimit(String),
@@ -67,6 +75,8 @@ impl Clone for ExcelError {
             Self::SheetNotFound(s) => Self::SheetNotFound(s.clone()),
             Self::Format(s) => Self::Format(s.clone()),
             Self::Unsupported(s) => Self::Unsupported(s.clone()),
+            Self::AnalysisStop(s) => Self::AnalysisStop(s.clone()),
+            Self::AnalysisStopSheet(s) => Self::AnalysisStopSheet(s.clone()),
             Self::ResourceLimit(s) => Self::ResourceLimit(s.clone()),
             Self::Io(e) => Self::Io(std::io::Error::new(e.kind(), e.to_string())),
         }
@@ -98,6 +108,8 @@ impl PartialEq for ExcelError {
             (Self::SheetNotFound(a), Self::SheetNotFound(b))
             | (Self::Format(a), Self::Format(b))
             | (Self::Unsupported(a), Self::Unsupported(b))
+            | (Self::AnalysisStop(a), Self::AnalysisStop(b))
+            | (Self::AnalysisStopSheet(a), Self::AnalysisStopSheet(b))
             | (Self::ResourceLimit(a), Self::ResourceLimit(b)) => a == b,
             (Self::Io(a), Self::Io(b)) => a.kind() == b.kind() && a.to_string() == b.to_string(),
             _ => false,
@@ -157,6 +169,12 @@ mod tests_extra {
 
         let format = ExcelError::Format("f".to_string());
         assert_eq!(format.clone(), format);
+
+        let stop = ExcelError::AnalysisStop("done".to_string());
+        assert_eq!(stop.clone(), stop);
+
+        let stop_sheet = ExcelError::AnalysisStopSheet("done".to_string());
+        assert_eq!(stop_sheet.clone(), stop_sheet);
 
         let unsupported = ExcelError::Unsupported("u".to_string());
         assert_eq!(unsupported.clone(), unsupported);

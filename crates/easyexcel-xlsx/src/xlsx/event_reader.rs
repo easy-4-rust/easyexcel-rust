@@ -11,9 +11,9 @@ use easyexcel_cache::{
     ReadCacheMode, SharedStringCache, SharedStringCacheReader, create_cache, memory_cache,
 };
 use easyexcel_format::{
-    SpreadsheetLocale, excel_display_number, format_with_code, is_date_format_code,
-    is_scientific_magnitude, java_plain_extreme_format, java_scientific_format,
-    resolve_builtin_format_code,
+    CompiledExcelFormat, SpreadsheetLocale, compile_format_code, excel_display_number,
+    format_with_compiled, is_date_format_code, is_scientific_magnitude, java_plain_extreme_format,
+    java_scientific_format, resolve_builtin_format_code,
 };
 use easyexcel_io::{Error, Result};
 use quick_xml::escape::resolve_predefined_entity;

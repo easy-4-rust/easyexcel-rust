@@ -1,2 +1,3 @@
-{"ts":"2026-08-06T04:41:32.522Z","event":"workflow_created","status":"created","message":"Performance goal created with evaluator contract"}
-{"ts":"2026-08-06T04:41:32.638Z","event":"goal_handoff_emitted","status":"in_progress","message":"Emitted model-facing Codex goal handoff; shell command did not mutate Codex goal state"}
+{"ts":"2026-08-08T04:52:24.026Z","event":"workflow_created","status":"created","message":"Performance goal created with evaluator contract"}
+{"ts":"2026-08-08T04:52:24.128Z","event":"goal_handoff_emitted","status":"in_progress","message":"Emitted model-facing Codex goal handoff; shell command did not mutate Codex goal state"}
+{"ts":"2026-08-08T04:52:24.294Z","event":"validation_failed","status":"validation_failed","validationStatus":"fail","evidence":"correct release evaluator exit 1: release raw matrix and stable baseline files are absent"}

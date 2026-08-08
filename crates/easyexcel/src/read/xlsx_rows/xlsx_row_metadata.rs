@@ -44,6 +44,8 @@ impl XlsxRowMetadata {
         use_1904_windowing: bool,
         use_scientific_format: bool,
         locale: SpreadsheetLocale,
+        retain_decimal_values: bool,
+        retain_display_columns: Option<HashSet<usize>>,
     ) -> Result<XlsxDisplayCellReader<'_>> {
         let inner = self
             .inner
@@ -53,6 +55,8 @@ impl XlsxRowMetadata {
                     date_1904: use_1904_windowing,
                     use_scientific_format,
                     locale,
+                    retain_decimal_values,
+                    retain_display_columns,
                 },
             )
             .map_err(ExcelError::from)?;
@@ -108,4 +112,3 @@ impl XlsxRowMetadata {
             .map_err(ExcelError::from)
     }
 }
-

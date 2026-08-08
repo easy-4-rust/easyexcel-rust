@@ -44,18 +44,21 @@ fn facade_propagates_read_sync_and_write_failures() {
     );
 
     let directory = tempdir().expect("temporary directory");
-    // Minimal BIFF8: empty .xls write succeeds (password / template still Unsupported).
+    // Minimal BIFF8 and CryptoAPI-encrypted .xls writes both succeed.
     let xls_empty = directory.path().join("empty.xls");
     EasyExcel::write::<Value>(&xls_empty)
         .do_write(Vec::<Value>::new())
         .expect("empty BIFF8 write");
     assert!(xls_empty.exists());
-    // Phase 5.3: XLS password is now supported via BIFF8 RC4
+    let encrypted_xls = directory.path().join("encrypted.xls");
+    EasyExcel::write::<Value>(&encrypted_xls)
+        .password("123456")
+        .do_write(Vec::new())
+        .expect("CryptoAPI BIFF8 write");
     assert!(
-        EasyExcel::write::<Value>(directory.path().join("encrypted.xls"))
-            .password("123456")
-            .do_write(Vec::new())
-            .is_ok()
+        std::fs::read(&encrypted_xls)
+            .expect("encrypted XLS bytes")
+            .starts_with(&[0xD0, 0xCF, 0x11, 0xE0])
     );
 
     let date = NaiveDate::from_ymd_opt(2026, 7, 17).expect("valid date");
@@ -313,4 +316,3 @@ fn sheet_converter_overrides_stateful_workbook_converter() -> Result<()> {
     assert_eq!(rows[1].value, "sheet:two");
     Ok(())
 }
-

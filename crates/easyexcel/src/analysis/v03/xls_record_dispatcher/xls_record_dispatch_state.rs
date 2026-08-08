@@ -15,9 +15,12 @@ pub struct XlsRecordDispatchState {
     last_boolean_cell: Option<BoolCell>,
     last_number_cell: Option<NumberCell>,
     last_rk_cell: Option<BlankCell>,
+    last_label_cell: Option<LabelCell>,
     shared_strings: Vec<String>,
+    rich_shared_strings: Vec<easyexcel_xls::Biff8SstString>,
     last_label_sst_cell: Option<LabelSstCell>,
     last_formula_cell: Option<FormulaCell>,
+    extras: Vec<(usize, crate::core::CellExtra)>,
 }
 
 impl XlsRecordDispatchState {
@@ -117,10 +120,22 @@ impl XlsRecordDispatchState {
         self.last_rk_cell
     }
 
+    /// 最近一次由 `LabelRecordHandler` 解码的内联字符串单元格。
+    #[must_use]
+    pub const fn last_label_cell(&self) -> Option<&LabelCell> {
+        self.last_label_cell.as_ref()
+    }
+
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 Fully decoded shared-string table in BIFF index order.
     #[must_use]
     pub fn shared_strings(&self) -> &[String] {
         &self.shared_strings
+    }
+
+    /// 保留 UTF-16 run 与 BIFF8 FONT 索引的共享字符串表。
+    #[must_use]
+    pub fn rich_shared_strings(&self) -> &[easyexcel_xls::Biff8SstString] {
+        &self.rich_shared_strings
     }
 
     /// Last `LabelSST` cell resolved through the decoded shared-string table.
@@ -136,5 +151,11 @@ impl XlsRecordDispatchState {
     pub const fn last_formula_cell(&self) -> Option<&FormulaCell> {
         self.last_formula_cell.as_ref()
     }
-}
 
+    /// Extra metadata in physical BIFF record order, paired with sheet index.
+    #[must_use]
+    /// 对应 Java：`AnalysisEventProcessor.extra` 的工作表上下文。
+    pub fn extras(&self) -> &[(usize, crate::core::CellExtra)] {
+        &self.extras
+    }
+}

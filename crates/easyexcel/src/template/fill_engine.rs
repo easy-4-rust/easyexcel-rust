@@ -89,9 +89,9 @@ fn template_fill_data(data: &TemplateData) -> TemplateFillData {
 fn template_cell_value(value: &CellValue) -> TemplateCellValue {
     match value {
         CellValue::Empty | CellValue::Image(_) => TemplateCellValue::Empty,
-        CellValue::String(text) | CellValue::Hyperlink { text, .. } => {
-            TemplateCellValue::Text(text.clone())
-        }
+        CellValue::String(text)
+        | CellValue::Hyperlink { text, .. }
+        | CellValue::HyperlinkWithMetadata { text, .. } => TemplateCellValue::Text(text.clone()),
         CellValue::RichText(value) => TemplateCellValue::Text(value.text_string().to_owned()),
         CellValue::Bool(value) => TemplateCellValue::Bool(*value),
         CellValue::Int(value) => TemplateCellValue::Number(value.to_string()),

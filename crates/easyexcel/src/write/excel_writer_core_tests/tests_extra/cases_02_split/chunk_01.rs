@@ -59,39 +59,57 @@
                 7,
                 CellValue::DateTime(date.and_hms_opt(3, 4, 5).expect("time")),
             ),
+            (8, CellValue::RichText(RichTextStringData::new("rich"))),
             (
-                8,
-                CellValue::Comment {
-                    value: Box::new(CellValue::String("note".to_owned())),
-                    text: "hello".to_owned(),
-                },
-            ),
-            (9, CellValue::RichText(RichTextStringData::new("rich"))),
-            (
-                10,
-                CellValue::Images {
-                    value: Box::new(CellValue::String("img".to_owned())),
-                    images: vec![ImageData::new(vec![1, 2, 3])],
-                },
-            ),
-            (11, CellValue::Image(vec![4, 5, 6])),
-            (
-                12,
+                9,
                 CellValue::Decimal(BigDecimal::from_str("12.34").expect("dec")),
             ),
             (
-                13,
+                10,
                 CellValue::Decimal(BigDecimal::from_str("9007199254740992").expect("dec")),
             ),
-            (14, CellValue::Float(1e12)),
-            (15, CellValue::Empty),
+            (11, CellValue::Float(1e12)),
+            (12, CellValue::Empty),
         ]);
         writer.write([row], &WriteSheet::new("Sheet1"))?;
         writer.finish()?;
         let bytes = std::fs::read(&path)?;
         assert!(bytes.starts_with(CFB_MAGIC));
-        Ok(())
+    Ok(())
+}
+
+#[test]
+fn xls_image_cell_values_return_typed_unsupported() -> Result<()> {
+    let directory = tempdir()?;
+    let cases = [
+        (
+            "image.xls",
+            CellValue::Image(vec![4, 5, 6]),
+            "CellValue::Image",
+        ),
+        (
+            "images.xls",
+            CellValue::Images {
+                value: Box::new(CellValue::String("img".to_owned())),
+                images: vec![ImageData::new(vec![1, 2, 3])],
+            },
+            "CellValue::Images",
+        ),
+    ];
+    for (file_name, value, expected) in cases {
+        let path = directory.path().join(file_name);
+        let mut writer = ExcelWriter::new(&path);
+        let result = writer.write(
+            [dyn_row_values(&[(0, value)])],
+            &WriteSheet::new("Sheet1"),
+        );
+        assert!(matches!(
+            result,
+            Err(ExcelError::Unsupported(message)) if message.contains(expected)
+        ));
     }
+    Ok(())
+}
 
 #[test]
     fn xlsx_cell_value_variant_branches() -> Result<()> {
@@ -351,4 +369,3 @@
         assert!(matches!(result, Err(ExcelError::Unsupported(_))));
         Ok(())
     }
-

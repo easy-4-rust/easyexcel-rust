@@ -10,6 +10,8 @@
 //! typed accessors that return the underlying engine handles when
 //! they are available.
 
+use std::path::{Path, PathBuf};
+
 use crate::ReadOptions;
 
 /// 对应 Java：`ReadWorkbook extends ReadBasicParameter`.
@@ -20,8 +22,14 @@ use crate::ReadOptions;
 /// the Java-shaped getters/setters as thin pass-throughs.
 #[derive(Debug, Clone)]
 pub struct ReadWorkbook {
+    /// Input workbook path. (Java `ReadWorkbook.file`)
+    file: Option<PathBuf>,
     /// Backing configuration. (Java `ReadWorkbook` getter surface)
     pub options: ReadOptions,
+    /// Explicit workbook type selected by the caller.
+    excel_type: Option<crate::support::ExcelTypeEnum>,
+    /// Whether an owned input is closed after analysis.
+    auto_close_stream: bool,
 }
 
 impl ReadWorkbook {
@@ -29,22 +37,39 @@ impl ReadWorkbook {
     #[must_use]
     pub fn new() -> Self {
         Self {
+            file: None,
             options: ReadOptions::default(),
+            excel_type: None,
+            auto_close_stream: true,
         }
+    }
+
+    /// 返回输入工作簿文件。
+    ///
+    /// 对应 Java：`ReadWorkbook#getFile()`。
+    #[must_use]
+    pub fn file(&self) -> Option<&Path> {
+        self.file.as_deref()
+    }
+
+    /// 设置输入工作簿文件。
+    ///
+    /// 对应 Java：`ReadWorkbook#setFile(File)`。
+    pub fn set_file(&mut self, file: impl Into<PathBuf>) -> &mut Self {
+        self.file = Some(file.into());
+        self
     }
 
     /// Returns the Excel file type. (Java `getExcelType()`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.read.metadata.ReadWorkbook。
-    pub const fn excel_type(&self) -> Option<crate::SheetSelector> {
-        match &self.options.sheet {
-            crate::SheetSelector::Index(_) => Some(crate::SheetSelector::Index(0)),
-            _ => None,
-        }
+    pub const fn excel_type(&self) -> Option<crate::support::ExcelTypeEnum> {
+        self.excel_type
     }
 
     /// 对应 Java：com.alibaba.excel.read.metadata.ReadWorkbook。 Sets the Excel file type. (Java `setExcelType(ExcelTypeEnum)`)
-    pub fn set_excel_type(&mut self, _excel_type: ()) -> &mut Self {
+    pub fn set_excel_type(&mut self, excel_type: crate::support::ExcelTypeEnum) -> &mut Self {
+        self.excel_type = Some(excel_type);
         self
     }
 
@@ -65,13 +90,14 @@ impl ReadWorkbook {
     #[must_use]
     /// 对应 Java：com.alibaba.excel.read.metadata.ReadWorkbook。
     pub const fn auto_close_stream(&self) -> bool {
-        true
+        self.auto_close_stream
     }
 
     /// 对应 Java：com.alibaba.excel.read.metadata.ReadWorkbook。 Sets the auto-close-stream flag. (Java `setAutoCloseStream(Boolean)`)
-    /// Rust port: no-op (engine always closes the stream when the
-    /// `ExcelReader` is dropped).
-    pub fn set_auto_close_stream(&mut self, _value: bool) -> &mut Self {
+    /// Path-based readers own their file handle; borrowed stream entrypoints
+    /// retain caller ownership independently of this metadata value.
+    pub fn set_auto_close_stream(&mut self, value: bool) -> &mut Self {
+        self.auto_close_stream = value;
         self
     }
 
@@ -167,7 +193,12 @@ impl Default for ReadWorkbook {
 
 impl From<ReadOptions> for ReadWorkbook {
     fn from(options: ReadOptions) -> Self {
-        Self { options }
+        Self {
+            file: None,
+            options,
+            excel_type: None,
+            auto_close_stream: true,
+        }
     }
 }
 
@@ -183,10 +214,14 @@ mod tests {
         let mut workbook = ReadWorkbook::new();
         assert_eq!(workbook.excel_type(), None);
 
-        workbook.set_excel_type(());
+        workbook.set_excel_type(crate::support::ExcelTypeEnum::Xls);
+        assert_eq!(
+            workbook.excel_type(),
+            Some(crate::support::ExcelTypeEnum::Xls)
+        );
         assert!(workbook.auto_close_stream());
         workbook.set_auto_close_stream(false);
-        assert!(workbook.auto_close_stream(), "no-op setter 保持 true");
+        assert!(!workbook.auto_close_stream());
 
         workbook.set_ignore_empty_row(false);
         assert!(!workbook.ignore_empty_row());
@@ -216,13 +251,12 @@ mod tests {
     }
 
     #[test]
-    fn excel_type_mirrors_index_sheet_selection() {
-        // 对应 Java：getExcelType() 由 sheet 选择器推导
+    fn excel_type_is_independent_from_sheet_selection() {
         let workbook = ReadWorkbook::from(ReadOptions {
             sheet: crate::SheetSelector::Index(3),
             ..ReadOptions::default()
         });
-        assert_eq!(workbook.excel_type(), Some(crate::SheetSelector::Index(0)));
+        assert_eq!(workbook.excel_type(), None);
         assert_eq!(ReadWorkbook::default().excel_type(), None);
     }
 }

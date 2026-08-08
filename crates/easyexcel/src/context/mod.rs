@@ -4,6 +4,10 @@
 
 pub mod analysis_context;
 pub mod analysis_context_impl;
+pub mod chart_mutation;
+pub mod chart_range;
+pub mod chart_series;
+pub mod chart_type;
 pub mod csv;
 pub mod write_backend_handle;
 pub mod write_cell_context;

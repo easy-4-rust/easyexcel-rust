@@ -19,17 +19,15 @@ impl StringRecordHandler {
         Self::default()
     }
 
-    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.StringRecordHandler。 Java `StringRecordHandler.processRecord` — applies string onto pending formula.
+    /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.StringRecordHandler。 Java `StringRecordHandler.processRecord` — applies the untrimmed string onto a pending formula.
     pub fn process_string(
         formula_handler: &mut FormulaRecordHandler,
         value: String,
-        auto_trim: bool,
+        _auto_trim: bool,
     ) -> Option<(FormulaCell, String)> {
-        let text = if auto_trim {
-            easyexcel_utils::string_utils::java_trim(&value).to_owned()
-        } else {
-            value
-        };
+        // Java StringRecordHandler 直接写入 StringRecord#getString()；与普通
+        // LABEL/LABELSST 不同，公式字符串结果不会应用 global autoTrim。
+        let text = value;
         formula_handler
             .complete_pending_string(text.clone())
             .map(|cell| (cell, text))
@@ -62,13 +60,22 @@ mod tests_extra {
     use super::*;
 
     #[test]
-    fn process_string_without_trim_keeps_spaces() {
-        // 对应 Java：autoTrim=false 时公式字符串保留空白
+    fn process_string_keeps_spaces_for_both_trim_modes() {
+        // 对应 Java：公式 StringRecord 不应用 global autoTrim。
         let mut formula = FormulaRecordHandler::new();
         let cell = StringRecordHandler::process_string(&mut formula, " x ".to_owned(), false);
         assert!(cell.is_none(), "无 pending 公式时返回 None");
-        let cell = StringRecordHandler::process_string(&mut formula, " x ".to_owned(), true);
-        assert!(cell.is_none());
+        let _ = formula.process_formula(
+            0,
+            0,
+            None,
+            super::super::formula_record_handler::FormulaCachedType::String,
+            None,
+            None,
+        );
+        let cell = StringRecordHandler::process_string(&mut formula, " x ".to_owned(), true)
+            .expect("pending string formula");
+        assert_eq!(cell.1, " x ");
     }
 
     #[test]

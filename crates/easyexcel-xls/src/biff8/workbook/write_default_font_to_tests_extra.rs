@@ -37,19 +37,28 @@ fn write_boundsheet_placeholder(out: &mut Vec<u8>, name: &str) -> usize {
 // 语义敏感：SST 条目数与 Excel 字符串表规模一致（远小于 u32 上限），
 // usize->u32 不可能截断；保留 as 以对齐 BIFF8 规范。
 #[allow(clippy::cast_possible_truncation)]
-fn build_sst(sheets: &[Biff8Sheet]) -> (Vec<String>, HashMap<String, u32>, u32) {
+fn build_sst(
+    sheets: &[Biff8Sheet],
+) -> (
+    Vec<Biff8RichText>,
+    HashMap<Biff8RichText, u32>,
+    u32,
+) {
     let mut strings = Vec::new();
     let mut index = HashMap::new();
     let mut total_refs = 0u32;
     for sheet in sheets {
         for cell in sheet.cells.values() {
-            if let Biff8Value::Text(text) = &cell.value {
-                total_refs += 1;
-                if let std::collections::hash_map::Entry::Vacant(entry) = index.entry(text.clone())
-                {
-                    entry.insert(strings.len() as u32);
-                    strings.push(text.clone());
-                }
+            let rich = match &cell.value {
+                Biff8Value::Text(text) => Some(Biff8RichText::plain(text.clone())),
+                Biff8Value::RichText(rich) => Some(rich.clone()),
+                _ => None,
+            };
+            let Some(rich) = rich else { continue };
+            total_refs += 1;
+            if let std::collections::hash_map::Entry::Vacant(entry) = index.entry(rich.clone()) {
+                entry.insert(strings.len() as u32);
+                strings.push(rich);
             }
         }
     }
@@ -58,57 +67,20 @@ fn build_sst(sheets: &[Biff8Sheet]) -> (Vec<String>, HashMap<String, u32>, u32) 
 
 // 语义敏感：同上，SST 字符串计数转换为 BIFF8 u32 计数字段。
 #[allow(clippy::cast_possible_truncation)]
-fn build_sst_records(strings: &[String], total_refs: u32) -> Vec<u8> {
-    let mut pieces: Vec<Vec<u8>> = Vec::new();
-    let mut header = Vec::new();
-    header.extend_from_slice(&total_refs.to_le_bytes());
-    header.extend_from_slice(&(strings.len() as u32).to_le_bytes());
-    pieces.push(header);
-    for s in strings {
-        pieces.push(encode_unicode_string(s));
+fn build_sst_records(strings: &[Biff8RichText], total_refs: u32) -> Vec<u8> {
+    let mut framer = Biff8SstFramer::new(total_refs, strings.len() as u32);
+    for rich in strings {
+        framer.push_rich_text(rich);
     }
-
-    let mut out = Vec::new();
-    let mut current = Vec::new();
-    let mut first = true;
-    for piece in pieces {
-        if !current.is_empty() && current.len() + piece.len() > MAX_RECORD_DATA {
-            flush_sst_chunk(&mut out, &mut current, &mut first);
-        }
-        if piece.len() > MAX_RECORD_DATA {
-            let mut offset = 0;
-            while offset < piece.len() {
-                let room = MAX_RECORD_DATA.saturating_sub(current.len());
-                if room == 0 {
-                    flush_sst_chunk(&mut out, &mut current, &mut first);
-                    continue;
-                }
-                let take = room.min(piece.len() - offset);
-                current.extend_from_slice(&piece[offset..offset + take]);
-                offset += take;
-            }
-        } else {
-            current.extend_from_slice(&piece);
-        }
-    }
-    if !current.is_empty() {
-        flush_sst_chunk(&mut out, &mut current, &mut first);
-    }
-    out
-}
-
-fn flush_sst_chunk(out: &mut Vec<u8>, current: &mut Vec<u8>, first: &mut bool) {
-    let typ = if *first { SST } else { CONTINUE };
-    record(out, typ, current);
-    *first = false;
-    current.clear();
+    framer.finish()
 }
 
 fn write_worksheet(
     out: &mut Vec<u8>,
     sheet: &Biff8Sheet,
-    sst_index: &HashMap<String, u32>,
+    sst_index: &HashMap<Biff8RichText, u32>,
     caches: &HashMap<(u16, u8), Biff8Cached>,
+    link_table: &super::ptg::Biff8LinkTable,
 ) {
     write_bof(out, DT_WORKSHEET);
     let (max_row, max_col) = sheet.dimensions();
@@ -130,7 +102,7 @@ fn write_worksheet(
     for (&row, &height) in &sheet.row_heights {
         record(out, ROW, &pack_row(row, 0, last_col_exclusive, height));
     }
-    write_cells(out, sheet, sst_index, caches);
+    write_cells(out, sheet, sst_index, caches, link_table);
     if !sheet.merges.is_empty() {
         let ranges: Vec<[u8; 8]> = sheet
             .merges
@@ -146,6 +118,8 @@ fn write_worksheet(
             .collect();
         write_merge_cells(out, &ranges);
     }
+    write_comments(out, &sheet.comments);
+    write_charts(out, &sheet.charts, link_table);
     {
         let mut data = vec![0u8; 18];
         // options: fDspGrid | fDspRwCol | fDspZeros | fDefaultHdr | fDspGuts |
@@ -162,6 +136,13 @@ fn write_worksheet(
         if let Some((rows, cols)) = sheet.freeze.filter(|&(r, c)| r > 0 || c > 0) {
             write_pane(out, rows, cols);
         }
+    }
+    // BIFF8 record order places the Hyperlink Table after the view settings
+    // (WINDOW2/SCL/PANE/SELECTION) and merged cells. Apache POI uses WINDOW2 as
+    // the row-block terminator, so emitting HLINK before it makes the workbook
+    // structurally unreadable by HSSF.
+    for hyperlink in &sheet.hyperlinks {
+        record(out, HYPERLINK, &hyperlink.encode_record_data());
     }
     record(out, EOF, &[]);
 }
@@ -192,30 +173,32 @@ fn write_pane(out: &mut Vec<u8>, rows: u16, cols: u16) {
 fn write_cells(
     out: &mut Vec<u8>,
     sheet: &Biff8Sheet,
-    sst_index: &HashMap<String, u32>,
+    sst_index: &HashMap<Biff8RichText, u32>,
     caches: &HashMap<(u16, u8), Biff8Cached>,
+    link_table: &super::ptg::Biff8LinkTable,
 ) {
     // BTreeMap 按键 (row, col) 有序：按行分组扫描
     let mut row_cells: Vec<(u16, u8, &Biff8Cell)> = Vec::new();
     let mut last_row = None;
     for (&(row, col), cell) in &sheet.cells {
         if last_row != Some(row) && !row_cells.is_empty() {
-            flush_row(out, &mut row_cells, sst_index, caches);
+            flush_row(out, &mut row_cells, sst_index, caches, link_table);
             row_cells.clear();
         }
         last_row = Some(row);
         row_cells.push((row, col, cell));
     }
     if !row_cells.is_empty() {
-        flush_row(out, &mut row_cells, sst_index, caches);
+        flush_row(out, &mut row_cells, sst_index, caches, link_table);
     }
 }
 
 fn flush_row(
     out: &mut Vec<u8>,
     cells: &mut [(u16, u8, &Biff8Cell)],
-    sst_index: &HashMap<String, u32>,
+    sst_index: &HashMap<Biff8RichText, u32>,
     caches: &HashMap<(u16, u8), Biff8Cached>,
+    link_table: &super::ptg::Biff8LinkTable,
 ) {
     // 行内按列扫描，收集可合并段
     let mut i = 0;
@@ -269,7 +252,15 @@ fn flush_row(
                 i = j + 1;
             }
             _ => {
-                write_cell(out, row, col, cell, sst_index, caches.get(&(row, col)))
+                write_cell(
+                    out,
+                    row,
+                    col,
+                    cell,
+                    sst_index,
+                    caches.get(&(row, col)),
+                    link_table,
+                )
                     .expect("BIFF8 单元格序列化失败");
                 i += 1;
             }
@@ -307,18 +298,27 @@ fn write_cell(
     row: u16,
     col: u8,
     cell: &Biff8Cell,
-    sst_index: &HashMap<String, u32>,
+    sst_index: &HashMap<Biff8RichText, u32>,
     cached: Option<&Biff8Cached>,
+    link_table: &super::ptg::Biff8LinkTable,
 ) -> Result<()> {
     match &cell.value {
         Biff8Value::Blank => write_blank(out, row, col, cell.xf),
         Biff8Value::Text(text) => {
-            let idx = *sst_index.get(text).unwrap_or(&0);
+            let idx = *sst_index
+                .get(&Biff8RichText::plain(text.clone()))
+                .unwrap_or(&0);
+            write_labelsst(out, row, col, cell.xf, idx);
+        }
+        Biff8Value::RichText(rich) => {
+            let idx = *sst_index.get(rich).unwrap_or(&0);
             write_labelsst(out, row, col, cell.xf, idx);
         }
         Biff8Value::Number(n) => write_number(out, row, col, cell.xf, *n),
         Biff8Value::Bool(b) => write_boolerr(out, row, col, cell.xf, u8::from(*b), false),
-        Biff8Value::Formula(expr) => write_formula(out, row, col, cell.xf, expr, cached)?,
+        Biff8Value::Formula(expr) => {
+            write_formula(out, row, col, cell.xf, expr, cached, link_table)?;
+        }
     }
     Ok(())
 }
@@ -335,8 +335,9 @@ fn write_formula(
     xf: u16,
     expr: &str,
     cached: Option<&Biff8Cached>,
+    link_table: &super::ptg::Biff8LinkTable,
 ) -> Result<()> {
-    let rgce = super::ptg::encode_formula_rpn(expr)?;
+    let rgce = super::ptg::encode_formula_rpn_with_link_table(expr, link_table)?;
     let mut data = Vec::with_capacity(22 + rgce.len());
     cell_header(&mut data, row, col, xf);
     match cached {

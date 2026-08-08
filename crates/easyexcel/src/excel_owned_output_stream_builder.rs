@@ -23,11 +23,13 @@ where
     /// 对应 Java：ExcelWriterBuilder。 Builds a stateful writer for repeated `write` calls.
     #[must_use]
     pub fn build(self) -> ExcelWriter {
-        ExcelWriter::with_output_stream(
+        let backend_selection = self.builder.stateful_backend_selection();
+        ExcelWriter::with_output_stream_and_selection(
             self.builder.path,
             self.output,
             self.builder.handlers,
             self.builder.options,
+            backend_selection,
         )
     }
 

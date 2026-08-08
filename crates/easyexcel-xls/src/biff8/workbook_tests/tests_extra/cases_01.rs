@@ -124,6 +124,119 @@
     }
 
     #[test]
+    fn url_hyperlink_emits_poi_compatible_hlink_record() -> Result<()> {
+        let mut book = Biff8Book::default();
+        let sheet = book.sheet_mut("Links");
+        sheet.set(
+            2,
+            3,
+            Biff8Cell::general(Biff8Value::Text("OpenAI".to_owned())),
+        )?;
+        sheet.add_hyperlink(2, 3, "https://openai.com", "OpenAI")?;
+
+        let stream = build_workbook_stream(&book, &[HashMap::new()]);
+        let (_, data) = records(&stream)
+            .into_iter()
+            .find(|(typ, _)| *typ == HYPERLINK)
+            .expect("HLINK record");
+        assert_eq!(&data[0..8], &[2, 0, 2, 0, 3, 0, 3, 0]);
+        assert_eq!(&data[8..24], &Biff8Hyperlink::STD_MONIKER);
+        assert_eq!(u32::from_le_bytes(data[24..28].try_into().unwrap()), 2);
+        assert_eq!(u32::from_le_bytes(data[28..32].try_into().unwrap()), 0x17);
+        let label_units = u32::from_le_bytes(data[32..36].try_into().unwrap()) as usize;
+        assert_eq!(label_units, "OpenAI".encode_utf16().count() + 1);
+        let moniker_offset = 36 + label_units * 2;
+        assert_eq!(
+            &data[moniker_offset..moniker_offset + 16],
+            &Biff8Hyperlink::URL_MONIKER
+        );
+        let url_size = u32::from_le_bytes(
+            data[moniker_offset + 16..moniker_offset + 20]
+                .try_into()
+                .unwrap(),
+        ) as usize;
+        assert_eq!(
+            url_size,
+            ("https://openai.com".encode_utf16().count() + 1) * 2
+                + Biff8Hyperlink::URL_TAIL.len()
+        );
+        assert_eq!(
+            &data[data.len() - Biff8Hyperlink::URL_TAIL.len()..],
+            &Biff8Hyperlink::URL_TAIL
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn hyperlink_rejects_nul_and_oversized_payloads() {
+        let mut sheet = Biff8Sheet::new("Links");
+        assert!(matches!(
+            sheet.add_hyperlink(0, 0, "https://example.test/\0bad", "label"),
+            Err(ExcelError::Xls(_))
+        ));
+        assert!(matches!(
+            sheet.add_hyperlink(0, 0, "https://example.test", "x".repeat(MAX_RECORD_DATA)),
+            Err(ExcelError::Xls(_))
+        ));
+        assert!(sheet.hyperlinks.is_empty());
+    }
+
+    #[test]
+    fn typed_hyperlinks_encode_poi_flags_ranges_and_monikers() -> Result<()> {
+        let mut book = Biff8Book::default();
+        let sheet = book.sheet_mut("Links");
+        sheet.add_typed_hyperlink(
+            1,
+            2,
+            3,
+            4,
+            "'Other Sheet'!A1",
+            "place",
+            Biff8HyperlinkKind::Document,
+        )?;
+        sheet.add_typed_hyperlink(
+            3,
+            3,
+            0,
+            0,
+            "../docs/report.xls",
+            "file",
+            Biff8HyperlinkKind::File,
+        )?;
+        sheet.add_typed_hyperlink(
+            4,
+            4,
+            0,
+            0,
+            "mailto:test@example.com?subject=Hi",
+            "email",
+            Biff8HyperlinkKind::Email,
+        )?;
+
+        let stream = build_workbook_stream(&book, &[HashMap::new()]);
+        let links: Vec<Vec<u8>> = records(&stream)
+            .into_iter()
+            .filter(|(typ, _)| *typ == HYPERLINK)
+            .map(|(_, data)| data)
+            .collect();
+        assert_eq!(links.len(), 3);
+        assert_eq!(&links[0][0..8], &[1, 0, 2, 0, 3, 0, 4, 0]);
+        assert_eq!(u32::from_le_bytes(links[0][28..32].try_into().unwrap()), 0x1C);
+        assert!(!links[0]
+            .windows(Biff8Hyperlink::URL_MONIKER.len())
+            .any(|window| window == Biff8Hyperlink::URL_MONIKER));
+        assert_eq!(u32::from_le_bytes(links[1][28..32].try_into().unwrap()), 0x15);
+        assert!(links[1]
+            .windows(Biff8Hyperlink::FILE_MONIKER.len())
+            .any(|window| window == Biff8Hyperlink::FILE_MONIKER));
+        assert_eq!(u32::from_le_bytes(links[2][28..32].try_into().unwrap()), 0x17);
+        assert!(links[2]
+            .windows(Biff8Hyperlink::URL_MONIKER.len())
+            .any(|window| window == Biff8Hyperlink::URL_MONIKER));
+        Ok(())
+    }
+
+    #[test]
     fn write_raw_bytes_round_trips_through_cfb_images_stream() {
         let mut book = Biff8Book::default();
         book.write_raw_bytes(&[1, 2, 3, 4]);
@@ -212,7 +325,8 @@
             }
         }
         assert_eq!(sst, 1);
-        assert!(continues >= 3, "expected CONTINUE chunks, got {continues}");
+        // 两个约 9 KiB 的字符串在规范的紧凑分帧下占 3 条记录：1 SST + 2 CONTINUE。
+        assert!(continues >= 2, "expected CONTINUE chunks, got {continues}");
     }
 
     #[test]

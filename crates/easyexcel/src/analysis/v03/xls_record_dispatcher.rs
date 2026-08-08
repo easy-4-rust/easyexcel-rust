@@ -19,7 +19,7 @@ use super::handlers::eof_record_handler::{EOF_SID, EofRecordHandler};
 use super::handlers::formula_record_handler::{FORMULA_SID, FormulaCell, FormulaRecordHandler};
 use super::handlers::hyperlink_record_handler::HyperlinkRecordHandler;
 use super::handlers::index_record_handler::{INDEX_SID, IndexRecordHandler};
-use super::handlers::label_record_handler::{LABEL_SID, LabelRecordHandler};
+use super::handlers::label_record_handler::{LABEL_SID, LabelCell, LabelRecordHandler};
 use super::handlers::label_sst_record_handler::{
     LABEL_SST_SID, LabelSstCell, LabelSstRecordHandler,
 };
@@ -164,6 +164,10 @@ impl XlsRecordDispatcher {
     pub fn process_record(&mut self, record_sid: u16, data: &[u8]) -> Result<()> {
         self.state.total_record_count += 1;
         if record_sid == CONTINUE_SID {
+            if self.text_object.consume_continue(data) {
+                self.state.handled_record_count += 1;
+                return Ok(());
+            }
             if self.continuable_record.push(data) {
                 self.try_finalize_continuable_record(false)?;
                 return Ok(());
@@ -219,12 +223,21 @@ impl XlsRecordDispatcher {
                     return Ok(());
                 }
                 self.hyperlink.process_record(record_sid, data);
+                if let Some(extra) = self.hyperlink.last_extra.take() {
+                    self.state
+                        .extras
+                        .push((self.next_sheet_index.saturating_sub(1), extra));
+                }
             }
             INDEX_SID => {
                 self.index.process_record(record_sid, data);
                 self.state.approximate_total_row_number = self.index.approximate_total_row_number;
             }
-            LABEL_SID => self.label.process_record(record_sid, data),
+            LABEL_SID => {
+                self.label
+                    .process_record_with_auto_trim(record_sid, data, self.auto_trim);
+                self.state.last_label_cell = self.label.last_cell.clone();
+            }
             LABEL_SST_SID => {
                 self.label_sst.process_record(record_sid, data);
                 if let Some(reference) = self.label_sst.last_reference {
@@ -244,13 +257,36 @@ impl XlsRecordDispatcher {
                     return Ok(());
                 }
                 self.merge_cells.process_record(record_sid, data);
+                let sheet_index = self.next_sheet_index.saturating_sub(1);
+                self.state.extras.extend(
+                    self.merge_cells
+                        .take_extras()
+                        .into_iter()
+                        .map(|extra| (sheet_index, extra)),
+                );
             }
             NOTE_SID => {
                 if !self.note.support() {
                     self.state.skipped_record_count += 1;
                     return Ok(());
                 }
-                self.note.process_record(record_sid, data);
+                if let (Some((row, column)), Some(object_id)) = (
+                    easyexcel_xls::biff8::event_record::decode_note_record_position(data),
+                    easyexcel_xls::biff8::event_record::decode_note_shape_id(data),
+                ) {
+                    self.note.process_note(
+                        self.text_object.get(object_id).map(str::to_owned),
+                        row,
+                        column,
+                    );
+                } else {
+                    self.note.process_record(record_sid, data);
+                }
+                if let Some(extra) = self.note.last_extra.take() {
+                    self.state
+                        .extras
+                        .push((self.next_sheet_index.saturating_sub(1), extra));
+                }
             }
             NUMBER_SID => self.dispatch_number(record_sid, data),
             OBJ_SID => self.obj.process_record(record_sid, data),
@@ -267,7 +303,13 @@ impl XlsRecordDispatcher {
                     .begin(Biff8ContinuableRecordKind::UnicodeString, data);
                 self.try_finalize_continuable_record(false)?;
             }
-            TEXT_OBJECT_SID => self.text_object.process_record(record_sid, data),
+            TEXT_OBJECT_SID => {
+                if let Some(object_id) = self.obj.temp_object_index.take() {
+                    self.text_object.begin_text_object(object_id, data);
+                } else {
+                    self.text_object.process_record(record_sid, data);
+                }
+            }
             _ => {
                 self.state.unknown_record_count += 1;
                 return Ok(());
@@ -333,7 +375,9 @@ impl XlsRecordDispatcher {
                 })?;
                 self.sst.process_decoded_sst(unique, strings.clone());
                 self.state.unique_string_count = Some(unique);
-                self.state.shared_strings = strings;
+                self.state.shared_strings =
+                    strings.iter().map(|value| value.text.clone()).collect();
+                self.state.rich_shared_strings = strings;
             }
             Biff8ContinuationStatus::Complete(Biff8DecodedContinuableRecord::UnicodeString(
                 value,

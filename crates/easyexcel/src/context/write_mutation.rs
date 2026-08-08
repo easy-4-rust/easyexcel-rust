@@ -1,6 +1,6 @@
 //! 写处理器请求的后端中立工作簿修改。
 
-use crate::CellValue;
+use crate::{CellValue, ChartMutation, MergeRange};
 
 /// 写生命周期回调提交、由具体格式后端在保存前执行的修改。
 ///
@@ -18,5 +18,12 @@ pub(crate) enum WriteMutation {
     ProtectSheet {
         sheet_name: String,
         password: String,
+    },
+    /// 创建一个后端中立图表。
+    AddChart(ChartMutation),
+    /// 在指定工作表创建零基、闭区间合并区域。
+    AddMerge {
+        sheet_name: String,
+        range: MergeRange,
     },
 }

@@ -11,6 +11,7 @@ pub(crate) struct CellFormatContext<'a> {
     pub(crate) converted_cell: Option<ExcelCellStyle>,
     /// Owned runtime format carried by `WriteCellData::DataFormatData`.
     pub(crate) converted_data_format: Option<&'a str>,
+    pub(crate) ignore_fill_style: bool,
     pub(crate) global: WriteGlobalFlags,
 }
 
@@ -41,7 +42,7 @@ impl<'a> CellFormatContext<'a> {
         self.handler_cell = None;
         self.converted_cell = None;
         self.converted_data_format = None;
+        self.ignore_fill_style = true;
         self
     }
 }
-

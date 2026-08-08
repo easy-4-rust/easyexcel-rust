@@ -48,12 +48,22 @@ where
     L: ReadListener<T>,
 {
     let mut consumer = TypedRowConsumer::<T> { listener };
-    read_xlsx_source_with_consumer(source, options, &mut consumer)
+    let retain_decimal_values = requires_decimal_metadata::<T>(options);
+    let retain_display_columns = required_display_columns::<T>(options);
+    read_xlsx_source_with_consumer(
+        source,
+        options,
+        retain_decimal_values,
+        retain_display_columns.as_ref(),
+        &mut consumer,
+    )
 }
 
 fn read_xlsx_source_with_consumer(
     source: &XlsxSource,
     options: &ReadOptions,
+    retain_decimal_values: bool,
+    retain_display_columns: Option<&HashSet<usize>>,
     consumer: &mut dyn RowConsumer,
 ) -> Result<()> {
     let mut row_metadata = XlsxRowMetadata::new_with_cache(source.reader()?, options)?;
@@ -75,6 +85,8 @@ fn read_xlsx_source_with_consumer(
             options.use_1904_windowing,
             scientific_enabled,
             options.locale.formatter(),
+            retain_decimal_values,
+            retain_display_columns.cloned(),
         )?;
         if read_sheet(
             &mut cell_reader,
@@ -90,6 +102,35 @@ fn read_xlsx_source_with_consumer(
         }
     }
     Ok(())
+}
+
+fn requires_decimal_metadata<T: ExcelRow>(options: &ReadOptions) -> bool {
+    let schema = T::schema();
+    schema.is_empty()
+        || !options.converters.is_standard_read_only()
+        || schema.iter().any(|column| {
+            column
+                .field_type
+                .is_some_and(|field_type| field_type.contains("BigDecimal"))
+        })
+}
+
+fn required_display_columns<T: ExcelRow>(options: &ReadOptions) -> Option<HashSet<usize>> {
+    let schema = T::schema();
+    if schema.is_empty() || !options.converters.is_standard_read_only() {
+        return None;
+    }
+    let mut columns = HashSet::new();
+    for column in schema {
+        let requires_display = column
+            .field_type
+            .is_some_and(|field_type| field_type.contains("String"));
+        if requires_display {
+            let index = column.index?;
+            columns.insert(index);
+        }
+    }
+    Some(columns)
 }
 
 fn xlsx_sheet_metadata(

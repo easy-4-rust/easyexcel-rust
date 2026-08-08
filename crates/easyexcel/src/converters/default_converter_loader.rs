@@ -316,6 +316,7 @@ pub fn load_default_read_converter() -> ConverterRegistry {
     registry.register::<String, _>(StringNumberConverter);
     registry.register::<String, _>(StringStringConverter);
     registry.register::<String, _>(StringErrorConverter);
+    registry.mark_standard_read_only();
     registry
 }
 

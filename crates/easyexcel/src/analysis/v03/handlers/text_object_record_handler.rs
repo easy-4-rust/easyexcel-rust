@@ -11,6 +11,9 @@ use super::super::xls_record_handler::XlsRecordHandler;
 pub struct TextObjectRecordHandler {
     /// shapeId → comment text. (Java `objectCacheMap`)
     pub object_cache: HashMap<u32, String>,
+    pending_object_id: Option<u32>,
+    remaining_text_units: usize,
+    pending_text: Vec<u16>,
 }
 
 impl TextObjectRecordHandler {
@@ -23,6 +26,63 @@ impl TextObjectRecordHandler {
     /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler。 Java `TextObjectRecordHandler.processRecord`.
     pub fn process_text(&mut self, object_id: u32, text: String) {
         self.object_cache.insert(object_id, text);
+    }
+
+    /// Starts a TXO continuation sequence for the object id captured from the
+    /// immediately preceding comment OBJ record.
+    pub fn begin_text_object(&mut self, object_id: u32, txo: &[u8]) {
+        let Some(length) = txo
+            .get(10..12)
+            .and_then(|bytes| bytes.try_into().ok())
+            .map(u16::from_le_bytes)
+            .map(usize::from)
+        else {
+            return;
+        };
+        if length == 0 {
+            self.object_cache.insert(object_id, String::new());
+            return;
+        }
+        self.pending_object_id = Some(object_id);
+        self.remaining_text_units = length;
+        self.pending_text.clear();
+    }
+
+    /// Consumes one CONTINUE record belonging to the pending TXO text.
+    /// Returns `true` when the record was owned by this handler.
+    pub fn consume_continue(&mut self, data: &[u8]) -> bool {
+        let Some(object_id) = self.pending_object_id else {
+            return false;
+        };
+        let Some((&flags, payload)) = data.split_first() else {
+            return true;
+        };
+        let wide = flags & 0x01 != 0;
+        let available = if wide {
+            payload.len() / 2
+        } else {
+            payload.len()
+        };
+        let take = available.min(self.remaining_text_units);
+        if wide {
+            self.pending_text.extend(
+                payload[..take * 2]
+                    .chunks_exact(2)
+                    .map(|pair| u16::from_le_bytes([pair[0], pair[1]])),
+            );
+        } else {
+            self.pending_text
+                .extend(payload[..take].iter().copied().map(u16::from));
+        }
+        self.remaining_text_units -= take;
+        if self.remaining_text_units == 0 {
+            if let Ok(text) = String::from_utf16(&self.pending_text) {
+                self.object_cache.insert(object_id, text);
+            }
+            self.pending_object_id = None;
+            self.pending_text.clear();
+        }
+        true
     }
 
     /// 对应 Java：com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler。 Lookup used by [`super::note_record_handler::NoteRecordHandler`].

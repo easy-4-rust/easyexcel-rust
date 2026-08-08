@@ -6,7 +6,16 @@ use super::xls_record_handler::XlsRecordHandler;
 ///
 /// Java marks handlers whose records belong to a worksheet and may be skipped
 /// while the current worksheet is not selected.
-pub trait IgnorableXlsRecordHandler: XlsRecordHandler {}
+pub trait IgnorableXlsRecordHandler: XlsRecordHandler {
+    /// 返回该处理器是否带有 Java `IgnorableXlsRecordHandler` 标记。
+    ///
+    /// Java 使用空 marker interface；Rust 暴露只读查询，便于在不依赖
+    /// 运行时反射的情况下验证并使用相同标记语义。
+    #[must_use]
+    fn is_ignorable(&self) -> bool {
+        true
+    }
+}
 
 macro_rules! impl_ignorable {
     ($($handler:path),+ $(,)?) => {
@@ -33,3 +42,17 @@ impl_ignorable!(
     super::handlers::string_record_handler::StringRecordHandler,
     super::handlers::text_object_record_handler::TextObjectRecordHandler,
 );
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::analysis::v03::handlers::blank_record_handler::BlankRecordHandler;
+
+    fn assert_java_marker<T: IgnorableXlsRecordHandler>() {}
+
+    #[test]
+    fn blank_handler_implements_java_marker_interface() {
+        assert_java_marker::<BlankRecordHandler>();
+        assert!(BlankRecordHandler::new().is_ignorable());
+    }
+}

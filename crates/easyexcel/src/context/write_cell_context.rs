@@ -299,11 +299,26 @@ impl WriteCellContext {
     /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Attaches all holder views and the resolved Java `currentWriteHolder()` state.
     #[must_use]
     pub fn with_resolved_holder_context(
-        mut self,
+        self,
         workbook: WriteWorkbookHolderView,
         sheet_no: i32,
         table_no: Option<i32>,
         current_holder_state: crate::WriteContextHolderState,
+    ) -> Self {
+        self.with_shared_resolved_holder_context(
+            workbook,
+            sheet_no,
+            table_no,
+            std::sync::Arc::new(current_holder_state),
+        )
+    }
+
+    pub(crate) fn with_shared_resolved_holder_context(
+        mut self,
+        workbook: WriteWorkbookHolderView,
+        sheet_no: i32,
+        table_no: Option<i32>,
+        current_holder_state: std::sync::Arc<crate::WriteContextHolderState>,
     ) -> Self {
         let sheet = WriteSheetHolderView::new(&self.sheet_name)
             .with_sheet_no(sheet_no)
@@ -311,7 +326,7 @@ impl WriteCellContext {
         self.holders = WriteHolderContext::new()
             .with_workbook(workbook)
             .with_sheet(sheet)
-            .with_current_holder_state(current_holder_state);
+            .with_shared_current_holder_state(current_holder_state);
         if let Some(table_no) = table_no {
             self.holders = self
                 .holders

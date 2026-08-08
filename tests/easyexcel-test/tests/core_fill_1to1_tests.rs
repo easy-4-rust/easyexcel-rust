@@ -358,8 +358,57 @@ mod fill_data_test {
     /// Java: com.alibaba.easyexcel.test.core.fill.FillDataTest#t02Fill03
     #[test]
     fn t02_fill03() {
-        // Java fills xls/fill/simple.xls. Legacy XLS template fill is Unsupported (visible).
+        // Java fills xls/fill/simple.xls through the same public facade.
         assert_xls_fill_works(&require_fixture("xls/fill/simple.xls"), "t02_fill03.xls");
+    }
+
+    /// Java：BIFF8 集合填充必须扩展全部数据行，而不是只消费第一行。
+    #[test]
+    fn t02_fill_xls_collection_expands_all_rows() {
+        let template = require_fixture("xls/fill/complex.xls");
+        let output = temp_path("t02_fill_collection.xls");
+        EasyExcel::fill_template_list(
+            &template,
+            &output,
+            &FillWrapper::new(fill_data_rows()),
+            FillConfig::new().force_new_row(true),
+        )
+        .unwrap();
+        let rows = EasyExcel::read_dynamic_sync(&output)
+            .head_row_number(0)
+            .ignore_empty_row(false)
+            .do_read_sync()
+            .unwrap();
+        let names = rows
+            .iter()
+            .filter(|row| {
+                row.values().values().any(|value| match value {
+                    DynamicValue::String(text)
+                    | DynamicValue::ActualData(CellValue::String(text)) => text == "张三",
+                    _ => false,
+                })
+            })
+            .count();
+        assert_eq!(names, 9, "all non-null collection values must be filled");
+    }
+
+    /// Java：BIFF8 横向集合填充沿列展开并保持输出可读。
+    #[test]
+    fn t02_fill_xls_collection_horizontal() {
+        let template = require_fixture("xls/fill/horizontal.xls");
+        let output = temp_path("t02_fill_horizontal.xls");
+        EasyExcel::fill_template_list(
+            &template,
+            &output,
+            &FillWrapper::new(fill_data_rows()),
+            FillConfig::new().direction(FillDirection::Horizontal),
+        )
+        .unwrap();
+        let rows = EasyExcel::read_dynamic_sync(&output)
+            .head_row_number(0)
+            .do_read_sync()
+            .unwrap();
+        assert!(dynamic_contains(&rows, "张三"));
     }
 
     /// Java: com.alibaba.easyexcel.test.core.fill.FillDataTest#t03FillCsv

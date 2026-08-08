@@ -119,7 +119,7 @@ fn xlsx_extra_callbacks_follow_rows_and_java_listener_control_flow() -> Result<(
 }
 
 #[test]
-fn non_xlsx_readers_reject_requested_extra_metadata_before_opening_input() {
+fn csv_rejects_extra_metadata_while_xls_reaches_the_input() {
     let options = ReadOptions {
         extra_read: HashSet::from([crate::core::CellExtraType::Comment]),
         ..options()
@@ -127,11 +127,10 @@ fn non_xlsx_readers_reject_requested_extra_metadata_before_opening_input() {
     let mut probe = Probe::default();
     assert!(matches!(
         read_xls::<TestRow, _>(Path::new("missing.xls"), &options, &mut probe),
-        Err(ExcelError::Unsupported(message)) if message.contains("XLS")
+        Err(ExcelError::Io(error)) if error.kind() == std::io::ErrorKind::NotFound
     ));
     assert!(matches!(
         read_csv::<TestRow, _>(Path::new("missing.csv"), &options, &mut probe),
         Err(ExcelError::Unsupported(message)) if message.contains("CSV")
     ));
 }
-

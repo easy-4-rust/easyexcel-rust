@@ -1,6 +1,7 @@
 //! Backend-neutral read-only views of Java write holders.
 
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use crate::{
     ExcelWriteHeadProperty, Holder, WriteContext, WriteContextHolder, WriteContextHolderState,
@@ -18,7 +19,7 @@ pub struct WriteHolderContext {
     workbook: Option<WriteWorkbookHolderView>,
     sheet: Option<WriteSheetHolderView>,
     table: Option<WriteTableHolderView>,
-    current_holder_state: WriteContextHolderState,
+    current_holder_state: Arc<WriteContextHolderState>,
 }
 
 impl WriteHolderContext {
@@ -29,7 +30,7 @@ impl WriteHolderContext {
             workbook: None,
             sheet: None,
             table: None,
-            current_holder_state: WriteContextHolderState::default(),
+            current_holder_state: Arc::new(WriteContextHolderState::default()),
         }
     }
 
@@ -57,6 +58,16 @@ impl WriteHolderContext {
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 Attaches the fully resolved Java `currentWriteHolder()` state.
     #[must_use]
     pub fn with_current_holder_state(mut self, state: WriteContextHolderState) -> Self {
+        self.current_holder_state = Arc::new(state);
+        self
+    }
+
+    /// 复用已经解析的不可变 holder 快照，避免每个单元格深拷贝表头、转换器与列选择。
+    #[must_use]
+    pub(crate) fn with_shared_current_holder_state(
+        mut self,
+        state: Arc<WriteContextHolderState>,
+    ) -> Self {
         self.current_holder_state = state;
         self
     }

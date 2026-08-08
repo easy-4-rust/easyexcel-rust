@@ -7,12 +7,11 @@ use std::any::Any;
 use std::path::PathBuf;
 
 use crate::core::{DynamicRow, Result};
-use crate::template::{
-    CompiledTemplateFillStyles, create_builder_fill_executor,
-    create_builder_fill_executor_with_styles,
-};
+#[cfg(test)]
+use crate::template::create_builder_fill_executor;
+use crate::template::{CompiledTemplateFillStyles, create_builder_fill_executor_with_styles};
 use crate::write::BuilderFillConfig;
-use crate::write::{ExcelBuilder, ExcelBuilderImpl, ExcelWriter, WriteSheet};
+use crate::write::{ExcelBuilderImpl, ExcelWriter, WriteSheet};
 
 /// 对应 Java：`new ExcelBuilderImpl(WriteWorkbook)`。 Creates an [`ExcelBuilderImpl`] from a stateful writer without fill wiring.
 ///
@@ -42,6 +41,7 @@ fn fill_builder_from_writer_with_styles(
     let output = writer.output_path().to_path_buf();
     let template_file = writer.template_file().map(PathBuf::from);
     let template_bytes = writer.template_bytes().map(<[u8]>::to_vec);
+    let password = writer.password().map(ToOwned::to_owned);
     let mut builder = ExcelBuilderImpl::new(writer, output.clone());
     if template_file.is_some() || template_bytes.is_some() {
         let executor = create_builder_fill_executor_with_styles(
@@ -49,6 +49,7 @@ fn fill_builder_from_writer_with_styles(
             template_bytes,
             output,
             styles,
+            password,
         )?;
         builder.set_fill_executor(executor);
     }
@@ -64,7 +65,7 @@ pub(crate) fn do_fill_template_with_compiled_styles(
 ) -> Result<()> {
     let mut builder = fill_builder_from_writer_with_styles(writer, styles)?;
     builder.fill(data, fill_config, sheet)?;
-    builder.finish(false)
+    builder.finish()
 }
 
 /// 对应 Java：`new ExcelBuilderImpl(WriteWorkbook)`。 Wires template fill into an existing builder when a template is configured.
@@ -83,7 +84,14 @@ pub fn wire_template_fill(builder: &mut ExcelBuilderImpl) -> Result<()> {
     let output = writer.output_path().to_path_buf();
     let template_file = writer.template_file().map(PathBuf::from);
     let template_bytes = writer.template_bytes().map(<[u8]>::to_vec);
-    let executor = create_builder_fill_executor(template_file, template_bytes, output)?;
+    let password = writer.password().map(ToOwned::to_owned);
+    let executor = create_builder_fill_executor_with_styles(
+        template_file,
+        template_bytes,
+        output,
+        None,
+        password,
+    )?;
     builder.set_fill_executor(executor);
     Ok(())
 }
@@ -116,7 +124,7 @@ pub fn do_fill_template_with_config(
 ) -> Result<()> {
     let mut builder = fill_builder_from_writer(writer)?;
     builder.fill(data, fill_config, sheet)?;
-    builder.finish(false)
+    builder.finish()
 }
 
 #[cfg(test)]

@@ -20,9 +20,9 @@ fn write_xls_annotation_dimensions_and_style() -> Result<()> {
     Ok(())
 }
 
-/// Phase 5.5: BIFF8 images supported. Test XLS password write succeeds.
+/// BIFF8 password output emits POI-compatible `CryptoAPI` `FILEPASS` encryption.
 #[test]
-fn write_xls_rejects_password_and_images() {
+fn write_xls_encrypts_with_password() {
     let directory = tempdir().expect("tempdir");
     write_xls::<DimensionRow, _>(
         &directory.path().join("protected03.xls"),
@@ -32,9 +32,21 @@ fn write_xls_rejects_password_and_images() {
         },
         Vec::new(),
     )
-    .expect("XLS password write must succeed (Phase 5.3)");
-    assert!(directory.path().join("protected03.xls").exists());
-    // Phase 5.5: image writing also works — see core_phase5_xls_features test
+    .expect("write encrypted XLS");
+    let workbook = easyexcel_xls::read_path_with_password(
+        &directory.path().join("protected03.xls"),
+        Some("secret"),
+    )
+    .expect("read encrypted XLS");
+    assert_eq!(workbook.sheets.len(), 1);
+    assert!(matches!(
+        easyexcel_xls::read_path_with_password(
+            &directory.path().join("protected03.xls"),
+            Some("wrong")
+        ),
+        Err(easyexcel_io::Error::WrongPassword)
+    ));
+    // Image writing also works — see core_phase5_xls_features test.
 }
 
 /// Java `WorkBookUtil.createWorkBook/createSheet/createRow/createCell` delegates
@@ -191,6 +203,269 @@ fn excel_writer_set_compress_temp_files_false() {
 struct NoOpHandler;
 
 impl WriteHandler for NoOpHandler {}
+
+struct GeneratedChartHandler(crate::ChartType);
+
+impl WriteHandler for GeneratedChartHandler {
+    fn after_workbook_dispose(&mut self, context: &WriteWorkbookContext) -> Result<()> {
+        let mut chart = crate::ChartMutation::new("Data", self.0, 4, 3, 20, 12)
+            .with_title("Sales")
+            .with_series(
+                crate::ChartSeries::new(crate::ChartRange::new("Data", 0, 1, 2, 1))
+                    .with_name("Amount")
+                    .with_categories(crate::ChartRange::new("Data", 0, 0, 2, 0)),
+            );
+        if self.0 != crate::ChartType::Pie {
+            chart = chart.with_series(
+                crate::ChartSeries::new(crate::ChartRange::new("Data", 0, 2, 2, 2))
+                    .with_name("Amount2")
+                    .with_categories(crate::ChartRange::new("Data", 0, 0, 2, 0)),
+            );
+        }
+        context.add_chart(chart)
+    }
+}
+
+#[test]
+fn handler_generates_native_biff8_bar_line_and_pie_charts() -> Result<()> {
+    for (kind, sid, name) in [
+        (crate::ChartType::Bar, 0x1017u16, "bar"),
+        (crate::ChartType::Line, 0x1018u16, "line"),
+        (crate::ChartType::Pie, 0x1019u16, "pie"),
+    ] {
+        let directory = tempdir().map_err(test_error)?;
+        let path = directory.path().join(format!("generated-{name}.xls"));
+        let rows = (0..3)
+            .map(|row| {
+                let mut values = std::collections::BTreeMap::new();
+                values.insert(0, DynamicValue::String(format!("C{row}")));
+                values.insert(
+                    1,
+                    DynamicValue::ActualData(CellValue::Float(f64::from(row + 1))),
+                );
+                values.insert(
+                    2,
+                    DynamicValue::ActualData(CellValue::Float(f64::from((row + 1) * 10))),
+                );
+                DynamicRow::new(values)
+            })
+            .collect::<Vec<_>>();
+        let mut handlers: Vec<Box<dyn WriteHandler>> =
+            vec![Box::new(GeneratedChartHandler(kind))];
+        write_xls_with_handlers::<DynamicRow, _>(
+            &path,
+            &WriteOptions {
+                sheet_name: "Data".to_owned(),
+                need_head: false,
+                ..WriteOptions::default()
+            },
+            rows,
+            &mut handlers,
+        )?;
+        let workbook = easyexcel_xls::biff8::record_stream::read_workbook_stream(&path)
+            .map_err(test_error)?;
+        assert!(workbook_records(&workbook).any(|(actual, _)| actual == sid));
+        assert_eq!(
+            workbook_records(&workbook)
+                .filter(|(actual, _)| *actual == 0x1003)
+                .count(),
+            if kind == crate::ChartType::Pie { 1 } else { 2 }
+        );
+        assert!(workbook_records(&workbook).any(|(actual, payload)| {
+            actual == 0x1051
+                && payload == [
+                    0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x0B, 0x00, 0x3B, 0x00, 0x00, 0x00,
+                    0x00, 0x02, 0x00, 0x01, 0x00, 0x01, 0x00,
+                ]
+        }));
+    }
+    Ok(())
+}
+
+fn workbook_records(bytes: &[u8]) -> impl Iterator<Item = (u16, &[u8])> {
+    let mut offset = 0usize;
+    std::iter::from_fn(move || {
+        if offset + 4 > bytes.len() {
+            return None;
+        }
+        let sid = u16::from_le_bytes([bytes[offset], bytes[offset + 1]]);
+        let length = usize::from(u16::from_le_bytes([bytes[offset + 2], bytes[offset + 3]]));
+        if offset + 4 + length > bytes.len() {
+            return None;
+        }
+        let payload = &bytes[offset + 4..offset + 4 + length];
+        offset += 4 + length;
+        Some((sid, payload))
+    })
+}
+
+#[derive(Debug, Clone, easyexcel_derive::ExcelRow)]
+struct AutoStateRow {
+    #[excel(index = 0, name = "Value")]
+    value: i64,
+}
+
+#[test]
+fn stateful_build_auto_selects_streaming_for_scalar_batches() -> Result<()> {
+    let dir = tempdir()?;
+    let path = dir.path().join("stateful_auto.xlsx");
+    let mut writer = crate::EasyExcel::write::<AutoStateRow>(&path).build();
+    assert_eq!(
+        writer.backend_selection(),
+        crate::WriteBackendSelection::AutoUndecided
+    );
+    writer.write(
+        vec![AutoStateRow { value: 1 }],
+        &WriteSheet::new("Data"),
+    )?;
+    assert_eq!(
+        writer.backend_selection(),
+        crate::WriteBackendSelection::AutoStreaming
+    );
+    assert!(writer.compress_temp_files_enabled());
+    writer.finish()?;
+    assert!(path.exists());
+    Ok(())
+}
+
+#[test]
+fn stateful_build_auto_uses_memory_for_unknown_handler() -> Result<()> {
+    let dir = tempdir()?;
+    let path = dir.path().join("stateful_auto_unknown.xlsx");
+    let mut writer = crate::EasyExcel::write::<AutoStateRow>(&path)
+        .register_write_handler(NoOpHandler)
+        .build();
+    writer.write(
+        vec![AutoStateRow { value: 1 }],
+        &WriteSheet::new("Data"),
+    )?;
+    assert_eq!(
+        writer.backend_selection(),
+        crate::WriteBackendSelection::InMemory
+    );
+    writer.finish()
+}
+
+#[test]
+fn explicit_streaming_rejects_unknown_handler_before_writing() {
+    let dir = tempdir().expect("tempdir");
+    let path = dir.path().join("stateful_explicit_conflict.xlsx");
+    let mut writer = crate::EasyExcel::write::<AutoStateRow>(&path)
+        .constant_memory(true)
+        .register_write_handler(NoOpHandler)
+        .build();
+    let Err(error) = writer.write(
+        vec![AutoStateRow { value: 1 }],
+        &WriteSheet::new("Data"),
+    ) else {
+        panic!("unknown handler requires random access");
+    };
+    assert!(matches!(error, ExcelError::Unsupported(message) if message.contains("explicit constant-memory")));
+    assert_eq!(
+        writer.backend_selection(),
+        crate::WriteBackendSelection::ExplicitStreaming
+    );
+    assert!(!path.exists());
+}
+
+struct StreamingCounterHandler(Rc<Cell<usize>>);
+
+impl WriteHandler for StreamingCounterHandler {
+    fn backend_capability(&self) -> crate::WriteHandlerCapability {
+        crate::WriteHandlerCapability::StreamingSafe
+    }
+
+    fn after_cell(&mut self, context: &WriteCellContext) -> Result<()> {
+        self.0.set(self.0.get().saturating_add(1));
+        if !context.is_head {
+            context.cell().set_style(crate::ExcelCellStyle {
+                border_bottom: Some(crate::ExcelBorderStyle::Double),
+                ..crate::ExcelCellStyle::default()
+            });
+        }
+        Ok(())
+    }
+
+    fn after_row(&mut self, context: &WriteRowContext) -> Result<()> {
+        if !context.is_head {
+            context.row().set_height(37);
+        }
+        Ok(())
+    }
+
+    fn before_cell(&mut self, context: &mut WriteCellContext) -> Result<()> {
+        if context.is_head {
+            context.value = CellValue::String("Renamed".to_owned());
+        }
+        Ok(())
+    }
+}
+
+#[test]
+fn auto_streaming_promotes_without_replaying_handler_callbacks() -> Result<()> {
+    let dir = tempdir()?;
+    let path = dir.path().join("stateful_promote.xlsx");
+    let callbacks = Rc::new(Cell::new(0));
+    let mut writer = crate::EasyExcel::write::<AutoStateRow>(&path)
+        .register_write_handler(StreamingCounterHandler(Rc::clone(&callbacks)))
+        .build();
+    writer.write(
+        vec![AutoStateRow { value: 11 }],
+        &WriteSheet::new("First"),
+    )?;
+    assert_eq!(
+        writer.backend_selection(),
+        crate::WriteBackendSelection::AutoStreaming
+    );
+    let first_callbacks = callbacks.get();
+
+    writer.write(
+        vec![AutoStateRow { value: 22 }],
+        &WriteSheet::new("Advanced").auto_width(true),
+    )?;
+    assert_eq!(
+        writer.backend_selection(),
+        crate::WriteBackendSelection::InMemory
+    );
+    assert_eq!(
+        callbacks.get(),
+        first_callbacks.saturating_add(2),
+        "promotion must not replay the first sheet's head/data callbacks"
+    );
+    writer.finish()?;
+
+    let mut book: Xlsx<_> = open_workbook(&path).map_err(test_error)?;
+    assert_eq!(
+        book.worksheet_range("First")
+            .map_err(test_error)?
+            .get_value((0, 0)),
+        Some(&Data::String("Renamed".to_owned()))
+    );
+    assert_eq!(
+        book.worksheet_range("First")
+            .map_err(test_error)?
+            .get_value((1, 0)),
+        Some(&Data::Float(11.0))
+    );
+    assert_eq!(
+        book.worksheet_range("Advanced")
+            .map_err(test_error)?
+            .get_value((1, 0)),
+        Some(&Data::Float(22.0))
+    );
+    let styles_xml = zip_entry(&path, "xl/styles.xml")?;
+    assert!(
+        styles_xml.contains("style=\"double\""),
+        "promotion must retain the first batch's handler cell style"
+    );
+    let first_sheet_xml = zip_entry(&path, "xl/worksheets/sheet1.xml")?;
+    assert!(
+        first_sheet_xml.contains("r=\"2\" spans=\"1:1\" ht=\"36.75\"")
+            && first_sheet_xml.contains("customHeight=\"1\""),
+        "promotion must retain the first batch's handler row height: {first_sheet_xml}"
+    );
+    Ok(())
+}
 
 #[test]
 fn register_write_handler_after_first_write_fails() -> Result<()> {

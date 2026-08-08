@@ -6,10 +6,61 @@
 //! [`java_compat_format_code`] + [`java_compat_display`] so STRING mode
 //! matches `EasyExcel` / POI.
 
-use ssfmt::{DateSystem, FormatOptions, Locale, NumberFormat, format};
+use ssfmt::{DateSystem, FormatOptions, Locale, NumberFormat};
 
 /// `ssfmt` 使用的区域设置类型。
 pub use ssfmt::Locale as SpreadsheetLocale;
+
+/// 已编译的 Excel 数字格式。
+///
+/// 解析格式代码会构建 AST；读取器应在工作表生命周期内复用该对象，避免逐单元格
+/// 重复解析和克隆。对应 Java：`DataFormatter` 内部格式缓存。
+#[derive(Debug, Clone, PartialEq)]
+pub struct CompiledExcelFormat {
+    format: NumberFormat,
+    is_date: bool,
+}
+
+impl CompiledExcelFormat {
+    /// 返回该格式是否包含日期或时间字段。
+    #[must_use]
+    pub const fn is_date_format(&self) -> bool {
+        self.is_date
+    }
+}
+
+/// 编译 Excel 格式代码，供同一工作簿中的多个单元格复用。
+#[must_use]
+pub fn compile_format_code(code: &str) -> Option<CompiledExcelFormat> {
+    let original = NumberFormat::parse(code).ok()?;
+    let is_date = original.is_date_format();
+    let resolved = if is_date {
+        java_compat_date_format_code(code)
+    } else {
+        java_compat_format_code(code)
+    };
+    let format = NumberFormat::parse(&resolved).ok()?;
+    Some(CompiledExcelFormat { format, is_date })
+}
+
+/// 使用预编译格式渲染数字，避免热路径重复解析格式 AST。
+#[must_use]
+pub fn format_with_compiled(
+    value: f64,
+    compiled: &CompiledExcelFormat,
+    date_1904: bool,
+    locale: &Locale,
+) -> String {
+    let options = FormatOptions {
+        date_system: if date_1904 {
+            DateSystem::Date1904
+        } else {
+            DateSystem::Date1900
+        },
+        locale: locale.clone(),
+    };
+    java_compat_display(&compiled.format.format(value, &options))
+}
 
 /// 对应 Java：com.alibaba.excel.metadata.format.DataFormatter。 按 `EasyExcel` 优先级解析内建数字格式代码。
 ///
@@ -122,31 +173,20 @@ pub fn format_with_code(
     date_1904: bool,
     locale: &Locale,
 ) -> Option<String> {
-    let is_date = NumberFormat::parse(code)
-        .ok()
-        .is_some_and(|parsed| parsed.is_date_format());
-    let resolved = if is_date {
-        java_compat_date_format_code(code)
-    } else {
-        java_compat_format_code(code)
-    };
-    let options = FormatOptions {
-        date_system: if date_1904 {
-            DateSystem::Date1904
-        } else {
-            DateSystem::Date1900
-        },
-        locale: locale.clone(),
-    };
-    format(value, &resolved, &options)
-        .ok()
-        .map(|formatted| java_compat_display(&formatted))
+    let compiled = compile_format_code(code)?;
+    Some(format_with_compiled(value, &compiled, date_1904, locale))
 }
 
 /// 对应 Java：com.alibaba.excel.metadata.format.DataFormatter。 将浮点值约束为 Excel 显示使用的 14 位有效精度。
 #[must_use]
 pub fn excel_display_number(value: f64) -> f64 {
     if value == 0.0 || !value.is_finite() {
+        return value;
+    }
+    // 小于 10^14 的整数/半整数最多具有 15 位有效数字，而且二进制表示精确；
+    // 经过 `%.14e` 再解析不会改变结果。跳过临时 String 和二次浮点解析，
+    // 覆盖 Excel 中最常见的 ID、日期序号和 .5 步进数值。
+    if value.abs() < 1E14 && (value * 2.0).fract() == 0.0 {
         return value;
     }
     format!("{value:.14e}").parse().unwrap_or(value)
@@ -240,6 +280,22 @@ mod tests {
             java_compat_date_format_code(r#"yyyy"年"m"月" "#),
             r#"yyyy"年"m"月" "#
         );
+    }
+
+    #[test]
+    fn exact_integer_and_half_fast_path_matches_java_precision_round_trip() {
+        for value in [
+            -99_999_999_999_999.5,
+            -1_000_000.0,
+            -0.5,
+            0.5,
+            42.0,
+            999_999.5,
+            99_999_999_999_999.5,
+        ] {
+            let java_round_trip = format!("{value:.14e}").parse::<f64>().unwrap();
+            assert_eq!(excel_display_number(value), java_round_trip);
+        }
     }
 }
 

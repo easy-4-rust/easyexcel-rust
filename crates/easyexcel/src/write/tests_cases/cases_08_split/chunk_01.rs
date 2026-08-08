@@ -178,7 +178,7 @@ fn decimal_writer_rejects_values_outside_xlsx_numeric_range() {
 fn constant_memory_writer_can_omit_headers_and_freeze_request() -> Result<()> {
     let directory = tempdir()?;
     let path = directory.path().join("stream.xlsx");
-    write_xlsx::<EveryCell, _>(
+    write_xlsx::<AutoStateRow, _>(
         &path,
         &WriteOptions {
             sheet_name: "Stream".to_owned(),
@@ -188,17 +188,38 @@ fn constant_memory_writer_can_omit_headers_and_freeze_request() -> Result<()> {
             freeze_panes: None,
             ..WriteOptions::default()
         },
-        vec![every_cell(), every_cell()],
+        vec![AutoStateRow { value: 1 }, AutoStateRow { value: 2 }],
     )?;
     let mut workbook: Xlsx<_> = open_workbook(path).map_err(test_error)?;
     let range = workbook.worksheet_range("Stream").map_err(test_error)?;
     assert_eq!(
-        range.get_value((0, 1)),
-        Some(&Data::String("text".to_owned()))
+        range.get_value((0, 0)),
+        Some(&Data::Float(1.0))
     );
     assert_eq!(
-        range.get_value((1, 1)),
-        Some(&Data::String("text".to_owned()))
+        range.get_value((1, 0)),
+        Some(&Data::Float(2.0))
+    );
+    Ok(())
+}
+
+#[test]
+fn constant_memory_rejects_advanced_cells_with_a_stable_error() -> Result<()> {
+    let directory = tempdir()?;
+    let path = directory.path().join("advanced-stream.xlsx");
+    let error = write_xlsx::<EveryCell, _>(
+        &path,
+        &WriteOptions {
+            constant_memory: true,
+            ..WriteOptions::default()
+        },
+        vec![every_cell()],
+    )
+    .expect_err("advanced cells must not be silently dropped in constant-memory mode");
+    assert!(matches!(error, ExcelError::Unsupported(_)));
+    assert_eq!(
+        error.to_string(),
+        "unsupported operation: constant-memory XLSX does not support comment, image, images, or rich-text cells"
     );
     Ok(())
 }
@@ -211,7 +232,7 @@ fn constant_memory_writer_can_omit_headers_and_freeze_request() -> Result<()> {
 fn compress_temp_files_forces_constant_memory_spill() -> Result<()> {
     let directory = tempdir()?;
     let path = directory.path().join("compress_temp.xlsx");
-    let sheet = WriteSheet::<EveryCell>::new("Spill").compress_temp_files(true);
+    let sheet = WriteSheet::<AutoStateRow>::new("Spill").compress_temp_files(true);
     assert!(sheet.options().compress_temp_files);
     assert!(sheet.options().constant_memory);
 
@@ -225,7 +246,10 @@ fn compress_temp_files_forces_constant_memory_spill() -> Result<()> {
     );
     assert!(writer.compress_temp_files_enabled());
     for _ in 0..5 {
-        writer.write(vec![every_cell(), every_cell()], &sheet)?;
+        writer.write(
+            vec![AutoStateRow { value: 1 }, AutoStateRow { value: 2 }],
+            &sheet,
+        )?;
     }
     // Late toggle mirrors Java afterWorkbookCreate (no-op once sheets exist).
     writer.set_compress_temp_files(true);
@@ -243,9 +267,8 @@ fn compress_temp_files_forces_constant_memory_spill() -> Result<()> {
     // Header + 10 data rows.
     assert_eq!(range.height(), 11);
     assert_eq!(
-        range.get_value((1, 1)),
-        Some(&Data::String("text".to_owned()))
+        range.get_value((1, 0)),
+        Some(&Data::Float(1.0))
     );
     Ok(())
 }
-

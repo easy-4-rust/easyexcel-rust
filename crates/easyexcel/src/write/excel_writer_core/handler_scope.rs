@@ -46,7 +46,7 @@ pub(crate) struct HandlerHolderScope {
     workbook: WriteWorkbookHolderView,
     sheet_no: i32,
     table_no: Option<i32>,
-    current_holder_state: WriteContextHolderState,
+    current_holder_state: std::sync::Arc<WriteContextHolderState>,
     mutation_plan: crate::context::write_mutation_plan::WriteMutationPlan,
 }
 
@@ -84,14 +84,16 @@ impl HandlerHolderScope {
             workbook: WriteWorkbookHolderView::new(path),
             sheet_no,
             table_no,
-            current_holder_state: resolved_write_context_holder_state::<T>(options, table_no)?,
+            current_holder_state: std::sync::Arc::new(resolved_write_context_holder_state::<T>(
+                options, table_no,
+            )?),
             mutation_plan,
         })
     }
 
     fn row(&self, context: WriteRowContext) -> WriteRowContext {
         // 跳过临时 live_context 构造与解构——直接注入字段，省去中间全套克隆
-        context.with_resolved_holder_context(
+        context.with_shared_resolved_holder_context(
             self.workbook.clone(),
             self.sheet_no,
             self.table_no,
@@ -102,7 +104,7 @@ impl HandlerHolderScope {
     /// 每单元格注入 holder 状态。跳过临时 `live_context` 值构造与解构，
     /// 直接调用 `with_resolved_holder_context` 省去中间全套克隆。
     fn cell(&self, context: WriteCellContext) -> WriteCellContext {
-        context.with_resolved_holder_context(
+        context.with_shared_resolved_holder_context(
             self.workbook.clone(),
             self.sheet_no,
             self.table_no,
@@ -112,7 +114,7 @@ impl HandlerHolderScope {
 
     /// 对应 Java：无直接对应对象；Rust 架构扩展。
     pub(crate) fn sheet(&self, context: WriteSheetContext) -> WriteSheetContext {
-        context.with_resolved_holder_context(
+        context.with_shared_resolved_holder_context(
             self.workbook.clone(),
             self.sheet_no,
             self.table_no,

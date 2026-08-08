@@ -84,9 +84,11 @@ pub(super) fn render_trait_impl(
                 &METADATA
             }
             fn from_row(row: &#crate_path::RowData) -> #crate_path::Result<Self> {
+                let mut context = row.convert_context_base();
                 Ok(Self { #(#readers),* })
             }
             fn from_row_with_converters(row: &#crate_path::RowData, converters: &#crate_path::ConverterRegistry) -> #crate_path::Result<Self> {
+                let mut context = row.convert_context_base();
                 Ok(Self { #(#registered_readers),* })
             }
             fn to_row(&self) -> #crate_path::Result<::std::vec::Vec<#crate_path::CellValue>> {
