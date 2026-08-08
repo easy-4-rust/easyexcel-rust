@@ -22,6 +22,9 @@ pub const NAME_SID: u16 = 0x0018;
 pub const NOTE_SID: u16 = 0x001C;
 /// BIFF8 inline rich-string cell record SID。
 pub const RICH_STRING_SID: u16 = 0x00D6;
+/// DBCELL 行块索引记录 SID。
+/// 对应 Java：POI `DBCellRecord`。
+pub const DB_CELL_SID: u16 = 0x00D7;
 /// DATEMODE 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const DATE_MODE_SID: u16 = 0x0022;

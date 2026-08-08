@@ -7,6 +7,7 @@ pub mod encode;
 mod encrypt;
 pub mod event_record;
 mod format;
+pub mod model;
 mod numeric;
 pub mod ptg;
 mod protection;
@@ -31,6 +32,10 @@ pub use numeric::{
     Biff8NumericCell, Biff8NumericSheets, Biff8SheetDisplays, decode_rk, format_numeric_displays,
     load_numeric_displays, load_numeric_displays_with_password, parse_format_record,
     scan_numeric_cells,
+};
+pub use model::{
+    Biff8Globals, Biff8ObjectModel, Biff8Record, Biff8WorkbookModel,
+    Biff8WorksheetModel, RecordSink, RecordTransform,
 };
 pub use protection::legacy_password_hash;
 pub use style::{

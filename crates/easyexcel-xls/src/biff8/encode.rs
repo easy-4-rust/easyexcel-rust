@@ -35,6 +35,9 @@ pub use super::record_sid::{
     TEXT_OBJECT_SID as TXO, WINDOW2_SID as WINDOW2, WRITE_ACCESS_SID as WRITEACCESS, XF_SID as XF,
 };
 
+/// BIFF8 DBCELL 记录。
+pub const DBCELL: u16 = super::record_sid::DB_CELL_SID;
+
 /// Workbook globals substream type.
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const DT_GLOBALS: u16 = 0x0005;
