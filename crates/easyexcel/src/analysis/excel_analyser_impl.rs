@@ -133,6 +133,18 @@ impl ExcelAnalyserImpl {
     ///
     /// Returns when the workbook type cannot be resolved from the path.
     pub fn from_path(path: impl Into<PathBuf>, options: ReadOptions) -> Result<Self> {
+        Self::from_path_with_type(path, options, None)
+    }
+
+    /// 使用可选的显式工作簿类型创建分析器。
+    ///
+    /// 对应 Java：`ExcelReaderBuilder.excelType(ExcelTypeEnum)`；显式类型优先于
+    /// 文件扩展名与魔数推断。
+    pub(crate) fn from_path_with_type(
+        path: impl Into<PathBuf>,
+        options: ReadOptions,
+        explicit_type: Option<ExcelTypeEnum>,
+    ) -> Result<Self> {
         let mut analyser = Self {
             path: Some(path.into()),
             options,
@@ -143,7 +155,7 @@ impl ExcelAnalyserImpl {
             temporary_input: None,
             last_error: None,
         };
-        analyser.choice_excel_executor()?;
+        analyser.choice_excel_executor_with_type(explicit_type)?;
         Ok(analyser)
     }
 
@@ -185,7 +197,17 @@ impl ExcelAnalyserImpl {
         temporary_input: Arc<TemporaryInput>,
         options: ReadOptions,
     ) -> Result<Self> {
-        let mut analyser = Self::from_path(path, options)?;
+        Self::from_temporary_input_with_type(path, temporary_input, options, None)
+    }
+
+    /// 使用显式工作簿类型创建由临时输入文件守卫持有的分析器。
+    pub(crate) fn from_temporary_input_with_type(
+        path: impl Into<PathBuf>,
+        temporary_input: Arc<TemporaryInput>,
+        options: ReadOptions,
+        explicit_type: Option<ExcelTypeEnum>,
+    ) -> Result<Self> {
+        let mut analyser = Self::from_path_with_type(path, options, explicit_type)?;
         analyser.temporary_input = Some(temporary_input);
         Ok(analyser)
     }

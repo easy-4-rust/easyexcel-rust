@@ -18,7 +18,6 @@ http-body-util = { workspace = true }
 hyper = { workspace = true, features = ["http1", "server"] }
 serde_json = { workspace = true }
 tokio-util = { workspace = true }
-urlencoding = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt"] }

@@ -37,6 +37,8 @@ pub const FONT_SID: u16 = 0x0031;
 /// CONTINUE 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const CONTINUE_SID: u16 = 0x003C;
+/// WINDOW1 工作簿窗口记录 SID。
+pub const WINDOW1_SID: u16 = 0x003D;
 /// PANE 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const PANE_SID: u16 = 0x0041;
@@ -46,6 +48,8 @@ pub const CODE_PAGE_SID: u16 = 0x0042;
 /// CODENAME 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const CODE_NAME_SID: u16 = 0x004A;
+/// DEFCOLWIDTH 工作表默认列宽记录 SID。
+pub const DEFAULT_COLUMN_WIDTH_SID: u16 = 0x0055;
 /// WRITEACCESS 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const WRITE_ACCESS_SID: u16 = 0x005C;
@@ -61,6 +65,8 @@ pub const BOUND_SHEET_SID: u16 = 0x0085;
 /// PALETTE 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const PALETTE_SID: u16 = 0x0092;
+/// STANDARDWIDTH 工作表精确默认列宽记录 SID。
+pub const STANDARD_WIDTH_SID: u16 = 0x0099;
 /// MULRK 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const MUL_RK_SID: u16 = 0x00BD;
@@ -135,6 +141,8 @@ pub const STRING_SID: u16 = 0x0207;
 /// ROW 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const ROW_SID: u16 = 0x0208;
+/// DEFAULTROWHEIGHT 工作表默认行高记录 SID。
+pub const DEFAULT_ROW_HEIGHT_SID: u16 = 0x0225;
 /// INDEX 记录 SID。
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub const INDEX_SID: u16 = 0x020B;
@@ -181,6 +189,7 @@ pub const fn is_skippable_event_record(record_sid: u16) -> bool {
             | FORMULA_SID
             | HYPERLINK_SID
             | INDEX_SID
+            | DB_CELL_SID
             | LABEL_SID
             | LABEL_SST_SID
             | MERGE_CELLS_SID

@@ -90,6 +90,11 @@ fn encode_cell_record(row: u16, col: u8, xf: u16, value: &Biff8Value) -> Result<
             data.push(0);
             Ok(RawRecord { typ: BOOLERR, data })
         }
+        Biff8Value::Error(code) => {
+            data.push(*code);
+            data.push(1);
+            Ok(RawRecord { typ: BOOLERR, data })
+        }
         Biff8Value::Number(number) => {
             if let Some(rk) = encode_rk(*number) {
                 data.extend_from_slice(&rk.to_le_bytes());
@@ -278,6 +283,15 @@ fn apply_macro_policy(bytes: &[u8], policy: &Biff8MacroPolicy) -> Result<Vec<u8>
                 }
                 destination
                     .set_state_bits(&path, entry.state_bits())
+                    .map_err(|error| ExcelError::Cfb(error.to_string()))?;
+                // CFB 规范只在 storage 目录项保存创建/修改时间；cfb 对 stream
+                // 调用为显式 no-op。Replace 仍对全部 entry 调用，以完整复制来源
+                // storage 元数据且不在此处重复判断对象类型。
+                destination
+                    .set_created_time(&path, entry.created())
+                    .map_err(|error| ExcelError::Cfb(error.to_string()))?;
+                destination
+                    .set_modified_time(&path, entry.modified())
                     .map_err(|error| ExcelError::Cfb(error.to_string()))?;
             }
         }
@@ -603,57 +617,17 @@ fn sheet_cell_insert_index(records: &[RawRecord], sheet: &SheetSpan) -> usize {
         .unwrap_or(sheet.bof_index + 1)
 }
 
-// 语义敏感：BOUNDSHEET 的 lbPlyPos 是 BIFF8 规范中的 u32 绝对偏移，
-// 文件流不可能超过 4GiB，usize->u32 截断在此场景不可能发生。
-#[allow(clippy::cast_possible_truncation)]
 fn assemble_workbook(records: &[RawRecord]) -> Result<Vec<u8>> {
-    let mut out = Vec::new();
-    let mut boundsheet_patches = Vec::new();
-    let mut sheet_offsets = Vec::new();
-    let sheet_bof_indices = top_level_substreams(records)
-        .into_iter()
-        .skip(1)
-        .map(|(bof_index, _)| bof_index)
-        .collect::<Vec<_>>();
-    let mut next_sheet = 0usize;
-    for (record_index, record) in records.iter().enumerate() {
-        if record.typ == BOUNDSHEET {
-            // Patch site: absolute offset of lbPlyPos inside the assembled stream.
-            boundsheet_patches.push(out.len() + 4);
-        }
-        if sheet_bof_indices.get(next_sheet) == Some(&record_index) {
-            sheet_offsets.push(out.len() as u32);
-            next_sheet += 1;
-        }
-        write_raw_record(&mut out, record)?;
-    }
-    if boundsheet_patches.len() != sheet_offsets.len() {
-        return Err(ExcelError::Xls(format!(
-            "BOUNDSHEET count ({}) does not match top-level sheet BOF count ({})",
-            boundsheet_patches.len(),
-            sheet_offsets.len()
-        )));
-    }
-    for (patch_at, offset) in boundsheet_patches.into_iter().zip(sheet_offsets) {
-        out[patch_at..patch_at + 4].copy_from_slice(&offset.to_le_bytes());
-    }
-    Ok(out)
-}
-
-// 语义敏感：上方已校验 data.len() <= MAX_RECORD_DATA（远小于 u16 上限），
-// 记录长度字段按 BIFF8 规范为 u16，保留 as 转换。
-#[allow(clippy::cast_possible_truncation)]
-fn write_raw_record(out: &mut Vec<u8>, record: &RawRecord) -> Result<()> {
-    if record.data.len() > MAX_RECORD_DATA {
-        return Err(ExcelError::Xls(format!(
-            "BIFF record 0x{:04X} payload exceeds {MAX_RECORD_DATA} bytes",
-            record.typ
-        )));
-    }
-    out.extend_from_slice(&record.typ.to_le_bytes());
-    out.extend_from_slice(&(record.data.len() as u16).to_le_bytes());
-    out.extend_from_slice(&record.data);
-    Ok(())
+    // 插行、追加单元格或移动记录后，模板中的 INDEX/DBCELL 保存的是旧的
+    // Workbook-stream 绝对/相对偏移。BIFF8 允许省略这两个加速索引；保留陈旧
+    // 偏移则可能让 HSSF 按错误位置跳转。统一 record model 在修补 BOUNDSHEET
+    // 前先移除它们，确保模板填充结果结构正确。
+    let normalized = records
+        .iter()
+        .filter(|record| !matches!(record.typ, INDEX | DBCELL))
+        .cloned()
+        .collect();
+    super::model::Biff8WorkbookModel::from_records(normalized)?.to_workbook_stream()
 }
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 Returns whether `bytes` look like an OLE `.xls` compound document.

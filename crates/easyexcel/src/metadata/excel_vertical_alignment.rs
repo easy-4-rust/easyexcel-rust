@@ -1,7 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.enums.poi.VerticalAlignmentEnum`.
 
 /// Vertical alignment used by annotation-driven cell styles.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 /// 对应 Java：com.alibaba.excel.enums.poi.VerticalAlignmentEnum。
 pub enum ExcelVerticalAlignment {
     /// Top aligned.

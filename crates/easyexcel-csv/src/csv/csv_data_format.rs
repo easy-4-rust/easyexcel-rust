@@ -4,25 +4,43 @@
 
 use std::collections::HashMap;
 
-use easyexcel_format::{MIN_CUSTOM_DATA_FORMAT_INDEX, switch_builtin_formats};
+use easyexcel_format::{
+    ExcelLocale, MIN_CUSTOM_DATA_FORMAT_INDEX, switch_builtin_formats_for_locale,
+};
 
 /// 对应 Java：com.alibaba.excel.metadata.csv.CsvDataFormat。 工作簿局部的 CSV 数据格式注册表。
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CsvDataFormat {
     custom_indexes: HashMap<String, i16>,
     custom_formats: Vec<String>,
+    builtin_formats: &'static [Option<&'static str>],
 }
 
 impl CsvDataFormat {
     /// 对应 Java：com.alibaba.excel.metadata.csv.CsvDataFormat。 创建空的自定义格式注册表。
     #[must_use]
     pub fn new() -> Self {
-        Self::default()
+        Self::for_locale(None)
+    }
+
+    /// 使用指定 locale 创建格式注册表。对应 Java `CsvDataFormat(Locale)`。
+    #[must_use]
+    pub fn with_locale(locale: ExcelLocale) -> Self {
+        Self::for_locale(Some(&locale))
+    }
+
+    fn for_locale(locale: Option<&ExcelLocale>) -> Self {
+        Self {
+            custom_indexes: HashMap::new(),
+            custom_formats: Vec::new(),
+            builtin_formats: switch_builtin_formats_for_locale(locale),
+        }
     }
 
     /// 对应 Java：com.alibaba.excel.metadata.csv.CsvDataFormat。 返回内建格式或工作簿局部格式的索引。
     pub fn get_format_index(&mut self, format: &str) -> i16 {
-        if let Some(index) = switch_builtin_formats()
+        if let Some(index) = self
+            .builtin_formats
             .iter()
             .position(|candidate| candidate.is_some_and(|candidate| candidate == format))
         {
@@ -43,11 +61,17 @@ impl CsvDataFormat {
     pub fn get_format(&self, index: i16) -> Option<&str> {
         let index = usize::try_from(index).ok()?;
         if index < usize::from(MIN_CUSTOM_DATA_FORMAT_INDEX) {
-            return switch_builtin_formats().get(index).copied().flatten();
+            return self.builtin_formats.get(index).copied().flatten();
         }
         self.custom_formats
             .get(index - usize::from(MIN_CUSTOM_DATA_FORMAT_INDEX))
             .map(String::as_str)
+    }
+}
+
+impl Default for CsvDataFormat {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

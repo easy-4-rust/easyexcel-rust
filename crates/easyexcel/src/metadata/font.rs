@@ -36,6 +36,12 @@ impl Font {
         self.font_name.as_deref()
     }
 
+    /// Java `getFontName` 兼容入口。
+    #[must_use]
+    pub fn get_font_name(&self) -> Option<&str> {
+        self.font_name()
+    }
+
     /// 设置字体名称。对应 Java `setFontName(String)`。
     pub fn set_font_name(&mut self, font_name: impl Into<String>) {
         self.font_name = Some(font_name.into());
@@ -45,6 +51,12 @@ impl Font {
     #[must_use]
     pub const fn font_height_in_points(&self) -> i16 {
         self.font_height_in_points
+    }
+
+    /// Java `getFontHeightInPoints` 兼容入口。
+    #[must_use]
+    pub const fn get_font_height_in_points(&self) -> i16 {
+        self.font_height_in_points()
     }
 
     /// 设置字号。对应 Java `setFontHeightInPoints(short)`。

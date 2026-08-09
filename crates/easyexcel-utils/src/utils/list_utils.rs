@@ -32,8 +32,12 @@ pub fn new_array_list_with_capacity<T>(capacity: usize) -> Vec<T> {
 /// 对应 Java：com.alibaba.excel.util.ListUtils。 Mirrors `com.google.common.collect.Lists#newArrayListWithExpectedSize`.
 #[must_use]
 pub fn new_array_list_with_expected_size<T>(expected_size: usize) -> Vec<T> {
-    // Guava's sizing: 1.5 * expected + 1, capped by isize::MAX.
-    let cap = expected_size + (expected_size >> 1) + 1;
+    // EasyExcel v4.0.3 的实现不是当前 Guava 公式，而是
+    // `5 + arraySize + arraySize / 10`；使用饱和运算保留 Java
+    // `IntUtils.saturatedCast` 在超大输入时不溢出的意图。
+    let cap = expected_size
+        .saturating_add(expected_size / 10)
+        .saturating_add(5);
     Vec::with_capacity(cap)
 }
 

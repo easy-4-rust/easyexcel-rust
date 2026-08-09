@@ -9,12 +9,12 @@ use std::path::{Path, PathBuf};
 
 use crate::core::{
     Converter, CsvCharset, DynamicRow, ExcelError, ExcelRow, NullableObjectConverter, Result,
-    WriteDirection, WriteHandler,
+    WriteHandler,
 };
 use crate::excel_builder::do_fill_template_with_compiled_styles;
 use crate::excel_output_stream_builder::ExcelOutputStreamBuilder;
 use crate::excel_owned_output_stream_builder::ExcelOwnedOutputStreamBuilder;
-use crate::template::{FillConfig, FillDirection};
+use crate::template::FillConfig;
 use crate::write::{
     BuilderFillConfig, CellStyle, DefaultWriteHandlerLoader, ExcelWriter, MergeRange,
     MirroredLoopMergeStrategy as LoopMergeStrategy, WriteOptions, WriteSheet,
@@ -276,7 +276,7 @@ where
         self
     }
 
-    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Encrypts XLSX output using ECMA-376 Agile Encryption.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Encrypts XLSX with ECMA-376 Agile or BIFF8 XLS with CryptoAPI `FILEPASS`.
     #[must_use]
     pub fn password(mut self, password: impl Into<String>) -> Self {
         self.options.password = Some(password.into());
@@ -447,9 +447,9 @@ where
     ///
     /// `true` keeps the full workbook available for random-access handlers;
     /// `false` forces SXSSF-style constant-memory output. Without either this
-    /// method or [`Self::constant_memory`], safe one-shot scalar XLSX writes use
-    /// constant memory from the first batch, while advanced/random-access writes
-    /// stay in memory.
+    /// method or [`Self::constant_memory`], Stateful `.build()` 保持 Auto：首批
+    /// 安全时可以进入流式后端，同时保留 Handler 执行后的 journal；后续批次
+    /// 需要随机访问能力时从 journal 晋升，且不会重复执行用户 Handler。
     #[must_use]
     pub const fn in_memory(mut self, enabled: bool) -> Self {
         self.options.constant_memory = !enabled;
@@ -471,6 +471,9 @@ where
         self.options.compress_temp_files = enabled;
         if enabled {
             self.options.constant_memory = true;
+            // 该入口的公开契约是“强制常量内存”。若仍保持 Auto，后续
+            // 随机访问 Handler 会把它静默改选为内存模式，违背显式配置。
+            self.memory_selection = WriteMemorySelection::Explicit;
         }
         self
     }
@@ -545,7 +548,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns template, fill, CSV/XLS unsupported, or output errors.
+    /// Returns template, fill, CSV-unsupported, XLS/XLSX backend, or output errors.
     pub fn do_fill(self, data: &dyn std::any::Any) -> Result<()> {
         let sheet = WriteSheet::<DynamicRow>::from_options(self.options.clone());
         let mut handlers = self.handlers;
@@ -572,19 +575,14 @@ where
     ///
     /// # Errors
     ///
-    /// Returns template, fill, CSV/XLS unsupported, or output errors.
+    /// Returns template, fill, CSV-unsupported, XLS/XLSX backend, or output errors.
     pub fn do_fill_with_config(
         self,
         data: &dyn std::any::Any,
         fill_config: FillConfig,
     ) -> Result<()> {
-        let builder_config = BuilderFillConfig::new()
-            .direction(match fill_config.get_direction() {
-                FillDirection::Vertical => WriteDirection::Vertical,
-                FillDirection::Horizontal => WriteDirection::Horizontal,
-            })
-            .force_new_row(fill_config.get_force_new_row())
-            .auto_style(fill_config.get_auto_style());
+        let mut builder_config = fill_config;
+        builder_config.init();
         let sheet = WriteSheet::<DynamicRow>::from_options(self.options.clone());
         let mut handlers = self.handlers;
         handlers.extend(
@@ -604,7 +602,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns template, fill, CSV/XLS unsupported, or output errors.
+    /// Returns template, fill, CSV-unsupported, XLS/XLSX backend, or output errors.
     pub fn do_fill_with<D, F>(self, supplier: F) -> Result<()>
     where
         D: std::any::Any,
@@ -620,7 +618,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns template, fill, CSV/XLS unsupported, or output errors.
+    /// Returns template, fill, CSV-unsupported, XLS/XLSX backend, or output errors.
     pub fn do_fill_with_config_supplier<D, F>(
         self,
         supplier: F,
@@ -644,6 +642,10 @@ where
     T: ExcelRow,
 {
     if !stateful_streaming_configuration_is_safe::<T>(options, handlers, has_template) {
+        return false;
+    }
+
+    if !T::supports_static_scalar_write() {
         return false;
     }
 

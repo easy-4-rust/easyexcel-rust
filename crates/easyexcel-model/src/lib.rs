@@ -11,11 +11,19 @@
 pub mod model;
 
 pub use model::{
-    Cell, CellAddress, CellError, CellRange, CellValue, ColInfo, DataFormatData, DateSystem,
-    DefinedName, Error, ExcelDataFormat, FrozenPanes, Metadata, OpaquePart, Result, RowInfo, Sheet,
+    Cell, CellAddress, CellError, CellRange, CellValue, ChartMutation, ChartRange, ChartSeries,
+    ChartType, ColInfo, DataFormatData, DateSystem,
+    DefinedName, Error, ExcelDataFormat, FrozenPanes, MergeRange, Metadata, OpaquePart, Result,
+    RowInfo, Sheet,
     Spill, StoredRow, Table, TabularCell, TabularDocument, TabularTable, Visibility, Workbook,
-    chrono_date_format, date_to_excel_serial, datetime_to_excel_serial,
+    DATE_FORMAT_10, DATE_FORMAT_14, DATE_FORMAT_16, DATE_FORMAT_16_FORWARD_SLASH, DATE_FORMAT_17,
+    DATE_FORMAT_19, DATE_FORMAT_19_FORWARD_SLASH, DAY_MILLISECONDS, DEFAULT_DATE_FORMAT,
+    DEFAULT_LOCAL_DATE_FORMAT, HOURS_PER_DAY, MINUTES_PER_HOUR, SECONDS_PER_DAY,
+    RichTextSegment, SECONDS_PER_MINUTE, chrono_date_format, date_to_excel_serial,
+    datetime_to_excel_serial, excel_parts_to_datetime, segment_utf16_text,
+    infer_java_date_pattern,
 };
 pub use model::{
-    addr, data_format_data, dates, error, excel_data_format, numfmt, styles, tabular, value,
+    addr, chart_mutation, chart_range, chart_series, chart_type, data_format_data, dates, error,
+    excel_data_format, merge_range, numfmt, rich_text_segment, styles, tabular, value,
 };

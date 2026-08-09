@@ -13,4 +13,14 @@ pub trait Cell {
 
     /// Returns the zero-based column index. (Java `getColumnIndex()`)
     fn column_index(&self) -> Option<i32>;
+
+    /// Java `getRowIndex` 兼容入口。
+    fn get_row_index(&self) -> Option<i32> {
+        self.row_index()
+    }
+
+    /// Java `getColumnIndex` 兼容入口。
+    fn get_column_index(&self) -> Option<i32> {
+        self.column_index()
+    }
 }

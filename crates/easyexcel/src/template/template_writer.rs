@@ -12,7 +12,8 @@ use crate::core::{CellValue, ExcelError, Result};
 use crate::write::ExcelOutputStream;
 
 use crate::template::fill_engine::{
-    append_rows_to_sheet, replace_collection_fills_in_sheet, replace_scalar_cells_in_sheet,
+    append_rows_to_sheet_with_decorations, replace_collection_fills_in_sheet_with_decorations,
+    replace_scalar_cells_in_sheet_with_decorations,
 };
 use crate::template::sheet_fill_state::{
     PendingCollectionFill, PendingSheetFill, ResolvedSheetFill,
@@ -36,6 +37,9 @@ pub struct ExcelTemplateWriter<'a> {
     pub(crate) next_collection_order: usize,
     pub(crate) finished: bool,
     pub(crate) auto_close_stream: bool,
+    /// OOXML package output password. Encryption itself remains owned by
+    /// `easyexcel-xlsx`; BIFF8 templates use their dedicated backend.
+    pub(crate) package_password: Option<String>,
     pub(crate) collection_column_styles: BTreeMap<usize, u32>,
     /// Stateful BIFF8 backend when the template is an OLE `.xls` workbook.
     pub(crate) xls: Option<crate::write::xls_adapter::Biff8TemplatePackage>,
@@ -47,6 +51,7 @@ impl std::fmt::Debug for ExcelTemplateWriter<'_> {
             TemplateOutput::Path(_) => "path",
             TemplateOutput::Borrowed(_) => "borrowed stream",
             TemplateOutput::Owned(_) => "owned stream",
+            TemplateOutput::Managed { .. } => "managed writer stream",
         };
         formatter
             .debug_struct("ExcelTemplateWriter")
@@ -100,6 +105,7 @@ impl<'a> ExcelTemplateWriter<'a> {
             next_collection_order: 0,
             finished: false,
             auto_close_stream: true,
+            package_password: None,
             collection_column_styles: BTreeMap::new(),
             xls: None,
         }
@@ -116,6 +122,7 @@ impl<'a> ExcelTemplateWriter<'a> {
             next_collection_order: 0,
             finished: false,
             auto_close_stream: true,
+            package_password: None,
             collection_column_styles: BTreeMap::new(),
             xls: Some(xls),
         }
@@ -131,7 +138,7 @@ impl<'a> ExcelTemplateWriter<'a> {
         Ok(Self::from_entries(output, load_entries(template)?))
     }
 
-    fn from_template_bytes(output: TemplateOutput<'a>, bytes: &[u8]) -> Result<Self> {
+    pub(crate) fn from_template_bytes(output: TemplateOutput<'a>, bytes: &[u8]) -> Result<Self> {
         match easyexcel_io::Format::from_magic(bytes) {
             easyexcel_io::Format::Xls => Ok(Self::from_xls(
                 output,
@@ -228,6 +235,36 @@ impl<'a> ExcelTemplateWriter<'a> {
         self
     }
 
+    /// 配置 OOXML 模板产物的工作簿密码。
+    ///
+    /// 对应 Java：`WriteWorkbook#getPassword()`；仅由统一 builder wiring
+    /// 调用，具体 ECMA-376 加密由 `easyexcel-xlsx` 承载。
+    pub(crate) fn set_package_password(&mut self, password: Option<String>) {
+        self.package_password = password;
+    }
+
+    /// 将 facade writer 已持有的真实输出目标移交给模板引擎。
+    ///
+    /// 模板解析完成后才调用，避免解析失败时提前夺走调用方输出流。
+    pub(crate) fn redirect_output(
+        &mut self,
+        output: TemplateOutput<'a>,
+        auto_close_stream: bool,
+    ) {
+        self.output = output;
+        self.auto_close_stream = auto_close_stream;
+    }
+
+    /// 异常结束且禁止输出工作簿时，只完成目标生命周期，不写模板内容。
+    pub(crate) fn discard_output(&mut self) -> Result<()> {
+        if self.finished {
+            return Ok(());
+        }
+        discard_template_output(&mut self.output, self.auto_close_stream)?;
+        self.finished = true;
+        Ok(())
+    }
+
     /// Accumulates scalar `{key}` values for this workbook.
     ///
     /// Later fills replace earlier values for the same key, matching Java map
@@ -255,11 +292,10 @@ impl<'a> ExcelTemplateWriter<'a> {
         self.ensure_open()?;
         if self.xls.is_some() {
             let sheet_name = self.resolve_xls_sheet_name(sheet)?;
-            let values = template_text_values(data);
             self.xls
                 .as_mut()
                 .expect("XLS backend checked")
-                .replace_scalar_placeholders_on_sheet(Some(&sheet_name), &values)?;
+                .replace_scalar_cell_values_on_sheet(Some(&sheet_name), data.values())?;
             return Ok(self);
         }
         self.sheet_state_mut(sheet)
@@ -304,18 +340,18 @@ impl<'a> ExcelTemplateWriter<'a> {
             let rows = data
                 .rows()
                 .iter()
-                .map(template_text_values)
+                .map(|row| row.values().clone())
                 .collect::<Vec<_>>();
             self.xls
                 .as_mut()
                 .expect("XLS backend checked")
-                .fill_collection_placeholders(
+                .fill_collection_cell_values(
                     Some(&sheet_name),
                     data.name(),
                     &rows,
-                    matches!(config.get_direction(), FillDirection::Horizontal),
-                    config.get_force_new_row(),
-                    config.get_auto_style(),
+                    matches!(config.effective_direction(), FillDirection::Horizontal),
+                    config.effective_force_new_row(),
+                    config.effective_auto_style(),
                 )?;
             return Ok(self);
         }
@@ -351,8 +387,8 @@ impl<'a> ExcelTemplateWriter<'a> {
             .iter()
             .map(|column| base_by_column.get(column).copied().unwrap_or(0))
             .collect::<Vec<_>>();
-        let entries = std::mem::take(&mut self.entries);
-        let package = easyexcel_xlsx::OoxmlPackage::from_entries(entries);
+        // 样式表和 worksheet 引用必须原子提交；映射失败时保留可重试的模板包。
+        let package = easyexcel_xlsx::OoxmlPackage::from_entries(self.entries.clone());
         let mut package = easyexcel_xlsx::OoxmlTemplatePackage::from_package(package);
         let mapped = package
             .import_compiled_styles_onto(compiled_xlsx, &base_indexes)
@@ -446,10 +482,10 @@ impl<'a> ExcelTemplateWriter<'a> {
                 )?;
             return Ok(self);
         }
-        let entries = std::mem::take(&mut self.entries);
-        let package = easyexcel_xlsx::OoxmlPackage::from_entries(entries);
+        // 在快照上修改，只有工作表解析和布局更新均成功后才替换原包。
+        let package = easyexcel_xlsx::OoxmlPackage::from_entries(self.entries.clone());
         let mut package = easyexcel_xlsx::OoxmlTemplatePackage::from_package(package);
-        let result = (|| {
+        {
             let names = package.sheet_names().map_err(ExcelError::from)?;
             let name = match sheet {
                 TemplateSheet::First => names.first(),
@@ -468,10 +504,9 @@ impl<'a> ExcelTemplateWriter<'a> {
                         last_column: range.last_column,
                     }],
                 )
-                .map_err(ExcelError::from)
-        })();
+                .map_err(ExcelError::from)?;
+        }
         self.entries = package.into_package().into_entries();
-        result?;
         Ok(self)
     }
 
@@ -487,24 +522,97 @@ impl<'a> ExcelTemplateWriter<'a> {
         }
         if let Some(xls) = self.xls.as_ref() {
             let bytes = xls.to_bytes()?;
-            self.finished = true;
-            return write_template_bytes_to_output(
+            write_template_bytes_to_output(
                 &mut self.output,
                 &bytes,
                 self.auto_close_stream,
+            )?;
+            self.finished = true;
+            return Ok(());
+        }
+        // finish 可能在 XML、关系或批注部件合并阶段失败。所有模板替换都在
+        // 工作副本上完成，成功后一次提交，失败时允许调用方修正后重试。
+        let mut entries = self.entries.clone();
+        let mut decorations = Vec::new();
+        for sheet in self.resolved_sheet_fills()? {
+            decorations.extend(
+                replace_collection_fills_in_sheet_with_decorations(
+                    &mut entries,
+                    &sheet.worksheet,
+                    &sheet.collections,
+                )?
+                .into_iter()
+                .map(|placement| (sheet.worksheet.clone(), placement)),
+            );
+            decorations.extend(
+                replace_scalar_cells_in_sheet_with_decorations(
+                    &mut entries,
+                    &sheet.worksheet,
+                    &sheet.scalar,
+                )?
+                .into_iter()
+                .map(|placement| (sheet.worksheet.clone(), placement)),
+            );
+            decorations.extend(
+                append_rows_to_sheet_with_decorations(
+                    &mut entries,
+                    &sheet.worksheet,
+                    &sheet.appended_rows,
+                )?
+                .into_iter()
+                .map(|placement| (sheet.worksheet.clone(), placement)),
             );
         }
-        for sheet in self.resolved_sheet_fills()? {
-            replace_collection_fills_in_sheet(
-                &mut self.entries,
-                &sheet.worksheet,
-                &sheet.collections,
-            )?;
-            replace_scalar_cells_in_sheet(&mut self.entries, &sheet.worksheet, &sheet.scalar)?;
-            append_rows_to_sheet(&mut self.entries, &sheet.worksheet, &sheet.appended_rows)?;
+        if !decorations.is_empty() {
+            let package = easyexcel_xlsx::OoxmlPackage::from_entries(entries);
+            let mut package = easyexcel_xlsx::OoxmlTemplatePackage::from_package(package);
+            let mut sheet_names = BTreeMap::new();
+            for (worksheet, placement) in decorations {
+                let sheet_name = if let Some(sheet_name) = sheet_names.get(&worksheet) {
+                    sheet_name.clone()
+                } else {
+                    let sheet_name = package.sheet_name_by_worksheet_path(&worksheet)?;
+                    sheet_names.insert(worksheet.clone(), sheet_name.clone());
+                    sheet_name
+                };
+                match placement.decoration {
+                    easyexcel_xlsx::TemplateDecoration::Comment(comment) => {
+                        package.set_template_comment(
+                            &sheet_name,
+                            placement.row,
+                            placement.column,
+                            &comment,
+                        )?;
+                    }
+                    easyexcel_xlsx::TemplateDecoration::Hyperlink(hyperlink) => {
+                        package.set_template_hyperlink(
+                            &sheet_name,
+                            placement.row,
+                            placement.column,
+                            &hyperlink,
+                        )?;
+                    }
+                    easyexcel_xlsx::TemplateDecoration::Image(image) => {
+                        package.set_template_image(
+                            &sheet_name,
+                            placement.row,
+                            placement.column,
+                            &image,
+                        )?;
+                    }
+                }
+            }
+            entries = package.into_package().into_entries();
         }
+        write_entries_to_output_with_password(
+            &mut self.output,
+            &entries,
+            self.auto_close_stream,
+            self.package_password.as_deref(),
+        )?;
+        self.entries = entries;
         self.finished = true;
-        write_entries_to_output(&mut self.output, &self.entries, self.auto_close_stream)
+        Ok(())
     }
 
     /// Returns whether [`Self::finish`] has run.
@@ -648,7 +756,7 @@ pub fn fill_xlsx_template_list(
 /// for XLS workbooks.
 fn fill_xls_template_scalar(template: &Path, output: &Path, data: &TemplateData) -> Result<()> {
     let mut pkg = crate::write::xls_adapter::Biff8TemplatePackage::from_path(template)?;
-    pkg.replace_scalar_placeholders(&template_text_values(data))?;
+    pkg.replace_scalar_cell_values_on_sheet(None, data.values())?;
     pkg.save_to_path(output)
 }
 
@@ -663,25 +771,18 @@ fn fill_xls_template_list(
     let rows = data
         .rows()
         .iter()
-        .map(template_text_values)
+        .map(|row| row.values().clone())
         .collect::<Vec<_>>();
     let first_sheet = pkg.sheet_names().into_iter().next();
-    pkg.fill_collection_placeholders(
+    pkg.fill_collection_cell_values(
         first_sheet.as_deref(),
         data.name(),
         &rows,
-        matches!(config.get_direction(), FillDirection::Horizontal),
-        config.get_force_new_row(),
-        config.get_auto_style(),
+        matches!(config.effective_direction(), FillDirection::Horizontal),
+        config.effective_force_new_row(),
+        config.effective_auto_style(),
     )?;
     pkg.save_to_path(output)
-}
-
-fn template_text_values(data: &TemplateData) -> BTreeMap<String, String> {
-    data.values()
-        .iter()
-        .map(|(key, value)| (key.clone(), value.as_text()))
-        .collect()
 }
 
 /// 对应 Java：com.alibaba.excel.ExcelWriter。
@@ -713,7 +814,7 @@ pub(crate) fn write_entries(path: &Path, entries: &[TemplateEntry]) -> Result<()
     Ok(easyexcel_xlsx::OoxmlPackage::from_entries(entries.to_vec()).save_to_path(path)?)
 }
 
-fn write_template_bytes_to_output(
+pub(crate) fn write_template_bytes_to_output(
     output: &mut TemplateOutput<'_>,
     bytes: &[u8],
     auto_close_stream: bool,
@@ -734,6 +835,15 @@ fn write_template_bytes_to_output(
             easyexcel_io::write_all_and_flush(writer.as_mut(), bytes).map_err(ExcelError::from)?;
             if auto_close_stream {
                 writer.close().map_err(ExcelError::from)?;
+            }
+            Ok(())
+        }
+        TemplateOutput::Managed { writer, close } => {
+            easyexcel_io::write_all_and_flush(writer.as_mut(), bytes).map_err(ExcelError::from)?;
+            if auto_close_stream
+                && let Some(close) = close.take()
+            {
+                close().map_err(ExcelError::from)?;
             }
             Ok(())
         }
@@ -765,7 +875,69 @@ pub(crate) fn write_entries_to_output(
             close_result.map_err(ExcelError::from)?;
             write_result
         }
+        TemplateOutput::Managed { writer, close } => {
+            let write_result = encode_entries(entries).and_then(|bytes| {
+                easyexcel_io::write_all_and_flush(writer.as_mut(), &bytes).map_err(ExcelError::from)
+            });
+            let close_result = if auto_close_stream {
+                close.take().map_or(Ok(()), |close| close())
+            } else {
+                Ok(())
+            };
+            close_result.map_err(ExcelError::from)?;
+            write_result
+        }
     }
+}
+
+pub(crate) fn discard_template_output(
+    output: &mut TemplateOutput<'_>,
+    auto_close_stream: bool,
+) -> Result<()> {
+    match output {
+        TemplateOutput::Path(path) => {
+            if let Some(parent) = path.parent()
+                && !parent.as_os_str().is_empty()
+            {
+                std::fs::create_dir_all(parent)?;
+            }
+            std::fs::File::create(path)?;
+            Ok(())
+        }
+        TemplateOutput::Borrowed(_) => Ok(()),
+        TemplateOutput::Owned(writer) => {
+            if auto_close_stream {
+                writer.close().map_err(ExcelError::from)?;
+            }
+            Ok(())
+        }
+        TemplateOutput::Managed { close, .. } => {
+            if auto_close_stream
+                && let Some(close) = close.take()
+            {
+                close().map_err(ExcelError::from)?;
+            }
+            Ok(())
+        }
+    }
+}
+
+/// 将 OOXML entries 写入目标，并在请求时交由 XLSX 引擎包装为 ECMA-376
+/// Agile Encryption CFB 容器。
+fn write_entries_to_output_with_password(
+    output: &mut TemplateOutput<'_>,
+    entries: &[TemplateEntry],
+    auto_close_stream: bool,
+    password: Option<&str>,
+) -> Result<()> {
+    let Some(password) = password else {
+        return write_entries_to_output(output, entries, auto_close_stream);
+    };
+    let plaintext = encode_entries(entries)?;
+    let mut encrypted = std::io::Cursor::new(Vec::new());
+    easyexcel_xlsx::encrypt_package_to(&plaintext, password, &mut encrypted)
+        .map_err(ExcelError::from)?;
+    write_template_bytes_to_output(output, encrypted.get_ref(), auto_close_stream)
 }
 
 /// 对应 Java：com.alibaba.excel.ExcelWriter。

@@ -163,14 +163,19 @@ writer.write(admins, &EasyExcel::writer_sheet::<User>("Admins"))?;
 writer.finish()?;
 ```
 
-### Write with Image
+### Write with Image (XLSX)
 
 ```rust
-let writer = EasyExcel::write::<User>("output.xls");
-// For XLS: embed raw image bytes
-writer.write_image(&std::fs::read("logo.jpg")?, 0, 5);
-writer.sheet("Data").do_write(users)?;
+let row = ImageRow {
+    image: WriteCellData::from_image(std::fs::read("logo.jpg")?),
+};
+EasyExcel::write::<ImageRow>("output.xlsx")
+    .sheet("Data")
+    .do_write([row])?;
 ```
+
+BIFF8 `.xls` cell images remain a typed `Unsupported` boundary. Raw OBJ/MSODrawing
+bytes cannot be placed in a separate CFB stream and advertised as an anchored image.
 
 ### CSV with BOM
 

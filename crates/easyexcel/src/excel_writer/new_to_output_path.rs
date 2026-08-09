@@ -38,7 +38,7 @@ impl ExcelWriter {
         let selection = if options.constant_memory || options.compress_temp_files {
             crate::write::WriteBackendSelection::ExplicitStreaming
         } else {
-            crate::write::WriteBackendSelection::InMemory
+            crate::write::WriteBackendSelection::AutoUndecided
         };
         Self::with_handlers_and_options_and_selection(path, handlers, options, selection)
     }
@@ -119,7 +119,7 @@ impl ExcelWriter {
         let selection = if options.constant_memory || options.compress_temp_files {
             crate::write::WriteBackendSelection::ExplicitStreaming
         } else {
-            crate::write::WriteBackendSelection::InMemory
+            crate::write::WriteBackendSelection::AutoUndecided
         };
         Self::with_output_stream_and_selection(
             logical_path,
@@ -274,13 +274,19 @@ impl ExcelWriter {
         let mut handlers = handler_scope.effective_boxed();
         self.ensure_backend_for_write::<T>(sheet.options(), &handlers)?;
         self.start()?;
-        if self.is_csv() {
+        // `start()` 执行 workbook Handler；回调可能通过共享 mutation plan 新增
+        // 随机访问修改，因此首批数据落盘前必须按回调后的真实状态再判定一次。
+        self.ensure_backend_for_write::<T>(sheet.options(), &handlers)?;
+        let write_result = if self.is_csv() {
             self.write_csv_batch::<T, I>(rows, sheet, &mut handlers, false, false, false, None)?;
+            Ok(())
         } else if self.is_xls() {
             self.write_xls_batch::<T, I>(rows, sheet, &mut handlers, false, false, false, None)?;
+            Ok(())
         } else {
-            self.write_xlsx_batch::<T, I>(rows, sheet, &mut handlers, false, false, false, None)?;
-        }
+            self.write_xlsx_batch::<T, I>(rows, sheet, &mut handlers, false, false, false, None)
+        };
+        self.record_streaming_write_result(write_result)?;
         self.current_effective_handlers = handler_scope.effective;
         debug_assert!(self.resolve_sheet_name(sheet.options()).is_some());
         Ok(self)
@@ -379,6 +385,11 @@ impl ExcelWriter {
                     "automatic streaming backend promotion is already in progress".to_owned(),
                 ));
             }
+            crate::WriteBackendSelection::Failed => {
+                return Err(ExcelError::Format(
+                    "stateful streaming backend previously failed".to_owned(),
+                ));
+            }
             _ => {}
         }
         self.mutation_plan.add_merge(sheet_name, range)
@@ -402,7 +413,9 @@ impl ExcelWriter {
             self.template_file.as_deref(),
             self.template_bytes.as_deref(),
         );
-        let configuration_safe = !self.has_custom_converters
+        let has_deferred_mutations = !self.mutation_plan.is_empty()?;
+        let configuration_safe = !has_deferred_mutations
+            && !self.has_custom_converters
             && options.converters.is_empty()
             && crate::write::builder::excel_writer_builder::stateful_streaming_configuration_is_safe::<T>(
                 options,
@@ -445,6 +458,9 @@ impl ExcelWriter {
             crate::WriteBackendSelection::Promoting => Err(ExcelError::Unsupported(
                 "automatic streaming backend promotion is already in progress".to_owned(),
             )),
+            crate::WriteBackendSelection::Failed => Err(ExcelError::Format(
+                "stateful streaming backend previously failed".to_owned(),
+            )),
             _ => Ok(()),
         }
     }
@@ -452,26 +468,38 @@ impl ExcelWriter {
     fn promote_auto_streaming_to_memory(&mut self) -> Result<()> {
         self.backend_selection = crate::WriteBackendSelection::Promoting;
         let mut spills = std::mem::take(&mut self.gzip_spills);
-        let mut workbook = easyexcel_xlsx::xlsx::generation::new_workbook();
-        let mut ordered_sheets = self.sheet_indexes.iter().collect::<Vec<_>>();
-        ordered_sheets.sort_by_key(|(index, _)| **index);
-        for (_, sheet_name) in ordered_sheets {
-            let state = self.sheets.get(sheet_name).ok_or_else(|| {
-                ExcelError::Format(format!(
-                    "stateful journal is missing sheet state for '{sheet_name}'"
-                ))
-            })?;
-            let mut reader = spills
-                .remove(sheet_name)
-                .map(crate::write::gzip_spill::GzipSheetDataWriter::finish)
-                .transpose()?;
-            replay_stateful_sheet_journal(&mut workbook, state, reader.as_mut())?;
-        }
-        if !spills.is_empty() {
-            return Err(ExcelError::Format(
-                "stateful journal contains sheets absent from the workbook index".to_owned(),
-            ));
-        }
+        let promoted = (|| {
+            let mut workbook = easyexcel_xlsx::xlsx::generation::new_workbook();
+            let mut ordered_sheets = self.sheet_indexes.iter().collect::<Vec<_>>();
+            ordered_sheets.sort_by_key(|(index, _)| **index);
+            for (_, sheet_name) in ordered_sheets {
+                let state = self.sheets.get(sheet_name).ok_or_else(|| {
+                    ExcelError::Format(format!(
+                        "stateful journal is missing sheet state for '{sheet_name}'"
+                    ))
+                })?;
+                let mut reader = spills
+                    .remove(sheet_name)
+                    .map(crate::write::gzip_spill::GzipSheetDataWriter::finish)
+                    .transpose()?;
+                replay_stateful_sheet_journal(&mut workbook, state, reader.as_mut())?;
+            }
+            if !spills.is_empty() {
+                return Err(ExcelError::Format(
+                    "stateful journal contains sheets absent from the workbook index".to_owned(),
+                ));
+            }
+            Ok(workbook)
+        })();
+        let workbook = match promoted {
+            Ok(workbook) => workbook,
+            Err(error) => {
+                // finish() 已消费部分 journal，无法诚实回滚；进入终止失败态，
+                // 禁止后续保存一个不完整的内存工作簿。
+                self.backend_selection = crate::WriteBackendSelection::Failed;
+                return Err(error);
+            }
+        };
         self.workbook = workbook;
         for state in self.sheets.values_mut() {
             state.options.constant_memory = false;
@@ -481,6 +509,22 @@ impl ExcelWriter {
         self.compress_temp_files = false;
         self.backend_selection = crate::WriteBackendSelection::InMemory;
         Ok(())
+    }
+
+    /// 将可能已经部分消费输入、执行 Handler 或追加 journal 的流式批次错误
+    /// 转换为终止失败态，禁止调用方在未知物理行位置上继续写入。
+    fn record_streaming_write_result(&mut self, result: Result<()>) -> Result<()> {
+        if result.is_err()
+            && matches!(
+                self.backend_selection,
+                crate::WriteBackendSelection::AutoStreaming
+                    | crate::WriteBackendSelection::ExplicitStreaming
+                    | crate::WriteBackendSelection::Promoting
+            )
+        {
+            self.backend_selection = crate::WriteBackendSelection::Failed;
+        }
+        result
     }
 
     fn workbook_handler_scope(&self) -> HandlerExecutionScope {
@@ -758,7 +802,8 @@ impl ExcelWriter {
 
         let handler_scope = self.table_handler_scope(&sheet_name, table_no);
         let mut handlers = handler_scope.effective_boxed();
-        if self.is_csv() {
+        self.ensure_backend_for_write::<T>(sheet_with_table.options(), &handlers)?;
+        let write_result = if self.is_csv() {
             self.write_csv_batch::<T, I>(
                 rows,
                 &sheet_with_table,
@@ -767,7 +812,7 @@ impl ExcelWriter {
                 true,
                 table_is_new,
                 Some(table_no),
-            )?;
+            )
         } else if self.is_xls() {
             self.write_xls_batch::<T, I>(
                 rows,
@@ -777,7 +822,7 @@ impl ExcelWriter {
                 true,
                 table_is_new,
                 Some(table_no),
-            )?;
+            )
         } else {
             self.write_xlsx_batch::<T, I>(
                 rows,
@@ -787,8 +832,9 @@ impl ExcelWriter {
                 true,
                 table_is_new,
                 Some(table_no),
-            )?;
-        }
+            )
+        };
+        self.record_streaming_write_result(write_result)?;
         if let Some(state) = self.sheets.get_mut(&sheet_name) {
             let mut options = sheet.options().clone();
             options.sheet_name.clone_from(&sheet_name);

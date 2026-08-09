@@ -11,6 +11,8 @@ pub enum Biff8Value {
     Number(f64),
     /// Boolean.
     Bool(bool),
+    /// BIFF8 `BOOLERR` 错误码。
+    Error(u8),
     /// Formula expression (without leading `=`), encoded as `BIFF8` `Ptg`
     /// tokens at serialization time. Cached result defaults to `0` so
     /// `Excel` / `LibreOffice` recalculate on load.

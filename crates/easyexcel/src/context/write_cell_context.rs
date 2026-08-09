@@ -5,8 +5,8 @@ use crate::core::enum_cell_data_type::CellDataType;
 use crate::core::excel_column::ExcelColumn;
 use crate::{
     DateTimeFormatProperty, ExcelContentProperty, FontProperty, Head, NumberFormatProperty,
-    StyleProperty, WriteCellHandle, WriteContext, WriteHolderContext, WriteSheetHolderView,
-    WriteTableHolderView, WriteWorkbookHolderView,
+    StyleProperty, WriteCellHandle, WriteContext, WriteHolderContext, WriteRowHandle,
+    WriteSheetHolderView, WriteTableHolderView, WriteWorkbookHolderView,
 };
 
 /// 私有：转换前原始值的三态缓存（对应旧实现 `Option<CellValue>` 加构造默认）。
@@ -89,6 +89,7 @@ pub struct WriteCellContext {
     pub value: CellValue,
     /// A handler may set this to suppress the physical cell.
     pub skip: bool,
+    row: WriteRowHandle,
     cell: WriteCellHandle,
     holders: WriteHolderContext,
 }
@@ -119,6 +120,7 @@ impl WriteCellContext {
             // 视图），不能惰性化；热路径上由 with_write_context 整体替换。
             holders: WriteHolderContext::new()
                 .with_sheet(WriteSheetHolderView::new(&sheet_name).with_last_row_index(row_index)),
+            row: WriteRowHandle::new(row_index),
             cell: WriteCellHandle::new(row_index, column_index, value.clone()),
             sheet_name,
             row_index,
@@ -155,7 +157,7 @@ impl WriteCellContext {
         };
         self.pending_original_field_type = column.field_type;
         self.resolved_excel_content_property = Some(ExcelContentProperty {
-            content_style_property: column.content_style.map(StyleProperty::new),
+            content_style_property: column.content_style.map(StyleProperty::from_cell_style),
             content_font_property: column.content_font_style.map(FontProperty::build),
             date_time_format_property: DateTimeFormatProperty::build(
                 column.effective_date_time_format(),
@@ -423,7 +425,21 @@ impl WriteCellContext {
     /// 设置物理行号并重建后端中立单元格句柄。
     pub fn set_row_index(&mut self, value: u32) {
         self.row_index = value;
+        self.row = WriteRowHandle::new(value);
         self.cell = WriteCellHandle::new(value, self.column_index, self.value.clone());
+    }
+    /// 返回当前后端中立行句柄。对应 Java `getRow`。
+    #[must_use]
+    pub const fn get_row(&self) -> &WriteRowHandle { &self.row }
+    /// 替换行句柄并同步行号及单元格坐标。对应 Java `setRow`。
+    pub fn set_row(&mut self, row: WriteRowHandle) {
+        self.row_index = row.row_index();
+        self.cell = WriteCellHandle::new(
+            self.row_index,
+            self.column_index,
+            self.value.clone(),
+        );
+        self.row = row;
     }
     /// 返回物理列号，语义对应 Java `getColumnIndex`。
     #[must_use]
@@ -437,6 +453,7 @@ impl WriteCellContext {
     pub fn set_cell(&mut self, cell: WriteCellHandle) {
         self.row_index = cell.row_index();
         self.column_index = cell.column_index();
+        self.row = WriteRowHandle::new(self.row_index);
         self.cell = cell;
     }
     /// 返回已转换单元格列表。

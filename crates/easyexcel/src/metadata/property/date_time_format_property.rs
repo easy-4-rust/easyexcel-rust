@@ -3,7 +3,7 @@
 /// Date-time format metadata from `@DateTimeFormat`.
 ///
 /// Rust port of Java `DateTimeFormatProperty`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 /// 对应 Java：com.alibaba.excel.metadata.property.DateTimeFormatProperty。
 pub struct DateTimeFormatProperty {
     /// Format pattern. (Java `format`)

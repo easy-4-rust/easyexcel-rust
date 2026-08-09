@@ -17,7 +17,7 @@ test the engine, not the facade. These are excluded by design.
 
 | Method | Reason for exclusion |
 |--------|---------------------|
-| `cache` | Directly tests a JVM persistent-cache manager's `put/clear` — not the EasyExcel Rust facade. Rust has portable `ReadCacheMode::File` and `MokaCache` equivalents. |
+| `cache` | Directly tests a JVM persistent-cache manager's `put/clear` — not the EasyExcel Rust facade. The retired Ehcache contract is covered by `easyexcel-cache` Memory/File/Moka policy and the facade `ReadCache`/selector lifecycle; no single Rust backend is claimed as a 1:1 Ehcache type. |
 
 ### temp.poi.PoiTest (14 methods)
 
@@ -83,6 +83,6 @@ POI `BuiltinFormats` / custom format probing.
 | `PoiDateFormatTest#test` | `builtin_formats` + `data_formatter` tests | `easyexcel-core/src/constant/builtin_formats.rs` |
 | `PoiEncryptTest#*` (2 methods) | `biff8::encrypt::tests::rc4_round_trip` | `easyexcel-writer/src/biff8/encrypt.rs` |
 | `PoiFormatTest#*` (2 methods) | `builtin_formats` coverage tests | `easyexcel-core/src/constant/builtin_formats.rs` |
-| `CacheTest#cache` | `cache_moka_facade_object_put_get` | `easyexcel-test/tests/temp_1to1_tests/cache.rs` |
+| `CacheTest#cache` | Explicit Moka branch probe only; full retired-Ehcache classification additionally requires Memory/File policy and facade lifecycle evidence | `easyexcel-test/tests/temp_1to1_tests/cache.rs` |
 
 **31/31 methods have Rust behavioral equivalents.** All 31 Rust tests run as part of `cargo test --workspace --all-features`.

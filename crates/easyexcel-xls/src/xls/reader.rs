@@ -92,6 +92,18 @@ pub fn read_with_password<R: Read + Seek>(reader: R, password: Option<&str>) -> 
     Ok(wb)
 }
 
+/// 从已经解密的 BIFF8 Workbook stream 构建中立工作簿模型。
+///
+/// 供需要在同一字节流上同时提取数字显示、富文本和事件 record 的上层读取管线
+/// 复用，避免重复打开 OLE2 容器和重复执行密码派生。
+///
+/// # Errors
+///
+/// Workbook stream 为空、缺少全局 BOF 或包含损坏记录时返回错误。
+pub fn read_decrypted_workbook_stream(workbook_stream: &[u8]) -> Result<Workbook> {
+    parse_workbook_stream(workbook_stream, true)
+}
+
 fn contains_filepass(workbook_stream: &[u8]) -> bool {
     for record in Records::new(workbook_stream) {
         if record.typ == biff::FILEPASS {

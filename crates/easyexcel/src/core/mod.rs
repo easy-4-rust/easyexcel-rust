@@ -30,7 +30,8 @@ pub use crate::enums::{
     write_last_row_type_enum, write_template_analysis_cell_type_enum, write_type_enum,
 };
 pub use crate::event::{
-    AbstractIgnoreExceptionReadListener, AnalysisEventListener, CompositeReadListener, ErrorAction,
+    AbstractIgnoreExceptionListenerAdapter, AbstractIgnoreExceptionReadListener,
+    AnalysisEventListener, AnalysisEventListenerAdapter, CompositeReadListener, ErrorAction,
     Handler, Listener, NotRepeatExecutor, Order, PageReadListener, ReadListenerList,
     SyncReadListener, abstract_ignore_exception_read_listener, analysis_event_listener, handler,
     listener, not_repeat_executor, order, page_read_listener, sync_read_listener,
@@ -71,10 +72,8 @@ pub use crate::metadata::data::{
 // read::listener::read_listener 模块路径镜像
 pub use crate::read::listener::read_listener;
 
-// Result 类型别名
-/// `Result` 类型别名，错误类型为 `ExcelError`。
-/// 对应 Java：无直接对应对象；Rust 架构扩展。
-pub type Result<T> = std::result::Result<T, crate::support::excel_error::ExcelError>;
+mod result;
+pub use result::Result;
 
 // write/ 相关类型
 pub use crate::write::write_backend_handle::{WriteCellHandle, WriteRowHandle};
@@ -97,7 +96,7 @@ pub use crate::metadata::property::{
 };
 
 // 具名类型重导出
-pub use crate::context::analysis_context::AnalysisContext;
+pub use crate::context::analysis_context::{AnalysisContext, AnalysisContextLifecycle};
 pub use crate::converters::converter_registry::ConverterRegistry;
 pub use crate::converters::nullable_object_converter::NullableObjectConverter;
 pub use crate::enums::enum_cache_location::CacheLocation;

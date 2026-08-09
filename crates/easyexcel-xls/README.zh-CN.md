@@ -34,8 +34,11 @@ flowchart LR
 | 能力 | 状态 | 说明 |
 |:---|:---|:---|
 | 工作簿读写 | 可用 | 复合文档识别与 BIFF8 模型映射。 |
-| 公式 token | 有边界可用 | 把已支持 BIFF 公式 token 映射到共享模型/引擎。 |
-| 事件模式与旧式加密 | 不支持 | 不宣称 XLS Event Mode、旧密码保护或占位符填充。 |
+| 公式 token | 有边界可用 | 通过 BIFF8 `SUPBOOK`/`EXTERNSHEET` 支持工作簿内部 `Ref3d`/`Area3d`；外部工作簿引用不在契约内。 |
+| 密码加密 | 已编码，待发布证据 | BIFF8 CryptoAPI RC4 使用 `FILEPASS` 与逐记录加解密；非 CryptoAPI 的旧加密方案显式报错。 |
+| 占位符填充 | 已编码，待发布证据 | 标量/集合、纵向/横向、重复 fill、`forceNewRow`、样式与关联记录迁移均由 BIFF8 模板引擎承载。 |
+| 共享模型适配 | 已编码，待发布证据 | 复用完整 BIFF8 引擎，保留 active Sheet、默认/显式行列尺寸、隐藏状态、行列 XF、小数字号及完整下划线类型。 |
+| 事件模式 | 不支持 | XLS 继续使用 Workbook Mode；这与密码和模板能力无关。 |
 
 ## 公共 API
 

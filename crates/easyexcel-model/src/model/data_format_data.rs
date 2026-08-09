@@ -6,7 +6,7 @@
 use std::borrow::Cow;
 
 /// 对应 Java：com.alibaba.excel.metadata.data.DataFormatData。 单元格数据格式索引与自定义格式文本。
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub struct DataFormatData {
     /// 工作簿内的格式索引。
     pub index: Option<i16>,

@@ -15,6 +15,35 @@ use chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, NaiveTime, Timelike, 
 
 use super::error::{Error, Result};
 
+/// Java `DateUtils.DATE_FORMAT_10`。
+pub const DATE_FORMAT_10: &str = "yyyy-MM-dd";
+/// Java `DateUtils.DATE_FORMAT_14`。
+pub const DATE_FORMAT_14: &str = "yyyyMMddHHmmss";
+/// Java `DateUtils.DATE_FORMAT_16`。
+pub const DATE_FORMAT_16: &str = "yyyy-MM-dd HH:mm";
+/// Java `DateUtils.DATE_FORMAT_16_FORWARD_SLASH`。
+pub const DATE_FORMAT_16_FORWARD_SLASH: &str = "yyyy/MM/dd HH:mm";
+/// Java `DateUtils.DATE_FORMAT_17`。
+pub const DATE_FORMAT_17: &str = "yyyyMMdd HH:mm:ss";
+/// Java `DateUtils.DATE_FORMAT_19`。
+pub const DATE_FORMAT_19: &str = "yyyy-MM-dd HH:mm:ss";
+/// Java `DateUtils.DATE_FORMAT_19_FORWARD_SLASH`。
+pub const DATE_FORMAT_19_FORWARD_SLASH: &str = "yyyy/MM/dd HH:mm:ss";
+/// Java 默认日期时间格式。
+pub const DEFAULT_DATE_FORMAT: &str = DATE_FORMAT_19;
+/// Java 默认本地日期格式。
+pub const DEFAULT_LOCAL_DATE_FORMAT: &str = DATE_FORMAT_10;
+/// 每分钟秒数。
+pub const SECONDS_PER_MINUTE: i32 = 60;
+/// 每小时分钟数。
+pub const MINUTES_PER_HOUR: i32 = 60;
+/// 每日小时数。
+pub const HOURS_PER_DAY: i32 = 24;
+/// 每日秒数。
+pub const SECONDS_PER_DAY: i32 = HOURS_PER_DAY * MINUTES_PER_HOUR * SECONDS_PER_MINUTE;
+/// 每日毫秒数。
+pub const DAY_MILLISECONDS: i64 = 86_400_000;
+
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 Which date epoch a workbook uses.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum DateSystem {
@@ -47,6 +76,32 @@ pub fn parse_java_date<'a>(
         }
     }
     Err(Error::Other(format!("date parse failed for {value:?}")))
+}
+
+/// 根据 Java `DateUtils` 的长度和分隔符规则推断日期模式。
+///
+/// # Errors
+///
+/// 输入形状不属于 Java 支持的 10/14/16/17/19 字符日期时返回错误。
+pub fn infer_java_date_pattern(value: &str) -> Result<&'static str> {
+    match value.chars().count() {
+        19 => Ok(if value.contains('-') {
+            DATE_FORMAT_19
+        } else {
+            DATE_FORMAT_19_FORWARD_SLASH
+        }),
+        16 => Ok(if value.contains('-') {
+            DATE_FORMAT_16
+        } else {
+            DATE_FORMAT_16_FORWARD_SLASH
+        }),
+        17 => Ok(DATE_FORMAT_17),
+        14 => Ok(DATE_FORMAT_14),
+        10 => Ok(DATE_FORMAT_10),
+        _ => Err(Error::Other(format!(
+            "can not find date format for: {value}"
+        ))),
+    }
 }
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 使用 Java `SimpleDateFormat` 模式格式化日期时间。
@@ -146,6 +201,39 @@ pub fn datetime_to_excel_serial(value: NaiveDateTime, use_1904_windowing: bool) 
     let seconds = f64::from(time.num_seconds_from_midnight())
         + f64::from(time.nanosecond()) / 1_000_000_000.0;
     date_part + seconds / 86_400.0
+}
+
+/// 从 Java `DateUtils#setCalendar` 使用的整日和日内毫秒构造日期时间。
+///
+/// `round_seconds` 为真时严格保留 EasyExcel v4.0.3 的行为：先增加
+/// 499 毫秒，再清除毫秒部分，因此 500 毫秒仍向下、501 毫秒才进位。
+/// 该函数接收拆分后的整数值，避免先拼成浮点 serial 造成毫秒精度损失。
+#[must_use]
+pub fn excel_parts_to_datetime(
+    whole_days: i32,
+    milliseconds_in_day: i32,
+    use_1904_windowing: bool,
+    round_seconds: bool,
+) -> Option<NaiveDateTime> {
+    let base = if use_1904_windowing {
+        NaiveDate::from_ymd_opt(1904, 1, 1)?
+    } else if whole_days < 61 {
+        // 1900-02-29 不存在；与 java.util.Calendar 的宽松日期规则一致，
+        // serial 60 与 61 都落到真实世界的 1900-03-01。
+        NaiveDate::from_ymd_opt(1899, 12, 31)?
+    } else {
+        NaiveDate::from_ymd_opt(1899, 12, 30)?
+    };
+    let value = base
+        .and_hms_opt(0, 0, 0)?
+        .checked_add_signed(Duration::days(i64::from(whole_days)))?
+        .checked_add_signed(Duration::milliseconds(i64::from(milliseconds_in_day)))?;
+    if !round_seconds {
+        return Some(value);
+    }
+    value
+        .checked_add_signed(Duration::milliseconds(499))?
+        .with_nanosecond(0)
 }
 
 impl DateSystem {

@@ -1,11 +1,12 @@
 //! 对应 Java：`com.alibaba.excel.read.metadata.holder.ReadSheetHolder`.
 
-use std::collections::HashMap;
+use indexmap::IndexMap;
 
 use crate::{CellExtra, CellValue, HolderEnum, ReadCellData, ReadSheet};
 
 use super::read_workbook_holder::ReadWorkbookHolder;
 use super::abstract_read_holder::AbstractReadHolder;
+use super::read_holder::delegate_read_holder_contract;
 use std::ops::{Deref, DerefMut};
 
 /// 对应 Java：`ReadSheetHolder extends AbstractReadHolder`.
@@ -22,7 +23,7 @@ pub struct ReadSheetHolder {
     pub ended: bool,
     approximate_total_row_number: Option<i32>,
     max_not_empty_data_head_size: Option<i32>,
-    cell_map: HashMap<usize, CellValue>,
+    cell_map: IndexMap<usize, CellValue>,
     cell_extra: Option<CellExtra>,
     temp_cell_data: Option<ReadCellData>,
     read_sheet: ReadSheet,
@@ -50,7 +51,7 @@ impl ReadSheetHolder {
             ended: false,
             approximate_total_row_number: None,
             max_not_empty_data_head_size: None,
-            cell_map: HashMap::new(),
+            cell_map: IndexMap::new(),
             cell_extra: None,
             temp_cell_data: None,
             parent_read_workbook_holder: None,
@@ -59,7 +60,10 @@ impl ReadSheetHolder {
 
     /// Java `ReadSheetHolder(ReadSheet, ReadWorkbookHolder)` 完整构造器。
     #[must_use]
-    pub fn from_read_sheet(read_sheet: ReadSheet, read_workbook_holder: ReadWorkbookHolder) -> Self {
+    pub fn from_read_sheet(
+        read_sheet: ReadSheet,
+        read_workbook_holder: &ReadWorkbookHolder,
+    ) -> Self {
         let sheet_no = read_sheet.get_sheet_no().unwrap_or(-1);
         let sheet_name = read_sheet.get_sheet_name().to_owned();
         let abstract_holder = AbstractReadHolder::from_parameter(
@@ -75,11 +79,11 @@ impl ReadSheetHolder {
             ended: false,
             approximate_total_row_number: None,
             max_not_empty_data_head_size: None,
-            cell_map: HashMap::new(),
+            cell_map: IndexMap::new(),
             cell_extra: None,
             temp_cell_data: None,
             read_sheet,
-            parent_read_workbook_holder: Some(Box::new(read_workbook_holder)),
+            parent_read_workbook_holder: Some(Box::new(read_workbook_holder.clone())),
         }
     }
 
@@ -109,8 +113,13 @@ impl ReadSheetHolder {
     pub const fn set_max_not_empty_data_head_size(&mut self, value: Option<i32>) {
         self.max_not_empty_data_head_size = value;
     }
-    #[must_use] pub const fn get_cell_map(&self) -> &HashMap<usize, CellValue> { &self.cell_map }
-    pub fn set_cell_map(&mut self, value: HashMap<usize, CellValue>) { self.cell_map = value; }
+    #[must_use] pub const fn get_cell_map(&self) -> &IndexMap<usize, CellValue> { &self.cell_map }
+    pub fn set_cell_map(
+        &mut self,
+        value: impl IntoIterator<Item = (usize, CellValue)>,
+    ) {
+        self.cell_map = value.into_iter().collect();
+    }
     #[must_use] pub const fn get_cell_extra(&self) -> Option<&CellExtra> { self.cell_extra.as_ref() }
     pub fn set_cell_extra(&mut self, value: Option<CellExtra>) { self.cell_extra = value; }
     #[must_use] pub const fn get_temp_cell_data(&self) -> Option<&ReadCellData> {
@@ -140,3 +149,5 @@ impl Deref for ReadSheetHolder {
 impl DerefMut for ReadSheetHolder {
     fn deref_mut(&mut self) -> &mut Self::Target { &mut self.abstract_holder }
 }
+
+delegate_read_holder_contract!(ReadSheetHolder, abstract_holder);

@@ -4,6 +4,8 @@ pub mod converter;
 pub use converter::Converter;
 
 pub mod auto_converter;
+pub mod converter_key;
+pub use converter_key::ConverterKey;
 pub mod converter_key_build;
 pub mod default_converter_loader;
 pub mod nullable_object_converter;
@@ -48,6 +50,6 @@ pub mod read_converter_context;
 pub use read_converter_context::ReadConverterContext;
 pub use string::string_image_converter::StringImageConverter;
 pub mod url_image_converter;
-pub use url_image_converter::UrlImageConverter;
+pub use url_image_converter::{URL_CONNECT_TIMEOUT, URL_READ_TIMEOUT, UrlImageConverter};
 pub mod write_converter_context;
 pub use write_converter_context::WriteConverterContext;

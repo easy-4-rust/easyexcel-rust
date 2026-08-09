@@ -9,14 +9,17 @@ use std::sync::Arc;
 use easyexcel_io::io::file_utils::TemporaryInput;
 
 use crate::core::{
-    AnalysisContext, CellExtraType, CsvCharset, CustomReadObject, ExcelRow, ReadDefaultReturn,
-    ReadListener, ReadListenerList, Result,
+    AnalysisContext, CellExtraType, Converter, CsvCharset, CustomReadObject, ExcelRow,
+    NullableObjectConverter, ReadDefaultReturn, ReadListener, ReadListenerList, Result,
 };
 
 use crate::cache::SimpleReadCacheSelector;
 use crate::read::builder::abstract_excel_reader_parameter_builder::AbstractExcelReaderParameterBuilder;
 use crate::read::excel_reader::ExcelReader;
-use crate::{ReadCacheMode, ReadOptions, SheetSelector, StoredReadCacheSelector};
+use crate::{
+    ExcelLocale, ExcelTypeEnum, ReadCacheMode, ReadOptions, SheetSelector,
+    StoredReadCacheSelector,
+};
 
 /// 对应 Java：`ExcelReaderBuilder extends AbstractExcelReaderParameterBuilder`.
 #[derive(Debug, Clone, Default)]
@@ -25,6 +28,12 @@ pub struct ExcelReaderBuilder {
     pub file: Option<PathBuf>,
     /// Guard for a caller-supplied Java-style `InputStream`.
     temporary_input: Option<Arc<TemporaryInput>>,
+    /// Java `ReadWorkbook.excelType`；`None` 时由格式探测引擎决定。
+    explicit_excel_type: Option<ExcelTypeEnum>,
+    /// Java 流关闭开关；Rust 中实际关闭行为由传值或 `&mut` 借用所有权决定。
+    auto_close_stream: Option<bool>,
+    /// Java 强制流路径开关；Rust 的非 seekable 输入始终物化，因此记录该意图即可。
+    mandatory_use_input_stream: Option<bool>,
     /// Collapsed read options from Java `ReadWorkbook` + parameter builders.
     pub options: ReadOptions,
 }
@@ -90,6 +99,75 @@ impl ExcelReaderBuilder {
     #[must_use]
     pub fn charset(mut self, charset: impl Into<CsvCharset>) -> Self {
         self.options.charset = charset.into();
+        self
+    }
+
+    /// 显式指定工作簿格式并优先于路径扩展名推断。
+    /// 对应 Java：`ExcelReaderBuilder.excelType(ExcelTypeEnum)`。
+    #[must_use]
+    pub const fn excel_type(mut self, excel_type: ExcelTypeEnum) -> Self {
+        self.explicit_excel_type = Some(excel_type);
+        self
+    }
+
+    /// 记录 Java `autoCloseStream(Boolean)` 配置。
+    ///
+    /// Rust 调用者传入拥有值时随值释放，传入 `&mut R` 时底层流仍归调用者所有。
+    #[must_use]
+    pub const fn auto_close_stream(mut self, enabled: bool) -> Self {
+        self.auto_close_stream = Some(enabled);
+        self
+    }
+
+    /// 记录 Java `mandatoryUseInputStream(Boolean)` 配置。
+    ///
+    /// Rust 格式引擎对非 seekable 输入始终采用临时文件物化，等价于安全的强制流路径。
+    #[must_use]
+    pub const fn mandatory_use_input_stream(mut self, enabled: bool) -> Self {
+        self.mandatory_use_input_stream = Some(enabled);
+        self
+    }
+
+    /// 设置字符串自动裁剪。对应 Java：`AbstractParameterBuilder.autoTrim(Boolean)`。
+    #[must_use]
+    pub const fn auto_trim(mut self, enabled: bool) -> Self {
+        self.options.auto_trim = enabled;
+        self
+    }
+
+    /// 设置 1904 日期窗口。对应 Java：`AbstractParameterBuilder.use1904windowing(Boolean)`。
+    #[must_use]
+    pub const fn use_1904_windowing(mut self, enabled: bool) -> Self {
+        self.options.use_1904_windowing = enabled;
+        self
+    }
+
+    /// 设置数字和日期格式化区域。
+    #[must_use]
+    pub fn locale(mut self, locale: ExcelLocale) -> Self {
+        self.options.locale = locale;
+        self
+    }
+
+    /// 注册强类型读取转换器。
+    #[must_use]
+    pub fn register_converter<V, C>(mut self, converter: C) -> Self
+    where
+        V: 'static,
+        C: Converter<V> + Send + Sync + 'static,
+    {
+        self.options.converters.register::<V, C>(converter);
+        self
+    }
+
+    /// 注册可接收空单元格的强类型读取转换器。
+    #[must_use]
+    pub fn register_nullable_converter<V, C>(mut self, converter: C) -> Self
+    where
+        V: 'static,
+        C: NullableObjectConverter<V> + Send + Sync + 'static,
+    {
+        self.options.converters.register_nullable::<V, C>(converter);
         self
     }
 
@@ -213,16 +291,31 @@ impl ExcelReaderBuilder {
         T: ExcelRow,
         L: ReadListener<T>,
     {
+        // Java 的开关影响 InputStream 生命周期/是否先落盘；Rust 分别由所有权和
+        // 非 seekable 输入必经的 TemporaryInput 协议承载，保留配置意图但不伪造句柄。
+        let _stream_policy = (
+            self.auto_close_stream.unwrap_or(true),
+            self.mandatory_use_input_stream.unwrap_or(false),
+        );
         let path = self.file.ok_or_else(|| {
             crate::core::ExcelError::Format(
                 "ExcelReaderBuilder.file must be set before build()".to_owned(),
             )
         })?;
         match self.temporary_input {
-            Some(temporary_input) => {
-                ExcelReader::from_temporary_input(path, temporary_input, self.options, listener)
-            }
-            None => ExcelReader::new(path, self.options, listener),
+            Some(temporary_input) => ExcelReader::from_temporary_input_with_explicit_type(
+                path,
+                temporary_input,
+                self.options,
+                listener,
+                self.explicit_excel_type,
+            ),
+            None => ExcelReader::new_with_explicit_type(
+                path,
+                self.options,
+                listener,
+                self.explicit_excel_type,
+            ),
         }
     }
 

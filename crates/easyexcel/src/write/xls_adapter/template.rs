@@ -10,8 +10,8 @@ use std::path::Path;
 use crate::core::{CellValue, CoordinateData, ExcelError, HyperlinkType, Result};
 
 use super::{
-    Biff8Cell, Biff8Comment, Biff8HyperlinkKind, Biff8Merge, Biff8RichText,
-    Biff8StyleRequest, Biff8StyleTable, Biff8Value, apply_write_font,
+    Biff8Cell, Biff8Comment, Biff8HyperlinkKind, Biff8Merge, Biff8StyleRequest,
+    Biff8StyleTable, GeneratedBiff8CellValue, apply_write_font,
 };
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 保留原 `EasyExcel` 路径的 BIFF8 模板包门面。
@@ -241,30 +241,68 @@ impl Biff8TemplatePackage {
                     .inner
                     .protect_sheet(&sheet_name, &password)
                     .map_err(ExcelError::from)?,
+                crate::context::write_mutation::WriteMutation::RemoveComment {
+                    sheet_name,
+                    row_index,
+                    column_index,
+                } => {
+                    self.inner
+                        .remove_comment(&sheet_name, row_index, usize::from(column_index))
+                        .map_err(ExcelError::from)?;
+                }
             }
         }
         Ok(())
     }
 
-    /// 对应 Java：无直接对应对象；Rust 架构扩展。 使用中立文本数据替换 BIFF8 标量占位符。
-    pub fn replace_scalar_placeholders(
-        &mut self,
-        values: &BTreeMap<String, String>,
-    ) -> Result<usize> {
-        self.inner
-            .replace_scalar_placeholders(values)
-            .map_err(ExcelError::from)
-    }
-
-    /// 对应 Java：`ExcelWriter.fill(data, WriteSheet)`。仅替换指定 Sheet。
-    pub fn replace_scalar_placeholders_on_sheet(
+    /// 使用完整 `CellValue` 语义替换 BIFF8 标量占位符。
+    ///
+    /// 占位符定位和样式保留由 `easyexcel-xls` 完成；本适配层只转换值，并在
+    /// 引擎返回的最终坐标上补写 HLINK、NOTE/TXO 等独立 BIFF8 记录。
+    pub fn replace_scalar_cell_values_on_sheet(
         &mut self,
         sheet_name: Option<&str>,
-        values: &BTreeMap<String, String>,
+        values: &BTreeMap<String, CellValue>,
     ) -> Result<usize> {
-        self.inner
-            .replace_scalar_placeholders_on_sheet(sheet_name, values)
-            .map_err(ExcelError::from)
+        let snapshot = self.clone();
+        let result = (|| -> Result<usize> {
+            let mut cells = BTreeMap::new();
+            for (key, value) in values {
+                cells.insert(key.clone(), self.template_cell(value)?);
+            }
+            self.flush_rich_text_fonts()?;
+            let placements = self
+                .inner
+                .replace_scalar_cells_on_sheet(sheet_name, &cells)
+                .map_err(ExcelError::from)?;
+            let mut decorations = Vec::new();
+            for (physical_sheet, row, column, key) in &placements {
+                let Some(value) = values.get(key) else {
+                    continue;
+                };
+                let formatting_runs = self.comment_formatting_runs(value)?;
+                let mut cell_decorations = Vec::new();
+                collect_template_decorations(
+                    &mut cell_decorations,
+                    u32::from(*row),
+                    usize::from(*column),
+                    value,
+                    formatting_runs,
+                )?;
+                decorations.extend(
+                    cell_decorations
+                        .into_iter()
+                        .map(|decoration| (physical_sheet.clone(), decoration)),
+                );
+            }
+            self.flush_rich_text_fonts()?;
+            self.apply_template_decorations(decorations)?;
+            Ok(placements.len())
+        })();
+        if result.is_err() {
+            *self = snapshot;
+        }
+        result
     }
 
     /// 对应 Java：`HSSFWorkbook#write`。序列化为 OLE/BIFF8 字节。
@@ -272,26 +310,77 @@ impl Biff8TemplatePackage {
         self.inner.to_bytes().map_err(ExcelError::from)
     }
 
-    /// 对应 Java：`ExcelWriteFillExecutor#doFill`。 按工作表和 `FillConfig` 扩展集合占位符。
-    pub fn fill_collection_placeholders(
+    /// 按密码与 VBA 策略序列化，供 facade 将现有 BIFF8 引擎输出到任意目标。
+    pub(crate) fn to_bytes_with_password_and_macro_policy(
+        &self,
+        password: Option<&str>,
+        policy: &crate::Biff8MacroPolicy,
+    ) -> Result<Vec<u8>> {
+        self.inner
+            .to_bytes_with_password_and_macro_policy(password, policy)
+            .map_err(ExcelError::from)
+    }
+
+    /// 使用完整 `CellValue` 语义执行 BIFF8 集合占位符填充。
+    pub fn fill_collection_cell_values(
         &mut self,
         sheet_name: Option<&str>,
         collection_name: Option<&str>,
-        rows: &[BTreeMap<String, String>],
+        rows: &[BTreeMap<String, CellValue>],
         horizontal: bool,
         force_new_row: bool,
         auto_style: bool,
     ) -> Result<usize> {
-        self.inner
-            .fill_collection_placeholders(
-                sheet_name,
-                collection_name,
-                rows,
-                horizontal,
-                force_new_row,
-                auto_style,
-            )
-            .map_err(ExcelError::from)
+        let snapshot = self.clone();
+        let result = (|| -> Result<usize> {
+            let mut cells = Vec::with_capacity(rows.len());
+            for row in rows {
+                let mut mapped = BTreeMap::new();
+                for (key, value) in row {
+                    mapped.insert(key.clone(), self.template_cell(value)?);
+                }
+                cells.push(mapped);
+            }
+            self.flush_rich_text_fonts()?;
+            let placements = self
+                .inner
+                .fill_collection_cells(
+                    sheet_name,
+                    collection_name,
+                    &cells,
+                    horizontal,
+                    force_new_row,
+                    auto_style,
+                )
+                .map_err(ExcelError::from)?;
+            let mut decorations = Vec::new();
+            for (physical_sheet, row, column, input_row, key) in &placements {
+                let Some(value) = rows.get(*input_row).and_then(|values| values.get(key)) else {
+                    continue;
+                };
+                let formatting_runs = self.comment_formatting_runs(value)?;
+                let mut cell_decorations = Vec::new();
+                collect_template_decorations(
+                    &mut cell_decorations,
+                    u32::from(*row),
+                    usize::from(*column),
+                    value,
+                    formatting_runs,
+                )?;
+                decorations.extend(
+                    cell_decorations
+                        .into_iter()
+                        .map(|decoration| (physical_sheet.clone(), decoration)),
+                );
+            }
+            self.flush_rich_text_fonts()?;
+            self.apply_template_decorations(decorations)?;
+            Ok(placements.len())
+        })();
+        if result.is_err() {
+            *self = snapshot;
+        }
+        result
     }
 
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 保存到文件。
@@ -343,19 +432,26 @@ impl Biff8TemplatePackage {
 
     fn template_cell(&mut self, value: &CellValue) -> Result<Biff8Cell> {
         if let CellValue::Comment { value, .. }
-        | CellValue::CommentWithMetadata { value, .. }
-        | CellValue::Images { value, .. } = value
+        | CellValue::CommentWithMetadata { value, .. } = value
         {
             return self.template_cell(value);
+        }
+        if matches!(value, CellValue::Images { .. } | CellValue::Image(_)) {
+            return Err(ExcelError::Unsupported(
+                "legacy XLS writing does not support images until BIFF8 Workbook drawing records are implemented"
+                    .to_owned(),
+            ));
         }
         let CellValue::RichText(rich) = value else {
             return cell_value_to_template_cell(value);
         };
         let runs = self.resolve_rich_text_runs(rich)?;
         self.flush_rich_text_fonts()?;
-        Ok(Biff8Cell::general(Biff8Value::RichText(
-            Biff8RichText::new(rich.text_string().to_owned(), runs),
-        )))
+        Ok(GeneratedBiff8CellValue::RichText {
+            text: rich.text_string().to_owned(),
+            runs,
+        }
+        .into_cell())
     }
 
     fn comment_formatting_runs(&mut self, value: &CellValue) -> Result<Option<Vec<(u16, u16)>>> {
@@ -384,8 +480,8 @@ impl Biff8TemplatePackage {
             .iter()
             .map(|interval| (interval.start_index(), interval.end_index()))
             .collect::<Vec<_>>();
-        let segments = easyexcel_xlsx::segment_utf16_text(rich.text_string(), &intervals)
-            .map_err(ExcelError::from)?;
+        let segments = easyexcel_model::segment_utf16_text(rich.text_string(), &intervals)
+            .map_err(|error| ExcelError::Format(error.to_string()))?;
         let mut runs = Vec::new();
         let mut utf16_start = 0usize;
         let mut previous_font = None;
@@ -430,53 +526,88 @@ impl Biff8TemplatePackage {
         self.emitted_rich_text_fonts = fonts.len();
         Ok(())
     }
+
+    fn apply_template_decorations(
+        &mut self,
+        decorations: Vec<(String, TemplateDecoration)>,
+    ) -> Result<()> {
+        let mut comments = BTreeMap::<String, Vec<Biff8Comment>>::new();
+        for (sheet_name, decoration) in decorations {
+            match decoration {
+                TemplateDecoration::Hyperlink {
+                    first_row,
+                    last_row,
+                    first_col,
+                    last_col,
+                    address,
+                    label,
+                    kind,
+                } => self
+                    .inner
+                    .add_hyperlink_range(
+                        &sheet_name,
+                        first_row,
+                        last_row,
+                        first_col,
+                        last_col,
+                        address,
+                        label,
+                        kind,
+                    )
+                    .map_err(ExcelError::from)?,
+                TemplateDecoration::Comment(comment) => {
+                    comments.entry(sheet_name).or_default().push(comment);
+                }
+            }
+        }
+        for (sheet_name, comments) in comments {
+            self.inner
+                .add_comments(&sheet_name, &comments)
+                .map_err(ExcelError::from)?;
+        }
+        Ok(())
+    }
 }
 
 fn cell_value_to_template_cell(value: &CellValue) -> Result<Biff8Cell> {
     let mapped = match value {
-        CellValue::Empty => Biff8Value::Blank,
+        CellValue::Empty => GeneratedBiff8CellValue::Blank,
         CellValue::String(text)
         | CellValue::Error(text)
         | CellValue::Hyperlink { text, .. }
-        | CellValue::HyperlinkWithMetadata { text, .. } => Biff8Value::Text(text.clone()),
-        CellValue::Formula(text) => Biff8Value::Formula(text.clone()),
-        CellValue::RichText(rich) => Biff8Value::Text(rich.text_string().to_owned()),
-        CellValue::Bool(flag) => Biff8Value::Bool(*flag),
-        CellValue::Int(number) => Biff8Value::Number(
+        | CellValue::HyperlinkWithMetadata { text, .. } => GeneratedBiff8CellValue::Text(text.clone()),
+        CellValue::Formula(text) => GeneratedBiff8CellValue::Formula(text.clone()),
+        CellValue::RichText(rich) => GeneratedBiff8CellValue::Text(rich.text_string().to_owned()),
+        CellValue::Bool(flag) => GeneratedBiff8CellValue::Bool(*flag),
+        CellValue::Int(number) => GeneratedBiff8CellValue::Number(
             #[allow(clippy::cast_precision_loss)]
             {
                 *number as f64
             },
         ),
-        CellValue::Float(number) => Biff8Value::Number(*number),
+        CellValue::Float(number) => GeneratedBiff8CellValue::Number(*number),
         CellValue::Decimal(number) => {
             let numeric = crate::write::finite_decimal_f64(number, "BIFF8")?;
             if crate::write::decimal_integer_requires_text(number)? {
-                Biff8Value::Text(number.to_plain_string())
+                GeneratedBiff8CellValue::Text(number.to_plain_string())
             } else {
-                Biff8Value::Number(numeric)
+                GeneratedBiff8CellValue::Number(numeric)
             }
         }
-        CellValue::Date(date) => {
-            return Ok(Biff8Cell::date_serial(super::date_to_excel_serial(*date)));
-        }
-        CellValue::DateTime(datetime) => {
-            return Ok(Biff8Cell::datetime_serial(super::datetime_to_excel_serial(
-                *datetime,
-            )));
-        }
+        CellValue::Date(date) => GeneratedBiff8CellValue::DateSerial(super::date_to_excel_serial(*date)),
+        CellValue::DateTime(datetime) => GeneratedBiff8CellValue::DateTimeSerial(super::datetime_to_excel_serial(*datetime)),
         CellValue::Comment { value, .. }
-        | CellValue::CommentWithMetadata { value, .. }
-        | CellValue::Images { value, .. } => {
+        | CellValue::CommentWithMetadata { value, .. } => {
             return cell_value_to_template_cell(value);
         }
-        CellValue::Image(_) => {
+        CellValue::Images { .. } | CellValue::Image(_) => {
             return Err(ExcelError::Unsupported(
-                "legacy XLS writing does not support images".to_owned(),
+                "legacy XLS writing does not support images until BIFF8 Workbook drawing records are implemented"
+                    .to_owned(),
             ));
         }
     };
-    Ok(Biff8Cell::general(mapped))
+    Ok(mapped.into_cell())
 }
 
 enum TemplateDecoration {
@@ -518,13 +649,7 @@ fn collect_template_decorations(
             if let Some(kind) = template_hyperlink_kind(*hyperlink_type) {
                 let (first_row, last_row, first_col, last_col) =
                     resolve_template_hyperlink_range(row, column, *coordinates)?;
-                let address = if *hyperlink_type == HyperlinkType::Email
-                    && !address.to_ascii_lowercase().starts_with("mailto:")
-                {
-                    format!("mailto:{address}")
-                } else {
-                    address.clone()
-                };
+                let address = kind.normalized_target(address);
                 target.push(TemplateDecoration::Hyperlink {
                     first_row,
                     last_row,
@@ -536,7 +661,7 @@ fn collect_template_decorations(
                 });
             }
         }
-        CellValue::Comment { text, .. } => {
+        CellValue::Comment { value, text } => {
             let row = u16::try_from(row)
                 .map_err(|_| ExcelError::Format("BIFF8 comment row exceeds 65535".to_owned()))?;
             let column = u8::try_from(column)
@@ -550,14 +675,22 @@ fn collect_template_decorations(
                 text.clone(),
                 "easyexcel-rust",
             )));
+            collect_template_decorations(
+                target,
+                u32::from(row),
+                usize::from(column),
+                value,
+                None,
+            )?;
         }
-        CellValue::CommentWithMetadata { comment, .. } => {
+        CellValue::CommentWithMetadata { value, comment } => {
             let cell_row = u16::try_from(row)
                 .map_err(|_| ExcelError::Format("BIFF8 comment row exceeds 65535".to_owned()))?;
             let cell_column = u8::try_from(column)
                 .map_err(|_| ExcelError::Format("BIFF8 comment column exceeds 255".to_owned()))?;
             let text = comment.note_text();
             let author = comment.get_author().unwrap_or("").to_owned();
+            let visible = comment.get_visible();
             if text.contains('\0')
                 || author.contains('\0')
                 || text.encode_utf16().count() > usize::from(u16::MAX)
@@ -570,7 +703,7 @@ fn collect_template_decorations(
             let anchor = comment.get_anchor();
             let (first_row, last_row, first_col, last_col) =
                 resolve_template_hyperlink_range(row, column, anchor.get_coordinates())?;
-            let mut value = Biff8Comment::new(cell_row, cell_column, text, author).with_anchor(
+            let mut biff8_comment = Biff8Comment::new(cell_row, cell_column, text, author).with_anchor(
                 u16::try_from(first_row).map_err(|_| {
                     ExcelError::Format("BIFF8 comment first row exceeds 65535".to_owned())
                 })?,
@@ -589,9 +722,25 @@ fn collect_template_decorations(
                 anchor.get_left().map(template_comment_offset),
             );
             if let Some(formatting_runs) = formatting_runs {
-                value = value.with_formatting_runs(formatting_runs);
+                biff8_comment = biff8_comment.with_formatting_runs(formatting_runs);
             }
-            target.push(TemplateDecoration::Comment(value));
+            if let Some(visible) = visible {
+                biff8_comment = biff8_comment.with_visible(visible);
+            }
+            target.push(TemplateDecoration::Comment(biff8_comment));
+            collect_template_decorations(
+                target,
+                u32::from(cell_row),
+                usize::from(cell_column),
+                value,
+                None,
+            )?;
+        }
+        CellValue::Images { .. } | CellValue::Image(_) => {
+            return Err(ExcelError::Unsupported(
+                "legacy XLS writing does not support images until BIFF8 Workbook drawing records are implemented"
+                    .to_owned(),
+            ));
         }
         _ => {}
     }

@@ -18,7 +18,7 @@ use crate::{
 /// `easyexcel-core` lets `WriteContextHolder` expose the same resolved property
 /// for XLSX, XLS, CSV and template writers without creating a core → writer
 /// dependency cycle.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct ExcelWriteHeadProperty {
     inner: ExcelHeadProperty,
     /// Mirrors `ExcelWriteHeadProperty.headRowHeightProperty`.
@@ -27,6 +27,25 @@ pub struct ExcelWriteHeadProperty {
     pub content_row_height_property: Option<RowHeightProperty>,
     /// Mirrors `ExcelWriteHeadProperty.onceAbsoluteMergeProperty`.
     pub once_absolute_merge_property: Option<OnceAbsoluteMergeProperty>,
+}
+
+// Java Lombok `@EqualsAndHashCode` 默认不调用父类，只比较本类三个属性。
+impl PartialEq for ExcelWriteHeadProperty {
+    fn eq(&self, other: &Self) -> bool {
+        self.head_row_height_property == other.head_row_height_property
+            && self.content_row_height_property == other.content_row_height_property
+            && self.once_absolute_merge_property == other.once_absolute_merge_property
+    }
+}
+
+impl Eq for ExcelWriteHeadProperty {}
+
+impl std::hash::Hash for ExcelWriteHeadProperty {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        std::hash::Hash::hash(&self.head_row_height_property, state);
+        std::hash::Hash::hash(&self.content_row_height_property, state);
+        std::hash::Hash::hash(&self.once_absolute_merge_property, state);
+    }
 }
 
 impl ExcelWriteHeadProperty {
@@ -110,7 +129,7 @@ impl ExcelWriteHeadProperty {
             head_data.head_style_property = column
                 .head_style
                 .or(metadata.head_style)
-                .map(StyleProperty::new);
+                .map(StyleProperty::from_cell_style);
             head_data.head_font_property = column
                 .head_font_style
                 .or(metadata.head_font_style)
@@ -258,7 +277,7 @@ impl Deref for ExcelWriteHeadProperty {
 
 fn font_property(font: ExcelFontStyle) -> FontProperty {
     FontProperty {
-        font_name: font.font_name,
+        font_name: font.font_name.map(str::to_owned),
         font_height_in_points: font.font_height_in_points,
         italic: font.italic,
         strikeout: font.strikeout,

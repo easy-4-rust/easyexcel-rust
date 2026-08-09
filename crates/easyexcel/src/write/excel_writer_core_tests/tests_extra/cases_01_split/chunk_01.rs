@@ -315,22 +315,6 @@
     }
 
 #[test]
-    fn xls_write_raw_bytes_and_image_are_embedded() -> Result<()> {
-        let directory = tempdir()?;
-        let path = directory.path().join("raw.xls");
-        let mut writer = ExcelWriter::new(&path);
-        writer.write_raw_bytes(b"extra-image-stream");
-        let png: &[u8] = &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 1];
-        writer.write_image(png, 1, 2);
-        writer.write([dyn_row(&[(0, "cell")])], &WriteSheet::new("Sheet1"))?;
-        writer.finish()?;
-        let bytes = std::fs::read(&path)?;
-        assert!(bytes.starts_with(CFB_MAGIC));
-        assert!(bytes.windows(png.len()).any(|window| window == png));
-        Ok(())
-    }
-
-#[test]
     fn xlsx_password_protected_stateful_output_is_ole() -> Result<()> {
         let directory = tempdir()?;
         let path = directory.path().join("secret.xlsx");
@@ -362,4 +346,3 @@
         assert!(bytes.starts_with(CFB_MAGIC));
         Ok(())
     }
-

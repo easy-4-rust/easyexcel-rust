@@ -8,7 +8,8 @@
 use std::collections::HashMap;
 
 use super::encode::{
-    ICV_AUTO, ICV_PATTERN_BG_DEFAULT, XF_CUSTOM_BASE, XF_DATE, XF_DATETIME, pack_cell_xf, pack_font,
+    ICV_AUTO, ICV_PATTERN_BG_DEFAULT, XF_CUSTOM_BASE, XF_DATE, XF_DATETIME, pack_cell_xf,
+    pack_font_twips,
 };
 use super::format::builtin_format_id;
 
@@ -22,16 +23,19 @@ include!("style/biff8fill_pattern.rs");
 
 include!("style/biff8_border_style.rs");
 
+include!("style/biff8_underline.rs");
+
 include!("style/biff8style_request.rs");
 
 include!("style/biff8number_format.rs");
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 struct FontKey {
-    height_points: u16,
+    height_twips: u16,
     bold: bool,
     italic: bool,
     strikeout: bool,
+    underline: Biff8Underline,
     color_icv: u16,
     name: String,
 }

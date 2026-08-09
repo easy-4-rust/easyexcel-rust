@@ -6,19 +6,22 @@
 //! class name; every public static method becomes a `pub fn`.
 
 pub mod bean_map_utils;
+pub mod bean_map;
 pub mod boolean_utils;
 pub mod class_utils;
+pub mod content_property_key;
 pub mod converter_utils;
 pub mod date_utils;
 pub mod easy_excel_temp_file_creation_strategy;
+pub mod easy_excel_naming_policy;
 pub mod field_utils;
+pub mod field_cache_key;
 pub mod file_type_utils;
 pub mod file_utils;
 pub mod int_utils;
 pub mod io_utils;
 pub mod list_utils;
 pub mod map_utils;
-pub mod member_utils;
 pub mod number_data_formatter_utils;
 pub mod number_utils;
 pub mod poi_utils;

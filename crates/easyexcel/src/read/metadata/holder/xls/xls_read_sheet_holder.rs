@@ -1,6 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.read.metadata.holder.xls.XlsReadSheetHolder`.
 
 use crate::read::holder::read_sheet_holder::ReadSheetHolder;
+use crate::read::metadata::holder::read_holder::delegate_read_holder_contract;
 use std::collections::HashMap;
 use crate::RowTypeEnum;
 use std::ops::{Deref, DerefMut};
@@ -22,11 +23,32 @@ impl DerefMut for XlsReadSheetHolder {
     fn deref_mut(&mut self) -> &mut Self::Target { &mut self.inner }
 }
 
+delegate_read_holder_contract!(XlsReadSheetHolder, inner);
+
 impl XlsReadSheetHolder {
     /// 对应 Java： constructor.
     pub fn new(sheet_no: i32, sheet_name: impl Into<String>) -> Self {
         Self {
             inner: ReadSheetHolder::new(sheet_no, sheet_name),
+            object_cache_map: HashMap::new(),
+            temp_object_index: None,
+            temp_row_type: None,
+        }
+    }
+    /// Java 无参构造器；格式上下文稍后再注入实际 Sheet。
+    #[must_use]
+    pub fn default_construction() -> Self {
+        Self::new(-1, "")
+    }
+
+    /// Java `XlsReadSheetHolder(ReadSheet, ReadWorkbookHolder)` 完整构造器。
+    #[must_use]
+    pub fn from_read_sheet(
+        read_sheet: crate::ReadSheet,
+        read_workbook_holder: &crate::read::holder::read_workbook_holder::ReadWorkbookHolder,
+    ) -> Self {
+        Self {
+            inner: ReadSheetHolder::from_read_sheet(read_sheet, read_workbook_holder),
             object_cache_map: HashMap::new(),
             temp_object_index: None,
             temp_row_type: None,

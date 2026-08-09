@@ -2,4 +2,4 @@
 //!
 //! 实现数据在 `write/metadata/fill/fill_config.rs`，本文件保留旧模块路径兼容。
 
-pub use crate::write::metadata::fill::fill_config::{FillConfig, FillDirection};
+pub use crate::write::metadata::fill::{FillConfig, FillConfigBuilder, FillDirection};

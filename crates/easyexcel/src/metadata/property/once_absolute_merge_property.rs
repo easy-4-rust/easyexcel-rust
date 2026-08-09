@@ -1,7 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.metadata.property.OnceAbsoluteMergeProperty`.
 
 /// 对应 Java：`OnceAbsoluteMergeProperty`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct OnceAbsoluteMergeProperty {
     /// First row index. (Java `firstRowIndex`)
     pub first_row_index: i32,

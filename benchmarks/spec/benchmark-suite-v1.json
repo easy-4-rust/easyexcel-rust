@@ -19,6 +19,15 @@
   },
   "concurrency": [1, 2, 4, 8, 16],
   "concurrency_scenarios": ["xlsx-stream-write", "xlsx-event-read"],
+  "internal_parallel_map": {
+    "scenario_id": "xlsx-event-read",
+    "temperature": "steady",
+    "worker_counts": [1, 2, 4],
+    "queue_capacity_per_worker": 64,
+    "work_factor": 32,
+    "min_median_speedup": 1.20,
+    "max_peak_rss_bytes": 67108864
+  },
   "runtime_contract": {
     "rust_toolchain": "1.97.1",
     "java_version": "17",
@@ -45,7 +54,7 @@
     {"id": "xlsx-event-read", "format": "xlsx", "operation": "read", "mode": "event", "memory": "constant"},
     {"id": "xlsx-workbook-read", "format": "xlsx", "operation": "read", "mode": "workbook", "memory": "full"},
     {"id": "xlsx-roundtrip", "format": "xlsx", "operation": "roundtrip", "mode": "workbook", "memory": "full"},
-    {"id": "xls-stream-write", "format": "xls", "operation": "write", "mode": "event", "memory": "constant"},
+    {"id": "xls-batched-write", "format": "xls", "operation": "write", "mode": "workbook", "memory": "batched"},
     {"id": "xls-event-read", "format": "xls", "operation": "read", "mode": "event", "memory": "constant"},
     {"id": "csv-stream-write", "format": "csv", "operation": "write", "mode": "event", "memory": "constant"},
     {"id": "csv-event-read", "format": "csv", "operation": "read", "mode": "event", "memory": "constant"}
@@ -56,6 +65,19 @@
     "max_coefficient_of_variation": 0.10,
     "max_median_throughput_regression": 0.10,
     "max_peak_rss_regression": 0.15,
+    "resources": {
+      "worker_counts": [1],
+      "rust_peak_rss_scenarios": ["xlsx-stream-write", "xlsx-event-read"],
+      "rust_max_peak_rss_bytes": 67108864,
+      "temporary_disk_scenarios": ["xlsx-stream-write"],
+      "rust_max_temporary_disk_to_java_ratio": 0.25,
+      "require_measured_fields": true
+    },
+    "soak": {
+      "required_profile": "release",
+      "execution_order": ["rust", "java", "java", "rust"],
+      "require_complete_worker_sets": true
+    },
     "cross_runtime": {
       "scenarios": ["xlsx-stream-write", "xlsx-event-read"],
       "worker_counts": [1, 2, 4, 8, 16],

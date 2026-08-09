@@ -6,7 +6,13 @@
 //! [`java_compat_format_code`] + [`java_compat_display`] so STRING mode
 //! matches `EasyExcel` / POI.
 
+use std::collections::HashMap;
+use std::sync::Arc;
+
+use bigdecimal::BigDecimal;
 use ssfmt::{DateSystem, FormatOptions, Locale, NumberFormat};
+
+use super::{ExcelLocale, NumberRoundingMode};
 
 /// `ssfmt` 使用的区域设置类型。
 pub use ssfmt::Locale as SpreadsheetLocale;
@@ -19,6 +25,128 @@ pub use ssfmt::Locale as SpreadsheetLocale;
 pub struct CompiledExcelFormat {
     format: NumberFormat,
     is_date: bool,
+}
+
+type CustomNumberFormat = Arc<dyn Fn(&BigDecimal) -> String + Send + Sync>;
+
+/// 可复用的工作簿数字格式器。
+///
+/// 对应 Java：`com.alibaba.excel.metadata.format.DataFormatter`。格式 AST、
+/// locale、日期窗口、默认回退格式与 `addFormat` 覆盖项全部由格式引擎拥有，
+/// 上层门面只负责重导出与 Java 参数命名适配。
+pub struct DataFormatter {
+    use_1904_windowing: bool,
+    locale: ExcelLocale,
+    use_scientific_format: bool,
+    default_number_format: Option<CustomNumberFormat>,
+    custom_formats: HashMap<String, CustomNumberFormat>,
+}
+
+impl DataFormatter {
+    /// 解析 Excel 舍入模式；未指定时使用 Java 默认的 HALF_UP。
+    #[must_use]
+    pub fn set_excel_style_rounding_mode(
+        rounding_mode: Option<NumberRoundingMode>,
+    ) -> NumberRoundingMode {
+        rounding_mode.unwrap_or(NumberRoundingMode::HalfUp)
+    }
+
+    /// 使用 Java nullable 构造参数创建格式器。
+    #[must_use]
+    pub fn new(
+        use_1904_windowing: Option<bool>,
+        locale: Option<ExcelLocale>,
+        use_scientific_format: Option<bool>,
+    ) -> Self {
+        Self {
+            use_1904_windowing: use_1904_windowing.unwrap_or(false),
+            locale: locale.unwrap_or_default(),
+            use_scientific_format: use_scientific_format.unwrap_or(false),
+            default_number_format: None,
+            custom_formats: HashMap::new(),
+        }
+    }
+
+    /// 按格式索引和格式代码渲染任意精度数字。
+    #[must_use]
+    pub fn format(
+        &self,
+        data: &BigDecimal,
+        data_format: Option<i16>,
+        data_format_string: Option<&str>,
+    ) -> String {
+        let format_code = data_format_string
+            .filter(|value| !value.is_empty())
+            .or_else(|| {
+                data_format
+                    .and_then(|value| u32::try_from(value).ok())
+                    .and_then(resolve_builtin_format_code)
+            })
+            .unwrap_or("General");
+
+        if let Some(formatter) = self.custom_formats.get(format_code) {
+            return formatter(data);
+        }
+
+        let decimal_text = data.to_string();
+        let value = decimal_text.parse::<f64>().unwrap_or_else(|_| {
+            if decimal_text.starts_with('-') {
+                f64::NEG_INFINITY
+            } else {
+                f64::INFINITY
+            }
+        });
+        if format_code.eq_ignore_ascii_case("General") || format_code == "@" {
+            return super::format_general_with_options(
+                value,
+                self.use_scientific_format,
+                self.locale.formatter().decimal_separator,
+            );
+        }
+        format_with_code(
+            value,
+            format_code,
+            self.use_1904_windowing,
+            &self.locale.formatter(),
+        )
+        .or_else(|| self.default_number_format.as_ref().map(|formatter| formatter(data)))
+        .unwrap_or(decimal_text)
+    }
+
+    /// 设置无法解析格式代码时的回退格式器。
+    pub fn set_default_number_format<F>(&mut self, formatter: F)
+    where
+        F: Fn(&BigDecimal) -> String + Send + Sync + 'static,
+    {
+        self.default_number_format = Some(Arc::new(formatter));
+    }
+
+    /// 注册或替换一个格式代码对应的自定义格式器。
+    pub fn add_format<F>(&mut self, excel_format_string: impl Into<String>, formatter: F)
+    where
+        F: Fn(&BigDecimal) -> String + Send + Sync + 'static,
+    {
+        self.custom_formats
+            .insert(excel_format_string.into(), Arc::new(formatter));
+    }
+
+    /// 返回是否使用 1904 日期窗口。
+    #[must_use]
+    pub const fn use_1904_windowing(&self) -> bool {
+        self.use_1904_windowing
+    }
+
+    /// 返回区域设置。
+    #[must_use]
+    pub const fn locale(&self) -> &ExcelLocale {
+        &self.locale
+    }
+}
+
+impl Default for DataFormatter {
+    fn default() -> Self {
+        Self::new(None, None, None)
+    }
 }
 
 impl CompiledExcelFormat {

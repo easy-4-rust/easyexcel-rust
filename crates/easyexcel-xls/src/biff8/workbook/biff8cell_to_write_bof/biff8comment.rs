@@ -17,6 +17,8 @@ pub struct Biff8Comment {
     pub(crate) left: Option<u16>,
     /// TXO formatting runs，元素为 `(UTF-16 起始下标, FONT 索引)`。
     pub(crate) formatting_runs: Vec<(u16, u16)>,
+    /// NOTE record 的可见标志；默认隐藏，与 Excel/POI 新建批注一致。
+    pub(crate) visible: bool,
 }
 
 impl Biff8Comment {
@@ -37,6 +39,7 @@ impl Biff8Comment {
             bottom: None,
             left: None,
             formatting_runs: Vec::new(),
+            visible: false,
         }
     }
 
@@ -71,6 +74,13 @@ impl Biff8Comment {
     #[must_use]
     pub fn with_formatting_runs(mut self, formatting_runs: Vec<(u16, u16)>) -> Self {
         self.formatting_runs = formatting_runs;
+        self
+    }
+
+    /// 设置 NOTE record 的初始可见性。
+    #[must_use]
+    pub const fn with_visible(mut self, visible: bool) -> Self {
+        self.visible = visible;
         self
     }
 }

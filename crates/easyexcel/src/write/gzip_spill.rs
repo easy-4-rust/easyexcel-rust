@@ -212,7 +212,9 @@ fn from_spill_value(value: GzipCellValue) -> Result<CellValue> {
                     .collect(),
             }
         }
-        GzipCellValue::Styled { .. } | GzipCellValue::JournalMetadata { .. } => {
+        GzipCellValue::Styled { .. }
+        | GzipCellValue::JournalMetadata { .. }
+        | GzipCellValue::JournalMergeRange { .. } => {
             return Err(ExcelError::Format(
                 "stateful journal metadata used as a scalar spill value".to_owned(),
             ));

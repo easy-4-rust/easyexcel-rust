@@ -24,7 +24,9 @@ evidence because the former Java and Rust workloads were not equivalent.
   `Rust -> Java -> Java -> Rust` order, and every writer uses a unique file.
 - `fixtures/fixture-manifest.json` is generated with the SHA-256 of every Java-
   and Rust-produced XLS/XLSX/CSV fixture. Both runtimes read each exact fixture;
-  comparisons never use separately generated inputs under the same label.
+  comparisons never use separately generated inputs under the same label. The
+  comparator re-hashes every retained fixture once and binds its absolute path,
+  manifest entry, origin, row count, and every timed sample's `input_sha256`.
 
 ## Required execution rules
 
@@ -81,10 +83,28 @@ Write, while the 16-worker soak exercises their 70/30 mixed workload. This
 keeps the concurrency contract focused on the production streaming paths and
 avoids multiplying sixteen independent full-memory JVM workloads.
 
-The Java/Rust ratio is reported for engineering insight. Release gates compare
-each implementation with its own pinned stable baseline: checksum and reopen
-must pass, median throughput may not regress by more than 10%, and peak RSS may
-not grow by more than 15%.
+Release additionally contains a Rust-only `internal-parallel-map` phase for the
+explicit opt-in `ParallelMapReadListener`. It reads each Java- and Rust-produced
+XLSX in one process and compares a serial pure mapper with 2 and 4 mapper
+workers. The deterministic mapper workload and bounded queue are fixed by the
+shared spec; ordinary XML parsing and downstream Listener callbacks remain
+single-threaded and ordered. Both 2- and 4-worker steady-state medians must be
+at least 1.20x the serial mapper, every checksum must match, all seven trials
+must exist, and peak RSS must remain within 64 MiB. `worker_count` denotes
+in-process mapper workers only for this phase; it continues to denote concurrent
+runner processes for the normal matrix and soak phases.
+
+The XLS write scenario is deliberately named `xls-batched-write`: both runners
+bound input batches and split at BIFF8's Sheet row limit, while the effective
+backend remains workbook-memory. It is declared as `mode=workbook` and
+`memory=batched`; it must never be reported as constant-memory or streaming.
+
+Release gates apply both dimensions: each implementation must remain within its
+own pinned regression baseline, and Rust must satisfy the cross-runtime median
+and confidence-lower-bound thresholds in `benchmark-suite-v1.json`. Checksum,
+cross-runtime reopen, RSS, temporary disk, sample completeness, and CV remain
+independent fail-closed conditions; a strong result in one dimension cannot
+waive another.
 
 ## Running the matrix
 
@@ -111,12 +131,67 @@ python3 benchmarks/scripts/compare_results.py \
   --output benchmarks/results/pr/report.json \
   benchmarks/results/pr/raw-results.jsonl
 
+# Release only: build both clean-SHA runners and attest their exact bytes first.
+python3 benchmarks/scripts/prepare_release_artifacts.py \
+  --rust-repo /path/to/easyexcel-rust \
+  --java-repo /path/to/easyexcel \
+  --rust-bin /path/to/easyexcel-rust/target/release/easyexcel-benchmark-runner \
+  --java-bin /path/to/pinned-jdk/bin/java \
+  --java-classpath "$JAVA_BENCHMARK_CLASSPATH" \
+  --output /tmp/easyexcel-release-artifacts.json
+
+# Produce the complete 1M matrix, including workers 1/2/4/8/16.
+python3 benchmarks/scripts/run_matrix.py \
+  --profile release \
+  --rust-bin target/release/easyexcel-benchmark-runner \
+  --java-bin /path/to/pinned-jdk/bin/java \
+  --java-classpath "$JAVA_BENCHMARK_CLASSPATH" \
+  --java-repo /path/to/easyexcel \
+  --rust-repo /path/to/easyexcel-rust \
+  --artifact-manifest /tmp/easyexcel-release-artifacts.json \
+  --output-dir benchmarks/results/release
+
 # Release only: complete cycles preserve an exact 70/30 operation ratio.
 python3 benchmarks/scripts/run_soak.py \
   --rust-bin target/release/easyexcel-benchmark-runner \
+  --java-bin /path/to/pinned-jdk/bin/java \
   --java-classpath "$JAVA_BENCHMARK_CLASSPATH" \
+  --java-repo /path/to/easyexcel \
+  --rust-repo /path/to/easyexcel-rust \
+  --artifact-manifest /tmp/easyexcel-release-artifacts.json \
   --output-dir benchmarks/results/release-soak
+
+python3 benchmarks/scripts/compare_results.py \
+  --profile release \
+  --spec benchmarks/spec/benchmark-suite-v1.json \
+  --expected-java-git-sha "$JAVA_GIT_SHA" \
+  --expected-rust-git-sha "$RUST_GIT_SHA" \
+  --baseline benchmarks/baselines/release-ubuntu-x64.json \
+  --require-baseline \
+  --soak-manifest benchmarks/results/release-soak/soak-manifest.json \
+  --output benchmarks/results/release/report.json \
+  benchmarks/results/release/raw-results.jsonl \
+  benchmarks/results/release-soak/raw-results.jsonl
 ```
+
+`--profile release` 会无条件要求 `--baseline`；`--require-baseline` 在上述命令中保留是为了让
+意图可见，也可用于 nightly 等非 release profile。baseline 必须覆盖候选报告中的每一个矩阵
+summary，缺少单个 label 即失败，不能通过省略历史差项绕过吞吐或 RSS 回归比较。
+
+Release comparison is fail-closed: the complete matrix, four soak phases in
+`Rust → Java → Java → Rust` order, each phase's measured 30-minute duration,
+exact 70/30 operation mix, complete 16-worker trial sets, the complete
+serial/2/4-worker internal mapper phase, Rust's 64 MiB
+single-worker RSS ceiling, the 15% stable RSS regression ceiling, and Rust
+temporary write-disk usage at no more than 25% of Java must all be present.
+The schema-v2 runner attestation also proves that `--rust-bin` is the exact
+Cargo release target built in the preparation run and binds the Rust compiler,
+Java executable/JAVA_HOME/version, runner class, and every classpath entry by
+path and SHA-256. Maven compilation is forced onto that same Java home.
+Each results directory also carries the artifact attestation and environment
+manifest. The comparator binds the clean source fingerprints, Rust binary hash,
+Java runner class and full classpath hashes to the expected Git SHAs; a stale
+prebuilt runner cannot pass by reporting a runtime-injected SHA.
 
 The Java classpath must begin with the pinned Java repository's
 `easyexcel-test/target/test-classes` and include its Maven dependency

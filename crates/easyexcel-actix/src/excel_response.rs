@@ -49,8 +49,8 @@ where
     type Body = BoxBody;
 
     fn respond_to(self, _request: &HttpRequest) -> HttpResponse<Self::Body> {
-        let encoded = urlencoding::encode(self.export.file_name()).replace('+', "%20");
-        let disposition = format!("attachment;filename*=UTF-8''{encoded}");
+        let disposition =
+            easyexcel_web::excel_attachment_content_disposition(self.export.file_name());
         let chunk_size = self.export.io_chunk_size();
         HttpResponse::Ok()
             .insert_header((CONTENT_TYPE, self.export.content_type()))

@@ -27,6 +27,33 @@ pub enum FillPatternTypeEnum {
 }
 
 impl FillPatternTypeEnum {
+    /// 按 Java `values()` 声明顺序列出全部枚举值。
+    pub const ALL: [Self; 20] = [
+        Self::Default, Self::NoFill, Self::SolidForeground, Self::FineDots,
+        Self::AltBars, Self::SparseDots, Self::ThickHorzBands, Self::ThickVertBands,
+        Self::ThickBackwardDiag, Self::ThickForwardDiag, Self::BigSpots, Self::Bricks,
+        Self::ThinHorzBands, Self::ThinVertBands, Self::ThinBackwardDiag,
+        Self::ThinForwardDiag, Self::Squares, Self::Diamonds, Self::LessDots,
+        Self::LeastDots,
+    ];
+
+    /// 返回 Java 枚举常量名。
+    #[must_use]
+    pub const fn java_name(self) -> &'static str {
+        match self {
+            Self::Default => "DEFAULT", Self::NoFill => "NO_FILL",
+            Self::SolidForeground => "SOLID_FOREGROUND", Self::FineDots => "FINE_DOTS",
+            Self::AltBars => "ALT_BARS", Self::SparseDots => "SPARSE_DOTS",
+            Self::ThickHorzBands => "THICK_HORZ_BANDS", Self::ThickVertBands => "THICK_VERT_BANDS",
+            Self::ThickBackwardDiag => "THICK_BACKWARD_DIAG",
+            Self::ThickForwardDiag => "THICK_FORWARD_DIAG", Self::BigSpots => "BIG_SPOTS",
+            Self::Bricks => "BRICKS", Self::ThinHorzBands => "THIN_HORZ_BANDS",
+            Self::ThinVertBands => "THIN_VERT_BANDS", Self::ThinBackwardDiag => "THIN_BACKWARD_DIAG",
+            Self::ThinForwardDiag => "THIN_FORWARD_DIAG", Self::Squares => "SQUARES",
+            Self::Diamonds => "DIAMONDS", Self::LessDots => "LESS_DOTS", Self::LeastDots => "LEAST_DOTS",
+        }
+    }
+
     /// 返回底层填充图案；`Default` 对应 Java `null`。
     #[must_use]
     pub const fn poi_fill_pattern_type(self) -> Option<crate::ExcelFillPattern> {
@@ -58,5 +85,15 @@ impl FillPatternTypeEnum {
     #[must_use]
     pub const fn get_poi_fill_pattern_type(self) -> Option<crate::ExcelFillPattern> {
         self.poi_fill_pattern_type()
+    }
+}
+
+impl std::str::FromStr for FillPatternTypeEnum {
+    type Err = String;
+
+    /// 解析 Java `valueOf(String)` 使用的精确枚举常量名。
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        Self::ALL.into_iter().find(|item| item.java_name() == value)
+            .ok_or_else(|| format!("unknown FillPatternTypeEnum value: {value}"))
     }
 }

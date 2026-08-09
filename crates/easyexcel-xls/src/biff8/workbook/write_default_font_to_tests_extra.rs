@@ -24,11 +24,16 @@ fn write_cell_xf(out: &mut Vec<u8>, ifmt: u16) {
     record(out, XF, &data);
 }
 
-fn write_boundsheet_placeholder(out: &mut Vec<u8>, name: &str) -> usize {
+fn write_boundsheet_placeholder(out: &mut Vec<u8>, sheet: &Biff8Sheet) -> usize {
     let mut data = Vec::new();
     data.extend_from_slice(&0u32.to_le_bytes());
-    data.extend_from_slice(&[0x00, 0x00]);
-    data.extend_from_slice(&encode_short_unicode_string(name));
+    data.push(match sheet.visibility {
+        easyexcel_model::Visibility::Visible => 0,
+        easyexcel_model::Visibility::Hidden => 1,
+        easyexcel_model::Visibility::VeryHidden => 2,
+    });
+    data.push(0x00);
+    data.extend_from_slice(&encode_short_unicode_string(&sheet.name));
     let record_start = out.len();
     record(out, BOUNDSHEET, &data);
     record_start + 4
@@ -81,8 +86,13 @@ fn write_worksheet(
     sst_index: &HashMap<Biff8RichText, u32>,
     caches: &HashMap<(u16, u8), Biff8Cached>,
     link_table: &super::ptg::Biff8LinkTable,
-) {
+    comment_drawing_id: Option<u16>,
+    first_chart_drawing_id: u16,
+    selected: bool,
+) -> Result<()> {
     write_bof(out, DT_WORKSHEET);
+    let physical_rows = physical_rows(sheet);
+    let index_patch = write_index_placeholder(out, &physical_rows);
     if let Some(password_hash) = sheet.protection_password_hash {
         record(out, PROTECT, &1_u16.to_le_bytes());
         record(out, OBJECTPROTECT, &1_u16.to_le_bytes());
@@ -99,16 +109,55 @@ fn write_worksheet(
         data.extend_from_slice(&0u16.to_le_bytes());
         record(out, DIMENSION, &data);
     }
+    if let Some(width_units) = sheet.default_column_width_units {
+        let width_chars = width_units.div_ceil(256).max(1);
+        record(out, DEFCOLWIDTH, &width_chars.to_le_bytes());
+        record(out, STANDARDWIDTH, &width_units.to_le_bytes());
+    }
+    if let Some(height_twips) = sheet.default_row_height_twips {
+        let mut data = [0_u8; 4];
+        data[0..2].copy_from_slice(&1_u16.to_le_bytes()); // fUnsynced: 显式默认行高
+        data[2..4].copy_from_slice(&height_twips.to_le_bytes());
+        record(out, DEFAULTROWHEIGHT, &data);
+    }
     // COLINFO — Java HSSF ColumnInfoRecord / sheet.setColumnWidth
-    for (&col, &width) in &sheet.column_widths {
-        record(out, COLINFO, &pack_colinfo(col, col, width, XF_GENERAL));
+    let mut columns = sheet.column_widths.keys().copied().collect::<BTreeSet<_>>();
+    columns.extend(sheet.column_width_units.keys().copied());
+    columns.extend(sheet.column_xfs.keys().copied());
+    columns.extend(sheet.hidden_columns.iter().copied());
+    for col in columns {
+        let width = sheet.column_width_units.get(&col).copied().unwrap_or_else(|| {
+            sheet.column_widths.get(&col).map_or_else(
+                || sheet.default_column_width_units.unwrap_or(8_u16.saturating_mul(256)),
+                |width| width.saturating_mul(256),
+            )
+        });
+        let xf = sheet.column_xfs.get(&col).copied().unwrap_or(XF_GENERAL);
+        let user_set_width = sheet.column_user_set_widths.contains(&col);
+        record(
+            out,
+            COLINFO,
+            &pack_colinfo_metadata(
+                col,
+                col,
+                width,
+                xf,
+                sheet.hidden_columns.contains(&col),
+                user_set_width,
+            ),
+        );
     }
-    // ROW — Java HSSF RowRecord / setHeightInPoints
-    let last_col_exclusive = u8::try_from(max_col.min(256)).unwrap_or(0);
-    for (&row, &height) in &sheet.row_heights {
-        record(out, ROW, &pack_row(row, 0, last_col_exclusive, height));
+    let dbcell_offsets = write_row_blocks(
+        out,
+        sheet,
+        &physical_rows,
+        sst_index,
+        caches,
+        link_table,
+    )?;
+    for (patch_at, offset) in index_patch.into_iter().zip(dbcell_offsets) {
+        out[patch_at..patch_at + 4].copy_from_slice(&offset.to_le_bytes());
     }
-    write_cells(out, sheet, sst_index, caches, link_table);
     if !sheet.merges.is_empty() {
         let ranges: Vec<[u8; 8]> = sheet
             .merges
@@ -124,18 +173,26 @@ fn write_worksheet(
             .collect();
         write_merge_cells(out, &ranges);
     }
-    write_comments(out, &sheet.comments);
-    write_charts(out, &sheet.charts, link_table);
+    if let Some(drawing_id) = comment_drawing_id {
+        write_comments_with_drawing_id(out, &sheet.comments, drawing_id);
+    }
+    write_charts_with_drawing_ids(
+        out,
+        &sheet.charts,
+        link_table,
+        first_chart_drawing_id,
+        2,
+    );
     {
         let mut data = vec![0u8; 18];
         // options: fDspGrid | fDspRwCol | fDspZeros | fDefaultHdr | fDspGuts |
         // fUnsynced | fSelected | fDspSheet（与 LibreOffice 默认值 0x06B6 一致）
-        data[0] = 0xB6;
-        data[1] = 0x06;
+        let options = if selected { 0x06B6_u16 } else { 0x04B6_u16 };
+        data[0..2].copy_from_slice(&options.to_le_bytes());
         if let Some((_rows, _cols)) = sheet.freeze.filter(|&(r, c)| r > 0 || c > 0) {
-            // fFrozen(bit3=0x0008) + fFrozenNoSplit(bit12=0x1000)
+            // MS-XLS Window2：fFrozen(bit3=0x0008) + fFrozenNoSplit(bit8=0x0100)。
             data[0] |= 0x08;
-            data[1] |= 0x10;
+            data[1] |= 0x01;
         }
         record(out, WINDOW2, &data);
         // WINDOW2 之后发射 PANE（xlwt/POI 流序一致）
@@ -151,6 +208,148 @@ fn write_worksheet(
         record(out, HYPERLINK, &hyperlink.encode_record_data());
     }
     record(out, EOF, &[]);
+    Ok(())
+}
+
+fn physical_rows(sheet: &Biff8Sheet) -> Vec<u16> {
+    let mut rows = sheet
+        .cells
+        .keys()
+        .map(|(row, _)| *row)
+        .collect::<BTreeSet<_>>();
+    rows.extend(sheet.row_heights.keys().copied());
+    rows.extend(sheet.row_height_twips.keys().copied());
+    rows.extend(sheet.row_xfs.keys().copied());
+    rows.extend(sheet.hidden_rows.iter().copied());
+    rows.into_iter().collect()
+}
+
+fn write_index_placeholder(out: &mut Vec<u8>, rows: &[u16]) -> Vec<usize> {
+    let block_count = rows.len().div_ceil(32);
+    let mut data = Vec::with_capacity(16 + block_count * 4);
+    data.extend_from_slice(&0u32.to_le_bytes());
+    data.extend_from_slice(&u32::from(rows.first().copied().unwrap_or(0)).to_le_bytes());
+    data.extend_from_slice(
+        &u32::from(rows.last().copied().map_or(0, |row| row.saturating_add(1))).to_le_bytes(),
+    );
+    data.extend_from_slice(&0u32.to_le_bytes());
+    data.resize(16 + block_count * 4, 0);
+    let record_start = out.len();
+    record(out, INDEX, &data);
+    (0..block_count)
+        .map(|block| record_start + 4 + 16 + block * 4)
+        .collect()
+}
+
+fn write_row_blocks(
+    out: &mut Vec<u8>,
+    sheet: &Biff8Sheet,
+    rows: &[u16],
+    sst_index: &HashMap<Biff8RichText, u32>,
+    caches: &HashMap<(u16, u8), Biff8Cached>,
+    link_table: &super::ptg::Biff8LinkTable,
+) -> Result<Vec<u32>> {
+    let mut dbcell_offsets = Vec::with_capacity(rows.len().div_ceil(32));
+    for block in rows.chunks(32) {
+        let first_row_record = out.len();
+        for &row in block {
+            let (first_col, last_col_exclusive) = row_column_span(sheet, row);
+            let explicit_height = sheet
+                .row_height_twips
+                .get(&row)
+                .copied()
+                .or_else(|| sheet.row_heights.get(&row).map(|height| height.saturating_mul(20)));
+            let hidden = sheet.hidden_rows.contains(&row);
+            let xf = sheet.row_xfs.get(&row).copied();
+            let payload = if explicit_height.is_none() && !hidden && xf.is_none() {
+                pack_default_row(row, first_col, last_col_exclusive)
+            } else {
+                let height_twips = explicit_height
+                    .or(sheet.default_row_height_twips)
+                    .unwrap_or(15_u16.saturating_mul(20));
+                if !(2..=8_192).contains(&height_twips) {
+                    return Err(ExcelError::Xls(format!(
+                        "BIFF8 row height must be 2..=8192 twips for row {row}, got {height_twips}"
+                    )));
+                }
+                pack_row_metadata(
+                    row,
+                    first_col,
+                    last_col_exclusive,
+                    height_twips,
+                    explicit_height.is_some(),
+                    hidden,
+                    xf,
+                )
+            };
+            record(out, ROW, &payload);
+        }
+
+        let row_record_bytes = out.len().saturating_sub(first_row_record);
+        let mut cell_reference_offset = row_record_bytes.saturating_sub(20);
+        let mut cell_offsets = Vec::new();
+        for &row in block {
+            if sheet
+                .cells
+                .range((row, 0)..=(row, u8::MAX))
+                .next()
+                .is_none()
+            {
+                continue;
+            }
+            cell_offsets.push(u16::try_from(cell_reference_offset).map_err(|_| {
+                ExcelError::Xls(format!(
+                    "BIFF8 DBCELL offset exceeds u16 for row {row}"
+                ))
+            })?);
+            let cells_start = out.len();
+            write_cells_for_row(out, sheet, row, sst_index, caches, link_table)?;
+            cell_reference_offset = out.len().saturating_sub(cells_start);
+        }
+
+        let dbcell_position = out.len();
+        let row_offset = u32::try_from(dbcell_position.saturating_sub(first_row_record))
+            .map_err(|_| ExcelError::Xls("BIFF8 DBCELL row offset overflow".to_owned()))?;
+        let mut data = Vec::with_capacity(4 + cell_offsets.len() * 2);
+        data.extend_from_slice(&row_offset.to_le_bytes());
+        for offset in cell_offsets {
+            data.extend_from_slice(&offset.to_le_bytes());
+        }
+        record(out, DBCELL, &data);
+        dbcell_offsets.push(
+            u32::try_from(dbcell_position)
+                .map_err(|_| ExcelError::Xls("BIFF8 INDEX offset exceeds 4GiB".to_owned()))?,
+        );
+    }
+    Ok(dbcell_offsets)
+}
+
+fn row_column_span(sheet: &Biff8Sheet, row: u16) -> (u16, u16) {
+    let mut columns = sheet
+        .cells
+        .range((row, 0)..=(row, u8::MAX))
+        .map(|((_, column), _)| u16::from(*column));
+    let Some(first) = columns.next() else {
+        return (0, 0);
+    };
+    let last = columns.next_back().unwrap_or(first);
+    (first, last.saturating_add(1))
+}
+
+fn write_cells_for_row(
+    out: &mut Vec<u8>,
+    sheet: &Biff8Sheet,
+    row: u16,
+    sst_index: &HashMap<Biff8RichText, u32>,
+    caches: &HashMap<(u16, u8), Biff8Cached>,
+    link_table: &super::ptg::Biff8LinkTable,
+) -> Result<()> {
+    let mut cells = sheet
+        .cells
+        .range((row, 0)..=(row, u8::MAX))
+        .map(|(&(row, column), cell)| (row, column, cell))
+        .collect::<Vec<_>>();
+    flush_row(out, &mut cells, sst_index, caches, link_table)
 }
 
 /// PANE 记录（0x0041）：冻结窗格布局。与 xlwt `PanesRecord` 字节一致——
@@ -173,39 +372,13 @@ fn write_pane(out: &mut Vec<u8>, rows: u16, cols: u16) {
     record(out, PANE, &data);
 }
 
-/// 逐行扫描单元格，把连续的 RK 可编码数字合并为 MULRK、连续空白合并为
-/// MULBLANK（文件更小、Excel 打开更快）；其余类型逐格写出。
-/// 对应 Java：POI `MulRKRecord` / `MulBlankRecord`。
-fn write_cells(
-    out: &mut Vec<u8>,
-    sheet: &Biff8Sheet,
-    sst_index: &HashMap<Biff8RichText, u32>,
-    caches: &HashMap<(u16, u8), Biff8Cached>,
-    link_table: &super::ptg::Biff8LinkTable,
-) {
-    // BTreeMap 按键 (row, col) 有序：按行分组扫描
-    let mut row_cells: Vec<(u16, u8, &Biff8Cell)> = Vec::new();
-    let mut last_row = None;
-    for (&(row, col), cell) in &sheet.cells {
-        if last_row != Some(row) && !row_cells.is_empty() {
-            flush_row(out, &mut row_cells, sst_index, caches, link_table);
-            row_cells.clear();
-        }
-        last_row = Some(row);
-        row_cells.push((row, col, cell));
-    }
-    if !row_cells.is_empty() {
-        flush_row(out, &mut row_cells, sst_index, caches, link_table);
-    }
-}
-
 fn flush_row(
     out: &mut Vec<u8>,
     cells: &mut [(u16, u8, &Biff8Cell)],
     sst_index: &HashMap<Biff8RichText, u32>,
     caches: &HashMap<(u16, u8), Biff8Cached>,
     link_table: &super::ptg::Biff8LinkTable,
-) {
+) -> Result<()> {
     // 行内按列扫描，收集可合并段
     let mut i = 0;
     while i < cells.len() {
@@ -266,12 +439,12 @@ fn flush_row(
                     sst_index,
                     caches.get(&(row, col)),
                     link_table,
-                )
-                    .expect("BIFF8 单元格序列化失败");
+                )?;
                 i += 1;
             }
         }
     }
+    Ok(())
 }
 
 /// MULRK（0x00BD）：rw + colFirst + (xf, rk)*n + colLast
@@ -322,6 +495,7 @@ fn write_cell(
         }
         Biff8Value::Number(n) => write_number(out, row, col, cell.xf, *n),
         Biff8Value::Bool(b) => write_boolerr(out, row, col, cell.xf, u8::from(*b), false),
+        Biff8Value::Error(code) => write_boolerr(out, row, col, cell.xf, *code, true),
         Biff8Value::Formula(expr) => {
             write_formula(out, row, col, cell.xf, expr, cached, link_table)?;
         }

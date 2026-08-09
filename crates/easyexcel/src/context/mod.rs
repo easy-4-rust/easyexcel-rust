@@ -26,6 +26,7 @@ pub mod xlsx;
 
 pub use crate::read::metadata::read_sheet;
 pub use crate::read::metadata::read_sheet::ReadSheet;
+pub use analysis_context::AnalysisContextLifecycle;
 pub use analysis_context_impl::AnalysisContextImpl;
 pub use csv::csv_read_context::{CsvReadContext, DefaultCsvReadContext};
 pub use xls::xls_read_context::{DefaultXlsReadContext, XlsReadContext};

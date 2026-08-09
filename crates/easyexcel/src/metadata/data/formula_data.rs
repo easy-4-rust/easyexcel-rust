@@ -4,7 +4,7 @@
 ///
 /// 对应 Java：`FormulaData` (`formulaValue` field + `clone()` override).
 /// Rust uses `#[derive(Clone)]` so the public `clone()` is automatic.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub struct FormulaData {
     formula_value: String,
 }

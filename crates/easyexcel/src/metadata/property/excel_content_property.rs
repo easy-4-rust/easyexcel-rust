@@ -11,11 +11,11 @@ use super::style_property::StyleProperty;
 /// 对应 Java：`ExcelContentProperty`.
 ///
 /// Java carries a `Field`, `Converter`, [`DateTimeFormatProperty`],
-/// [`NumberFormatProperty`], `StyleProperty`, `FontProperty`. Rust
-/// collapses the format/style/font into the existing `ExcelCellStyle` /
-/// `ExcelFontStyle` types and drops the reflection fields because the
-/// derive macro handles them at compile time.
-#[derive(Debug, Clone, Default, PartialEq)]
+/// [`NumberFormatProperty`], `StyleProperty` and `FontProperty`. Rust keeps
+/// the four runtime properties directly; JVM reflection objects are represented
+/// by stable field/converter registration keys so the derive and registry layers
+/// remain the only reflection owners.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub struct ExcelContentProperty {
     /// Content cell style. (Java `contentStyleProperty`)
     pub content_style_property: Option<StyleProperty>,

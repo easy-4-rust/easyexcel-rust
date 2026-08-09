@@ -67,8 +67,16 @@ impl Biff8LinkTable {
         if self.ixti(first_sheet, last_sheet).is_some() {
             return;
         }
-        let first = sheet_index(sheet_names, first_sheet);
-        let last = sheet_index(sheet_names, last_sheet);
+        // 只为当前工作簿中真实存在的 Sheet 建立内部引用。未知名称不能用
+        // 0xFFFF 伪装成有效 internal SUPBOOK 索引，否则公式编码会成功，最终
+        // Excel/POI 才在打开文件时发现损坏。保持未登记可让调用方现有的
+        // `ixti(...).ok_or_else(...)` 路径立即 fail-closed。
+        let (Some(first), Some(last)) = (
+            sheet_index(sheet_names, first_sheet),
+            sheet_index(sheet_names, last_sheet),
+        ) else {
+            return;
+        };
         self.entries
             .push((first_sheet.to_owned(), last_sheet.to_owned(), first, last));
     }
@@ -80,7 +88,7 @@ impl Biff8LinkTable {
                 first.eq_ignore_ascii_case(first_sheet) && last.eq_ignore_ascii_case(last_sheet)
             })
             .and_then(|index| u16::try_from(index).ok())
-            .map(|index| self.ixti_base.saturating_add(index))
+            .and_then(|index| self.ixti_base.checked_add(index))
     }
 
     pub(crate) fn is_empty(&self) -> bool {
@@ -108,10 +116,9 @@ impl Biff8LinkTable {
     }
 }
 
-fn sheet_index(sheet_names: &[String], name: &str) -> u16 {
+fn sheet_index(sheet_names: &[String], name: &str) -> Option<u16> {
     sheet_names
         .iter()
         .position(|sheet| sheet.eq_ignore_ascii_case(name))
         .and_then(|index| u16::try_from(index).ok())
-        .unwrap_or(u16::MAX)
 }

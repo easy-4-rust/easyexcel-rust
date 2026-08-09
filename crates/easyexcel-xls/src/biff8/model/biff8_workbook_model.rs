@@ -17,6 +17,20 @@ pub struct Biff8WorkbookModel {
 }
 
 impl Biff8WorkbookModel {
+    /// 从完整 Workbook stream 字节建立可变模型。
+    ///
+    /// # Errors
+    ///
+    /// 记录帧损坏或子流结构不闭合时返回错误。
+    pub fn from_workbook_stream(workbook: &[u8]) -> Result<Self> {
+        let mut records = Vec::new();
+        crate::biff8::record_stream::walk_biff_records(workbook, |sid, payload| {
+            records.push(Biff8Record::new(sid, payload.to_vec()));
+            Ok(())
+        })?;
+        Self::from_records(records)
+    }
+
     /// 从平铺的 Workbook stream records 建立模型。
     ///
     /// # Errors

@@ -181,6 +181,12 @@ impl AnalysisContextImpl {
         self.excel_type
     }
 
+    /// Java `@Deprecated getInputStream()`；借用 Holder 已物化的输入字节。
+    #[must_use]
+    pub fn get_input_stream(&self) -> Option<&[u8]> {
+        self.read_workbook_holder.get_input_stream()
+    }
+
     /// 对应 Java：`@Deprecated getCurrentRowNum()`.
     #[must_use]
     pub fn current_row_num(&self) -> Option<i32> {
@@ -205,7 +211,7 @@ impl AnalysisContextImpl {
 
     /// 对应 Java `getCurrentRowAnalysisResult()`。
     #[must_use]
-    pub fn current_row_analysis_result(&self) -> Option<&CellValue> {
+    pub fn current_row_analysis_result(&self) -> Option<&crate::CustomReadObject> {
         self.read_row_holder
             .as_ref()
             .and_then(ReadRowHolder::get_current_row_analysis_result)
@@ -213,7 +219,7 @@ impl AnalysisContextImpl {
 
     /// Java `getCurrentRowAnalysisResult()` 兼容别名。
     #[must_use]
-    pub fn get_current_row_analysis_result(&self) -> Option<&CellValue> {
+    pub fn get_current_row_analysis_result(&self) -> Option<&crate::CustomReadObject> {
         self.current_row_analysis_result()
     }
 
@@ -225,6 +231,12 @@ impl AnalysisContextImpl {
     pub fn interrupt(&self) -> Result<()> {
         Err(ExcelError::Format("interrupt error".to_owned()))
     }
+}
+
+impl super::analysis_context::AnalysisContextLifecycle for AnalysisContextImpl {
+    fn analysis_context_impl(&self) -> &Self { self }
+
+    fn analysis_context_impl_mut(&mut self) -> &mut Self { self }
 }
 
 #[cfg(test)]

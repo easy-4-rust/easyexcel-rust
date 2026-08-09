@@ -29,6 +29,19 @@ pub enum ExcelError {
         /// Human-readable failure reason.
         message: String,
     },
+    /// 显式并行行映射中的错误，保留原始工作表和行坐标及底层错误类别。
+    #[error("sheet={sheet}, row={row}, column={column:?}: parallel row mapping failed: {source}")]
+    ParallelRowMapping {
+        /// Sheet name at the mapper boundary.
+        sheet: String,
+        /// Zero-based physical row index.
+        row: u32,
+        /// Optional zero-based column index when supplied by the mapper.
+        column: Option<usize>,
+        /// Original mapper error.
+        #[source]
+        source: Box<Self>,
+    },
     /// A requested worksheet does not exist. (Java `SheetNotFoundException`)
     #[error("worksheet not found: {0}")]
     SheetNotFound(String),
@@ -72,6 +85,17 @@ impl Clone for ExcelError {
                 value: value.clone(),
                 message: message.clone(),
             },
+            Self::ParallelRowMapping {
+                sheet,
+                row,
+                column,
+                source,
+            } => Self::ParallelRowMapping {
+                sheet: sheet.clone(),
+                row: *row,
+                column: *column,
+                source: Box::new((**source).clone()),
+            },
             Self::SheetNotFound(s) => Self::SheetNotFound(s.clone()),
             Self::Format(s) => Self::Format(s.clone()),
             Self::Unsupported(s) => Self::Unsupported(s.clone()),
@@ -104,6 +128,20 @@ impl PartialEq for ExcelError {
                     message: m2,
                 },
             ) => s1 == s2 && r1 == r2 && c1 == c2 && f1 == f2 && v1 == v2 && m1 == m2,
+            (
+                Self::ParallelRowMapping {
+                    sheet: s1,
+                    row: r1,
+                    column: c1,
+                    source: source1,
+                },
+                Self::ParallelRowMapping {
+                    sheet: s2,
+                    row: r2,
+                    column: c2,
+                    source: source2,
+                },
+            ) => s1 == s2 && r1 == r2 && c1 == c2 && source1 == source2,
             // 三个携带 String 负载的变体比较内容是否一致（合并同体分支）
             (Self::SheetNotFound(a), Self::SheetNotFound(b))
             | (Self::Format(a), Self::Format(b))
@@ -118,6 +156,24 @@ impl PartialEq for ExcelError {
 }
 
 impl Eq for ExcelError {}
+
+impl ExcelError {
+    /// 为并行 mapper 错误补充原始读取坐标，同时保留已有 Data/stop 语义。
+    pub(crate) fn with_parallel_row_context(self, context: &crate::AnalysisContext) -> Self {
+        match self {
+            Self::Data { .. }
+            | Self::AnalysisStop(_)
+            | Self::AnalysisStopSheet(_)
+            | Self::ParallelRowMapping { .. } => self,
+            source => Self::ParallelRowMapping {
+                sheet: context.sheet_name().to_owned(),
+                row: context.row_index(),
+                column: None,
+                source: Box::new(source),
+            },
+        }
+    }
+}
 
 impl From<easyexcel_io::Error> for ExcelError {
     fn from(error: easyexcel_io::Error) -> Self {

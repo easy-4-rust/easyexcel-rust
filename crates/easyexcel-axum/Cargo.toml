@@ -20,7 +20,6 @@ serde_json = { workspace = true }
 tokio = { workspace = true, features = ["fs", "io-util", "rt", "macros"] }
 tokio-util = { workspace = true }
 tower = { workspace = true }
-urlencoding = { workspace = true }
 
 [dev-dependencies]
 axum = { workspace = true, features = ["multipart"] }

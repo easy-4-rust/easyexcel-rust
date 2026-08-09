@@ -7,6 +7,8 @@ use std::any::{Any, TypeId};
 use std::borrow::Cow;
 
 use crate::core::{ExcelColumn, ExcelRow};
+use crate::metadata::NullObject;
+use crate::util::bean_map::BeanMap;
 
 /// 对应 Java：com.alibaba.excel.util.FieldUtils。 Mirrors `com.alibaba.excel.util.FieldUtils#resolveCglibFieldName`.
 ///
@@ -25,10 +27,31 @@ pub fn get_field<T: ExcelRow>(field_name: &str) -> Option<&'static ExcelColumn> 
     T::schema().iter().find(|column| column.field == field_name)
 }
 
-/// 返回动态字段值的 Rust 类型键；`None` 对应 Java `NullObject.class`。
+/// 返回 Java `FieldUtils.nullObjectClass` 的后端中立类型键。
 #[must_use]
-pub fn get_field_class(value: Option<&dyn Any>) -> Option<TypeId> {
-    value.map(Any::type_id)
+pub fn null_object_class() -> TypeId {
+    TypeId::of::<NullObject>()
+}
+
+/// 返回动态字段值的 Rust 类型键；空值回退到 Java `NullObject.class` 的 Rust 载体。
+#[must_use]
+pub fn get_field_class(value: Option<&dyn Any>) -> TypeId {
+    value.map_or_else(null_object_class, Any::type_id)
+}
+
+/// 返回字段声明类型；声明缺失时回退到运行时值类型。
+///
+/// 对应 Java：`FieldUtils#getFieldClass(Map, String, Object)`。Java 仅在
+/// `Map` 实际为 CGLIB `BeanMap` 时读取属性类型；Rust 直接接收其强类型替代。
+#[must_use]
+pub fn get_field_class_from_map(
+    data_map: Option<&BeanMap>,
+    field_name: &str,
+    value: Option<&dyn Any>,
+) -> TypeId {
+    data_map
+        .and_then(|map| map.property_type_id(field_name))
+        .unwrap_or_else(|| get_field_class(value))
 }
 
 #[cfg(test)]

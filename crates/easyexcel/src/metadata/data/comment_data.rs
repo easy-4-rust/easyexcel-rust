@@ -2,16 +2,38 @@
 
 use crate::core::client_anchor_data::ClientAnchorData;
 use crate::core::rich_text_string_data::RichTextStringData;
+use std::hash::{Hash, Hasher};
 
 /// 对应 Java：com.alibaba.excel.metadata.data.CommentData。 Cell comment metadata matching Java `CommentData extends ClientAnchorData`.
 ///
 /// Rust uses composition for the anchor (same pattern as [`crate::ImageData`])
 /// so `ClientAnchorData` stays `Copy`/`Default` without inheritance bookkeeping.
-#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct CommentData {
     author: Option<String>,
     rich_text_string_data: Option<RichTextStringData>,
     anchor: ClientAnchorData,
+    /// 批注是否在打开工作簿时保持展开；`None` 使用后端默认隐藏语义。
+    #[serde(default)]
+    visible: Option<bool>,
+}
+
+// Java `CommentData` 的 Lombok `@EqualsAndHashCode` 默认不包含父类锚点。
+// `visible` 是 Rust 后端扩展，也不能改变 Java 值对象的相等性。
+impl PartialEq for CommentData {
+    fn eq(&self, other: &Self) -> bool {
+        self.author == other.author
+            && self.rich_text_string_data == other.rich_text_string_data
+    }
+}
+
+impl Eq for CommentData {}
+
+impl Hash for CommentData {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.author.hash(state);
+        self.rich_text_string_data.hash(state);
+    }
 }
 
 impl CommentData {
@@ -23,6 +45,7 @@ impl CommentData {
             author: None,
             rich_text_string_data: None,
             anchor: ClientAnchorData::new(),
+            visible: None,
         }
     }
 
@@ -52,6 +75,13 @@ impl CommentData {
     /// 对应 Java：com.alibaba.excel.metadata.data.CommentData。
     pub const fn anchor(mut self, value: ClientAnchorData) -> Self {
         self.anchor = value;
+        self
+    }
+
+    /// 设置批注初始可见性。
+    #[must_use]
+    pub const fn visible(mut self, value: bool) -> Self {
+        self.visible = Some(value);
         self
     }
 
@@ -85,6 +115,13 @@ impl CommentData {
 
     /// 设置继承的客户端锚点数据。
     pub const fn set_anchor(&mut self, value: ClientAnchorData) { self.anchor = value; }
+
+    /// 返回显式批注可见性；`None` 表示使用格式后端默认值。
+    #[must_use]
+    pub const fn get_visible(&self) -> Option<bool> { self.visible }
+
+    /// 设置批注初始可见性。
+    pub const fn set_visible(&mut self, value: Option<bool>) { self.visible = value; }
 
     /// 对应 Java：com.alibaba.excel.metadata.data.CommentData。 Returns plain note text for writer backends that only accept a string.
     #[must_use]

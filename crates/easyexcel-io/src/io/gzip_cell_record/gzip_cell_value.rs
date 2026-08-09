@@ -101,4 +101,18 @@ pub enum GzipCellValue {
         /// Final row height after handler processing, when explicitly set.
         row_height: Option<u16>,
     },
+    /// Stateful writer 中已经实际应用到 worksheet 的绝对合并范围。
+    ///
+    /// 该值是运行结果而不是待重新执行的策略，AutoStreaming 晋升时可据此
+    /// 重建合并区域，同时保证用户 Handler 不会被二次调用。
+    JournalMergeRange {
+        /// 起始行（零基）。
+        first_row: u32,
+        /// 结束行（零基，包含）。
+        last_row: u32,
+        /// 起始列（零基）。
+        first_col: u16,
+        /// 结束列（零基，包含）。
+        last_col: u16,
+    },
 }

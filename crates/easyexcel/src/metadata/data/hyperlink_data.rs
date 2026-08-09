@@ -1,15 +1,33 @@
 //! 对应 Java：`com.alibaba.excel.metadata.data.HyperlinkData`.
 
 use crate::core::coordinate_data::CoordinateData;
+use std::hash::{Hash, Hasher};
 
 include!("hyperlink_data/hyperlink_type.rs");
 
 /// 对应 Java：com.alibaba.excel.metadata.data.HyperlinkData。 Hyperlink metadata matching Java `HyperlinkData extends CoordinateData`.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default)]
 pub struct HyperlinkData {
     address: Option<String>,
     hyperlink_type: HyperlinkType,
     coordinates: CoordinateData,
+}
+
+// 对应 Java Lombok 默认 `callSuper = false`：坐标属于父类状态，不参与
+// `HyperlinkData.equals/hashCode`，但仍完整保留给格式后端。
+impl PartialEq for HyperlinkData {
+    fn eq(&self, other: &Self) -> bool {
+        self.address == other.address && self.hyperlink_type == other.hyperlink_type
+    }
+}
+
+impl Eq for HyperlinkData {}
+
+impl Hash for HyperlinkData {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.address.hash(state);
+        self.hyperlink_type.hash(state);
+    }
 }
 
 impl HyperlinkData {

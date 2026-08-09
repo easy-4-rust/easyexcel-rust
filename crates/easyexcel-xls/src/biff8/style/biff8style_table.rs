@@ -98,11 +98,12 @@ impl Biff8StyleTable {
         self.fonts
             .iter()
             .map(|font| {
-                pack_font(
-                    font.height_points,
+                pack_font_twips(
+                    font.height_twips,
                     font.bold,
                     font.italic,
                     font.strikeout,
+                    font.underline.code(),
                     font.color_icv,
                     &font.name,
                 )
@@ -161,10 +162,13 @@ impl Biff8StyleTable {
 
     fn ensure_font(&mut self, request: &Biff8StyleRequest) -> u16 {
         let key = FontKey {
-            height_points: request.font_height_points.unwrap_or(10),
+            height_twips: request
+                .font_height_twips
+                .unwrap_or_else(|| request.font_height_points.unwrap_or(10).saturating_mul(20)),
             bold: request.bold,
             italic: request.italic,
             strikeout: request.strikeout,
+            underline: request.underline,
             color_icv: self.resolve_color(request.font_color, ICV_AUTO),
             name: request
                 .font_name
@@ -172,10 +176,11 @@ impl Biff8StyleTable {
                 .unwrap_or_else(|| "Arial".to_owned()),
         };
         // Default Arial 10 / not bold / auto colour → built-in font 0.
-        if key.height_points == 10
+        if key.height_twips == 200
             && !key.bold
             && !key.italic
             && !key.strikeout
+            && key.underline == Biff8Underline::None
             && key.color_icv == ICV_AUTO
             && key.name == "Arial"
         {

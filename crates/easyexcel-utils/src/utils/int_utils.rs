@@ -2,6 +2,9 @@
 
 #![allow(dead_code)]
 
+/// Java `IntUtils.MAX_POWER_OF_TWO`：`i32` 可表示的最大 2 的幂。
+pub const MAX_POWER_OF_TWO: i32 = 1_i32 << (i32::BITS - 2);
+
 /// 返回无符号 32 位整数的低 8 位。
 ///
 /// 供 Java `short`/POI 调色板等兼容入口使用；位级截断语义集中在基础工具层。

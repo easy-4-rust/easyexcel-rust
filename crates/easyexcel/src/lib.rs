@@ -43,12 +43,13 @@ mod into_sheet_selector;
 mod write_type_helpers;
 
 pub use crate::cache::{
-    Ehcache, EternalReadCacheSelector, FileCache, MapCache, MokaCache, ReadCache, ReadCacheSelector,
+    EternalReadCacheSelector, FileCache, MapCache, MokaCache, ReadCache, ReadCacheSelector,
     SimpleReadCacheSelector, XlsCache,
 };
 pub use crate::core::{
-    AbstractCell, AbstractHolder, AbstractIgnoreExceptionReadListener, AbstractParameterBuilder,
-    AnalysisCell, AnalysisContext, AnalysisEventListener, AnchorType, BasicParameter,
+    AbstractCell, AbstractHolder, AbstractIgnoreExceptionListenerAdapter,
+    AbstractIgnoreExceptionReadListener, AbstractParameterBuilder, AnalysisCell, AnalysisContext,
+    AnalysisEventListener, AnalysisEventListenerAdapter, AnchorType, BasicParameter,
     BasicParameterBuilder, BooleanEnum, ByteOrderMark, CacheLocation, Cell, CellData, CellDataType,
     CellExtra, CellExtraType, CellRange, CellValue, ChartMutation, ChartRange, ChartSeries,
     ChartType, ClientAnchorData, ColumnWidthProperty, CommentData, CompositeReadListener,
@@ -111,9 +112,13 @@ pub use crate::read::{
     ParallelMapReadListener,
     apply_global_configuration_to_read_options, global_configuration_from_read_options,
 };
+pub use crate::read::listener::{
+    IgnoreExceptionListenerAdapter, IgnoreExceptionReadListener, ModelBuildEventListener,
+};
 pub use crate::template::{
-    ExcelTemplateWriter, FillConfig, FillDirection, FillWrapper, IntoTemplateValue, TemplateData,
-    TemplateSheet, fill_xlsx_template, fill_xlsx_template_list,
+    ExcelTemplateWriter, FillConfig, FillConfigBuilder, FillDirection, FillWrapper,
+    IntoTemplateValue, TemplateData, TemplateSheet, fill_xlsx_template,
+    fill_xlsx_template_list,
 };
 pub use crate::write::{
     CellStyle, CompatibleExcelWriterBuilder, CompatibleExcelWriterOutputStreamBuilder,
@@ -126,6 +131,7 @@ pub use crate::write::{
     write_xlsx_to_writer,
 };
 pub use easyexcel_derive::ExcelRow;
+pub use easyexcel_io::EasyExcelTempFileCreationStrategy;
 pub use easyexcel_xls::biff8::Biff8MacroPolicy;
 pub use excel_builder::{
     builder_from_writer, do_fill_template, do_fill_template_with_config, fill_builder_from_writer,

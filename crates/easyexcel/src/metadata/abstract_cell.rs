@@ -5,7 +5,7 @@ use super::cell::Cell;
 /// 对应 Java：com.alibaba.excel.metadata.AbstractCell。 Base cell coordinate holder.
 ///
 /// Rust port of Java `AbstractCell implements Cell`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub struct AbstractCell {
     /// Row index. (Java `rowIndex`)
     pub row_index: Option<i32>,

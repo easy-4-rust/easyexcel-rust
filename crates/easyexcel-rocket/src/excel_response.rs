@@ -47,13 +47,14 @@ where
     fn respond_to(self, _request: &'r Request<'_>) -> response::Result<'static> {
         let content_type = self.export.content_type();
         let content_length = self.export.content_length();
-        let encoded = urlencoding::encode(self.export.file_name()).replace('+', "%20");
+        let disposition =
+            easyexcel_web::excel_attachment_content_disposition(self.export.file_name());
         Response::build()
             .raw_header("Content-Type", content_type)
             .raw_header("Content-Length", content_length.to_string())
             .raw_header(
                 "Content-Disposition",
-                format!("attachment;filename*=UTF-8''{encoded}"),
+                disposition,
             )
             .streamed_body(self.export)
             .ok()

@@ -1,6 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.read.metadata.holder.xlsx.XlsxReadSheetHolder`.
 
 use crate::read::holder::read_sheet_holder::ReadSheetHolder;
+use crate::read::metadata::holder::read_holder::delegate_read_holder_contract;
 use std::collections::VecDeque;
 use std::ops::{Deref, DerefMut};
 
@@ -23,11 +24,28 @@ impl DerefMut for XlsxReadSheetHolder {
     fn deref_mut(&mut self) -> &mut Self::Target { &mut self.inner }
 }
 
+delegate_read_holder_contract!(XlsxReadSheetHolder, inner);
+
 impl XlsxReadSheetHolder {
     /// 对应 Java： constructor.
     pub fn new(sheet_no: i32, sheet_name: impl Into<String>) -> Self {
         Self {
             inner: ReadSheetHolder::new(sheet_no, sheet_name),
+            column_index: None,
+            tag_deque: VecDeque::new(),
+            temp_data: String::new(),
+            temp_formula: String::new(),
+            package_relationship_collection: Vec::new(),
+        }
+    }
+    /// Java `XlsxReadSheetHolder(ReadSheet, ReadWorkbookHolder)` 完整构造器。
+    #[must_use]
+    pub fn from_read_sheet(
+        read_sheet: crate::ReadSheet,
+        read_workbook_holder: &crate::read::holder::read_workbook_holder::ReadWorkbookHolder,
+    ) -> Self {
+        Self {
+            inner: ReadSheetHolder::from_read_sheet(read_sheet, read_workbook_holder),
             column_index: None,
             tag_deque: VecDeque::new(),
             temp_data: String::new(),

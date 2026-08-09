@@ -7,10 +7,12 @@ use crate::write::metadata::WriteBasicParameter;
 ///
 /// Java carries a `tableNo` field. Rust reuses [`WriteOptions`] for the
 /// common base and adds the table index.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct WriteTable {
     /// Mirrors `WriteTable.tableNo`.
     pub table_no: i32,
+    /// Java nullable `tableNo` 原始状态；`table_no` 保存写入引擎的有效值。
+    java_table_no: Option<i32>,
     /// Mirrors the remaining `WriteBasicParameter` fields.
     pub options: WriteOptions,
     /// Nullable table-level overrides used for Java parent-holder inheritance.
@@ -23,6 +25,7 @@ impl WriteTable {
     pub fn new() -> Self {
         Self {
             table_no: 0,
+            java_table_no: None,
             options: WriteOptions::default(),
             parameter: WriteBasicParameter::default(),
         }
@@ -33,6 +36,7 @@ impl WriteTable {
     pub fn with_table_no(table_no: i32) -> Self {
         Self {
             table_no,
+            java_table_no: Some(table_no),
             options: WriteOptions::default(),
             parameter: WriteBasicParameter::default(),
         }
@@ -45,11 +49,19 @@ impl WriteTable {
         self.table_no
     }
     /// Java `getTableNo` 别名。
-    #[must_use] pub const fn get_table_no(&self) -> i32 { self.table_no }
+    #[must_use] pub const fn get_table_no(&self) -> Option<i32> { self.java_table_no }
 
     /// 对应 Java：com.alibaba.excel.write.metadata.WriteTable。 Sets the zero-based table index. (Java `setTableNo(Integer)`)
     pub fn set_table_no(&mut self, table_no: i32) -> &mut Self {
         self.table_no = table_no;
+        self.java_table_no = Some(table_no);
+        self
+    }
+
+    /// 设置或清空 Java nullable `tableNo`，同时维护引擎有效值。
+    pub fn set_table_no_nullable(&mut self, table_no: Option<i32>) -> &mut Self {
+        self.java_table_no = table_no;
+        self.table_no = table_no.unwrap_or_default();
         self
     }
 
@@ -79,6 +91,21 @@ impl WriteTable {
 impl Default for WriteTable {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+// Java Lombok 只比较 WriteTable 自身声明的 tableNo，不包含父类参数。
+impl PartialEq for WriteTable {
+    fn eq(&self, other: &Self) -> bool {
+        self.java_table_no == other.java_table_no
+    }
+}
+
+impl Eq for WriteTable {}
+
+impl std::hash::Hash for WriteTable {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        std::hash::Hash::hash(&self.java_table_no, state);
     }
 }
 

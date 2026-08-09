@@ -2,7 +2,7 @@
 
 use crate::core::CellValue;
 
-/// 对应 Java：`RowData` interface (one method: `getCellValue(int)`).
+/// 对应 Java：`RowData` interface。
 ///
 /// Java models each cell of a basic-type row through a common interface so
 /// `ExcelWriteAddExecutor` can branch on `CollectionRowData`, `MapRowData`,
@@ -10,16 +10,28 @@ use crate::core::CellValue;
 /// accepting `&[CellValue]` slices from any source, so this trait is a
 /// 1:1 API marker without runtime polymorphism.
 pub trait RowData {
-    /// Returns the cell value at the given column index. (Java `getCellValue(int)`)
-    fn get_cell_value(&self, column_index: usize) -> Option<&CellValue>;
+    /// 返回指定列的数据；越界时返回 `None`。对应 Java `get(int)` 返回 `null`。
+    fn get(&self, index: usize) -> Option<&CellValue>;
+
+    /// 返回元素数量。Rust 容器无法超过地址空间，因此无需 Java 的 `Integer.MAX_VALUE` 饱和分支。
+    fn size(&self) -> usize;
 
     /// Returns whether the row carries any value. (Java `isEmpty()`)
     fn is_empty(&self) -> bool;
+
+    /// 保留早期 Rust API 名称，委托给 Java `get(int)` 契约。
+    fn get_cell_value(&self, column_index: usize) -> Option<&CellValue> {
+        self.get(column_index)
+    }
 }
 
 impl RowData for [CellValue] {
-    fn get_cell_value(&self, column_index: usize) -> Option<&CellValue> {
-        self.get(column_index)
+    fn get(&self, index: usize) -> Option<&CellValue> {
+        <[CellValue]>::get(self, index)
+    }
+
+    fn size(&self) -> usize {
+        self.len()
     }
 
     fn is_empty(&self) -> bool {
@@ -28,8 +40,12 @@ impl RowData for [CellValue] {
 }
 
 impl RowData for Vec<CellValue> {
-    fn get_cell_value(&self, column_index: usize) -> Option<&CellValue> {
-        self.get(column_index)
+    fn get(&self, index: usize) -> Option<&CellValue> {
+        self.as_slice().get(index)
+    }
+
+    fn size(&self) -> usize {
+        self.len()
     }
 
     fn is_empty(&self) -> bool {

@@ -5,7 +5,6 @@
 //! `EasyExcel::template_writer`.
 
 use std::any::Any;
-use std::io::Cursor;
 use std::path::{Path, PathBuf};
 
 use crate::core::{
@@ -17,6 +16,8 @@ use crate::{
     ExcelTemplateWriter, FillConfig, FillDirection, FillWrapper, MergeRange, TemplateData,
     TemplateSheet,
 };
+use super::template_output::TemplateOutput;
+use super::template_writer::write_template_bytes_to_output;
 
 /// Stateful template fill executor for [`crate::write::ExcelBuilderImpl`].
 ///
@@ -25,8 +26,11 @@ use crate::{
 pub struct BuilderFillExecutor {
     inner: Option<ExcelTemplateWriter<'static>>,
     xls: Option<crate::write::xls_adapter::Biff8TemplatePackage>,
-    output: PathBuf,
+    output: Option<TemplateOutput<'static>>,
+    auto_close_stream: bool,
     password: Option<String>,
+    write_excel_on_exception: bool,
+    biff8_macro_policy: crate::Biff8MacroPolicy,
     finished: bool,
 }
 
@@ -47,7 +51,14 @@ impl BuilderFillExecutor {
         template_bytes: Option<Vec<u8>>,
         output: PathBuf,
     ) -> Result<Self> {
-        Self::new_with_password(template_file, template_bytes, output, None)
+        Self::new_with_password(
+            template_file,
+            template_bytes,
+            output,
+            None,
+            false,
+            crate::Biff8MacroPolicy::Preserve,
+        )
     }
 
     pub(crate) fn new_with_password(
@@ -55,8 +66,10 @@ impl BuilderFillExecutor {
         template_bytes: Option<Vec<u8>>,
         output: PathBuf,
         password: Option<String>,
+        write_excel_on_exception: bool,
+        biff8_macro_policy: crate::Biff8MacroPolicy,
     ) -> Result<Self> {
-        let bytes = if let Some(path) = template_file {
+        let mut bytes = if let Some(path) = template_file {
             std::fs::read(path)?
         } else if let Some(bytes) = template_bytes {
             bytes
@@ -65,6 +78,15 @@ impl BuilderFillExecutor {
                 "with_template requires a template file or template bytes".to_owned(),
             ));
         };
+        if easyexcel_xlsx::is_encrypted_ooxml(&bytes) {
+            let password = password.as_deref().ok_or_else(|| {
+                ExcelError::Unsupported(
+                    "encrypted OOXML template requires a workbook password".to_owned(),
+                )
+            })?;
+            bytes = easyexcel_xlsx::decrypt_package(&bytes, password)
+                .map_err(ExcelError::from)?;
+        }
         if crate::write::xls_adapter::looks_like_xls(&bytes) {
             let xls = crate::write::xls_adapter::Biff8TemplatePackage::from_bytes_with_password(
                 &bytes,
@@ -73,17 +95,27 @@ impl BuilderFillExecutor {
             return Ok(Self {
                 inner: None,
                 xls: Some(xls),
-                output,
+                output: Some(TemplateOutput::Path(output)),
+                auto_close_stream: true,
                 password,
+                write_excel_on_exception,
+                biff8_macro_policy,
                 finished: false,
             });
         }
-        let inner = ExcelTemplateWriter::from_reader(Cursor::new(bytes), output.clone())?;
+        let mut inner = ExcelTemplateWriter::from_template_bytes(
+            TemplateOutput::Path(output),
+            &bytes,
+        )?;
+        inner.set_package_password(password.clone());
         Ok(Self {
             inner: Some(inner),
             xls: None,
-            output,
+            output: None,
+            auto_close_stream: true,
             password,
+            write_excel_on_exception,
+            biff8_macro_policy,
             finished: false,
         })
     }
@@ -94,9 +126,17 @@ impl BuilderFillExecutor {
         output: PathBuf,
         styles: Option<CompiledTemplateFillStyles>,
         password: Option<String>,
+        write_excel_on_exception: bool,
+        biff8_macro_policy: crate::Biff8MacroPolicy,
     ) -> Result<Self> {
-        let mut executor =
-            Self::new_with_password(template_file, template_bytes, output, password)?;
+        let mut executor = Self::new_with_password(
+            template_file,
+            template_bytes,
+            output,
+            password,
+            write_excel_on_exception,
+            biff8_macro_policy,
+        )?;
         if let (Some(styles), Some(inner)) = (styles, executor.inner.as_mut()) {
             inner.import_collection_styles(&styles.workbook, &styles.columns)?;
         }
@@ -112,13 +152,25 @@ impl BuilderFillExecutor {
         template: impl AsRef<Path>,
         output: impl Into<PathBuf>,
     ) -> Result<Self> {
-        Ok(Self {
-            inner: Some(ExcelTemplateWriter::new(template, output.into())?),
-            xls: None,
-            output: PathBuf::new(),
-            password: None,
-            finished: false,
-        })
+        Self::new(
+            Some(template.as_ref().to_path_buf()),
+            None,
+            output.into(),
+        )
+    }
+
+    /// 将统一 `ExcelWriter` 的真实输出目标交给已完成模板解析的 executor。
+    pub(crate) fn redirect_output(
+        &mut self,
+        output: TemplateOutput<'static>,
+        auto_close_stream: bool,
+    ) {
+        self.auto_close_stream = auto_close_stream;
+        if let Some(inner) = self.inner.as_mut() {
+            inner.redirect_output(output, auto_close_stream);
+        } else {
+            self.output = Some(output);
+        }
     }
 }
 
@@ -145,6 +197,8 @@ pub(crate) fn create_builder_fill_executor_with_styles(
     output: PathBuf,
     styles: Option<CompiledTemplateFillStyles>,
     password: Option<String>,
+    write_excel_on_exception: bool,
+    biff8_macro_policy: crate::Biff8MacroPolicy,
 ) -> Result<Box<dyn WriteFillExecutor>> {
     Ok(Box::new(BuilderFillExecutor::with_compiled_styles(
         template_file,
@@ -152,6 +206,8 @@ pub(crate) fn create_builder_fill_executor_with_styles(
         output,
         styles,
         password,
+        write_excel_on_exception,
+        biff8_macro_policy,
     )?))
 }
 
@@ -169,24 +225,15 @@ impl WriteFillExecutor for BuilderFillExecutor {
         }
         if let Some(xls) = self.xls.as_mut() {
             if let Some(scalar) = data.downcast_ref::<TemplateData>() {
-                let values = scalar
-                    .values()
-                    .iter()
-                    .map(|(key, value)| (key.clone(), value.as_text()))
-                    .collect();
-                xls.replace_scalar_placeholders(&values)?;
+                let sheet_name = resolve_xls_sheet_name(xls, &sheet)?;
+                xls.replace_scalar_cell_values_on_sheet(Some(&sheet_name), scalar.values())?;
                 return Ok(());
             }
             if let Some(collection) = data.downcast_ref::<FillWrapper>() {
                 let rows = collection
                     .rows()
                     .iter()
-                    .map(|row| {
-                        row.values()
-                            .iter()
-                            .map(|(key, value)| (key.clone(), value.as_text()))
-                            .collect()
-                    })
+                    .map(|row| row.values().clone())
                     .collect::<Vec<_>>();
                 let sheet_name = if let Some(index) = sheet.sheet_index {
                     xls.sheet_names().get(index).cloned().ok_or_else(|| {
@@ -195,7 +242,7 @@ impl WriteFillExecutor for BuilderFillExecutor {
                 } else {
                     sheet.sheet_name.clone()
                 };
-                xls.fill_collection_placeholders(
+                xls.fill_collection_cell_values(
                     Some(&sheet_name),
                     collection.name(),
                     &rows,
@@ -288,18 +335,43 @@ impl WriteFillExecutor for BuilderFillExecutor {
         Ok(())
     }
 
-    fn finish(&mut self, _on_exception: bool) -> Result<()> {
+    fn finish(&mut self, on_exception: bool) -> Result<()> {
         if self.finished {
             return Ok(());
         }
-        self.finished = true;
+        if on_exception && !self.write_excel_on_exception {
+            if let Some(inner) = self.inner.as_mut() {
+                inner.discard_output()?;
+            } else {
+                let output = self.output.as_mut().ok_or_else(|| {
+                    ExcelError::Format("template fill executor has no output target".to_owned())
+                })?;
+                super::template_writer::discard_template_output(
+                    output,
+                    self.auto_close_stream,
+                )?;
+            }
+            self.finished = true;
+            return Ok(());
+        }
         if let Some(xls) = self.xls.as_ref() {
-            return xls.save_to_path_with_password(&self.output, self.password.as_deref());
+            let bytes = xls.to_bytes_with_password_and_macro_policy(
+                self.password.as_deref(),
+                &self.biff8_macro_policy,
+            )?;
+            let output = self.output.as_mut().ok_or_else(|| {
+                ExcelError::Format("template fill executor has no output target".to_owned())
+            })?;
+            write_template_bytes_to_output(output, &bytes, self.auto_close_stream)?;
+            self.finished = true;
+            return Ok(());
         }
         self.inner
             .as_mut()
             .ok_or_else(|| ExcelError::Format("template fill executor has no backend".to_owned()))?
-            .finish()
+            .finish()?;
+        self.finished = true;
+        Ok(())
     }
 }
 

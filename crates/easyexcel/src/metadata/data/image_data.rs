@@ -2,16 +2,34 @@
 
 use crate::core::client_anchor_data::ClientAnchorData;
 use crate::core::image_type::ImageType;
+use std::hash::{Hash, Hasher};
 
 /// 对应 Java：com.alibaba.excel.metadata.data.ImageData。 One Java-compatible image and its client anchor.
 ///
 /// Java `ImageData extends ClientAnchorData`; Rust uses composition for the
 /// same reason as `ClientAnchorData`.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default)]
 pub struct ImageData {
     image: Vec<u8>,
     image_type: Option<ImageType>,
     anchor: ClientAnchorData,
+}
+
+// Java `ImageData` 的 Lombok 相等性不调用父类：锚点只影响摆放，不影响
+// 图片值对象身份。Rust 使用组合后需要显式排除 `anchor`。
+impl PartialEq for ImageData {
+    fn eq(&self, other: &Self) -> bool {
+        self.image == other.image && self.image_type == other.image_type
+    }
+}
+
+impl Eq for ImageData {}
+
+impl Hash for ImageData {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.image.hash(state);
+        self.image_type.hash(state);
+    }
 }
 
 impl ImageData {

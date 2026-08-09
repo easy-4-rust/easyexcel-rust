@@ -17,6 +17,12 @@ pub enum ExcelTypeEnum {
 }
 
 impl ExcelTypeEnum {
+    /// Java `values()` 的声明顺序。
+    pub const ALL: [Self; 3] = [Self::Csv, Self::Xls, Self::Xlsx];
+    /// Java 枚举常量名。
+    #[must_use] pub const fn java_name(self) -> &'static str {
+        match self { Self::Csv => "CSV", Self::Xls => "XLS", Self::Xlsx => "XLSX" }
+    }
     /// 返回文件魔数。CSV 没有固定魔数。对应 Java：`getMagic()`。
     #[must_use]
     pub const fn magic(self) -> &'static [u8] {
@@ -67,6 +73,51 @@ impl ExcelTypeEnum {
             }
             _ => None,
         }
+    }
+
+    /// 解析 Java `ExcelTypeEnum.valueOf(ReadWorkbook)`。
+    ///
+    /// 显式 `excelType` 优先；无密码文件先按 Java 的小写扩展名判断，随后复用
+    /// `easyexcel-io` 魔数探测；输入流已由 Rust 门面物化为字节，因此无需修改
+    /// 调用方 stream 的 mark/reset 状态。
+    ///
+    /// # Errors
+    ///
+    /// 文件与输入字节均缺失，或文件无法读取时返回可见的格式错误。
+    pub fn value_of(read_workbook: &crate::read::metadata::ReadWorkbook) -> crate::Result<Self> {
+        if let Some(excel_type) = read_workbook.get_excel_type() {
+            return Ok(excel_type);
+        }
+        if let Some(file) = read_workbook.get_file() {
+            if read_workbook.get_password().is_none() {
+                let name = file.file_name().and_then(|value| value.to_str()).unwrap_or_default();
+                if name.ends_with(Self::Xlsx.value()) { return Ok(Self::Xlsx); }
+                if name.ends_with(Self::Xls.value()) { return Ok(Self::Xls); }
+                if name.ends_with(Self::Csv.value()) { return Ok(Self::Csv); }
+            }
+            return match easyexcel_io::Format::detect_path(file).map_err(crate::ExcelError::from)? {
+                easyexcel_io::Format::Xlsx => Ok(Self::Xlsx),
+                easyexcel_io::Format::Xls => Ok(Self::Xls),
+                easyexcel_io::Format::Csv => Ok(Self::Csv),
+                _ => Err(crate::ExcelError::Format(
+                    "Convert excel format exception.You can try specifying the 'excelType' yourself".to_owned(),
+                )),
+            };
+        }
+        if let Some(input) = read_workbook.get_input_stream() {
+            return Ok(Self::from_magic(input));
+        }
+        Err(crate::ExcelError::Format(
+            "File and inputStream must be a non-null.".to_owned(),
+        ))
+    }
+}
+
+impl std::str::FromStr for ExcelTypeEnum {
+    type Err = String;
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        Self::ALL.into_iter().find(|item| item.java_name() == value)
+            .ok_or_else(|| format!("unknown ExcelTypeEnum value: {value}"))
     }
 }
 

@@ -3,6 +3,7 @@
 use std::path::{Path, PathBuf};
 
 use crate::ReadOptions;
+use crate::context::analysis_context::AnalysisContextLifecycle;
 use crate::context::analysis_context_impl::AnalysisContextImpl;
 use crate::context::csv::csv_read_context::CsvReadContext;
 use crate::context::read_sheet::ReadSheet;
@@ -94,10 +95,6 @@ impl DefaultCsvReadContext {
     }
 }
 impl CsvReadContext for DefaultCsvReadContext {
-    fn analysis_context_impl(&self) -> &AnalysisContextImpl {
-        &self.inner
-    }
-
     fn csv_read_workbook_holder(&self) -> &CsvReadWorkbookHolder {
         &self.csv_read_workbook_holder
     }
@@ -105,4 +102,8 @@ impl CsvReadContext for DefaultCsvReadContext {
     fn csv_read_sheet_holder(&self) -> Option<&CsvReadSheetHolder> {
         self.csv_read_sheet_holder.as_ref()
     }
+}
+impl AnalysisContextLifecycle for DefaultCsvReadContext {
+    fn analysis_context_impl(&self) -> &AnalysisContextImpl { &self.inner }
+    fn analysis_context_impl_mut(&mut self) -> &mut AnalysisContextImpl { &mut self.inner }
 }

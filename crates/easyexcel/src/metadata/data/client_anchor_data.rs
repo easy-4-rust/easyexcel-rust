@@ -2,13 +2,14 @@
 
 use crate::core::anchor_type::AnchorType;
 use crate::core::coordinate_data::CoordinateData;
+use std::hash::{Hash, Hasher};
 
 /// 对应 Java：com.alibaba.excel.metadata.data.ClientAnchorData。 Client-anchor margins and movement behavior.
 ///
 /// Java `ClientAnchorData extends CoordinateData`; Rust uses composition
 /// because the inner type is `Copy`/`Default` and we avoid the inheritance
 /// bookkeeping penalty. The four pixel margin fields match Java exactly.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, Default, serde::Serialize, serde::Deserialize)]
 pub struct ClientAnchorData {
     coordinates: CoordinateData,
     top: Option<u32>,
@@ -16,6 +17,30 @@ pub struct ClientAnchorData {
     bottom: Option<u32>,
     left: Option<u32>,
     anchor_type: Option<AnchorType>,
+}
+
+// Java 的 Lombok `@EqualsAndHashCode` 默认 `callSuper = false`，因此继承自
+// `CoordinateData` 的坐标不参与相等性和哈希；组合映射也必须保持这一点。
+impl PartialEq for ClientAnchorData {
+    fn eq(&self, other: &Self) -> bool {
+        self.top == other.top
+            && self.right == other.right
+            && self.bottom == other.bottom
+            && self.left == other.left
+            && self.anchor_type == other.anchor_type
+    }
+}
+
+impl Eq for ClientAnchorData {}
+
+impl Hash for ClientAnchorData {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.top.hash(state);
+        self.right.hash(state);
+        self.bottom.hash(state);
+        self.left.hash(state);
+        self.anchor_type.hash(state);
+    }
 }
 
 impl ClientAnchorData {

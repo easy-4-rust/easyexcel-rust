@@ -9,20 +9,21 @@ use std::path::PathBuf;
 use crate::core::{DynamicRow, Result};
 #[cfg(test)]
 use crate::template::create_builder_fill_executor;
-use crate::template::{CompiledTemplateFillStyles, create_builder_fill_executor_with_styles};
+use crate::template::{BuilderFillExecutor, CompiledTemplateFillStyles};
 use crate::write::BuilderFillConfig;
 use crate::write::{ExcelBuilderImpl, ExcelWriter, WriteSheet};
 
-/// 对应 Java：`new ExcelBuilderImpl(WriteWorkbook)`。 Creates an [`ExcelBuilderImpl`] from a stateful writer without fill wiring.
+/// 对应 Java：`new ExcelBuilderImpl(WriteWorkbook)`。 Creates an [`ExcelBuilderImpl`] from a stateful writer.
 ///
-/// Use [`fill_builder_from_writer`] when the builder will call [`ExcelBuilder::fill`].
+/// Template fill wiring is initialized lazily by the builder's first template
+/// write, fill, or merge operation, matching Java's internal executor lifecycle.
 #[must_use]
 pub fn builder_from_writer(writer: ExcelWriter) -> ExcelBuilderImpl {
     let path = writer.output_path().to_path_buf();
     ExcelBuilderImpl::new(writer, path)
 }
 
-/// Creates an [`ExcelBuilderImpl`] and wires template fill when configured.
+/// Creates an [`ExcelBuilderImpl`] and eagerly validates/wires template fill when configured.
 ///
 /// 对应 Java：`new ExcelBuilderImpl(WriteWorkbook)` where
 /// `WriteWorkbook.templateInputStream` is non-null.
@@ -35,23 +36,43 @@ pub fn fill_builder_from_writer(writer: ExcelWriter) -> Result<ExcelBuilderImpl>
 }
 
 fn fill_builder_from_writer_with_styles(
-    writer: ExcelWriter,
+    mut writer: ExcelWriter,
     styles: Option<CompiledTemplateFillStyles>,
 ) -> Result<ExcelBuilderImpl> {
     let output = writer.output_path().to_path_buf();
     let template_file = writer.template_file().map(PathBuf::from);
     let template_bytes = writer.template_bytes().map(<[u8]>::to_vec);
     let password = writer.password().map(ToOwned::to_owned);
-    let mut builder = ExcelBuilderImpl::new(writer, output.clone());
-    if template_file.is_some() || template_bytes.is_some() {
-        let executor = create_builder_fill_executor_with_styles(
+    let write_excel_on_exception = writer.write_excel_on_exception();
+    let biff8_macro_policy = writer.biff8_macro_policy().clone();
+    let mut executor = if template_file.is_some() || template_bytes.is_some() {
+        match BuilderFillExecutor::with_compiled_styles(
             template_file,
             template_bytes,
-            output,
+            output.clone(),
             styles,
             password,
-        )?;
-        builder.set_fill_executor(executor);
+            write_excel_on_exception,
+            biff8_macro_policy,
+        ) {
+            Ok(executor) => Some(executor),
+            Err(error) => {
+                writer.discard_uninitialized_template_output()?;
+                return Err(error);
+            }
+        }
+    } else {
+        None
+    };
+    if let Some(executor) = executor.as_mut() {
+        // 先完成模板解析，再移交真实流。解析失败时 writer 仍完整持有调用方目标。
+        let auto_close_stream = writer.auto_close_stream_enabled();
+        let target = writer.take_template_output();
+        executor.redirect_output(target, auto_close_stream);
+    }
+    let mut builder = ExcelBuilderImpl::new(writer, output);
+    if let Some(executor) = executor {
+        builder.set_active_template_fill_executor(Box::new(executor));
     }
     Ok(builder)
 }
@@ -64,7 +85,10 @@ pub(crate) fn do_fill_template_with_compiled_styles(
     styles: Option<CompiledTemplateFillStyles>,
 ) -> Result<()> {
     let mut builder = fill_builder_from_writer_with_styles(writer, styles)?;
-    builder.fill(data, fill_config, sheet)?;
+    if let Err(error) = builder.fill(data, fill_config, sheet) {
+        builder.finish_on_exception()?;
+        return Err(error);
+    }
     builder.finish()
 }
 
@@ -85,14 +109,22 @@ pub fn wire_template_fill(builder: &mut ExcelBuilderImpl) -> Result<()> {
     let template_file = writer.template_file().map(PathBuf::from);
     let template_bytes = writer.template_bytes().map(<[u8]>::to_vec);
     let password = writer.password().map(ToOwned::to_owned);
-    let executor = create_builder_fill_executor_with_styles(
+    let write_excel_on_exception = writer.write_excel_on_exception();
+    let biff8_macro_policy = writer.biff8_macro_policy().clone();
+    // 使用逻辑路径先解析模板，成功后再原子式移交真实输出流。
+    let mut executor = BuilderFillExecutor::with_compiled_styles(
         template_file,
         template_bytes,
         output,
         None,
         password,
+        write_excel_on_exception,
+        biff8_macro_policy,
     )?;
-    builder.set_fill_executor(executor);
+    let auto_close_stream = writer.auto_close_stream_enabled();
+    let target = writer.take_template_output();
+    executor.redirect_output(target, auto_close_stream);
+    builder.set_active_template_fill_executor(Box::new(executor));
     Ok(())
 }
 
@@ -123,7 +155,10 @@ pub fn do_fill_template_with_config(
     sheet: &WriteSheet<DynamicRow>,
 ) -> Result<()> {
     let mut builder = fill_builder_from_writer(writer)?;
-    builder.fill(data, fill_config, sheet)?;
+    if let Err(error) = builder.fill(data, fill_config, sheet) {
+        builder.finish_on_exception()?;
+        return Err(error);
+    }
     builder.finish()
 }
 

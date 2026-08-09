@@ -1,9 +1,6 @@
-/// One framed BIFF record (`type` + payload).
-#[derive(Debug, Clone)]
-struct RawRecord {
-    typ: u16,
-    data: Vec<u8>,
-}
+/// 模板编辑链沿用统一 BIFF8 record model；旧名称仅保留在本私有模块内，
+/// 避免为 placeholder 算法复制第二种 record 容器。
+type RawRecord = super::model::Biff8Record;
 
 /// Worksheet location inside the globals / sheet record list.
 #[derive(Debug, Clone)]
@@ -159,6 +156,19 @@ impl Biff8TemplatePackage {
     ///
     /// 工作表不存在、坐标越界或单元格无法编码时返回错误。
     pub fn append_rows(
+        &mut self,
+        sheet_name: &str,
+        rows: &[Vec<(usize, Biff8Cell)>],
+    ) -> Result<u32> {
+        let snapshot = self.clone();
+        let result = self.append_rows_inner(sheet_name, rows);
+        if result.is_err() {
+            *self = snapshot;
+        }
+        result
+    }
+
+    fn append_rows_inner(
         &mut self,
         sheet_name: &str,
         rows: &[Vec<(usize, Biff8Cell)>],
@@ -324,32 +334,246 @@ impl Biff8TemplatePackage {
     /// 向模板工作表批量加入批注记录组；已有 Drawing/OBJ 子流会原位扩展
     /// Escher DG/SPGR 计数和对象编号，而不是创建重复 drawing group。
     pub fn add_comments(&mut self, sheet_name: &str, comments: &[Biff8Comment]) -> Result<()> {
+        let snapshot = self.clone();
+        if let Err(error) = self.add_comments_inner(sheet_name, comments) {
+            *self = snapshot;
+            return Err(error);
+        }
+        Ok(())
+    }
+
+    fn add_comments_inner(&mut self, sheet_name: &str, comments: &[Biff8Comment]) -> Result<()> {
         if comments.is_empty() {
             return Ok(());
+        }
+        let mut effective = Vec::with_capacity(comments.len());
+        for comment in comments {
+            effective.retain(|existing: &Biff8Comment| {
+                existing.row != comment.row || existing.col != comment.col
+            });
+            effective.push(comment.clone());
+        }
+        for comment in &effective {
+            self.remove_comment(
+                sheet_name,
+                u32::from(comment.row),
+                usize::from(comment.col),
+            )?;
         }
         let sheet_index = self.sheet_index(sheet_name)?;
         let sheet = self.sheets[sheet_index].clone();
         let has_drawing = self.records[sheet.bof_index..sheet.eof_index]
             .iter()
             .any(|record| record.typ == MSO_DRAWING_SID);
+        let first_sheet_bof = self
+            .sheets
+            .iter()
+            .map(|candidate| candidate.bof_index)
+            .min()
+            .ok_or_else(|| ExcelError::Xls("XLS template has no worksheet BOF".to_owned()))?;
+        let existing_dgg = self.records[..first_sheet_bof]
+            .iter()
+            .position(|record| record.typ == MSODRAWINGGROUP);
         let first_shape_id = next_sheet_shape_id(&self.records, &sheet);
         let mut framed = Vec::new();
         if has_drawing {
+            let drawing_id = sheet_drawing_id(&self.records, &sheet)?;
+            let dgg_index = existing_dgg.ok_or_else(|| {
+                ExcelError::Xls(
+                    "XLS worksheet has a drawing but Workbook globals has no DGG".to_owned(),
+                )
+            })?;
             extend_sheet_escher_for_comments(
                 &mut self.records,
                 &sheet,
-                comments,
+                &effective,
                 first_shape_id,
             )?;
-            super::workbook::write_appended_comments(&mut framed, comments, first_shape_id);
+            extend_existing_dgg_shapes(
+                &mut self.records[dgg_index].data,
+                drawing_id,
+                effective.len(),
+                first_shape_id.saturating_add(
+                    u32::try_from(effective.len()).unwrap_or(u32::MAX).saturating_sub(1),
+                ),
+            )?;
+            super::workbook::write_appended_comments(&mut framed, &effective, first_shape_id);
         } else {
-            super::workbook::write_comments(&mut framed, comments);
+            let used_shapes = u32::try_from(effective.len())
+                .unwrap_or(u32::MAX)
+                .saturating_add(1);
+            let drawing_id = if let Some(index) = existing_dgg {
+                append_dgg_drawing(&mut self.records[index].data, used_shapes)?
+            } else {
+                let boundsheet_at = self.records[..first_sheet_bof]
+                    .iter()
+                    .position(|record| record.typ == BOUNDSHEET)
+                    .unwrap_or(first_sheet_bof);
+                self.records.insert(
+                    boundsheet_at,
+                    RawRecord {
+                        typ: MSODRAWINGGROUP,
+                        data: super::workbook::drawing_group_for_clusters(&[(1, used_shapes)]),
+                    },
+                );
+                self.adjust_indices_after_global_insert(boundsheet_at);
+                1
+            };
+            super::workbook::write_comments_with_drawing_id(
+                &mut framed,
+                &effective,
+                drawing_id,
+            );
         }
         for record in split_records(&framed)? {
             let insert_at = self.sheets[sheet_index].eof_index;
             self.records.insert(insert_at, record);
             self.adjust_indices_after_insert(sheet_index, insert_at);
         }
+        Ok(())
+    }
+
+    /// 删除模板工作表中指定单元格的 BIFF8 批注对象链。
+    ///
+    /// 对应 Java：`HSSFCell#removeCellComment()`。删除 NOTE、OBJ、TXO、文本/
+    /// 格式 CONTINUE 和 Escher comment shape，并同步修正 DG/SPGR 容器长度与
+    /// shape count。未知或截断的对象链 fail-closed，避免保存出部分删除文件。
+    pub fn remove_comment(&mut self, sheet_name: &str, row: u32, col: usize) -> Result<bool> {
+        let row = u16::try_from(row)
+            .map_err(|_| ExcelError::Xls("BIFF8 comment row exceeds 65535".to_owned()))?;
+        let col = u16::try_from(col)
+            .map_err(|_| ExcelError::Xls("BIFF8 comment column exceeds 65535".to_owned()))?;
+        if col > u16::from(u8::MAX) {
+            return Err(ExcelError::Xls(
+                "BIFF8 comment column exceeds 255".to_owned(),
+            ));
+        }
+        let mut removed = false;
+        loop {
+            let sheet_index = self.sheet_index(sheet_name)?;
+            let sheet = self.sheets[sheet_index].clone();
+            let Some(note_index) = (sheet.bof_index..sheet.eof_index).find(|index| {
+                let record = &self.records[*index];
+                record.typ == NOTE_SID
+                    && record.data.len() >= 8
+                    && u16::from_le_bytes([record.data[0], record.data[1]]) == row
+                    && u16::from_le_bytes([record.data[2], record.data[3]]) == col
+            }) else {
+                return Ok(removed);
+            };
+            let shape_id = u16::from_le_bytes([
+                self.records[note_index].data[6],
+                self.records[note_index].data[7],
+            ]);
+            self.remove_comment_object_chain(sheet_index, note_index, shape_id)?;
+            removed = true;
+        }
+    }
+
+    fn remove_comment_object_chain(
+        &mut self,
+        sheet_index: usize,
+        note_index: usize,
+        shape_id: u16,
+    ) -> Result<()> {
+        let sheet = self.sheets[sheet_index].clone();
+        let drawing_id = sheet_drawing_id(&self.records, &sheet)?;
+        let object_index = (sheet.bof_index..sheet.eof_index)
+            .find(|index| {
+                let record = &self.records[*index];
+                record.typ == OBJ_SID
+                    && record.data.len() >= 8
+                    && u16::from_le_bytes([record.data[4], record.data[5]]) == 0x0019
+                    && u16::from_le_bytes([record.data[6], record.data[7]]) == shape_id
+            })
+            .ok_or_else(|| {
+                ExcelError::Xls(format!(
+                    "BIFF8 comment NOTE shape {shape_id} has no matching OBJ"
+                ))
+            })?;
+        let text_object_index = (object_index + 1..sheet.eof_index)
+            .take_while(|index| {
+                !matches!(self.records[*index].typ, OBJ_SID | NOTE_SID | EOF)
+            })
+            .find(|index| self.records[*index].typ == TEXT_OBJECT_SID)
+            .ok_or_else(|| {
+                ExcelError::Xls(format!(
+                    "BIFF8 comment OBJ {shape_id} has no matching TXO"
+                ))
+            })?;
+
+        let mut updated = self.records.clone();
+        let mut escher_removed = false;
+        for record in &mut updated[sheet.bof_index..sheet.eof_index] {
+            if record.typ != MSO_DRAWING_SID {
+                continue;
+            }
+            let (data, removed_shape) = remove_escher_comment_shape(&record.data, u32::from(shape_id))?;
+            if removed_shape {
+                record.data = data;
+                escher_removed = true;
+                break;
+            }
+        }
+        if !escher_removed {
+            return Err(ExcelError::Xls(format!(
+                "BIFF8 comment OBJ {shape_id} has no matching Escher shape"
+            )));
+        }
+        let mut dg_updated = false;
+        for record in &mut updated[sheet.bof_index..sheet.eof_index] {
+            if record.typ == MSO_DRAWING_SID
+                && decrement_escher_dg_count(&mut record.data)?
+            {
+                dg_updated = true;
+                break;
+            }
+        }
+        if !dg_updated {
+            return Err(ExcelError::Xls(
+                "BIFF8 comment drawing has no Escher DG shape count".to_owned(),
+            ));
+        }
+        let first_sheet_bof = self
+            .sheets
+            .iter()
+            .map(|candidate| candidate.bof_index)
+            .min()
+            .ok_or_else(|| ExcelError::Xls("XLS template has no worksheet BOF".to_owned()))?;
+        let dgg_index = updated[..first_sheet_bof]
+            .iter()
+            .position(|record| record.typ == MSODRAWINGGROUP)
+            .ok_or_else(|| {
+                ExcelError::Xls(
+                    "XLS comment drawing exists but Workbook globals has no DGG".to_owned(),
+                )
+            })?;
+        decrement_existing_dgg_shapes(&mut updated[dgg_index].data, drawing_id, 1)?;
+
+        let mut remove = vec![note_index, object_index, text_object_index];
+        let mut continuation = text_object_index + 1;
+        while continuation < sheet.eof_index && updated[continuation].typ == CONTINUE_SID {
+            remove.push(continuation);
+            continuation += 1;
+        }
+        if object_index + 1 < text_object_index
+            && updated[object_index + 1].typ == MSO_DRAWING_SID
+            && is_empty_client_textbox_record(&updated[object_index + 1].data)
+        {
+            remove.push(object_index + 1);
+        }
+        for index in sheet.bof_index..sheet.eof_index {
+            if updated[index].typ == MSO_DRAWING_SID && updated[index].data.is_empty() {
+                remove.push(index);
+            }
+        }
+        remove.sort_unstable();
+        remove.dedup();
+        for index in remove.into_iter().rev() {
+            updated.remove(index);
+        }
+        self.records = updated;
+        self.sheets = discover_sheets(&self.records)?;
         Ok(())
     }
 
@@ -434,14 +658,18 @@ impl Biff8TemplatePackage {
             .iter()
             .filter(|record| record.typ == EXTERNAL_SHEET_SID && record.data.len() >= 2)
             .map(|record| u16::from_le_bytes([record.data[0], record.data[1]]))
-            .fold(0_u16, u16::saturating_add);
+            .try_fold(0_u16, |total, count| {
+                total.checked_add(count).ok_or_else(|| {
+                    ExcelError::Xls("template EXTERNSHEET entry count exceeds u16".to_owned())
+                })
+            })?;
         let existing_supbook_count = u16::try_from(
             self.records[..sheet.bof_index]
                 .iter()
                 .filter(|record| record.typ == SUP_BOOK_SID)
                 .count(),
         )
-        .unwrap_or(u16::MAX);
+        .map_err(|_| ExcelError::Xls("template SUPBOOK count exceeds u16".to_owned()))?;
         let link_table = super::ptg::Biff8LinkTable::from_formulas_and_references(
             &sheet_names,
             &[],
@@ -665,6 +893,44 @@ impl Biff8TemplatePackage {
         selected_sheet: Option<&str>,
         values: &BTreeMap<String, String>,
     ) -> Result<usize> {
+        let cells = values
+            .iter()
+            .map(|(key, value)| {
+                (
+                    key.clone(),
+                    Biff8Cell::general(Biff8Value::Text(value.clone())),
+                )
+            })
+            .collect::<BTreeMap<_, _>>();
+        self.replace_scalar_cells_on_sheet(selected_sheet, &cells)
+            .map(|placements| placements.len())
+    }
+
+    /// 使用类型化 BIFF8 单元格替换标量占位符，并返回最终物理位置。
+    ///
+    /// 该入口承载模板定位、原样式保留与事务回滚；上层只负责把领域值适配为
+    /// [`Biff8Cell`]，并根据返回位置写入超链接、批注等独立记录。
+    pub fn replace_scalar_cells_on_sheet(
+        &mut self,
+        selected_sheet: Option<&str>,
+        values: &BTreeMap<String, Biff8Cell>,
+    ) -> Result<Vec<(String, u16, u8, String)>> {
+        let snapshot = self.clone();
+        let result = self.replace_scalar_cells_on_sheet_inner(selected_sheet, values);
+        if result.is_err() {
+            *self = snapshot;
+        }
+        result
+    }
+
+    fn replace_scalar_cells_on_sheet_inner(
+        &mut self,
+        selected_sheet: Option<&str>,
+        values: &BTreeMap<String, Biff8Cell>,
+    ) -> Result<Vec<(String, u16, u8, String)>> {
+        if let Some(sheet_name) = selected_sheet {
+            self.sheet_index(sheet_name)?;
+        }
         let replacements = self
             .scan_placeholders()
             .into_iter()
@@ -673,24 +939,24 @@ impl Biff8TemplatePackage {
             })
             .filter_map(|(sheet_name, row, col, text)| {
                 let key = scalar_placeholder_key(&text);
-                values
-                    .get(key)
-                    .cloned()
-                    .map(|replacement| (sheet_name, row, col, replacement))
+                values.get(key).cloned().map(|replacement| {
+                    (sheet_name, row, col, key.to_owned(), replacement)
+                })
             })
             .collect::<Vec<_>>();
-        let replacement_count = replacements.len();
-        for (sheet_name, row, col, replacement) in replacements {
-            self.replace_label(&sheet_name, row, col, &replacement)?;
+        let mut placements = Vec::with_capacity(replacements.len());
+        for (sheet_name, row, col, key, replacement) in replacements {
+            self.set_cell(&sheet_name, u32::from(row), usize::from(col), &replacement)?;
+            placements.push((sheet_name, row, col, key));
         }
-        Ok(replacement_count)
+        Ok(placements)
     }
 
     /// 对应 Java：HSSFSheet#getLastRowNum。 使用格式无关文本行替换集合占位符。
     ///
-    /// 未命名集合匹配 `{.field}`，命名集合匹配 `{name.field}`。为保持既有
-    /// XLS 仅替换值的行为，首个包含字段的输入行提供替换值。本方法不会插入
-    /// BIFF 行，结构化扩展仍明确不支持。返回实际替换的单元格数量。
+    /// 未命名集合匹配 `{.field}`，命名集合匹配 `{name.field}`。该兼容入口
+    /// 使用纵向、不强制迁移尾部行的默认配置；集合仍会按输入行数扩展并复用
+    /// 模板锚点样式。返回实际替换的单元格数量。
     ///
     /// # Errors
     ///
@@ -721,8 +987,69 @@ impl Biff8TemplatePackage {
         force_new_row: bool,
         auto_style: bool,
     ) -> Result<usize> {
+        let cells = rows
+            .iter()
+            .map(|row| {
+                row.iter()
+                    .map(|(key, value)| {
+                        (
+                            key.clone(),
+                            Biff8Cell::general(Biff8Value::Text(value.clone())),
+                        )
+                    })
+                    .collect::<BTreeMap<_, _>>()
+            })
+            .collect::<Vec<_>>();
+        self.fill_collection_cells(
+            selected_sheet,
+            collection_name,
+            &cells,
+            horizontal,
+            force_new_row,
+            auto_style,
+        )
+        .map(|placements| placements.len())
+    }
+
+    /// 使用类型化 BIFF8 单元格执行集合填充，并返回输入行、字段与最终坐标。
+    pub fn fill_collection_cells(
+        &mut self,
+        selected_sheet: Option<&str>,
+        collection_name: Option<&str>,
+        rows: &[BTreeMap<String, Biff8Cell>],
+        horizontal: bool,
+        force_new_row: bool,
+        auto_style: bool,
+    ) -> Result<Vec<(String, u16, u8, usize, String)>> {
+        let snapshot = self.clone();
+        let result = self.fill_collection_cells_inner(
+            selected_sheet,
+            collection_name,
+            rows,
+            horizontal,
+            force_new_row,
+            auto_style,
+        );
+        if result.is_err() {
+            *self = snapshot;
+        }
+        result
+    }
+
+    fn fill_collection_cells_inner(
+        &mut self,
+        selected_sheet: Option<&str>,
+        collection_name: Option<&str>,
+        rows: &[BTreeMap<String, Biff8Cell>],
+        horizontal: bool,
+        force_new_row: bool,
+        auto_style: bool,
+    ) -> Result<Vec<(String, u16, u8, usize, String)>> {
+        if let Some(sheet_name) = selected_sheet {
+            self.sheet_index(sheet_name)?;
+        }
         if rows.is_empty() {
-            return Ok(0);
+            return Ok(Vec::new());
         }
         let wrapper = collection_name.unwrap_or("").to_owned();
         let mut groups = BTreeMap::<(String, u16), Vec<(u8, String)>>::new();
@@ -737,7 +1064,7 @@ impl Biff8TemplatePackage {
                 groups.entry((sheet_name, row)).or_default().push((col, key.to_owned()));
             }
         }
-        let mut replacement_count = 0usize;
+        let mut placements = Vec::new();
         for ((sheet_name, anchor_row), fields) in groups {
             let anchor_col = fields.iter().map(|(col, _)| *col).min().unwrap_or(0);
             let cursor_key = (
@@ -749,8 +1076,8 @@ impl Biff8TemplatePackage {
             );
             let cursor = self.collection_cursors.get(&cursor_key).copied().unwrap_or(0);
             if horizontal {
-                for (offset, values) in rows.iter().enumerate() {
-                    let offset = u16::try_from(offset).map_err(|_| {
+                for (input_row, values) in rows.iter().enumerate() {
+                    let offset = u16::try_from(input_row).map_err(|_| {
                         ExcelError::Xls("BIFF8 horizontal fill exceeds 256 columns".to_owned())
                     })?;
                     for (field_col, key) in &fields {
@@ -771,14 +1098,20 @@ impl Biff8TemplatePackage {
                             } else {
                                 XF_GENERAL
                             };
-                            self.replace_label_with_xf(
+                            self.set_cell_with_xf(
                                 &sheet_name,
                                 anchor_row,
                                 target,
                                 value,
                                 xf,
                             )?;
-                            replacement_count += 1;
+                            placements.push((
+                                sheet_name.clone(),
+                                anchor_row,
+                                target,
+                                input_row,
+                                key.clone(),
+                            ));
                         }
                     }
                 }
@@ -800,8 +1133,8 @@ impl Biff8TemplatePackage {
                 })?;
                 self.shift_rows(&sheet_name, target_start.saturating_add(available_anchor_row as u16), delta)?;
             }
-            for (offset, values) in rows.iter().enumerate() {
-                let offset = u16::try_from(offset).map_err(|_| {
+            for (input_row, values) in rows.iter().enumerate() {
+                let offset = u16::try_from(input_row).map_err(|_| {
                     ExcelError::Xls("BIFF8 collection fill exceeds 65536 rows".to_owned())
                 })?;
                 let target_row = target_start.checked_add(offset).ok_or_else(|| {
@@ -814,14 +1147,20 @@ impl Biff8TemplatePackage {
                         } else {
                             XF_GENERAL
                         };
-                        self.replace_label_with_xf(
+                        self.set_cell_with_xf(
                             &sheet_name,
                             target_row,
                             *field_col,
                             value,
                             xf,
                         )?;
-                        replacement_count += 1;
+                        placements.push((
+                            sheet_name.clone(),
+                            target_row,
+                            *field_col,
+                            input_row,
+                            key.clone(),
+                        ));
                     }
                 }
             }
@@ -830,7 +1169,7 @@ impl Biff8TemplatePackage {
             })?;
             self.collection_cursors.insert(cursor_key, cursor.saturating_add(advance));
         }
-        Ok(replacement_count)
+        Ok(placements)
     }
 
     /// 对应 Java：HSSFSheet#getLastRowNum。 Replaces a cell value at `(row, col)` on the given sheet with
@@ -880,18 +1219,22 @@ impl Biff8TemplatePackage {
         Ok(())
     }
 
-    fn replace_label_with_xf(
+    /// 使用调用方解析后的 XF 写入类型化单元格。
+    ///
+    /// 集合填充的 `auto_style` 决策属于模板引擎：开启时复制锚点 XF，关闭时
+    /// 固定使用通用 XF；值类型仍由 [`Biff8Cell`] 决定。
+    fn set_cell_with_xf(
         &mut self,
         sheet_name: &str,
         row: u16,
         col: u8,
-        replacement: &str,
+        cell: &Biff8Cell,
         xf: u16,
     ) -> Result<()> {
         let sheet_index = self.sheet_index(sheet_name)?;
         let sheet = &self.sheets[sheet_index];
         let existing = find_cell_record(&self.records, sheet, row, col);
-        let payload = encode_label_record(row, col, xf, replacement)?;
+        let payload = encode_cell_record(row, col, xf, &cell.value)?;
         if let Some(index) = existing {
             self.records[index] = payload;
         } else {
@@ -1222,6 +1565,142 @@ fn next_sheet_shape_id(records: &[RawRecord], sheet: &SheetSpan) -> u32 {
     maximum.saturating_add(1).max(1_025)
 }
 
+fn is_empty_client_textbox_record(data: &[u8]) -> bool {
+    data.len() == 8
+        && u16::from_le_bytes([data[2], data[3]]) == 0xF00D
+        && u32::from_le_bytes([data[4], data[5], data[6], data[7]]) == 0
+}
+
+fn remove_escher_comment_shape(data: &[u8], shape_id: u32) -> Result<(Vec<u8>, bool)> {
+    remove_escher_records(data, shape_id)
+}
+
+fn remove_escher_records(data: &[u8], shape_id: u32) -> Result<(Vec<u8>, bool)> {
+    let mut output = Vec::with_capacity(data.len());
+    let mut offset = 0usize;
+    let mut removed = false;
+    while offset < data.len() {
+        if offset.saturating_add(8) > data.len() {
+            return Err(ExcelError::Xls(
+                "truncated Escher record while removing BIFF8 comment".to_owned(),
+            ));
+        }
+        let options = u16::from_le_bytes([data[offset], data[offset + 1]]);
+        let record_type = u16::from_le_bytes([data[offset + 2], data[offset + 3]]);
+        let payload_len = usize::try_from(u32::from_le_bytes([
+            data[offset + 4],
+            data[offset + 5],
+            data[offset + 6],
+            data[offset + 7],
+        ]))
+        .unwrap_or(usize::MAX);
+        let end = offset
+            .checked_add(8)
+            .and_then(|value| value.checked_add(payload_len))
+            .filter(|end| *end <= data.len())
+            .ok_or_else(|| {
+                ExcelError::Xls("Escher record length exceeds drawing payload".to_owned())
+            })?;
+        let payload = &data[offset + 8..end];
+        if record_type == 0xF004 && escher_shape_container_id(payload) == Some(shape_id) {
+            removed = true;
+            offset = end;
+            continue;
+        }
+
+        let is_container = options & 0x000F == 0x000F;
+        let (next_payload, child_removed) = if is_container {
+            remove_escher_records(payload, shape_id)?
+        } else {
+            (payload.to_vec(), false)
+        };
+        output.extend_from_slice(&options.to_le_bytes());
+        output.extend_from_slice(&record_type.to_le_bytes());
+        output.extend_from_slice(
+            &u32::try_from(next_payload.len())
+                .map_err(|_| ExcelError::Xls("Escher payload exceeds 4 GiB".to_owned()))?
+                .to_le_bytes(),
+        );
+        output.extend_from_slice(&next_payload);
+        removed |= child_removed;
+        offset = end;
+    }
+    Ok((output, removed))
+}
+
+fn decrement_escher_dg_count(data: &mut [u8]) -> Result<bool> {
+    let mut offset = 0usize;
+    while offset < data.len() {
+        if offset.saturating_add(8) > data.len() {
+            return Err(ExcelError::Xls(
+                "truncated Escher record while updating comment shape count".to_owned(),
+            ));
+        }
+        let options = u16::from_le_bytes([data[offset], data[offset + 1]]);
+        let record_type = u16::from_le_bytes([data[offset + 2], data[offset + 3]]);
+        let payload_len = usize::try_from(u32::from_le_bytes([
+            data[offset + 4],
+            data[offset + 5],
+            data[offset + 6],
+            data[offset + 7],
+        ]))
+        .unwrap_or(usize::MAX);
+        let payload_start = offset + 8;
+        let end = payload_start
+            .checked_add(payload_len)
+            .filter(|end| *end <= data.len())
+            .ok_or_else(|| {
+                ExcelError::Xls("Escher record length exceeds drawing payload".to_owned())
+            })?;
+        if record_type == 0xF008 && payload_len >= 8 {
+            let count = u32::from_le_bytes([
+                data[payload_start],
+                data[payload_start + 1],
+                data[payload_start + 2],
+                data[payload_start + 3],
+            ]);
+            data[payload_start..payload_start + 4]
+                .copy_from_slice(&count.saturating_sub(1).max(1).to_le_bytes());
+            return Ok(true);
+        }
+        if options & 0x000F == 0x000F
+            && decrement_escher_dg_count(&mut data[payload_start..end])?
+        {
+            return Ok(true);
+        }
+        offset = end;
+    }
+    Ok(false)
+}
+
+fn escher_shape_container_id(payload: &[u8]) -> Option<u32> {
+    let mut offset = 0usize;
+    while offset.saturating_add(16) <= payload.len() {
+        let record_type = u16::from_le_bytes([payload[offset + 2], payload[offset + 3]]);
+        let length = usize::try_from(u32::from_le_bytes([
+            payload[offset + 4],
+            payload[offset + 5],
+            payload[offset + 6],
+            payload[offset + 7],
+        ]))
+        .ok()?;
+        let end = offset.checked_add(8)?.checked_add(length)?;
+        if end > payload.len() {
+            return None;
+        }
+        if record_type == 0xF00A && length >= 4 {
+            return Some(u32::from_le_bytes([
+                payload[offset + 8],
+                payload[offset + 9],
+                payload[offset + 10],
+                payload[offset + 11],
+            ]));
+        }
+        offset = end;
+    }
+    None
+}
+
 fn next_sheet_object_id(records: &[RawRecord], sheet: &SheetSpan) -> u16 {
     records[sheet.bof_index..sheet.eof_index]
         .iter()
@@ -1295,6 +1774,49 @@ fn extend_existing_dgg_shapes(
                     .saturating_add(u32::try_from(shape_count).unwrap_or(u32::MAX))
                     .to_le_bytes(),
             );
+            return Ok(());
+        }
+    }
+    Err(ExcelError::Xls(
+        "existing XLS DGG has no cluster for the worksheet drawing".to_owned(),
+    ))
+}
+
+fn decrement_existing_dgg_shapes(
+    data: &mut [u8],
+    drawing_id: u16,
+    shape_count: usize,
+) -> Result<()> {
+    let offset = (0..data.len().saturating_sub(24))
+        .find(|offset| u16::from_le_bytes([data[offset + 2], data[offset + 3]]) == 0xF006)
+        .ok_or_else(|| ExcelError::Xls("existing XLS DGG has no Escher Dgg record".to_owned()))?;
+    let payload = offset.saturating_add(8);
+    let payload_len = usize::try_from(u32::from_le_bytes([
+        data[offset + 4], data[offset + 5], data[offset + 6], data[offset + 7],
+    ]))
+    .unwrap_or(0);
+    if payload.saturating_add(payload_len) > data.len() || payload_len < 24 {
+        return Err(ExcelError::Xls("existing XLS DGG payload is truncated".to_owned()));
+    }
+    let decrement = u32::try_from(shape_count).unwrap_or(u32::MAX);
+    let saved_shapes = u32::from_le_bytes([
+        data[payload + 8], data[payload + 9], data[payload + 10], data[payload + 11],
+    ]);
+    data[payload + 8..payload + 12]
+        .copy_from_slice(&saved_shapes.saturating_sub(decrement).to_le_bytes());
+    for cluster in (payload + 16..payload + payload_len).step_by(8) {
+        if cluster.saturating_add(8) > data.len() {
+            break;
+        }
+        if u32::from_le_bytes([
+            data[cluster], data[cluster + 1], data[cluster + 2], data[cluster + 3],
+        ]) == u32::from(drawing_id)
+        {
+            let used = u32::from_le_bytes([
+                data[cluster + 4], data[cluster + 5], data[cluster + 6], data[cluster + 7],
+            ]);
+            data[cluster + 4..cluster + 8]
+                .copy_from_slice(&used.saturating_sub(decrement).max(1).to_le_bytes());
             return Ok(());
         }
     }
@@ -1390,8 +1912,7 @@ fn extend_sheet_escher_headers(
     }
 }
 
-fn extend_chart_drawing_group(data: &mut Vec<u8>, chart_count: usize) -> Result<u16> {
-    let chart_count_u32 = u32::try_from(chart_count).unwrap_or(u32::MAX);
+fn append_dgg_drawing(data: &mut Vec<u8>, used_shapes: u32) -> Result<u16> {
     let offset = (0..data.len().saturating_sub(8))
         .find(|offset| {
             u16::from_le_bytes([data[offset + 2], data[offset + 3]]) == 0xF006
@@ -1415,44 +1936,62 @@ fn extend_chart_drawing_group(data: &mut Vec<u8>, chart_count: usize) -> Result<
         data[payload + 14],
         data[payload + 15],
     ]);
-    let first_drawing_id = saved_drawings.saturating_add(1);
-    let mut clusters = Vec::with_capacity(chart_count.saturating_mul(8));
-    for index in 0..chart_count {
-        let drawing_id = first_drawing_id
-            .saturating_add(u32::try_from(index).unwrap_or(u32::MAX));
-        clusters.extend_from_slice(&drawing_id.to_le_bytes());
-        clusters.extend_from_slice(&3_u32.to_le_bytes());
-    }
-    data.splice(payload_end..payload_end, clusters.iter().copied());
-    let added_len = u32::try_from(clusters.len()).unwrap_or(u32::MAX);
+    let maximum_drawing_id = (payload + 16..payload_end)
+        .step_by(8)
+        .filter(|cluster| cluster.saturating_add(8) <= data.len())
+        .map(|cluster| {
+            u32::from_le_bytes([
+                data[cluster],
+                data[cluster + 1],
+                data[cluster + 2],
+                data[cluster + 3],
+            ])
+        })
+        .max()
+        .unwrap_or(0);
+    let drawing_id = maximum_drawing_id.saturating_add(1);
+    let mut cluster = Vec::with_capacity(8);
+    cluster.extend_from_slice(&drawing_id.to_le_bytes());
+    cluster.extend_from_slice(&used_shapes.to_le_bytes());
+    data.splice(payload_end..payload_end, cluster.iter().copied());
+    let added_len = 8_u32;
     data[offset + 4..offset + 8]
         .copy_from_slice(&payload_len.saturating_add(added_len).to_le_bytes());
     if data.len() >= 8 && u16::from_le_bytes([data[2], data[3]]) == 0xF000 {
         let container_len = u32::from_le_bytes([data[4], data[5], data[6], data[7]]);
         data[4..8].copy_from_slice(&container_len.saturating_add(added_len).to_le_bytes());
     }
-    let last_drawing_id = first_drawing_id.saturating_add(chart_count_u32.saturating_sub(1));
-    data[payload..payload + 4].copy_from_slice(
-        &last_drawing_id
-            .saturating_add(1)
-            .saturating_mul(1_024)
-            .saturating_add(1)
-            .to_le_bytes(),
-    );
+    let current_max = u32::from_le_bytes([
+        data[payload], data[payload + 1], data[payload + 2], data[payload + 3],
+    ]);
+    let next_shape_id = drawing_id
+        .saturating_mul(1_024)
+        .saturating_add(used_shapes);
+    data[payload..payload + 4]
+        .copy_from_slice(&current_max.max(next_shape_id).to_le_bytes());
     let cluster_count = u32::from_le_bytes([
         data[payload + 4], data[payload + 5], data[payload + 6], data[payload + 7],
     ]);
     data[payload + 4..payload + 8]
-        .copy_from_slice(&cluster_count.saturating_add(chart_count_u32).to_le_bytes());
+        .copy_from_slice(&cluster_count.saturating_add(1).to_le_bytes());
     let saved_shapes = u32::from_le_bytes([
         data[payload + 8], data[payload + 9], data[payload + 10], data[payload + 11],
     ]);
     data[payload + 8..payload + 12]
-        .copy_from_slice(&saved_shapes.saturating_add(chart_count_u32.saturating_mul(2)).to_le_bytes());
+        .copy_from_slice(&saved_shapes.saturating_add(used_shapes).to_le_bytes());
     data[payload + 12..payload + 16]
-        .copy_from_slice(&saved_drawings.saturating_add(chart_count_u32).to_le_bytes());
-    u16::try_from(first_drawing_id)
+        .copy_from_slice(&saved_drawings.saturating_add(1).to_le_bytes());
+    u16::try_from(drawing_id)
         .map_err(|_| ExcelError::Xls("XLS drawing id exceeds BIFF8 range".to_owned()))
+}
+
+fn extend_chart_drawing_group(data: &mut Vec<u8>, chart_count: usize) -> Result<u16> {
+    let mut first_drawing_id = None;
+    for _ in 0..chart_count {
+        let drawing_id = append_dgg_drawing(data, 3)?;
+        first_drawing_id.get_or_insert(drawing_id);
+    }
+    first_drawing_id.ok_or_else(|| ExcelError::Xls("cannot add an empty chart drawing group".to_owned()))
 }
 
 fn extend_sheet_escher_for_comments(

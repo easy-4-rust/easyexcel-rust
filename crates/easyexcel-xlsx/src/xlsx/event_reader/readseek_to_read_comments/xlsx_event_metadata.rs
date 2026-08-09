@@ -131,16 +131,27 @@ impl<R: Read + Seek> XlsxEventMetadata<R> {
         let sheet_path = self
             .sheet_paths
             .get(sheet_name)
-            .cloned()
             .ok_or_else(|| Error::Other(format!("sheet not found: {sheet_name}")))?;
+        if enabled.is_empty() {
+            return Ok(Vec::new());
+        }
+        let sheet_path = sheet_path.clone();
         let relationships_path = relationship_part_name(&sheet_path);
-        let relationships = if self.package.contains(&relationships_path) {
-            self.package.raw_relationships(&relationships_path)?
+        let requires_relationships = enabled.contains(&XlsxExtraKind::Hyperlink)
+            || enabled.contains(&XlsxExtraKind::Comment);
+        let relationships =
+            if requires_relationships && self.package.contains(&relationships_path) {
+                self.package.raw_relationships(&relationships_path)?
+            } else {
+                RawRelationships::new()
+            };
+        let mut extras = if enabled.contains(&XlsxExtraKind::Merge)
+            || enabled.contains(&XlsxExtraKind::Hyperlink)
+        {
+            read_worksheet_extras(&mut self.package, &sheet_path, &relationships, enabled)?
         } else {
-            RawRelationships::new()
+            Vec::new()
         };
-        let mut extras =
-            read_worksheet_extras(&mut self.package, &sheet_path, &relationships, enabled)?;
         if enabled.contains(&XlsxExtraKind::Comment)
             && let Some((target, _, false)) = relationships
                 .values()
@@ -152,4 +163,3 @@ impl<R: Read + Seek> XlsxEventMetadata<R> {
         Ok(extras)
     }
 }
-

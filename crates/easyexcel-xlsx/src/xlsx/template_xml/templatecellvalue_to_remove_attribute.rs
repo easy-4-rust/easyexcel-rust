@@ -199,6 +199,13 @@ pub fn render_cell(reference: &str, value: &TemplateCellValue, style: Option<u32
             "<c r=\"{reference}\"{style_attribute} t=\"e\"><v>{}</v></c>",
             escape_xml(error)
         ),
+        TemplateCellValue::RichText(value) => format!(
+            "<c r=\"{reference}\"{style_attribute} t=\"inlineStr\">{}</c>",
+            value.inline_string_xml()
+        ),
+        TemplateCellValue::Comment { value, .. }
+        | TemplateCellValue::Hyperlink { value, .. }
+        | TemplateCellValue::Images { value, .. } => render_cell(reference, value, style),
     }
 }
 

@@ -31,10 +31,11 @@ pub enum CsvCellType {
     Error,
 }
 
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 CSV 工作簿中的一个有类型单元格。
+/// 对应 Java：com.alibaba.excel.metadata.csv.CsvCell。 CSV 工作簿中的一个有类型单元格。
 #[derive(Debug, Clone, PartialEq)]
 pub struct CsvCell<V: CsvCellValue = ModelCellValue> {
     csv_workbook_id: Option<usize>,
+    csv_sheet_id: Option<usize>,
     column_index: u16,
     row_index: u32,
     value: V,
@@ -53,6 +54,7 @@ impl<V: CsvCellValue> CsvCell<V> {
     pub const fn new(column_index: u16) -> Self {
         Self {
             csv_workbook_id: None,
+            csv_sheet_id: None,
             column_index,
             row_index: 0,
             value: V::EMPTY,
@@ -83,6 +85,11 @@ impl<V: CsvCellValue> CsvCell<V> {
     #[must_use] pub const fn get_csv_workbook(&self) -> Option<usize> { self.csv_workbook_id }
     /// 设置父工作簿稳定身份。
     pub const fn set_csv_workbook(&mut self, value: Option<usize>) { self.csv_workbook_id = value; }
+    /// 返回父工作表稳定身份。对应 Java Lombok `getCsvSheet`。
+    #[must_use]
+    pub const fn get_csv_sheet(&self) -> Option<usize> { self.csv_sheet_id }
+    /// 设置父工作表稳定身份。
+    pub const fn set_csv_sheet(&mut self, value: Option<usize>) { self.csv_sheet_id = value; }
     /// 返回父行的零基行号。对应 Java Lombok `getCsvRow` 的稳定身份映射。
     #[must_use] pub const fn get_csv_row(&self) -> u32 { self.row_index }
     pub const fn get_column_index(&self) -> u16 { self.column_index() }

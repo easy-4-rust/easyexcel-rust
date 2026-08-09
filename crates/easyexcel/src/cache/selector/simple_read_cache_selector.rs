@@ -17,18 +17,18 @@ use crate::read::read_cache::{
 /// 对应 Java：`com.alibaba.excel.cache.selector.SimpleReadCacheSelector`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SimpleReadCacheSelector {
-    /// Maximum shared-string table size that keeps data in memory, in bytes.
-    max_use_map_cache_size_bytes: u64,
+    /// Java nullable `maxUseMapCacheSize`，单位 MB。
+    max_use_map_cache_size_mb: Option<i64>,
     /// 已弃用的 Java 活跃缓存 MB 上限，保留以兼容旧配置。
-    max_cache_activate_size_mb: Option<u64>,
-    /// Java Ehcache 活跃批次数上限。
-    max_cache_activate_batch_count: Option<usize>,
+    max_cache_activate_size_mb: Option<i32>,
+    /// Java 旧磁盘缓存实现的活跃批次数兼容配置。
+    max_cache_activate_batch_count: Option<i32>,
 }
 
 impl Default for SimpleReadCacheSelector {
     fn default() -> Self {
         Self {
-            max_use_map_cache_size_bytes: DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES,
+            max_use_map_cache_size_mb: None,
             max_cache_activate_size_mb: None,
             max_cache_activate_batch_count: None,
         }
@@ -48,10 +48,9 @@ impl SimpleReadCacheSelector {
     #[must_use]
     pub fn with_max_use_map_cache_size_mb(max_use_map_cache_size_mb: u64) -> Self {
         Self {
-            max_use_map_cache_size_bytes:
-                easyexcel_cache::SharedStringCachePolicy::memory_megabytes_to_bytes(
-                    max_use_map_cache_size_mb,
-                ),
+            max_use_map_cache_size_mb: Some(
+                i64::try_from(max_use_map_cache_size_mb).unwrap_or(i64::MAX),
+            ),
             max_cache_activate_size_mb: None,
             max_cache_activate_batch_count: None,
         }
@@ -59,47 +58,51 @@ impl SimpleReadCacheSelector {
 
     /// 对应 Java 已弃用双参数构造器。
     #[must_use]
-    pub fn with_limits(max_use_map_cache_size_mb: Option<u64>, max_cache_activate_size_mb: Option<u64>) -> Self {
-        let mut value = Self::default();
-        if let Some(size) = max_use_map_cache_size_mb {
-            value.max_use_map_cache_size_bytes = easyexcel_cache::SharedStringCachePolicy::memory_megabytes_to_bytes(size);
+    pub const fn with_limits(
+        max_use_map_cache_size_mb: Option<i64>,
+        max_cache_activate_size_mb: Option<i32>,
+    ) -> Self {
+        Self {
+            max_use_map_cache_size_mb,
+            max_cache_activate_size_mb,
+            max_cache_activate_batch_count: None,
         }
-        value.max_cache_activate_size_mb = max_cache_activate_size_mb;
-        value
     }
 
     /// 对应 Java：com.alibaba.excel.cache.selector.SimpleReadCacheSelector。 Sets the map-cache threshold in megabytes. (Java `setMaxUseMapCacheSize`)
     #[must_use]
     pub fn max_use_map_cache_size_mb(mut self, megabytes: u64) -> Self {
-        self.max_use_map_cache_size_bytes =
-            easyexcel_cache::SharedStringCachePolicy::memory_megabytes_to_bytes(megabytes);
+        self.max_use_map_cache_size_mb = Some(i64::try_from(megabytes).unwrap_or(i64::MAX));
         self
     }
 
     /// Returns the configured map-cache threshold in bytes.
     #[must_use]
     /// 对应 Java：com.alibaba.excel.cache.selector.SimpleReadCacheSelector。
-    pub const fn max_use_map_cache_size_bytes(&self) -> u64 {
-        self.max_use_map_cache_size_bytes
+    pub fn max_use_map_cache_size_bytes(&self) -> u64 {
+        let megabytes = match self.max_use_map_cache_size_mb {
+            Some(value) if value > 0 => u64::try_from(value).unwrap_or_default(),
+            Some(_) => return 0,
+            None => DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES / 1_000_000,
+        };
+        easyexcel_cache::SharedStringCachePolicy::memory_megabytes_to_bytes(megabytes)
     }
 
-    /// Java `getMaxUseMapCacheSize`，单位 MB。
+    /// Java `getMaxUseMapCacheSize`，保留首次选择缓存前的 nullable 状态。
     #[must_use]
-    pub const fn get_max_use_map_cache_size(&self) -> u64 { self.max_use_map_cache_size_bytes / 1_000_000 }
+    pub const fn get_max_use_map_cache_size(&self) -> Option<i64> { self.max_use_map_cache_size_mb }
     /// Java `setMaxUseMapCacheSize`，单位 MB。
-    pub fn set_max_use_map_cache_size(&mut self, value: u64) {
-        self.max_use_map_cache_size_bytes = easyexcel_cache::SharedStringCachePolicy::memory_megabytes_to_bytes(value);
-    }
+    pub const fn set_max_use_map_cache_size(&mut self, value: Option<i64>) { self.max_use_map_cache_size_mb = value; }
     /// Java `getMaxCacheActivateSize`。
     #[must_use]
-    pub const fn get_max_cache_activate_size(&self) -> Option<u64> { self.max_cache_activate_size_mb }
+    pub const fn get_max_cache_activate_size(&self) -> Option<i32> { self.max_cache_activate_size_mb }
     /// Java `setMaxCacheActivateSize`。
-    pub const fn set_max_cache_activate_size(&mut self, value: Option<u64>) { self.max_cache_activate_size_mb = value; }
+    pub const fn set_max_cache_activate_size(&mut self, value: Option<i32>) { self.max_cache_activate_size_mb = value; }
     /// Java `getMaxCacheActivateBatchCount`。
     #[must_use]
-    pub const fn get_max_cache_activate_batch_count(&self) -> Option<usize> { self.max_cache_activate_batch_count }
+    pub const fn get_max_cache_activate_batch_count(&self) -> Option<i32> { self.max_cache_activate_batch_count }
     /// Java `setMaxCacheActivateBatchCount`。
-    pub const fn set_max_cache_activate_batch_count(&mut self, value: Option<usize>) { self.max_cache_activate_batch_count = value; }
+    pub const fn set_max_cache_activate_batch_count(&mut self, value: Option<i32>) { self.max_cache_activate_batch_count = value; }
 }
 
 impl ReadCacheSelector for SimpleReadCacheSelector {
@@ -118,7 +121,7 @@ impl ReadCacheSelector for SimpleReadCacheSelector {
 impl SimpleReadCacheSelector {
     /// 将 Java selector 参数映射为格式无关的缓存引擎策略。
     fn engine_policy(&self) -> easyexcel_cache::SharedStringCachePolicy {
-        easyexcel_cache::SharedStringCachePolicy::new(self.max_use_map_cache_size_bytes)
+        easyexcel_cache::SharedStringCachePolicy::new(self.max_use_map_cache_size_bytes())
     }
 }
 

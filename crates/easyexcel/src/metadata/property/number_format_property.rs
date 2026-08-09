@@ -5,7 +5,7 @@ pub use easyexcel_format::NumberRoundingMode;
 /// 对应 Java：com.alibaba.excel.metadata.property.NumberFormatProperty。 Number format metadata from `@NumberFormat`.
 ///
 /// Rust port of Java `NumberFormatProperty`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NumberFormatProperty {
     /// Format pattern. (Java `format`)
     pub format: String,

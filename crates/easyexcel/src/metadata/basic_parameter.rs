@@ -71,8 +71,13 @@ impl BasicParameter {
     pub const fn set_auto_trim(&mut self, value: Option<bool>) { self.auto_trim = value; }
     /// Java `getUse1904windowing`。
     #[must_use] pub const fn get_use_1904windowing(&self) -> Option<bool> { self.use1904windowing }
+    /// Java `getUse1904windowing` 的逐字符 snake_case 名称。
+    #[must_use]
+    pub const fn get_use1904windowing(&self) -> Option<bool> { self.use1904windowing }
     /// Java `setUse1904windowing`。
     pub const fn set_use_1904windowing(&mut self, value: Option<bool>) { self.use1904windowing = value; }
+    /// Java `setUse1904windowing` 的逐字符 snake_case 名称。
+    pub const fn set_use1904windowing(&mut self, value: Option<bool>) { self.use1904windowing = value; }
     /// Java `getLocale` 的语言标签映射。
     #[must_use] pub fn get_locale(&self) -> Option<&str> { self.locale.as_deref() }
     /// Java `setLocale` 的语言标签映射。

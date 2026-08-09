@@ -26,7 +26,8 @@ impl GzipSpillReader {
             .map(|row| {
                 row.into_iter()
                     .filter_map(|value| match value {
-                        GzipCellValue::JournalMetadata { .. } => None,
+                        GzipCellValue::JournalMetadata { .. }
+                        | GzipCellValue::JournalMergeRange { .. } => None,
                         GzipCellValue::Styled { value, .. } => Some(from_spill_value(*value)),
                         value => Some(from_spill_value(value)),
                     })
@@ -41,10 +42,22 @@ impl GzipSpillReader {
             return Ok(None);
         };
         let mut row_height = None;
+        let mut merge_ranges = Vec::new();
         let mut cells = Vec::with_capacity(values.len());
         for value in values {
             match value {
                 GzipCellValue::JournalMetadata { row_height: height } => row_height = height,
+                GzipCellValue::JournalMergeRange {
+                    first_row,
+                    last_row,
+                    first_col,
+                    last_col,
+                } => merge_ranges.push(crate::write::merge_range::MergeRange {
+                    first_row,
+                    last_row,
+                    first_col,
+                    last_col,
+                }),
                 GzipCellValue::Styled { value, style_id } => {
                     let style = self
                         .styles
@@ -63,6 +76,10 @@ impl GzipSpillReader {
                 value => cells.push(JournalCell::plain(from_spill_value(value)?)),
             }
         }
-        Ok(Some(JournalRow { cells, row_height }))
+        Ok(Some(JournalRow {
+            cells,
+            row_height,
+            merge_ranges,
+        }))
     }
 }

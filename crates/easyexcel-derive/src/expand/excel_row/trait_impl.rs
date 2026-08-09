@@ -79,6 +79,9 @@ pub(super) fn render_trait_impl(
                 const COLUMNS: &[#crate_path::ExcelColumn] = &[#(#columns),*];
                 COLUMNS
             }
+            fn supports_static_scalar_write() -> bool {
+                true
+            }
             fn write_metadata() -> &'static #crate_path::ExcelWriteMetadata {
                 const METADATA: #crate_path::ExcelWriteMetadata = #write_metadata;
                 &METADATA

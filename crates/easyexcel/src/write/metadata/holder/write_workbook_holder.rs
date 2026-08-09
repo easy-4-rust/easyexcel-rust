@@ -4,9 +4,14 @@ use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 
 use crate::core::WriteHandler;
+use crate::metadata::data::DataFormatData;
 use crate::write::holder::abstract_write_holder::AbstractWriteHolder;
+use crate::write::metadata::holder::write_holder::delegate_write_holder_contract;
+use crate::write::metadata::style::write_cell_style::WriteCellStyle;
+use crate::write::metadata::style::write_font::WriteFont;
 use crate::write::holder::write_sheet_holder::WriteSheetHolder;
 use crate::write::metadata::WriteBasicParameter;
+use crate::util::style_util::{build_cell_style, build_data_format, build_font};
 
 /// 对应 Java：`WriteWorkbookHolder extends AbstractWriteHolder`.
 ///
@@ -37,9 +42,12 @@ pub struct WriteWorkbookHolder<'a> {
     password: Option<String>,
     template_file: Option<String>,
     initialized_sheet_indexes: HashMap<usize, String>,
-    cell_style_index_map: HashMap<String, u32>,
-    data_format_map: HashMap<String, u16>,
-    font_map: HashMap<String, u16>,
+    /// 后端中立样式缓存。Java 以来源 POI `CellStyle#index` 分组；Rust 没有
+    /// 暴露后端对象，因此直接以来源样式规格分组，保留同样的“有来源样式时
+    /// 不跨来源复用”语义。
+    cell_style_index_map: HashMap<Option<WriteCellStyle>, Vec<WriteCellStyle>>,
+    data_format_map: Vec<DataFormatData>,
+    font_map: Vec<WriteFont>,
 }
 
 impl<'a> WriteWorkbookHolder<'a> {
@@ -76,17 +84,27 @@ impl<'a> WriteWorkbookHolder<'a> {
     /// 替换已初始化 Sheet 名称映射。
     pub fn set_has_been_initialized_sheet_name_map(&mut self, value: HashMap<String, WriteSheetHolder<'a>>) { self.sheets = value; }
     /// Java `getCellStyleIndexMap`。
-    #[must_use] pub fn get_cell_style_index_map(&self) -> &HashMap<String, u32> { &self.cell_style_index_map }
+    #[must_use]
+    pub const fn get_cell_style_index_map(
+        &self,
+    ) -> &HashMap<Option<WriteCellStyle>, Vec<WriteCellStyle>> {
+        &self.cell_style_index_map
+    }
     /// Java `setCellStyleIndexMap`。
-    pub fn set_cell_style_index_map(&mut self, value: HashMap<String, u32>) { self.cell_style_index_map = value; }
+    pub fn set_cell_style_index_map(
+        &mut self,
+        value: HashMap<Option<WriteCellStyle>, Vec<WriteCellStyle>>,
+    ) {
+        self.cell_style_index_map = value;
+    }
     /// Java `getDataFormatMap`。
-    #[must_use] pub fn get_data_format_map(&self) -> &HashMap<String, u16> { &self.data_format_map }
+    #[must_use] pub fn get_data_format_map(&self) -> &[DataFormatData] { &self.data_format_map }
     /// Java `setDataFormatMap`。
-    pub fn set_data_format_map(&mut self, value: HashMap<String, u16>) { self.data_format_map = value; }
+    pub fn set_data_format_map(&mut self, value: Vec<DataFormatData>) { self.data_format_map = value; }
     /// Java `getFontMap`。
-    #[must_use] pub fn get_font_map(&self) -> &HashMap<String, u16> { &self.font_map }
+    #[must_use] pub fn get_font_map(&self) -> &[WriteFont] { &self.font_map }
     /// Java `setFontMap`。
-    pub fn set_font_map(&mut self, value: HashMap<String, u16>) { self.font_map = value; }
+    pub fn set_font_map(&mut self, value: Vec<WriteFont>) { self.font_map = value; }
 
     /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteWorkbookHolder。 Creates a holder matching the Java `WriteWorkbookHolder(WriteWorkbook)`
     /// initialiser.
@@ -115,17 +133,51 @@ impl<'a> WriteWorkbookHolder<'a> {
             template_file: None,
             initialized_sheet_indexes: HashMap::new(),
             cell_style_index_map: HashMap::new(),
-            data_format_map: HashMap::new(),
-            font_map: HashMap::new(),
+            data_format_map: Vec::new(),
+            font_map: Vec::new(),
         }
     }
 
     /// Java `WriteWorkbookHolder(WriteWorkbook)`。
     #[must_use]
     pub fn from_write_workbook(value: crate::WriteWorkbook) -> Self {
-        let path = value.output_file.as_ref().map_or_else(String::new, |path| path.display().to_string());
+        let path = value
+            .output_file
+            .as_ref()
+            .map_or_else(String::new, |path| path.display().to_string());
+        let detection_path = value
+            .output_file
+            .as_deref()
+            .or(value.options.template_file.as_deref())
+            .unwrap_or_else(|| std::path::Path::new(""));
+        let excel_type = crate::write_type_helpers::effective_write_type(
+            detection_path,
+            &value.options,
+        );
+        let parameter = WriteBasicParameter::from_options(&value.options);
+        let template_input_stream = value.options.template_bytes.clone();
         let mut holder = Self::new(path);
-        holder.excel_type = value.excel_type;
+        holder.abstract_holder = AbstractWriteHolder::from_parameter(&parameter, None);
+        holder.excel_type = excel_type;
+        holder.output_stream = value.output_stream.clone();
+        holder.template_input_stream = template_input_stream.clone();
+        holder.temp_template_input_stream = template_input_stream;
+        holder.auto_close_stream = value
+            .auto_close_stream_override
+            .unwrap_or(value.options.auto_close_stream);
+        holder.in_memory = Some(value.in_memory_override.unwrap_or(false));
+        holder.mandatory_use_input_stream = value.mandatory_use_input_stream.unwrap_or(false);
+        holder.write_excel_on_exception = value
+            .write_excel_on_exception_override
+            .unwrap_or(value.options.write_excel_on_exception);
+        holder.with_bom = value.with_bom_override.unwrap_or(value.options.with_bom);
+        holder.charset = value.options.charset.name().to_owned();
+        holder.password = value.options.password.clone();
+        holder.template_file = value
+            .options
+            .template_file
+            .as_ref()
+            .map(|path| path.display().to_string());
         holder.write_workbook = Some(value);
         holder
     }
@@ -248,39 +300,91 @@ impl<'a> WriteWorkbookHolder<'a> {
     pub fn initialized_sheet_names(&self) -> &HashMap<String, WriteSheetHolder<'a>> { &self.sheets }
     /// 返回样式索引缓存。
     #[must_use]
-    pub fn cell_style_index_map(&self) -> &HashMap<String, u32> { &self.cell_style_index_map }
+    pub const fn cell_style_index_map(
+        &self,
+    ) -> &HashMap<Option<WriteCellStyle>, Vec<WriteCellStyle>> {
+        &self.cell_style_index_map
+    }
     /// 返回数据格式缓存。
     #[must_use]
-    pub fn data_format_map(&self) -> &HashMap<String, u16> { &self.data_format_map }
+    pub fn data_format_map(&self) -> &[DataFormatData] { &self.data_format_map }
     /// 返回字体缓存。
     #[must_use]
-    pub fn font_map(&self) -> &HashMap<String, u16> { &self.font_map }
+    pub fn font_map(&self) -> &[WriteFont] { &self.font_map }
 
-    /// 分配一个稳定的样式索引，语义对应 Java `createCellStyle` 的 holder 缓存。
-    pub fn create_cell_style(&mut self, key: impl Into<String>) -> u32 {
-        let key = key.into();
-        if let Some(index) = self.cell_style_index_map.get(&key) { return *index; }
-        let index = u32::try_from(self.cell_style_index_map.len()).unwrap_or(u32::MAX);
-        self.cell_style_index_map.insert(key, index);
-        index
+    /// 合并并缓存后端中立样式，对应 Java `createCellStyle(writeCellStyle, originCellStyle)`。
+    ///
+    /// `write_cell_style` 为空时原样返回来源样式；否则仅用非空字段覆盖来源，
+    /// 并把字体/数据格式交给同一 Holder 的语义缓存。XLS/XLSX 物理样式表仍由
+    /// 各自引擎在最终写入阶段编码。
+    pub fn create_cell_style(
+        &mut self,
+        write_cell_style: Option<&WriteCellStyle>,
+        origin_cell_style: Option<&WriteCellStyle>,
+    ) -> Option<WriteCellStyle> {
+        let Some(write_cell_style) = write_cell_style else {
+            return origin_cell_style.cloned();
+        };
+        let use_cache = origin_cell_style.is_none();
+        let style = build_cell_style(origin_cell_style, Some(write_cell_style));
+        let data_format = write_cell_style.get_data_format_data().map(|value| match value {
+            crate::ExcelDataFormat::Builtin(index) => DataFormatData {
+                index: Some(i16::from(index)),
+                format: None,
+            },
+            crate::ExcelDataFormat::Custom(format) => DataFormatData {
+                index: None,
+                format: Some(format.to_owned()),
+            },
+        });
+        let origin_font = origin_cell_style.and_then(WriteCellStyle::get_write_font);
+        let _ = self.create_font(write_cell_style.get_write_font(), origin_font, use_cache);
+        let _ = self.create_data_format(data_format.as_ref(), use_cache);
+        let cache_partition = self
+            .cell_style_index_map
+            .entry(origin_cell_style.cloned())
+            .or_default();
+        if let Some(cached) = cache_partition.iter().find(|cached| **cached == style) {
+            return Some(cached.clone());
+        }
+        cache_partition.push(style.clone());
+        Some(style)
     }
 
-    /// 分配一个稳定的数据格式索引。
-    pub fn create_data_format(&mut self, key: impl Into<String>) -> u16 {
-        let key = key.into();
-        if let Some(index) = self.data_format_map.get(&key) { return *index; }
-        let index = u16::try_from(self.data_format_map.len()).unwrap_or(u16::MAX);
-        self.data_format_map.insert(key, index);
-        index
+    /// 解析并缓存数据格式，对应 Java `createDataFormat(dataFormatData, useCache)`。
+    pub fn create_data_format(
+        &mut self,
+        data_format_data: Option<&DataFormatData>,
+        use_cache: bool,
+    ) -> Option<DataFormatData> {
+        let data_format_data = data_format_data?;
+        let resolved = build_data_format(Some(data_format_data));
+        if !use_cache {
+            return Some(resolved);
+        }
+        if let Some(cached) = self.data_format_map.iter().find(|cached| **cached == resolved) {
+            return Some(cached.clone());
+        }
+        self.data_format_map.push(resolved.clone());
+        Some(resolved)
     }
 
-    /// 分配一个稳定的字体索引。
-    pub fn create_font(&mut self, key: impl Into<String>) -> u16 {
-        let key = key.into();
-        if let Some(index) = self.font_map.get(&key) { return *index; }
-        let index = u16::try_from(self.font_map.len()).unwrap_or(u16::MAX);
-        self.font_map.insert(key, index);
-        index
+    /// 合并并缓存字体，对应 Java `createFont(writeFont, originFont, useCache)`。
+    pub fn create_font(
+        &mut self,
+        write_font: Option<&WriteFont>,
+        origin_font: Option<&WriteFont>,
+        use_cache: bool,
+    ) -> Option<WriteFont> {
+        let font = build_font(origin_font, write_font)?;
+        if !use_cache {
+            return Some(font);
+        }
+        if let Some(cached) = self.font_map.iter().find(|cached| **cached == font) {
+            return Some(cached.clone());
+        }
+        self.font_map.push(font.clone());
+        Some(font)
     }
 }
 
@@ -297,6 +401,8 @@ impl DerefMut for WriteWorkbookHolder<'_> {
         &mut self.abstract_holder
     }
 }
+
+delegate_write_holder_contract!(WriteWorkbookHolder<'a>, abstract_holder);
 
 #[cfg(test)]
 mod tests {

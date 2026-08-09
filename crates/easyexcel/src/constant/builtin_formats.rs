@@ -17,8 +17,12 @@ pub struct BuiltinFormats;
 impl BuiltinFormats {
     /// 通用格式索引。
     pub const GENERAL: u16 = GENERAL;
+    /// Java 原字段名 `GENERALS` 的兼容别名。
+    pub const GENERALS: u16 = GENERAL;
     /// 自定义格式的最小索引。
     pub const MIN_CUSTOM_DATA_FORMAT_INDEX: u16 = MIN_CUSTOM_DATA_FORMAT_INDEX;
+    /// Java 原字段名（复数）兼容别名。
+    pub const MIN_CUSTOM_DATA_FORMAT_INDEXS: u16 = MIN_CUSTOM_DATA_FORMAT_INDEX;
     /// 跨语言内建格式。
     pub const BUILTIN_FORMATS_ALL_LANGUAGES: &'static [Option<&'static str>] =
         &BUILTIN_FORMATS_ALL_LANGUAGES;

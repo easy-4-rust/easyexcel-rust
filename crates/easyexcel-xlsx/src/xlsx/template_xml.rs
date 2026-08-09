@@ -6,5 +6,6 @@ use std::fmt::Write as _;
 
 use easyexcel_io::{Error, Result};
 
+include!("template_xml/template_rich_text.rs");
 include!("template_xml/templatecellvalue_to_remove_attribute.rs");
 include!("template_xml/cell_references.rs");

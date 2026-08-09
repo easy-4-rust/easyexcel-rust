@@ -98,7 +98,7 @@ let import_report = EasyExcel::import_markdown("tables.md", "report.xlsx")
 | `merge_policy` | `MarkdownMergePolicy` | 锚点 warning、重复锚点、HTML fallback 或遇到 merge 报错。 |
 | `include_hidden` | `bool` | 是否输出隐藏工作表；默认跳过并记录 warning。 |
 | `limits` | `ResourceLimits` | 文件、行、列、单元格字符、输出字节等资源上限。 |
-| `password` | `String` | 读取加密 XLSX；密码只保存在 builder 生命周期内。 |
+| `password` | `String` | 读写加密 XLSX，或读写 BIFF8 CryptoAPI RC4 `.xls`；密码只保存在 builder 生命周期内。 |
 
 ### 导入参数
 

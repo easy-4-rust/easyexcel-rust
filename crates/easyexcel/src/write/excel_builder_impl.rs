@@ -306,6 +306,19 @@ impl ExcelBuilderImpl {
         self.fill_executor = Some(executor);
     }
 
+    /// 安装已经接管模板输出目标的 executor，并立即激活其资源生命周期。
+    ///
+    /// 与公开的 [`Self::set_fill_executor`] 不同，该入口只供 facade wiring
+    /// 使用：真实 writer/关闭回调一旦移交，即使首个 fill/write 随后失败，
+    /// 异常收尾也必须回到同一个 executor。
+    pub(crate) fn set_active_template_fill_executor(
+        &mut self,
+        executor: Box<dyn WriteFillExecutor>,
+    ) {
+        self.fill_executor = Some(executor);
+        self.fill_session_active = true;
+    }
+
     /// 对应 Java：com.alibaba.excel.write.ExcelBuilderImpl。 Returns whether a template fill executor has been installed.
     #[must_use]
     pub fn has_fill_executor(&self) -> bool {
@@ -358,9 +371,17 @@ impl ExcelBuilderImpl {
         };
         options.sheet_name.clone_from(&sheet_name);
         self.update_current_holder::<T>(&options, write_table.map(WriteTable::table_no))?;
-        if self.writer.has_template_configured()
-            && let Some(delegate) = self.fill_executor.as_mut()
-        {
+        if self.writer.has_template_configured() {
+            // Java 在 ExcelBuilderImpl(WriteWorkbook) 内部惰性创建
+            // ExcelWriteFillExecutor。所有公开构造路径都必须获得同样行为，
+            // 不能要求调用方知道 facade 私有的 executor wiring。
+            crate::excel_builder::wire_template_fill(self)?;
+            let delegate = self.fill_executor.as_mut().ok_or_else(|| {
+                ExcelError::Unsupported(
+                    "template executor could not be initialized for ordinary row writes"
+                        .to_owned(),
+                )
+            })?;
             let effective_options =
                 crate::write::excel_writer_core::with_default_write_converters(&options);
             let rows = data
@@ -471,10 +492,10 @@ impl ExcelBuilder for ExcelBuilderImpl {
             .and_then(|value| usize::try_from(value).ok());
         let range = MergeRange::new(first_row, last_row, first_col, last_col);
         if self.writer.has_template_configured() {
+            crate::excel_builder::wire_template_fill(self)?;
             let delegate = self.fill_executor.as_mut().ok_or_else(|| {
                 ExcelError::Unsupported(
-                    "template merge executor is not wired; build through easyexcel::builder_from_writer"
-                        .to_owned(),
+                    "template executor could not be initialized for merged regions".to_owned(),
                 )
             })?;
             delegate.add_merge(
@@ -514,10 +535,10 @@ impl ExcelBuilder for ExcelBuilderImpl {
             holder_options.sheet_name.clone()
         };
         self.update_current_holder::<DynamicRow>(&holder_options, None)?;
+        crate::excel_builder::wire_template_fill(self)?;
         let delegate = self.fill_executor.as_mut().ok_or_else(|| {
             ExcelError::Unsupported(
-                "template fill executor is not wired; build through easyexcel::builder_from_writer"
-                    .to_owned(),
+                "template fill executor could not be initialized".to_owned(),
             )
         })?;
         let sheet = WriteFillSheet {
@@ -528,9 +549,9 @@ impl ExcelBuilder for ExcelBuilderImpl {
         executor.fill(
             data,
             WriteFillConfig {
-                force_new_row: fill_config.force_new_row,
-                direction: fill_config.direction,
-                auto_style: fill_config.auto_style,
+                force_new_row: fill_config.effective_force_new_row(),
+                direction: Some(fill_config.effective_direction()),
+                auto_style: fill_config.effective_auto_style(),
             },
             sheet,
         )?;

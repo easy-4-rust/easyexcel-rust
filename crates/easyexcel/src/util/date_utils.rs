@@ -5,37 +5,56 @@
 
 use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use bigdecimal::BigDecimal;
+use std::sync::{LazyLock, RwLock};
 
 use crate::core::excel_error::ExcelError;
 
-/// Java `DateUtils.DATE_FORMAT_10`。
-pub const DATE_FORMAT_10: &str = "yyyy-MM-dd";
-/// Java `DateUtils.DATE_FORMAT_14`。
-pub const DATE_FORMAT_14: &str = "yyyyMMddHHmmss";
-/// Java `DateUtils.DATE_FORMAT_16`。
-pub const DATE_FORMAT_16: &str = "yyyy-MM-dd HH:mm";
-/// Java `DateUtils.DATE_FORMAT_16_FORWARD_SLASH`。
-pub const DATE_FORMAT_16_FORWARD_SLASH: &str = "yyyy/MM/dd HH:mm";
-/// Java `DateUtils.DATE_FORMAT_17`。
-pub const DATE_FORMAT_17: &str = "yyyyMMdd HH:mm:ss";
-/// Java `DateUtils.DATE_FORMAT_19`。
-pub const DATE_FORMAT_19: &str = "yyyy-MM-dd HH:mm:ss";
-/// Java `DateUtils.DATE_FORMAT_19_FORWARD_SLASH`。
-pub const DATE_FORMAT_19_FORWARD_SLASH: &str = "yyyy/MM/dd HH:mm:ss";
-/// 默认日期时间格式。
-pub const DEFAULT_DATE_FORMAT: &str = DATE_FORMAT_19;
-/// 默认本地日期格式。
-pub const DEFAULT_LOCAL_DATE_FORMAT: &str = DATE_FORMAT_10;
-/// 每分钟秒数。
-pub const SECONDS_PER_MINUTE: i32 = 60;
-/// 每小时分钟数。
-pub const MINUTES_PER_HOUR: i32 = 60;
-/// 每日小时数。
-pub const HOURS_PER_DAY: i32 = 24;
-/// 每日秒数。
-pub const SECONDS_PER_DAY: i32 = HOURS_PER_DAY * MINUTES_PER_HOUR * SECONDS_PER_MINUTE;
-/// 每日毫秒数。
-pub const DAY_MILLISECONDS: i64 = 86_400_000;
+pub use easyexcel_model::{
+    DATE_FORMAT_10, DATE_FORMAT_14, DATE_FORMAT_16, DATE_FORMAT_16_FORWARD_SLASH, DATE_FORMAT_17,
+    DATE_FORMAT_19, DATE_FORMAT_19_FORWARD_SLASH, DAY_MILLISECONDS, DEFAULT_DATE_FORMAT,
+    DEFAULT_LOCAL_DATE_FORMAT, HOURS_PER_DAY, MINUTES_PER_HOUR, SECONDS_PER_DAY,
+    SECONDS_PER_MINUTE,
+};
+
+/// Java `DateUtils.defaultDateFormat` 的线程安全运行时配置。
+pub static DEFAULT_DATE_FORMAT_SETTING: LazyLock<RwLock<String>> =
+    LazyLock::new(|| RwLock::new(DEFAULT_DATE_FORMAT.to_owned()));
+
+/// Java `DateUtils.defaultLocalDateFormat` 的线程安全运行时配置。
+pub static DEFAULT_LOCAL_DATE_FORMAT_SETTING: LazyLock<RwLock<String>> =
+    LazyLock::new(|| RwLock::new(DEFAULT_LOCAL_DATE_FORMAT.to_owned()));
+
+/// 返回当前默认日期时间格式。
+#[must_use]
+pub fn default_date_format() -> String {
+    DEFAULT_DATE_FORMAT_SETTING
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone()
+}
+
+/// 修改后续日期转换使用的默认日期时间格式。
+pub fn set_default_date_format(value: impl Into<String>) {
+    *DEFAULT_DATE_FORMAT_SETTING
+        .write()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = value.into();
+}
+
+/// 返回当前默认本地日期格式。
+#[must_use]
+pub fn default_local_date_format() -> String {
+    DEFAULT_LOCAL_DATE_FORMAT_SETTING
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone()
+}
+
+/// 修改后续本地日期转换使用的默认格式。
+pub fn set_default_local_date_format(value: impl Into<String>) {
+    *DEFAULT_LOCAL_DATE_FORMAT_SETTING
+        .write()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = value.into();
+}
 
 /// Java `com.alibaba.excel.util.DateUtils` 的静态门面。
 ///
@@ -74,6 +93,22 @@ impl DateUtils {
     /// 对应 Java：`DateUtils.DAY_MILLISECONDS`。
     pub const DAY_MILLISECONDS: i64 = DAY_MILLISECONDS;
 
+    /// 返回当前 Java `defaultDateFormat` 配置。
+    #[must_use]
+    pub fn default_date_format() -> String { default_date_format() }
+
+    /// 修改 Java `defaultDateFormat` 的 Rust 运行时配置。
+    pub fn set_default_date_format(value: impl Into<String>) { set_default_date_format(value); }
+
+    /// 返回当前 Java `defaultLocalDateFormat` 配置。
+    #[must_use]
+    pub fn default_local_date_format() -> String { default_local_date_format() }
+
+    /// 修改 Java `defaultLocalDateFormat` 的 Rust 运行时配置。
+    pub fn set_default_local_date_format(value: impl Into<String>) {
+        set_default_local_date_format(value);
+    }
+
     /// 解析 Java 日期字符串；空格式时沿用 Java 的长度推断规则。
     pub fn parse_date(
         date_string: &str,
@@ -106,13 +141,28 @@ impl DateUtils {
     /// 按 Java 日期模式格式化本地日期时间。
     #[must_use]
     pub fn format(date: NaiveDateTime, date_format: Option<&str>) -> String {
-        format(date, date_format.unwrap_or(DEFAULT_DATE_FORMAT))
+        let default_format;
+        let date_format = match date_format {
+            Some(value) => value,
+            None => {
+                default_format = default_date_format();
+                &default_format
+            }
+        };
+        format(date, date_format)
     }
 
     /// 按 Java 日期模式格式化本地日期。
     #[must_use]
     pub fn format_local_date(date: NaiveDate, date_format: Option<&str>) -> String {
-        let date_format = date_format.unwrap_or(DEFAULT_LOCAL_DATE_FORMAT);
+        let default_format;
+        let date_format = match date_format {
+            Some(value) => value,
+            None => {
+                default_format = default_local_date_format();
+                &default_format
+            }
+        };
         date.format(&easyexcel_model::chrono_date_format(date_format)).to_string()
     }
     /// Java `format(Date)` 重载。
@@ -144,18 +194,50 @@ impl DateUtils {
     /// 将 Excel serial 转为 Java `Date` 对应的本地日期时间。
     #[must_use]
     pub fn get_java_date(date: f64, use_1904_windowing: bool) -> Option<NaiveDateTime> {
-        get_local_date_time(date, use_1904_windowing)
+        Self::get_java_calendar(date, use_1904_windowing, None, true)
     }
     /// Java `getJavaCalendar` 的后端中立日历值。
+    ///
+    /// `time_zone` 是 Java `Calendar` 的展示属性；Rust 返回无时区的
+    /// `NaiveDateTime`，因此保留参数形状但不伪造时区转换。秒舍入语义完整保留。
     #[must_use]
-    pub fn get_java_calendar(date: f64, use_1904_windowing: bool, _time_zone: Option<&str>, _round_seconds: bool) -> Option<NaiveDateTime> {
-        Self::get_java_date(date, use_1904_windowing)
+    #[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
+    pub fn get_java_calendar(
+        date: f64,
+        use_1904_windowing: bool,
+        _time_zone: Option<&str>,
+        round_seconds: bool,
+    ) -> Option<NaiveDateTime> {
+        if !Self::is_valid_excel_date(date) {
+            return None;
+        }
+        let whole_days = date.floor();
+        let whole_days = i32::try_from(whole_days as i64).ok()?;
+        let milliseconds_in_day = ((date - f64::from(whole_days))
+            * DAY_MILLISECONDS as f64
+            + 0.5)
+            .floor() as i32;
+        Self::set_calendar(
+            whole_days,
+            milliseconds_in_day,
+            use_1904_windowing,
+            round_seconds,
+        )
     }
     /// Java `setCalendar` 的纯函数等价：从整日与毫秒偏移构造值。
     #[must_use]
-    pub fn set_calendar(whole_days: i32, milliseconds_in_day: i32, use_1904_windowing: bool) -> Option<NaiveDateTime> {
-        let serial = f64::from(whole_days) + f64::from(milliseconds_in_day) / f64::from(DAY_MILLISECONDS as i32);
-        Self::get_java_date(serial, use_1904_windowing)
+    pub fn set_calendar(
+        whole_days: i32,
+        milliseconds_in_day: i32,
+        use_1904_windowing: bool,
+        round_seconds: bool,
+    ) -> Option<NaiveDateTime> {
+        easyexcel_model::excel_parts_to_datetime(
+            whole_days,
+            milliseconds_in_day,
+            use_1904_windowing,
+            round_seconds,
+        )
     }
 
     /// 将 Excel serial 转为本地日期时间。
@@ -255,14 +337,8 @@ pub fn is_internal_date_format(format: &str) -> bool {
 
 /// 根据 Java 的长度/分隔符规则推断日期格式。
 pub fn switch_date_format(value: &str) -> Result<&'static str, ExcelError> {
-    match value.chars().count() {
-        19 => Ok(if value.contains('-') { DATE_FORMAT_19 } else { DATE_FORMAT_19_FORWARD_SLASH }),
-        16 => Ok(if value.contains('-') { DATE_FORMAT_16 } else { DATE_FORMAT_16_FORWARD_SLASH }),
-        17 => Ok(DATE_FORMAT_17),
-        14 => Ok(DATE_FORMAT_14),
-        10 => Ok(DATE_FORMAT_10),
-        _ => Err(ExcelError::Format(format!("can not find date format for: {value}"))),
-    }
+    easyexcel_model::infer_java_date_pattern(value)
+        .map_err(|error| ExcelError::Format(error.to_string()))
 }
 
 /// 按显式或推断格式解析本地日期时间。

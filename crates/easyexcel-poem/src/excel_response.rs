@@ -48,8 +48,8 @@ where
     fn into_response(self) -> Response {
         let content_type = self.export.content_type();
         let content_length = self.export.content_length();
-        let encoded = urlencoding::encode(self.export.file_name()).replace('+', "%20");
-        let disposition = format!("attachment;filename*=UTF-8''{encoded}");
+        let disposition =
+            easyexcel_web::excel_attachment_content_disposition(self.export.file_name());
         let mut response = Response::builder()
             .status(StatusCode::OK)
             .body(Body::from_async_read(self.export));

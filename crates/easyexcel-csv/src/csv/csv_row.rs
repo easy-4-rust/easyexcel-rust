@@ -5,10 +5,11 @@ use easyexcel_model::CellValue as ModelCellValue;
 
 use super::{CsvCell, CsvCellStyle, CsvCellValue};
 
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 具有零基行号和稀疏单元格集合的 CSV 行。
+/// 对应 Java：com.alibaba.excel.metadata.csv.CsvRow。 具有零基行号和稀疏单元格集合的 CSV 行。
 #[derive(Debug, Clone, PartialEq)]
 pub struct CsvRow<V: CsvCellValue = ModelCellValue> {
     csv_workbook_id: Option<usize>,
+    csv_sheet_id: Option<usize>,
     row_index: u32,
     cells: Vec<CsvCell<V>>,
     cell_style: Option<CsvCellStyle>,
@@ -23,6 +24,7 @@ impl<V: CsvCellValue> CsvRow<V> {
     pub const fn new(row_index: u32) -> Self {
         Self {
             csv_workbook_id: None,
+            csv_sheet_id: None,
             row_index,
             cells: Vec::new(),
             cell_style: None,
@@ -40,7 +42,22 @@ impl<V: CsvCellValue> CsvRow<V> {
     /// 返回父工作簿稳定身份。对应 Java Lombok `getCsvWorkbook`。
     #[must_use] pub const fn get_csv_workbook(&self) -> Option<usize> { self.csv_workbook_id }
     /// 设置父工作簿稳定身份。
-    pub const fn set_csv_workbook(&mut self, value: Option<usize>) { self.csv_workbook_id = value; }
+    pub fn set_csv_workbook(&mut self, value: Option<usize>) {
+        self.csv_workbook_id = value;
+        for cell in &mut self.cells {
+            cell.set_csv_workbook(value);
+        }
+    }
+    /// 返回父工作表稳定身份。对应 Java Lombok `getCsvSheet`。
+    #[must_use]
+    pub const fn get_csv_sheet(&self) -> Option<usize> { self.csv_sheet_id }
+    /// 设置父工作表稳定身份并传播给已有单元格。
+    pub fn set_csv_sheet(&mut self, value: Option<usize>) {
+        self.csv_sheet_id = value;
+        for cell in &mut self.cells {
+            cell.set_csv_sheet(value);
+        }
+    }
 
     /// 设置零基行号，语义对应 Java Lombok `setRowIndex` / `setRowNum`。
     pub const fn set_row_index(&mut self, row_index: u32) {
@@ -226,7 +243,10 @@ impl<V: CsvCellValue> CsvRow<V> {
                 self.row_index
             )));
         }
-        self.cells.push(CsvCell::new_at(self.row_index, column_index));
+        let mut cell = CsvCell::new_at(self.row_index, column_index);
+        cell.set_csv_workbook(self.csv_workbook_id);
+        cell.set_csv_sheet(self.csv_sheet_id);
+        self.cells.push(cell);
         self.cells
             .last_mut()
             .ok_or_else(|| Error::Csv("CSV cell append produced no cell".to_owned()))

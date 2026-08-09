@@ -120,6 +120,7 @@ flowchart LR
 | `analysis/v03` 的 BIFF SID、记录长度、CONTINUE 分段状态机与 BOF 子流类型码 | `easyexcel-xls::biff8::{record_sid,event_record,continuation_decoder}` | Java handler 名称、开关、状态与事件路由 |
 | BIFF8 OBJ `ftCmo` 子记录与批注对象编号解析 | `easyexcel-xls::biff8::event_record::decode_obj_common_data` | `ObjRecordHandler` 只保留 Java `tempObjectIndex` 状态 |
 | BIFF8 行列上限、冻结窗格、行高/列宽坐标与合并区域收窄 | `easyexcel-xls::biff8::workbook::{Biff8Sheet,Biff8Merge}` | `WriteOptions`、注解和 handler 结果到引擎参数的编排 |
+| 中立 `Workbook` 到 XLS 的公开 `write/write_path` | `easyexcel-xls::xls::writer -> biff8::Biff8Book` | `easyexcel::xls` 仅重导出；禁止恢复独立简化 record writer |
 | `read/xlsx_rows.rs` 的 OPC 路径与关系解析 | `easyexcel-xlsx::xlsx::package` | listener、读取缓存、extra handler 与 Java 显示语义 |
 | `write/template_write.rs` 的 ZIP 条目保留/重打包 | `easyexcel-xlsx::xlsx::ooxml_package` | 模板来源选择与 EasyExcel 写入编排 |
 | `write/template_write.rs` 的行 XML、列宽、合并、dimension | `easyexcel-xlsx::xlsx::template_xml` | `CellValue`、`MergeRange` 到中立输入的转换 |

@@ -20,6 +20,8 @@ use crate::write::style::abstract_vertical_cell_style_strategy::AbstractVertical
 pub struct VerticalCellStyleStrategy {
     head: Box<dyn Fn(usize) -> ExcelCellStyle + Send + Sync>,
     content: Box<dyn Fn(usize) -> ExcelCellStyle + Send + Sync>,
+    head_write_font: Option<WriteFont>,
+    content_write_font: Option<WriteFont>,
 }
 
 impl VerticalCellStyleStrategy {
@@ -34,6 +36,8 @@ impl VerticalCellStyleStrategy {
         Self {
             head: Box::new(head),
             content: Box::new(content),
+            head_write_font: None,
+            content_write_font: None,
         }
     }
 
@@ -58,8 +62,8 @@ impl VerticalCellStyleStrategy {
     }
 
     /// 对应 Java：com.alibaba.excel.write.style.AbstractVerticalCellStyleStrategy。 Creates a uniform strategy from runtime [`WriteFont`] values
-    /// (Java `setWriteFont(WriteFont)`; owned names omitted — see
-    /// [`excel_font_style_from_write_font`]).
+    /// (Java `setWriteFont(WriteFont)`；动态字体名由运行期侧车保留并在格式
+    /// 边界直接应用。)
     #[must_use]
     pub fn uniform_with_write_fonts(
         head: ExcelCellStyle,
@@ -67,12 +71,15 @@ impl VerticalCellStyleStrategy {
         content: ExcelCellStyle,
         content_font: &WriteFont,
     ) -> Self {
-        Self::uniform_with_fonts(
+        let mut strategy = Self::uniform_with_fonts(
             head,
             excel_font_style_from_write_font(head_font),
             content,
             excel_font_style_from_write_font(content_font),
-        )
+        );
+        strategy.head_write_font = Some(head_font.clone());
+        strategy.content_write_font = Some(content_font.clone());
+        strategy
     }
 }
 
@@ -100,11 +107,19 @@ impl AbstractCellStyleStrategy for VerticalCellStyleStrategy {
 impl WriteHandler for VerticalCellStyleStrategy {
     fn order(&self) -> i32 {
         // Java `OrderConstant.DEFINE_STYLE` on `AbstractCellStyleStrategy`
-        50_000
+        crate::constant::order_constant::DEFINE_STYLE
     }
 
     fn style_cell_style(&self, context: &WriteCellContext) -> Option<ExcelCellStyle> {
         Some(AbstractCellStyleStrategy::cell_style(self, context))
+    }
+
+    fn style_write_font(&self, context: &WriteCellContext) -> Option<WriteFont> {
+        if context.is_head {
+            self.head_write_font.clone()
+        } else {
+            self.content_write_font.clone()
+        }
     }
 }
 

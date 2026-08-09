@@ -1,15 +1,35 @@
 //! 对应 Java：`com.alibaba.excel.exception.ExcelDataConvertException`。
 
 use super::ExcelRuntimeException;
+use std::hash::{Hash, Hasher};
 
 /// 携带精确单元格位置与字段配置的数据转换异常。
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct ExcelDataConvertException {
     inner: ExcelRuntimeException,
     row_index: usize,
     column_index: usize,
     cell_data: crate::CellData<crate::CellValue>,
     excel_content_property: Option<crate::ExcelContentProperty>,
+}
+
+// Lombok `@EqualsAndHashCode` 的默认 `callSuper=false`：message/cause 不参与值相等。
+impl PartialEq for ExcelDataConvertException {
+    fn eq(&self, other: &Self) -> bool {
+        self.row_index == other.row_index
+            && self.column_index == other.column_index
+            && self.cell_data == other.cell_data
+            && self.excel_content_property == other.excel_content_property
+    }
+}
+
+impl Hash for ExcelDataConvertException {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // `CellValue::Float` 保留 IEEE PartialEq（NaN 不自等），因此不能虚假声明 Eq。
+        // 物理位置是 Java 声明字段的稳定子集；相等对象必有相同位置，满足 Hash 契约。
+        self.row_index.hash(state);
+        self.column_index.hash(state);
+    }
 }
 impl ExcelDataConvertException {
     /// Java 五参数构造器。

@@ -3,9 +3,6 @@
 //! NOTE: full implementation in progress. The public entry points below are the
 //! frozen API the rest of the crate depends on.
 
-use easyexcel_io::Result;
-use easyexcel_model::model::Workbook;
-
 mod cell_reference;
 mod crypto;
 mod encrypt;
@@ -17,6 +14,7 @@ pub mod ooxml_constants;
 mod ooxml_package;
 pub mod package;
 mod package_reader;
+mod path_io;
 mod reader;
 mod rich_text_segment;
 mod shared_strings;
@@ -36,7 +34,7 @@ pub use cell_reference::{
     MAX_XLSX_COLUMN_NUMBER, MAX_XLSX_ROW_NUMBER, dimension_last_row, parse_a1_cell_range,
     parse_a1_cell_reference, parse_xlsx_index, parse_xlsx_row_number,
 };
-pub use crypto::{decrypt_file, is_encrypted_ooxml};
+pub use crypto::{decrypt as decrypt_package, decrypt_file, is_encrypted_ooxml};
 pub use encrypt::{ReadWriteSeek, encrypt_package_to};
 pub use event_reader::{
     ReadSeek, XlsxCellEvent, XlsxCellEventReader, XlsxCellValue, XlsxDisplayOptions,
@@ -50,6 +48,7 @@ pub use legacy_template::{
 };
 pub use ooxml_package::{OoxmlPackage, OoxmlZipEntry};
 pub use package_reader::XlsxPackageReader;
+pub use path_io::{looks_like_zip, read_path, read_path_with_password, write_path};
 pub use reader::{read, read_with_password};
 pub use rich_text_segment::{RichTextSegment, segment_utf16_text};
 pub use source::{
@@ -57,10 +56,18 @@ pub use source::{
 };
 pub use stream::{stream, stream_sheet_entries, stream_sheet_names};
 pub use template_fill::{
-    TemplateCollectionFill, TemplateFillData, TemplateFillDirection, append_rows_to_sheet,
+    TemplateCollectionFill, TemplateComment, TemplateCommentPlacement, TemplateDecoration,
+    TemplateDecorationPlacement, TemplateFillData, TemplateFillDirection, TemplateHyperlink,
+    TemplateHyperlinkCoordinate, TemplateHyperlinkType, TemplateImage, TemplateImageMovement,
+    append_rows_to_sheet,
+    append_rows_to_sheet_with_comments, append_rows_to_sheet_with_decorations,
     append_rows_to_xml, collection_column_style_indexes, render_typed_cell,
-    replace_collection_fills_in_sheet, replace_scalar_cells, replace_scalar_cells_in_sheet,
-    replace_scalar_cells_in_xml,
+    replace_collection_fills_in_sheet, replace_collection_fills_in_sheet_with_comments,
+    replace_collection_fills_in_sheet_with_decorations,
+    replace_scalar_cells, replace_scalar_cells_in_sheet,
+    replace_scalar_cells_in_sheet_with_comments,
+    replace_scalar_cells_in_sheet_with_decorations, replace_scalar_cells_in_xml,
+    template_value_decorations,
 };
 pub use template_package::OoxmlTemplatePackage;
 pub use template_source::{
@@ -68,51 +75,16 @@ pub use template_source::{
     resolve_sheet_target, validate_xlsx_template_source, workbook_sheets, worksheet_path,
     xml_elements,
 };
+pub use template_xml::TemplateRichText;
 pub use writer::write;
 pub use xmlutil::{decode_ooxml_escape, local_tag_name, parse_attribute_pairs};
-
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 Read an XLSX workbook from a path.
-///
-/// # Errors
-///
-/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
-pub fn read_path(path: &std::path::Path) -> Result<Workbook> {
-    read_path_with_password(path, None)
-}
-
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 Read an XLSX workbook from a path, decrypting with `password` if it is a
-/// password-protected (MS-OFFCRYPTO) file.
-///
-/// # Errors
-///
-/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
-pub fn read_path_with_password(path: &std::path::Path, password: Option<&str>) -> Result<Workbook> {
-    let file = std::fs::File::open(path)?;
-    read_with_password(file, password)
-}
-
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 Write a workbook to an XLSX file at `path`.
-///
-/// # Errors
-///
-/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
-pub fn write_path(wb: &Workbook, path: &std::path::Path) -> Result<()> {
-    let file = std::fs::File::create(path)?;
-    write(wb, file)
-}
-
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 Detect whether bytes look like a ZIP (and therefore possibly XLSX).
-#[must_use]
-pub fn looks_like_zip(magic: &[u8]) -> bool {
-    magic.starts_with(b"PK\x03\x04") || magic.starts_with(b"PK\x05\x06")
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use easyexcel_formula::Engine;
     use easyexcel_model::CellValue;
-    use easyexcel_model::model::Cell;
+    use easyexcel_model::model::{Cell, Workbook};
     use std::io::Write;
 
     #[test]

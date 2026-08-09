@@ -1,5 +1,5 @@
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 Java `java.math.RoundingMode` 对应的中立舍入模式。
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub enum NumberRoundingMode {
     /// 远离零。
     Up,
@@ -51,4 +51,3 @@ impl From<RoundingMode> for NumberRoundingMode {
         }
     }
 }
-

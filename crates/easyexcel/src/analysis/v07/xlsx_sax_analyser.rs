@@ -91,30 +91,6 @@ impl XlsxSaxAnalyser {
         self.last_error.as_ref()
     }
 
-    /// 对应 Java：`readComments(ReadSheet)` — comment replay after sheet SAX.
-    ///
-    /// # Errors
-    ///
-    /// Returns `ExcelError::Unsupported` because comment replay is already
-    /// handled inside [`read_xlsx`] via worksheet extras.
-    pub fn read_comments(&self, _read_sheet: &ReadSheet) -> Result<()> {
-        Err(ExcelError::Unsupported(
-            "XlsxSaxAnalyser.readComments is handled by read_xlsx extras dispatch".to_owned(),
-        ))
-    }
-
-    /// 对应 Java：`parseXmlSource(InputStream, ContentHandler)`.
-    ///
-    /// # Errors
-    ///
-    /// Returns `ExcelError::Unsupported` — Rust routes XML through quick-xml
-    /// handlers instead of Java SAX `ContentHandler`.
-    pub fn parse_xml_source(&self) -> Result<()> {
-        Err(ExcelError::Unsupported(
-            "XlsxSaxAnalyser.parseXmlSource is internal to read_xlsx quick-xml handlers".to_owned(),
-        ))
-    }
-
     /// 对应 Java：com.alibaba.excel.analysis.v07.XlsxSaxAnalyser。 Typed execute path. (Java `execute()` + listener on `ReadWorkbook`)
     ///
     /// # Errors
@@ -339,8 +315,8 @@ mod tests_extra {
     }
 
     #[test]
-    fn accessors_unsupported_entries_and_context() -> Result<()> {
-        // 对应 Java：XlsxSaxAnalyser 公开访问器与 Unsupported 方法
+    fn accessors_and_context() -> Result<()> {
+        // 对应 Java：XlsxSaxAnalyser 公开访问器与上下文
         let file = write_xlsx();
         let options = ReadOptions::default();
         let analyser = XlsxSaxAnalyser::from_path(file.path(), options)?;
@@ -356,14 +332,6 @@ mod tests_extra {
         );
         assert!(analyser.analysis_context().sheet_name().is_empty());
         assert!(analyser.last_error().is_none());
-
-        // readComments / parseXmlSource 由 read_xlsx 内部分派（对应 Java 方法签名保留）
-        assert!(
-            analyser
-                .read_comments(&ReadSheet::default_construction())
-                .is_err()
-        );
-        assert!(analyser.parse_xml_source().is_err());
 
         // 构造即可用（sheet_list 发现工作表）
         assert_eq!(analyser.sheet_list().len(), 1);

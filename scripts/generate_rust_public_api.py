@@ -6,10 +6,14 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+
+
+EXPECTED_CARGO_PUBLIC_API_VERSION = "cargo-public-api 0.52.0"
 
 
 def output(command: list[str], cwd: Path) -> str:
@@ -19,6 +23,10 @@ def output(command: list[str], cwd: Path) -> str:
             f"command failed ({process.returncode}): {' '.join(command)}\n{process.stderr.strip()}"
         )
     return process.stdout.strip()
+
+
+def git_dirty(repo: Path) -> bool:
+    return bool(output(["git", "status", "--porcelain", "--untracked-files=normal"], repo))
 
 
 def published_workspace_packages(repo: Path) -> list[str]:
@@ -38,6 +46,18 @@ def api_kind(signature: str) -> str:
         return "module"
     if tokens[:2] == ["pub", "use"]:
         return "reexport"
+    if tokens[:2] == ["pub", "variant"]:
+        return "variant"
+    if tokens[:2] == ["pub", "field"]:
+        return "field"
+    # cargo-public-api 当前对 enum variant 输出为
+    # `pub crate::path::Enum::Variant`（可能带 tuple/struct payload），没有
+    # 固定 `variant` 关键字。末段 PascalCase 可与小写 struct field 区分。
+    if re.match(
+        r"^pub\s+(?:[A-Za-z_][A-Za-z0-9_]*::)+[A-Z][A-Za-z0-9_]*(?:\(|\s*\{|$)",
+        signature,
+    ):
+        return "variant"
     if " fn " in f" {signature} ":
         return "function"
     if tokens and tokens[0] == "impl":
@@ -65,7 +85,9 @@ def run_public_api(repo: Path, package: str, all_features: bool) -> dict[str, An
     return {"mode": "all_features" if all_features else "default", "count": len(items), "items": items}
 
 
-def build_manifest(repo: Path, packages: list[str]) -> dict[str, Any]:
+def build_manifest(
+    repo: Path, packages: list[str], extractor_version: str
+) -> dict[str, Any]:
     package_items = []
     for package in sorted(set(packages)):
         package_items.append(
@@ -80,10 +102,11 @@ def build_manifest(repo: Path, packages: list[str]) -> dict[str, Any]:
         "rust_repo": {
             "name": repo.resolve().name,
             "git_sha": output(["git", "rev-parse", "HEAD"], repo),
+            "dirty": git_dirty(repo),
         },
         "extractor": {
             "command": "cargo public-api -sss --color never",
-            "version": output(["cargo", "public-api", "--version"], repo),
+            "version": extractor_version,
         },
         "summary": {
             "packages": len(package_items),
@@ -102,11 +125,48 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--rust-root", type=Path, required=True)
     parser.add_argument("--package", action="append", default=[])
+    parser.add_argument(
+        "--allow-partial",
+        action="store_true",
+        help="允许仅生成 --package 指定 crate；权威 Java parity 快照不得使用",
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--check", action="store_true")
+    parser.add_argument(
+        "--expected-version",
+        default=EXPECTED_CARGO_PUBLIC_API_VERSION,
+        help="权威快照使用的 cargo-public-api 完整版本字符串",
+    )
     args = parser.parse_args()
-    packages = args.package or published_workspace_packages(args.rust_root)
-    manifest = build_manifest(args.rust_root, packages)
+    if git_dirty(args.rust_root) and not args.allow_partial:
+        parser.error("authoritative Rust public API extraction requires a clean worktree")
+    extractor_version = output(["cargo", "public-api", "--version"], args.rust_root)
+    if extractor_version != args.expected_version:
+        parser.error(
+            "cargo-public-api version mismatch: "
+            f"expected {args.expected_version!r}, got {extractor_version!r}"
+        )
+    published_packages = published_workspace_packages(args.rust_root)
+    packages = sorted(set(args.package)) if args.package else published_packages
+    unknown_packages = sorted(set(packages) - set(published_packages))
+    if unknown_packages:
+        parser.error(
+            "--package contains non-published or non-workspace crates: "
+            + ", ".join(unknown_packages)
+        )
+    missing_packages = sorted(set(published_packages) - set(packages))
+    if missing_packages and not args.allow_partial:
+        parser.error(
+            "authoritative Rust public API snapshot must include every published workspace crate; "
+            "missing: " + ", ".join(missing_packages)
+        )
+    manifest = build_manifest(args.rust_root, packages, extractor_version)
+    manifest["scope"] = {
+        "authoritative": not missing_packages,
+        "published_workspace_packages": published_packages,
+        "included_packages": packages,
+        "missing_packages": missing_packages,
+    }
     rendered = canonical_json(manifest)
     if args.check:
         if not args.output.is_file() or args.output.read_text(encoding="utf-8") != rendered:

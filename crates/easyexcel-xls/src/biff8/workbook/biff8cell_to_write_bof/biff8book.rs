@@ -7,151 +7,11 @@ pub struct Biff8Book {
     pub styles: Biff8StyleTable,
     /// When `true`, BIFF8 `DATEMODE` uses the 1904 date windowing system.
     pub use_1904_windowing: bool,
-    /// Raw bytes appended after the BIFF8 Workbook stream (images etc.)
-    pub extra_bytes: Vec<u8>,
+    /// 活动工作表索引；写入 WINDOW1，并与各工作表 WINDOW2 选择状态同步。
+    pub active_sheet: usize,
 }
 
 impl Biff8Book {
-    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Appends raw bytes to be written after the BIFF8 stream in the
-    /// OLE container. Used for embedding image data in the output.
-    pub fn write_raw_bytes(&mut self, bytes: &[u8]) {
-        self.extra_bytes.extend_from_slice(bytes);
-    }
-
-    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Encodes image bytes as BIFF8 Obj + `MSODrawing` records (Escher BSE
-    /// container) and appends them to `extra_bytes`. This produces output
-    /// compatible with POI's `HSSFWorkbook` image writing.
-    // 语义敏感：Escher 容器长度与 BIFF 记录长度按规范为 u32/u16 字段，
-    // 与原实现（POI HSSF 单记录嵌入）行为一致，保留 as 转换。
-    #[allow(clippy::cast_possible_truncation)]
-    /// 对应 Java：无直接对应对象；Rust 架构扩展。
-    pub fn write_image(&mut self, image_data: &[u8], _col: u8, _row: u32) {
-        // Determine image type from magic bytes
-        let blip_type: u8 = if image_data.len() >= 2 {
-            match &image_data[..2] {
-                [0x89, b'P'] => 0x09, // PNG
-                _ => 0x07,            // JPEG / default
-            }
-        } else {
-            0x07
-        };
-
-        let obj_id: u16 = 1;
-        let image_size = image_data.len() as u32;
-
-        // --- Obj Record (0x005D, common object) ---
-        let mut obj = Vec::with_capacity(26);
-        // ftCmo (Common object header, 18 bytes)
-        obj.extend_from_slice(&0x0015u16.to_le_bytes()); // ftCmo
-        obj.extend_from_slice(&0x0012u16.to_le_bytes()); // cbCmo = 18
-        obj.extend_from_slice(&0x0008u16.to_le_bytes()); // ot = Picture
-        obj.extend_from_slice(&obj_id.to_le_bytes()); // id
-        obj.extend_from_slice(&0x6011u16.to_le_bytes()); // grbit
-        obj.extend_from_slice(&[0u8; 4]); // reserved
-        obj.extend_from_slice(&[0u8; 4]); // reserved
-        obj.extend_from_slice(&[0u8; 2]); // reserved
-        // ftEnd
-        obj.extend_from_slice(&0x0000u16.to_le_bytes()); // ftEnd
-        obj.extend_from_slice(&0x0000u16.to_le_bytes()); // cbEnd
-
-        // --- MSODrawing Record (0x00EC) with Escher BSE ---
-        let mut drawing = Vec::new();
-
-        // === MsofbtDggContainer ===
-        let dgg_start = drawing.len();
-        drawing.extend_from_slice(&[0x0F, 0x00, 0x00, 0xF0]); // ver+inst+type
-        drawing.extend_from_slice(&0u32.to_le_bytes()); // length placeholder
-        // MsofbtDgg
-        drawing.extend_from_slice(&[0x00, 0x00, 0x00, 0xF0]); // ver+inst+type
-        drawing.extend_from_slice(&0x0000_0008u32.to_le_bytes()); // length
-        drawing.extend_from_slice(&(-1i32).to_le_bytes()); // idclusters
-        drawing.extend_from_slice(&1u32.to_le_bytes()); // cSavedDrawings
-        drawing.extend_from_slice(&1u32.to_le_bytes()); // cSavedShapes
-        let dgg_end = drawing.len();
-        let dgg_len = (dgg_end - dgg_start - 4) as u32;
-        drawing[dgg_start..dgg_start + 4].copy_from_slice(&dgg_len.to_le_bytes());
-
-        // === MsofbtDgContainer ===
-        drawing.extend_from_slice(&[0x0F, 0x00, 0x02, 0xF0]); // ver+inst+type
-        drawing.extend_from_slice(&0u32.to_le_bytes()); // length placeholder
-        // MsofbtDg
-        drawing.extend_from_slice(&[0x00, 0x00, 0x08, 0xF0]); // ver+inst+type
-        drawing.extend_from_slice(&0x0000_0008u32.to_le_bytes()); // length
-        drawing.extend_from_slice(&1u32.to_le_bytes()); // drawingId
-        drawing.extend_from_slice(&1u32.to_le_bytes()); // cLastSpId
-        // MsofbtSpgrContainer
-        drawing.extend_from_slice(&[0x0F, 0x00, 0x03, 0xF0]); // ver+inst+type
-        let spgr_start = drawing.len();
-        drawing.extend_from_slice(&0u32.to_le_bytes()); // length placeholder
-        // MsofbtSpContainer
-        drawing.extend_from_slice(&[0x0F, 0x00, 0x04, 0xF0]); // ver+inst+type
-        let sp_start = drawing.len();
-        drawing.extend_from_slice(&0u32.to_le_bytes()); // length placeholder
-        // MsofbtSp
-        drawing.extend_from_slice(&[0x00, 0x00, 0x0A, 0xF0]); // ver+inst+type
-        drawing.extend_from_slice(&0x0000_0008u32.to_le_bytes()); // length
-        drawing.extend_from_slice(&obj_id.to_le_bytes()); // shapeId
-        drawing.extend_from_slice(&0x0A00u16.to_le_bytes()); // flags
-        let sp_end = drawing.len();
-        let sp_len = (sp_end - sp_start - 4) as u32;
-        drawing[sp_start..sp_start + 4].copy_from_slice(&sp_len.to_le_bytes());
-
-        // MsofbtClientAnchor
-        drawing.extend_from_slice(&[0x00, 0x00, 0x10, 0xF0]); // ver+inst+type
-        drawing.extend_from_slice(&0x0000_0008u32.to_le_bytes()); // length
-        drawing.extend_from_slice(&[0u8; 8]); // 8 bytes anchor
-
-        // MsofbtClientData
-        drawing.extend_from_slice(&[0x00, 0x00, 0x11, 0xF0]); // ver+inst+type
-        drawing.extend_from_slice(&0x0000_0000u32.to_le_bytes()); // length
-
-        // Close spgr
-        let spgr_end = drawing.len();
-        let spgr_len = (spgr_end - spgr_start - 4) as u32;
-        drawing[spgr_start..spgr_start + 4].copy_from_slice(&spgr_len.to_le_bytes());
-
-        // Close Dg
-        let dg_end2 = drawing.len();
-        let dg_start2 = dgg_end; // dg container starts right after dgg
-        let dg_len2 = (dg_end2 - dg_start2 - 4) as u32;
-        drawing[dg_start2..dg_start2 + 4].copy_from_slice(&dg_len2.to_le_bytes());
-
-        // === MsofbtBSE (Blip Store Entry) with embedded image ===
-        drawing.extend_from_slice(&[0x02, 0x00, 0x07, 0xF0]); // ver+inst+type (BlipType depends)
-        let bse_start = drawing.len();
-        drawing.extend_from_slice(&0u32.to_le_bytes()); // length placeholder
-        drawing.push(blip_type); // btWin32
-        drawing.push(0x00); // btMacOS
-        drawing.extend_from_slice(&[0u8; 16]); // rgbUid (dummy)
-        drawing.extend_from_slice(&0x0000u16.to_le_bytes()); // tag
-        drawing.extend_from_slice(&image_size.to_le_bytes()); // size
-        drawing.extend_from_slice(&1u32.to_le_bytes()); // cRef
-        drawing.extend_from_slice(&0u32.to_le_bytes()); // foDelay
-        drawing.push(0x00); // usage
-        drawing.push(0x00); // cbName
-        drawing.push(0x00); // cbSave
-        drawing.extend_from_slice(image_data); // image bytes
-        // Padding to 4-byte boundary
-        while drawing.len() % 4 != 0 {
-            drawing.push(0x00);
-        }
-        let bse_end = drawing.len();
-        let bse_len = (bse_end - bse_start - 4) as u32;
-        drawing[bse_start..bse_start + 4].copy_from_slice(&bse_len.to_le_bytes());
-
-        // Write as BIFF records
-        let mut record_data = Vec::new();
-        // Obj record
-        record_data.extend_from_slice(&OBJ.to_le_bytes());
-        record_data.extend_from_slice(&(obj.len() as u16).to_le_bytes());
-        record_data.extend_from_slice(&obj);
-        // MSODrawing record
-        record_data.extend_from_slice(&MSODRAWING.to_le_bytes());
-        record_data.extend_from_slice(&(drawing.len() as u16).to_le_bytes());
-        record_data.extend_from_slice(&drawing);
-
-        self.extra_bytes.extend_from_slice(&record_data);
-    }
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 Creates a new worksheet and rejects duplicate names.
     ///
     /// # Errors
@@ -184,6 +44,82 @@ impl Biff8Book {
         self.sheets.last_mut().expect("just pushed")
     }
 
+    /// 将后端中立图表请求编译为 BIFF8 图表记录模型。
+    ///
+    /// # Errors
+    ///
+    /// 目标工作表不存在、系列为空、文本或坐标超出 BIFF8 限制时返回错误。
+    pub fn add_chart_mutation(
+        &mut self,
+        mutation: &easyexcel_model::ChartMutation,
+    ) -> Result<()> {
+        if mutation.series.is_empty() {
+            return Err(ExcelError::Xls(
+                "chart mutation requires at least one data series".to_owned(),
+            ));
+        }
+        if mutation.last_row < mutation.first_row || mutation.last_column < mutation.first_column {
+            return Err(ExcelError::Xls(
+                "chart mutation anchor end must not precede its start".to_owned(),
+            ));
+        }
+        for text in mutation
+            .title
+            .iter()
+            .chain(mutation.series.iter().filter_map(|series| series.name.as_ref()))
+        {
+            if text.contains('\0') || text.encode_utf16().count() > usize::from(u8::MAX) {
+                return Err(ExcelError::Xls(
+                    "BIFF8 chart titles and series names must contain at most 255 UTF-16 units and no NUL"
+                        .to_owned(),
+                ));
+            }
+        }
+        let target_index = self
+            .sheets
+            .iter()
+            .position(|sheet| sheet.name == mutation.sheet_name)
+            .ok_or_else(|| {
+                ExcelError::Xls(format!(
+                    "chart target sheet '{}' does not exist",
+                    mutation.sheet_name
+                ))
+            })?;
+        let known_sheets = self
+            .sheets
+            .iter()
+            .map(|sheet| sheet.name.as_str())
+            .collect::<std::collections::HashSet<_>>();
+        let kind = match mutation.chart_type {
+            easyexcel_model::ChartType::Bar => Biff8ChartKind::Bar,
+            easyexcel_model::ChartType::Line => Biff8ChartKind::Line,
+            easyexcel_model::ChartType::Pie => Biff8ChartKind::Pie,
+        };
+        let mut chart = Biff8Chart::new(
+            kind,
+            checked_chart_row(mutation.first_row)?,
+            checked_chart_column(mutation.first_column)?,
+            checked_chart_row(mutation.last_row)?,
+            checked_chart_column(mutation.last_column)?,
+        );
+        if let Some(title) = &mutation.title {
+            chart = chart.with_title(title.clone());
+        }
+        for source in &mutation.series {
+            let values = chart_range(&source.values, &known_sheets)?;
+            let mut series = Biff8ChartSeries::new(values);
+            if let Some(name) = &source.name {
+                series = series.with_name(name.clone());
+            }
+            if let Some(categories) = &source.categories {
+                series = series.with_categories(chart_range(categories, &known_sheets)?);
+            }
+            chart = chart.with_series(series);
+        }
+        self.sheets[target_index].add_chart(chart);
+        Ok(())
+    }
+
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 Serializes this book to an OLE Compound File containing a `Workbook` stream.
     ///
     /// # Errors
@@ -209,11 +145,15 @@ impl Biff8Book {
                 self,
                 &caches,
                 Some(encryption.filepass_payload()),
-            );
+            )?;
+            let plain = super::model::Biff8WorkbookModel::from_workbook_stream(&plain)?
+                .to_workbook_stream()?;
             super::encrypt::encrypt_crypto_api_workbook_stream(&plain, &encryption)
                 .map_err(ExcelError::Xls)?
         } else {
-            build_workbook_stream(self, &caches)
+            let plain = build_workbook_stream_result(self, &caches)?;
+            super::model::Biff8WorkbookModel::from_workbook_stream(&plain)?
+                .to_workbook_stream()?
         };
         let mut mem = Cursor::new(Vec::<u8>::new());
         {
@@ -226,11 +166,6 @@ impl Biff8Book {
                 #[rustfmt::skip]
                 let mut workbook = cf.create_stream("Workbook").map_err(|error| ExcelError::Cfb(format!("cannot create Workbook stream: {error}")))?;
                 workbook.write_all(&stream)?;
-            }
-            if !self.extra_bytes.is_empty() {
-                #[rustfmt::skip]
-                let mut images = cf.create_stream("Images").map_err(|error| ExcelError::Cfb(format!("cannot create Images stream: {error}")))?;
-                images.write_all(&self.extra_bytes)?;
             }
             #[rustfmt::skip]
             cf.flush().map_err(|error| ExcelError::Cfb(format!("cannot flush OLE2 container: {error}")))?;
@@ -359,4 +294,45 @@ impl Biff8Book {
         let mut file = std::fs::File::create(path)?;
         self.write_to_with_password(&mut file, password)
     }
+}
+
+fn chart_range(
+    range: &easyexcel_model::ChartRange,
+    known_sheets: &std::collections::HashSet<&str>,
+) -> Result<Biff8ChartRange> {
+    if range.last_row < range.first_row || range.last_column < range.first_column {
+        return Err(ExcelError::Xls(format!(
+            "chart range on sheet '{}' has an end before its start",
+            range.sheet_name
+        )));
+    }
+    if !known_sheets.contains(range.sheet_name.as_str()) {
+        return Err(ExcelError::Xls(format!(
+            "chart range sheet '{}' does not exist",
+            range.sheet_name
+        )));
+    }
+    Ok(Biff8ChartRange::new(
+        range.sheet_name.clone(),
+        checked_chart_row(range.first_row)?,
+        checked_chart_column(range.first_column)?,
+        checked_chart_row(range.last_row)?,
+        checked_chart_column(range.last_column)?,
+    ))
+}
+
+fn checked_chart_row(row: u32) -> Result<u16> {
+    u16::try_from(row).map_err(|_| {
+        ExcelError::Xls(format!(
+            "BIFF8 chart row {row} exceeds the 65535 row index limit"
+        ))
+    })
+}
+
+fn checked_chart_column(column: u16) -> Result<u8> {
+    u8::try_from(column).map_err(|_| {
+        ExcelError::Xls(format!(
+            "BIFF8 chart column {column} exceeds the 255 column index limit"
+        ))
+    })
 }

@@ -3,6 +3,8 @@
 //! 集合游标、标量替换、XML 渲染、行追加和引用平移均由
 //! `easyexcel-xlsx` 实现；本模块只保留门面值与错误契约转换。
 
+use std::collections::BTreeMap;
+
 use crate::TemplateData;
 use crate::core::{CellValue, ExcelError, Result};
 use crate::template::sheet_fill_state::PendingCollectionFill;
@@ -30,9 +32,43 @@ pub(crate) fn replace_collection_fills_in_sheet(
     let fills = fills
         .iter()
         .map(template_collection_fill)
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>>>()?;
     easyexcel_xlsx::replace_collection_fills_in_sheet(entries, worksheet, &fills)
         .map_err(ExcelError::from)
+}
+
+pub(crate) fn replace_collection_fills_in_sheet_with_comments(
+    entries: &mut [TemplateEntry],
+    worksheet: &str,
+    fills: &[PendingCollectionFill],
+) -> Result<Vec<easyexcel_xlsx::TemplateCommentPlacement>> {
+    let fills = fills
+        .iter()
+        .map(template_collection_fill)
+        .collect::<Result<Vec<_>>>()?;
+    easyexcel_xlsx::replace_collection_fills_in_sheet_with_comments(
+        entries,
+        worksheet,
+        &fills,
+    )
+    .map_err(ExcelError::from)
+}
+
+pub(crate) fn replace_collection_fills_in_sheet_with_decorations(
+    entries: &mut [TemplateEntry],
+    worksheet: &str,
+    fills: &[PendingCollectionFill],
+) -> Result<Vec<easyexcel_xlsx::TemplateDecorationPlacement>> {
+    let fills = fills
+        .iter()
+        .map(template_collection_fill)
+        .collect::<Result<Vec<_>>>()?;
+    easyexcel_xlsx::replace_collection_fills_in_sheet_with_decorations(
+        entries,
+        worksheet,
+        &fills,
+    )
+    .map_err(ExcelError::from)
 }
 
 /// 执行指定工作表的标量模板填充。
@@ -42,8 +78,28 @@ pub(crate) fn replace_scalar_cells_in_sheet(
     worksheet: &str,
     data: &TemplateData,
 ) -> Result<()> {
-    let data = template_fill_data(data);
+    let data = template_fill_data(data)?;
     easyexcel_xlsx::replace_scalar_cells_in_sheet(entries, worksheet, &data)
+        .map_err(ExcelError::from)
+}
+
+pub(crate) fn replace_scalar_cells_in_sheet_with_comments(
+    entries: &mut [TemplateEntry],
+    worksheet: &str,
+    data: &TemplateData,
+) -> Result<Vec<easyexcel_xlsx::TemplateCommentPlacement>> {
+    let data = template_fill_data(data)?;
+    easyexcel_xlsx::replace_scalar_cells_in_sheet_with_comments(entries, worksheet, &data)
+        .map_err(ExcelError::from)
+}
+
+pub(crate) fn replace_scalar_cells_in_sheet_with_decorations(
+    entries: &mut [TemplateEntry],
+    worksheet: &str,
+    data: &TemplateData,
+) -> Result<Vec<easyexcel_xlsx::TemplateDecorationPlacement>> {
+    let data = template_fill_data(data)?;
+    easyexcel_xlsx::replace_scalar_cells_in_sheet_with_decorations(entries, worksheet, &data)
         .map_err(ExcelError::from)
 }
 
@@ -56,43 +112,99 @@ pub(crate) fn append_rows_to_sheet(
 ) -> Result<()> {
     let rows = rows
         .iter()
-        .map(|row| row.iter().map(template_cell_value).collect::<Vec<_>>())
-        .collect::<Vec<_>>();
+        .map(|row| row.iter().map(template_cell_value).collect::<Result<Vec<_>>>())
+        .collect::<Result<Vec<_>>>()?;
     easyexcel_xlsx::append_rows_to_sheet(entries, worksheet, &rows).map_err(ExcelError::from)
 }
 
-fn template_collection_fill(fill: &PendingCollectionFill) -> TemplateCollectionFill {
-    TemplateCollectionFill {
+pub(crate) fn append_rows_to_sheet_with_comments(
+    entries: &mut [TemplateEntry],
+    worksheet: &str,
+    rows: &[Vec<CellValue>],
+) -> Result<Vec<easyexcel_xlsx::TemplateCommentPlacement>> {
+    let rows = rows
+        .iter()
+        .map(|row| row.iter().map(template_cell_value).collect::<Result<Vec<_>>>())
+        .collect::<Result<Vec<_>>>()?;
+    easyexcel_xlsx::append_rows_to_sheet_with_comments(entries, worksheet, &rows)
+        .map_err(ExcelError::from)
+}
+
+pub(crate) fn append_rows_to_sheet_with_decorations(
+    entries: &mut [TemplateEntry],
+    worksheet: &str,
+    rows: &[Vec<CellValue>],
+) -> Result<Vec<easyexcel_xlsx::TemplateDecorationPlacement>> {
+    let rows = rows
+        .iter()
+        .map(|row| row.iter().map(template_cell_value).collect::<Result<Vec<_>>>())
+        .collect::<Result<Vec<_>>>()?;
+    easyexcel_xlsx::append_rows_to_sheet_with_decorations(entries, worksheet, &rows)
+        .map_err(ExcelError::from)
+}
+
+fn template_collection_fill(fill: &PendingCollectionFill) -> Result<TemplateCollectionFill> {
+    Ok(TemplateCollectionFill {
         name: fill.wrapper.name().map(str::to_owned),
-        rows: fill.wrapper.rows().iter().map(template_fill_data).collect(),
-        direction: match fill.config.get_direction() {
+        rows: fill
+            .wrapper
+            .rows()
+            .iter()
+            .map(template_fill_data)
+            .collect::<Result<Vec<_>>>()?,
+        direction: match fill.config.effective_direction() {
             crate::FillDirection::Vertical => TemplateFillDirection::Vertical,
             crate::FillDirection::Horizontal => TemplateFillDirection::Horizontal,
         },
-        force_new_row: fill.config.get_force_new_row(),
-        auto_style: fill.config.get_auto_style(),
+        force_new_row: fill.config.effective_force_new_row(),
+        auto_style: fill.config.effective_auto_style(),
         order: fill.order,
         column_styles: fill.column_styles.clone(),
-    }
+    })
 }
 
-fn template_fill_data(data: &TemplateData) -> TemplateFillData {
-    TemplateFillData {
-        values: data
-            .values()
-            .iter()
-            .map(|(key, value)| (key.clone(), template_cell_value(value)))
-            .collect(),
+fn template_fill_data(data: &TemplateData) -> Result<TemplateFillData> {
+    let mut values = BTreeMap::new();
+    for (key, value) in data.values() {
+        values.insert(key.clone(), template_cell_value(value)?);
     }
+    Ok(TemplateFillData { values })
 }
 
-fn template_cell_value(value: &CellValue) -> TemplateCellValue {
-    match value {
-        CellValue::Empty | CellValue::Image(_) => TemplateCellValue::Empty,
-        CellValue::String(text)
-        | CellValue::Hyperlink { text, .. }
-        | CellValue::HyperlinkWithMetadata { text, .. } => TemplateCellValue::Text(text.clone()),
-        CellValue::RichText(value) => TemplateCellValue::Text(value.text_string().to_owned()),
+fn template_cell_value(value: &CellValue) -> Result<TemplateCellValue> {
+    Ok(match value {
+        CellValue::Empty => TemplateCellValue::Empty,
+        CellValue::Image(bytes) => TemplateCellValue::Images {
+            value: Box::new(TemplateCellValue::Empty),
+            images: vec![easyexcel_xlsx::TemplateImage::new(bytes.clone())],
+        },
+        CellValue::String(text) => TemplateCellValue::Text(text.clone()),
+        CellValue::Hyperlink { url, text } => crate::write::template_write::template_hyperlink_value(
+            url,
+            text,
+            crate::HyperlinkType::Url,
+            crate::CoordinateData::new(),
+        ),
+        CellValue::HyperlinkWithMetadata {
+            address,
+            text,
+            hyperlink_type,
+            coordinates,
+        } => {
+            if *hyperlink_type == crate::HyperlinkType::None {
+                TemplateCellValue::Text(text.clone())
+            } else {
+                crate::write::template_write::template_hyperlink_value(
+                    address,
+                    text,
+                    *hyperlink_type,
+                    *coordinates,
+                )
+            }
+        }
+        CellValue::RichText(value) => {
+            return crate::write::excel_writer_core::template_rich_text_cell_value(value);
+        }
         CellValue::Bool(value) => TemplateCellValue::Bool(*value),
         CellValue::Int(value) => TemplateCellValue::Number(value.to_string()),
         CellValue::Float(value) => TemplateCellValue::Number(value.to_string()),
@@ -103,10 +215,19 @@ fn template_cell_value(value: &CellValue) -> TemplateCellValue {
         }
         CellValue::Error(value) => TemplateCellValue::Error(value.clone()),
         CellValue::Formula(value) => TemplateCellValue::Formula(value.clone()),
-        CellValue::Comment { value, .. }
-        | CellValue::CommentWithMetadata { value, .. }
-        | CellValue::Images { value, .. } => {
-            template_cell_value(value)
+        CellValue::Comment { value, text } => TemplateCellValue::Comment {
+            value: Box::new(template_cell_value(value)?),
+            comment: easyexcel_xlsx::TemplateComment {
+                text: text.clone(),
+                ..easyexcel_xlsx::TemplateComment::default()
+            },
+        },
+        CellValue::CommentWithMetadata { value, comment } => TemplateCellValue::Comment {
+            value: Box::new(template_cell_value(value)?),
+            comment: crate::write::template_write::template_comment_data(comment),
+        },
+        CellValue::Images { value, images } => {
+            return crate::write::template_write::template_images_value(value, images);
         }
-    }
+    })
 }

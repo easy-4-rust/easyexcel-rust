@@ -7,7 +7,7 @@ use crate::core::write_font::WriteFont;
 /// Java keeps `Integer` for both indices; Rust uses `usize` to match
 /// `std::str::encode_utf16` and to align with how the rest of the
 /// `easyexcel-rust` workspace indexes strings.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct IntervalFont {
     start_index: usize,
     end_index: usize,

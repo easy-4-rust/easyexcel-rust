@@ -565,11 +565,11 @@
 
 | Java 依赖 | Rust 替代 | 说明 |
 |----------|----------|------|
-| Apache POI | `rust_xlsxwriter` | XLSX 写入 |
-| Apache POI (SAX) | `quick-xml` | XML 解析 |
-| Apache POI (HSSF) | `calamine` | XLS 读取 |
-| commons-csv | `csv` | CSV 处理 |
-| Java 旧对象缓存 | `MokaCache` + 独立 `FileCache` | Moka 生命周期对象缓存；文件缓存服务大文件 SAX |
+| Apache POI | `easyexcel-xlsx` + `rust_xlsxwriter` | OOXML 解析、模板保真与 XLSX 生成由格式引擎承载 |
+| Apache POI (SAX) | `easyexcel-xlsx` + `quick-xml` | 格式引擎内的事件流 XML 解析 |
+| Apache POI (HSSF) | `easyexcel-xls` | 自有 CFB/BIFF8 读取、写入、模板、公式和加密实现；`calamine` 仅作开发期回读证据 |
+| commons-csv | `easyexcel-csv` + `csv` | CSV 格式引擎与底层记录处理 |
+| Java 旧 Ehcache 契约 | `easyexcel-cache` 多后端策略 + facade `ReadCache`/selector | Memory、File、Moka 各自承载不同存储语义，不存在 Ehcache 同名实现或单一替代 |
 | Lombok | `proc-macro2` + `syn` | 派生宏 |
 | JUnit | `#[test]` | 测试框架 |
 

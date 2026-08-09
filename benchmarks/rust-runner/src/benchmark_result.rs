@@ -33,6 +33,8 @@ pub(crate) struct BenchmarkResult {
     pub(crate) file_size_bytes: u64,
     pub(crate) total_written_bytes: Option<u64>,
     pub(crate) worker_count: u32,
+    pub(crate) internal_map_work_factor: Option<u32>,
+    pub(crate) internal_map_queue_capacity: Option<usize>,
     pub(crate) trial: Option<u32>,
     pub(crate) worker_id: Option<u32>,
     pub(crate) success: bool,

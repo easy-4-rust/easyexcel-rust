@@ -299,6 +299,7 @@ pub(crate) fn read_model_sheet(
     extras: &[&crate::core::CellExtra],
     consumer: &mut dyn RowConsumer,
 ) -> Result<ReadFlow> {
+    let dispatch_plan = crate::read::read_dispatch_plan::ReadDispatchPlan::compile(consumer);
     let mut stored_rows = sheet.stored_rows().peekable();
     if stored_rows.peek().is_none() {
         if dispatch_extras(consumer, sheet_no, sheet_name, options, extras)? == ReadFlow::Stop {
@@ -326,7 +327,7 @@ pub(crate) fn read_model_sheet(
             if let Some(rich_text) = rich_text_cells.get(&(sheet_no, row_index, column)) {
                 value = CellValue::RichText(rich_text.clone());
             }
-            if !value.is_empty() {
+            if dispatch_plan.retain_present_columns() && !value.is_empty() {
                 present_columns.insert(column);
             }
             cells[column] = value;
@@ -394,7 +395,14 @@ pub(crate) fn process_row<T>(
 where
     T: ExcelRow,
 {
-    let present_columns = (0..cells.len()).collect();
+    // 只有动态 RowData 需要区分“源中缺失”和“显式空单元格”。强类型 schema
+    // 已固定列位置，不为 CSV 的每一行构造 0..len 的 HashSet；与 XLSX
+    // ReadDispatchPlan 的 capability 判定保持一致。
+    let present_columns = if T::schema().is_empty() {
+        (0..cells.len()).collect()
+    } else {
+        HashSet::new()
+    };
     let mut consumer = TypedRowConsumer::<T> { listener };
     dispatch_row(
         &mut consumer,

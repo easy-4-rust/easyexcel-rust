@@ -46,9 +46,11 @@ where
             context = context.with_column(column);
         }
         let handler_cell = collect_handler_cell_style(handlers, &context);
+        let handler_font = collect_handler_write_font(handlers, &context);
         if annotation_cell.is_none()
             && annotation_font.is_none()
             && handler_cell.is_none()
+            && handler_font.is_none()
             && converted_data_format.is_none()
         {
             continue;
@@ -58,6 +60,7 @@ where
             cell: annotation_cell,
             font: annotation_font,
             handler_cell,
+            handler_font,
             converted_cell: None,
             converted_data_format,
             ignore_fill_style: false,
@@ -68,14 +71,7 @@ where
     if formats.is_empty() {
         return Ok(None);
     }
-    let mut compiler = generation::new_workbook();
-    let worksheet = compiler.add_worksheet();
-    for (index, format) in formats.iter().enumerate() {
-        let row = u32::try_from(index)
-            .map_err(|_| ExcelError::Format("too many template fill styles".to_owned()))?;
-        generation::write_blank(worksheet, row, 0, format).map_err(format_error)?;
-    }
-    let workbook = generation::serialize_workbook(&mut compiler).map_err(ExcelError::from)?;
+    let workbook = generation::compile_blank_format_workbook(&formats).map_err(ExcelError::from)?;
     Ok(Some(crate::template::CompiledTemplateFillStyles {
         workbook,
         columns: styled_columns,
@@ -139,25 +135,28 @@ pub(crate) fn apply_xlsx_mutations(
                 column_index,
                 value,
             } => {
-                let worksheet = workbook
-                    .worksheet_from_name(&sheet_name)
-                    .map_err(format_error)?;
+                let worksheet = generation::worksheet_by_name(workbook, &sheet_name)
+                    .map_err(ExcelError::from)?;
                 write_mutation_cell(worksheet, row_index, column_index, &value)?;
             }
             WriteMutation::ProtectSheet {
                 sheet_name,
                 password,
             } => {
-                let worksheet = workbook
-                    .worksheet_from_name(&sheet_name)
-                    .map_err(format_error)?;
-                worksheet.protect_with_password(&password);
+                let worksheet = generation::worksheet_by_name(workbook, &sheet_name)
+                    .map_err(ExcelError::from)?;
+                generation::protect_worksheet(worksheet, &password);
             }
-            WriteMutation::AddChart(chart) => add_chart(workbook, &chart)?,
+            WriteMutation::AddChart(chart) => {
+                generation::add_chart(workbook, &chart).map_err(ExcelError::from)?;
+            }
             // `rust_xlsxwriter::merge_range` 会重写左上角单元格；Java
             // `Sheet.addMergedRegion` 不会。合并区域因此在工作簿序列化后由
             // OOXML package 层只修改 `<mergeCells>` 元数据。
             WriteMutation::AddMerge { .. } => {}
+            // rust_xlsxwriter 没有删除 note 的公开入口；工作簿序列化后由
+            // easyexcel-xlsx 的 OOXML package 引擎执行。
+            WriteMutation::RemoveComment { .. } => {}
         }
     }
     Ok(())
@@ -176,8 +175,13 @@ pub(crate) fn apply_xlsx_template_mutations(
                 column_index,
                 value,
             } => {
-                let value = crate::write::template_write::template_cell_value(&value)?;
-                package.set_cell(&sheet_name, row_index, column_index, &value)?;
+                apply_xlsx_template_cell(
+                    package,
+                    &sheet_name,
+                    row_index,
+                    column_index,
+                    &value,
+                )?;
             }
             WriteMutation::ProtectSheet {
                 sheet_name,
@@ -188,7 +192,39 @@ pub(crate) fn apply_xlsx_template_mutations(
                 range,
             } => package.apply_sheet_layout(&sheet_name, &[], &[range])?,
             WriteMutation::AddChart(chart) => add_chart_to_template(package, &chart)?,
+            WriteMutation::RemoveComment {
+                sheet_name,
+                row_index,
+                column_index,
+            } => {
+                package.remove_comment(&sheet_name, row_index, column_index)?;
+            }
         }
+    }
+    Ok(())
+}
+
+fn apply_xlsx_template_cell(
+    package: &mut crate::write::template_write::TemplatePackage,
+    sheet_name: &str,
+    row_index: u32,
+    column_index: u16,
+    value: &CellValue,
+) -> Result<()> {
+    let cell_value = crate::write::template_write::template_cell_value(value)?;
+    package.set_cell_with_decorations(sheet_name, row_index, column_index, &cell_value)
+}
+
+/// 在工作簿序列化后应用不能由 rust_xlsxwriter 原位表达的 OOXML 修改。
+pub(crate) fn apply_deferred_xlsx_mutations(
+    package: &mut crate::write::template_write::TemplatePackage,
+    plan: &WriteMutationPlan,
+) -> Result<()> {
+    for (sheet_name, range) in plan.merge_ranges()? {
+        package.apply_sheet_layout(&sheet_name, &[], &[range])?;
+    }
+    for (sheet_name, row_index, column_index) in plan.comment_removals()? {
+        package.remove_comment(&sheet_name, row_index, column_index)?;
     }
     Ok(())
 }
@@ -215,77 +251,11 @@ fn add_chart_to_template(
             .set_name(sheet_name)
             .map_err(format_error)?;
     }
-    add_chart(&mut compiler, mutation)?;
+    generation::add_chart(&mut compiler, mutation).map_err(ExcelError::from)?;
     let bytes = generation::serialize_workbook(&mut compiler).map_err(ExcelError::from)?;
     package
         .import_chart(&bytes, &mutation.sheet_name)
         .map_err(ExcelError::from)
-}
-
-fn add_chart(workbook: &mut Workbook, mutation: &crate::ChartMutation) -> Result<()> {
-    if mutation.series.is_empty() {
-        return Err(ExcelError::Format(
-            "chart mutation requires at least one data series".to_owned(),
-        ));
-    }
-    if mutation.last_row < mutation.first_row || mutation.last_column < mutation.first_column {
-        return Err(ExcelError::Format(
-            "chart mutation anchor end must not precede its start".to_owned(),
-        ));
-    }
-    let chart_type = match mutation.chart_type {
-        crate::ChartType::Bar => generation::ChartType::Bar,
-        crate::ChartType::Line => generation::ChartType::Line,
-        crate::ChartType::Pie => generation::ChartType::Pie,
-    };
-    let mut chart = generation::Chart::new(chart_type);
-    if let Some(title) = &mutation.title {
-        chart.title().set_name(title);
-    }
-    for source in &mutation.series {
-        validate_chart_range(&source.values)?;
-        let series = chart.add_series().set_values((
-            source.values.sheet_name.as_str(),
-            source.values.first_row,
-            source.values.first_column,
-            source.values.last_row,
-            source.values.last_column,
-        ));
-        if let Some(categories) = &source.categories {
-            validate_chart_range(categories)?;
-            series.set_categories((
-                categories.sheet_name.as_str(),
-                categories.first_row,
-                categories.first_column,
-                categories.last_row,
-                categories.last_column,
-            ));
-        }
-        if let Some(name) = &source.name {
-            series.set_name(name.as_str());
-        }
-    }
-
-    let worksheet = workbook
-        .worksheet_from_name(&mutation.sheet_name)
-        .map_err(format_error)?;
-    let width = u32::from(mutation.last_column - mutation.first_column + 1).saturating_mul(64);
-    let height = (mutation.last_row - mutation.first_row + 1).saturating_mul(20);
-    chart.set_width(width).set_height(height);
-    worksheet
-        .insert_chart(mutation.first_row, mutation.first_column, &chart)
-        .map(|_| ())
-        .map_err(format_error)
-}
-
-fn validate_chart_range(range: &crate::ChartRange) -> Result<()> {
-    if range.last_row < range.first_row || range.last_column < range.first_column {
-        return Err(ExcelError::Format(format!(
-            "chart range on sheet '{}' has an end before its start",
-            range.sheet_name
-        )));
-    }
-    Ok(())
 }
 
 fn write_mutation_cell(
@@ -294,65 +264,55 @@ fn write_mutation_cell(
     column_index: u16,
     value: &CellValue,
 ) -> Result<()> {
+    let default_format = generation::new_format();
     match value {
-        CellValue::Empty => generation::write_blank(
-            worksheet,
-            row_index,
-            column_index,
-            &generation::new_format(),
-        )
-        .map_err(format_error),
+        CellValue::Empty => generation::GeneratedCellValue::Blank
+            .write(worksheet, row_index, column_index, Some(&default_format))
+            .map_err(format_error),
         CellValue::String(value) | CellValue::Error(value) => {
-            generation::write_string(worksheet, row_index, column_index, value)
+            generation::GeneratedCellValue::Text(value.clone())
+                .write(worksheet, row_index, column_index, None)
                 .map_err(format_error)
         }
         CellValue::Bool(value) => {
-            generation::write_boolean(worksheet, row_index, column_index, *value)
+            generation::GeneratedCellValue::Bool(*value)
+                .write(worksheet, row_index, column_index, None)
                 .map_err(format_error)
         }
         CellValue::Int(value) => {
-            generation::write_integer(worksheet, row_index, column_index, *value, None)
+            generation::GeneratedCellValue::Integer(*value)
+                .write(worksheet, row_index, column_index, None)
                 .map_err(format_error)
         }
         CellValue::Float(value) => {
-            generation::write_number(worksheet, row_index, column_index, *value)
+            generation::GeneratedCellValue::Number(*value)
+                .write(worksheet, row_index, column_index, None)
                 .map_err(format_error)
         }
         CellValue::Decimal(value) => {
             let number = value.to_string().parse::<f64>().map_err(|error| {
                 ExcelError::Format(format!("cannot write decimal mutation {value}: {error}"))
             })?;
-            generation::write_number(worksheet, row_index, column_index, number)
+            generation::GeneratedCellValue::Number(number)
+                .write(worksheet, row_index, column_index, None)
                 .map_err(format_error)
         }
         CellValue::Formula(value) => {
-            generation::write_formula(worksheet, row_index, column_index, value)
+            generation::GeneratedCellValue::Formula(value.clone())
+                .write(worksheet, row_index, column_index, None)
                 .map_err(format_error)
         }
-        CellValue::Date(value) => generation::write_date_with_format(
-            worksheet,
-            row_index,
-            column_index,
-            *value,
-            &generation::new_format(),
-        )
-        .map_err(format_error),
-        CellValue::DateTime(value) => generation::write_datetime_with_format(
-            worksheet,
-            row_index,
-            column_index,
-            *value,
-            &generation::new_format(),
-        )
-        .map_err(format_error),
-        CellValue::Hyperlink { url, text } => generation::write_url_with_options(
-            worksheet,
-            row_index,
-            column_index,
-            url,
-            text,
-            &generation::new_format(),
-        )
+        CellValue::Date(value) => generation::GeneratedCellValue::Date(*value)
+            .write(worksheet, row_index, column_index, Some(&default_format))
+            .map_err(format_error),
+        CellValue::DateTime(value) => generation::GeneratedCellValue::DateTime(*value)
+            .write(worksheet, row_index, column_index, Some(&default_format))
+            .map_err(format_error),
+        CellValue::Hyperlink { url, text } => generation::GeneratedCellValue::Hyperlink {
+            target: url.clone(),
+            text: text.clone(),
+        }
+        .write(worksheet, row_index, column_index, Some(&default_format))
         .map_err(format_error),
         CellValue::HyperlinkWithMetadata {
             address,
@@ -361,17 +321,16 @@ fn write_mutation_cell(
             ..
         } => {
             if *hyperlink_type == HyperlinkType::None {
-                generation::write_string(worksheet, row_index, column_index, text)
+                generation::GeneratedCellValue::Text(text.clone())
+                    .write(worksheet, row_index, column_index, None)
                     .map_err(format_error)
             } else {
-                generation::write_url_with_options(
-                    worksheet,
-                    row_index,
-                    column_index,
-                    &xlsx_hyperlink_target(address, *hyperlink_type),
-                    text,
-                    &generation::new_format(),
-                )
+                generation::GeneratedCellValue::Hyperlink {
+                    target: crate::write::template_write::template_hyperlink_type(*hyperlink_type)
+                        .generation_target(address),
+                    text: text.clone(),
+                }
+                .write(worksheet, row_index, column_index, Some(&default_format))
                 .map_err(format_error)
             }
         }
@@ -381,13 +340,14 @@ fn write_mutation_cell(
         }
         CellValue::CommentWithMetadata { value, comment } => {
             write_mutation_cell(worksheet, row_index, column_index, value)?;
-            generation::insert_note_with_metadata(
+            generation::insert_note_with_policy(
                 worksheet,
                 row_index,
                 column_index,
                 &comment.note_text(),
                 comment.get_author(),
                 xlsx_comment_movement(comment.get_anchor().get_anchor_type()),
+                comment.get_visible(),
             )
             .map_err(format_error)
         }
@@ -411,9 +371,13 @@ fn write_mutation_cell(
             value,
             &generation::new_format(),
         ),
-        CellValue::Image(_) => Err(ExcelError::Unsupported(
-            "workbook handler image mutations require an explicit image anchor".to_owned(),
-        )),
+        CellValue::Image(image) => insert_image_data(
+            worksheet,
+            row_index,
+            column_index,
+            image,
+            &ImageLayout::default(),
+        ),
     }
 }
 

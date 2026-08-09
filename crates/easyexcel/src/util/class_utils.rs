@@ -10,40 +10,9 @@ use crate::metadata::{
     DateTimeFormatProperty, ExcelContentProperty, FontProperty, NumberFormatProperty, StyleProperty,
 };
 
-/// 字段内容属性缓存键。
-///
-/// 对应 Java：`ClassUtils.ContentPropertyKey`。
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ContentPropertyKey {
-    clazz: Option<TypeId>,
-    head_class: Option<TypeId>,
-    field_name: String,
-}
-
-impl ContentPropertyKey {
-    #[must_use]
-    pub fn new(clazz: Option<TypeId>, head_class: Option<TypeId>, field_name: impl Into<String>) -> Self {
-        Self { clazz, head_class, field_name: field_name.into() }
-    }
-    #[must_use] pub const fn get_clazz(&self) -> Option<TypeId> { self.clazz }
-    pub const fn set_clazz(&mut self, value: Option<TypeId>) { self.clazz = value; }
-    #[must_use] pub const fn get_head_class(&self) -> Option<TypeId> { self.head_class }
-    pub const fn set_head_class(&mut self, value: Option<TypeId>) { self.head_class = value; }
-    #[must_use] pub fn get_field_name(&self) -> &str { &self.field_name }
-    pub fn set_field_name(&mut self, value: impl Into<String>) { self.field_name = value.into(); }
-}
-
-/// 解析字段表时使用的 include/exclude 缓存键。
-///
-/// 对应 Java：`ClassUtils.FieldCacheKey`。
-#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
-pub struct FieldCacheKey {
-    clazz: Option<TypeId>,
-    exclude_column_field_names: Vec<String>,
-    exclude_column_indexes: Vec<usize>,
-    include_column_field_names: Vec<String>,
-    include_column_indexes: Vec<usize>,
-}
+// 保留历史公开路径 `util::class_utils::*Key`，真实对象分别由独立模块承载。
+pub use super::content_property_key::ContentPropertyKey;
+pub use super::field_cache_key::FieldCacheKey;
 
 /// Rust 无运行时接口反射；调用方传入 derive/注册阶段已知的 trait 类型键，
 /// 本函数按 Java `getAllInterfaces` 语义保序去重。
@@ -57,21 +26,6 @@ pub fn get_all_interfaces(interfaces: Option<&[TypeId]>) -> Option<Vec<TypeId>> 
     Some(result)
 }
 
-impl FieldCacheKey {
-    #[must_use]
-    pub fn new(clazz: Option<TypeId>) -> Self { Self { clazz, ..Self::default() } }
-    #[must_use] pub const fn get_clazz(&self) -> Option<TypeId> { self.clazz }
-    pub const fn set_clazz(&mut self, value: Option<TypeId>) { self.clazz = value; }
-    #[must_use] pub fn get_exclude_column_field_names(&self) -> &[String] { &self.exclude_column_field_names }
-    pub fn set_exclude_column_field_names(&mut self, value: Vec<String>) { self.exclude_column_field_names = value; }
-    #[must_use] pub fn get_exclude_column_indexes(&self) -> &[usize] { &self.exclude_column_indexes }
-    pub fn set_exclude_column_indexes(&mut self, value: Vec<usize>) { self.exclude_column_indexes = value; }
-    #[must_use] pub fn get_include_column_field_names(&self) -> &[String] { &self.include_column_field_names }
-    pub fn set_include_column_field_names(&mut self, value: Vec<String>) { self.include_column_field_names = value; }
-    #[must_use] pub fn get_include_column_indexes(&self) -> &[usize] { &self.include_column_indexes }
-    pub fn set_include_column_indexes(&mut self, value: Vec<usize>) { self.include_column_indexes = value; }
-}
-
 /// 对应 Java：com.alibaba.excel.util.ClassUtils。 Mirrors `com.alibaba.excel.util.ClassUtils#declaredExcelContentProperty`.
 ///
 #[must_use]
@@ -80,7 +34,7 @@ pub fn declared_excel_content_property<T: ExcelRow>(
 ) -> Option<ExcelContentProperty> {
     let column = crate::util::field_utils::get_field::<T>(field_name)?;
     Some(ExcelContentProperty {
-        content_style_property: column.content_style.map(StyleProperty::new),
+        content_style_property: column.content_style.map(StyleProperty::from_cell_style),
         content_font_property: column.content_font_style.map(FontProperty::build),
         date_time_format_property: DateTimeFormatProperty::build(
             column.effective_date_time_format(),

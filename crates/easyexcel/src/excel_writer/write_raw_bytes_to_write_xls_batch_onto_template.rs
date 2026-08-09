@@ -1,19 +1,4 @@
 impl ExcelWriter {
-    /// 对应 Java：`WriteWorkbookHolder.getTempTemplateInputStream() != null`。 Appends raw bytes to the BIFF8 output stream. These bytes are
-    /// written as an "Images" OLE stream in the CFB container when
-    /// the file is serialized. Used for embedding image data in XLS.
-    pub fn write_raw_bytes(&mut self, bytes: &[u8]) -> &mut Self {
-        self.xls_book.write_raw_bytes(bytes);
-        self
-    }
-
-    /// 对应 Java：`WriteWorkbookHolder.getTempTemplateInputStream() != null`。 Encodes image bytes as BIFF8 Obj + `MSODrawing` + Escher BSE
-    /// records (POI HSSF compatible) and embeds them in the output.
-    pub fn write_image(&mut self, image_data: &[u8], col: u8, row: u32) -> &mut Self {
-        self.xls_book.write_image(image_data, col, row);
-        self
-    }
-
     /// Returns whether [`WriteOptions::template_file`] / `template_bytes` is set.
     ///
     /// 对应 Java：`WriteWorkbookHolder.getTempTemplateInputStream() != null`.
@@ -43,6 +28,65 @@ impl ExcelWriter {
     #[must_use]
     pub(crate) fn password(&self) -> Option<&str> {
         self.password.as_deref()
+    }
+
+    /// 返回异常结束时是否仍输出工作簿，供共享模板 executor 保持同一生命周期语义。
+    ///
+    /// 对应 Java：`WriteWorkbookHolder#getWriteExcelOnException()`。
+    #[must_use]
+    pub(crate) const fn write_excel_on_exception(&self) -> bool {
+        self.write_excel_on_exception
+    }
+
+    /// 返回 BIFF8 模板 VBA 保存策略，供共享 fill executor 复用。
+    #[must_use]
+    pub(crate) const fn biff8_macro_policy(&self) -> &crate::Biff8MacroPolicy {
+        &self.biff8_macro_policy
+    }
+
+    /// 返回统一 writer 的输出流关闭策略，供模板引擎接管相同生命周期。
+    #[must_use]
+    pub(crate) const fn auto_close_stream_enabled(&self) -> bool {
+        self.auto_close_stream
+    }
+
+    /// 将真实输出目标移交给共享模板引擎。
+    ///
+    /// 路径 writer 仅传递路径；流 writer 同时移交已擦除类型的 writer 与
+    /// 原关闭回调，避免模板 fill 误写到逻辑文件名。
+    pub(crate) fn take_template_output(&mut self) -> crate::template::TemplateOutput<'static> {
+        if let Some(writer) = self.output_stream.take() {
+            return crate::template::TemplateOutput::Managed {
+                writer,
+                close: self.close_stream.take(),
+            };
+        }
+        crate::template::TemplateOutput::Path(self.path.clone())
+    }
+
+    /// 模板 executor 尚未安装即初始化失败时，完成原始输出目标的生命周期。
+    ///
+    /// 此时不能调用普通 `finish_on_exception`，因为它会再次尝试启动并解析同一
+    /// 无效模板。路径目标按 Java 已打开 `FileOutputStream` 的可观察语义创建为空；
+    /// 受管流仅在 `autoCloseStream(true)` 时调用原关闭动作。
+    pub(crate) fn discard_uninitialized_template_output(&mut self) -> Result<()> {
+        let uses_output_path = self.output_stream.is_none();
+        self.output_stream.take();
+        if self.auto_close_stream
+            && let Some(close) = self.close_stream.take()
+        {
+            close().map_err(ExcelError::from)?;
+        }
+        if uses_output_path {
+            if let Some(parent) = self.path.parent()
+                && !parent.as_os_str().is_empty()
+            {
+                std::fs::create_dir_all(parent)?;
+            }
+            std::fs::File::create(&self.path)?;
+        }
+        self.finished = true;
+        Ok(())
     }
 
     /// 对应 Java：`WriteWorkbookHolder.getTempTemplateInputStream() != null`。 Marks the writer finished without persisting workbook output.
@@ -75,16 +119,26 @@ impl ExcelWriter {
     }
 
     fn finish_with_exception(&mut self, on_exception: bool) -> Result<()> {
+        if self.backend_selection == crate::WriteBackendSelection::Failed {
+            self.finished = true;
+            if self.auto_close_stream
+                && let Some(close) = self.close_stream.take()
+                && let Err(error) = close()
+            {
+                return Err(ExcelError::Format(format!(
+                    "stateful streaming backend failed; output close also failed: {error}"
+                )));
+            }
+            return Err(ExcelError::Format(
+                "cannot finish after stateful streaming backend failed".to_owned(),
+            ));
+        }
         if self.finished {
             return Ok(());
         }
         self.start()?;
-        if let Err(error) = self.finish_gzip_spills() {
-            self.finished = true;
-            return Err(error);
-        }
         self.finished = true;
-        let write_excel = !on_exception || self.write_excel_on_exception;
+        let mut write_excel = !on_exception || self.write_excel_on_exception;
         let mut result = Ok(());
         let context = WriteWorkbookContext::new(&self.path)
             .with_mutation_plan(self.mutation_plan.clone());
@@ -93,7 +147,42 @@ impl ExcelWriter {
         if let Err(error) = after_workbook(&mut handlers, &context) {
             result = Err(error);
         }
-        if !self.mutation_plan.is_empty()? && self.is_csv() {
+        // `afterWorkbookDispose` 仍可通过共享 mutation plan 请求随机访问。
+        // 必须在消费 journal 前观察这些最终能力；否则自动流式 writer 已无从
+        // 晋升，只能把不完整的常量内存 workbook 误当作完整结果保存。
+        let has_deferred_mutations = match self.mutation_plan.is_empty() {
+            Ok(is_empty) => !is_empty,
+            Err(error) => {
+                result = Err(error);
+                write_excel = false;
+                false
+            }
+        };
+        if write_excel && has_deferred_mutations {
+            match self.backend_selection {
+                crate::WriteBackendSelection::AutoStreaming => {
+                    if let Err(error) = self.promote_auto_streaming_to_memory() {
+                        result = Err(error);
+                        write_excel = false;
+                    }
+                }
+                crate::WriteBackendSelection::ExplicitStreaming => {
+                    self.backend_selection = crate::WriteBackendSelection::Failed;
+                    result = Err(ExcelError::Unsupported(
+                        "explicit constant-memory writer received a deferred random-access mutation"
+                            .to_owned(),
+                    ));
+                    write_excel = false;
+                }
+                _ => {}
+            }
+        }
+        if let Err(error) = self.finish_gzip_spills() {
+            self.backend_selection = crate::WriteBackendSelection::Failed;
+            result = Err(error);
+            write_excel = false;
+        }
+        if has_deferred_mutations && self.is_csv() {
             result = Err(ExcelError::Unsupported(
                 "workbook handler mutations are not supported for CSV output".to_owned(),
             ));
@@ -143,9 +232,9 @@ impl ExcelWriter {
     }
 
     fn save_xlsx_output(&mut self) -> Result<()> {
-        let deferred_merge_package = if self.template_package.is_none() {
+        let deferred_package = if self.template_package.is_none() {
             apply_xlsx_mutations(&mut self.workbook, &self.mutation_plan)?;
-            self.build_deferred_merge_package()?
+            self.build_deferred_package()?
         } else {
             None
         };
@@ -159,7 +248,7 @@ impl ExcelWriter {
                 self.password.as_deref(),
             );
         }
-        if let Some(package) = deferred_merge_package.as_ref() {
+        if let Some(package) = deferred_package.as_ref() {
             return save_template_package(
                 package,
                 &self.path,
@@ -180,18 +269,20 @@ impl ExcelWriter {
         }
     }
 
-    fn build_deferred_merge_package(
+    fn build_deferred_package(
         &mut self,
     ) -> Result<Option<crate::write::template_write::TemplatePackage>> {
         let merges = self.mutation_plan.merge_ranges()?;
-        if merges.is_empty() {
+        let comment_removals = self.mutation_plan.comment_removals()?;
+        if merges.is_empty() && comment_removals.is_empty() {
             return Ok(None);
         }
         let bytes = generation::serialize_workbook(&mut self.workbook).map_err(ExcelError::from)?;
         let mut package = crate::write::template_write::TemplatePackage::from_bytes(&bytes)?;
-        for (sheet_name, range) in merges {
-            package.apply_sheet_layout(&sheet_name, &[], &[range])?;
-        }
+        crate::write::excel_writer_core::apply_deferred_xlsx_mutations(
+            &mut package,
+            &self.mutation_plan,
+        )?;
         Ok(Some(package))
     }
 
@@ -238,13 +329,71 @@ impl ExcelWriter {
         self.finished
     }
 
-    /// 对应 Java：`WriteWorkbookHolder.getTempTemplateInputStream() != null`。 Returns the underlying `rust_xlsxwriter` workbook for advanced XLSX customization.
+    /// 对应 Java：`WriteWorkbookHolder#getWorkbook()`。返回底层
+    /// `rust_xlsxwriter` workbook，供高级 XLSX 定制使用。
     ///
-    /// Callers are responsible for preserving valid worksheet names and
-    /// workbook invariants. CSV writers do not use this workbook.
+    /// 首次写入前调用会锁定为内存后端。已经进入自动流式后端时，本兼容入口
+    /// 会尝试 journal 晋升；晋升失败会明确 panic，而不会返回一个不完整的
+    /// workbook。需要处理 I/O/重放错误的调用方应使用 [`Self::try_workbook_mut`]。
+    /// CSV/XLS writer 不使用该 XLSX workbook。
     #[must_use]
     pub fn workbook_mut(&mut self) -> &mut Workbook {
-        &mut self.workbook
+        match self.try_workbook_mut() {
+            Ok(workbook) => workbook,
+            Err(error) => panic!("cannot access the stateful XLSX workbook safely: {error}"),
+        }
+    }
+
+    /// 安全返回底层 XLSX workbook，并在需要时完成自动流式 journal 晋升。
+    ///
+    /// 该方法是 Rust 对 Java `WriteWorkbookHolder#getWorkbook()` 的可失败替代：
+    /// 显式常量内存模式拒绝随机访问；自动模式在首批写入前锁定为内存，或在
+    /// 已写入批次后重放 journal。这样高级定制不会绕过 Stateful 后端状态机。
+    ///
+    /// # Errors
+    ///
+    /// 当格式不是 XLSX、显式常量内存禁止随机访问、writer 已结束，或 journal
+    /// 晋升失败时返回错误。
+    pub fn try_workbook_mut(&mut self) -> Result<&mut Workbook> {
+        if self.finished {
+            return Err(ExcelError::Unsupported(
+                "writer already finished".to_owned(),
+            ));
+        }
+        if self.is_csv() || self.is_xls() {
+            return Err(ExcelError::Unsupported(
+                "the rust_xlsxwriter workbook is available only for XLSX output".to_owned(),
+            ));
+        }
+        match self.backend_selection {
+            crate::WriteBackendSelection::AutoUndecided => {
+                self.backend_selection = crate::WriteBackendSelection::InMemory;
+                self.default_constant_memory = false;
+                self.compress_temp_files = false;
+            }
+            crate::WriteBackendSelection::AutoStreaming => {
+                self.promote_auto_streaming_to_memory()?;
+            }
+            crate::WriteBackendSelection::ExplicitStreaming => {
+                return Err(ExcelError::Unsupported(
+                    "explicit constant-memory writer does not expose random-access workbook mutation"
+                        .to_owned(),
+                ));
+            }
+            crate::WriteBackendSelection::Promoting => {
+                return Err(ExcelError::Unsupported(
+                    "automatic streaming backend promotion is already in progress".to_owned(),
+                ));
+            }
+            crate::WriteBackendSelection::Failed => {
+                return Err(ExcelError::Format(
+                    "stateful streaming backend previously failed".to_owned(),
+                ));
+            }
+            crate::WriteBackendSelection::InMemory
+            | crate::WriteBackendSelection::ExplicitInMemory => {}
+        }
+        Ok(&mut self.workbook)
     }
 
     /// 对应 Java：`WriteWorkbookHolder.getTempTemplateInputStream() != null`。 Enables SXSSF-style compressed / disk-spill temp files for later sheets.
@@ -252,12 +401,54 @@ impl ExcelWriter {
     /// Java mapping: `SXSSFWorkbook.setCompressTempFiles(true)`, typically called from
     /// `WorkbookWriteHandler.afterWorkbookCreate`. Call this before the first
     /// `write` that creates a worksheet. Already-created sheets keep their mode.
+    ///
+    /// # Panics
+    ///
+    /// See [`Self::try_set_compress_temp_files`] for conflicting state transitions.
     pub fn set_compress_temp_files(&mut self, enabled: bool) -> &mut Self {
+        if let Err(error) = self.try_set_compress_temp_files(enabled) {
+            panic!("cannot change stateful temp-file compression safely: {error}");
+        }
+        self
+    }
+
+    /// 尝试修改后续常量内存 Sheet 的临时文件压缩策略。
+    ///
+    /// 自动模式尚未决策或已经进入流式后端时可以修改；已经锁定完整内存后端
+    /// 时不能再借此把后续 Sheet 偷换成流式实现。
+    ///
+    /// # Errors
+    ///
+    /// writer 已结束/失败，或启用压缩会与已经锁定的内存后端冲突时返回错误。
+    pub fn try_set_compress_temp_files(&mut self, enabled: bool) -> Result<&mut Self> {
+        if self.backend_selection == crate::WriteBackendSelection::Failed {
+            return Err(ExcelError::Format(
+                "stateful streaming backend previously failed".to_owned(),
+            ));
+        }
+        if self.finished {
+            return Err(ExcelError::Unsupported(
+                "writer already finished".to_owned(),
+            ));
+        }
+        if enabled
+            && matches!(
+                self.backend_selection,
+                crate::WriteBackendSelection::InMemory
+                    | crate::WriteBackendSelection::ExplicitInMemory
+            )
+        {
+            return Err(ExcelError::Unsupported(
+                "stateful writer is already locked to the in-memory backend".to_owned(),
+            ));
+        }
         self.compress_temp_files = enabled;
         if enabled {
             self.default_constant_memory = true;
+        } else if self.backend_selection == crate::WriteBackendSelection::AutoUndecided {
+            self.default_constant_memory = false;
         }
-        self
+        Ok(self)
     }
 
     /// Returns whether workbook-level temp-file compression / spill is enabled.
@@ -299,6 +490,11 @@ impl ExcelWriter {
     }
 /// 对应 Java：`WriteWorkbookHolder.getTempTemplateInputStream() != null`。
     pub(crate) fn start(&mut self) -> Result<()> {
+        if self.backend_selection == crate::WriteBackendSelection::Failed {
+            return Err(ExcelError::Format(
+                "cannot start after stateful streaming backend failed".to_owned(),
+            ));
+        }
         if self.started {
             return Ok(());
         }

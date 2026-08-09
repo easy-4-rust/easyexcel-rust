@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 
 use crate::write::holder::abstract_write_holder::AbstractWriteHolder;
+use crate::write::metadata::holder::write_holder::delegate_write_holder_contract;
 use crate::write::holder::write_table_holder::WriteTableHolder;
 use crate::write::metadata::WriteBasicParameter;
 use crate::{HolderEnum, WriteLastRowTypeEnum, WriteSheet};
@@ -72,6 +73,12 @@ impl<'a> WriteSheetHolder<'a> {
             last_row_index: 0,
             has_data: false,
         }.synchronize_sheet_name()
+    }
+
+    /// Java 无参构造器；真实 `WriteSheet` 可在 Holder 初始化阶段再设置。
+    #[must_use]
+    pub fn default_construction() -> Self {
+        Self::new("", 0)
     }
 
     /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteSheetHolder。 Creates a sheet holder and resolves nullable values against its parent.
@@ -149,11 +156,42 @@ impl<'a> WriteSheetHolder<'a> {
         self
     }
 
-    /// 使用完整 `WriteSheet` 创建 Holder。
+    /// 使用完整 `WriteSheet` 和父工作簿 Holder 创建 Holder。
+    ///
+    /// 对应 Java：`WriteSheetHolder(WriteSheet, WriteWorkbookHolder)`。Sheet
+    /// 参数继承父 Holder 的 converter、Handler 与列过滤配置，模板状态由父
+    /// Holder 的临时模板输入决定；父对象以构造时身份令牌记录，避免 Rust 自引用。
     #[must_use]
-    pub fn from_write_sheet(write_sheet: WriteSheet, template_present: bool) -> Self {
+    pub fn from_write_sheet(
+        write_sheet: WriteSheet,
+        parent: &super::write_workbook_holder::WriteWorkbookHolder<'_>,
+    ) -> Self {
+        let template_present = parent.get_temp_template_input_stream().is_some();
+        let mut holder = Self::new(write_sheet.sheet_name.clone(), write_sheet.sheet_no);
+        holder.abstract_holder = AbstractWriteHolder::from_parameter(
+            &write_sheet.parameter,
+            Some(parent.abstract_holder()),
+        );
+        holder.abstract_holder.abstract_holder_mut().holder_type = HolderEnum::Sheet;
+        holder.parent_write_workbook_holder_id = Some(std::ptr::from_ref(parent).addr());
+        holder.write_sheet = write_sheet;
+        holder.write_last_row_type_enum = if template_present {
+            WriteLastRowTypeEnum::TemplateEmpty
+        } else {
+            WriteLastRowTypeEnum::CommonEmpty
+        };
+        holder
+    }
+
+    /// 无父 Holder 时按显式模板状态创建 Sheet Holder，供 Rust 内部预构建使用。
+    #[must_use]
+    pub fn from_write_sheet_with_template_state(
+        write_sheet: WriteSheet,
+        template_present: bool,
+    ) -> Self {
         let mut holder = Self::new(write_sheet.sheet_name.clone(), write_sheet.sheet_no);
         holder.abstract_holder = AbstractWriteHolder::from_parameter(&write_sheet.parameter, None);
+        holder.abstract_holder.abstract_holder_mut().holder_type = HolderEnum::Sheet;
         holder.write_sheet = write_sheet;
         holder.write_last_row_type_enum = if template_present {
             WriteLastRowTypeEnum::TemplateEmpty
@@ -171,13 +209,13 @@ impl<'a> WriteSheetHolder<'a> {
         self.sheet_name.clone_from(&value.sheet_name);
         self.write_sheet = value;
     }
-    /// Java `getParentWriteWorkbookHolder` 的稳定身份映射。
+    /// Java `getParentWriteWorkbookHolder` 的构造时身份映射。
     #[must_use] pub const fn get_parent_write_workbook_holder_id(&self) -> Option<usize> { self.parent_write_workbook_holder_id }
-    /// Java 命名兼容入口；Rust 使用稳定身份而不是自引用。
+    /// Java 命名兼容入口；Rust 使用构造时身份令牌而不是自引用。
     #[must_use] pub const fn get_parent_write_workbook_holder(&self) -> Option<usize> { self.parent_write_workbook_holder_id }
-    /// Java `setParentWriteWorkbookHolder` 的稳定身份映射。
+    /// Java `setParentWriteWorkbookHolder` 的构造时身份映射。
     pub const fn set_parent_write_workbook_holder_id(&mut self, value: Option<usize>) { self.parent_write_workbook_holder_id = value; }
-    /// Java 命名兼容入口；Rust 使用稳定身份而不是自引用。
+    /// Java 命名兼容入口；Rust 使用构造时身份令牌而不是自引用。
     pub const fn set_parent_write_workbook_holder(&mut self, value: Option<usize>) { self.parent_write_workbook_holder_id = value; }
     /// Java `getWriteLastRowTypeEnum`。
     #[must_use] pub const fn get_write_last_row_type_enum(&self) -> WriteLastRowTypeEnum { self.write_last_row_type_enum }
@@ -235,6 +273,8 @@ impl DerefMut for WriteSheetHolder<'_> {
         &mut self.abstract_holder
     }
 }
+
+delegate_write_holder_contract!(WriteSheetHolder<'a>, abstract_holder);
 
 #[cfg(test)]
 mod tests {

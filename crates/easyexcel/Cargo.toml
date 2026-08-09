@@ -35,6 +35,7 @@ easyexcel-markdown.workspace = true
 easyexcel-xls.workspace = true
 easyexcel-xlsx.workspace = true
 easyexcel-tabular.workspace = true
+indexmap.workspace = true
 
 [dev-dependencies]
 base64.workspace = true

@@ -25,6 +25,15 @@ pub enum ByteOrderMarkEnum {
 }
 
 impl ByteOrderMarkEnum {
+    /// Java `values()` 的声明顺序。
+    pub const ALL: [Self; 5] = [Self::Utf8, Self::Utf16Be, Self::Utf16Le, Self::Utf32Be, Self::Utf32Le];
+    /// Java 枚举常量名。
+    #[must_use] pub const fn java_name(self) -> &'static str {
+        match self {
+            Self::Utf8 => "UTF_8", Self::Utf16Be => "UTF_16BE", Self::Utf16Le => "UTF_16LE",
+            Self::Utf32Be => "UTF_32BE", Self::Utf32Le => "UTF_32LE",
+        }
+    }
     /// Returns the BOM bytes as a slice.
     #[must_use]
     /// 对应 Java：com.alibaba.excel.enums.ByteOrderMarkEnum。
@@ -80,6 +89,14 @@ impl ByteOrderMarkEnum {
             easyexcel_io::ByteOrderMark::Utf32Be => Self::Utf32Be,
             easyexcel_io::ByteOrderMark::Utf32Le => Self::Utf32Le,
         }
+    }
+}
+
+impl std::str::FromStr for ByteOrderMarkEnum {
+    type Err = String;
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        Self::ALL.into_iter().find(|item| item.java_name() == value)
+            .ok_or_else(|| format!("unknown ByteOrderMarkEnum value: {value}"))
     }
 }
 

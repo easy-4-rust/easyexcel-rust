@@ -32,6 +32,32 @@ impl MapRowData {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    /// 按 Java 的连续整数键契约返回数据。对应 `MapRowData#get(int)`。
+    #[must_use]
+    pub fn get(&self, index: usize) -> Option<&CellValue> {
+        self.0.get(&index)
+    }
+
+    /// 返回 Map 条目数量。对应 Java `MapRowData#size()`。
+    #[must_use]
+    pub fn size(&self) -> usize {
+        self.0.len()
+    }
+}
+
+impl super::row_data::RowData for MapRowData {
+    fn get(&self, index: usize) -> Option<&CellValue> {
+        self.get(index)
+    }
+
+    fn size(&self) -> usize {
+        self.size()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.is_empty()
+    }
 }
 
 impl crate::core::ExcelRow for MapRowData {

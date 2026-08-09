@@ -3,7 +3,7 @@
 use std::path::Path;
 use std::{cell::RefCell, rc::Rc};
 
-use easyexcel::{AnalysisContext, EasyExcel, ReadListener};
+use easyexcel::{AnalysisContext, EasyExcel, ParallelMapReadListener, ReadListener};
 
 use crate::benchmark_row::BenchmarkRow;
 use crate::benchmark_spec::ScenarioSpec;
@@ -16,6 +16,14 @@ pub(crate) struct OperationResult {
     pub(crate) observed_rows: u64,
     pub(crate) checksum: String,
     pub(crate) file_size_bytes: u64,
+}
+
+/// 对应 Java：无直接对应对象；Rust 架构扩展。单工作簿纯函数映射并发参数。
+#[derive(Clone, Copy)]
+pub(crate) struct ParallelMapConfig {
+    pub(crate) worker_count: usize,
+    pub(crate) queue_capacity: usize,
+    pub(crate) work_factor: u32,
 }
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 执行统一写入场景。
@@ -37,11 +45,16 @@ pub(crate) fn write(
             .sheet("Data")
             .constant_memory(false)
             .do_write(values)?;
-    } else {
-        let mut writer = EasyExcel::write::<BenchmarkRow>(path)
-            .sheet("Data")
-            .constant_memory(true)
-            .build();
+    } else if scenario.memory == "constant" || scenario.memory == "batched" {
+        let builder = EasyExcel::write::<BenchmarkRow>(path).sheet("Data");
+        // BIFF8 has a 65,536-row Sheet limit and uses the workbook backend.
+        // `batched` bounds runner input allocation and splits Sheets; it must
+        // not pretend that the underlying XLS workbook is constant-memory.
+        let mut writer = if scenario.memory == "constant" {
+            builder.constant_memory(true).build()
+        } else {
+            builder.build()
+        };
         let batch_size = i64::try_from(batch_size)?;
         let sheet_capacity = if scenario.format == "xls" {
             XLS_DATA_ROWS_PER_SHEET
@@ -65,6 +78,8 @@ pub(crate) fn write(
             }
         }
         writer.finish()?;
+    } else {
+        return Err(format!("unsupported write memory mode: {}", scenario.memory).into());
     }
     Ok(OperationResult {
         observed_rows: rows,
@@ -77,6 +92,7 @@ pub(crate) fn write(
 pub(crate) fn read(
     scenario: &ScenarioSpec,
     path: &Path,
+    parallel_map: Option<ParallelMapConfig>,
 ) -> Result<OperationResult, Box<dyn std::error::Error>> {
     let (observed_rows, checksum) = if scenario.mode == "workbook" {
         let builder = EasyExcel::read_sync::<BenchmarkRow>(path);
@@ -90,6 +106,28 @@ pub(crate) fn read(
             checksum.update(row);
         }
         (u64::try_from(rows.len())?, checksum.finish())
+    } else if let Some(config) = parallel_map {
+        let state = Rc::new(RefCell::new(EventState::default()));
+        if config.worker_count == 1 {
+            let listener = SerialMapListener {
+                downstream: EventListener(Rc::clone(&state)),
+                work_factor: config.work_factor,
+            };
+            EasyExcel::read::<BenchmarkRow, _>(path, listener).do_read()?;
+        } else {
+            let work_factor = config.work_factor;
+            let listener = ParallelMapReadListener::new(
+                config.worker_count,
+                config.queue_capacity,
+                move |row, _context| Ok(apply_benchmark_map(row, work_factor)),
+                EventListener(Rc::clone(&state)),
+            )?;
+            EasyExcel::read::<BenchmarkRow, _>(path, listener).do_read()?;
+        }
+        let state = Rc::try_unwrap(state)
+            .map_err(|_| "parallel-map listener state still shared")?
+            .into_inner();
+        (state.rows, state.checksum.finish())
     } else {
         let state = Rc::new(RefCell::new(EventState::default()));
         let builder = EasyExcel::read::<BenchmarkRow, _>(path, EventListener(Rc::clone(&state)));
@@ -129,7 +167,24 @@ pub(crate) fn roundtrip(
     if reopened.metadata.title.as_deref() != Some("easyexcel-benchmark-roundtrip") {
         return Err("roundtrip metadata marker was not preserved".into());
     }
-    read(scenario, output)
+    read(scenario, output, None)
+}
+
+/// 对显式纯函数 mapper 建立确定、可重复且与输出 checksum 绑定的 CPU 工作量。
+/// 返回值保持不变，因此串行与并行路径必须产生完全相同的行序列。
+fn apply_benchmark_map(row: BenchmarkRow, work_factor: u32) -> BenchmarkRow {
+    let mut fingerprint = row.id as u64 ^ row.score.to_bits().rotate_left(17);
+    for round in 0..work_factor {
+        fingerprint ^= u64::from(round).wrapping_mul(0x9e37_79b9_7f4a_7c15);
+        for byte in row.name.as_bytes() {
+            fingerprint ^= u64::from(*byte);
+            fingerprint = fingerprint
+                .rotate_left(9)
+                .wrapping_mul(0x1000_0000_01b3);
+        }
+    }
+    std::hint::black_box(fingerprint);
+    row
 }
 
 #[derive(Default)]
@@ -139,6 +194,18 @@ struct EventState {
 }
 
 struct EventListener(Rc<RefCell<EventState>>);
+
+struct SerialMapListener {
+    downstream: EventListener,
+    work_factor: u32,
+}
+
+impl ReadListener<BenchmarkRow> for SerialMapListener {
+    fn invoke(&mut self, data: BenchmarkRow, context: &AnalysisContext) -> easyexcel::Result<()> {
+        self.downstream
+            .invoke(apply_benchmark_map(data, self.work_factor), context)
+    }
+}
 
 impl ReadListener<BenchmarkRow> for EventListener {
     fn invoke(&mut self, data: BenchmarkRow, _context: &AnalysisContext) -> easyexcel::Result<()> {

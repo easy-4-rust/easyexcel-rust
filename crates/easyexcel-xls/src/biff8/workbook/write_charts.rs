@@ -63,25 +63,41 @@ pub(crate) fn chart_drawing_group() -> Vec<u8> {
 /// 构造覆盖连续 drawing id 的 DGG container。
 pub(crate) fn chart_drawing_group_for_range(first_drawing_id: u16, count: usize) -> Vec<u8> {
     let count = count.max(1);
-    let count_u32 = u32::try_from(count).unwrap_or(u32::MAX);
-    let mut dgg_payload = Vec::with_capacity(16 + count * 8);
-    let last_drawing = u32::from(first_drawing_id)
-        .saturating_add(count_u32.saturating_sub(1));
-    dgg_payload.extend_from_slice(
-        &last_drawing
-            .saturating_add(1)
-            .saturating_mul(1_024)
-            .saturating_add(1)
-            .to_le_bytes(),
-    );
-    dgg_payload.extend_from_slice(&count_u32.saturating_add(1).to_le_bytes());
-    dgg_payload.extend_from_slice(&count_u32.saturating_mul(2).to_le_bytes());
-    dgg_payload.extend_from_slice(&count_u32.to_le_bytes());
-    for offset in 0..count {
-        let drawing_id = u32::from(first_drawing_id)
-            .saturating_add(u32::try_from(offset).unwrap_or(u32::MAX));
-        dgg_payload.extend_from_slice(&drawing_id.to_le_bytes());
-        dgg_payload.extend_from_slice(&3_u32.to_le_bytes());
+    let clusters = (0..count)
+        .map(|offset| {
+            (
+                first_drawing_id
+                    .saturating_add(u16::try_from(offset).unwrap_or(u16::MAX)),
+                3_u32,
+            )
+        })
+        .collect::<Vec<_>>();
+    drawing_group_for_clusters(&clusters)
+}
+
+/// 构造唯一的 Workbook 全局 DGG，`used_shapes` 包含每个 drawing 的根 shape。
+pub(crate) fn drawing_group_for_clusters(clusters: &[(u16, u32)]) -> Vec<u8> {
+    let mut dgg_payload = Vec::with_capacity(16 + clusters.len() * 8);
+    let maximum_shape_id = clusters
+        .iter()
+        .map(|(drawing_id, used_shapes)| {
+            u32::from(*drawing_id)
+                .saturating_mul(1_024)
+                .saturating_add(*used_shapes)
+        })
+        .max()
+        .unwrap_or(1);
+    let saved_shapes = clusters
+        .iter()
+        .fold(0_u32, |total, (_, used)| total.saturating_add(*used));
+    let saved_drawings = u32::try_from(clusters.len()).unwrap_or(u32::MAX);
+    dgg_payload.extend_from_slice(&maximum_shape_id.to_le_bytes());
+    dgg_payload.extend_from_slice(&saved_drawings.saturating_add(1).to_le_bytes());
+    dgg_payload.extend_from_slice(&saved_shapes.to_le_bytes());
+    dgg_payload.extend_from_slice(&saved_drawings.to_le_bytes());
+    for (drawing_id, used_shapes) in clusters {
+        dgg_payload.extend_from_slice(&u32::from(*drawing_id).to_le_bytes());
+        dgg_payload.extend_from_slice(&used_shapes.to_le_bytes());
     }
     let suffix = hex_bytes(
         "33000BF012000000BF0008000800810109000008C0014000000840001EF1100000000D0000080C00000817000008F7000010",

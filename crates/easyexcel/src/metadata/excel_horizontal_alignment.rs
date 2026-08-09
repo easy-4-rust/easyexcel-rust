@@ -5,7 +5,7 @@
 /// Java retains the POI alignment codes; Rust strips them because the
 /// underlying backend (`rust_xlsxwriter`) does not need them. Variant names
 /// match Java's `HorizontalAlignment`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 /// 对应 Java：com.alibaba.excel.enums.poi.HorizontalAlignmentEnum。
 pub enum ExcelHorizontalAlignment {
     /// Excel's type-dependent default.

@@ -1,11 +1,23 @@
 pub(crate) fn write_comments(out: &mut Vec<u8>, comments: &[Biff8Comment]) {
+    write_comments_with_drawing_id(out, comments, 1);
+}
+
+/// 使用调用方分配的 Workbook 全局 drawing id 写出一组批注。
+pub(crate) fn write_comments_with_drawing_id(
+    out: &mut Vec<u8>,
+    comments: &[Biff8Comment],
+    drawing_id: u16,
+) {
     if comments.is_empty() {
         return;
     }
+    let root_shape_id = u32::from(drawing_id).saturating_mul(1_024);
     for (index, comment) in comments.iter().enumerate() {
-        let shape_id = 1_025u32.saturating_add(u32::try_from(index).unwrap_or(u32::MAX));
+        let shape_id = root_shape_id
+            .saturating_add(1)
+            .saturating_add(u32::try_from(index).unwrap_or(u32::MAX));
         let drawing = if index == 0 {
-            first_comment_drawing(comments.len(), comment, shape_id)
+            first_comment_drawing(comments.len(), comment, drawing_id, root_shape_id, shape_id)
         } else {
             comment_shape(comment, shape_id)
         };
@@ -18,8 +30,14 @@ pub(crate) fn write_comments(out: &mut Vec<u8>, comments: &[Biff8Comment]) {
         write_comment_formatting_continues(out, &formatting);
     }
     for (index, comment) in comments.iter().enumerate() {
-        let shape_id = 1_025u16.saturating_add(u16::try_from(index).unwrap_or(u16::MAX));
-        record(out, NOTE, &comment_note(comment, shape_id));
+        let shape_id = root_shape_id
+            .saturating_add(1)
+            .saturating_add(u32::try_from(index).unwrap_or(u32::MAX));
+        record(
+            out,
+            NOTE,
+            &comment_note(comment, u16::try_from(shape_id).unwrap_or(u16::MAX)),
+        );
     }
 }
 
@@ -57,29 +75,18 @@ pub(crate) fn appended_comment_shape_len(comment: &Biff8Comment, shape_id: u32) 
     comment_shape(comment, shape_id).len()
 }
 
-fn comment_drawing_group(comment_count: usize) -> Vec<u8> {
-    let mut data = vec![
-        0x0F, 0x00, 0x00, 0xF0, 0x52, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0xF0, 0x18, 0x00,
-        0x00, 0x00, 0x02, 0x04, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00,
-        0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x33, 0x00,
-        0x0B, 0xF0, 0x12, 0x00, 0x00, 0x00, 0xBF, 0x00, 0x08, 0x00, 0x08, 0x00, 0x81, 0x01,
-        0x41, 0x00, 0x00, 0x08, 0xC0, 0x01, 0x40, 0x00, 0x00, 0x08, 0x40, 0x00, 0x1E, 0xF1,
-        0x10, 0x00, 0x00, 0x00, 0x0D, 0x00, 0x00, 0x08, 0x0C, 0x00, 0x00, 0x08, 0x17, 0x00,
-        0x00, 0x08, 0xF7, 0x00, 0x00, 0x10,
-    ];
-    let count = u32::try_from(comment_count).unwrap_or(u32::MAX);
-    data[16..20].copy_from_slice(&1_025u32.saturating_add(count).to_le_bytes());
-    data[24..28].copy_from_slice(&count.saturating_add(1).to_le_bytes());
-    data[36..40].copy_from_slice(&count.saturating_add(1).to_le_bytes());
-    data
-}
-
-fn first_comment_drawing(count: usize, comment: &Biff8Comment, shape_id: u32) -> Vec<u8> {
+fn first_comment_drawing(
+    count: usize,
+    comment: &Biff8Comment,
+    drawing_id: u16,
+    root_shape_id: u32,
+    shape_id: u32,
+) -> Vec<u8> {
     let count = u32::try_from(count).unwrap_or(u32::MAX);
     let mut dg_payload = Vec::new();
     dg_payload.extend_from_slice(&count.saturating_add(1).to_le_bytes());
-    dg_payload.extend_from_slice(&1_024u32.saturating_add(count).to_le_bytes());
-    let dg = escher_record(0x0010, 0xF008, &dg_payload, None);
+    dg_payload.extend_from_slice(&root_shape_id.saturating_add(count).to_le_bytes());
+    let dg = escher_record(drawing_id << 4, 0xF008, &dg_payload, None);
 
     let mut root_payload = Vec::new();
     let mut spgr_payload = Vec::new();
@@ -89,7 +96,7 @@ fn first_comment_drawing(count: usize, comment: &Biff8Comment, shape_id: u32) ->
     spgr_payload.extend_from_slice(&255i32.to_le_bytes());
     root_payload.extend_from_slice(&escher_record(0x0001, 0xF009, &spgr_payload, None));
     let mut root_sp = Vec::new();
-    root_sp.extend_from_slice(&1_024u32.to_le_bytes());
+    root_sp.extend_from_slice(&root_shape_id.to_le_bytes());
     root_sp.extend_from_slice(&5u32.to_le_bytes());
     root_payload.extend_from_slice(&escher_record(0x0002, 0xF00A, &root_sp, None));
     let root = escher_record(0x000F, 0xF004, &root_payload, None);
@@ -263,7 +270,8 @@ fn comment_note(comment: &Biff8Comment, shape_id: u16) -> Vec<u8> {
     let mut data = Vec::new();
     data.extend_from_slice(&comment.row.to_le_bytes());
     data.extend_from_slice(&u16::from(comment.col).to_le_bytes());
-    data.extend_from_slice(&0u16.to_le_bytes());
+    let flags = if comment.visible { 0x0002u16 } else { 0u16 };
+    data.extend_from_slice(&flags.to_le_bytes());
     data.extend_from_slice(&shape_id.to_le_bytes());
     let units = comment.author.encode_utf16().collect::<Vec<_>>();
     data.extend_from_slice(&u16::try_from(units.len()).unwrap_or(u16::MAX).to_le_bytes());

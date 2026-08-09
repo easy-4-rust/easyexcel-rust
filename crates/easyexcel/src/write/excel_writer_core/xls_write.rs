@@ -98,7 +98,7 @@ pub(crate) fn apply_xls_mutations(
                 column_index,
                 value,
             } => {
-                let cell = cell_value_to_biff8(&value, global)?;
+                let cell = cell_value_to_biff8_with_styles(&value, &mut book.styles, global)?;
                 book.sheet_mut(&sheet_name)
                     .set(row_index, usize::from(column_index), cell)?;
                 add_biff8_cell_metadata(
@@ -119,116 +119,21 @@ pub(crate) fn apply_xls_mutations(
             crate::context::write_mutation::WriteMutation::AddMerge { sheet_name, range } => {
                 add_biff8_merge_range(book.sheet_mut(&sheet_name), range)?;
             }
+            crate::context::write_mutation::WriteMutation::RemoveComment {
+                sheet_name,
+                row_index,
+                column_index,
+            } => {
+                book.sheet_mut(&sheet_name)
+                    .remove_comment(row_index, usize::from(column_index))?;
+            }
         }
     }
     Ok(())
 }
 
 pub(crate) fn add_biff8_chart(book: &mut Biff8Book, mutation: &crate::ChartMutation) -> Result<()> {
-    if mutation.series.is_empty() {
-        return Err(ExcelError::Format(
-            "chart mutation requires at least one data series".to_owned(),
-        ));
-    }
-    if mutation.last_row < mutation.first_row || mutation.last_column < mutation.first_column {
-        return Err(ExcelError::Format(
-            "chart mutation anchor end must not precede its start".to_owned(),
-        ));
-    }
-    for text in mutation
-        .title
-        .iter()
-        .chain(mutation.series.iter().filter_map(|series| series.name.as_ref()))
-    {
-        if text.contains('\0') || text.encode_utf16().count() > usize::from(u8::MAX) {
-            return Err(ExcelError::Format(
-                "BIFF8 chart titles and series names must contain at most 255 UTF-16 units and no NUL"
-                    .to_owned(),
-            ));
-        }
-    }
-    let target_index = book
-        .sheets
-        .iter()
-        .position(|sheet| sheet.name == mutation.sheet_name)
-        .ok_or_else(|| {
-            ExcelError::Format(format!(
-                "chart target sheet '{}' does not exist",
-                mutation.sheet_name
-            ))
-        })?;
-    let known_sheets = book
-        .sheets
-        .iter()
-        .map(|sheet| sheet.name.as_str())
-        .collect::<HashSet<_>>();
-    let first_row = checked_chart_row(mutation.first_row)?;
-    let last_row = checked_chart_row(mutation.last_row)?;
-    let first_column = checked_chart_column(mutation.first_column)?;
-    let last_column = checked_chart_column(mutation.last_column)?;
-    let kind = match mutation.chart_type {
-        crate::ChartType::Bar => Biff8ChartKind::Bar,
-        crate::ChartType::Line => Biff8ChartKind::Line,
-        crate::ChartType::Pie => Biff8ChartKind::Pie,
-    };
-    let mut chart = Biff8Chart::new(kind, first_row, first_column, last_row, last_column);
-    if let Some(title) = &mutation.title {
-        chart = chart.with_title(title.clone());
-    }
-    for source in &mutation.series {
-        let values = biff8_chart_range(&source.values, &known_sheets)?;
-        let mut series = Biff8ChartSeries::new(values);
-        if let Some(name) = &source.name {
-            series = series.with_name(name.clone());
-        }
-        if let Some(categories) = &source.categories {
-            series = series.with_categories(biff8_chart_range(categories, &known_sheets)?);
-        }
-        chart = chart.with_series(series);
-    }
-    book.sheets[target_index].add_chart(chart);
-    Ok(())
-}
-
-fn biff8_chart_range(
-    range: &crate::ChartRange,
-    known_sheets: &HashSet<&str>,
-) -> Result<Biff8ChartRange> {
-    if range.last_row < range.first_row || range.last_column < range.first_column {
-        return Err(ExcelError::Format(format!(
-            "chart range on sheet '{}' has an end before its start",
-            range.sheet_name
-        )));
-    }
-    if !known_sheets.contains(range.sheet_name.as_str()) {
-        return Err(ExcelError::Format(format!(
-            "chart range sheet '{}' does not exist",
-            range.sheet_name
-        )));
-    }
-    Ok(Biff8ChartRange::new(
-        range.sheet_name.clone(),
-        checked_chart_row(range.first_row)?,
-        checked_chart_column(range.first_column)?,
-        checked_chart_row(range.last_row)?,
-        checked_chart_column(range.last_column)?,
-    ))
-}
-
-fn checked_chart_row(row: u32) -> Result<u16> {
-    u16::try_from(row).map_err(|_| {
-        ExcelError::Format(format!(
-            "BIFF8 chart row {row} exceeds the 65535 row index limit"
-        ))
-    })
-}
-
-fn checked_chart_column(column: u16) -> Result<u8> {
-    u8::try_from(column).map_err(|_| {
-        ExcelError::Format(format!(
-            "BIFF8 chart column {column} exceeds the 255 column index limit"
-        ))
-    })
+    book.add_chart_mutation(mutation).map_err(ExcelError::from)
 }
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn write_sheet_to_biff8_book<T, I>(
@@ -404,7 +309,8 @@ where
                 } else {
                     let format_ctx = style_ctx
                         .column(column)
-                        .with_handler_cell(effective_handler_cell_style(handlers, &context));
+                        .with_handler_cell(effective_handler_cell_style(handlers, &context))
+                        .with_handler_font(collect_handler_write_font(handlers, &context));
                     cell_data.map_or(format_ctx, |cell| format_ctx.with_converted_cell(cell))
                 };
                 let cell =
@@ -537,7 +443,9 @@ pub(crate) fn write_biff8_styled_text_cell(
         let format_ctx = if context.ignore_fill_style {
             format_ctx.without_fill_style()
         } else {
-            format_ctx.with_handler_cell(effective_handler_cell_style(handlers, &context))
+            format_ctx
+                .with_handler_cell(effective_handler_cell_style(handlers, &context))
+                .with_handler_font(collect_handler_write_font(handlers, &context))
         };
         let cell = cell_value_to_biff8_styled(&context.value, &mut book.styles, format_ctx)?;
         {
@@ -557,54 +465,53 @@ pub(crate) fn cell_value_to_biff8(
     value: &CellValue,
     global: WriteGlobalFlags,
 ) -> Result<Biff8Cell> {
-    match value {
-        CellValue::Empty => Ok(Biff8Cell::general(Biff8Value::Blank)),
+    let generated = match value {
+        CellValue::Empty => GeneratedBiff8CellValue::Blank,
         CellValue::String(text)
         | CellValue::Error(text)
         | CellValue::Hyperlink { text, .. }
-        | CellValue::HyperlinkWithMetadata { text, .. } => {
-            Ok(Biff8Cell::general(Biff8Value::Text(
-                easyexcel_utils::string_utils::maybe_trim(text, global.auto_trim).into_owned(),
-            )))
-        }
-        CellValue::Formula(text) => Ok(Biff8Cell::general(Biff8Value::Formula(text.clone()))),
-        CellValue::Bool(flag) => Ok(Biff8Cell::general(Biff8Value::Bool(*flag))),
-        CellValue::Int(number) =>
-        {
+        | CellValue::HyperlinkWithMetadata { text, .. } => GeneratedBiff8CellValue::Text(
+            easyexcel_utils::string_utils::maybe_trim(text, global.auto_trim).into_owned(),
+        ),
+        CellValue::Formula(text) => GeneratedBiff8CellValue::Formula(text.clone()),
+        CellValue::Bool(flag) => GeneratedBiff8CellValue::Bool(*flag),
+        CellValue::Int(number) => {
             #[allow(clippy::cast_precision_loss)]
-            Ok(Biff8Cell::general(Biff8Value::Number(*number as f64)))
+            GeneratedBiff8CellValue::Number(*number as f64)
         }
-        CellValue::Float(number) => Ok(Biff8Cell::general(Biff8Value::Number(*number))),
+        CellValue::Float(number) => GeneratedBiff8CellValue::Number(*number),
         CellValue::Decimal(number) => {
             let numeric = finite_decimal_f64(number, "BIFF8")?;
             if decimal_integer_requires_text(number)? {
-                Ok(Biff8Cell::general(Biff8Value::Text(
-                    number.to_plain_string(),
-                )))
+                GeneratedBiff8CellValue::Text(number.to_plain_string())
             } else {
-                Ok(Biff8Cell::general(Biff8Value::Number(numeric)))
+                GeneratedBiff8CellValue::Number(numeric)
             }
         }
-        CellValue::Date(date) => Ok(Biff8Cell::date_serial(date_to_excel_serial_with_windowing(
-            *date,
-            global.use_1904_windowing,
-        ))),
-        CellValue::DateTime(date_time) => Ok(Biff8Cell::datetime_serial(
+        CellValue::Date(date) => GeneratedBiff8CellValue::DateSerial(
+            date_to_excel_serial_with_windowing(*date, global.use_1904_windowing),
+        ),
+        CellValue::DateTime(date_time) => GeneratedBiff8CellValue::DateTimeSerial(
             datetime_to_excel_serial_with_windowing(*date_time, global.use_1904_windowing),
-        )),
+        ),
         CellValue::Comment { value, .. }
-        | CellValue::CommentWithMetadata { value, .. } => cell_value_to_biff8(value, global),
-        CellValue::Images { .. } => Err(ExcelError::Unsupported(
-            "legacy XLS writing does not support CellValue::Images".to_owned(),
-        )),
-        CellValue::RichText(rich) => Ok(Biff8Cell::general(Biff8Value::Text(
+        | CellValue::CommentWithMetadata { value, .. } => return cell_value_to_biff8(value, global),
+        CellValue::Images { .. } => {
+            return Err(ExcelError::Unsupported(
+                "legacy XLS writing does not support CellValue::Images".to_owned(),
+            ));
+        }
+        CellValue::RichText(rich) => GeneratedBiff8CellValue::Text(
             easyexcel_utils::string_utils::maybe_trim(rich.text_string(), global.auto_trim)
                 .into_owned(),
-        ))),
-        CellValue::Image(_) => Err(ExcelError::Unsupported(
-            "legacy XLS writing does not support CellValue::Image".to_owned(),
-        )),
-    }
+        ),
+        CellValue::Image(_) => {
+            return Err(ExcelError::Unsupported(
+                "legacy XLS writing does not support CellValue::Image".to_owned(),
+            ));
+        }
+    };
+    Ok(generated.into_cell())
 }
 
 fn add_biff8_cell_metadata(
@@ -656,7 +563,7 @@ fn add_biff8_cell_metadata(
                 coordinates.get_relative_last_column_index(),
                 "last column",
             )?;
-            let address = normalize_hyperlink_address(address, *hyperlink_type);
+            let address = kind.normalized_target(address);
             book.sheet_mut(sheet_name).add_typed_hyperlink(
                 first_row,
                 last_row,
@@ -672,14 +579,15 @@ fn add_biff8_cell_metadata(
             )?;
             Ok(())
         }
-        CellValue::Comment { text, .. } => {
+        CellValue::Comment { value, text } => {
             book.sheet_mut(sheet_name)
                 .add_comment(row, column, text.clone(), "easyexcel-rust")?;
-            Ok(())
+            add_biff8_cell_metadata(book, sheet_name, row, column, value)
         }
-        CellValue::CommentWithMetadata { comment, .. } => {
+        CellValue::CommentWithMetadata { value, comment } => {
             let text = comment.note_text();
             let author = comment.get_author().unwrap_or("").to_owned();
+            let visible = comment.get_visible();
             if text.contains('\0') || author.contains('\0') {
                 return Err(ExcelError::Format(
                     "BIFF8 comment text and author cannot contain NUL".to_owned(),
@@ -763,11 +671,46 @@ fn add_biff8_cell_metadata(
             if let Some(formatting_runs) = formatting_runs {
                 comment = comment.with_formatting_runs(formatting_runs);
             }
-            book.sheet_mut(sheet_name).comments.push(comment);
-            Ok(())
+            if let Some(visible) = visible {
+                comment = comment.with_visible(visible);
+            }
+            book.sheet_mut(sheet_name).set_comment(comment);
+            // Java WriteCellData 可同时携带 comment 与 hyperlink。effective_value
+            // 以包装值表达组合装饰，写完当前 NOTE/TXO/OBJ 后继续处理底层 HLINK。
+            add_biff8_cell_metadata(book, sheet_name, row, column, value)
         }
         _ => Ok(()),
     }
+}
+
+fn cell_value_to_biff8_with_styles(
+    value: &CellValue,
+    styles: &mut Biff8StyleTable,
+    global: WriteGlobalFlags,
+) -> Result<Biff8Cell> {
+    let mut scalar = value;
+    loop {
+        scalar = match scalar {
+            CellValue::Comment { value, .. }
+            | CellValue::CommentWithMetadata { value, .. } => value.as_ref(),
+            CellValue::Images { .. } => {
+                return Err(ExcelError::Unsupported(
+                    "legacy XLS writing does not support CellValue::Images".to_owned(),
+                ));
+            }
+            _ => break,
+        };
+    }
+    if let CellValue::RichText(rich) = scalar {
+        let runs = resolve_biff8_rich_text_runs(rich, styles)?;
+        return Ok(GeneratedBiff8CellValue::RichText {
+            // 富文本 run 使用原始 UTF-16 坐标，不能套用普通字符串 autoTrim。
+            text: rich.text_string().to_owned(),
+            runs,
+        }
+        .into_cell());
+    }
+    cell_value_to_biff8(value, global)
 }
 
 fn resolve_biff8_rich_text_runs(
@@ -779,8 +722,8 @@ fn resolve_biff8_rich_text_runs(
         .iter()
         .map(|interval| (interval.start_index(), interval.end_index()))
         .collect::<Vec<_>>();
-    let segments = easyexcel_xlsx::segment_utf16_text(rich.text_string(), &intervals)
-        .map_err(ExcelError::from)?;
+    let segments = easyexcel_model::segment_utf16_text(rich.text_string(), &intervals)
+        .map_err(|error| ExcelError::Format(error.to_string()))?;
     let mut runs = Vec::new();
     let mut utf16_start = 0usize;
     let mut previous_font = None;
@@ -824,15 +767,6 @@ const fn biff8_hyperlink_kind(value: HyperlinkType) -> Option<Biff8HyperlinkKind
     }
 }
 
-fn normalize_hyperlink_address(address: &str, hyperlink_type: HyperlinkType) -> String {
-    if hyperlink_type == HyperlinkType::Email && !address.to_ascii_lowercase().starts_with("mailto:")
-    {
-        format!("mailto:{address}")
-    } else {
-        address.to_owned()
-    }
-}
-
 fn resolve_hyperlink_coordinate(
     current: u32,
     absolute: Option<u32>,
@@ -858,23 +792,7 @@ pub(crate) fn cell_value_to_biff8_styled(
     styles: &mut Biff8StyleTable,
     format_ctx: CellFormatContext<'_>,
 ) -> Result<Biff8Cell> {
-    let styled_value = match value {
-        CellValue::Comment { value, .. }
-        | CellValue::CommentWithMetadata { value, .. }
-        | CellValue::Images { value, .. } => value.as_ref(),
-        value => value,
-    };
-    let cell = if let CellValue::RichText(rich) = styled_value {
-        let runs = resolve_biff8_rich_text_runs(rich, styles)?;
-        Biff8Cell::general(Biff8Value::RichText(Biff8RichText::new(
-            // 富文本区间使用原始 UTF-16 坐标；裁剪文本会让 Java
-            // `applyFont(start, end, ...)` 的坐标失效，因此不能套用普通字符串的 autoTrim。
-            rich.text_string().to_owned(),
-            runs,
-        )))
-    } else {
-        cell_value_to_biff8(value, format_ctx.global)?
-    };
+    let cell = cell_value_to_biff8_with_styles(value, styles, format_ctx.global)?;
     let request = biff8_style_request(format_ctx);
     let xf = styles.resolve_xf(&request, cell.xf);
     Ok(cell.with_xf(xf))
@@ -885,31 +803,39 @@ pub(crate) fn cell_value_to_biff8_styled(
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn biff8_style_request(context: CellFormatContext<'_>) -> Biff8StyleRequest {
     let mut request = Biff8StyleRequest::default();
-    let mut annotation_cell = context.converted_cell;
+    let mut annotation_cell = context.converted_cell.cloned();
     if let Some(annotation_style) = context.cell {
+        let annotation_style = crate::WriteCellStyle::from(annotation_style);
         annotation_cell = Some(merge_write_cell_style(
             &annotation_style,
             annotation_cell.unwrap_or_default(),
         ));
     }
     if let Some(handler_style) = context.handler_cell {
+        let handler_style = crate::WriteCellStyle::from(handler_style);
         annotation_cell = Some(merge_write_cell_style(
             &handler_style,
             annotation_cell.unwrap_or_default(),
         ));
     }
-    let mut font = context.font;
+    let mut font = context.font.map(write_font_from_excel_font_style);
     if let Some(style) = annotation_cell {
-        if let Some(style_font) = style.font {
+        if let Some(style_font) = style.font.as_ref() {
             font = Some(match font {
-                Some(target) => merge_handler_font_style(&style_font, target),
-                None => style_font,
+                Some(target) => merge_write_font(style_font, target),
+                None => style_font.clone(),
             });
         }
-        apply_excel_cell_style(&mut request, style);
+        apply_excel_cell_style(&mut request, style.engine_cell_style());
+    }
+    if let Some(handler_font) = context.handler_font {
+        font = Some(match font {
+            Some(target) => merge_write_font(&handler_font, target),
+            None => handler_font,
+        });
     }
     if let Some(font) = font {
-        apply_excel_font_style(&mut request, font);
+        apply_write_font(&mut request, &font);
     }
     if let Some(style) = context.explicit {
         apply_writer_cell_style_to_request(&mut request, style);
@@ -1034,8 +960,7 @@ pub(crate) fn apply_biff8_once_absolute_merge_property(
 }
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn add_biff8_merge_range(sheet: &mut Biff8Sheet, range: MergeRange) -> Result<()> {
-    sheet.add_merge(merge_range_to_biff8(range)?)?;
-    Ok(())
+    sheet.add_merge_range(range).map_err(ExcelError::from)
 }
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn merge_range_to_biff8(range: MergeRange) -> Result<Biff8Merge> {

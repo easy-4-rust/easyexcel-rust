@@ -119,6 +119,19 @@ impl WriteWorkbookContext {
         self.mutations.add_chart(chart)
     }
 
+    /// 请求在保存前删除指定单元格的批注。
+    ///
+    /// 对应 Java：通过工作簿取得 `Cell` 后调用 `removeCellComment()`。
+    pub fn remove_comment(
+        &self,
+        sheet_name: impl Into<String>,
+        row_index: u32,
+        column_index: u16,
+    ) -> Result<()> {
+        self.mutations
+            .remove_comment(sheet_name, row_index, column_index)
+    }
+
     pub(crate) const fn mutation_plan(&self) -> &WriteMutationPlan {
         &self.mutations
     }

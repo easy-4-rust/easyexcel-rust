@@ -1,6 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.read.metadata.holder.csv.CsvReadWorkbookHolder`.
 
 use crate::read::holder::read_workbook_holder::ReadWorkbookHolder;
+use crate::read::metadata::holder::read_holder::delegate_read_holder_contract;
 use std::ops::{Deref, DerefMut};
 
 /// 对应 Java：`CsvReadWorkbookHolder extends ReadWorkbookHolder`.
@@ -67,6 +68,8 @@ impl Deref for CsvReadWorkbookHolder {
 impl DerefMut for CsvReadWorkbookHolder {
     fn deref_mut(&mut self) -> &mut Self::Target { &mut self.inner }
 }
+
+delegate_read_holder_contract!(CsvReadWorkbookHolder, inner);
 
 impl Default for CsvReadWorkbookHolder {
     fn default() -> Self {

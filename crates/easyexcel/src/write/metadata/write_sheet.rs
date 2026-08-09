@@ -7,12 +7,16 @@ use crate::write::metadata::WriteBasicParameter;
 ///
 /// Java stores `sheetNo` and `sheetName`. Rust reuses [`WriteOptions`] and
 /// extends the type with the two fields so 1:1 naming is preserved.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct WriteSheet {
     /// Mirrors `WriteSheet.sheetNo`.
     pub sheet_no: i32,
     /// Mirrors `WriteSheet.sheetName`.
     pub sheet_name: String,
+    /// Java nullable `sheetNo` 原始状态；`sheet_no` 保存写入引擎的有效值。
+    java_sheet_no: Option<i32>,
+    /// Java nullable `sheetName` 原始状态；`sheet_name` 保存写入引擎的有效值。
+    java_sheet_name: Option<String>,
     /// Mirrors the remaining `WriteBasicParameter` fields.
     pub options: WriteOptions,
     /// Nullable sheet-level overrides before workbook inheritance.
@@ -26,6 +30,8 @@ impl WriteSheet {
         Self {
             sheet_no: 0,
             sheet_name: String::new(),
+            java_sheet_no: None,
+            java_sheet_name: None,
             options: WriteOptions::default(),
             parameter: WriteBasicParameter::default(),
         }
@@ -37,6 +43,8 @@ impl WriteSheet {
         Self {
             sheet_no,
             sheet_name: String::new(),
+            java_sheet_no: Some(sheet_no),
+            java_sheet_name: None,
             options: WriteOptions::default(),
             parameter: WriteBasicParameter::default(),
         }
@@ -45,9 +53,12 @@ impl WriteSheet {
     /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。 Creates a `WriteSheet` with the given sheet no and name. (Java `WriteSheet(sheetNo, sheetName)`)
     #[must_use]
     pub fn with_sheet(sheet_no: i32, sheet_name: impl Into<String>) -> Self {
+        let sheet_name = sheet_name.into();
         Self {
             sheet_no,
-            sheet_name: sheet_name.into(),
+            sheet_name: sheet_name.clone(),
+            java_sheet_no: Some(sheet_no),
+            java_sheet_name: Some(sheet_name),
             options: WriteOptions::default(),
             parameter: WriteBasicParameter::default(),
         }
@@ -60,11 +71,19 @@ impl WriteSheet {
         self.sheet_no
     }
     /// Java `getSheetNo` 别名。
-    #[must_use] pub const fn get_sheet_no(&self) -> i32 { self.sheet_no }
+    #[must_use] pub const fn get_sheet_no(&self) -> Option<i32> { self.java_sheet_no }
 
     /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。 Sets the zero-based sheet index. (Java `setSheetNo(Integer)`)
     pub fn set_sheet_no(&mut self, sheet_no: i32) -> &mut Self {
         self.sheet_no = sheet_no;
+        self.java_sheet_no = Some(sheet_no);
+        self
+    }
+
+    /// 设置或清空 Java nullable `sheetNo`，同时维护引擎有效值。
+    pub fn set_sheet_no_nullable(&mut self, sheet_no: Option<i32>) -> &mut Self {
+        self.java_sheet_no = sheet_no;
+        self.sheet_no = sheet_no.unwrap_or_default();
         self
     }
 
@@ -74,11 +93,20 @@ impl WriteSheet {
         &self.sheet_name
     }
     /// Java `getSheetName` 别名。
-    #[must_use] pub fn get_sheet_name(&self) -> &str { &self.sheet_name }
+    #[must_use] pub fn get_sheet_name(&self) -> Option<&str> { self.java_sheet_name.as_deref() }
 
     /// 对应 Java：com.alibaba.excel.write.metadata.WriteSheet。 Sets the sheet name. (Java `setSheetName(String)`)
     pub fn set_sheet_name(&mut self, sheet_name: impl Into<String>) -> &mut Self {
-        self.sheet_name = sheet_name.into();
+        let sheet_name = sheet_name.into();
+        self.sheet_name.clone_from(&sheet_name);
+        self.java_sheet_name = Some(sheet_name);
+        self
+    }
+
+    /// 设置或清空 Java nullable `sheetName`，同时维护引擎有效值。
+    pub fn set_sheet_name_nullable(&mut self, sheet_name: Option<String>) -> &mut Self {
+        self.java_sheet_name.clone_from(&sheet_name);
+        self.sheet_name = sheet_name.unwrap_or_default();
         self
     }
 
@@ -108,6 +136,23 @@ impl WriteSheet {
 impl Default for WriteSheet {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+// Java Lombok 只比较 WriteSheet 自身声明的两个字段，不包含父类参数。
+impl PartialEq for WriteSheet {
+    fn eq(&self, other: &Self) -> bool {
+        self.java_sheet_no == other.java_sheet_no
+            && self.java_sheet_name == other.java_sheet_name
+    }
+}
+
+impl Eq for WriteSheet {}
+
+impl std::hash::Hash for WriteSheet {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        std::hash::Hash::hash(&self.java_sheet_no, state);
+        std::hash::Hash::hash(&self.java_sheet_name, state);
     }
 }
 

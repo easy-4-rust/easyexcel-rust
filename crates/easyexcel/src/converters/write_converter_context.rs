@@ -16,8 +16,21 @@ pub struct WriteConverterContext<'a, T> {
 }
 
 impl<'a, T> WriteConverterContext<'a, T> {
+    /// 替换待转换值。对应 Java Lombok `setValue`。
+    ///
+    /// Rust 要求新引用与上下文具有相同生命周期，避免 Java 无参构造后可能出现的
+    /// 临时非法状态。
+    pub const fn set_value(&mut self, value: &'a T) {
+        self.value = value;
+    }
+
     /// 替换字段内容属性。对应 Java Lombok setter。
     pub const fn set_content_property(&mut self, value: &'a ExcelColumn) { self.column = value; }
+
+    /// 替换写入上下文。对应 Java Lombok `setWriteContext`。
+    pub const fn set_write_context(&mut self, value: &'a ConvertContext) {
+        self.context = value;
+    }
     /// Creates a write conversion context. (Java `@AllArgsConstructor`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.converters.WriteConverterContext。

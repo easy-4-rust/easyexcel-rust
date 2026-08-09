@@ -1,6 +1,6 @@
 //! 对应 Java：`com.alibaba.excel.metadata.data.WriteCellData`.
 
-use crate::ExcelCellStyle;
+use crate::WriteCellStyle;
 use crate::core::cell_value::CellValue;
 use crate::core::comment_data::CommentData;
 use crate::core::convert_context::ConvertContext;
@@ -28,8 +28,8 @@ pub struct WriteCellData {
     comment_data: Option<CommentData>,
     hyperlink_data: Option<HyperlinkData>,
     formula_data: Option<FormulaData>,
-    write_cell_style: Option<ExcelCellStyle>,
-    origin_cell_style: Option<ExcelCellStyle>,
+    write_cell_style: Option<WriteCellStyle>,
+    origin_cell_style: Option<WriteCellStyle>,
     data_format_data: Option<DataFormatData>,
 }
 
@@ -241,25 +241,25 @@ impl WriteCellData {
     /// Returns the logical cell style. (Java `getWriteCellStyle()`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.metadata.data.WriteCellData。
-    pub const fn write_cell_style(&self) -> Option<&ExcelCellStyle> {
+    pub const fn write_cell_style(&self) -> Option<&WriteCellStyle> {
         self.write_cell_style.as_ref()
     }
     /// Java `getWriteCellStyle` 别名。
-    #[must_use] pub const fn get_write_cell_style(&self) -> Option<&ExcelCellStyle> { self.write_cell_style() }
+    #[must_use] pub const fn get_write_cell_style(&self) -> Option<&WriteCellStyle> { self.write_cell_style() }
 
     /// 对应 Java：com.alibaba.excel.metadata.data.WriteCellData。 Replaces the logical cell style. (Java `setWriteCellStyle(...)`)
-    pub fn set_write_cell_style(&mut self, style: Option<ExcelCellStyle>) {
+    pub fn set_write_cell_style(&mut self, style: Option<WriteCellStyle>) {
         self.write_cell_style = style;
     }
 
     /// 返回后端原始样式。对应 Java：`getOriginCellStyle()`。
     #[must_use]
-    pub const fn get_origin_cell_style(&self) -> Option<&ExcelCellStyle> {
+    pub const fn get_origin_cell_style(&self) -> Option<&WriteCellStyle> {
         self.origin_cell_style.as_ref()
     }
 
     /// 设置后端原始样式。对应 Java：`setOriginCellStyle(CellStyle)`。
-    pub const fn set_origin_cell_style(&mut self, style: Option<ExcelCellStyle>) {
+    pub const fn set_origin_cell_style(&mut self, style: Option<WriteCellStyle>) {
         self.origin_cell_style = style;
     }
 
@@ -306,9 +306,9 @@ impl WriteCellData {
     /// Returns a mutable style, creating it when absent.
     ///
     /// 对应 Java：`WriteCellData#getOrCreateStyle`.
-    pub fn get_or_create_style(&mut self) -> &mut ExcelCellStyle {
+    pub fn get_or_create_style(&mut self) -> &mut WriteCellStyle {
         self.write_cell_style
-            .get_or_insert_with(ExcelCellStyle::default)
+            .get_or_insert_with(WriteCellStyle::default)
     }
 
     /// Returns the owned data-format metadata associated with the style.

@@ -19,6 +19,12 @@ use super::template_xml::{
 };
 
 include!("template_fill/template_fill_direction.rs");
+include!("template_fill/template_comment.rs");
+include!("template_fill/template_comment_placement.rs");
+include!("template_fill/template_hyperlink.rs");
+include!("template_fill/template_image.rs");
+include!("template_fill/template_decoration.rs");
+include!("template_fill/template_decoration_placement.rs");
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 一行模板数据。
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -82,9 +88,29 @@ pub fn replace_collection_fills_in_sheet(
     worksheet: &str,
     fills: &[TemplateCollectionFill],
 ) -> Result<()> {
+    replace_collection_fills_in_sheet_with_decorations(entries, worksheet, fills).map(|_| ())
+}
+
+/// 在指定 worksheet 中执行集合填充，并返回批注最终物理坐标。
+pub fn replace_collection_fills_in_sheet_with_comments(
+    entries: &mut [OoxmlZipEntry],
+    worksheet: &str,
+    fills: &[TemplateCollectionFill],
+) -> Result<Vec<TemplateCommentPlacement>> {
+    replace_collection_fills_in_sheet_with_decorations(entries, worksheet, fills)
+        .map(comment_placements)
+}
+
+/// 在指定 worksheet 中执行集合填充，并返回全部 package 层装饰的最终物理坐标。
+pub fn replace_collection_fills_in_sheet_with_decorations(
+    entries: &mut [OoxmlZipEntry],
+    worksheet: &str,
+    fills: &[TemplateCollectionFill],
+) -> Result<Vec<TemplateDecorationPlacement>> {
     if fills.is_empty() {
-        return Ok(());
+        return Ok(Vec::new());
     }
+    let mut decoration_placements = Vec::new();
     let shared_strings = shared_strings(entries);
     let entry = entries
         .iter_mut()
@@ -110,7 +136,17 @@ pub fn replace_collection_fills_in_sheet(
             );
         }
         if fill.direction == TemplateFillDirection::Vertical && fill.force_new_row {
-            shift_following_rows_for_fill(&mut xml, &mut cursors, &key, fill.rows.len());
+            if let Some((maximum, shift)) =
+                shift_following_rows_for_fill(&mut xml, &mut cursors, &key, fill.rows.len())
+            {
+                for placement in &mut decoration_placements {
+                    if usize::try_from(placement.row).unwrap_or(usize::MAX) > maximum {
+                        placement.row = placement
+                            .row
+                            .saturating_add(u32::try_from(shift).unwrap_or(u32::MAX));
+                    }
+                }
+            }
         }
 
         let Some(cursor) = cursors.get_mut(&key) else {
@@ -134,6 +170,19 @@ pub fn replace_collection_fills_in_sheet(
                     }
                 };
                 validate_collection_target(target_row, target_column)?;
+                if let Some(placeholder) = cell_value(&template.cell, &shared_strings)
+                    && let Some(value) = exact_collection_value(
+                        &placeholder,
+                        data,
+                        fill.name.as_deref(),
+                    )
+                {
+                    decoration_placements.extend(template_decoration_placements(
+                        value,
+                        target_row,
+                        target_column,
+                    ));
+                }
                 let cell = positioned_collection_cell(
                     &template.cell,
                     data,
@@ -154,7 +203,7 @@ pub fn replace_collection_fills_in_sheet(
         }
     }
     entry.bytes = update_worksheet_dimension(&xml).into_bytes();
-    Ok(())
+    Ok(decoration_placements)
 }
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 在指定 worksheet part 中替换标量占位符。
@@ -167,7 +216,25 @@ pub fn replace_scalar_cells_in_sheet(
     worksheet: &str,
     data: &TemplateFillData,
 ) -> Result<()> {
-    replace_scalar_cells_matching(entries, Some(worksheet), data)
+    replace_scalar_cells_in_sheet_with_decorations(entries, worksheet, data).map(|_| ())
+}
+
+/// 替换标量占位符，并返回精确批注值对应的最终物理坐标。
+pub fn replace_scalar_cells_in_sheet_with_comments(
+    entries: &mut [OoxmlZipEntry],
+    worksheet: &str,
+    data: &TemplateFillData,
+) -> Result<Vec<TemplateCommentPlacement>> {
+    replace_scalar_cells_in_sheet_with_decorations(entries, worksheet, data).map(comment_placements)
+}
+
+/// 替换标量占位符，并返回全部 package 层装饰的最终物理坐标。
+pub fn replace_scalar_cells_in_sheet_with_decorations(
+    entries: &mut [OoxmlZipEntry],
+    worksheet: &str,
+    data: &TemplateFillData,
+) -> Result<Vec<TemplateDecorationPlacement>> {
+    replace_scalar_cells_matching_with_decorations(entries, Some(worksheet), data)
 }
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 在全部 worksheet part 中替换标量占位符。
@@ -176,7 +243,7 @@ pub fn replace_scalar_cells_in_sheet(
 ///
 /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn replace_scalar_cells(entries: &mut [OoxmlZipEntry], data: &TemplateFillData) -> Result<()> {
-    replace_scalar_cells_matching(entries, None, data)
+    replace_scalar_cells_matching_with_decorations(entries, None, data).map(|_| ())
 }
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 在指定 worksheet part 末尾追加普通行。
@@ -189,8 +256,26 @@ pub fn append_rows_to_sheet(
     worksheet: &str,
     rows: &[Vec<TemplateCellValue>],
 ) -> Result<()> {
+    append_rows_to_sheet_with_decorations(entries, worksheet, rows).map(|_| ())
+}
+
+/// 追加普通行，并返回批注值对应的最终物理坐标。
+pub fn append_rows_to_sheet_with_comments(
+    entries: &mut [OoxmlZipEntry],
+    worksheet: &str,
+    rows: &[Vec<TemplateCellValue>],
+) -> Result<Vec<TemplateCommentPlacement>> {
+    append_rows_to_sheet_with_decorations(entries, worksheet, rows).map(comment_placements)
+}
+
+/// 追加普通行，并返回全部 package 层装饰的最终物理坐标。
+pub fn append_rows_to_sheet_with_decorations(
+    entries: &mut [OoxmlZipEntry],
+    worksheet: &str,
+    rows: &[Vec<TemplateCellValue>],
+) -> Result<Vec<TemplateDecorationPlacement>> {
     if rows.is_empty() {
-        return Ok(());
+        return Ok(Vec::new());
     }
     let entry = entries
         .iter_mut()
@@ -198,8 +283,9 @@ pub fn append_rows_to_sheet(
         .ok_or_else(|| Error::Xlsx(format!("template does not contain {worksheet}")))?;
     let xml = String::from_utf8(std::mem::take(&mut entry.bytes))
         .map_err(|error| Error::Xlsx(error.to_string()))?;
-    entry.bytes = append_rows_to_xml(&xml, rows)?.into_bytes();
-    Ok(())
+    let (xml, decorations) = append_rows_to_xml_with_decorations(&xml, rows)?;
+    entry.bytes = xml.into_bytes();
+    Ok(decorations)
 }
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 在工作表 XML 的 `sheetData` 末尾追加连续行。
@@ -208,15 +294,28 @@ pub fn append_rows_to_sheet(
 ///
 /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
 pub fn append_rows_to_xml(xml: &str, rows: &[Vec<TemplateCellValue>]) -> Result<String> {
+    append_rows_to_xml_with_decorations(xml, rows).map(|(xml, _)| xml)
+}
+
+fn append_rows_to_xml_with_decorations(
+    xml: &str,
+    rows: &[Vec<TemplateCellValue>],
+) -> Result<(String, Vec<TemplateDecorationPlacement>)> {
     let sheet_data_end = xml
         .find("</sheetData>")
         .ok_or_else(|| Error::Xlsx("worksheet does not contain sheetData".to_owned()))?;
     let next_row = worksheet_max_row(&xml[..sheet_data_end]).saturating_add(1);
     let mut appended = String::new();
+    let mut decorations = Vec::new();
     for (row_offset, values) in rows.iter().enumerate() {
         let row_index = next_row + row_offset;
         let _ = write!(appended, "<row r=\"{row_index}\">");
         for (column, value) in values.iter().enumerate() {
+            decorations.extend(template_decoration_placements(
+                value,
+                row_index.saturating_sub(1),
+                column,
+            ));
             let reference = format!("{}{row_index}", column_name(column + 1));
             appended.push_str(&render_typed_cell(
                 &format!("<c r=\"{reference}\"></c>"),
@@ -232,7 +331,7 @@ pub fn append_rows_to_xml(xml: &str, rows: &[Vec<TemplateCellValue>]) -> Result<
         appended,
         &xml[sheet_data_end..]
     );
-    Ok(update_worksheet_dimension(&expanded))
+    Ok((update_worksheet_dimension(&expanded), decorations))
 }
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 在单个工作表 XML 中替换标量占位符。
@@ -242,30 +341,49 @@ pub fn replace_scalar_cells_in_xml(
     data: &TemplateFillData,
     shared_strings: &[String],
 ) -> String {
+    replace_scalar_cells_in_xml_with_decorations(xml, data, shared_strings).0
+}
+
+fn replace_scalar_cells_in_xml_with_decorations(
+    xml: &str,
+    data: &TemplateFillData,
+    shared_strings: &[String],
+) -> (String, Vec<TemplateDecorationPlacement>) {
     let mut output = String::with_capacity(xml.len());
     let mut offset = 0;
+    let mut decorations = Vec::new();
     while let Some((start, end)) = find_next_cell(xml, offset) {
         let cell = &xml[start..end];
         output.push_str(&xml[offset..start]);
-        let replacement = cell_value(cell, shared_strings).map_or_else(
-            || cell.to_owned(),
-            |placeholder| {
-                if let Some(value) = exact_scalar_value(&placeholder, data) {
-                    return render_typed_cell(cell, value, true);
+        let replacement = if let Some(placeholder) = cell_value(cell, shared_strings) {
+            if let Some(value) = exact_scalar_value(&placeholder, data) {
+                if let Some(reference) = attribute_value(cell, "r")
+                    && let Some((column, row)) = parse_cell_reference(reference)
+                {
+                    decorations.extend(template_decoration_placements(
+                        value,
+                        row.saturating_sub(1),
+                        column.saturating_sub(1),
+                    ));
                 }
-                let filled = replace_template_values(&placeholder, &data.values, None, true, false);
+                render_typed_cell(cell, value, true)
+            } else {
+                let filled =
+                    replace_template_values(&placeholder, &data.values, None, true, false);
                 if filled == placeholder {
                     cell.to_owned()
                 } else {
                     render_typed_cell(cell, &TemplateCellValue::Text(filled), true)
                 }
-            },
-        );
+            }
+        } else {
+            cell.to_owned()
+        };
         output.push_str(&replacement);
         offset = end;
     }
     output.push_str(&xml[offset..]);
-    output
+    (output, decorations)
 }
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 渲染保留原坐标与可选样式的类型化单元格。
@@ -301,6 +419,15 @@ pub fn render_typed_cell(cell: &str, value: &TemplateCellValue, auto_style: bool
             insert_cell_type(&mut start, "e");
             format!("{start}<v>{}</v></c>", escape_xml(value))
         }
+        TemplateCellValue::RichText(value) => {
+            insert_cell_type(&mut start, "inlineStr");
+            format!("{start}{}</c>", value.inline_string_xml())
+        }
+        TemplateCellValue::Comment { value, .. }
+        | TemplateCellValue::Hyperlink { value, .. }
+        | TemplateCellValue::Images { value, .. } => {
+            render_typed_cell(cell, value, auto_style)
+        }
     }
 }
 
@@ -312,12 +439,12 @@ fn shift_following_rows_for_fill(
     cursors: &mut BTreeMap<Option<String>, CollectionFillCursor>,
     key: &Option<String>,
     row_count: usize,
-) {
+) -> Option<(usize, usize)> {
     let Some(cursor) = cursors.get(key) else {
-        return;
+        return None;
     };
     if cursor.templates.is_empty() {
-        return;
+        return None;
     }
     let maximum = cursor
         .templates
@@ -328,7 +455,7 @@ fn shift_following_rows_for_fill(
         .unwrap_or(0);
     let shift = row_count.saturating_sub(usize::from(!cursor.initialized));
     if shift == 0 || maximum >= last_worksheet_row(xml).unwrap_or(maximum) {
-        return;
+        return None;
     }
     *xml = shift_worksheet_rows_after(xml, maximum, shift);
     for cached in cursors.values_mut() {
@@ -340,6 +467,7 @@ fn shift_following_rows_for_fill(
             }
         }
     }
+    Some((maximum, shift))
 }
 
 fn collection_template_cells(
@@ -483,6 +611,80 @@ fn exact_scalar_value<'a>(
         .flatten()
 }
 
+fn template_decoration_placements(
+    value: &TemplateCellValue,
+    row: usize,
+    column: usize,
+) -> Vec<TemplateDecorationPlacement> {
+    let (Ok(row), Ok(column)) = (u32::try_from(row), u16::try_from(column)) else {
+        return Vec::new();
+    };
+    template_value_decorations(value, row, column)
+}
+
+/// 返回一个 typed template value 在最终物理坐标上需要落盘的全部装饰。
+///
+/// Comment、hyperlink 与 images 可以嵌套包装同一显示值；本函数逐层展开，
+/// 供 placeholder fill、模板追加和 mutation set-cell 共用同一语义。
+#[must_use]
+pub fn template_value_decorations(
+    value: &TemplateCellValue,
+    row: u32,
+    column: u16,
+) -> Vec<TemplateDecorationPlacement> {
+    let mut placements = Vec::new();
+    let mut current = value;
+    loop {
+        match current {
+            TemplateCellValue::Comment { value, comment } => {
+                placements.push(TemplateDecorationPlacement {
+                    row,
+                    column,
+                    decoration: TemplateDecoration::Comment(comment.clone()),
+                });
+                current = value;
+            }
+            TemplateCellValue::Hyperlink { value, hyperlink } => {
+                placements.push(TemplateDecorationPlacement {
+                    row,
+                    column,
+                    decoration: TemplateDecoration::Hyperlink(hyperlink.clone()),
+                });
+                current = value;
+            }
+            TemplateCellValue::Images { value, images } => {
+                placements.extend(images.iter().cloned().map(|image| {
+                    TemplateDecorationPlacement {
+                        row,
+                        column,
+                        decoration: TemplateDecoration::Image(image),
+                    }
+                }));
+                current = value;
+            }
+            _ => break,
+        }
+    }
+    placements
+}
+
+fn comment_placements(
+    placements: Vec<TemplateDecorationPlacement>,
+) -> Vec<TemplateCommentPlacement> {
+    placements
+        .into_iter()
+        .filter_map(|placement| match placement.decoration {
+            TemplateDecoration::Comment(comment) => Some(TemplateCommentPlacement {
+                row: placement.row,
+                column: placement.column,
+                comment,
+            }),
+            TemplateDecoration::Hyperlink(_) => None,
+            TemplateDecoration::Image(_) => None,
+        })
+        .collect()
+}
+
 fn cell_value(cell: &str, shared_strings: &[String]) -> Option<String> {
     if attribute_value(cell, "t") == Some("s") {
         let index = element_value(cell, "v")?.parse::<usize>().ok()?;
@@ -497,12 +699,13 @@ fn contains_collection_marker(value: &str, name: Option<&str>) -> bool {
     contains_unescaped(value, &format!("{{{prefix}"))
 }
 
-fn replace_scalar_cells_matching(
+fn replace_scalar_cells_matching_with_decorations(
     entries: &mut [OoxmlZipEntry],
     worksheet: Option<&str>,
     data: &TemplateFillData,
-) -> Result<()> {
+) -> Result<Vec<TemplateDecorationPlacement>> {
     let shared_strings = shared_strings(entries);
+    let mut decorations = Vec::new();
     for entry in entries.iter_mut().filter(|entry| {
         !entry.is_dir
             && worksheet.map_or_else(
@@ -515,9 +718,12 @@ fn replace_scalar_cells_matching(
     }) {
         let xml = String::from_utf8(std::mem::take(&mut entry.bytes))
             .map_err(|error| Error::Xlsx(error.to_string()))?;
-        entry.bytes = replace_scalar_cells_in_xml(&xml, data, &shared_strings).into_bytes();
+        let (xml, entry_decorations) =
+            replace_scalar_cells_in_xml_with_decorations(&xml, data, &shared_strings);
+        entry.bytes = xml.into_bytes();
+        decorations.extend(entry_decorations);
     }
-    Ok(())
+    Ok(decorations)
 }
 
 fn shared_strings(entries: &[OoxmlZipEntry]) -> Vec<String> {

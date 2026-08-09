@@ -1,4 +1,4 @@
-use crate::core::ExcelCellStyle;
+use crate::core::{ExcelCellStyle, WriteCellStyle, WriteFont};
 use crate::write::sheet_style_context::CellFormatContext;
 
 /// `AutoStreaming` journal 中相对基础 Sheet 样式的最终单元格样式增量。
@@ -9,7 +9,8 @@ use crate::write::sheet_style_context::CellFormatContext;
 pub(crate) struct JournalCellStyle {
     pub(crate) ignore_fill_style: bool,
     pub(crate) handler_cell: Option<ExcelCellStyle>,
-    pub(crate) converted_cell: Option<ExcelCellStyle>,
+    pub(crate) handler_font: Option<WriteFont>,
+    pub(crate) converted_cell: Option<WriteCellStyle>,
     pub(crate) converted_data_format: Option<String>,
 }
 
@@ -17,6 +18,7 @@ impl JournalCellStyle {
     pub(crate) fn from_context(context: &CellFormatContext<'_>) -> Option<Self> {
         if !context.ignore_fill_style
             && context.handler_cell.is_none()
+            && context.handler_font.is_none()
             && context.converted_cell.is_none()
             && context.converted_data_format.is_none()
         {
@@ -25,7 +27,8 @@ impl JournalCellStyle {
         Some(Self {
             ignore_fill_style: context.ignore_fill_style,
             handler_cell: context.handler_cell,
-            converted_cell: context.converted_cell,
+            handler_font: context.handler_font.clone(),
+            converted_cell: context.converted_cell.cloned(),
             converted_data_format: context.converted_data_format.map(str::to_owned),
         })
     }
@@ -35,7 +38,8 @@ impl JournalCellStyle {
             return base.without_fill_style();
         }
         base.handler_cell = self.handler_cell;
-        base.converted_cell = self.converted_cell;
+        base.handler_font = self.handler_font.clone();
+        base.converted_cell = self.converted_cell.as_ref();
         base.converted_data_format = self.converted_data_format.as_deref();
         base
     }

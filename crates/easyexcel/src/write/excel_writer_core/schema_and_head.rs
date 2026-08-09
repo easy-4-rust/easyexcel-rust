@@ -258,8 +258,25 @@ fn collect_handler_cell_style(
     for handler in handlers {
         if let Some(style) = handler.style_cell_style(context) {
             merged = Some(match merged {
-                Some(target) => merge_write_cell_style(&style, target),
+                Some(target) => merge_excel_cell_style(&style, target),
                 None => style,
+            });
+        }
+    }
+    merged
+}
+
+/// 合并 Handler 样式策略返回的运行期字体，保留动态字体名称。
+pub(crate) fn collect_handler_write_font(
+    handlers: &[Box<dyn WriteHandler>],
+    context: &WriteCellContext,
+) -> Option<WriteFont> {
+    let mut merged: Option<WriteFont> = None;
+    for handler in handlers {
+        if let Some(font) = handler.style_write_font(context) {
+            merged = Some(match merged {
+                Some(target) => merge_write_font(&font, target),
+                None => font,
             });
         }
     }
@@ -280,7 +297,7 @@ pub(crate) fn effective_handler_cell_style(
         .requested_style()
         .map_or(merged, |requested| {
             Some(match merged {
-                Some(current) => merge_write_cell_style(&requested, current),
+                Some(current) => merge_excel_cell_style(&requested, current),
                 None => requested,
             })
         })

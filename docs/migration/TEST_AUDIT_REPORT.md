@@ -19,7 +19,7 @@
 |----------|-------|---|--------|
 | Methods with FULL matching logic | ~295 | 88% | ✅ |
 | XLS fill (SST passthrough) | ~15 | 4% | ⚠️ BIFF8 LABEL fill works; SST fill passes through |
-| XLS encrypt/image/extra (explicit Unsupported) | ~4 | 1% | ⚠️ Documented BIFF8 gaps |
+| XLS encrypt/image/extra historical gaps | ~4 | 1% | ⚠️ Encryption and comment/extra paths are now coded but await rerun; image remains an explicit boundary |
 | POI probes (excluded) | ~31 | 9% | ✅ Not EasyExcel API |
 
 ### Phase 5.2 deliverables
@@ -31,14 +31,14 @@
 | `easyexcel-test/tests/core_fill_1to1_tests.rs` | XLS fill tests: assert output exists instead of expecting Unsupported |
 | `easyexcel-test/tests/java_full_parity_tests.rs` | 5 XLS parity tests: assert output exists |
 
-### Remaining explicit gaps (4 methods)
+### Historical explicit gaps and current static status
 
 | Java method | Gap | Reason |
 |-------------|-----|--------|
-| EncryptDataTest#t02ReadAndWrite03 | XLS encryption | BIFF8 standard encryption (RC4) not implemented |
-| EncryptDataTest#t04ReadAndWriteStream03 | XLS encryption | Same |
+| EncryptDataTest#t02ReadAndWrite03 | XLS encryption | CryptoAPI RC4 `FILEPASS` read/write is coded; this historical test has not been rerun during the current no-test phase |
+| EncryptDataTest#t04ReadAndWriteStream03 | XLS encryption | Stream path is coded through the same record-level engine; release evidence remains pending |
 | ConverterDataTest#t22WriteImage03 | XLS image | BIFF8 MSODrawing/Escher records not implemented |
-| ExtraDataTest#t02Read03 | XLS extra metadata | XLS NOTE/TXO comment records not bridged |
+| ExtraDataTest#t02Read03 | XLS extra metadata | NOTE/TXO/OBJ comment read/write is coded; this historical test has not been rerun during the current no-test phase |
 
 ### SST limitation
 

@@ -1,6 +1,9 @@
 //! 对应 Java：`com.alibaba.excel.write.style.DefaultStyle`.
 
-use crate::core::{ExcelCellStyle, ExcelColor, ExcelHorizontalAlignment, WriteHandler};
+use crate::core::{
+    ExcelBorderStyle, ExcelCellStyle, ExcelColor, ExcelFillPattern, ExcelHorizontalAlignment,
+    ExcelVerticalAlignment, WriteCellContext, WriteFont, WriteHandler,
+};
 
 /// 对应 Java：`DefaultStyle`.
 ///
@@ -10,16 +13,36 @@ use crate::core::{ExcelCellStyle, ExcelColor, ExcelHorizontalAlignment, WriteHan
 /// `WriteHandler` hook.
 pub struct DefaultStyle {
     header: ExcelCellStyle,
+    header_font: WriteFont,
 }
 
 impl DefaultStyle {
     /// Creates the default style with a bold header.
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.style.DefaultStyle。
-    pub const fn new() -> Self {
-        let mut header = ExcelCellStyle::new();
-        header.horizontal_alignment = Some(ExcelHorizontalAlignment::Center);
-        Self { header }
+    pub fn new() -> Self {
+        let header = ExcelCellStyle {
+            locked: Some(true),
+            horizontal_alignment: Some(ExcelHorizontalAlignment::Center),
+            wrapped: Some(true),
+            vertical_alignment: Some(ExcelVerticalAlignment::Center),
+            border_left: Some(ExcelBorderStyle::Thin),
+            border_right: Some(ExcelBorderStyle::Thin),
+            border_top: Some(ExcelBorderStyle::Thin),
+            border_bottom: Some(ExcelBorderStyle::Thin),
+            fill_pattern: Some(ExcelFillPattern::Solid),
+            // Apache POI `IndexedColors.GREY_25_PERCENT` 的稳定索引。
+            fill_foreground_color: Some(ExcelColor::Indexed(22)),
+            ..ExcelCellStyle::new()
+        };
+        let header_font = WriteFont::new()
+            .font_name("宋体")
+            .font_height_in_points(14.0)
+            .bold(true);
+        Self {
+            header,
+            header_font,
+        }
     }
 
     /// Returns the configured header style. (Java `getHeaderStyle()` step)
@@ -28,6 +51,10 @@ impl DefaultStyle {
     pub const fn header(&self) -> &ExcelCellStyle {
         &self.header
     }
+
+    /// 返回 Java 默认表头字体。
+    #[must_use]
+    pub const fn header_font(&self) -> &WriteFont { &self.header_font }
 }
 
 impl Default for DefaultStyle {
@@ -50,7 +77,15 @@ impl WriteHandler for DefaultStyle {
     }
 
     fn order(&self) -> i32 {
-        0
+        crate::constant::order_constant::DEFAULT_DEFINE_STYLE
+    }
+
+    fn style_cell_style(&self, context: &WriteCellContext) -> Option<ExcelCellStyle> {
+        context.is_head.then_some(self.header)
+    }
+
+    fn style_write_font(&self, context: &WriteCellContext) -> Option<WriteFont> {
+        context.is_head.then(|| self.header_font.clone())
     }
     fn after_workbook(
         &mut self,
@@ -61,9 +96,6 @@ impl WriteHandler for DefaultStyle {
         Ok(())
     }
 }
-
-// Hint to the linter that the color import is part of the public surface.
-const _IGNORE: Option<ExcelColor> = None;
 
 #[cfg(test)]
 mod tests {

@@ -4,7 +4,10 @@
 //!
 //! Loads the OLE/CFB container, parses the `Workbook` stream into BIFF records,
 //! and **preserves every untouched record byte-for-byte** (FONT / XF / SST /
-//! MERGECELLS / existing cells). New values are inserted as inline `LABEL`
+//! MERGECELLS / existing cells). Row-block acceleration records (`INDEX` /
+//! `DBCELL`) are discarded after a structural edit because their byte offsets
+//! are no longer valid; Excel and POI rebuild them when the workbook is opened
+//! and saved. New values are inserted as inline `LABEL`
 //! (0x0204) or `NUMBER` / `BOOLERR` / `BLANK` records immediately before the
 //! target sheet's `EOF`, then `DIMENSION` and `BOUNDSHEET` stream offsets are
 //! repaired. Other OLE streams (`SummaryInformation`, …) are kept by rewriting
@@ -35,8 +38,9 @@ use cfb::CompoundFile;
 use easyexcel_io::{Error as ExcelError, Result};
 
 use super::encode::{
-    BLANK, BOF, BOOLERR, BOUNDSHEET, DIMENSION, DT_WORKSHEET, EOF, FILEPASS, FONT, FORMULA, LABEL,
-    LABELSST, MAX_RECORD_DATA, MERGECELLS, MSODRAWINGGROUP, NUMBER, RK, SST, SUPBOOK, XF,
+    BLANK, BOF, BOOLERR, BOUNDSHEET, DBCELL, DIMENSION, DT_WORKSHEET, EOF, FILEPASS, FONT,
+    FORMULA, INDEX, LABEL, LABELSST, MAX_RECORD_DATA, MERGECELLS, MSODRAWINGGROUP, NUMBER, RK,
+    SST, SUPBOOK, XF,
     WINDOW2, XF_GENERAL, EXTERNSHEET, encode_rk,
     encode_unicode_string, pack_merge_range,
 };
@@ -44,7 +48,7 @@ use super::record_sid::{
     CHART_AI_SID, CONDITIONAL_FORMATTING_HEADER_SID, CONDITIONAL_FORMATTING_RULE_SID,
     DATA_VALIDATION_SID, EXTERNAL_SHEET_SID, HYPERLINK_SID, MSO_DRAWING_SID, NAME_SID, NOTE_SID,
     OBJECT_PROTECT_SID, OBJ_SID, PASSWORD_SID, PROTECT_SID, RICH_STRING_SID, ROW_SID,
-    SCENARIO_PROTECT_SID, SUP_BOOK_SID, TEXT_OBJECT_SID,
+    SCENARIO_PROTECT_SID, SUP_BOOK_SID, TEXT_OBJECT_SID, CONTINUE_SID,
 };
 use super::{
     Biff8Cell, Biff8Chart, Biff8Comment, Biff8Hyperlink, Biff8HyperlinkKind, Biff8Merge, Biff8Value,

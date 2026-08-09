@@ -7,18 +7,18 @@ include!("fill_config/fill_direction.rs");
 /// 对应 Java：com.alibaba.excel.write.metadata.fill.FillConfig。 Collection fill behavior corresponding to Java `EasyExcel`'s `FillConfig`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FillConfig {
-    direction: FillDirection,
-    force_new_row: bool,
-    auto_style: bool,
+    direction: Option<FillDirection>,
+    force_new_row: Option<bool>,
+    auto_style: Option<bool>,
     has_init: bool,
 }
 
 impl Default for FillConfig {
     fn default() -> Self {
         Self {
-            direction: FillDirection::Vertical,
-            force_new_row: false,
-            auto_style: true,
+            direction: None,
+            force_new_row: None,
+            auto_style: None,
             has_init: false,
         }
     }
@@ -30,9 +30,9 @@ impl FillConfig {
     /// 对应 Java：com.alibaba.excel.write.metadata.fill.FillConfig。
     pub const fn new() -> Self {
         Self {
-            direction: FillDirection::Vertical,
-            force_new_row: false,
-            auto_style: true,
+            direction: None,
+            force_new_row: None,
+            auto_style: None,
             has_init: false,
         }
     }
@@ -40,9 +40,9 @@ impl FillConfig {
     /// 对应 Java 全参数构造器。
     #[must_use]
     pub const fn with_values(
-        direction: FillDirection,
-        force_new_row: bool,
-        auto_style: bool,
+        direction: Option<FillDirection>,
+        force_new_row: Option<bool>,
+        auto_style: Option<bool>,
         has_init: bool,
     ) -> Self {
         Self { direction, force_new_row, auto_style, has_init }
@@ -56,7 +56,7 @@ impl FillConfig {
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.metadata.fill.FillConfig。
     pub const fn direction(mut self, direction: FillDirection) -> Self {
-        self.direction = direction;
+        self.direction = Some(direction);
         self
     }
 
@@ -64,7 +64,7 @@ impl FillConfig {
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.metadata.fill.FillConfig。
     pub const fn force_new_row(mut self, force_new_row: bool) -> Self {
-        self.force_new_row = force_new_row;
+        self.force_new_row = Some(force_new_row);
         self
     }
 
@@ -72,44 +72,63 @@ impl FillConfig {
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.metadata.fill.FillConfig。
     pub const fn auto_style(mut self, auto_style: bool) -> Self {
-        self.auto_style = auto_style;
+        self.auto_style = Some(auto_style);
         self
     }
 
     /// Returns the configured expansion direction.
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.metadata.fill.FillConfig。
-    pub const fn get_direction(self) -> FillDirection {
+    pub const fn get_direction(self) -> Option<FillDirection> {
         self.direction
     }
 
     /// Returns whether vertical filling shifts following rows.
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.metadata.fill.FillConfig。
-    pub const fn get_force_new_row(self) -> bool {
+    pub const fn get_force_new_row(self) -> Option<bool> {
         self.force_new_row
     }
 
     /// Returns whether template style is inherited.
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.metadata.fill.FillConfig。
-    pub const fn get_auto_style(self) -> bool {
+    pub const fn get_auto_style(self) -> Option<bool> {
         self.auto_style
     }
 
     /// Java `setDirection`。
-    pub const fn set_direction(&mut self, value: FillDirection) { self.direction = value; }
+    pub const fn set_direction(&mut self, value: Option<FillDirection>) { self.direction = value; }
     /// Java `setForceNewRow`。
-    pub const fn set_force_new_row(&mut self, value: bool) { self.force_new_row = value; }
+    pub const fn set_force_new_row(&mut self, value: Option<bool>) { self.force_new_row = value; }
     /// Java `setAutoStyle`。
-    pub const fn set_auto_style(&mut self, value: bool) { self.auto_style = value; }
-    /// Java `init`，仅记录一次初始化并保持已经显式设置的有效值。
-    pub const fn init(&mut self) { self.has_init = true; }
+    pub const fn set_auto_style(&mut self, value: Option<bool>) { self.auto_style = value; }
+    /// Java `init`，仅执行一次并物化三个 nullable 字段的默认值。
+    pub fn init(&mut self) {
+        if self.has_init {
+            return;
+        }
+        self.direction.get_or_insert(FillDirection::Vertical);
+        self.force_new_row.get_or_insert(false);
+        self.auto_style.get_or_insert(true);
+        self.has_init = true;
+    }
     /// Java `isHasInit`。
     #[must_use]
     pub const fn is_has_init(self) -> bool { self.has_init }
     /// Java `setHasInit`。
     pub const fn set_has_init(&mut self, value: bool) { self.has_init = value; }
+    /// 返回执行 `init` 后的有效方向，不改变当前对象。
+    #[must_use]
+    pub fn effective_direction(self) -> FillDirection {
+        self.direction.unwrap_or(FillDirection::Vertical)
+    }
+    /// 返回执行 `init` 后的有效强制新行配置，不改变当前对象。
+    #[must_use]
+    pub fn effective_force_new_row(self) -> bool { self.force_new_row.unwrap_or(false) }
+    /// 返回执行 `init` 后的有效自动样式配置，不改变当前对象。
+    #[must_use]
+    pub fn effective_auto_style(self) -> bool { self.auto_style.unwrap_or(true) }
 }
 
 /// 对应 Java：`FillConfig.FillConfigBuilder`。
@@ -125,19 +144,25 @@ impl FillConfigBuilder {
     /// 设置方向。
     #[must_use]
     pub const fn direction(mut self, value: FillDirection) -> Self {
-        self.value.direction = value;
+        self.value.direction = Some(value);
         self
     }
     /// 设置强制新行。
     #[must_use]
     pub const fn force_new_row(mut self, value: bool) -> Self {
-        self.value.force_new_row = value;
+        self.value.force_new_row = Some(value);
         self
     }
     /// 设置自动样式。
     #[must_use]
     pub const fn auto_style(mut self, value: bool) -> Self {
-        self.value.auto_style = value;
+        self.value.auto_style = Some(value);
+        self
+    }
+    /// 设置内部初始化标志。对应 Lombok builder 的 `hasInit(boolean)`。
+    #[must_use]
+    pub const fn has_init(mut self, value: bool) -> Self {
+        self.value.has_init = value;
         self
     }
     /// 构建配置。

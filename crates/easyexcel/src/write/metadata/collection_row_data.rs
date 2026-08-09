@@ -27,6 +27,32 @@ impl CollectionRowData {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    /// 返回指定下标的数据。对应 Java `CollectionRowData#get(int)`。
+    #[must_use]
+    pub fn get(&self, index: usize) -> Option<&crate::core::CellValue> {
+        self.0.get(index)
+    }
+
+    /// 返回集合大小。对应 Java `CollectionRowData#size()`。
+    #[must_use]
+    pub fn size(&self) -> usize {
+        self.0.len()
+    }
+}
+
+impl super::row_data::RowData for CollectionRowData {
+    fn get(&self, index: usize) -> Option<&crate::core::CellValue> {
+        self.get(index)
+    }
+
+    fn size(&self) -> usize {
+        self.size()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.is_empty()
+    }
 }
 
 impl crate::core::ExcelRow for CollectionRowData {

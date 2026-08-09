@@ -18,6 +18,16 @@ pub trait ExcelRow: Sized {
     /// Returns static column metadata. (Java `ExcelHeadProperty.getHeadMap().values()`)
     fn schema() -> &'static [ExcelColumn];
 
+    /// 返回该实现是否由静态 schema 生成，且不会绕过声明的字段类型产生高级单元格值。
+    ///
+    /// Stateful Auto 只有在本标记为真、字段类型均为标量且不存在自定义 converter
+    /// 时才可选择常量内存后端。手写实现默认不作此保证，避免实际值在首批写入时才
+    /// 暴露 comment、image 或 rich text，导致无法安全晋升。
+    #[must_use]
+    fn supports_static_scalar_write() -> bool {
+        false
+    }
+
     /// Returns whether this item represents a Java `null` row.
     ///
     /// Writers advance the physical and relative row indexes for an absent row,
@@ -157,6 +167,10 @@ where
 {
     fn schema() -> &'static [ExcelColumn] {
         T::schema()
+    }
+
+    fn supports_static_scalar_write() -> bool {
+        T::supports_static_scalar_write()
     }
 
     fn is_absent_row(&self) -> bool {

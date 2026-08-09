@@ -20,6 +20,15 @@ where
         self
     }
 
+    /// 设置 Java 风格输入流；非 seekable 输入会物化并由 reader 生命周期管理。
+    pub fn input_stream<R>(mut self, input: R) -> Result<Self>
+    where
+        R: std::io::Read,
+    {
+        self.builder = self.builder.input_stream(input)?;
+        Ok(self)
+    }
+
     /// Selects a worksheet by zero-based index.
     #[must_use]
     /// 对应 Java：`Math.max(headRowNumber, 0)`。
@@ -49,6 +58,107 @@ where
     /// 对应 Java：`Math.max(headRowNumber, 0)`。
     pub fn charset(mut self, charset: impl Into<CsvCharset>) -> Self {
         self.builder = self.builder.charset(charset);
+        self
+    }
+
+    /// 显式指定工作簿格式。
+    #[must_use]
+    pub fn excel_type(mut self, excel_type: ExcelTypeEnum) -> Self {
+        self.builder = self.builder.excel_type(excel_type);
+        self
+    }
+
+    /// 记录 Java 输入流自动关闭配置。
+    #[must_use]
+    pub fn auto_close_stream(mut self, enabled: bool) -> Self {
+        self.builder = self.builder.auto_close_stream(enabled);
+        self
+    }
+
+    /// 记录 Java 强制输入流路径配置。
+    #[must_use]
+    pub fn mandatory_use_input_stream(mut self, enabled: bool) -> Self {
+        self.builder = self.builder.mandatory_use_input_stream(enabled);
+        self
+    }
+
+    /// 设置字符串自动裁剪。
+    #[must_use]
+    pub fn auto_trim(mut self, enabled: bool) -> Self {
+        self.builder = self.builder.auto_trim(enabled);
+        self
+    }
+
+    /// 设置 1904 日期窗口。
+    #[must_use]
+    pub fn use_1904_windowing(mut self, enabled: bool) -> Self {
+        self.builder = self.builder.use_1904_windowing(enabled);
+        self
+    }
+
+    /// 设置数字和日期格式化区域。
+    #[must_use]
+    pub fn locale(mut self, locale: ExcelLocale) -> Self {
+        self.builder = self.builder.locale(locale);
+        self
+    }
+
+    /// 注册强类型读取转换器。
+    #[must_use]
+    pub fn register_converter<V, C>(mut self, converter: C) -> Self
+    where
+        V: 'static,
+        C: Converter<V> + Send + Sync + 'static,
+    {
+        self.builder = self.builder.register_converter::<V, C>(converter);
+        self
+    }
+
+    /// 注册可接收空单元格的强类型读取转换器。
+    #[must_use]
+    pub fn register_nullable_converter<V, C>(mut self, converter: C) -> Self
+    where
+        V: 'static,
+        C: NullableObjectConverter<V> + Send + Sync + 'static,
+    {
+        self.builder = self
+            .builder
+            .register_nullable_converter::<V, C>(converter);
+        self
+    }
+
+    /// 选择共享字符串缓存实现。
+    #[must_use]
+    pub fn read_cache(mut self, mode: ReadCacheMode) -> Self {
+        self.builder = self.builder.read_cache(mode);
+        self
+    }
+
+    /// 选择共享字符串缓存策略。
+    #[must_use]
+    pub fn read_cache_selector(mut self, selector: StoredReadCacheSelector) -> Self {
+        self.builder = self.builder.read_cache_selector(selector);
+        self
+    }
+
+    /// 使用 Java 默认 simple cache selector 的 Rust 载体。
+    #[must_use]
+    pub fn simple_read_cache_selector(mut self, selector: SimpleReadCacheSelector) -> Self {
+        self.builder = self.builder.simple_read_cache_selector(selector);
+        self
+    }
+
+    /// 控制默认模型监听器。
+    #[must_use]
+    pub fn use_default_listener(mut self, enabled: bool) -> Self {
+        self.builder = self.builder.use_default_listener(enabled);
+        self
+    }
+
+    /// 设置 XLSX SAX parser factory 名称。
+    #[must_use]
+    pub fn xlsx_saxparser_factory_name(mut self, name: impl Into<String>) -> Self {
+        self.builder = self.builder.xlsx_saxparser_factory_name(name);
         self
     }
 
@@ -177,4 +287,3 @@ where
         self
     }
 }
-

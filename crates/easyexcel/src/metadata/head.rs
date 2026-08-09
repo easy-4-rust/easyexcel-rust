@@ -8,18 +8,20 @@ use crate::metadata::property::{
 /// 对应 Java：com.alibaba.excel.metadata.Head。 Excel header metadata for one column.
 ///
 /// Rust port of Java `Head`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Head {
     /// Column index. (Java `columnIndex`)
     pub column_index: Option<i32>,
+    /// Java 反射 `Field` 的后端中立字段键。
+    pub field_key: Option<String>,
     /// Rust field name when bound to a model class. (Java `fieldName`)
     pub field_name: Option<String>,
     /// Header labels from the top row down. (Java `headNameList`)
     pub head_name_list: Vec<String>,
     /// Whether `@ExcelProperty.index` forced the column index. (Java `forceIndex`)
-    pub force_index: bool,
+    pub force_index: Option<bool>,
     /// Whether `@ExcelProperty.value` forced the header name. (Java `forceName`)
-    pub force_name: bool,
+    pub force_name: Option<bool>,
     /// Column width annotation. (Java `columnWidthProperty`)
     pub column_width_property: Option<ColumnWidthProperty>,
     /// Loop merge annotation. (Java `loopMergeProperty`)
@@ -45,10 +47,42 @@ impl Head {
         force_index: bool,
         force_name: bool,
     ) -> Result<Self, ExcelError> {
+        let field_key = field_name.clone();
         Ok(Self {
             column_index: Some(column_index),
+            field_key,
             field_name,
             head_name_list,
+            force_index: Some(force_index),
+            force_name: Some(force_name),
+            column_width_property: None,
+            loop_merge_property: None,
+            head_style_property: None,
+            head_font_property: None,
+        })
+    }
+
+    /// 使用 Java 六参数构造器的后端中立形状创建表头。
+    ///
+    /// `field_key` 保存 Java 反射 `Field` 的稳定字段名，`field_name` 独立保存 Java 的
+    /// `fieldName`。Rust 无 null 字符串元素，因此 `None` 的 head list 规范化为空集合。
+    ///
+    /// # Errors
+    ///
+    /// Rust 字符串无法表示 Java 集合中的 null 元素，所以已构造的输入总是有效。
+    pub fn from_java_fields(
+        column_index: Option<i32>,
+        field_key: Option<String>,
+        field_name: Option<String>,
+        head_name_list: Option<Vec<String>>,
+        force_index: Option<bool>,
+        force_name: Option<bool>,
+    ) -> Result<Self, ExcelError> {
+        Ok(Self {
+            column_index,
+            field_key,
+            field_name,
+            head_name_list: head_name_list.unwrap_or_default(),
             force_index,
             force_name,
             column_width_property: None,
@@ -80,14 +114,14 @@ impl Head {
     #[must_use]
     /// 对应 Java：com.alibaba.excel.metadata.Head。
     pub const fn force_index(&self) -> bool {
-        self.force_index
+        self.force_index.unwrap_or(false)
     }
 
     /// Returns whether the header name was forced. (Java `getForceName()`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.metadata.Head。
     pub const fn force_name(&self) -> bool {
-        self.force_name
+        self.force_name.unwrap_or(false)
     }
 
     /// Java `getColumnIndex` 别名。
@@ -97,9 +131,9 @@ impl Head {
     pub fn set_column_index(&mut self, value: Option<i32>) { self.column_index = value; }
     /// Java `getField` 的后端中立映射；Rust 以静态字段名替代反射 `Field`。
     #[must_use]
-    pub fn get_field(&self) -> Option<&str> { self.field_name.as_deref() }
+    pub fn get_field(&self) -> Option<&str> { self.field_key.as_deref() }
     /// Java `setField` 的后端中立映射。
-    pub fn set_field(&mut self, value: Option<String>) { self.field_name = value; }
+    pub fn set_field(&mut self, value: Option<String>) { self.field_key = value; }
     /// Java `getFieldName` 别名。
     #[must_use]
     pub fn get_field_name(&self) -> Option<&str> { self.field_name.as_deref() }
@@ -112,14 +146,14 @@ impl Head {
     pub fn set_head_name_list(&mut self, value: Vec<String>) { self.head_name_list = value; }
     /// Java `getForceIndex` 别名。
     #[must_use]
-    pub const fn get_force_index(&self) -> bool { self.force_index }
+    pub const fn get_force_index(&self) -> Option<bool> { self.force_index }
     /// Java `setForceIndex`。
-    pub const fn set_force_index(&mut self, value: bool) { self.force_index = value; }
+    pub const fn set_force_index(&mut self, value: Option<bool>) { self.force_index = value; }
     /// Java `getForceName` 别名。
     #[must_use]
-    pub const fn get_force_name(&self) -> bool { self.force_name }
+    pub const fn get_force_name(&self) -> Option<bool> { self.force_name }
     /// Java `setForceName`。
-    pub const fn set_force_name(&mut self, value: bool) { self.force_name = value; }
+    pub const fn set_force_name(&mut self, value: Option<bool>) { self.force_name = value; }
     /// Java `getColumnWidthProperty`。
     #[must_use]
     pub const fn get_column_width_property(&self) -> Option<&ColumnWidthProperty> {

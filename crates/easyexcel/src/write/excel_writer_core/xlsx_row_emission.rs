@@ -141,18 +141,19 @@ fn write_header_row_with_handlers(
                 style
                     .column(column)
                     .with_handler_cell(effective_handler_cell_style(handlers, &context))
+                    .with_handler_font(collect_handler_write_font(handlers, &context))
             };
             let format = cell_format(format_context);
             match &context.value {
                 CellValue::String(value) | CellValue::Error(value) => {
-                    generation::write_string_with_format(
+                    generation::GeneratedCellValue::write_text(
                         worksheet,
                         row_index,
                         context.column_index,
                         value,
-                        &format,
+                        Some(&format),
                     )
-                    .map_err(format_error)?;
+                        .map_err(ExcelError::from)?;
                 }
                 value => write_cell(
                     worksheet,
@@ -185,6 +186,7 @@ fn write_header_row_with_handlers(
     Ok(crate::write::gzip_spill::JournalRow {
         cells: final_cells,
         row_height,
+        merge_ranges: Vec::new(),
     })
 }
 
@@ -262,11 +264,12 @@ pub(crate) fn write_data_row_fast(
     worksheet: &mut Worksheet,
     row_index: u32,
     columns: &[(usize, usize, &'static ExcelColumn)],
+    date_formats: Option<&[(String, String)]>,
     cells: &[WriteCellData],
     style: SheetStyleContext<'_>,
     image_layout: &ImageLayout,
 ) -> Result<()> {
-    for (physical_index, schema_index, metadata) in columns {
+    for (column_offset, (physical_index, schema_index, metadata)) in columns.iter().enumerate() {
         let cell_data = cells.get(*schema_index);
         let effective_value;
         let value = match cell_data {
@@ -278,10 +281,14 @@ pub(crate) fn write_data_row_fast(
             None => &CellValue::Empty,
         };
         let format_context = style.column(metadata);
-        let format_context = cell_data.map_or(format_context, |cell| {
-            format_context.with_converted_cell(cell)
-        });
-        write_cell(
+        let format_context = match cell_data {
+            Some(cell) => format_context.with_converted_cell(cell),
+            None => format_context,
+        };
+        let date_formats = date_formats
+            .and_then(|formats| formats.get(column_offset))
+            .map(|(date, date_time)| (date.as_str(), date_time.as_str()));
+        write_cell_with_date_formats(
             worksheet,
             row_index,
             to_column(*physical_index)?,
@@ -289,6 +296,7 @@ pub(crate) fn write_data_row_fast(
             value,
             format_context,
             image_layout,
+            date_formats,
         )?;
     }
     Ok(())
@@ -336,9 +344,10 @@ pub(crate) fn write_data_row_with_handlers(
                 None => &CellValue::Empty,
             };
             let format_context = style.column(metadata);
-            let format_context = cell_data.map_or(format_context, |cell| {
-                format_context.with_converted_cell(cell)
-            });
+            let format_context = match cell_data {
+                Some(cell) => format_context.with_converted_cell(cell),
+                None => format_context,
+            };
             write_cell(
                 worksheet,
                 row_index,
@@ -356,6 +365,7 @@ pub(crate) fn write_data_row_with_handlers(
         return Ok(crate::write::gzip_spill::JournalRow {
             cells: final_cells,
             row_height: None,
+            merge_ranges: Vec::new(),
         });
     }
 
@@ -387,10 +397,12 @@ pub(crate) fn write_data_row_with_handlers(
             } else {
                 let format_context = style
                     .column(metadata)
-                    .with_handler_cell(effective_handler_cell_style(handlers, &context));
-                cell_data.map_or(format_context, |cell| {
-                    format_context.with_converted_cell(cell)
-                })
+                    .with_handler_cell(effective_handler_cell_style(handlers, &context))
+                    .with_handler_font(collect_handler_write_font(handlers, &context));
+                match cell_data {
+                    Some(cell) => format_context.with_converted_cell(cell),
+                    None => format_context,
+                }
             };
             write_cell(
                 worksheet,
@@ -422,6 +434,7 @@ pub(crate) fn write_data_row_with_handlers(
     Ok(crate::write::gzip_spill::JournalRow {
         cells: final_cells,
         row_height,
+        merge_ranges: Vec::new(),
     })
 }
 
@@ -539,6 +552,18 @@ pub(crate) fn replay_stateful_sheet_journal(
         .as_mut()
         .map_or(Ok(None), |reader| reader.next_journal_row())?
     {
+        for range in &journal_row.merge_ranges {
+            generation::merge_range(
+                worksheet,
+                range.first_row,
+                range.first_col,
+                range.last_row,
+                range.last_col,
+                "",
+                &generation::new_format(),
+            )
+            .map_err(format_error)?;
+        }
         let style = (!options.content_styles.is_empty())
             .then(|| &options.content_styles[data_index % options.content_styles.len()]);
         let style = SheetStyleContext::content(style, &state.metadata, global);
@@ -593,6 +618,29 @@ fn write_cell(
     style: CellFormatContext<'_>,
     image_layout: &ImageLayout,
 ) -> Result<()> {
+    write_cell_with_date_formats(
+        worksheet,
+        row_index,
+        column,
+        metadata,
+        value,
+        style,
+        image_layout,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_lines, clippy::too_many_arguments, clippy::large_types_passed_by_value)]
+fn write_cell_with_date_formats(
+    worksheet: &mut Worksheet,
+    row_index: u32,
+    column: u16,
+    metadata: &ExcelColumn,
+    value: &CellValue,
+    style: CellFormatContext<'_>,
+    image_layout: &ImageLayout,
+    date_formats: Option<(&str, &str)>,
+) -> Result<()> {
     // Java creates the POI Row and Cell through WorkBookUtil before assigning
     // the typed value. rust_xlsxwriter materialises them on the first write,
     // so the adapter creates and validates the same logical handles here.
@@ -629,6 +677,7 @@ fn write_cell(
         && style.cell.is_none()
         && style.font.is_none()
         && style.handler_cell.is_none()
+        && style.handler_font.is_none()
         && style.converted_cell.is_none()
         && style.converted_data_format.is_none()
     {
@@ -639,20 +688,33 @@ fn write_cell(
                     // 空字符串经带格式写入会落成空白单元格（store_string 语义），
                     // 无格式写入则整格跳过——为保持优化前输出，回退带格式路径。
                     let format = generation::new_format();
-                    return generation::write_string_with_format(
-                        worksheet, row_index, column, text, &format,
+                    return generation::GeneratedCellValue::write_text(
+                        worksheet,
+                        row_index,
+                        column,
+                        text.as_ref(),
+                        Some(&format),
                     )
-                    .map_err(format_error);
+                        .map_err(format_error);
                 }
-                return generation::write_string(worksheet, row_index, column, text)
+                return generation::GeneratedCellValue::write_text(
+                    worksheet,
+                    row_index,
+                    column,
+                    text.as_ref(),
+                    None,
+                )
                     .map_err(format_error);
             }
             CellValue::Bool(flag) => {
-                return generation::write_boolean(worksheet, row_index, column, *flag)
+                return generation::GeneratedCellValue::Bool(*flag)
+                    .write(worksheet, row_index, column, None)
                     .map_err(format_error);
             }
             CellValue::Int(number) => {
-                return write_integer_unformatted(worksheet, row_index, column, *number);
+                return generation::GeneratedCellValue::Integer(*number)
+                    .write(worksheet, row_index, column, None)
+                    .map_err(format_error);
             }
             CellValue::Float(number) => {
                 if global.use_scientific_format
@@ -661,20 +723,17 @@ fn write_cell(
                 {
                     // 科学计数法需要数字格式，落入下方带格式路径。
                 } else {
-                    return generation::write_number(worksheet, row_index, column, *number)
+                    return generation::GeneratedCellValue::Number(*number)
+                        .write(worksheet, row_index, column, None)
                         .map_err(format_error);
                 }
             }
             CellValue::Decimal(number) => {
                 let numeric = finite_decimal_f64(number, "XLSX")?;
                 if decimal_integer_requires_text(number)? {
-                    return generation::write_string(
-                        worksheet,
-                        row_index,
-                        column,
-                        number.to_plain_string(),
-                    )
-                    .map_err(format_error);
+                    return generation::GeneratedCellValue::Text(number.to_plain_string())
+                        .write(worksheet, row_index, column, None)
+                        .map_err(format_error);
                 }
                 if global.use_scientific_format
                     && metadata.effective_number_format().is_none()
@@ -682,12 +741,15 @@ fn write_cell(
                 {
                     // 科学计数法需要数字格式，落入下方带格式路径。
                 } else {
-                    return generation::write_number(worksheet, row_index, column, numeric)
+                    return generation::GeneratedCellValue::Number(numeric)
+                        .write(worksheet, row_index, column, None)
                         .map_err(format_error);
                 }
             }
             CellValue::Formula(text) => {
-                return generation::write_formula(worksheet, row_index, column, text.as_str())
+                return generation::GeneratedCellValue::write_formula_value(
+                    worksheet, row_index, column, text, None,
+                )
                     .map_err(format_error);
             }
             // 其余类型（Empty/Date/DateTime/Hyperlink/Comment/Image/RichText/
@@ -696,28 +758,36 @@ fn write_cell(
             _ => {}
         }
     }
-    let format = cell_format(style);
+    // Comment/Images 包装值会递归写入其底层值，必须保留同一份样式上下文；
+    // 普通值仅多克隆若干引用和小型 Option，实际字体 String 只在存在 Handler
+    // 运行期样式时复制。
+    let format = cell_format(style.clone());
     match value {
         CellValue::Empty => {
-            generation::write_blank(worksheet, row_index, column, &format).map_err(format_error)?;
+            generation::GeneratedCellValue::Blank
+                .write(worksheet, row_index, column, Some(&format))
+                .map_err(format_error)?;
         }
         CellValue::String(value) | CellValue::Error(value) => {
             let text = easyexcel_utils::string_utils::maybe_trim(value, global.auto_trim);
-            generation::write_string_with_format(
+            generation::GeneratedCellValue::write_text(
                 worksheet,
                 row_index,
                 column,
                 text.as_ref(),
-                &format,
+                Some(&format),
             )
-            .map_err(format_error)?;
+                .map_err(format_error)?;
         }
         CellValue::Bool(value) => {
-            generation::write_boolean_with_format(worksheet, row_index, column, *value, &format)
+            generation::GeneratedCellValue::Bool(*value)
+                .write(worksheet, row_index, column, Some(&format))
                 .map_err(format_error)?;
         }
         CellValue::Int(value) => {
-            write_integer(worksheet, row_index, column, *value, &format)?;
+            generation::GeneratedCellValue::Integer(*value)
+                .write(worksheet, row_index, column, Some(&format))
+                .map_err(format_error)?;
         }
         CellValue::Float(value) => {
             let mut cell_format = format.clone();
@@ -727,26 +797,16 @@ fn write_cell(
             {
                 cell_format = generation::with_number_format(cell_format, "0.#####E0");
             }
-            generation::write_number_with_format(
-                worksheet,
-                row_index,
-                column,
-                *value,
-                &cell_format,
-            )
-            .map_err(format_error)?;
+            generation::GeneratedCellValue::Number(*value)
+                .write(worksheet, row_index, column, Some(&cell_format))
+                .map_err(format_error)?;
         }
         CellValue::Decimal(value) => {
             let numeric = finite_decimal_f64(value, "XLSX")?;
             if decimal_integer_requires_text(value)? {
-                generation::write_string_with_format(
-                    worksheet,
-                    row_index,
-                    column,
-                    value.to_plain_string(),
-                    &format,
-                )
-                .map_err(format_error)?;
+                generation::GeneratedCellValue::Text(value.to_plain_string())
+                    .write(worksheet, row_index, column, Some(&format))
+                    .map_err(format_error)?;
                 return Ok(());
             }
             let mut cell_format = format.clone();
@@ -756,65 +816,69 @@ fn write_cell(
             {
                 cell_format = generation::with_number_format(cell_format, "0.#####E0");
             }
-            generation::write_number_with_format(
-                worksheet,
-                row_index,
-                column,
-                numeric,
-                &cell_format,
-            )
-            .map_err(format_error)?;
+            generation::GeneratedCellValue::Number(numeric)
+                .write(worksheet, row_index, column, Some(&cell_format))
+                .map_err(format_error)?;
         }
         CellValue::Date(value) => {
-            let number_format = easyexcel_format::excel_date_format_code(
-                metadata.effective_date_time_format(),
-                "yyyy-mm-dd",
-            );
-            let format = generation::with_number_format(format.clone(), &number_format);
+            let owned_number_format;
+            let number_format = if let Some((date, _)) = date_formats {
+                date
+            } else {
+                owned_number_format = easyexcel_format::excel_date_format_code(
+                    metadata.effective_date_time_format(),
+                    "yyyy-mm-dd",
+                );
+                &owned_number_format
+            };
+            let format = generation::with_number_format(format.clone(), number_format);
             if global.use_1904_windowing {
                 let serial = date_to_excel_serial_with_windowing(*value, true);
-                generation::write_number_with_format(worksheet, row_index, column, serial, &format)
+                generation::GeneratedCellValue::Number(serial)
+                    .write(worksheet, row_index, column, Some(&format))
                     .map_err(format_error)?;
             } else {
-                generation::write_date_with_format(worksheet, row_index, column, *value, &format)
+                generation::GeneratedCellValue::Date(*value)
+                    .write(worksheet, row_index, column, Some(&format))
                     .map_err(format_error)?;
             }
         }
         CellValue::DateTime(value) => {
-            let number_format = easyexcel_format::excel_date_format_code(
-                metadata.effective_date_time_format(),
-                "yyyy-mm-dd hh:mm:ss",
-            );
-            let format = generation::with_number_format(format.clone(), &number_format);
+            let owned_number_format;
+            let number_format = if let Some((_, date_time)) = date_formats {
+                date_time
+            } else {
+                owned_number_format = easyexcel_format::excel_date_format_code(
+                    metadata.effective_date_time_format(),
+                    "yyyy-mm-dd hh:mm:ss",
+                );
+                &owned_number_format
+            };
+            let format = generation::with_number_format(format.clone(), number_format);
             if global.use_1904_windowing {
                 let serial = datetime_to_excel_serial_with_windowing(*value, true);
-                generation::write_number_with_format(worksheet, row_index, column, serial, &format)
+                generation::GeneratedCellValue::Number(serial)
+                    .write(worksheet, row_index, column, Some(&format))
                     .map_err(format_error)?;
             } else {
-                generation::write_datetime_with_format(
-                    worksheet, row_index, column, *value, &format,
-                )
-                .map_err(format_error)?;
+                generation::GeneratedCellValue::DateTime(*value)
+                    .write(worksheet, row_index, column, Some(&format))
+                    .map_err(format_error)?;
             }
         }
         CellValue::Formula(value) => {
-            generation::write_formula_with_format(
+            generation::GeneratedCellValue::write_formula_value(
                 worksheet,
                 row_index,
                 column,
-                value.as_str(),
-                &format,
+                value,
+                Some(&format),
             )
-            .map_err(format_error)?;
+                .map_err(format_error)?;
         }
         CellValue::Hyperlink { url, text } => {
-            generation::write_url_with_options(
-                worksheet,
-                row_index,
-                column,
-                url.as_str(),
-                text,
-                &format,
+            generation::GeneratedCellValue::write_hyperlink(
+                worksheet, row_index, column, url, text, &format,
             )
             .map_err(format_error)?;
         }
@@ -825,29 +889,25 @@ fn write_cell(
             ..
         } => {
             if *hyperlink_type == HyperlinkType::None {
-                generation::write_string_with_format(
+                generation::GeneratedCellValue::write_text(
                     worksheet,
                     row_index,
                     column,
                     text,
-                    &format,
+                    Some(&format),
                 )
-                .map_err(format_error)?;
+                    .map_err(format_error)?;
             } else {
-                let target = xlsx_hyperlink_target(address, *hyperlink_type);
-                generation::write_url_with_options(
-                    worksheet,
-                    row_index,
-                    column,
-                    &target,
-                    text,
-                    &format,
+                let target = crate::write::template_write::template_hyperlink_type(*hyperlink_type)
+                    .generation_target(address);
+                generation::GeneratedCellValue::write_hyperlink(
+                    worksheet, row_index, column, &target, text, &format,
                 )
                 .map_err(format_error)?;
             }
         }
         CellValue::Comment { value, text } => {
-            write_cell(
+            write_cell_with_date_formats(
                 worksheet,
                 row_index,
                 column,
@@ -855,11 +915,12 @@ fn write_cell(
                 value,
                 style,
                 image_layout,
+                date_formats,
             )?;
             generation::insert_note(worksheet, row_index, column, text).map_err(format_error)?;
         }
         CellValue::CommentWithMetadata { value, comment } => {
-            write_cell(
+            write_cell_with_date_formats(
                 worksheet,
                 row_index,
                 column,
@@ -867,14 +928,16 @@ fn write_cell(
                 value,
                 style,
                 image_layout,
+                date_formats,
             )?;
-            generation::insert_note_with_metadata(
+            generation::insert_note_with_policy(
                 worksheet,
                 row_index,
                 column,
                 &comment.note_text(),
                 comment.get_author(),
                 xlsx_comment_movement(comment.get_anchor().get_anchor_type()),
+                comment.get_visible(),
             )
             .map_err(format_error)?;
         }
@@ -886,7 +949,7 @@ fn write_cell(
             write_rich_text(worksheet, row_index, column, value, &format)?;
         }
         CellValue::Images { value, images } => {
-            write_cell(
+            write_cell_with_date_formats(
                 worksheet,
                 row_index,
                 column,
@@ -894,6 +957,7 @@ fn write_cell(
                 value,
                 style,
                 image_layout,
+                date_formats,
             )?;
             for image in images {
                 insert_image_data(worksheet, row_index, column, image, image_layout)?;
@@ -905,32 +969,18 @@ fn write_cell(
 
 const fn xlsx_comment_movement(
     value: Option<crate::core::AnchorType>,
-) -> Option<generation::ObjectMovement> {
+) -> Option<easyexcel_xlsx::TemplateImageMovement> {
     match value {
         Some(crate::core::AnchorType::MoveAndResize)
         | Some(crate::core::AnchorType::DontMoveDoResize) => {
-            Some(generation::ObjectMovement::MoveAndSizeWithCells)
+            Some(easyexcel_xlsx::TemplateImageMovement::MoveAndResize)
         }
         Some(crate::core::AnchorType::MoveDontResize) => {
-            Some(generation::ObjectMovement::MoveButDontSizeWithCells)
+            Some(easyexcel_xlsx::TemplateImageMovement::MoveDontResize)
         }
         Some(crate::core::AnchorType::DontMoveAndResize) => {
-            Some(generation::ObjectMovement::DontMoveOrSizeWithCells)
+            Some(easyexcel_xlsx::TemplateImageMovement::DontMoveOrResize)
         }
         None => None,
-    }
-}
-
-fn xlsx_hyperlink_target(address: &str, hyperlink_type: HyperlinkType) -> String {
-    match hyperlink_type {
-        HyperlinkType::None | HyperlinkType::Url => address.to_owned(),
-        HyperlinkType::Document if address.starts_with("internal:") => address.to_owned(),
-        HyperlinkType::Document => format!("internal:{address}"),
-        HyperlinkType::Email if address.to_ascii_lowercase().starts_with("mailto:") => {
-            address.to_owned()
-        }
-        HyperlinkType::Email => format!("mailto:{address}"),
-        HyperlinkType::File if address.starts_with("external:") => address.to_owned(),
-        HyperlinkType::File => format!("external:{address}"),
     }
 }

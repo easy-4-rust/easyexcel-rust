@@ -51,9 +51,10 @@ where
         let content_type = HeaderValue::from_static(self.export.content_type());
         let content_length = HeaderValue::from_str(&self.export.content_length().to_string())
             .unwrap_or_else(|_| HeaderValue::from_static("0"));
-        let encoded = urlencoding::encode(self.export.file_name()).replace('+', "%20");
-        let disposition = HeaderValue::from_str(&format!("attachment;filename*=UTF-8''{encoded}"))
-            .unwrap_or_else(|_| HeaderValue::from_static("attachment;filename=download.xlsx"));
+        let disposition = HeaderValue::from_str(
+            &easyexcel_web::excel_attachment_content_disposition(self.export.file_name()),
+        )
+        .unwrap_or_else(|_| HeaderValue::from_static("attachment;filename=download.xlsx"));
         let chunk_size = self.export.io_chunk_size();
         let stream = ReaderStream::with_capacity(self.export, chunk_size);
         let mut response = Response::new(Body::from_stream(stream));

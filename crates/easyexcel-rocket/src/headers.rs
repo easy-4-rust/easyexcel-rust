@@ -8,11 +8,7 @@
 
 use rocket::http::Header;
 
-/// OOXML 工作簿 MIME 类型。
-///
-/// 对应 Java `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`。
-pub const XLSX_CONTENT_TYPE: &str =
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+pub use easyexcel_web::XLSX_CONTENT_TYPE;
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 生成 XLSX 附件下载所需的 HTTP 头（Rocket [`Header`] 列表）。
 ///
@@ -24,8 +20,9 @@ pub const XLSX_CONTENT_TYPE: &str =
 /// 因此无需 Java `setHeader` 之外的兜底逻辑。
 #[must_use]
 pub fn excel_xlsx_attachment_headers(file_name: &str) -> Vec<Header<'static>> {
-    let encoded = urlencoding::encode(file_name).replace('+', "%20");
-    let disposition = format!("attachment;filename*=utf-8''{encoded}.xlsx");
+    let disposition = easyexcel_web::excel_attachment_content_disposition(&format!(
+        "{file_name}.xlsx"
+    ));
 
     vec![
         Header::new(http::header::CONTENT_TYPE.as_str(), XLSX_CONTENT_TYPE),

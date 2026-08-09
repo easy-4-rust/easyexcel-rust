@@ -7,6 +7,7 @@
 //! 本结构保留 Java 泛型 `CellData<T>` 的字段面，便于 1:1 迁移与测试对照。
 
 use bigdecimal::BigDecimal;
+use std::hash::{Hash, Hasher};
 
 use crate::CellDataType;
 use crate::FormulaData;
@@ -20,7 +21,7 @@ use crate::FormulaData;
 /// - `booleanValue` → [`Self::boolean_value`]
 /// - `data` → [`Self::data`]
 /// - `formulaData` → [`Self::formula_data`]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct CellData<T = ()> {
     /// 单元格类型。Java `type` / `getType()` / `setType`
     pub cell_type: Option<CellDataType>,
@@ -38,6 +39,33 @@ pub struct CellData<T = ()> {
     pub row_index: Option<usize>,
     /// 列号。来自 Java `AbstractCell.columnIndex`
     pub column_index: Option<usize>,
+}
+
+impl<T: PartialEq> PartialEq for CellData<T> {
+    /// 对齐 Java `@EqualsAndHashCode` 的默认 `callSuper = false`：业务负载参与相等性，
+    /// `AbstractCell` 的行列坐标不参与。
+    fn eq(&self, other: &Self) -> bool {
+        self.cell_type == other.cell_type
+            && self.number_value == other.number_value
+            && self.string_value == other.string_value
+            && self.boolean_value == other.boolean_value
+            && self.data == other.data
+            && self.formula_data == other.formula_data
+    }
+}
+
+impl<T: Eq> Eq for CellData<T> {}
+
+impl<T: Hash> Hash for CellData<T> {
+    /// 按与 Java equals 相同的字段集合计算 Rust 哈希，不混入行列坐标。
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.cell_type.hash(state);
+        self.number_value.hash(state);
+        self.string_value.hash(state);
+        self.boolean_value.hash(state);
+        self.data.hash(state);
+        self.formula_data.hash(state);
+    }
 }
 
 impl<T> Default for CellData<T> {

@@ -16,6 +16,14 @@ pub(crate) enum TemplateOutput<'a> {
     Path(PathBuf),
     Borrowed(&'a mut dyn Write),
     Owned(Box<dyn CloseableWrite + 'a>),
+    /// 已由统一 `ExcelWriter` 擦除具体类型的输出流及其关闭动作。
+    ///
+    /// 这是 Rust 门面对 Java `OutputStream` 生命周期的适配，不复制新的
+    /// 流实现；实际写入仍落到调用方原始流，关闭仍由原 builder 回调完成。
+    Managed {
+        writer: Box<dyn Write + Send + 'a>,
+        close: Option<Box<dyn FnOnce() -> std::io::Result<()> + Send + 'a>>,
+    },
 }
 
 include!("template_output/closeable_write.rs");

@@ -9,11 +9,7 @@
 use salvo::http::header::{CONTENT_DISPOSITION, CONTENT_TYPE};
 use salvo::http::{HeaderMap, HeaderValue};
 
-/// OOXML 工作簿 MIME 类型。
-///
-/// 对应 Java `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`。
-pub const XLSX_CONTENT_TYPE: &str =
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+pub use easyexcel_web::XLSX_CONTENT_TYPE;
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 生成 XLSX 附件下载所需的 HTTP 头。
 ///
@@ -22,8 +18,9 @@ pub const XLSX_CONTENT_TYPE: &str =
 /// 与 Java `WebTest` 保持一致。
 #[must_use]
 pub fn excel_xlsx_attachment_headers(file_name: &str) -> HeaderMap {
-    let encoded = urlencoding::encode(file_name).replace('+', "%20");
-    let disposition = format!("attachment;filename*=utf-8''{encoded}.xlsx");
+    let disposition = easyexcel_web::excel_attachment_content_disposition(&format!(
+        "{file_name}.xlsx"
+    ));
 
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static(XLSX_CONTENT_TYPE));

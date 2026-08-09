@@ -1,10 +1,13 @@
 //! Rust implementation of Java
 //! `com.alibaba.excel.write.builder.ExcelWriterSheetBuilder`.
 
-use crate::core::{ExcelError, ExcelRow, Result, WriteHandler};
+use std::any::Any;
+
+use crate::core::{DynamicRow, ExcelError, ExcelRow, Result, WriteHandler};
 
 use crate::write::builder::excel_writer_table_builder::ExcelWriterTableBuilder;
 use crate::write::metadata::write_sheet::WriteSheet as WriteSheetMetadata;
+use crate::write::BuilderFillConfig;
 use crate::{ExcelWriter, WriteOptions, WriteSheet};
 
 /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 A sheet builder optionally owning the writer that will execute it.
@@ -212,6 +215,63 @@ impl ExcelWriterSheetBuilder {
         F: FnOnce() -> I,
     {
         self.do_write(supplier())
+    }
+
+    /// 使用 Java 默认配置填充当前模板 Sheet 并结束 writer。
+    ///
+    /// 对应 Java：`ExcelWriterSheetBuilder.doFill(Object)`。
+    pub fn do_fill(mut self, data: &dyn Any) -> Result<()> {
+        let writer = self.excel_writer.take().ok_or_else(|| {
+            ExcelError::Format("Must use ExcelWriterBuilder.sheet() to call do_fill()".to_owned())
+        })?;
+        let sheet = WriteSheet::<DynamicRow>::from_options(self.write_sheet.options.clone());
+        crate::excel_builder::do_fill_template(writer, data, &sheet)
+    }
+
+    /// 使用显式配置填充当前模板 Sheet 并结束 writer。
+    ///
+    /// 对应 Java：`ExcelWriterSheetBuilder.doFill(Object, FillConfig)`。
+    pub fn do_fill_with_config(
+        mut self,
+        data: &dyn Any,
+        fill_config: BuilderFillConfig,
+    ) -> Result<()> {
+        let writer = self.excel_writer.take().ok_or_else(|| {
+            ExcelError::Format("Must use ExcelWriterBuilder.sheet() to call do_fill()".to_owned())
+        })?;
+        let sheet = WriteSheet::<DynamicRow>::from_options(self.write_sheet.options.clone());
+        crate::excel_builder::do_fill_template_with_config(
+            writer,
+            data,
+            fill_config,
+            &sheet,
+        )
+    }
+
+    /// 惰性获取填充对象，supplier 只求值一次。
+    ///
+    /// 对应 Java：`ExcelWriterSheetBuilder.doFill(Supplier)`。
+    pub fn do_fill_with<F>(self, supplier: F) -> Result<()>
+    where
+        F: FnOnce() -> Box<dyn Any>,
+    {
+        let data = supplier();
+        self.do_fill(data.as_ref())
+    }
+
+    /// 惰性获取填充对象并使用显式配置，supplier 只求值一次。
+    ///
+    /// 对应 Java：`ExcelWriterSheetBuilder.doFill(Supplier, FillConfig)`。
+    pub fn do_fill_with_config_supplier<F>(
+        self,
+        supplier: F,
+        fill_config: BuilderFillConfig,
+    ) -> Result<()>
+    where
+        F: FnOnce() -> Box<dyn Any>,
+    {
+        let data = supplier();
+        self.do_fill_with_config(data.as_ref(), fill_config)
     }
 
     /// Creates a table builder bound to this writer and sheet.

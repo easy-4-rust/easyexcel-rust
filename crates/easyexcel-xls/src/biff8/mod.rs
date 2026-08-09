@@ -1,16 +1,19 @@
 //! 可复用的 BIFF8 底层 record、公式与加密原语。
 
 mod cached;
+mod biff8_font;
+mod biff8_rich_text_cell;
 mod continuation_chain;
 mod continuation_decoder;
 pub mod encode;
 mod encrypt;
 pub mod event_record;
 mod format;
-pub mod model;
+pub(crate) mod model;
 mod numeric;
 pub mod ptg;
 mod protection;
+mod rich_text;
 pub mod record_sid;
 pub mod record_stream;
 pub mod string;
@@ -19,6 +22,8 @@ mod template;
 mod workbook;
 
 pub use continuation_chain::Biff8ContinuationChain;
+pub use biff8_font::Biff8Font;
+pub use biff8_rich_text_cell::Biff8RichTextCell;
 pub use continuation_decoder::{
     Biff8ContinuableRecordDecoder, Biff8ContinuableRecordKind, Biff8ContinuationStatus,
     Biff8DecodedContinuableRecord,
@@ -33,14 +38,11 @@ pub use numeric::{
     load_numeric_displays, load_numeric_displays_with_password, parse_format_record,
     scan_numeric_cells,
 };
-pub use model::{
-    Biff8Globals, Biff8ObjectModel, Biff8Record, Biff8WorkbookModel,
-    Biff8WorksheetModel, RecordSink, RecordTransform,
-};
 pub use protection::legacy_password_hash;
+pub use rich_text::{load_rich_text_cells, load_rich_text_cells_with_password};
 pub use style::{
     Biff8BorderStyle, Biff8Color, Biff8FillPattern, Biff8HorizontalAlignment, Biff8NumberFormat,
-    Biff8StyleRequest, Biff8StyleTable, Biff8VerticalAlignment,
+    Biff8StyleRequest, Biff8StyleTable, Biff8Underline, Biff8VerticalAlignment,
 };
 pub use template::{Biff8MacroPolicy, Biff8TemplatePackage, looks_like_xls};
 pub use workbook::{

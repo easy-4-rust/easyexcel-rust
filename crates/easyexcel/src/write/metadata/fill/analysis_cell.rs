@@ -32,12 +32,7 @@ impl AnalysisCell {
         Self {
             column_index,
             row_index,
-            variable_list: Vec::new(),
-            prepare_data_list: Vec::new(),
-            only_one_variable: None,
-            cell_type: WriteTemplateAnalysisCellType::Common,
-            prefix: None,
-            first_row: None,
+            ..Self::default()
         }
     }
 
@@ -93,6 +88,25 @@ impl AnalysisCell {
     #[must_use] pub const fn get_first_row(&self) -> Option<bool> { self.first_row }
     /// Java `setFirstRow`。
     pub const fn set_first_row(&mut self, value: Option<bool>) { self.first_row = value; }
+}
+
+impl Default for AnalysisCell {
+    /// 创建未绑定坐标的模板分析单元格。
+    ///
+    /// 对应 Java 公共无参构造器。Rust 将 Java 可空集合规范化为空集合，并将内部必须可用的
+    /// 可空 cellType 规范化为 `Common`；其余 Java 可空标量仍保持 `None`。
+    fn default() -> Self {
+        Self {
+            column_index: 0,
+            row_index: 0,
+            variable_list: Vec::new(),
+            prepare_data_list: Vec::new(),
+            only_one_variable: None,
+            cell_type: WriteTemplateAnalysisCellType::Common,
+            prefix: None,
+            first_row: None,
+        }
+    }
 }
 
 impl PartialEq for AnalysisCell {

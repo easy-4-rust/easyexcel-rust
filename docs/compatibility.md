@@ -32,7 +32,7 @@ This document is the release gate, not a marketing checklist. A row is marked
 | no-model `Map<Integer, String/Object/ReadCellData<?>>` | `DynamicRow` + `DynamicValue` | implemented: physical column indexes, sparse gaps, header-tail nulls, XLSX/XLS/CSV event and sync reads, schema-less XLSX/CSV writes, and Java official compatibility fixtures `t01`–`t07`/`t09` are verified |
 | `ReadDefaultReturnEnum.STRING/ACTUAL_DATA/READ_CELL_DATA` | `ReadDefaultReturn::{String, ActualData, ReadCellData}` | implemented: Java-compatible default, Excel-formatted strings, exact `BigDecimal` numeric values, formula metadata, display text, coordinates, and raw cell values |
 | `ReadListener` | `ReadListener<T>` | implemented |
-| `extraRead(CellExtraTypeEnum)` / `ReadListener.extra` | `extra_read(CellExtraType)` / `ReadListener::extra` | implemented for XLSX comments, hyperlinks, and merged ranges; XLS/CSV return a typed unsupported error when requested |
+| `extraRead(CellExtraTypeEnum)` / `ReadListener.extra` | `extra_read(CellExtraType)` / `ReadListener::extra` | implemented for XLSX and BIFF8 comments, hyperlinks, and merged ranges; CSV returns a typed unsupported error when requested |
 | `PageReadListener` | `PageReadListener<T>` | implemented |
 | `AnalysisContext` | `AnalysisContext` | implemented |
 | `@ExcelProperty` | `#[excel(value/head, name, index, order, converter)]` | implemented: `value` arrays generate and automatically merge multi-level heads; reads resolve the final head name; priority remains `index > order > declaration order` |
@@ -60,17 +60,17 @@ This document is the release gate, not a marketing checklist. A row is marked
 | `with_template` create-missing-sheet | `template_write::TemplatePackage::create_sheet` | implemented: missing sheet creates an empty worksheet part with expandable `<sheetData></sheetData>`; inherits `sheetFormatPr`/`cols` from the first template sheet when present; existing `styles.xml` / `mergeCells` on other sheets stay untouched; legacy value-replay only via `use_legacy_template_seed` |
 | `@ColumnWidth` / `@HeadRowHeight` / `@ContentRowHeight` | `#[excel(column_width, head_row_height, content_row_height)]` | implemented: field width overrides type width; registered width strategies override annotations for sheet cols and `ImageLayout`; explicit builder width overrides strategies |
 | `HorizontalCellStyleStrategy` | header and cycling content `CellStyle` | implemented |
-| `@HeadStyle` / `@ContentStyle` / `@HeadFontStyle` / `@ContentFontStyle` | `#[excel(head_style(...), content_style(...), head_font_style(...), content_font_style(...))]` | partial: XLSX cell/font metadata verified; Minimal BIFF8 emits basic FONT/XF/fill/align for `.xls` writes; custom HSSF palettes and full HSSF XF parity remain |
-| formulas/rich text/images/comments/hyperlinks | formula metadata, `CellExtra`, `WriteCellData`, `RichTextStringData`, `WriteFont`, `ImageData`, `CoordinateData`, and `ClientAnchorData` | partial: XLSX formula and comment/hyperlink/merge reads plus formula, Java UTF-16-indexed rich-text font runs, comment, hyperlink, single-image, and ordered `WriteCellData.imageDataList` writes are implemented; multi-image anchors support absolute/relative cell ranges, pixel margins, and all four POI movement modes; image pixel layout reads `SimpleColumnWidthStyleStrategy` / annotation / explicit widths for schema columns; EMF/WMF/PICT/DIB payload encoding and anchor resizing after backend `auto_width` changes remain pending; BIFF8 URL hyperlink write/read and comment read are implemented, while BIFF8 image and comment writes return typed `Unsupported` (see [XLS write capability boundary](#xls-write-capability-boundary)) |
+| `@HeadStyle` / `@ContentStyle` / `@HeadFontStyle` / `@ContentFontStyle` | `#[excel(head_style(...), content_style(...), head_font_style(...), content_font_style(...))]` | partial: XLSX cell/font metadata verified; the BIFF8 engine now codes FONT/XF, palette, fill, alignment, all border sides, precise font sizes and underline modes, but the newly expanded XLS path remains outside verified until release gates run |
+| formulas/rich text/images/comments/hyperlinks | formula metadata, `CellExtra`, `WriteCellData`, `RichTextStringData`, `WriteFont`, `ImageData`, `CoordinateData`, and `ClientAnchorData` | partial: XLSX formula, rich-text, comment/hyperlink/merge and image paths are implemented within the documented image-format boundaries; BIFF8 owns workbook-internal 3D formula references, UTF-16 rich runs, URL/DOCUMENT/EMAIL/FILE hyperlinks and NOTE/TXO/OBJ comment read/write. BIFF8 cell images remain an explicit typed-unsupported boundary. Newly coded BIFF8 paths still require the frozen release gates before they count as verified |
 | `OnceAbsoluteMergeStrategy` | `MergeRange` / `merge_cells` | implemented |
 | `LoopMergeStrategy` | repeating data-row merge metadata | implemented |
 | dynamic and multi-level heads | `head(Vec<Vec<String>>)` | implemented |
-| template `fill` | OOXML-preserving template engine + stateful `ExcelTemplateWriter` | partial: typed scalar/collection cells, mixed-text string conversion, escaped braces, named/unnamed vertical and horizontal collections, repeated per-prefix fill calls with Java-compatible per-call `FillConfig` and shared cursor state, row reuse, `forceNewRow`, `autoStyle`, formula/range metadata shifting, `fill` followed by raw `CellValue` `write_rows`, sheet-number/name isolated scalar/list/row operations, path/`Read` template input, borrowed `Write`, and closeable owned output streams are implemented and verified with Java's official `simple.xlsx`, `composite.xlsx`, and `complexFillWithTable.xlsx`; input is copied into memory and owned streams default to Java-compatible close-on-finish; typed-model/write-handler composition remains; **`.xls` fill stays typed `Unsupported`** (Java HSSF `ExcelWriter.fill`; use `with_template` + write for `.xls` cell append) |
+| template `fill` | OOXML-preserving template engine + stateful `ExcelTemplateWriter` plus BIFF8 template engine | partial: XLSX typed scalar/collection fill, repeated cursor state and metadata shifting remain implemented; `.xls` now has scalar/collection, named/unnamed vertical/horizontal, repeated fill, `forceNewRow`, `autoStyle`, formula token and dependent-record relocation in `easyexcel-xls`. The BIFF8 implementation is coded but does not count as verified until the currently forbidden Java/byte-level gates run |
 | CSV read/write | extension-based CSV engine dispatch | partial: typed read/write, headers, column filters, listeners, write handlers, flexible rows, Java-style `charset`/`withBom`, stateful same-sheet multi-write, UTF-8/UTF-16/GBK streaming transcoding, official Java BOM fixtures, and case-insensitive `.csv` dispatch implemented; JVM-only charset providers remain |
 | XLSX SAX read lifecycle | `quick-xml` OOXML cell parser + typed/dynamic row dispatcher | implemented: worksheet cells and shared strings are streamed; memory/disk/automatic shared-string caches, every header row, leading/intermediate/trailing empty rows, `autoTrim`, shared/inline rich strings, booleans, 15-significant-digit numbers, built-in/custom display formats, exact decimals, 1900/1904 dates, cached formula results plus `FormulaData`, error text, comment/hyperlink/merged-cell extras, typed and no-model rows, listener exception routing, post-callback `hasNext`, workbook-wide stop, and completion callbacks match Java |
-| XLS read | calamine BIFF/XLS engine | implemented: sheet selection, typed mapping, listeners, headers, coordinates, multi-sheet Java fixture; worksheet data is materialized in memory |
-| XLS write | Minimal BIFF8 (`easyexcel_writer::biff8`) | partial: see [XLS write capability boundary](#xls-write-capability-boundary); never silently emits XLSX bytes under a `.xls` path |
-| XLSX password/encryption | `password` on read/write builders | partial: ECMA-376 Agile AES-256/SHA-512 write and Agile/Standard OOXML read implemented; correct, wrong, and missing-password paths tested; **legacy `.xls` password/RC4 stays typed `Unsupported`** (not remapped to Agile) |
+| XLS read | `easyexcel-xls` BIFF8/OLE engine | implemented: sheet selection, typed mapping, listeners, headers, coordinates and multi-sheet model materialization; `calamine` is a dev-only independent reader, not the production owner |
+| XLS write | `easyexcel-xls` BIFF8/OLE engine | advanced source paths are coded; see [XLS write capability boundary](#xls-write-capability-boundary). It never silently emits XLSX bytes under a `.xls` path |
+| XLSX/XLS password encryption | `password` on read/write builders | XLSX Agile AES-256/SHA-512 write and Agile/Standard read are implemented; BIFF8 CryptoAPI RC4 read/write uses a real `FILEPASS` plus record-level encryption. Unsupported legacy variants fail explicitly rather than being remapped to OOXML encryption; the new BIFF8 path awaits the frozen interoperability gates |
 | Seven Web adapters | `easyexcel-{axum,actix,hyper,poem,rocket,salvo,warp}` | implemented: native `ExcelRequest<T>` extractor/bridge and `ExcelResponse<T>` responder backed by the single `easyexcel-web` runtime; raw request bodies are streamed to bounded temporary artifacts, typed rows use bounded-channel backpressure, downloads stream generated files, and all adapters share stable Problem Details, resource limits, timeout/cancellation semantics, runnable examples, and `easyexcel-web-conformance` upload/download tests |
 
 Hutool POI is used only as a secondary ergonomics and production-hardening
@@ -266,9 +266,9 @@ does not replace the release suite's seven-sample stability matrix.
 
 ## XLS write capability boundary
 
-`.xls` paths and streams dispatch to a **Minimal BIFF8** writer (OLE/CFB
-`Workbook` stream), not to the XLSX engine. This is a deliberate HSSF subset,
-not a full POI port. OLE container uses CFB V3 (512-byte sectors) matching
+`.xls` paths and streams dispatch to the `easyexcel-xls` BIFF8 writer (OLE/CFB
+`Workbook` stream), not to the XLSX engine. This is an independent Rust format
+engine with explicit POI-observable compatibility boundaries, not a POI port. OLE container uses CFB V3 (512-byte sectors) matching
 Excel/LibreOffice output — the previous V4 (4096-byte) container was not
 parseable by LibreOffice (2026-08-04 fix, verified by
 `scripts/verify-libreoffice-open.sh` content checks).
@@ -280,19 +280,22 @@ parseable by LibreOffice (2026-08-04 fix, verified by
 | Header row + data rows; single / multi sheet | supported |
 | One-shot `do_write` and stateful `ExcelWriter::write` on `.xls` | supported |
 | `to_writer` / owned stream BIFF8 emission | supported |
-| Password / RC4 / XOR encryption | unsupported (typed `Unsupported`: `"password protection is not supported for legacy XLS"`) — the former whole-file RC4 shim was removed because it emitted neither a valid OLE/CFB container nor a BIFF8 `FILEPASS` stream |
-| Images (`CellValue::Image` / non-empty `Images`) | unsupported (typed `Unsupported`) — the lower-level experimental `Biff8Sheet::write_image` encoder is not connected to Java-compatible cell anchors and therefore is not advertised as a public writer capability |
+| Password / RC4 / XOR encryption | CryptoAPI RC4 read/write is coded with a real `FILEPASS` and record-level encryption/decryption; XOR and non-CryptoAPI legacy variants remain explicit typed boundaries. Java interoperability evidence must be rerun after the no-test phase |
+| Images (`CellValue::Image` / non-empty `Images`) | unsupported (typed `Unsupported`) — the former raw `Images` CFB stream encoder was removed because it did not create worksheet-owned drawing records or consume cell anchors |
 | `.xls` `with_template` + `doWrite` | supported (MVP): OLE `Workbook` record overlay — unmodified BIFF records kept; new cells as LABEL/NUMBER; BoundSheet offsets repaired. Creating sheets absent from the template remains unsupported |
-| `.xls` placeholder `fill` | unsupported (typed `Unsupported`) — Java `ExcelWriter.fill` on HSSF; Rust fill stays OOXML-only |
-| Column width / row height (`COLINFO` / `ROW`) | supported |
-| Basic FONT / XF (bold, italic, size, indexed/approx RGB fill, align, wrap) | supported (subset) |
+| `.xls` placeholder `fill` | coded in the BIFF8 template engine: scalar/collection, named/unnamed vertical/horizontal, repeated fill, `forceNewRow`, `autoStyle`, formula/NAME/DV/CF/chart/Escher relocation and typed decorations; final multi-fixture evidence is pending |
+| Column/row metadata (`COLINFO` / `ROW` / defaults) | coded: exact widths/heights, defaults, hidden state and row/column XF are emitted by the BIFF8 engine; release evidence remains pending |
+| FONT / XF | coded: bold, italic, strike, fractional twip size, all BIFF8 underline modes, indexed/approx RGB, fill, align, wrap and four-side borders; release evidence remains pending |
+| Active sheet | coded through workbook `WINDOW1` and per-sheet `WINDOW2` selection flags; release evidence remains pending |
 | Merged cells (`MERGECELLS`) | supported |
 | Freeze panes (`freeze_head` / `freeze_panes`) | supported (2026-08-04): `PANE` record + `WINDOW2` fFrozen/fFrozenNoSplit flags — frozen header rows, frozen columns, and row+column combinations, byte-identical to xlwt `PanesRecord` layout (px/py/rwTop/colLeft/pnnAct); out-of-BIFF8-range splits (row>65535 or col>255) return a typed error like `rust_xlsxwriter::set_freeze_panes` |
-| True formula tokens | implemented (2026-08-04): BIFF8 `FORMULA` records with real `Ptg` RPN tokens — A1-style refs/areas with `$` absolute flags, arithmetic/comparison/text operators, 257 built-in functions (`[MS-XLS]` indices incl. CETAB like COUNTIF/SUMIF), strings/booleans/errors, percent, unary ops, empty args (`tMissArg`); cached results are **evaluated at write time** via the `xls` formula engine (git dependency pinned by `rev` on the `easy-4-rust/xls` fork of `zemse/xls`, MIT/Apache-2.0) — numbers/booleans/errors/strings encoded in the 8-byte result + `STRING` record like POI `FormulaEvaluator`; unsupported formulas fall back to `0` + `CALCMODE` auto-recalc. Verified: calamine reads back `A1+B1` = 5.0, LibreOffice recalculates `A1+B1`/`SUM`/`IF` correctly. Cross-sheet refs remain typed `Unsupported` |
-| Hyperlink records | supported for URL write/read (`HLINK`); Java-produced document links are read with address and range. File/email-specific write monikers remain unsupported |
-| Comment records | read supported (`OBJ` → `TXO/CONTINUE` → `NOTE`, including Java-produced comment text); write returns typed `Unsupported` instead of dropping the comment |
-| Rich-text runs, charts, macros | unsupported |
-| Borders | unsupported |
+| True formula tokens | BIFF8 `FORMULA` records use real `Ptg` RPN tokens. Workbook-internal quoted sheet names, sheet ranges and `Ref3d`/`Area3d` are coded through `SUPBOOK`/`EXTERNSHEET`; cached evaluation receives the workbook sheet map. External-workbook references and unsupported functions remain fail-closed/recalc boundaries. The new 3D path awaits expanded golden evidence |
+| Hyperlink records | URL/DOCUMENT/EMAIL/FILE targets and ranges are coded for generation, template mutation and readback through `HLINK` |
+| Comment records | NOTE/TXO/CONTINUE/OBJ/MSODRAWING read/write is coded, including rich formatting runs, visibility, anchor offsets, same-coordinate replacement/removal and workbook-global drawing identifiers |
+| Rich-text runs | SST/CONTINUE reads retain UTF-16 run/font indexes; generation and template fill emit rich runs with Java UTF-16 interval semantics |
+| Charts | template chart records are preserved and relocated; generated Bar/Line/Pie mutations support title, anchors, multiple series and workbook-internal cross-sheet ranges |
+| Macros | template CFB `_VBA_PROJECT_CUR` supports Preserve (default), Strip and complete-storage Replace; macros are never executed |
+| Borders | BIFF8 FONT/XF style requests encode the Java border-style inventory and apply it through generated and template cell paths |
 | Custom number formats | supported (2026-08-04): `ExcelDataFormat::Custom` → `FORMAT` record registered from index 164 (POI `BuiltinFormats` 27-entry code table for built-ins), `XF` ifmt wired — format code round-trips through LibreOffice/calamine display |
 
 Out-of-boundary requests return a typed `ExcelError::Unsupported` (or a
@@ -310,9 +313,11 @@ Supplying a password for an unencrypted XLSX is harmless, matching Java
 EasyExcel's builder behavior.
 
 Encryption currently buffers the plaintext OOXML package in memory before it
-is encrypted or parsed. Legacy encrypted `.xls` uses a different BIFF/RC4
-mechanism and returns a typed unsupported-format error; it is not covered by
-the OOXML password implementation or the Minimal BIFF8 writer.
+is encrypted or parsed. Legacy encrypted `.xls` uses a separate BIFF8
+CryptoAPI RC4 `FILEPASS` and record-level cipher implementation in
+`easyexcel-xls`; XOR and non-CryptoAPI variants remain explicit typed
+boundaries. The newly coded XLS interoperability path is not verified until
+the frozen release gates run.
 
 ## CSV charset boundary
 

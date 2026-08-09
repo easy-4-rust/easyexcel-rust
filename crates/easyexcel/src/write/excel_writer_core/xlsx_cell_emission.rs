@@ -6,51 +6,65 @@ fn write_rich_text(
     cell_format: &Format,
 ) -> Result<()> {
     if data.text_string().is_empty() {
-        generation::write_string_with_format(worksheet, row, column, "", cell_format)
-            .map_err(format_error)?;
+        generation::GeneratedCellValue::Text(String::new())
+            .write(worksheet, row, column, Some(cell_format))
+            .map_err(ExcelError::from)?;
         return Ok(());
     }
-    let runs = rich_text_runs(data)?;
-    generation::write_rich_string(worksheet, row, column, &runs, cell_format).map_err(format_error)
+    let runs = rich_text_run_specs(data)?;
+    generation::write_rich_string_with_font_specs(worksheet, row, column, &runs, cell_format)
+        .map_err(format_error)
 }
 
-fn rich_text_runs(data: &RichTextStringData) -> Result<Vec<(Format, String)>> {
+fn rich_text_run_specs(data: &RichTextStringData) -> Result<Vec<(FontFormatSpec, String)>> {
     let text = data.text_string();
     let intervals = data
         .interval_fonts()
         .iter()
         .map(|interval| (interval.start_index(), interval.end_index()))
         .collect::<Vec<_>>();
-    easyexcel_xlsx::segment_utf16_text(text, &intervals)
-        .map_err(ExcelError::from)?
-        .into_iter()
-        .map(|segment| {
-            let font = segment.interval_index.map_or(data.write_font(), |index| {
-                Some(data.interval_fonts()[index].write_font())
-            });
-            Ok((
-                font.map_or_else(generation::new_format, rich_text_format),
-                segment.text,
-            ))
-        })
-        .collect()
+    let segments = easyexcel_model::segment_utf16_text(text, &intervals)
+        .map_err(|error| ExcelError::Format(error.to_string()))?;
+    let mut runs = Vec::with_capacity(segments.len());
+    for segment in segments {
+        let font = segment.interval_index.map_or(data.write_font(), |index| {
+            Some(data.interval_fonts()[index].write_font())
+        });
+        runs.push((
+            font.map_or_else(FontFormatSpec::default, rich_text_font_spec),
+            segment.text,
+        ));
+    }
+    Ok(runs)
 }
 
-fn rich_text_format(font: &WriteFont) -> Format {
-    generation::build_format(&FormatSpec {
-        font: FontFormatSpec {
-            name: font.get_font_name().map(str::to_owned),
-            size: font.get_font_height_in_points(),
-            italic: font.get_italic(),
-            strikeout: font.get_strikeout(),
-            color: font.get_color().map(annotation_color),
-            script: font.get_type_offset().map(annotation_font_script),
-            underline: font.get_underline().map(annotation_underline),
-            charset: font.get_charset(),
-            bold: font.get_bold(),
-        },
-        ..FormatSpec::default()
-    })
+fn rich_text_font_spec(font: &WriteFont) -> FontFormatSpec {
+    FontFormatSpec {
+        name: font.get_font_name().map(str::to_owned),
+        size: font.get_font_height_in_points(),
+        italic: font.get_italic(),
+        strikeout: font.get_strikeout(),
+        color: font.get_color().map(annotation_color),
+        script: font.get_type_offset().map(annotation_font_script),
+        underline: font.get_underline().map(annotation_underline),
+        charset: font.get_charset(),
+        bold: font.get_bold(),
+    }
+}
+
+/// 将 Java 富文本元数据转换为 XLSX 模板引擎的 typed-cell 值。
+pub(crate) fn template_rich_text_cell_value(
+    data: &RichTextStringData,
+) -> Result<easyexcel_xlsx::xlsx::template_xml::TemplateCellValue> {
+    let rich_text = if data.text_string().is_empty() {
+        easyexcel_xlsx::TemplateRichText::plain("")
+    } else {
+        easyexcel_xlsx::TemplateRichText::from_runs(&rich_text_run_specs(data)?)
+            .map_err(ExcelError::from)?
+    };
+    Ok(easyexcel_xlsx::xlsx::template_xml::TemplateCellValue::RichText(
+        rich_text,
+    ))
 }
 
 fn insert_image_data(
@@ -95,13 +109,13 @@ fn insert_image_data(
         .get_anchor_type()
         .unwrap_or(AnchorType::MoveAndResize)
     {
-        AnchorType::MoveAndResize => ObjectMovement::MoveAndSizeWithCells,
+        AnchorType::MoveAndResize => easyexcel_xlsx::TemplateImageMovement::MoveAndResize,
         AnchorType::DontMoveDoResize | AnchorType::MoveDontResize => {
-            ObjectMovement::MoveButDontSizeWithCells
+            easyexcel_xlsx::TemplateImageMovement::MoveDontResize
         }
-        AnchorType::DontMoveAndResize => ObjectMovement::DontMoveOrSizeWithCells,
+        AnchorType::DontMoveAndResize => easyexcel_xlsx::TemplateImageMovement::DontMoveOrResize,
     };
-    generation::insert_scaled_image(
+    generation::insert_scaled_image_with_policy(
         worksheet,
         resolved.first_row,
         resolved.first_column,
@@ -121,14 +135,16 @@ fn cell_format(context: CellFormatContext<'_>) -> Format {
     let mut format = generation::new_format();
     // Annotation style merged with handler strategy style
     // (Java `WriteCellStyle.merge(strategy, cellData.getOrCreateStyle())`).
-    let mut annotation_cell = context.converted_cell;
+    let mut annotation_cell = context.converted_cell.cloned();
     if let Some(annotation_style) = context.cell {
+        let annotation_style = crate::WriteCellStyle::from(annotation_style);
         annotation_cell = Some(merge_write_cell_style(
             &annotation_style,
             annotation_cell.unwrap_or_default(),
         ));
     }
     if let Some(handler_style) = context.handler_cell {
+        let handler_style = crate::WriteCellStyle::from(handler_style);
         annotation_cell = Some(merge_write_cell_style(
             &handler_style,
             annotation_cell.unwrap_or_default(),
@@ -136,22 +152,30 @@ fn cell_format(context: CellFormatContext<'_>) -> Format {
     }
     // Nested WriteFont / ExcelFontStyle on merged cell style
     // (Java WriteCellStyle.writeFont merge onto annotation HeadFontStyle/ContentFontStyle).
-    let mut font = context.font;
-    let merged_has_data_format = annotation_cell.is_some_and(|style| style.data_format.is_some());
+    let mut font = context.font.map(write_font_from_excel_font_style);
+    let merged_has_data_format = annotation_cell
+        .as_ref()
+        .is_some_and(|style| style.data_format.is_some());
     if let Some(style) = annotation_cell {
-        if let Some(style_font) = style.font {
+        if let Some(style_font) = style.font.as_ref() {
             font = Some(match font {
-                Some(target) => merge_handler_font_style(&style_font, target),
-                None => style_font,
+                Some(target) => merge_write_font(style_font, target),
+                None => style_font.clone(),
             });
         }
-        format = apply_annotation_cell_style(format, style);
+        format = apply_annotation_cell_style(format, style.engine_cell_style());
+    }
+    if let Some(handler_font) = context.handler_font {
+        font = Some(match font {
+            Some(target) => merge_write_font(&handler_font, target),
+            None => handler_font,
+        });
     }
     if !merged_has_data_format && let Some(number_format) = context.converted_data_format {
         format = generation::with_number_format(format, number_format);
     }
     if let Some(font) = font {
-        format = apply_annotation_font_style(format, font);
+        format = apply_write_font_style(format, &font);
     }
     let Some(style) = context.explicit else {
         return format;
@@ -233,6 +257,23 @@ fn apply_annotation_font_style(format: Format, style: ExcelFontStyle) -> Format 
             underline: style.underline.map(annotation_underline),
             charset: style.charset,
             bold: style.bold,
+        },
+    )
+}
+
+fn apply_write_font_style(format: Format, style: &WriteFont) -> Format {
+    generation::apply_font_format_spec(
+        format,
+        &FontFormatSpec {
+            name: style.get_font_name().map(str::to_owned),
+            size: style.get_font_height_in_points(),
+            italic: style.get_italic(),
+            strikeout: style.get_strikeout(),
+            color: style.get_color().map(annotation_color),
+            script: style.get_type_offset().map(annotation_font_script),
+            underline: style.get_underline().map(annotation_underline),
+            charset: style.get_charset(),
+            bold: style.get_bold(),
         },
     )
 }
@@ -350,26 +391,6 @@ const fn vertical_format_align(alignment: VerticalAlignment) -> FormatAlign {
     }
 }
 
-fn write_integer(
-    worksheet: &mut Worksheet,
-    row: u32,
-    column: u16,
-    value: i64,
-    format: &Format,
-) -> Result<()> {
-    generation::write_integer(worksheet, row, column, value, Some(format)).map_err(format_error)
-}
-
-/// 无格式整数写入（无样式快速路径专用）：语义与 [`write_integer`] 完全一致，
-/// 仅跳过格式表查找，输出单元格 XML 相同（默认格式与无格式均解析为 xf 0）。
-fn write_integer_unformatted(
-    worksheet: &mut Worksheet,
-    row: u32,
-    column: u16,
-    value: i64,
-) -> Result<()> {
-    generation::write_integer(worksheet, row, column, value, None).map_err(format_error)
-}
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn finite_decimal_f64(value: &BigDecimal, format: &str) -> Result<f64> {
     easyexcel_format::finite_decimal_f64(value, format).map_err(format_error)
@@ -386,4 +407,3 @@ pub(crate) fn to_column(index: usize) -> Result<u16> {
 pub(crate) fn format_error(error: impl std::fmt::Display) -> ExcelError {
     ExcelError::Format(error.to_string())
 }
-

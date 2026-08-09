@@ -11,6 +11,9 @@ pub enum WriteBackendSelection {
     AutoStreaming,
     /// 正在从 journal 重放到内存工作簿。
     Promoting,
+    /// 流式批次或自动晋升失败，物理行/journal 位置可能已经分叉；后续操作
+    /// 必须 fail-closed。
+    Failed,
     /// 自动选择或晋升后的完整内存工作簿。
     InMemory,
     /// 调用方显式要求常量内存；能力冲突必须报错。

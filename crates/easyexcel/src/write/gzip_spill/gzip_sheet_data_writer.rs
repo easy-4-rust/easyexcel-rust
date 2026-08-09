@@ -50,7 +50,12 @@ impl GzipSheetDataWriter {
 
     /// 写入包含最终 Handler 样式和行高的 Stateful journal 行。
     pub(crate) fn write_journal_row(&mut self, row: &JournalRow) -> Result<()> {
-        let mut values = Vec::with_capacity(row.cells.len().saturating_add(1));
+        let mut values = Vec::with_capacity(
+            row.cells
+                .len()
+                .saturating_add(row.merge_ranges.len())
+                .saturating_add(1),
+        );
         for cell in &row.cells {
             let value = to_spill_value(&cell.value)?;
             if let Some(style) = &cell.style {
@@ -77,6 +82,14 @@ impl GzipSheetDataWriter {
         values.push(GzipCellValue::JournalMetadata {
             row_height: row.row_height,
         });
+        for range in &row.merge_ranges {
+            values.push(GzipCellValue::JournalMergeRange {
+                first_row: range.first_row,
+                last_row: range.last_row,
+                first_col: range.first_col,
+                last_col: range.last_col,
+            });
+        }
         self.inner.write_row(&values).map_err(ExcelError::from)
     }
 

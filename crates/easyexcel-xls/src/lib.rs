@@ -26,6 +26,7 @@ pub mod biff8;
 pub mod xls;
 
 pub use xls::{
-    Biff8SstString, CFB_MAGIC, looks_like_cfb, parse_sst_rich, read, read_path,
-    read_path_with_password, read_with_password, write, write_path,
+    Biff8SstString, CFB_MAGIC, looks_like_cfb, parse_sst_rich, read,
+    read_decrypted_workbook_stream, read_path, read_path_with_password, read_with_password,
+    to_biff8_book, write, write_path, write_path_with_password, write_with_password,
 };

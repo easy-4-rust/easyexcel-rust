@@ -1,5 +1,6 @@
 //! 写处理器修改计划。
 
+use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
 use crate::{CellValue, ChartMutation, ExcelError, MergeRange, Result};
@@ -65,6 +66,20 @@ impl WriteMutationPlan {
         })
     }
 
+    /// 记录一个在保存前执行的批注删除操作。
+    pub(crate) fn remove_comment(
+        &self,
+        sheet_name: impl Into<String>,
+        row_index: u32,
+        column_index: u16,
+    ) -> Result<()> {
+        self.push(WriteMutation::RemoveComment {
+            sheet_name: sheet_name.into(),
+            row_index,
+            column_index,
+        })
+    }
+
     pub(crate) fn snapshot(&self) -> Result<Vec<WriteMutation>> {
         self.mutations
             .lock()
@@ -88,6 +103,37 @@ impl WriteMutationPlan {
                 WriteMutation::AddMerge { sheet_name, range } => Some((sheet_name, range)),
                 _ => None,
             })
+            .collect())
+    }
+
+    /// 返回所有批注删除修改，供序列化后的 XLSX OOXML 包执行。
+    pub(crate) fn comment_removals(&self) -> Result<Vec<(String, u32, u16)>> {
+        let mut actions = BTreeMap::new();
+        for mutation in self.snapshot()? {
+            match mutation {
+                WriteMutation::RemoveComment {
+                    sheet_name,
+                    row_index,
+                    column_index,
+                } => {
+                    actions.insert((sheet_name, row_index, column_index), true);
+                }
+                WriteMutation::SetCell {
+                    sheet_name,
+                    row_index,
+                    column_index,
+                    value:
+                        CellValue::Comment { .. } | CellValue::CommentWithMetadata { .. },
+                } => {
+                    // 后续 setCellComment 覆盖此前 removeCellComment。
+                    actions.insert((sheet_name, row_index, column_index), false);
+                }
+                _ => {}
+            }
+        }
+        Ok(actions
+            .into_iter()
+            .filter_map(|(coordinate, remove)| remove.then_some(coordinate))
             .collect())
     }
 

@@ -2,8 +2,9 @@
 
 use std::ops::{Deref, DerefMut};
 
-use crate::metadata::AbstractHolder;
+use crate::metadata::{AbstractHolder, ConfigurationHolder, MetadataHolder};
 use crate::read::metadata::ReadBasicParameter;
+use crate::read::metadata::holder::read_holder::ReadHolder;
 use crate::{ExcelReadHeadProperty, HolderEnum};
 
 /// 对应 Java：`AbstractReadHolder extends AbstractHolder implements ReadHolder`.
@@ -72,6 +73,36 @@ impl AbstractReadHolder {
 impl Default for AbstractReadHolder {
     fn default() -> Self {
         Self::from_parameter(&ReadBasicParameter::default(), None, HolderEnum::Workbook)
+    }
+}
+
+impl MetadataHolder for AbstractReadHolder {
+    fn holder_type(&self) -> HolderEnum {
+        self.abstract_holder.holder_type
+    }
+}
+
+impl ConfigurationHolder for AbstractReadHolder {
+    fn is_new(&self) -> bool {
+        self.abstract_holder.is_new()
+    }
+
+    fn global_configuration(&self) -> &crate::GlobalConfiguration {
+        self.abstract_holder.global_configuration()
+    }
+
+    fn converter_map(&self) -> &crate::ConverterRegistry {
+        self.abstract_holder.converter_map()
+    }
+}
+
+impl ReadHolder for AbstractReadHolder {
+    fn read_listener_list(&self) -> &[String] {
+        &self.read_listener_list
+    }
+
+    fn excel_read_head_property(&self) -> &ExcelReadHeadProperty {
+        &self.excel_read_head_property
     }
 }
 

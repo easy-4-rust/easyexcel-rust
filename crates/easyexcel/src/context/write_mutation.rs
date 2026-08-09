@@ -26,4 +26,10 @@ pub(crate) enum WriteMutation {
         sheet_name: String,
         range: MergeRange,
     },
+    /// 删除指定工作表、单元格上的批注。
+    RemoveComment {
+        sheet_name: String,
+        row_index: u32,
+        column_index: u16,
+    },
 }

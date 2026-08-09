@@ -81,5 +81,8 @@ impl ContentStyle {
         }
     }
     /// 转换为 Java `StyleProperty` 运行期镜像。
-    #[must_use] pub fn to_property(self) -> StyleProperty { StyleProperty::new(self.to_write_cell_style().into()) }
+    #[must_use]
+    pub fn to_property(self) -> StyleProperty {
+        StyleProperty::from_write_cell_style(self.to_write_cell_style())
+    }
 }

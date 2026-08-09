@@ -162,7 +162,14 @@ impl<'a> XlsxCellEventReader<'a> {
                     phonetic_depth = phonetic_depth.saturating_sub(1);
                 }
                 Event::End(element) if element.local_name().as_ref() == b"c" => {
-                    let formula = (!self.formula.is_empty()).then(|| self.formula.clone());
+                    // 公式缓冲在下一单元格开始时本就会清空；直接转移其所有权，
+                    // 避免每个公式单元格复制一次 String。无公式时保留已分配容量
+                    // 供后续单元格复用。
+                    let formula = if self.formula.is_empty() {
+                        None
+                    } else {
+                        Some(std::mem::take(&mut self.formula))
+                    };
                     return self.finish_cell(
                         style_index,
                         column_index,

@@ -11,6 +11,8 @@ pub(crate) struct Arguments {
     pub(crate) input: Option<PathBuf>,
     pub(crate) output: Option<PathBuf>,
     pub(crate) worker_count: u32,
+    pub(crate) internal_map_work_factor: u32,
+    pub(crate) internal_map_queue_capacity: usize,
     pub(crate) temperature: String,
     pub(crate) warmups: u32,
 }
@@ -37,6 +39,23 @@ impl Arguments {
             .remove("--workers")
             .map_or(Ok(1), |value| value.parse::<u32>())
             .map_err(|error| format!("invalid --workers: {error}"))?;
+        if worker_count == 0 {
+            return Err("--workers must be greater than zero".to_owned());
+        }
+        let internal_map_work_factor = values
+            .remove("--internal-map-work-factor")
+            .map_or(Ok(0), |value| value.parse::<u32>())
+            .map_err(|error| format!("invalid --internal-map-work-factor: {error}"))?;
+        let internal_map_queue_capacity = values
+            .remove("--internal-map-queue-capacity")
+            .map_or(Ok(0), |value| value.parse::<usize>())
+            .map_err(|error| format!("invalid --internal-map-queue-capacity: {error}"))?;
+        if (internal_map_work_factor == 0) != (internal_map_queue_capacity == 0) {
+            return Err(
+                "--internal-map-work-factor and --internal-map-queue-capacity must be set together"
+                    .to_owned(),
+            );
+        }
         let temperature = values
             .remove("--temperature")
             .unwrap_or_else(|| "cold".to_owned());
@@ -60,6 +79,8 @@ impl Arguments {
             input,
             output,
             worker_count,
+            internal_map_work_factor,
+            internal_map_queue_capacity,
             temperature,
             warmups,
         })

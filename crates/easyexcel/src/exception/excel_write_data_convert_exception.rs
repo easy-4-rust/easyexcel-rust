@@ -1,12 +1,36 @@
 //! 对应 Java：`com.alibaba.excel.exception.ExcelWriteDataConvertException`。
 
 use super::ExcelDataConvertException;
+use std::hash::{Hash, Hasher};
 
 /// 写入转换异常，额外保留发生错误时的完整 Cell Handler 上下文。
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct ExcelWriteDataConvertException {
     inner: ExcelDataConvertException,
     cell_write_handler_context: crate::WriteCellContext,
+}
+
+// Java Lombok 只比较本类声明的 `cellWriteHandlerContext`，不比较父异常。
+impl PartialEq for ExcelWriteDataConvertException {
+    fn eq(&self, other: &Self) -> bool {
+        self.cell_write_handler_context == other.cell_write_handler_context
+    }
+}
+
+// 相等上下文必然具有相同物理位置与生命周期标志；这些稳定字段足以满足 Hash 契约，
+// 而无需把动态 Holder/handler 对象强制变成可哈希对象。
+impl Hash for ExcelWriteDataConvertException {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let context = &self.cell_write_handler_context;
+        context.sheet_name.hash(state);
+        context.row_index.hash(state);
+        context.column_index.hash(state);
+        context.is_head.hash(state);
+        context.relative_row_index.hash(state);
+        context.original_field_type.hash(state);
+        context.ignore_fill_style.hash(state);
+        context.skip.hash(state);
+    }
 }
 impl ExcelWriteDataConvertException {
     /// Java 双参数构造器。

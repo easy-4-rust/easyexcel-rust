@@ -5,17 +5,17 @@
 use std::any::{Any, TypeId};
 
 use crate::core::excel_error::ExcelError;
+use crate::{ConverterRegistry, ReadConverterContext};
 
-/// 对应 Java：com.alibaba.excel.util.ConverterUtils。 Mirrors `com.alibaba.excel.util.ConverterUtils#convertToJavaObject`.
-///
-/// The Rust port performs cell-to-field conversion via the
-/// `FromExcelCell` trait; this function is the Java-API-shaped anchor
-/// returning an `Unsupported` error until wired in by the reader crate.
+/// 将已经格式化的文本转换为内建 Rust 标量的内部回退路径。
 ///
 /// # Errors
 ///
-/// 始终返回 [`ExcelError::Unsupported`]，提示改用 `FromExcelCell` trait。
-pub fn convert_to_java_object(source: &str, target_type: TypeId) -> Result<String, ExcelError> {
+/// 目标类型不是内建标量或文本内容无法解析时返回转换错误。
+pub(crate) fn convert_text_to_rust_value(
+    source: &str,
+    target_type: TypeId,
+) -> Result<String, ExcelError> {
     if target_type == TypeId::of::<String>() || target_type == TypeId::of::<&'static str>() {
         return Ok(source.to_owned());
     }
@@ -46,12 +46,24 @@ pub fn convert_to_java_object(source: &str, target_type: TypeId) -> Result<Strin
     )))
 }
 
-/// Java `convertToJavaObject(ReadCellData, ..., Class, ...)` 的后端中立动态对象入口。
+/// Java 两个 `convertToJavaObject(...)` 重载的后端中立动态对象入口。
 ///
 /// # Errors
 ///
-/// 源类型与目标类型不兼容时返回带单元格值的转换错误。
-pub fn convert_read_cell_to_java_object(
+/// 注册转换器失败，或默认转换无法表示目标类型时返回带单元格值的转换错误。
+pub fn convert_to_java_object(
+    source: &crate::ReadCellData,
+    target_type: TypeId,
+    converters: &ConverterRegistry,
+    context: &ReadConverterContext<'_>,
+) -> Result<Box<dyn Any>, ExcelError> {
+    if let Some(value) = converters.convert_to_dynamic(target_type, context)? {
+        return Ok(value);
+    }
+    convert_read_cell_without_registered_converter(source, target_type)
+}
+
+fn convert_read_cell_without_registered_converter(
     source: &crate::ReadCellData,
     target_type: TypeId,
 ) -> Result<Box<dyn Any>, ExcelError> {
@@ -105,10 +117,10 @@ where
     easyexcel_utils::map_utils::to_string_map(entries)
 }
 
-/// 对应 Java：com.alibaba.excel.util.ConverterUtils。 Mirrors `com.alibaba.excel.util.ConverterUtils#defaultClassGeneric`.
+/// 返回 Java `defaultClassGeneric = String.class` 的后端中立类型身份。
 #[must_use]
-pub fn default_class_generic(_type_id: TypeId) -> Option<TypeId> {
-    Some(TypeId::of::<String>())
+pub fn default_class_generic() -> TypeId {
+    TypeId::of::<String>()
 }
 
 /// Java `convertToStringMap(Map<Integer, ReadCellData<?>>, AnalysisContext)` 的稀疏列语义。
@@ -127,7 +139,7 @@ pub fn convert_read_cells_to_string_map(
         let value = if cell.cell_type() == crate::CellDataType::Empty {
             None
         } else {
-            Some(convert_to_java_object(cell.string_value(), TypeId::of::<String>())?)
+            Some(convert_text_to_rust_value(cell.string_value(), TypeId::of::<String>())?)
         };
         result.insert(*column, value);
         index = column.saturating_add(1);
@@ -140,10 +152,14 @@ mod tests_extra {
     use super::*;
 
     #[test]
-    fn convert_to_java_object_reports_unsupported() {
-        // 对应 Java：ConverterUtils.convertToJavaObject 尚未接入时返回明确错误
-        let error = convert_to_java_object("x", TypeId::of::<String>()).expect_err("unsupported");
-        assert!(error.to_string().contains("FromExcelCell"));
+    fn text_fallback_converts_supported_types_and_rejects_unknown_types() {
+        assert_eq!(
+            convert_text_to_rust_value("x", TypeId::of::<String>()),
+            Ok("x".to_owned())
+        );
+        let error = convert_text_to_rust_value("x", TypeId::of::<()>())
+            .expect_err("unknown target must fail");
+        assert!(error.to_string().contains("no converter"));
     }
 
     #[test]
@@ -160,8 +176,8 @@ mod tests_extra {
     }
 
     #[test]
-    fn default_class_generic_returns_none() {
+    fn default_class_generic_is_string() {
         // 对应 Java：defaultClassGeneric 默认实现
-        assert_eq!(default_class_generic(TypeId::of::<String>()), None);
+        assert_eq!(default_class_generic(), TypeId::of::<String>());
     }
 }

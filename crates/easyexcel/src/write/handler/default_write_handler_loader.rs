@@ -14,6 +14,19 @@ use crate::write::style::default_style::DefaultStyle;
 pub struct DefaultWriteHandlerLoader;
 
 impl DefaultWriteHandlerLoader {
+    /// 返回 Java `DEFAULT_WRITE_HANDLER_LIST` 的后端中立快照。
+    ///
+    /// Java 暴露一个可变全局 `List`；Rust 每次返回三个新 Handler，保留其初始内容
+    /// 和顺序，同时避免跨 workbook 共享可变 Handler 实例。
+    #[must_use]
+    pub fn default_write_handler_list() -> Vec<Box<dyn WriteHandler>> {
+        vec![
+            Box::new(DimensionWorkbookWriteHandler::new()),
+            Box::new(DefaultRowWriteHandler::new()),
+            Box::new(FillStyleCellWriteHandler::new()),
+        ]
+    }
+
     /// 对应 Java：com.alibaba.excel.write.handler.DefaultWriteHandlerLoader。 Returns the default XLSX handler list with default style enabled.
     ///
     /// This no-argument form is retained for earlier Rust callers. Use

@@ -8,6 +8,9 @@ use std::io::{Read, Write};
 
 use crate::core::excel_error::ExcelError;
 
+/// Java `IoUtils.EOF`，由 `easyexcel-io` 统一承载。
+pub use easyexcel_io::EOF;
+
 /// 对应 Java：com.alibaba.excel.util.IoUtils。 复制输入流的全部字节到输出流。
 ///
 /// # Errors

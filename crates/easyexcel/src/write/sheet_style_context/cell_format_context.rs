@@ -1,4 +1,4 @@
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 /// 对应 Java：ignoreFillStyle。
 pub(crate) struct CellFormatContext<'a> {
     pub(crate) explicit: Option<&'a CellStyle>,
@@ -7,8 +7,10 @@ pub(crate) struct CellFormatContext<'a> {
     /// Style contributed by registered `WriteHandler` strategies
     /// (Java `AbstractCellStyleStrategy` merge into `WriteCellData`).
     pub(crate) handler_cell: Option<ExcelCellStyle>,
+    /// Handler 策略贡献的运行期字体，保留动态字体名称。
+    pub(crate) handler_font: Option<crate::WriteFont>,
     /// Style returned by `Converter::convert_to_excel_data`.
-    pub(crate) converted_cell: Option<ExcelCellStyle>,
+    pub(crate) converted_cell: Option<&'a crate::WriteCellStyle>,
     /// Owned runtime format carried by `WriteCellData::DataFormatData`.
     pub(crate) converted_data_format: Option<&'a str>,
     pub(crate) ignore_fill_style: bool,
@@ -24,11 +26,18 @@ impl<'a> CellFormatContext<'a> {
         self
     }
 
+    /// 附加 Handler 策略产生的运行期字体。
+    #[must_use]
+    pub(crate) fn with_handler_font(mut self, handler_font: Option<crate::WriteFont>) -> Self {
+        self.handler_font = handler_font;
+        self
+    }
+
     /// 对应 Java：ignoreFillStyle。 Attaches converter-produced style metadata without flattening it into
     /// the scalar value.
     #[must_use]
     pub(crate) fn with_converted_cell(mut self, cell: &'a WriteCellData) -> Self {
-        self.converted_cell = cell.write_cell_style().copied();
+        self.converted_cell = cell.write_cell_style();
         self.converted_data_format = cell.data_format_data().and_then(|data| data.format());
         self
     }
@@ -40,6 +49,7 @@ impl<'a> CellFormatContext<'a> {
         self.cell = None;
         self.font = None;
         self.handler_cell = None;
+        self.handler_font = None;
         self.converted_cell = None;
         self.converted_data_format = None;
         self.ignore_fill_style = true;

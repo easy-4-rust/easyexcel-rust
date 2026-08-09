@@ -176,6 +176,49 @@ impl ConverterRegistry {
             })
     }
 
+    /// 按运行期 `TypeId` 执行 Java `ConverterUtils` 所需的动态读取转换。
+    ///
+    /// 该入口与泛型 [`Self::convert_to_rust_data`] 共用同一 `(目标类型, 单元格类型)`
+    /// 索引、nullable 规则和 newest-wins 注册顺序，不维护第二份转换器表。
+    ///
+    /// # 参数
+    ///
+    /// - `target_type`：Java `Class<?>` 的后端中立替代。
+    /// - `context`：保留单元格、字段配置和分析位置的读取转换上下文。
+    ///
+    /// # 返回
+    ///
+    /// 没有注册转换器时返回 `Ok(None)`；命中时返回类型擦除后的真实转换结果。
+    ///
+    /// # Errors
+    ///
+    /// 注册转换器返回错误时原样传播。
+    pub fn convert_to_dynamic(
+        &self,
+        target_type: TypeId,
+        context: &ReadConverterContext<'_>,
+    ) -> Result<Option<Box<dyn Any>>, ExcelError> {
+        let data_type = context
+            .cell()
+            .map_or(CellDataType::Empty, CellValue::data_type);
+        let requested_key = ConverterKey::new(target_type, Some(data_type));
+        let converter_index = self.read_lookup.get(&requested_key).copied().or_else(|| {
+            self.converters.iter().rposition(|converter| {
+                ConverterKey::new(
+                    converter.target_type_id(),
+                    Some(converter.support_excel_type()),
+                ) == requested_key
+            })
+        });
+        let Some(converter) = converter_index.and_then(|index| self.converters.get(index)) else {
+            return Ok(None);
+        };
+        if data_type == CellDataType::Empty && !converter.accepts_null() {
+            return Ok(None);
+        }
+        converter.convert_to_rust_data(context).map(Some)
+    }
+
     /// 对应 Java：com.alibaba.excel.converters.ConverterKeyBuild。 Converts a Rust value through the newest matching global converter. Mirrors
     /// `AbstractHolder.converterMap` + write dispatch.
     ///

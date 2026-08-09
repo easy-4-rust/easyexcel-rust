@@ -4,7 +4,8 @@ pub(crate) fn apply_loop_merges(
     row_index: u32,
     data_index: usize,
     strategies: &[MirroredLoopMergeStrategy],
-) -> Result<()> {
+) -> Result<Vec<crate::write::merge_range::MergeRange>> {
+    let mut applied = Vec::new();
     for strategy in strategies {
         #[allow(clippy::cast_possible_truncation)]
         let each_rows = strategy.each_rows as usize;
@@ -28,8 +29,14 @@ pub(crate) fn apply_loop_merges(
             &generation::new_format(),
         )
         .map_err(format_error)?;
+        applied.push(crate::write::merge_range::MergeRange {
+            first_row: row_index,
+            last_row,
+            first_col: strategy.column_index,
+            last_col: last_column,
+        });
     }
-    Ok(())
+    Ok(applied)
 }
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn sort_handlers(handlers: &mut [Box<dyn WriteHandler>]) {

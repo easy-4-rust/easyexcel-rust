@@ -14,3 +14,20 @@ pub enum HeadKindEnum {
     /// Header derived from a literal string list.
     String,
 }
+
+impl HeadKindEnum {
+    /// Java `values()` 的声明顺序。
+    pub const ALL: [Self; 3] = [Self::None, Self::Class, Self::String];
+    /// Java 枚举常量名。
+    #[must_use] pub const fn java_name(self) -> &'static str {
+        match self { Self::None => "NONE", Self::Class => "CLASS", Self::String => "STRING" }
+    }
+}
+
+impl std::str::FromStr for HeadKindEnum {
+    type Err = String;
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        Self::ALL.into_iter().find(|item| item.java_name() == value)
+            .ok_or_else(|| format!("unknown HeadKindEnum value: {value}"))
+    }
+}

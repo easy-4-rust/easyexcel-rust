@@ -1,6 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.context.xlsx.DefaultXlsxReadContext`
 
 use crate::ReadOptions;
+use crate::context::analysis_context::AnalysisContextLifecycle;
 use crate::context::analysis_context_impl::AnalysisContextImpl;
 use crate::context::read_sheet::ReadSheet;
 use crate::context::xlsx::xlsx_read_context::XlsxReadContext;
@@ -62,10 +63,6 @@ impl DefaultXlsxReadContext {
     }
 }
 impl XlsxReadContext for DefaultXlsxReadContext {
-    fn analysis_context_impl(&self) -> &AnalysisContextImpl {
-        &self.inner
-    }
-
     fn xlsx_read_workbook_holder(&self) -> &XlsxReadWorkbookHolder {
         &self.xlsx_read_workbook_holder
     }
@@ -73,4 +70,8 @@ impl XlsxReadContext for DefaultXlsxReadContext {
     fn xlsx_read_sheet_holder(&self) -> Option<&XlsxReadSheetHolder> {
         self.xlsx_read_sheet_holder.as_ref()
     }
+}
+impl AnalysisContextLifecycle for DefaultXlsxReadContext {
+    fn analysis_context_impl(&self) -> &AnalysisContextImpl { &self.inner }
+    fn analysis_context_impl_mut(&mut self) -> &mut AnalysisContextImpl { &mut self.inner }
 }

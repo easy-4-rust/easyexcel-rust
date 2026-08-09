@@ -2,6 +2,7 @@
 
 mod byte_order_mark;
 mod closeable_output_stream;
+mod easy_excel_temp_file_creation_strategy;
 mod error;
 pub mod file_utils;
 mod format;
@@ -23,6 +24,7 @@ mod write_mode;
 
 pub use byte_order_mark::ByteOrderMark;
 pub use closeable_output_stream::CloseableOutputStream;
+pub use easy_excel_temp_file_creation_strategy::EasyExcelTempFileCreationStrategy;
 pub use error::{Error, Result};
 pub use format::{
     Format, looks_like_cfb, looks_like_delimited_text, looks_like_zip, path_has_extension,

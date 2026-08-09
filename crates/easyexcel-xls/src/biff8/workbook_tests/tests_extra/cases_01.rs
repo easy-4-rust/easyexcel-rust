@@ -7,7 +7,7 @@
             sheets: vec![Biff8Sheet::new("Sheet1")],
             styles: Biff8StyleTable::default(),
             use_1904_windowing: false,
-            extra_bytes: Vec::new(),
+            active_sheet: 0,
         };
         let request = crate::biff8::style::Biff8StyleRequest {
             number_format: Some(crate::biff8::style::Biff8NumberFormat::Custom(
@@ -237,49 +237,6 @@
     }
 
     #[test]
-    fn write_raw_bytes_round_trips_through_cfb_images_stream() {
-        let mut book = Biff8Book::default();
-        book.write_raw_bytes(&[1, 2, 3, 4]);
-        assert_eq!(book.extra_bytes, vec![1, 2, 3, 4]);
-        let cfb = book.to_cfb_bytes().unwrap();
-        assert!(!cfb.is_empty());
-    }
-
-    #[test]
-    fn write_image_encodes_obj_and_msodrawing_records() {
-        let images: &[&[u8]] = &[
-            &[0xFF, 0xD8, 0x01, 0x02], // JPEG magic
-            &[0x89, b'P', 0x03, 0x04], // PNG magic
-            &[0xAB, 0xCD, 0x05],       // unknown magic → default JPEG
-            &[0x42],                   // too short → default JPEG
-            &[],                       // empty
-        ];
-        for image in images {
-            let mut book = Biff8Book::default();
-            book.write_image(image, 0, 0);
-            assert!(book.extra_bytes.len() > 4);
-            assert_eq!(
-                u16::from_le_bytes([book.extra_bytes[0], book.extra_bytes[1]]),
-                OBJ
-            );
-            let obj_len = u16::from_le_bytes([book.extra_bytes[2], book.extra_bytes[3]]) as usize;
-            let mso = 4 + obj_len;
-            assert_eq!(
-                u16::from_le_bytes([book.extra_bytes[mso], book.extra_bytes[mso + 1]]),
-                MSODRAWING
-            );
-            let mso_len =
-                u16::from_le_bytes([book.extra_bytes[mso + 2], book.extra_bytes[mso + 3]]) as usize;
-            let drawing = &book.extra_bytes[mso + 4..mso + 4 + mso_len];
-            // The raw image payload is embedded inside the MSODRAWING record.
-            if !image.is_empty() {
-                assert!(drawing.windows(image.len()).any(|w| w == *image));
-            }
-            assert!(!book.to_cfb_bytes().unwrap().is_empty());
-        }
-    }
-
-    #[test]
     fn empty_book_writes_default_sheet1() {
         let book = Biff8Book::default();
         let stream = build_workbook_stream(&book, &[]);
@@ -445,10 +402,10 @@
             let w2 = window2.expect("sheet 必有 WINDOW2");
             assert_eq!(w2.len(), 18);
             let options = u16::from_le_bytes([w2[0], w2[1]]);
-            // 基础选项 0x06B6 保留 + fFrozen(0x0008) + fFrozenNoSplit(0x1000)
+            // 基础选项 0x06B6 保留 + fFrozen(0x0008) + fFrozenNoSplit(0x0100)
             assert_eq!(
                 options,
-                0x06B6 | 0x0008 | 0x1000,
+                0x06B6 | 0x0008 | 0x0100,
                 "freeze 时 WINDOW2 置冻结位"
             );
         }

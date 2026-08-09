@@ -165,6 +165,18 @@ fn encode_cell(out: &mut Vec<u8>, value: &GzipCellValue) -> Result<()> {
                 None => out.push(0),
             }
         }
+        GzipCellValue::JournalMergeRange {
+            first_row,
+            last_row,
+            first_col,
+            last_col,
+        } => {
+            out.push(21);
+            out.extend_from_slice(&first_row.to_le_bytes());
+            out.extend_from_slice(&last_row.to_le_bytes());
+            out.extend_from_slice(&first_col.to_le_bytes());
+            out.extend_from_slice(&last_col.to_le_bytes());
+        }
     }
     Ok(())
 }
@@ -240,6 +252,12 @@ fn decode_cell(buf: &[u8], cursor: &mut usize) -> Result<GzipCellValue> {
             }
         }
         20 => GzipCellValue::RichTextMetadata(read_bytes(buf, cursor)?),
+        21 => GzipCellValue::JournalMergeRange {
+            first_row: u32::from_le_bytes(read_exact(buf, cursor)?),
+            last_row: u32::from_le_bytes(read_exact(buf, cursor)?),
+            first_col: u16::from_le_bytes(read_exact(buf, cursor)?),
+            last_col: u16::from_le_bytes(read_exact(buf, cursor)?),
+        },
         other => {
             return Err(Error::Other(format!(
                 "unknown gzip spill cell tag: {other}"

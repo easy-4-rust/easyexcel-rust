@@ -7,7 +7,7 @@ use super::field_wrapper::FieldWrapper;
 /// 对应 Java：com.alibaba.excel.metadata.FieldCache。 Cached, sorted model fields.
 ///
 /// Rust port of Java `FieldCache`.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub struct FieldCache {
     /// Fields sorted by column order, excluding ignored fields. (Java `sortedFieldMap`)
     pub sorted_field_map: BTreeMap<i32, FieldWrapper>,

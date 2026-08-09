@@ -20,6 +20,7 @@ use crate::read::{
     ExcelLocale, ReadCacheMode, ReadOptions, ScientificFormatMode, SheetSelector,
     StoredReadCacheSelector,
 };
+use crate::ExcelTypeEnum;
 
 /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Event-driven reader builder.
 pub struct ExcelReaderBuilder<T, L> {
@@ -27,6 +28,7 @@ pub struct ExcelReaderBuilder<T, L> {
     pub(crate) options: ReadOptions,
     pub(crate) listener: L,
     pub(crate) temporary_input: Option<Arc<TemporaryInput>>,
+    pub(crate) explicit_excel_type: Option<ExcelTypeEnum>,
     pub(crate) marker: PhantomData<T>,
 }
 
@@ -42,6 +44,7 @@ where
             options: ReadOptions::default(),
             listener,
             temporary_input: None,
+            explicit_excel_type: None,
             marker: PhantomData,
         }
     }
@@ -64,6 +67,7 @@ where
             options: ReadOptions::default(),
             listener,
             temporary_input: Some(temporary_input),
+            explicit_excel_type: None,
             marker: PhantomData,
         })
     }
@@ -89,6 +93,7 @@ where
             options: self.options,
             listener: CompositeReadListener::new(self.listener, listener),
             temporary_input: self.temporary_input,
+            explicit_excel_type: self.explicit_excel_type,
             marker: PhantomData,
         }
     }
@@ -288,6 +293,13 @@ where
         self
     }
 
+    /// 显式指定工作簿格式并优先于路径推断。
+    #[must_use]
+    pub const fn excel_type(mut self, excel_type: ExcelTypeEnum) -> Self {
+        self.explicit_excel_type = Some(excel_type);
+        self
+    }
+
     /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Executes the read and consumes the builder.
     ///
     /// # Errors
@@ -295,13 +307,19 @@ where
     /// Returns a workbook, sheet-selection, conversion, or listener error.
     pub fn do_read(self) -> Result<()> {
         let mut reader = match self.temporary_input {
-            Some(temporary_input) => ExcelReader::from_temporary_input(
+            Some(temporary_input) => ExcelReader::from_temporary_input_with_explicit_type(
                 self.path,
                 temporary_input,
                 self.options,
                 self.listener,
+                self.explicit_excel_type,
             )?,
-            None => ExcelReader::new(self.path, self.options, self.listener)?,
+            None => ExcelReader::new_with_explicit_type(
+                self.path,
+                self.options,
+                self.listener,
+                self.explicit_excel_type,
+            )?,
         };
         reader.read_all()
     }

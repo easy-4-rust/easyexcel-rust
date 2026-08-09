@@ -9,7 +9,7 @@ use crate::core::ExcelFontStyle;
 use crate::core::ExcelWriteMetadata;
 
 use crate::core::ExcelWriteHeadProperty;
-use crate::metadata::AbstractHolder;
+use crate::metadata::{AbstractHolder, ConfigurationHolder, MetadataHolder};
 use crate::write::WriteHolder;
 use crate::write::metadata::WriteBasicParameter;
 use crate::write::handler::chain::cell_handler_execution_chain::CellHandlerExecutionChain;
@@ -393,6 +393,26 @@ impl std::ops::Deref for AbstractWriteHolder {
 
 impl std::ops::DerefMut for AbstractWriteHolder {
     fn deref_mut(&mut self) -> &mut Self::Target { &mut self.abstract_holder }
+}
+
+impl MetadataHolder for AbstractWriteHolder {
+    fn holder_type(&self) -> crate::enums::holder_enum::HolderEnum {
+        self.abstract_holder.holder_type
+    }
+}
+
+impl ConfigurationHolder for AbstractWriteHolder {
+    fn is_new(&self) -> bool {
+        self.abstract_holder.is_new()
+    }
+
+    fn global_configuration(&self) -> &crate::GlobalConfiguration {
+        self.abstract_holder.global_configuration()
+    }
+
+    fn converter_map(&self) -> &ConverterRegistry {
+        &self.converter_map
+    }
 }
 
 impl WriteHolder for AbstractWriteHolder {

@@ -1,5 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.write.metadata.style.WriteFont`.
 
+use std::hash::{Hash, Hasher};
+
 use crate::core::ExcelFontStyle;
 
 include!("write_font/write_cell_font.rs");
@@ -108,6 +110,43 @@ pub fn excel_font_style_from_write_font(font: &WriteFont) -> ExcelFontStyle {
     }
 }
 
+/// 把注解期可复制字体转换为拥有所有权的 Java 运行期字体对象。
+///
+/// 对应 Java：`WriteFont` 由 `HeadFontStyle` / `ContentFontStyle` 属性构建。
+/// 静态字体名称在此复制为 `String`，后续 setter 可以安全替换为动态值。
+#[must_use]
+pub fn write_font_from_excel_font_style(style: ExcelFontStyle) -> WriteFont {
+    let mut font = WriteFont::new();
+    if let Some(value) = style.font_name {
+        font = font.font_name(value.to_owned());
+    }
+    if let Some(value) = style.font_height_in_points {
+        font = font.font_height_in_points(value);
+    }
+    if let Some(value) = style.italic {
+        font = font.italic(value);
+    }
+    if let Some(value) = style.strikeout {
+        font = font.strikeout(value);
+    }
+    if let Some(value) = style.color {
+        font = font.color(value);
+    }
+    if let Some(value) = style.type_offset {
+        font = font.type_offset(value);
+    }
+    if let Some(value) = style.underline {
+        font = font.underline(value);
+    }
+    if let Some(value) = style.charset {
+        font = font.charset(value);
+    }
+    if let Some(value) = style.bold {
+        font = font.bold(value);
+    }
+    font
+}
+
 use crate::core::excel_color::ExcelColor;
 use crate::core::excel_font_script::ExcelFontScript;
 use crate::core::excel_underline::ExcelUnderline;
@@ -117,7 +156,7 @@ use crate::core::excel_underline::ExcelUnderline;
 /// Java uses boxed `Boolean`/`Short`/`Byte`/`Integer`; Rust uses `Option`
 /// to express "unset" with zero overhead. All nine fields preserve the Java
 /// semantics, including the POI alignment with `null` meaning "inherit".
-#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct WriteFont {
     font_name: Option<String>,
     font_height_in_points: Option<f64>,
@@ -128,6 +167,42 @@ pub struct WriteFont {
     underline: Option<ExcelUnderline>,
     charset: Option<u8>,
     bold: Option<bool>,
+}
+
+impl PartialEq for WriteFont {
+    fn eq(&self, other: &Self) -> bool {
+        self.font_name == other.font_name
+            && self.font_height_in_points.map(java_double_bits)
+                == other.font_height_in_points.map(java_double_bits)
+            && self.italic == other.italic
+            && self.strikeout == other.strikeout
+            && self.color == other.color
+            && self.type_offset == other.type_offset
+            && self.underline == other.underline
+            && self.charset == other.charset
+            && self.bold == other.bold
+    }
+}
+
+impl Eq for WriteFont {}
+
+impl Hash for WriteFont {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.font_name.hash(state);
+        self.font_height_in_points.map(java_double_bits).hash(state);
+        self.italic.hash(state);
+        self.strikeout.hash(state);
+        self.color.hash(state);
+        self.type_offset.hash(state);
+        self.underline.hash(state);
+        self.charset.hash(state);
+        self.bold.hash(state);
+    }
+}
+
+/// 对齐 Java `Double.doubleToLongBits`：所有 NaN 规范化，正负零保持不同。
+fn java_double_bits(value: f64) -> u64 {
+    if value.is_nan() { f64::NAN.to_bits() } else { value.to_bits() }
 }
 
 impl WriteFont {
@@ -220,8 +295,13 @@ impl WriteFont {
     }
 
     /// 合并源字体的非空字段到目标字体，语义对应 Java 静态 `merge`。
+    pub fn merge(source: &Self, target: &mut Self) {
+        *target = merge_write_font(source, target.clone());
+    }
+
+    /// 返回合并后的字体，供 Rust 值式调用链使用。
     #[must_use]
-    pub fn merge(source: &Self, target: Self) -> Self {
+    pub fn merged(source: &Self, target: Self) -> Self {
         merge_write_font(source, target)
     }
 
@@ -230,12 +310,18 @@ impl WriteFont {
     pub fn get_font_name(&self) -> Option<&str> {
         self.font_name.as_deref()
     }
+    /// Java `setFontName`，`None` 保留 Lombok setter 可清空语义。
+    pub fn set_font_name(&mut self, value: Option<String>) { self.font_name = value; }
 
     /// Returns the optional font size. (Java `getFontHeightInPoints()`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn get_font_height_in_points(&self) -> Option<f64> {
         self.font_height_in_points
+    }
+    /// Java `setFontHeightInPoints`。
+    pub const fn set_font_height_in_points(&mut self, value: Option<f64>) {
+        self.font_height_in_points = value;
     }
 
     /// Returns the optional italic flag. (Java `getItalic()`)
@@ -244,6 +330,8 @@ impl WriteFont {
     pub const fn get_italic(&self) -> Option<bool> {
         self.italic
     }
+    /// Java `setItalic`。
+    pub const fn set_italic(&mut self, value: Option<bool>) { self.italic = value; }
 
     /// Returns the optional strike-through flag. (Java `getStrikeout()`)
     #[must_use]
@@ -251,6 +339,8 @@ impl WriteFont {
     pub const fn get_strikeout(&self) -> Option<bool> {
         self.strikeout
     }
+    /// Java `setStrikeout`。
+    pub const fn set_strikeout(&mut self, value: Option<bool>) { self.strikeout = value; }
 
     /// Returns the optional font color. (Java `getColor()`)
     #[must_use]
@@ -258,12 +348,18 @@ impl WriteFont {
     pub const fn get_color(&self) -> Option<ExcelColor> {
         self.color
     }
+    /// Java `setColor`。
+    pub const fn set_color(&mut self, value: Option<ExcelColor>) { self.color = value; }
 
     /// Returns the optional superscript/subscript mode. (Java `getTypeOffset()`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteFont。
     pub const fn get_type_offset(&self) -> Option<ExcelFontScript> {
         self.type_offset
+    }
+    /// Java `setTypeOffset`。
+    pub const fn set_type_offset(&mut self, value: Option<ExcelFontScript>) {
+        self.type_offset = value;
     }
 
     /// Returns the optional underline mode. (Java `getUnderline()`)
@@ -272,6 +368,10 @@ impl WriteFont {
     pub const fn get_underline(&self) -> Option<ExcelUnderline> {
         self.underline
     }
+    /// Java `setUnderline`。
+    pub const fn set_underline(&mut self, value: Option<ExcelUnderline>) {
+        self.underline = value;
+    }
 
     /// Returns the optional character set. (Java `getCharset()`)
     #[must_use]
@@ -279,6 +379,8 @@ impl WriteFont {
     pub const fn get_charset(&self) -> Option<u8> {
         self.charset
     }
+    /// Java `setCharset`。
+    pub const fn set_charset(&mut self, value: Option<u8>) { self.charset = value; }
 
     /// Returns the optional bold flag. (Java `getBold()`)
     #[must_use]
@@ -286,6 +388,8 @@ impl WriteFont {
     pub const fn get_bold(&self) -> Option<bool> {
         self.bold
     }
+    /// Java `setBold`。
+    pub const fn set_bold(&mut self, value: Option<bool>) { self.bold = value; }
 }
 
 #[cfg(test)]

@@ -6,7 +6,7 @@
 /// labels because `#[derive(ExcelRow)]` resolves reflection at compile time.
 ///
 /// Rust port of Java `FieldWrapper`.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 /// 对应 Java：com.alibaba.excel.metadata.FieldWrapper。
 pub struct FieldWrapper {
     /// Java 反射 Field 的后端中立标识；Rust 无运行时 `java.lang.reflect.Field`。

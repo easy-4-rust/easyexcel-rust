@@ -2,7 +2,7 @@
 
 #[cfg(test)]
 use crate::ReadOptions;
-use crate::context::analysis_context_impl::AnalysisContextImpl;
+use crate::context::analysis_context::AnalysisContextLifecycle;
 #[cfg(test)]
 use crate::context::read_sheet::ReadSheet;
 use crate::read::holder::xlsx::xlsx_read_sheet_holder::XlsxReadSheetHolder;
@@ -10,10 +10,7 @@ use crate::read::holder::xlsx::xlsx_read_workbook_holder::XlsxReadWorkbookHolder
 #[cfg(test)]
 use crate::support::ExcelTypeEnum;
 /// 对应 Java：`XlsxReadContext extends AnalysisContext`.
-pub trait XlsxReadContext {
-    /// Returns the shared analysis state. (Java `AnalysisContext` methods)
-    fn analysis_context_impl(&self) -> &AnalysisContextImpl;
-
+pub trait XlsxReadContext: AnalysisContextLifecycle {
     /// Returns XLSX workbook holder. (Java `xlsxReadWorkbookHolder()`)
     fn xlsx_read_workbook_holder(&self) -> &XlsxReadWorkbookHolder;
 

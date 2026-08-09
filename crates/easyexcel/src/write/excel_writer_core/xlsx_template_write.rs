@@ -29,6 +29,21 @@ where
         write_sheet_onto_template::<T, I>(&mut workbook, options, rows, handlers)?;
         after_workbook(handlers, workbook_context)?;
         apply_xlsx_mutations(&mut workbook, workbook_context.mutation_plan())?;
+        let has_deferred = !workbook_context.mutation_plan().merge_ranges()?.is_empty()
+            || !workbook_context
+                .mutation_plan()
+                .comment_removals()?
+                .is_empty();
+        if has_deferred {
+            let bytes = easyexcel_xlsx::xlsx::generation::serialize_workbook(&mut workbook)
+                .map_err(ExcelError::from)?;
+            let mut package = crate::write::template_write::TemplatePackage::from_bytes(&bytes)?;
+            crate::write::excel_writer_core::apply_deferred_xlsx_mutations(
+                &mut package,
+                workbook_context.mutation_plan(),
+            )?;
+            return save_template_package(&package, path, output, options.password.as_deref());
+        }
         return match output {
             Some(writer) => {
                 save_workbook_to_writer(&mut workbook, writer, options.password.as_deref())
@@ -388,6 +403,7 @@ where
                 continue;
             }
             let handler_cell = collect_handler_cell_style(handlers, &context);
+            let handler_font = collect_handler_write_font(handlers, &context);
             let handler_cell = requested_styles
                 .get(row_offset)
                 .and_then(|row| row.get(cell_offset))
@@ -395,7 +411,7 @@ where
                 .flatten()
                 .map_or(handler_cell, |requested| {
                     Some(match handler_cell {
-                        Some(current) => merge_write_cell_style(&requested, current),
+                        Some(current) => merge_excel_cell_style(&requested, current),
                         None => requested,
                     })
                 });
@@ -412,6 +428,7 @@ where
                 && annotation_cell.is_none()
                 && annotation_font.is_none()
                 && handler_cell.is_none()
+                && handler_font.is_none()
                 && converted_cell
                     .and_then(WriteCellData::write_cell_style)
                     .is_none()
@@ -428,7 +445,7 @@ where
                 .and_then(WriteCellData::data_format_data)
                 .and_then(|data| data.format());
             let key = format!(
-                "{explicit:?}|{annotation_cell:?}|{annotation_font:?}|{handler_cell:?}|\
+                "{explicit:?}|{annotation_cell:?}|{annotation_font:?}|{handler_cell:?}|{handler_font:?}|\
                  {converted_style:?}|{converted_format:?}|{global:?}"
             );
             let local_index = if let Some(index) = format_by_key.get(&key).copied() {
@@ -440,15 +457,18 @@ where
                     cell: annotation_cell,
                     font: annotation_font,
                     handler_cell: None,
+                    handler_font: None,
                     converted_cell: None,
                     converted_data_format: None,
                     ignore_fill_style: false,
                     global,
                 }
-                .with_handler_cell(handler_cell);
-                let format_context = converted_cell.map_or(format_context, |cell| {
-                    format_context.with_converted_cell(cell)
-                });
+                .with_handler_cell(handler_cell)
+                .with_handler_font(handler_font);
+                let format_context = match converted_cell {
+                    Some(cell) => format_context.with_converted_cell(cell),
+                    None => format_context,
+                };
                 formats.push(cell_format(format_context));
                 format_by_key.insert(key, index);
                 index
@@ -461,18 +481,7 @@ where
         return Ok(Vec::new());
     }
 
-    let mut compiler = create_work_book(XlsxWorkBookCreator)?;
-    let mut sheet_creator = XlsxSheetCreator {
-        workbook: &mut compiler,
-        constant_memory: false,
-    };
-    let worksheet = create_sheet(&mut sheet_creator, "Sheet1")?;
-    for (index, format) in formats.iter().enumerate() {
-        let row = u32::try_from(index)
-            .map_err(|_| ExcelError::Format("too many template styles".to_owned()))?;
-        generation::write_blank(worksheet, row, 0, format).map_err(format_error)?;
-    }
-    let bytes = generation::serialize_workbook(&mut compiler).map_err(ExcelError::from)?;
+    let bytes = generation::compile_blank_format_workbook(&formats).map_err(ExcelError::from)?;
     let mapped = package.import_compiled_styles(&bytes, formats.len())?;
     Ok(local_styles
         .into_iter()
@@ -638,9 +647,8 @@ where
     }
 
     let start_row = sheets.get(target_index).map_or(0, |sheet| sheet.next_row);
-    let worksheet = workbook
-        .worksheet_from_name(&target_name)
-        .map_err(format_error)?;
+    let worksheet = generation::worksheet_by_name(workbook, &target_name)
+        .map_err(ExcelError::from)?;
     for (column, width) in &write_options.column_widths {
         set_xlsx_column_width_chars(worksheet, *column, *width)?;
     }

@@ -5,15 +5,17 @@
 //! `WriteHandler::order()`. This module re-exports the same value as a
 //! standalone trait so 1:1 Java package references resolve.
 
+pub use super::order::Order;
+
 /// 对应 Java：`Handler extends Order`.
 ///
-/// `Handler` is a marker extension of `Order`; Rust mirrors the
-/// contract through the `order()` method.
-pub trait Handler {
-    /// Returns the handler's execution order. Lower values execute first.
-    /// (Java `Handler.order()` defaulting to `OrderConstant.DEFAULT_ORDER`)
+/// `Handler` 是标记接口；`Order` 通过下方 blanket impl 自动获得，避免
+/// 每个 Handler 同时手写两个 trait 才能表达 Java 的接口继承。
+pub trait Handler {}
+
+impl<T: Handler + ?Sized> Order for T {
     fn order(&self) -> i32 {
-        0
+        crate::constant::order_constant::DEFAULT_ORDER
     }
 }
 

@@ -1,6 +1,7 @@
 //! 对应 Java：`com.alibaba.excel.read.metadata.holder.xlsx.XlsxReadWorkbookHolder`.
 
 use crate::read::holder::read_workbook_holder::ReadWorkbookHolder;
+use crate::read::metadata::holder::read_holder::delegate_read_holder_contract;
 use std::collections::HashMap;
 use crate::DataFormatData;
 use std::ops::{Deref, DerefMut};
@@ -98,6 +99,8 @@ impl Deref for XlsxReadWorkbookHolder {
 impl DerefMut for XlsxReadWorkbookHolder {
     fn deref_mut(&mut self) -> &mut Self::Target { &mut self.inner }
 }
+
+delegate_read_holder_contract!(XlsxReadWorkbookHolder, inner);
 
 impl Default for XlsxReadWorkbookHolder {
     fn default() -> Self {

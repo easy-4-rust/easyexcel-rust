@@ -11,8 +11,12 @@ pub struct Biff8StyleRequest {
     pub italic: bool,
     /// Strike-through font.
     pub strikeout: bool,
+    /// 下划线类型；保留 POI 的单线、双线和会计下划线语义。
+    pub underline: Biff8Underline,
     /// Font height in points (`None` → 10pt Arial default).
     pub font_height_points: Option<u16>,
+    /// 精确字体高度（twips）；设置时优先于整数 points。
+    pub font_height_twips: Option<u16>,
     /// Font family name (`None` → `"Arial"`).
     pub font_name: Option<String>,
     /// Semantic font colour (`None` → automatic).
@@ -56,7 +60,9 @@ impl Biff8StyleRequest {
         !self.bold
             && !self.italic
             && !self.strikeout
+            && self.underline == Biff8Underline::None
             && self.font_height_points.is_none()
+            && self.font_height_twips.is_none()
             && self.font_name.is_none()
             && self.font_color.is_none()
             && self.horizontal_alignment.is_none()

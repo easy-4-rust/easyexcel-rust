@@ -3,7 +3,7 @@
 /// Inclusive rectangular cell range.
 ///
 /// Rust port of Java `CellRange`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 /// 对应 Java：com.alibaba.excel.metadata.CellRange。
 pub struct CellRange {
     /// First row index. (Java `firstRow`)

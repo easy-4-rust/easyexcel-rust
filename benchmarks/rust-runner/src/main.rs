@@ -12,6 +12,7 @@ use std::time::Instant;
 use arguments::Arguments;
 use benchmark_result::{BenchmarkResult, CorrectnessResult, EnvironmentResult};
 use benchmark_spec::BenchmarkSpec;
+use operation::ParallelMapConfig;
 use sha2::{Digest, Sha256};
 
 fn main() {
@@ -48,6 +49,19 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let input = arguments.input.as_deref();
     let output = arguments.output.as_deref();
     validate_paths(&scenario.operation, input, output)?;
+    let parallel_map = (arguments.internal_map_work_factor > 0).then(|| ParallelMapConfig {
+        worker_count: usize::try_from(arguments.worker_count)
+            .expect("u32 worker count always fits usize"),
+        queue_capacity: arguments.internal_map_queue_capacity,
+        work_factor: arguments.internal_map_work_factor,
+    });
+    if parallel_map.is_some()
+        && (scenario.id != "xlsx-event-read"
+            || scenario.operation != "read"
+            || scenario.mode != "event")
+    {
+        return Err("internal parallel-map benchmark requires xlsx-event-read/event mode".into());
+    }
 
     // 稳态预热必须发生在被测 runner 进程内部；启动独立进程不能预热 JVM/JIT。
     for warmup in 0..arguments.warmups {
@@ -58,6 +72,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             warmup_output.as_deref().or(output),
             arguments.rows,
             spec.batch_size,
+            parallel_map,
         )?;
         if let Some(path) = warmup_output {
             let _ = std::fs::remove_file(path);
@@ -65,7 +80,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let started = Instant::now();
-    let operation = execute(scenario, input, output, arguments.rows, spec.batch_size)?;
+    let operation = execute(
+        scenario,
+        input,
+        output,
+        arguments.rows,
+        spec.batch_size,
+        parallel_map,
+    )?;
     let elapsed = started.elapsed();
     let expected = checksum::expected_checksum(arguments.rows)?;
     let success = operation.observed_rows == arguments.rows && operation.checksum == expected;
@@ -74,7 +96,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let result = BenchmarkResult {
         schema_version: 1,
         implementation: "rust",
-        phase: "single",
+        phase: if parallel_map.is_some() {
+            "internal-parallel-map"
+        } else {
+            "single"
+        },
         temperature: arguments.temperature,
         scenario_id: scenario.id.clone(),
         fixture_origin: None,
@@ -101,6 +127,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         total_written_bytes: matches!(scenario.operation.as_str(), "write" | "roundtrip")
             .then_some(operation.file_size_bytes),
         worker_count: arguments.worker_count,
+        internal_map_work_factor: parallel_map.map(|config| config.work_factor),
+        internal_map_queue_capacity: parallel_map.map(|config| config.queue_capacity),
         trial: None,
         worker_id: None,
         success,
@@ -153,9 +181,10 @@ fn execute(
     output: Option<&std::path::Path>,
     rows: u64,
     batch_size: usize,
+    parallel_map: Option<ParallelMapConfig>,
 ) -> Result<operation::OperationResult, Box<dyn std::error::Error>> {
     match scenario.operation.as_str() {
-        "read" => operation::read(scenario, input.ok_or("missing input")?),
+        "read" => operation::read(scenario, input.ok_or("missing input")?, parallel_map),
         "write" => operation::write(scenario, output.ok_or("missing output")?, rows, batch_size),
         "roundtrip" => operation::roundtrip(
             scenario,
@@ -189,6 +218,15 @@ fn validate_scenario(
     }
     if !matches!(scenario.mode.as_str(), "event" | "workbook") {
         return Err(format!("unsupported mode: {}", scenario.mode).into());
+    }
+    if scenario.format == "xls"
+        && scenario.operation == "write"
+        && (scenario.mode != "workbook" || scenario.memory != "batched")
+    {
+        return Err(
+            "BIFF8 write benchmark must declare workbook mode with batched input delivery"
+                .into(),
+        );
     }
     Ok(())
 }

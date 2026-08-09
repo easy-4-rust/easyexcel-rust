@@ -4,21 +4,21 @@ use crate::core::excel_border_style::ExcelBorderStyle;
 use crate::core::excel_color::ExcelColor;
 use crate::core::excel_data_format::ExcelDataFormat;
 use crate::core::excel_fill_pattern::ExcelFillPattern;
+use crate::core::excel_cell_style::ExcelCellStyle;
 use crate::core::excel_font_style::ExcelFontStyle;
 use crate::core::excel_horizontal_alignment::ExcelHorizontalAlignment;
 use crate::core::excel_vertical_alignment::ExcelVerticalAlignment;
-use crate::write::metadata::style::write_font::merge_excel_font_style;
+use crate::write::metadata::style::write_font::{
+    WriteFont, merge_write_font, write_font_from_excel_font_style,
+};
 
 /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteCellStyle。 Cell-style properties generated from `HeadStyle` or `ContentStyle` equivalents.
 ///
 /// Fields correspond to Java's `WriteCellStyle`. Java's boxed `Short` /
 /// `Integer` becomes `Option<u16>` / `Option<i16>`; Java's `BooleanEnum`
-/// becomes `Option<bool>`. Nested `writeFont` is carried as [`ExcelFontStyle`]
-/// (Copy annotation/strategy font; runtime owned [`crate::WriteFont`] converts
-/// via writer helpers).
-///
-/// `Eq` is not derived because [`ExcelFontStyle`] embeds `f64` font size.
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+/// becomes `Option<bool>`. Nested `writeFont` is the owned [`WriteFont`]
+/// runtime object; the copyable annotation model remains [`ExcelFontStyle`].
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub struct WriteCellStyle {
     /// Whether the cell is hidden when the sheet is protected.
     pub hidden: Option<bool>,
@@ -63,14 +63,14 @@ pub struct WriteCellStyle {
     /// Built-in or custom Excel number format.
     pub data_format: Option<ExcelDataFormat>,
     /// Nested font. (Java `WriteCellStyle.writeFont` / `WriteFont`)
-    pub font: Option<ExcelFontStyle>,
+    pub font: Option<WriteFont>,
 }
 
 impl WriteCellStyle {
     /// Java `getDataFormatData` 别名。
     #[must_use] pub const fn get_data_format_data(&self) -> Option<ExcelDataFormat> { self.data_format }
     /// Java `getWriteFont` 别名。
-    #[must_use] pub const fn get_write_font(&self) -> Option<ExcelFontStyle> { self.font }
+    #[must_use] pub const fn get_write_font(&self) -> Option<&WriteFont> { self.font.as_ref() }
     /// Java `getHidden` 别名。
     #[must_use] pub const fn get_hidden(&self) -> Option<bool> { self.hidden }
     /// Java `getLocked` 别名。
@@ -145,14 +145,38 @@ impl WriteCellStyle {
     /// Attaches a nested font. (Java `WriteCellStyle.setWriteFont(WriteFont)`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.metadata.style.WriteCellStyle。
-    pub const fn with_font(mut self, font: ExcelFontStyle) -> Self {
+    pub fn with_font(mut self, font: WriteFont) -> Self {
         self.font = Some(font);
         self
     }
 
-    /// Java `build` 兼容入口。
+    /// 附加注解期字体并转为拥有所有权的运行期字体。
     #[must_use]
-    pub const fn build(self) -> Self { self }
+    pub fn with_excel_font_style(self, font: ExcelFontStyle) -> Self {
+        self.with_font(write_font_from_excel_font_style(font))
+    }
+
+    /// 从注解解析出的样式与字体属性构建运行期单元格样式。
+    ///
+    /// 对应 Java：`WriteCellStyle.build(StyleProperty, FontProperty)`。两个参数
+    /// 都缺失时返回 `None`，等价于 Java `null`；字体属性覆盖样式对象中原有字体。
+    #[must_use]
+    pub fn build(
+        style_property: Option<&crate::StyleProperty>,
+        font_property: Option<&crate::FontProperty>,
+    ) -> Option<Self> {
+        if style_property.is_none() && font_property.is_none() {
+            return None;
+        }
+        let mut result = match style_property {
+            Some(property) => property.write_cell_style().clone(),
+            None => Self::new(),
+        };
+        if let Some(property) = font_property {
+            result.font = Some(property.to_write_font());
+        }
+        Some(result)
+    }
     /// 返回隐藏标志。
     #[must_use]
     pub const fn hidden(&self) -> Option<bool> { self.hidden }
@@ -260,12 +284,19 @@ impl WriteCellStyle {
     pub const fn set_data_format_data(&mut self, value: Option<ExcelDataFormat>) { self.data_format = value; }
     /// 返回字体。
     #[must_use]
-    pub const fn write_font(&self) -> Option<ExcelFontStyle> { self.font }
+    pub const fn write_font(&self) -> Option<&WriteFont> { self.font.as_ref() }
     /// 设置字体。
-    pub const fn set_write_font(&mut self, value: Option<ExcelFontStyle>) { self.font = value; }
+    pub fn set_write_font(&mut self, value: Option<WriteFont>) { self.font = value; }
     /// 合并源样式的非空字段到目标样式。
+    ///
+    /// 对应 Java 静态 `merge(source, target)` 的原位副作用。
+    pub fn merge(source: &Self, target: &mut Self) {
+        *target = merge_write_cell_style(source, target.clone());
+    }
+
+    /// 返回合并后的值，供 Rust 值式调用链使用。
     #[must_use]
-    pub fn merge(source: &Self, target: Self) -> Self {
+    pub fn merged(source: &Self, target: Self) -> Self {
         merge_write_cell_style(source, target)
     }
 }
@@ -327,13 +358,77 @@ pub fn merge_write_cell_style(
     or!(shrink_to_fit);
     or!(data_format);
     // Java `WriteFont.merge(source.getWriteFont(), target.getWriteFont())`
-    if let Some(source_font) = source.font {
+    if let Some(source_font) = &source.font {
         target.font = Some(match target.font {
-            Some(existing) => merge_excel_font_style(&source_font, existing),
-            None => source_font,
+            Some(existing) => merge_write_font(source_font, existing),
+            None => source_font.clone(),
         });
     }
     target
+}
+
+impl From<ExcelCellStyle> for WriteCellStyle {
+    /// 把注解期轻量样式提升为 Java 运行期样式，静态字体名称转为拥有所有权的字符串。
+    fn from(style: ExcelCellStyle) -> Self {
+        Self {
+            hidden: style.hidden,
+            locked: style.locked,
+            quote_prefix: style.quote_prefix,
+            horizontal_alignment: style.horizontal_alignment,
+            wrapped: style.wrapped,
+            vertical_alignment: style.vertical_alignment,
+            rotation: style.rotation,
+            indent: style.indent,
+            border_left: style.border_left,
+            border_right: style.border_right,
+            border_top: style.border_top,
+            border_bottom: style.border_bottom,
+            left_border_color: style.left_border_color,
+            right_border_color: style.right_border_color,
+            top_border_color: style.top_border_color,
+            bottom_border_color: style.bottom_border_color,
+            fill_pattern: style.fill_pattern,
+            fill_background_color: style.fill_background_color,
+            fill_foreground_color: style.fill_foreground_color,
+            shrink_to_fit: style.shrink_to_fit,
+            data_format: style.data_format,
+            font: style.font.map(write_font_from_excel_font_style),
+        }
+    }
+}
+
+impl WriteCellStyle {
+    /// 返回不含运行期字体的引擎轻量字段。
+    ///
+    /// 字体由 XLS/XLSX 边界直接读取 [`Self::write_font`] 并应用，避免把动态
+    /// `String` 反向收窄为静态字符串。
+    #[must_use]
+    pub const fn engine_cell_style(&self) -> ExcelCellStyle {
+        ExcelCellStyle {
+            hidden: self.hidden,
+            locked: self.locked,
+            quote_prefix: self.quote_prefix,
+            horizontal_alignment: self.horizontal_alignment,
+            wrapped: self.wrapped,
+            vertical_alignment: self.vertical_alignment,
+            rotation: self.rotation,
+            indent: self.indent,
+            border_left: self.border_left,
+            border_right: self.border_right,
+            border_top: self.border_top,
+            border_bottom: self.border_bottom,
+            left_border_color: self.left_border_color,
+            right_border_color: self.right_border_color,
+            top_border_color: self.top_border_color,
+            bottom_border_color: self.bottom_border_color,
+            fill_pattern: self.fill_pattern,
+            fill_background_color: self.fill_background_color,
+            fill_foreground_color: self.fill_foreground_color,
+            shrink_to_fit: self.shrink_to_fit,
+            data_format: self.data_format,
+            font: None,
+        }
+    }
 }
 
 #[cfg(test)]

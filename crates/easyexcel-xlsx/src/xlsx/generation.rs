@@ -10,12 +10,19 @@ use std::path::Path;
 use chrono::{NaiveDate, NaiveDateTime};
 use easyexcel_io::{Error, Result};
 
+use rust_xlsxwriter::{Chart, ChartType, Image, Note, ObjectMovement};
 pub use rust_xlsxwriter::{
-    Chart, ChartType, Color, Format, FormatAlign, FormatBorder, FormatPattern, FormatScript,
-    FormatUnderline, Image, Note, ObjectMovement, Workbook, Worksheet,
+    Color, Format, FormatAlign, FormatBorder, FormatPattern, FormatScript, FormatUnderline,
+    Workbook, Worksheet,
 };
 
 use super::encrypt::{ReadWriteSeek, encrypt_package_to};
+
+mod generated_cell_value;
+mod generated_chart;
+
+pub use generated_chart::add_chart;
+pub use generated_cell_value::GeneratedCellValue;
 
 /// Worksheet XML/ZIP 输出聚合缓冲区。128 KiB 位于发布计划要求的
 /// 64–256 KiB 区间，可显著减少大表写入的小块系统调用。

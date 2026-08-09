@@ -242,18 +242,30 @@ fn scan_last_row<R: BufRead>(input: R) -> Result<Option<u32>> {
         buffer.clear();
         match reader.read_event_into(&mut buffer)? {
             Event::Start(element) if element.local_name().as_ref() == b"dimension" => {
-                let values = attributes(&element, reader.decoder())?;
-                if let Some(reference) = values.get("ref") {
-                    dimension_last_row = Some(parse_dimension_last_row(reference)?);
+                for attribute in element.attributes().with_checks(false) {
+                    let attribute = attribute.map_err(xlsx_error)?;
+                    if attribute.key.local_name().as_ref() == b"ref" {
+                        let reference = std::str::from_utf8(attribute.value.as_ref())
+                            .map_err(xlsx_error)?;
+                        dimension_last_row = Some(parse_dimension_last_row(reference)?);
+                        break;
+                    }
                 }
             }
             Event::Start(element) if element.local_name().as_ref() == b"sheetData" => {
                 in_sheet_data = true;
             }
             Event::Start(element) if in_sheet_data && element.local_name().as_ref() == b"row" => {
-                let row = attributes(&element, reader.decoder())?
-                    .get("r")
-                    .map_or(Ok(current_row), |value| parse_row_number(value))?;
+                let mut row = current_row;
+                for attribute in element.attributes().with_checks(false) {
+                    let attribute = attribute.map_err(xlsx_error)?;
+                    if attribute.key.local_name().as_ref() == b"r" {
+                        let value = std::str::from_utf8(attribute.value.as_ref())
+                            .map_err(xlsx_error)?;
+                        row = parse_row_number(value)?;
+                        break;
+                    }
+                }
                 current_row = row;
                 last_row = Some(row);
             }

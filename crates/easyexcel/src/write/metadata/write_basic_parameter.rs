@@ -12,7 +12,7 @@ use crate::metadata::BasicParameter;
 /// `orderByIncludeColumn`). Rust reuses `WriteOptions` for the same
 /// data, and uses this struct as a thin handle so the 1:1 API name is
 /// preserved.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default)]
 pub struct WriteBasicParameter {
     /// Java 父类 `BasicParameter` 的完整字段。
     pub basic_parameter: BasicParameter,
@@ -40,7 +40,71 @@ pub struct WriteBasicParameter {
     pub custom_write_handler_list: Vec<String>,
 }
 
+// Java Lombok `@EqualsAndHashCode` 默认 `callSuper = false`，只比较本类声明字段。
+impl PartialEq for WriteBasicParameter {
+    fn eq(&self, other: &Self) -> bool {
+        self.relative_head_row_index == other.relative_head_row_index
+            && self.need_head == other.need_head
+            && self.custom_write_handler_list == other.custom_write_handler_list
+            && self.use_default_style == other.use_default_style
+            && self.automatic_merge_head == other.automatic_merge_head
+            && self.exclude_column_indexes == other.exclude_column_indexes
+            && self.exclude_column_field_names == other.exclude_column_field_names
+            && self.include_column_indexes == other.include_column_indexes
+            && self.include_column_field_names == other.include_column_field_names
+            && self.order_by_include_column == other.order_by_include_column
+    }
+}
+
+impl Eq for WriteBasicParameter {}
+
+impl std::hash::Hash for WriteBasicParameter {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        std::hash::Hash::hash(&self.relative_head_row_index, state);
+        std::hash::Hash::hash(&self.need_head, state);
+        std::hash::Hash::hash(&self.custom_write_handler_list, state);
+        std::hash::Hash::hash(&self.use_default_style, state);
+        std::hash::Hash::hash(&self.automatic_merge_head, state);
+        std::hash::Hash::hash(&self.exclude_column_indexes, state);
+        std::hash::Hash::hash(&self.exclude_column_field_names, state);
+        std::hash::Hash::hash(&self.include_column_indexes, state);
+        std::hash::Hash::hash(&self.include_column_field_names, state);
+        std::hash::Hash::hash(&self.order_by_include_column, state);
+    }
+}
+
 impl WriteBasicParameter {
+    /// 从工作簿/Sheet 共用的写入选项构造 Java 参数对象。
+    ///
+    /// 对应 Java：`WriteWorkbook extends WriteBasicParameter`。所有已经在
+    /// [`crate::WriteOptions`] 中解析完成的父类字段都必须进入 Holder，不能只保存
+    /// `WriteWorkbook` 外壳而让 Handler 看到一组默认值。
+    #[must_use]
+    pub fn from_options(options: &crate::WriteOptions) -> Self {
+        Self {
+            basic_parameter: BasicParameter {
+                head: options.dynamic_head.clone(),
+                auto_trim: Some(options.auto_trim),
+                use_1904windowing: Some(options.use_1904_windowing),
+                locale: Some(options.locale.clone()),
+                use_scientific_format: Some(options.use_scientific_format),
+                filed_cache_location: Some(options.filed_cache_location),
+                ..BasicParameter::default()
+            },
+            relative_head_row_index: Some(options.relative_head_row_index),
+            need_head: Some(options.need_head),
+            use_default_style: Some(options.use_default_style),
+            automatic_merge_head: Some(options.automatic_merge_head),
+            exclude_column_indexes: Some(options.exclude_column_indexes.clone()),
+            exclude_column_field_names: Some(options.exclude_column_field_names.clone()),
+            include_column_indexes: options.include_column_indexes.clone(),
+            include_column_field_names: options.include_column_field_names.clone(),
+            order_by_include_column: Some(options.order_by_include_column),
+            converters: options.converters.clone(),
+            custom_write_handler_list: Vec::new(),
+        }
+    }
+
     /// 返回自定义 Handler 注册键。对应 Java `getCustomWriteHandlerList()`。
     #[must_use]
     pub fn get_custom_write_handler_list(&self) -> &[String] {

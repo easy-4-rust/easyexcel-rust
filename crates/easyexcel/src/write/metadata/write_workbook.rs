@@ -10,16 +10,20 @@ use crate::WriteOptions;
 /// Rust reuses the existing [`WriteOptions`] struct that already models the
 /// same data; this newtype exists so the public API carries a 1:1 named
 /// class and lets builders accept either `WriteOptions` or `WriteWorkbook`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct WriteWorkbook {
     /// Backing configuration. (Java `WriteWorkbook` getter surface)
     pub options: WriteOptions,
     /// Mirrors `WriteWorkbook.excelType`. (Java `getExcelType()`)
     pub excel_type: crate::support::ExcelTypeEnum,
+    /// Java nullable `excelType` 原始状态；`excel_type` 保存引擎有效默认值。
+    pub excel_type_override: Option<crate::support::ExcelTypeEnum>,
     /// Final output file. (Java `WriteWorkbook.file`)
     pub output_file: Option<std::path::PathBuf>,
     /// 后端中立输出流缓冲。对应 Java `outputStream`。
     pub output_stream: Option<Vec<u8>>,
+    /// Java nullable `charset` 原始状态；`options.charset` 保存引擎有效值。
+    pub charset_override: Option<CsvCharset>,
     /// Java nullable 配置覆盖；Holder 初始化时再应用有效默认值。
     pub auto_close_stream_override: Option<bool>,
     /// Java nullable `inMemory`，`None` 表示自动选择。
@@ -39,8 +43,10 @@ impl WriteWorkbook {
         Self {
             options: WriteOptions::default(),
             excel_type: crate::support::ExcelTypeEnum::Xlsx,
+            excel_type_override: None,
             output_file: None,
             output_stream: None,
+            charset_override: None,
             auto_close_stream_override: None,
             in_memory_override: None,
             mandatory_use_input_stream: None,
@@ -65,6 +71,7 @@ impl WriteWorkbook {
     /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Sets the Excel file type. (Java `setExcelType(ExcelTypeEnum)`)
     pub fn set_excel_type(&mut self, excel_type: crate::support::ExcelTypeEnum) -> &mut Self {
         self.excel_type = excel_type;
+        self.excel_type_override = Some(excel_type);
         self.options.excel_type = Some(excel_type);
         self
     }
@@ -135,6 +142,7 @@ impl WriteWorkbook {
     /// 对应 Java：com.alibaba.excel.write.metadata.WriteWorkbook。 Sets the charset. (Java `setCharset(Charset)`)
     pub fn set_charset(&mut self, charset: CsvCharset) -> &mut Self {
         self.options.charset = charset;
+        self.charset_override = Some(self.options.charset.clone());
         self
     }
 
@@ -208,7 +216,9 @@ impl WriteWorkbook {
 
     /// Java `getExcelType` 别名。
     #[must_use]
-    pub fn get_excel_type(&self) -> crate::support::ExcelTypeEnum { self.excel_type }
+    pub const fn get_excel_type(&self) -> Option<crate::support::ExcelTypeEnum> {
+        self.excel_type_override
+    }
     /// Java `getFile` 别名。
     #[must_use]
     pub fn get_file(&self) -> Option<&std::path::Path> { self.file() }
@@ -217,7 +227,7 @@ impl WriteWorkbook {
     pub fn get_template_file(&self) -> Option<&std::path::Path> { self.template_file() }
     /// Java `getCharset` 别名。
     #[must_use]
-    pub fn get_charset(&self) -> &CsvCharset { self.charset() }
+    pub fn get_charset(&self) -> Option<&CsvCharset> { self.charset_override.as_ref() }
     /// Java `getPassword` 别名。
     #[must_use]
     pub fn get_password(&self) -> Option<&str> { self.password() }
@@ -255,16 +265,61 @@ impl Default for WriteWorkbook {
     }
 }
 
+// Java Lombok 默认 `callSuper = false`，只比较 WriteWorkbook 自身声明的十二个字段。
+impl PartialEq for WriteWorkbook {
+    fn eq(&self, other: &Self) -> bool {
+        self.excel_type_override == other.excel_type_override
+            && self.output_file == other.output_file
+            && self.output_stream == other.output_stream
+            && self.charset_override == other.charset_override
+            && self.with_bom_override == other.with_bom_override
+            && self.options.template_bytes == other.options.template_bytes
+            && self.options.template_file == other.options.template_file
+            && self.auto_close_stream_override == other.auto_close_stream_override
+            && self.mandatory_use_input_stream == other.mandatory_use_input_stream
+            && self.options.password == other.options.password
+            && self.in_memory_override == other.in_memory_override
+            && self.write_excel_on_exception_override == other.write_excel_on_exception_override
+    }
+}
+
+impl Eq for WriteWorkbook {}
+
+impl std::hash::Hash for WriteWorkbook {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        std::hash::Hash::hash(
+            &self.excel_type_override.map(crate::support::ExcelTypeEnum::java_name),
+            state,
+        );
+        std::hash::Hash::hash(&self.output_file, state);
+        std::hash::Hash::hash(&self.output_stream, state);
+        std::hash::Hash::hash(
+            &self.charset_override.as_ref().map(CsvCharset::name),
+            state,
+        );
+        std::hash::Hash::hash(&self.with_bom_override, state);
+        std::hash::Hash::hash(&self.options.template_bytes, state);
+        std::hash::Hash::hash(&self.options.template_file, state);
+        std::hash::Hash::hash(&self.auto_close_stream_override, state);
+        std::hash::Hash::hash(&self.mandatory_use_input_stream, state);
+        std::hash::Hash::hash(&self.options.password, state);
+        std::hash::Hash::hash(&self.in_memory_override, state);
+        std::hash::Hash::hash(&self.write_excel_on_exception_override, state);
+    }
+}
+
 impl From<WriteOptions> for WriteWorkbook {
     fn from(options: WriteOptions) -> Self {
-        let excel_type = options
-            .excel_type
-            .unwrap_or(crate::support::ExcelTypeEnum::Xlsx);
+        let excel_type_override = options.excel_type;
+        let excel_type = excel_type_override.unwrap_or(crate::support::ExcelTypeEnum::Xlsx);
+        let charset_override = Some(options.charset.clone());
         Self {
             options,
             excel_type,
+            excel_type_override,
             output_file: None,
             output_stream: None,
+            charset_override,
             auto_close_stream_override: None,
             in_memory_override: None,
             mandatory_use_input_stream: None,

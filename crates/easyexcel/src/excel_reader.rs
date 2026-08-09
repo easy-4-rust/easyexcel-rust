@@ -38,8 +38,18 @@ where
     ///
     /// 当工作簿无法打开或解析（路径不存在、文件损坏等）时返回 [`ExcelError`]。
     pub fn new(path: impl Into<PathBuf>, options: ReadOptions, listener: L) -> Result<Self> {
+        Self::new_with_explicit_type(path, options, listener, None)
+    }
+
+    /// 使用 Java builder 显式指定的工作簿类型创建 reader。
+    pub(crate) fn new_with_explicit_type(
+        path: impl Into<PathBuf>,
+        options: ReadOptions,
+        listener: L,
+        explicit_type: Option<ExcelTypeEnum>,
+    ) -> Result<Self> {
         Ok(Self {
-            analyser: ExcelAnalyserImpl::from_path(path, options)?,
+            analyser: ExcelAnalyserImpl::from_path_with_type(path, options, explicit_type)?,
             listener: Some(listener),
             marker: PhantomData,
         })
@@ -54,8 +64,30 @@ where
         options: ReadOptions,
         listener: L,
     ) -> Result<Self> {
+        Self::from_temporary_input_with_explicit_type(
+            path,
+            temporary_input,
+            options,
+            listener,
+            None,
+        )
+    }
+
+    /// 使用显式工作簿类型创建由临时输入文件守卫持有的 reader。
+    pub(crate) fn from_temporary_input_with_explicit_type(
+        path: impl Into<PathBuf>,
+        temporary_input: std::sync::Arc<TemporaryInput>,
+        options: ReadOptions,
+        listener: L,
+        explicit_type: Option<ExcelTypeEnum>,
+    ) -> Result<Self> {
         Ok(Self {
-            analyser: ExcelAnalyserImpl::from_temporary_input(path, temporary_input, options)?,
+            analyser: ExcelAnalyserImpl::from_temporary_input_with_type(
+                path,
+                temporary_input,
+                options,
+                explicit_type,
+            )?,
             listener: Some(listener),
             marker: PhantomData,
         })

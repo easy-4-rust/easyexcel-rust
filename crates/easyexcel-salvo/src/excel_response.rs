@@ -50,8 +50,8 @@ where
     async fn write(self, _request: &mut Request, _depot: &mut Depot, response: &mut Response) {
         let content_type = self.export.content_type();
         let content_length = self.export.content_length();
-        let encoded = urlencoding::encode(self.export.file_name()).replace('+', "%20");
-        let disposition = format!("attachment;filename*=UTF-8''{encoded}");
+        let disposition =
+            easyexcel_web::excel_attachment_content_disposition(self.export.file_name());
         let chunk_size = self.export.io_chunk_size();
         response.status_code = Some(StatusCode::OK);
         response

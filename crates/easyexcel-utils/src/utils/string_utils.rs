@@ -4,6 +4,12 @@
 
 use std::borrow::Cow;
 
+/// Java `StringUtils.SPACE`。
+pub const SPACE: &str = " ";
+
+/// Java `StringUtils.EMPTY`。
+pub const EMPTY: &str = "";
+
 /// 对应 Java：com.alibaba.excel.util.StringUtils。 返回字符串的 UTF-8 字节长度；超过 `u16` 可表示范围时返回 `None`。
 ///
 /// Java `EasyExcel` 的最长列宽策略使用 `String#getBytes().length`，门面可用
@@ -85,7 +91,7 @@ pub fn is_empty(cs: Option<&str>) -> bool {
 #[must_use]
 pub fn is_blank(cs: Option<&str>) -> bool {
     match cs {
-        Some(s) => s.trim().is_empty(),
+        Some(s) => s.chars().all(is_java_whitespace),
         None => true,
     }
 }
@@ -126,7 +132,9 @@ pub fn region_matches(
         if !ignore_case {
             return false;
         }
-        if !a.eq_ignore_ascii_case(&b) {
+        let upper_matches = simple_uppercase(a) == simple_uppercase(b);
+        let lower_matches = simple_lowercase(a) == simple_lowercase(b);
+        if !upper_matches && !lower_matches {
             return false;
         }
     }
@@ -140,7 +148,81 @@ pub fn is_numeric(cs: Option<&str>) -> bool {
         Some(s) if !s.is_empty() => s,
         _ => return false,
     };
-    s.chars().all(|c| c.is_ascii_digit())
+    s.chars().all(is_java_digit)
+}
+
+// Java 8 `Character.isWhitespace(char)` 使用 Unicode 6.2 的 BMP 规则，并明确
+// 排除不换行空格。Rust `str::trim` 的 Unicode 集合更宽，不能直接替代。
+const fn is_java_whitespace(character: char) -> bool {
+    matches!(
+        character,
+        '\u{0009}'..='\u{000D}'
+            | '\u{001C}'..='\u{0020}'
+            | '\u{1680}'
+            | '\u{180E}'
+            | '\u{2000}'..='\u{2006}'
+            | '\u{2008}'..='\u{200A}'
+            | '\u{2028}'..='\u{2029}'
+            | '\u{205F}'
+            | '\u{3000}'
+    )
+}
+
+// Java API 接收 `char`，因此只覆盖 Java 8 可观察的 BMP 十进制数字集合；
+// Rust `is_numeric` 还会接受罗马数字、分数等非 Decimal_Digit_Number 字符。
+const fn is_java_digit(character: char) -> bool {
+    matches!(
+        character,
+        '0'..='9'
+            | '\u{0660}'..='\u{0669}'
+            | '\u{06F0}'..='\u{06F9}'
+            | '\u{07C0}'..='\u{07C9}'
+            | '\u{0966}'..='\u{096F}'
+            | '\u{09E6}'..='\u{09EF}'
+            | '\u{0A66}'..='\u{0A6F}'
+            | '\u{0AE6}'..='\u{0AEF}'
+            | '\u{0B66}'..='\u{0B6F}'
+            | '\u{0BE6}'..='\u{0BEF}'
+            | '\u{0C66}'..='\u{0C6F}'
+            | '\u{0CE6}'..='\u{0CEF}'
+            | '\u{0D66}'..='\u{0D6F}'
+            | '\u{0DE6}'..='\u{0DEF}'
+            | '\u{0E50}'..='\u{0E59}'
+            | '\u{0ED0}'..='\u{0ED9}'
+            | '\u{0F20}'..='\u{0F29}'
+            | '\u{1040}'..='\u{1049}'
+            | '\u{1090}'..='\u{1099}'
+            | '\u{17E0}'..='\u{17E9}'
+            | '\u{1810}'..='\u{1819}'
+            | '\u{1946}'..='\u{194F}'
+            | '\u{19D0}'..='\u{19D9}'
+            | '\u{1A80}'..='\u{1A89}'
+            | '\u{1A90}'..='\u{1A99}'
+            | '\u{1B50}'..='\u{1B59}'
+            | '\u{1BB0}'..='\u{1BB9}'
+            | '\u{1C40}'..='\u{1C49}'
+            | '\u{1C50}'..='\u{1C59}'
+            | '\u{A620}'..='\u{A629}'
+            | '\u{A8D0}'..='\u{A8D9}'
+            | '\u{A900}'..='\u{A909}'
+            | '\u{A9D0}'..='\u{A9D9}'
+            | '\u{A9F0}'..='\u{A9F9}'
+            | '\u{AA50}'..='\u{AA59}'
+            | '\u{ABF0}'..='\u{ABF9}'
+            | '\u{FF10}'..='\u{FF19}'
+    )
+}
+
+fn simple_uppercase(character: char) -> char {
+    let mut mapped = character.to_uppercase();
+    let first = mapped.next().unwrap_or(character);
+    mapped.next().map_or(first, |_| character)
+}
+
+fn simple_lowercase(character: char) -> char {
+    let mut mapped = character.to_lowercase();
+    let first = mapped.next().unwrap_or(character);
+    mapped.next().map_or(first, |_| character)
 }
 
 #[cfg(test)]
@@ -227,9 +309,9 @@ mod tests_extra2 {
 
     #[test]
     fn region_matches_ignore_case_reports_lowercase_mismatch() {
-        // 对应 Java：忽略大小写时仅 ASCII 大小写折叠，其余字符不同则返回 false
+        // 对应 Java：Character.toUpperCase/toLowerCase 的简单 Unicode 大小写折叠
         assert!(region_matches(true, "AbC", 0, "aBc", 0, 3));
         assert!(!region_matches(true, "AbC", 0, "Axy", 0, 3));
-        assert!(!region_matches(true, "Ä", 0, "ä", 0, 1));
+        assert!(region_matches(true, "Ä", 0, "ä", 0, 1));
     }
 }

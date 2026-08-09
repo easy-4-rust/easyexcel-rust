@@ -6,6 +6,7 @@ use super::write_handler_capability::WriteHandlerCapability;
 use crate::core::analysis_context::Result;
 use crate::core::cell_value::CellValue;
 use crate::core::excel_cell_style::ExcelCellStyle;
+use crate::write::metadata::style::write_font::WriteFont;
 use crate::event::NotRepeatExecutor;
 use crate::metadata::property::LoopMergeProperty;
 use crate::metadata::property::OnceAbsoluteMergeProperty;
@@ -194,6 +195,14 @@ pub trait WriteHandler {
     /// `afterCellDispose`. The XLSX write path merges non-`None` results into
     /// the cell format.
     fn style_cell_style(&self, _context: &WriteCellContext) -> Option<ExcelCellStyle> {
+        None
+    }
+
+    /// 返回样式策略附加的运行期字体。
+    ///
+    /// 这是 [`ExcelCellStyle`] 注解快路径的拥有所有权补充：只有动态字体名等
+    /// 无法安全收窄为 `&'static str` 的配置才需要返回该值。
+    fn style_write_font(&self, _context: &WriteCellContext) -> Option<WriteFont> {
         None
     }
 

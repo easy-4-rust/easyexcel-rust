@@ -1,8 +1,10 @@
 //! 对应 Java：`com.alibaba.excel.write.metadata.holder.WriteTableHolder`.
 
+use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
 use crate::write::holder::abstract_write_holder::AbstractWriteHolder;
+use crate::write::metadata::holder::write_holder::delegate_write_holder_contract;
 use crate::write::metadata::WriteBasicParameter;
 use crate::{HolderEnum, WriteTable};
 
@@ -15,10 +17,12 @@ use crate::{HolderEnum, WriteTable};
 pub struct WriteTableHolder<'a> {
     abstract_holder: AbstractWriteHolder,
     table_no: i32,
-    parent_sheet: Option<&'a str>,
+    parent_sheet: Option<String>,
     parent_write_sheet_holder_id: Option<usize>,
     write_table: WriteTable,
     last_row_index: i32,
+    /// 保留既有公开类型参数，但不借用父 Holder，避免 Table 无法插回父 Sheet。
+    lifetime_marker: PhantomData<&'a ()>,
 }
 
 impl<'a> WriteTableHolder<'a> {
@@ -34,6 +38,7 @@ impl<'a> WriteTableHolder<'a> {
             parent_write_sheet_holder_id: None,
             write_table: WriteTable::with_table_no(table_no),
             last_row_index: 0,
+            lifetime_marker: PhantomData,
         }
     }
 
@@ -66,12 +71,12 @@ impl<'a> WriteTableHolder<'a> {
     /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteTableHolder。 Returns the parent sheet name, if any. (Java `getParentWriteSheetHolder().getSheetName()`)
     #[must_use]
     pub fn parent_sheet(&self) -> Option<&str> {
-        self.parent_sheet
+        self.parent_sheet.as_deref()
     }
 
     /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteTableHolder。 Sets the parent sheet name.
-    pub fn set_parent_sheet(&mut self, parent: &'a str) {
-        self.parent_sheet = Some(parent);
+    pub fn set_parent_sheet(&mut self, parent: impl Into<String>) {
+        self.parent_sheet = Some(parent.into());
     }
 
     /// Returns the zero-based table index. (Java `getTableNo()`)
@@ -88,11 +93,34 @@ impl<'a> WriteTableHolder<'a> {
         self.last_row_index
     }
 
-    /// 使用完整 `WriteTable` 创建 Holder。
+    /// 使用完整 `WriteTable` 和父 Sheet Holder 创建 Holder。
+    ///
+    /// 对应 Java：`WriteTableHolder(WriteTable, WriteSheetHolder)`。
     #[must_use]
-    pub fn from_write_table(write_table: WriteTable, parent_sheet: Option<&'a str>, parent: &AbstractWriteHolder) -> Self {
+    pub fn from_write_table(
+        write_table: WriteTable,
+        parent: &super::write_sheet_holder::WriteSheetHolder<'_>,
+    ) -> Self {
+        let mut holder = Self::from_parameter(
+            write_table.table_no,
+            &write_table.parameter,
+            parent.abstract_holder(),
+        );
+        holder.parent_sheet = Some(parent.sheet_name().to_owned());
+        holder.parent_write_sheet_holder_id = Some(std::ptr::from_ref(parent).addr());
+        holder.write_table = write_table;
+        holder
+    }
+
+    /// 由拆分后的父状态创建 Holder，供不持有具体 Sheet Holder 的 Rust 内部路径使用。
+    #[must_use]
+    pub fn from_write_table_parts(
+        write_table: WriteTable,
+        parent_sheet: Option<&str>,
+        parent: &AbstractWriteHolder,
+    ) -> Self {
         let mut holder = Self::from_parameter(write_table.table_no, &write_table.parameter, parent);
-        holder.parent_sheet = parent_sheet;
+        holder.parent_sheet = parent_sheet.map(str::to_owned);
         holder.write_table = write_table;
         holder
     }
@@ -104,13 +132,13 @@ impl<'a> WriteTableHolder<'a> {
     #[must_use] pub const fn get_write_table(&self) -> &WriteTable { &self.write_table }
     /// Java `setWriteTable`。
     pub fn set_write_table(&mut self, value: WriteTable) { self.table_no = value.table_no; self.write_table = value; }
-    /// Java `getParentWriteSheetHolder` 的稳定身份映射。
+    /// Java `getParentWriteSheetHolder` 的构造时身份映射。
     #[must_use] pub const fn get_parent_write_sheet_holder_id(&self) -> Option<usize> { self.parent_write_sheet_holder_id }
-    /// Java 命名兼容入口；Rust 使用稳定身份而不是自引用。
+    /// Java 命名兼容入口；Rust 使用构造时身份令牌而不是自引用。
     #[must_use] pub const fn get_parent_write_sheet_holder(&self) -> Option<usize> { self.parent_write_sheet_holder_id }
-    /// Java `setParentWriteSheetHolder` 的稳定身份映射。
+    /// Java `setParentWriteSheetHolder` 的构造时身份映射。
     pub const fn set_parent_write_sheet_holder_id(&mut self, value: Option<usize>) { self.parent_write_sheet_holder_id = value; }
-    /// Java 命名兼容入口；Rust 使用稳定身份而不是自引用。
+    /// Java 命名兼容入口；Rust 使用构造时身份令牌而不是自引用。
     pub const fn set_parent_write_sheet_holder(&mut self, value: Option<usize>) { self.parent_write_sheet_holder_id = value; }
     /// Java `holderType`。
     #[must_use] pub const fn holder_type(&self) -> HolderEnum { HolderEnum::Table }
@@ -129,6 +157,8 @@ impl DerefMut for WriteTableHolder<'_> {
         &mut self.abstract_holder
     }
 }
+
+delegate_write_holder_contract!(WriteTableHolder<'a>, abstract_holder);
 
 #[cfg(test)]
 mod tests {

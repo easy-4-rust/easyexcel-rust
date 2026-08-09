@@ -204,13 +204,13 @@ mod converter_data_test {
             string: img.to_string_lossy().into_owned(),
         };
         let path = temp_path("converterImage03.xls");
-        let result = EasyExcel::write::<ImageRow>(&path)
+        let error = EasyExcel::write::<ImageRow>(&path)
             .sheet("Sheet1")
-            .do_write(vec![row]);
-        // Phase 5.5: BIFF8 image support implemented（Err 分支刻意留空）
-        if let Ok(()) = result {
-            assert!(path.exists(), "XLS image write must produce output");
-        }
+            .do_write(vec![row])
+            .expect_err(
+                "XLS image write must fail until worksheet drawing records are implemented",
+            );
+        assert!(error.to_string().contains("legacy XLS writing does not support"));
     }
 }
 

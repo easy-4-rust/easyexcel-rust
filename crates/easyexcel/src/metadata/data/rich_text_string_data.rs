@@ -13,7 +13,7 @@ use crate::core::write_font::WriteFont;
 /// Java exposes `textString`, `writeFont`, `intervalFontList` via Lombok
 /// accessors. Rust preserves the same fields and offers builder-style
 /// `apply_font` / `apply_font_range` setters matching the Java semantics.
-#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct RichTextStringData {
     text_string: String,
     write_font: Option<WriteFont>,

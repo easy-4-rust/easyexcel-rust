@@ -7,32 +7,8 @@ use crate::core::{
 };
 use crate::write::executor::abstract_excel_write_executor::AbstractExcelWriteExecutor;
 
-/// 一次模板填充的数据域键。
-///
-/// 对应 Java：`ExcelWriteFillExecutor.UniqueDataFlagKey`。
-#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
-pub struct UniqueDataFlagKey {
-    sheet_no: Option<i32>,
-    sheet_name: Option<String>,
-    wrapper_name: Option<String>,
-}
-
-impl UniqueDataFlagKey {
-    #[must_use]
-    pub fn new(
-        sheet_no: Option<i32>,
-        sheet_name: Option<String>,
-        wrapper_name: Option<String>,
-    ) -> Self {
-        Self { sheet_no, sheet_name, wrapper_name }
-    }
-    #[must_use] pub const fn get_sheet_no(&self) -> Option<i32> { self.sheet_no }
-    pub const fn set_sheet_no(&mut self, value: Option<i32>) { self.sheet_no = value; }
-    #[must_use] pub fn get_sheet_name(&self) -> Option<&str> { self.sheet_name.as_deref() }
-    pub fn set_sheet_name(&mut self, value: Option<String>) { self.sheet_name = value; }
-    #[must_use] pub fn get_wrapper_name(&self) -> Option<&str> { self.wrapper_name.as_deref() }
-    pub fn set_wrapper_name(&mut self, value: Option<String>) { self.wrapper_name = value; }
-}
+// 保留历史公开路径，真实对象由独立文件承载。
+pub use super::unique_data_flag_key::UniqueDataFlagKey;
 
 /// 对应 Java：`ExcelWriteFillExecutor extends AbstractExcelWriteExecutor`.
 ///

@@ -14,7 +14,7 @@ pub trait ReadCache: Send {
     /// Default implementation records initialization state so callers
     /// can verify the lifecycle fires. Concrete implementations should
     /// override to allocate resources.
-    fn init(&mut self) {
+    fn init(&mut self, _analysis_context: &crate::AnalysisContext) {
         // Default: no resources to allocate (in-memory caches are lazy).
         // Concrete implementations may override when allocation is eager.
     }
@@ -108,7 +108,7 @@ mod tests_extra {
             }
         }
         let mut cache = NoopCache;
-        cache.init();
+        cache.init(&crate::AnalysisContext::new("", 0, 0));
         cache.destroy();
         assert!(cache.put("ignored".to_owned()).is_ok());
         // get/put_finished 同为默认空实现（对应 Java ReadCache 生命周期方法）

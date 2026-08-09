@@ -2,6 +2,7 @@
 
 use std::collections::{BTreeMap, HashMap};
 use std::marker::PhantomData;
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread::{self, JoinHandle};
@@ -20,6 +21,14 @@ struct MapResult<U> {
     sequence: u64,
     context: AnalysisContext,
     result: Result<U>,
+}
+
+fn panic_message(payload: &(dyn std::any::Any + Send)) -> &str {
+    payload
+        .downcast_ref::<&str>()
+        .copied()
+        .or_else(|| payload.downcast_ref::<String>().map(String::as_str))
+        .unwrap_or("non-string panic payload")
 }
 
 /// 对用户显式声明为纯函数的行转换执行有界并行化，并按输入顺序串行提交。
@@ -94,14 +103,46 @@ where
                             let Ok(job) = job else {
                                 break;
                             };
+                            let MapJob {
+                                sequence,
+                                data,
+                                context,
+                            } = job;
                             if cancelled.load(Ordering::Acquire) {
-                                break;
+                                let _ = results.send(MapResult {
+                                    sequence,
+                                    context,
+                                    result: Err(ExcelError::AnalysisStop(
+                                        "parallel_map pipeline cancelled after worker error"
+                                            .to_owned(),
+                                    )),
+                                });
+                                continue;
                             }
-                            let result = mapper(job.data, &job.context);
+                            // 用户 mapper 是扩展边界，panic 不能让某个 sequence 永久
+                            // 消失。否则主解析线程在队列背压期间会等待一个永远不会
+                            // 到达的结果，而其余 worker 又因发送端仍开放持续等待任务。
+                            // 将 panic 转换成普通的有序错误，取消、排空和 join 才能沿
+                            // 与 mapper 返回 Err 相同的协议收敛。
+                            let result = match catch_unwind(AssertUnwindSafe(|| {
+                                mapper(data, &context)
+                            })) {
+                                Ok(result) => result,
+                                Err(payload) => Err(ExcelError::Format(format!(
+                                    "parallel_map mapper panicked: {}",
+                                    panic_message(payload.as_ref())
+                                ))),
+                            }
+                            .map_err(|error| error.with_parallel_row_context(&context));
+                            if result.is_err() {
+                                // 首个 worker 错误立即阻止主线程继续提交新任务；已经进入
+                                // 队列的任务仍返回有序取消结果，避免 drain/join 死锁。
+                                cancelled.store(true, Ordering::Release);
+                            }
                             if results
                                 .send(MapResult {
-                                    sequence: job.sequence,
-                                    context: job.context,
+                                    sequence,
+                                    context,
                                     result,
                                 })
                                 .is_err()
@@ -205,10 +246,15 @@ where
     }
 
     fn invoke(&mut self, data: T, context: &AnalysisContext) -> Result<()> {
-        if self.in_flight >= self.queue_capacity {
+        // 乱序完成的结果进入 ready 后不一定立刻释放最早 sequence；必须持续
+        // 接收直到真正提交至少一行，才能保证 in_flight 永不超过硬上限。
+        while self.in_flight >= self.queue_capacity {
             self.receive_one()?;
         }
         if self.cancel.load(Ordering::Acquire) {
+            // worker 可能在主线程观察取消前已返回带真实坐标的错误；先按序
+            // 排空到该错误，不能用一个泛化的 AnalysisStop 把首错覆盖掉。
+            self.drain_all()?;
             return Err(ExcelError::AnalysisStop(
                 "parallel_map pipeline cancelled".to_owned(),
             ));

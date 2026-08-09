@@ -21,18 +21,21 @@ pub use super::record_sid::{
     BLANK_SID as BLANK, BOF_SID as BOF, BOOL_ERR_SID as BOOLERR, BOUND_SHEET_SID as BOUNDSHEET,
     CALC_MODE_SID as CALCMODE, CODE_NAME_SID as CODENAME, CODE_PAGE_SID as CODEPAGE,
     COLUMN_INFO_SID as COLINFO, CONTINUE_SID as CONTINUE, DATE_MODE_SID as DATEMODE,
+    DEFAULT_COLUMN_WIDTH_SID as DEFCOLWIDTH, DEFAULT_ROW_HEIGHT_SID as DEFAULTROWHEIGHT,
     DIMENSION_SID as DIMENSION, EOF_SID as EOF, EXT_SST_SID as EXTSST,
     EXTERNAL_SHEET_SID as EXTERNSHEET, FILE_PASS_SID as FILEPASS, FONT_SID as FONT,
     FORMAT_SID as FORMAT, FORMULA_SID as FORMULA, HYPERLINK_SID as HYPERLINK,
-    INTERFACE_END_SID as INTERFACEEND, INTERFACE_HEADER_SID as INTERFACEHDR, LABEL_SID as LABEL,
+    INDEX_SID as INDEX, INTERFACE_END_SID as INTERFACEEND,
+    INTERFACE_HEADER_SID as INTERFACEHDR, LABEL_SID as LABEL,
     LABEL_SST_SID as LABELSST, MERGE_CELLS_SID as MERGECELLS, MMS_SID as MMS,
     MSO_DRAWING_GROUP_SID as MSODRAWINGGROUP, MSO_DRAWING_SID as MSODRAWING,
     MUL_BLANK_SID as MULBLANK, MUL_RK_SID as MULRK, NOTE_SID as NOTE, NUMBER_SID as NUMBER,
     OBJECT_PROTECT_SID as OBJECTPROTECT, OBJ_SID as OBJ, PALETTE_SID as PALETTE,
     PANE_SID as PANE, PASSWORD_SID as PASSWORD, PROTECT_SID as PROTECT, RK_SID as RK,
     ROW_SID as ROW, SCENARIO_PROTECT_SID as SCENPROTECT, SST_SID as SST,
-    STRING_SID as STRING, STYLE_SID as STYLE, SUP_BOOK_SID as SUPBOOK,
-    TEXT_OBJECT_SID as TXO, WINDOW2_SID as WINDOW2, WRITE_ACCESS_SID as WRITEACCESS, XF_SID as XF,
+    STANDARD_WIDTH_SID as STANDARDWIDTH, STRING_SID as STRING, STYLE_SID as STYLE,
+    SUP_BOOK_SID as SUPBOOK, TEXT_OBJECT_SID as TXO, WINDOW1_SID as WINDOW1,
+    WINDOW2_SID as WINDOW2, WRITE_ACCESS_SID as WRITEACCESS, XF_SID as XF,
 };
 
 /// BIFF8 DBCELL 记录。
@@ -245,8 +248,30 @@ pub fn pack_font(
     color_icv: u16,
     name: &str,
 ) -> Vec<u8> {
+    pack_font_twips(
+        height_points.saturating_mul(20),
+        bold,
+        italic,
+        strikeout,
+        0,
+        color_icv,
+        name,
+    )
+}
+
+/// 使用 BIFF8 原始 twips 字号并保留下划线标志构造 FONT payload。
+#[must_use]
+pub fn pack_font_twips(
+    height_twips: u16,
+    bold: bool,
+    italic: bool,
+    strikeout: bool,
+    underline_code: u8,
+    color_icv: u16,
+    name: &str,
+) -> Vec<u8> {
     let mut data = Vec::new();
-    data.extend_from_slice(&(height_points.saturating_mul(20)).to_le_bytes());
+    data.extend_from_slice(&height_twips.to_le_bytes());
     let mut grbit = 0u16;
     if italic {
         grbit |= 0x02;
@@ -258,7 +283,8 @@ pub fn pack_font(
     data.extend_from_slice(&color_icv.to_le_bytes());
     data.extend_from_slice(&(if bold { 700u16 } else { 400u16 }).to_le_bytes());
     data.extend_from_slice(&0u16.to_le_bytes()); // sss
-    data.extend_from_slice(&[0, 0, 0, 0]); // uls, family, charset, reserved
+    data.push(underline_code); // uls: 0/1/2/0x21/0x22
+    data.extend_from_slice(&[0, 0, 0]); // family, charset, reserved
     data.extend_from_slice(&encode_short_unicode_string(name));
     data
 }
@@ -381,13 +407,43 @@ pub fn write_palette_record(out: &mut Vec<u8>, overrides: &[(u8, u8, u8)]) {
 /// `sheet.setColumnWidth(col, chars * 256)`).
 #[must_use]
 pub fn pack_colinfo(first_col: u8, last_col: u8, width_chars: u16, xf_index: u16) -> [u8; 12] {
-    let coldx = width_chars.saturating_mul(256);
+    pack_colinfo_units(
+        first_col,
+        last_col,
+        width_chars.saturating_mul(256),
+        xf_index,
+    )
+}
+
+/// 使用 BIFF8 原始 `1/256` 字符单位构造 COLINFO，供格式中立模型无损适配。
+#[must_use]
+pub fn pack_colinfo_units(
+    first_col: u8,
+    last_col: u8,
+    width_units: u16,
+    xf_index: u16,
+) -> [u8; 12] {
+    pack_colinfo_metadata(first_col, last_col, width_units, xf_index, false, true)
+}
+
+/// 构造带列样式和隐藏状态的 COLINFO payload。
+#[must_use]
+pub fn pack_colinfo_metadata(
+    first_col: u8,
+    last_col: u8,
+    width_units: u16,
+    xf_index: u16,
+    hidden: bool,
+    user_set_width: bool,
+) -> [u8; 12] {
     let mut d = [0u8; 12];
     d[0..2].copy_from_slice(&u16::from(first_col).to_le_bytes());
     d[2..4].copy_from_slice(&u16::from(last_col).to_le_bytes());
-    d[4..6].copy_from_slice(&coldx.to_le_bytes());
+    d[4..6].copy_from_slice(&width_units.to_le_bytes());
     d[6..8].copy_from_slice(&xf_index.to_le_bytes());
-    // options + unused remain zero.
+    let options = u16::from(hidden) | (u16::from(user_set_width) << 1);
+    d[8..10].copy_from_slice(&options.to_le_bytes());
+    // reserved bytes remain zero.
     d
 }
 
@@ -396,18 +452,98 @@ pub fn pack_colinfo(first_col: u8, last_col: u8, width_chars: u16, xf_index: u16
 /// `height_points` is converted to twips (`* 20`), matching POI
 /// `row.setHeightInPoints` / Java `StyleDataTest` (`40pt → 800`).
 #[must_use]
-pub fn pack_row(row: u16, first_col: u8, last_col_exclusive: u8, height_points: u16) -> [u8; 16] {
-    let miy = height_points.saturating_mul(20) & 0x7FFF; // bit15=0 → custom height
+pub fn pack_row(
+    row: u16,
+    first_col: u16,
+    last_col_exclusive: u16,
+    height_points: u16,
+) -> [u8; 16] {
+    pack_row_twips(
+        row,
+        first_col,
+        last_col_exclusive,
+        height_points.saturating_mul(20),
+    )
+}
+
+/// 使用 BIFF8 原始 twips（`1/20` point）构造 ROW。
+#[must_use]
+pub fn pack_row_twips(
+    row: u16,
+    first_col: u16,
+    last_col_exclusive: u16,
+    height_twips: u16,
+) -> [u8; 16] {
+    pack_row_metadata(
+        row,
+        first_col,
+        last_col_exclusive,
+        height_twips,
+        true,
+        false,
+        None,
+    )
+}
+
+/// 构造带隐藏状态和默认行 XF 的 ROW payload。
+#[must_use]
+pub fn pack_row_metadata(
+    row: u16,
+    first_col: u16,
+    last_col_exclusive: u16,
+    height_twips: u16,
+    custom_height: bool,
+    hidden: bool,
+    xf_index: Option<u16>,
+) -> [u8; 16] {
+    let miy = height_twips & 0x7FFF; // bit15=0 → custom height
     let mut d = [0u8; 16];
     d[0..2].copy_from_slice(&row.to_le_bytes());
-    d[2..4].copy_from_slice(&u16::from(first_col).to_le_bytes());
-    d[4..6].copy_from_slice(&u16::from(last_col_exclusive).to_le_bytes());
+    d[2..4].copy_from_slice(&first_col.to_le_bytes());
+    d[4..6].copy_from_slice(&last_col_exclusive.to_le_bytes());
     d[6..8].copy_from_slice(&miy.to_le_bytes());
     // unused + reserved
     // option flags: bit8 always 1 (0x100); bit6 = height unsynced (0x40)
-    let options: u32 = 0x0100 | 0x0040;
+    let mut options: u32 = 0x0100;
+    if custom_height {
+        options |= 0x0040;
+    }
+    if hidden {
+        options |= 0x0020;
+    }
+    if let Some(xf_index) = xf_index {
+        options |= 0x0080;
+        options |= (u32::from(xf_index) & 0x0fff) << 16;
+    }
     d[12..16].copy_from_slice(&options.to_le_bytes());
     d
+}
+
+/// 构造 Workbook globals 的 WINDOW1 payload，并选择活动工作表。
+#[must_use]
+pub fn pack_window1(active_sheet: u16, selected_sheet_count: u16) -> [u8; 18] {
+    let mut data = [0u8; 18];
+    // 使用 HSSF 常见的初始窗口尺寸；窗口位置保持零。
+    data[4..6].copy_from_slice(&0x3fcfu16.to_le_bytes());
+    data[6..8].copy_from_slice(&0x2a4eu16.to_le_bytes());
+    data[8..10].copy_from_slice(&0x0038u16.to_le_bytes());
+    data[10..12].copy_from_slice(&active_sheet.to_le_bytes());
+    data[12..14].copy_from_slice(&active_sheet.to_le_bytes());
+    data[14..16].copy_from_slice(&selected_sheet_count.max(1).to_le_bytes());
+    data[16..18].copy_from_slice(&600u16.to_le_bytes());
+    data
+}
+
+/// 发射使用工作表默认高度的 ROW payload。
+#[must_use]
+pub fn pack_default_row(row: u16, first_col: u16, last_col_exclusive: u16) -> [u8; 16] {
+    let mut data = [0u8; 16];
+    data[0..2].copy_from_slice(&row.to_le_bytes());
+    data[2..4].copy_from_slice(&first_col.to_le_bytes());
+    data[4..6].copy_from_slice(&last_col_exclusive.to_le_bytes());
+    data[6..8].copy_from_slice(&0x00FFu16.to_le_bytes());
+    data[12..16].copy_from_slice(&0x0100u32.to_le_bytes());
+    data
 }
 
 #[cfg(test)]

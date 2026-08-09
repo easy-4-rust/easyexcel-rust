@@ -5,7 +5,7 @@ use crate::CacheLocation;
 /// 对应 Java：com.alibaba.excel.metadata.GlobalConfiguration。 Global read/write configuration carried by holders.
 ///
 /// Rust port of Java `GlobalConfiguration`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct GlobalConfiguration {
     /// Automatic trim for sheet names and cell text. (Java `autoTrim`)
     pub auto_trim: bool,
@@ -81,8 +81,15 @@ impl GlobalConfiguration {
     /// Java `getUse1904windowing` 别名。
     #[must_use]
     pub const fn get_use_1904windowing(&self) -> bool { self.use1904windowing }
+    /// Java `getUse1904windowing` 的机械 snake_case 入口。
+    #[must_use]
+    pub const fn get_use1904windowing(&self) -> bool { self.use1904windowing }
     /// Java `setUse1904windowing`。
     pub const fn set_use_1904windowing(&mut self, value: bool) {
+        self.use1904windowing = value;
+    }
+    /// Java `setUse1904windowing` 的机械 snake_case 入口。
+    pub const fn set_use1904windowing(&mut self, value: bool) {
         self.use1904windowing = value;
     }
     /// Java `getLocale` 别名。

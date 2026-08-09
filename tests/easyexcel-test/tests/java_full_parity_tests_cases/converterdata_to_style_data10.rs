@@ -160,10 +160,11 @@ fn converter_t22_write_image_xls() {
     let row = ImageRow {
         file: WriteCellData::from_image(vec![0xFF, 0xD8, 0xFF, 0xD9]),
     };
-    EasyExcel::write::<ImageRow>(&path)
+    let error = EasyExcel::write::<ImageRow>(&path)
         .sheet("Sheet1")
         .do_write(vec![row])
-        .expect("XLS image write must succeed (Phase 5.6)");
+        .expect_err("XLS image write must fail until worksheet drawing records are implemented");
+    assert!(error.to_string().contains("legacy XLS writing does not support"));
 }
 
 // ============================================================================
@@ -597,4 +598,3 @@ fn style_data10() -> Vec<StyleData> {
         })
         .collect()
 }
-

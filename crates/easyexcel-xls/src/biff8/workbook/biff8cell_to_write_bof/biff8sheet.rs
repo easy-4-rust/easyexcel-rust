@@ -3,12 +3,32 @@
 pub struct Biff8Sheet {
     /// Worksheet name (BOUNDSHEET short Unicode string).
     pub name: String,
+    /// BOUNDSHEET 可见性。
+    pub visibility: easyexcel_model::Visibility,
     /// Sparse cells keyed by `(row, column)` in 0-based BIFF coordinates.
     pub cells: BTreeMap<(u16, u8), Biff8Cell>,
     /// Column widths in Excel character units (Java `sheet.setColumnWidth`).
     pub column_widths: BTreeMap<u8, u16>,
+    /// 精确 BIFF8 `1/256` 字符列宽；存在时优先于整数兼容视图。
+    column_width_units: BTreeMap<u8, u16>,
+    /// 工作表默认列宽，使用 BIFF8 `1/256` 字符单位。
+    default_column_width_units: Option<u16>,
+    /// 列级默认 XF。
+    column_xfs: BTreeMap<u8, u16>,
+    /// 隐藏列集合。
+    hidden_columns: BTreeSet<u8>,
+    /// 宽度由调用者显式设置的列集合（COLINFO fUserSet）。
+    column_user_set_widths: BTreeSet<u8>,
     /// Row heights in points (Java `row.setHeightInPoints`).
     pub row_heights: BTreeMap<u16, u16>,
+    /// 精确 BIFF8 twips 行高；存在时优先于整数兼容视图。
+    row_height_twips: BTreeMap<u16, u16>,
+    /// 工作表默认行高，使用 BIFF8 twips。
+    default_row_height_twips: Option<u16>,
+    /// 行级默认 XF。
+    row_xfs: BTreeMap<u16, u16>,
+    /// 隐藏行集合。
+    hidden_rows: BTreeSet<u16>,
     /// Merged regions (Java `addMergedRegion` / `MergedCellsTable`).
     pub merges: Vec<Biff8Merge>,
     /// Cell hyperlinks emitted as BIFF8 HLINK records.
@@ -34,9 +54,19 @@ impl Biff8Sheet {
     pub fn new(name: impl Into<String>) -> Self {
         Self {
             name: name.into(),
+            visibility: easyexcel_model::Visibility::Visible,
             cells: BTreeMap::new(),
             column_widths: BTreeMap::new(),
+            column_width_units: BTreeMap::new(),
+            default_column_width_units: None,
+            column_xfs: BTreeMap::new(),
+            hidden_columns: BTreeSet::new(),
+            column_user_set_widths: BTreeSet::new(),
             row_heights: BTreeMap::new(),
+            row_height_twips: BTreeMap::new(),
+            default_row_height_twips: None,
+            row_xfs: BTreeMap::new(),
+            hidden_rows: BTreeSet::new(),
             merges: Vec::new(),
             hyperlinks: Vec::new(),
             comments: Vec::new(),
@@ -104,11 +134,112 @@ impl Biff8Sheet {
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 Sets column width in character units (POI `setColumnWidth(col, chars*256)`).
     pub fn set_column_width(&mut self, col: u8, width_chars: u16) {
         self.column_widths.insert(col, width_chars);
+        self.column_width_units
+            .insert(col, width_chars.saturating_mul(256));
+        self.column_user_set_widths.insert(col);
+    }
+
+    /// 使用 BIFF8 原始 `1/256` 字符单位设置列宽。
+    pub fn set_column_width_units_at(&mut self, col: usize, width_units: u16) -> Result<()> {
+        let col = checked_column_index(col)?;
+        self.column_width_units.insert(col, width_units);
+        self.column_user_set_widths.insert(col);
+        Ok(())
+    }
+
+    /// 设置工作表默认列宽，单位为 BIFF8 `1/256` 字符。
+    pub fn set_default_column_width_units(&mut self, width_units: u16) {
+        self.default_column_width_units = Some(width_units);
+    }
+
+    /// 设置列宽、列级 XF 与隐藏状态。
+    ///
+    /// 对应 Java：`HSSFSheet#setColumnWidth`、`setColumnHidden`、`setDefaultColumnStyle`。
+    pub fn set_column_metadata_at(
+        &mut self,
+        col: usize,
+        width_units: u16,
+        xf_index: u16,
+        hidden: bool,
+        user_set_width: bool,
+    ) -> Result<()> {
+        let col = checked_column_index(col)?;
+        self.column_width_units.insert(col, width_units);
+        self.column_xfs.insert(col, xf_index);
+        if user_set_width {
+            self.column_user_set_widths.insert(col);
+        } else {
+            self.column_user_set_widths.remove(&col);
+        }
+        if hidden {
+            self.hidden_columns.insert(col);
+        } else {
+            self.hidden_columns.remove(&col);
+        }
+        Ok(())
     }
 
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 Sets row height in points (POI `setHeightInPoints`).
     pub fn set_row_height(&mut self, row: u16, height_points: u16) {
         self.row_heights.insert(row, height_points);
+        self.row_height_twips
+            .insert(row, height_points.saturating_mul(20));
+    }
+
+    /// 使用 BIFF8 原始 twips（`1/20` point）设置行高。
+    pub fn set_row_height_twips_at(&mut self, row: u32, height_twips: u16) -> Result<()> {
+        if !(2..=8_192).contains(&height_twips) {
+            return Err(ExcelError::Xls(format!(
+                "BIFF8 row height must be 2..=8192 twips, got {height_twips}"
+            )));
+        }
+        let row = checked_row_index(row)?;
+        self.row_height_twips.insert(row, height_twips);
+        Ok(())
+    }
+
+    /// 设置工作表默认行高，单位为 BIFF8 twips。
+    pub fn set_default_row_height_twips(&mut self, height_twips: u16) -> Result<()> {
+        if !(1..=8_179).contains(&height_twips) {
+            return Err(ExcelError::Xls(format!(
+                "BIFF8 default row height must be 1..=8179 twips, got {height_twips}"
+            )));
+        }
+        self.default_row_height_twips = Some(height_twips);
+        Ok(())
+    }
+
+    /// 设置行高、行级 XF 与隐藏状态。
+    ///
+    /// 对应 Java：`HSSFRow#setHeightInPoints`、`setZeroHeight`、`setRowStyle`。
+    pub fn set_row_metadata_at(
+        &mut self,
+        row: u32,
+        height_twips: u16,
+        custom_height: bool,
+        xf_index: Option<u16>,
+        hidden: bool,
+    ) -> Result<()> {
+        if !(2..=8_192).contains(&height_twips) {
+            return Err(ExcelError::Xls(format!(
+                "BIFF8 row height must be 2..=8192 twips, got {height_twips}"
+            )));
+        }
+        let row = checked_row_index(row)?;
+        if custom_height {
+            self.row_height_twips.insert(row, height_twips);
+        }
+        if let Some(xf_index) = xf_index {
+            self.row_xfs.insert(row, xf_index);
+        } else {
+            self.row_xfs.remove(&row);
+        }
+        if hidden {
+            self.hidden_rows.insert(row);
+        } else {
+            self.hidden_rows.remove(&row);
+        }
+        Ok(())
     }
 
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 Validates and sets a row height using a format-neutral row index.
@@ -117,6 +248,14 @@ impl Biff8Sheet {
     ///
     /// Returns [`ExcelError::Xls`] when `row` exceeds the BIFF8 row limit.
     pub fn set_row_height_at(&mut self, row: u32, height_points: u16) -> Result<()> {
+        let height_twips = height_points.checked_mul(20).ok_or_else(|| {
+            ExcelError::Xls(format!("BIFF8 row height overflows twips: {height_points}pt"))
+        })?;
+        if !(2..=8_192).contains(&height_twips) {
+            return Err(ExcelError::Xls(format!(
+                "BIFF8 row height must be 2..=8192 twips, got {height_twips}"
+            )));
+        }
         self.set_row_height(checked_row_index(row)?, height_points);
         Ok(())
     }
@@ -151,6 +290,16 @@ impl Biff8Sheet {
         }
         self.merges.push(merge);
         Ok(())
+    }
+
+    /// 将后端中立合并范围转换并写入 BIFF8 工作表。
+    pub fn add_merge_range(&mut self, range: easyexcel_model::MergeRange) -> Result<()> {
+        self.add_merge(Biff8Merge::try_from_bounds(
+            range.first_row,
+            range.last_row,
+            range.first_column,
+            range.last_column,
+        )?)
     }
 
     /// Adds a URL hyperlink attached to one cell.
@@ -239,13 +388,35 @@ impl Biff8Sheet {
                 "BIFF8 comment text or author exceeds 65535 UTF-16 units".to_owned(),
             ));
         }
-        self.comments.push(Biff8Comment::new(
+        self.set_comment(Biff8Comment::new(
             checked_row_index(row)?,
             checked_column_index(col)?,
             text,
             author,
         ));
         Ok(())
+    }
+
+    /// 新增或替换指定坐标的完整 BIFF8 批注。
+    ///
+    /// 对应 Java：`HSSFCell#setCellComment`；同一单元格只能关联一个 NOTE，
+    /// 后写入的批注覆盖此前对象，避免输出重复 NOTE/OBJ/TXO 链。
+    pub fn set_comment(&mut self, comment: Biff8Comment) {
+        self.comments
+            .retain(|existing| existing.row != comment.row || existing.col != comment.col);
+        self.comments.push(comment);
+    }
+
+    /// 删除指定坐标的批注并返回是否实际删除。
+    ///
+    /// 对应 Java：`HSSFCell#removeCellComment()`。
+    pub fn remove_comment(&mut self, row: u32, col: usize) -> Result<bool> {
+        let row = checked_row_index(row)?;
+        let col = checked_column_index(col)?;
+        let before = self.comments.len();
+        self.comments
+            .retain(|comment| comment.row != row || comment.col != col);
+        Ok(self.comments.len() != before)
     }
 
     /// Returns exclusive `(max_row, max_col)` for the DIMENSION record.

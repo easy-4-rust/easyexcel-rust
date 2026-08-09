@@ -2,7 +2,7 @@
 
 #[cfg(test)]
 use crate::ReadOptions;
-use crate::context::analysis_context_impl::AnalysisContextImpl;
+use crate::context::analysis_context::AnalysisContextLifecycle;
 #[cfg(test)]
 use crate::context::read_sheet::ReadSheet;
 use crate::read::holder::csv::csv_read_sheet_holder::CsvReadSheetHolder;
@@ -10,10 +10,7 @@ use crate::read::holder::csv::csv_read_workbook_holder::CsvReadWorkbookHolder;
 #[cfg(test)]
 use crate::support::ExcelTypeEnum;
 /// 对应 Java：`CsvReadContext extends AnalysisContext`.
-pub trait CsvReadContext {
-    /// Returns the shared analysis state.
-    fn analysis_context_impl(&self) -> &AnalysisContextImpl;
-
+pub trait CsvReadContext: AnalysisContextLifecycle {
     /// Returns CSV workbook holder. (Java `csvReadWorkbookHolder()`)
     fn csv_read_workbook_holder(&self) -> &CsvReadWorkbookHolder;
 

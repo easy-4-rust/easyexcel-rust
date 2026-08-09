@@ -77,10 +77,11 @@ pub(crate) fn write_date_value(
     context: &WriteConverterContext<'_, NaiveDate>,
 ) -> WriteCellData {
     let mut cell = WriteCellData::new(CellValue::Date(value));
+    let default_format = crate::util::date_utils::default_local_date_format();
     fill_data_format(
         &mut cell,
         context.convert_context().effective_date_time_format(),
-        DEFAULT_DATE_FORMAT,
+        &default_format,
     );
     cell
 }
@@ -90,10 +91,11 @@ pub(crate) fn write_datetime_value<T>(
     context: &WriteConverterContext<'_, T>,
 ) -> WriteCellData {
     let mut cell = WriteCellData::new(CellValue::DateTime(value));
+    let default_format = crate::util::date_utils::default_date_format();
     fill_data_format(
         &mut cell,
         context.convert_context().effective_date_time_format(),
-        DEFAULT_DATETIME_FORMAT,
+        &default_format,
     );
     cell
 }

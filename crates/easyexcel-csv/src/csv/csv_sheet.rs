@@ -1,15 +1,19 @@
 //! CSV 单工作表与有界行缓存模型。
 
 use std::collections::VecDeque;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use easyexcel_io::{Error, Result};
 use easyexcel_model::CellValue as ModelCellValue;
 
 use super::{CsvCellValue, CsvRow};
 
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 单工作表、有序行的 CSV 模型。
+static NEXT_CSV_SHEET_ID: AtomicUsize = AtomicUsize::new(1);
+
+/// 对应 Java：com.alibaba.excel.metadata.csv.CsvSheet。 单工作表、有序行的 CSV 模型。
 #[derive(Debug, Clone, PartialEq)]
 pub struct CsvSheet<V: CsvCellValue = ModelCellValue> {
+    identity: usize,
     name: String,
     csv_workbook_id: Option<usize>,
     out: String,
@@ -24,6 +28,7 @@ impl<V: CsvCellValue> CsvSheet<V> {
     #[must_use]
     pub fn new(name: impl Into<String>) -> Self {
         Self {
+            identity: NEXT_CSV_SHEET_ID.fetch_add(1, Ordering::Relaxed),
             name: name.into(),
             csv_workbook_id: None,
             out: String::new(),
@@ -32,6 +37,12 @@ impl<V: CsvCellValue> CsvSheet<V> {
             last_row_index: None,
             row_cache: VecDeque::with_capacity(100),
         }
+    }
+
+    /// 返回工作表稳定身份，供 Row/Cell 替代 Java 父对象引用。
+    #[must_use]
+    pub const fn identity(&self) -> usize {
+        self.identity
     }
 
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回逻辑工作表名。
@@ -49,7 +60,13 @@ impl<V: CsvCellValue> CsvSheet<V> {
     /// 返回父工作簿稳定身份。对应 Java Lombok `getCsvWorkbook`。
     #[must_use] pub const fn get_csv_workbook(&self) -> Option<usize> { self.csv_workbook_id }
     /// 设置父工作簿稳定身份，避免 Rust 自引用结构。
-    pub const fn set_csv_workbook(&mut self, value: Option<usize>) { self.csv_workbook_id = value; }
+    pub fn set_csv_workbook(&mut self, value: Option<usize>) {
+        self.csv_workbook_id = value;
+        for row in &mut self.row_cache {
+            row.set_csv_workbook(value);
+            row.set_csv_sheet(Some(self.identity));
+        }
+    }
     /// 返回输出缓冲。对应 Java Lombok `getOut`。
     #[must_use] pub fn get_out(&self) -> &str { &self.out }
     /// 设置输出缓冲。对应 Java Lombok `setOut`。
@@ -127,6 +144,10 @@ impl<V: CsvCellValue> CsvSheet<V> {
     /// 替换缓存窗口。对应 Java Lombok `setRowCache`。
     pub fn set_row_cache(&mut self, value: VecDeque<CsvRow<V>>) {
         self.row_cache = value;
+        for row in &mut self.row_cache {
+            row.set_csv_workbook(self.csv_workbook_id);
+            row.set_csv_sheet(Some(self.identity));
+        }
         self.last_row_index = self.row_cache.back().map(CsvRow::row_index);
     }
 
@@ -195,7 +216,10 @@ impl<V: CsvCellValue> CsvSheet<V> {
             )));
         }
         self.last_row_index = Some(row_index);
-        self.row_cache.push_back(CsvRow::new(row_index));
+        let mut row = CsvRow::new(row_index);
+        row.set_csv_workbook(self.csv_workbook_id);
+        row.set_csv_sheet(Some(self.identity));
+        self.row_cache.push_back(row);
         self.row_cache
             .back_mut()
             .ok_or_else(|| Error::Csv("CSV row append produced no row".to_owned()))

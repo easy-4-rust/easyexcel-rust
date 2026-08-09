@@ -2,6 +2,7 @@
 //! Java's default timeout values (1s connect, 5s read).
 
 use std::time::Duration;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use url::Url;
 
@@ -12,6 +13,12 @@ use crate::core::excel_error::ExcelError;
 use crate::core::into_excel_cell::IntoExcelCell;
 use crate::core::write_converter_context::WriteConverterContext;
 use crate::write::write_cell_data::WriteCellData;
+
+/// Java `UrlImageConverter.urlConnectTimeout` 的线程安全毫秒配置。
+pub static URL_CONNECT_TIMEOUT: AtomicU64 = AtomicU64::new(1_000);
+
+/// Java `UrlImageConverter.urlReadTimeout` 的线程安全毫秒配置。
+pub static URL_READ_TIMEOUT: AtomicU64 = AtomicU64::new(5_000);
 
 /// 对应 Java：com.alibaba.excel.converters.url.UrlImageConverter。 Java `UrlImageConverter` equivalent with Java's default timeout values.
 ///
@@ -65,7 +72,10 @@ impl UrlImageConverter {
 
 impl Default for UrlImageConverter {
     fn default() -> Self {
-        Self::new(Self::DEFAULT_CONNECT_TIMEOUT, Self::DEFAULT_READ_TIMEOUT)
+        Self::new(
+            Duration::from_millis(URL_CONNECT_TIMEOUT.load(Ordering::Relaxed)),
+            Duration::from_millis(URL_READ_TIMEOUT.load(Ordering::Relaxed)),
+        )
     }
 }
 

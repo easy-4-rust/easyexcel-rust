@@ -174,12 +174,17 @@ where
         let row_columns = dynamic_columns.as_deref().unwrap_or(columns);
         let style = (!options.content_styles.is_empty())
             .then(|| &options.content_styles[data_index % options.content_styles.len()]);
-        apply_loop_merges(worksheet, row_index, data_index, &loop_merges)?;
+        let applied_loop_merges =
+            apply_loop_merges(worksheet, row_index, data_index, &loop_merges)?;
         if !capture_journal && !schema_plan.requires_handler_context() {
+            let date_formats = dynamic_columns
+                .is_none()
+                .then(|| schema_plan.date_formats());
             write_data_row_fast(
                 worksheet,
                 row_index,
                 row_columns,
+                date_formats,
                 cells,
                 SheetStyleContext::content(style, metadata, global),
                 &image_layout,
@@ -205,6 +210,7 @@ where
         if final_row.row_height.is_none() {
             final_row.row_height = content_height;
         }
+        final_row.merge_ranges = applied_loop_merges;
         if let Some(spill) = gzip_spill.as_mut() {
             spill.write_journal_row(&final_row)?;
         }

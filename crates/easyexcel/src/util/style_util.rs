@@ -18,7 +18,7 @@ pub fn build_cell_style(
     origin_cell_style: Option<&WriteCellStyle>,
     write_cell_style: Option<&WriteCellStyle>,
 ) -> WriteCellStyle {
-    let origin = origin_cell_style.copied().unwrap_or_default();
+    let origin = origin_cell_style.cloned().unwrap_or_default();
     write_cell_style.map_or(origin, |style| merge_write_cell_style(style, origin))
 }
 

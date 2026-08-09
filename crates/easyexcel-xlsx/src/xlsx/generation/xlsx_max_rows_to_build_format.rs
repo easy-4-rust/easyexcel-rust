@@ -44,6 +44,13 @@ pub fn worksheet_by_name<'a>(workbook: &'a mut Workbook, name: &str) -> Result<&
     workbook.worksheet_from_name(name).map_err(xlsxwriter_error)
 }
 
+/// 对工作表启用密码保护。
+///
+/// 对应 Java：`Sheet.protectSheet(String)`；具体 OOXML protection 属性由 XLSX 引擎编码。
+pub fn protect_worksheet(worksheet: &mut Worksheet, password: &str) {
+    worksheet.protect_with_password(password);
+}
+
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 设置工作表名称。
 ///
 /// # Errors
@@ -438,6 +445,7 @@ pub fn insert_note_with_metadata(
     text: &str,
     author: Option<&str>,
     movement: Option<ObjectMovement>,
+    visible: Option<bool>,
 ) -> Result<()> {
     let mut note = Note::new(text).add_author_prefix(false);
     if let Some(author) = author {
@@ -446,10 +454,34 @@ pub fn insert_note_with_metadata(
     if let Some(movement) = movement {
         note = note.set_object_movement(movement);
     }
+    if let Some(visible) = visible {
+        note = note.set_visible(visible);
+    }
     worksheet
         .insert_note(row, column, &note)
         .map(|_| ())
         .map_err(xlsxwriter_error)
+}
+
+/// 使用引擎中立移动策略插入带元数据的批注。
+pub fn insert_note_with_policy(
+    worksheet: &mut Worksheet,
+    row: u32,
+    column: u16,
+    text: &str,
+    author: Option<&str>,
+    movement: Option<super::TemplateImageMovement>,
+    visible: Option<bool>,
+) -> Result<()> {
+    insert_note_with_metadata(
+        worksheet,
+        row,
+        column,
+        text,
+        author,
+        movement.map(object_movement),
+        visible,
+    )
 }
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 从内存图片创建 XLSX 图片对象。
@@ -511,6 +543,44 @@ pub fn insert_scaled_image(
         .map_err(xlsxwriter_error)
 }
 
+/// 使用引擎中立移动策略插入缩放图片。
+#[allow(clippy::too_many_arguments)]
+pub fn insert_scaled_image_with_policy(
+    worksheet: &mut Worksheet,
+    row: u32,
+    column: u16,
+    bytes: &[u8],
+    width: u32,
+    height: u32,
+    movement: super::TemplateImageMovement,
+    left: u32,
+    top: u32,
+) -> Result<()> {
+    insert_scaled_image(
+        worksheet,
+        row,
+        column,
+        bytes,
+        width,
+        height,
+        object_movement(movement),
+        left,
+        top,
+    )
+}
+
+const fn object_movement(value: super::TemplateImageMovement) -> ObjectMovement {
+    match value {
+        super::TemplateImageMovement::MoveAndResize => ObjectMovement::MoveAndSizeWithCells,
+        super::TemplateImageMovement::MoveDontResize => {
+            ObjectMovement::MoveButDontSizeWithCells
+        }
+        super::TemplateImageMovement::DontMoveOrResize => {
+            ObjectMovement::DontMoveOrSizeWithCells
+        }
+    }
+}
+
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 写入富文本片段及单元格格式。
 ///
 /// # Errors
@@ -531,6 +601,55 @@ pub fn write_rich_string(
         .write_rich_string_with_format(row, column, &references, cell_format)
         .map(|_| ())
         .map_err(xlsxwriter_error)
+}
+
+/// 使用中立字体规格写入富文本片段及单元格格式。
+///
+/// 对应 Java：无直接对应对象；Rust XLSX 引擎扩展。调用方负责按照 Java 的字符
+/// 区间语义切分文本，具体后端字体对象只在 `easyexcel-xlsx` 内构造。
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
+pub fn write_rich_string_with_font_specs(
+    worksheet: &mut Worksheet,
+    row: u32,
+    column: u16,
+    runs: &[(FontFormatSpec, String)],
+    cell_format: &Format,
+) -> Result<()> {
+    let compiled_runs = runs
+        .iter()
+        .map(|(font, text)| {
+            (
+                build_format(&FormatSpec {
+                    font: font.clone(),
+                    ..FormatSpec::default()
+                }),
+                text.clone(),
+            )
+        })
+        .collect::<Vec<_>>();
+    write_rich_string(worksheet, row, column, &compiled_runs, cell_format)
+}
+
+/// 将一组已编译单元格格式编码为可供模板样式导入的最小 XLSX 工作簿。
+///
+/// 对应 Java：无直接对应对象；Rust XLSX 引擎扩展。每个格式写入第一列的独立空白
+/// 单元格，模板层随后只需复制对应 style index，无需感知底层 workbook API。
+///
+/// # Errors
+///
+/// 格式数量超出 XLSX 行上限，或工作簿序列化失败时返回错误。
+pub fn compile_blank_format_workbook(formats: &[Format]) -> Result<Vec<u8>> {
+    let mut workbook = new_workbook();
+    let worksheet = workbook.add_worksheet();
+    for (index, format) in formats.iter().enumerate() {
+        let row = u32::try_from(index)
+            .map_err(|_| Error::Xlsx("too many template fill styles".to_owned()))?;
+        write_blank(worksheet, row, 0, format)?;
+    }
+    serialize_workbook(&mut workbook)
 }
 
 include!("xlsx_max_rows_to_build_format/number_format_spec.rs");

@@ -1,6 +1,20 @@
+use std::num::NonZeroU64;
+use std::sync::LazyLock;
+
+use bigdecimal::{Context, RoundingMode};
+
 /// Excel's decimal math context retains at most 15 significant digits.
-/// 对应 Java：NumberUtils.parseShort。
+/// 对应 Java：`EasyExcelConstants.EXCEL_MATH_CONTEXT`。
 pub const EXCEL_MATH_CONTEXT_PRECISION: u32 = 15;
+
+/// Java `new MathContext(15, RoundingMode.HALF_UP)` 的完整 Rust 载体。
+pub static EXCEL_MATH_CONTEXT: LazyLock<Context> = LazyLock::new(|| {
+    Context::new(
+        NonZeroU64::new(u64::from(EXCEL_MATH_CONTEXT_PRECISION))
+            .expect("Excel precision is non-zero"),
+        RoundingMode::HalfUp,
+    )
+});
 
 include!("excel_math_context_precision_to_parse_long/number_format_error.rs");
 
@@ -39,14 +53,38 @@ pub fn decimal_integer_requires_text(value: &BigDecimal) -> Result<bool, NumberF
 /// 对应 Java：NumberUtils.parseShort。 将 chrono/strftime 日期格式占位符转换为 Excel 数字格式代码。
 #[must_use]
 pub fn excel_date_format_code(format: Option<&str>, default: &str) -> String {
-    format
-        .unwrap_or(default)
-        .replace("%Y", "yyyy")
-        .replace("%m", "mm")
-        .replace("%d", "dd")
-        .replace("%H", "hh")
-        .replace("%M", "mm")
-        .replace("%S", "ss")
+    let source = format.unwrap_or(default);
+    if !source.as_bytes().contains(&b'%') {
+        return source.to_owned();
+    }
+
+    // 单次扫描完成 chrono/strftime 到 Excel token 的转换。旧实现连续调用
+    // 六次 `replace`，即使后五个 token 不存在也会为每个日期单元格反复分配。
+    let mut output = String::with_capacity(source.len());
+    let mut characters = source.chars();
+    while let Some(character) = characters.next() {
+        if character != '%' {
+            output.push(character);
+            continue;
+        }
+        let Some(token) = characters.next() else {
+            output.push('%');
+            break;
+        };
+        match token {
+            'Y' => output.push_str("yyyy"),
+            'm' => output.push_str("mm"),
+            'd' => output.push_str("dd"),
+            'H' => output.push_str("hh"),
+            'M' => output.push_str("mm"),
+            'S' => output.push_str("ss"),
+            other => {
+                output.push('%');
+                output.push(other);
+            }
+        }
+    }
+    output
 }
 
 include!("excel_math_context_precision_to_parse_long/number_rounding_mode.rs");
@@ -568,4 +606,3 @@ pub fn parse_short(value: &str) -> Result<i16, NumberFormatError> {
 pub fn parse_long(value: &str) -> Result<i64, NumberFormatError> {
     parse_decimal(value, None).map(|value| decimal_to_java_i64(&value))
 }
-

@@ -6,14 +6,14 @@
 
 use crate::core::{
     ExcelBorderStyle, ExcelCellStyle, ExcelColor, ExcelDataFormat, ExcelFillPattern,
-    ExcelFontStyle, ExcelHorizontalAlignment, ExcelVerticalAlignment, WriteFont,
+    ExcelFontStyle, ExcelHorizontalAlignment, ExcelUnderline, ExcelVerticalAlignment, WriteFont,
 };
 use crate::write::horizontal_alignment::HorizontalAlignment;
 use crate::write::vertical_alignment::VerticalAlignment;
 
 pub use easyexcel_xls::biff8::{
     Biff8BorderStyle, Biff8Color, Biff8FillPattern, Biff8HorizontalAlignment, Biff8NumberFormat,
-    Biff8StyleRequest, Biff8VerticalAlignment,
+    Biff8StyleRequest, Biff8Underline, Biff8VerticalAlignment,
 };
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 把 `EasyExcel` 单元格样式合并到 BIFF8 请求。
@@ -94,10 +94,8 @@ pub(crate) fn apply_excel_font_style(request: &mut Biff8StyleRequest, style: Exc
         request.font_name = Some(name.to_owned());
     }
     if let Some(height) = style.font_height_in_points {
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        {
-            request.font_height_points = Some(height.round().clamp(1.0, 409.0) as u16);
-        }
+        request.font_height_twips = Some(biff8_font_height_twips(height));
+        request.font_height_points = None;
     }
     if let Some(italic) = style.italic {
         request.italic = italic;
@@ -111,6 +109,9 @@ pub(crate) fn apply_excel_font_style(request: &mut Biff8StyleRequest, style: Exc
     if let Some(color) = style.color {
         request.font_color = Some(excel_color(color));
     }
+    if let Some(underline) = style.underline {
+        request.underline = biff8_underline(underline);
+    }
 }
 
 /// 把运行时 `WriteFont` 合并到 BIFF8 字体请求。
@@ -119,10 +120,8 @@ pub(crate) fn apply_write_font(request: &mut Biff8StyleRequest, font: &WriteFont
         request.font_name = Some(name.to_owned());
     }
     if let Some(height) = font.get_font_height_in_points() {
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        {
-            request.font_height_points = Some(height.round().clamp(1.0, 409.0) as u16);
-        }
+        request.font_height_twips = Some(biff8_font_height_twips(height));
+        request.font_height_points = None;
     }
     if let Some(italic) = font.get_italic() {
         request.italic = italic;
@@ -135,6 +134,26 @@ pub(crate) fn apply_write_font(request: &mut Biff8StyleRequest, font: &WriteFont
     }
     if let Some(color) = font.get_color() {
         request.font_color = Some(excel_color(color));
+    }
+    if let Some(underline) = font.get_underline() {
+        request.underline = biff8_underline(underline);
+    }
+}
+
+fn biff8_font_height_twips(height: f64) -> u16 {
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    {
+        (height * 20.0).round().clamp(1.0, f64::from(u16::MAX)) as u16
+    }
+}
+
+const fn biff8_underline(underline: ExcelUnderline) -> Biff8Underline {
+    match underline {
+        ExcelUnderline::None => Biff8Underline::None,
+        ExcelUnderline::Single => Biff8Underline::Single,
+        ExcelUnderline::Double => Biff8Underline::Double,
+        ExcelUnderline::SingleAccounting => Biff8Underline::SingleAccounting,
+        ExcelUnderline::DoubleAccounting => Biff8Underline::DoubleAccounting,
     }
 }
 

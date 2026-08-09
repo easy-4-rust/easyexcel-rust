@@ -16,12 +16,73 @@ def load(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def load_catalog(path: Path) -> dict[str, Any]:
-    catalog = load(path)
+def load_catalog(
+    path: Path, root: Path | None = None, stack: tuple[Path, ...] = ()
+) -> dict[str, Any]:
+    root = path.parent.resolve() if root is None else root
+    resolved = path.resolve()
+    try:
+        resolved.relative_to(root)
+    except ValueError as error:
+        raise ValueError(f"evidence catalog escapes root: {path}") from error
+    if resolved in stack:
+        chain = " -> ".join(str(item) for item in (*stack, resolved))
+        raise ValueError(f"cyclic evidence catalog include: {chain}")
+    catalog = load(resolved)
     evidence = list(catalog.get("evidence", []))
-    for relative in catalog.get("include", []):
-        evidence.extend(load_catalog(path.parent / relative).get("evidence", []))
-    return {"schema_version": catalog.get("schema_version", 1), "evidence": evidence}
+    mapping_resolutions = list(catalog.get("mapping_resolutions", []))
+    includes = catalog.get("include", [])
+    if not isinstance(includes, list) or any(not isinstance(item, str) for item in includes):
+        raise ValueError(f"invalid evidence catalog include list: {resolved}")
+    for relative in includes:
+        included = load_catalog(resolved.parent / relative, root, (*stack, resolved))
+        evidence.extend(included.get("evidence", []))
+        mapping_resolutions.extend(included.get("mapping_resolutions", []))
+    if any(
+        not isinstance(record, dict)
+        or not isinstance(record.get("id"), str)
+        or not record["id"]
+        for record in evidence
+    ):
+        raise ValueError(f"invalid evidence record in catalog tree: {resolved}")
+    ids = [
+        record.get("id")
+        for record in evidence
+        if isinstance(record, dict) and isinstance(record.get("id"), str)
+    ]
+    duplicate_ids = sorted(item for item in set(ids) if ids.count(item) > 1)
+    if duplicate_ids:
+        raise ValueError(f"duplicate evidence ids: {duplicate_ids[:10]}")
+    resolution_java_ids = [
+        record.get("java_id")
+        for record in mapping_resolutions
+        if isinstance(record, dict)
+    ]
+    if any(
+        not isinstance(record, dict)
+        or not isinstance(record.get("java_id"), str)
+        or not record["java_id"]
+        or not isinstance(record.get("rust_ids"), list)
+        or not record["rust_ids"]
+        or any(not isinstance(rust_id, str) or not rust_id for rust_id in record["rust_ids"])
+        or len(record["rust_ids"]) != len(set(record["rust_ids"]))
+        for record in mapping_resolutions
+    ):
+        raise ValueError(f"invalid mapping resolution in catalog tree: {resolved}")
+    duplicate_resolutions = sorted(
+        java_id
+        for java_id in set(resolution_java_ids)
+        if resolution_java_ids.count(java_id) > 1
+    )
+    if duplicate_resolutions:
+        raise ValueError(
+            f"duplicate mapping resolutions: {duplicate_resolutions[:10]}"
+        )
+    return {
+        "schema_version": catalog.get("schema_version", 1),
+        "evidence": evidence,
+        "mapping_resolutions": mapping_resolutions,
+    }
 
 
 def canonical_json(value: Any) -> str:

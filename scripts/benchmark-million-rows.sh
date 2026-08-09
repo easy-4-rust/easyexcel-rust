@@ -3,9 +3,13 @@ set -eu
 
 rows="${1:-1000000}"
 output="${2:-target/benchmark/million-rows.xlsx}"
-cargo_command="${CARGO:-cargo}"
-"$cargo_command" build --release -p easyexcel --example million_rows
-binary="target/release/examples/million_rows"
+binary="${EASYEXCEL_MILLION_ROWS_BIN:-target/release/examples/million_rows}"
+
+if [ ! -x "$binary" ]; then
+    echo "prebuilt benchmark binary is required: $binary" >&2
+    echo "build it before measurement; benchmark scripts never compile timed code" >&2
+    exit 2
+fi
 
 case "$(uname -s)" in
     Darwin)

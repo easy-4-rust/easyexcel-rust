@@ -1,11 +1,5 @@
-/// Direction used when expanding a collection placeholder.
-/// 对应 Java：`com.alibaba.excel.enums.WriteDirectionEnum`
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub enum FillDirection {
-    /// Repeats the template row downward.
-    #[default]
-    Vertical,
-    /// Repeats the template cell to the right.
-    Horizontal,
-}
-
+/// 模板集合展开方向的兼容名称。
+///
+/// 对应 Java：`com.alibaba.excel.enums.WriteDirectionEnum`。方向值由既有枚举唯一
+/// 承载，模板 API 不再维护第二个同值域 enum。
+pub use crate::WriteDirectionEnum as FillDirection;

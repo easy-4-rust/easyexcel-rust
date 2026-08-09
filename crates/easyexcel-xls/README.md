@@ -34,8 +34,11 @@ Dependency direction remains from the facade or format engines toward foundation
 | Capability | Status | Details |
 |:---|:---|:---|
 | Workbook read/write | Available | Compound File Binary detection and BIFF8 mapping. |
-| Formula tokens | Available with boundaries | Maps supported BIFF formula tokens through the shared model/engine. |
-| Event mode and legacy encryption | Unsupported | No claimed XLS Event Mode, legacy password protection or placeholder fill. |
+| Formula tokens | Available with boundaries | Supports workbook-internal `Ref3d`/`Area3d` through BIFF8 `SUPBOOK`/`EXTERNSHEET`; external workbooks remain outside the contract. |
+| Password encryption | Implemented, release evidence pending | BIFF8 CryptoAPI RC4 uses `FILEPASS` and record-level encryption/decryption; non-CryptoAPI legacy schemes fail explicitly. |
+| Placeholder fill | Implemented, release evidence pending | Scalar/collection, vertical/horizontal, repeated fill, `forceNewRow`, styles and dependent record relocation are owned by the BIFF8 template engine. |
+| Shared model adapter | Implemented, release evidence pending | Reuses the full BIFF8 engine and preserves the active sheet, default/explicit row and column dimensions, hidden state, row/column XFs, fractional font sizes and every BIFF8 underline mode. |
+| Event mode | Unsupported | XLS continues to use Workbook Mode; this is independent of password and template capabilities. |
 
 ## Public API
 

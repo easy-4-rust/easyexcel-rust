@@ -4,9 +4,11 @@
 //! the writer merges into each cell format after annotation styles. Nested
 //! fonts on [`ExcelCellStyle::font`] mirror Java `WriteCellStyle.writeFont`.
 
-use crate::core::{ExcelCellStyle, ExcelFontStyle, WriteCellContext, WriteFont, WriteHandler};
+use crate::core::{
+    ExcelCellStyle, ExcelFontStyle, WriteCellContext, WriteCellStyle, WriteFont, WriteHandler,
+};
 
-use crate::write::metadata::style::write_font::excel_font_style_from_write_font;
+use crate::write::metadata::style::write_font::write_font_from_excel_font_style;
 use crate::write::style::abstract_cell_style_strategy::AbstractCellStyleStrategy;
 
 /// 对应 Java：`HorizontalCellStyleStrategy`.
@@ -16,9 +18,10 @@ use crate::write::style::abstract_cell_style_strategy::AbstractCellStyleStrategy
 /// write path supplies [`WriteCellContext::relative_row_index`].
 /// Styles may carry nested fonts via [`ExcelCellStyle::font`] (Java
 /// `WriteCellStyle.setWriteFont`).
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct HorizontalCellStyleStrategy {
-    head_style: ExcelCellStyle,
-    content_styles: Vec<ExcelCellStyle>,
+    head_style: WriteCellStyle,
+    content_styles: Vec<WriteCellStyle>,
 }
 
 impl HorizontalCellStyleStrategy {
@@ -26,19 +29,25 @@ impl HorizontalCellStyleStrategy {
     /// (Java `HorizontalCellStyleStrategy(List<WriteCellStyle>)` subset)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。
-    pub const fn new(content_styles: Vec<ExcelCellStyle>) -> Self {
+    pub fn new(content_styles: Vec<WriteCellStyle>) -> Self {
         Self {
-            head_style: ExcelCellStyle::new(),
+            head_style: WriteCellStyle::new(),
             content_styles,
         }
+    }
+
+    /// 从注解/引擎轻量样式创建策略。
+    #[must_use]
+    pub fn from_engine_styles(content_styles: Vec<ExcelCellStyle>) -> Self {
+        Self::new(content_styles.into_iter().map(Into::into).collect())
     }
 
     /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。 Creates a strategy with one head style and one content style.
     /// (Java `HorizontalCellStyleStrategy(WriteCellStyle, WriteCellStyle)`)
     #[must_use]
     pub fn with_head_and_content(
-        head_style: ExcelCellStyle,
-        content_style: ExcelCellStyle,
+        head_style: WriteCellStyle,
+        content_style: WriteCellStyle,
     ) -> Self {
         Self {
             head_style,
@@ -50,9 +59,9 @@ impl HorizontalCellStyleStrategy {
     /// (Java `HorizontalCellStyleStrategy(WriteCellStyle, List<WriteCellStyle>)`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。
-    pub const fn with_head_and_contents(
-        head_style: ExcelCellStyle,
-        content_styles: Vec<ExcelCellStyle>,
+    pub fn with_head_and_contents(
+        head_style: WriteCellStyle,
+        content_styles: Vec<WriteCellStyle>,
     ) -> Self {
         Self {
             head_style,
@@ -63,19 +72,19 @@ impl HorizontalCellStyleStrategy {
     /// Attaches a head font (Java `headWriteCellStyle.setWriteFont`).
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。
-    pub const fn with_head_font(mut self, font: ExcelFontStyle) -> Self {
-        self.head_style.font = Some(font);
+    pub fn with_head_font(mut self, font: ExcelFontStyle) -> Self {
+        self.head_style = self.head_style.with_excel_font_style(font);
         self
     }
 
     /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。 Attaches a head font from runtime [`WriteFont`]
     /// (Java `WriteCellStyle.setWriteFont(WriteFont)`).
     ///
-    /// Owned font names are not copied into [`ExcelFontStyle`]; set
-    /// [`ExcelFontStyle::font_name`] when a static name is required.
+    /// 可复制字段进入 [`ExcelFontStyle`] 热路径，动态字体名称同时保存在
+    /// `WriteFont` 侧车中并由格式边界应用，不会被静默丢弃。
     #[must_use]
     pub fn with_head_write_font(mut self, font: &WriteFont) -> Self {
-        self.head_style.font = Some(excel_font_style_from_write_font(font));
+        self.head_style.font = Some(font.clone());
         self
     }
 
@@ -84,7 +93,7 @@ impl HorizontalCellStyleStrategy {
     #[must_use]
     pub fn with_content_font(mut self, font: ExcelFontStyle) -> Self {
         for style in &mut self.content_styles {
-            style.font = Some(font);
+            style.font = Some(write_font_from_excel_font_style(font));
         }
         self
     }
@@ -92,9 +101,8 @@ impl HorizontalCellStyleStrategy {
     /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。 Attaches a content font from runtime [`WriteFont`].
     #[must_use]
     pub fn with_content_write_font(mut self, font: &WriteFont) -> Self {
-        let converted = excel_font_style_from_write_font(font);
         for style in &mut self.content_styles {
-            style.font = Some(converted);
+            style.font = Some(font.clone());
         }
         self
     }
@@ -102,44 +110,66 @@ impl HorizontalCellStyleStrategy {
     /// Returns the configured head style. (Java `getHeadWriteCellStyle()`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。
-    pub const fn head_style(&self) -> ExcelCellStyle {
-        self.head_style
+    pub const fn head_style(&self) -> &WriteCellStyle {
+        &self.head_style
     }
-    #[must_use] pub const fn get_head_write_cell_style(&self) -> ExcelCellStyle { self.head_style() }
-    pub const fn set_head_write_cell_style(&mut self, value: ExcelCellStyle) { self.head_style = value; }
+    #[must_use] pub const fn get_head_write_cell_style(&self) -> &WriteCellStyle { self.head_style() }
+    pub fn set_head_write_cell_style(&mut self, value: WriteCellStyle) {
+        self.head_style = value;
+    }
 
     /// 对应 Java：com.alibaba.excel.write.style.HorizontalCellStyleStrategy。 Returns the configured content styles. (Java `getContentWriteCellStyleList()`)
     #[must_use]
-    pub fn content_styles(&self) -> &[ExcelCellStyle] {
+    pub fn content_styles(&self) -> &[WriteCellStyle] {
         &self.content_styles
     }
-    #[must_use] pub fn get_content_write_cell_style_list(&self) -> &[ExcelCellStyle] { self.content_styles() }
-    pub fn set_content_write_cell_style_list(&mut self, value: Vec<ExcelCellStyle>) { self.content_styles = value; }
+    #[must_use] pub fn get_content_write_cell_style_list(&self) -> &[WriteCellStyle] { self.content_styles() }
+    pub fn set_content_write_cell_style_list(&mut self, value: Vec<WriteCellStyle>) {
+        self.content_styles = value;
+    }
+}
+
+impl Default for HorizontalCellStyleStrategy {
+    /// Java 无参构造器：head/content 均保持未设置。
+    fn default() -> Self { Self::new(Vec::new()) }
 }
 
 impl AbstractCellStyleStrategy for HorizontalCellStyleStrategy {
     fn cell_style(&self, context: &WriteCellContext) -> ExcelCellStyle {
         // Java `setHeadCellStyle` / `setContentCellStyle`
         if context.is_head {
-            return self.head_style;
+            return self.head_style.engine_cell_style();
         }
         if self.content_styles.is_empty() {
             return ExcelCellStyle::new();
         }
         // Java: `relativeRowIndex % contentWriteCellStyleList.size()`
         let relative = context.relative_row_index.unwrap_or(0);
-        self.content_styles[relative % self.content_styles.len()]
+        self.content_styles[relative % self.content_styles.len()].engine_cell_style()
     }
 }
 
 impl WriteHandler for HorizontalCellStyleStrategy {
     fn order(&self) -> i32 {
         // Java `OrderConstant.DEFINE_STYLE` on `AbstractCellStyleStrategy`
-        50_000
+        crate::constant::order_constant::DEFINE_STYLE
     }
 
     fn style_cell_style(&self, context: &WriteCellContext) -> Option<ExcelCellStyle> {
         Some(AbstractCellStyleStrategy::cell_style(self, context))
+    }
+
+    fn style_write_font(&self, context: &WriteCellContext) -> Option<WriteFont> {
+        if context.is_head {
+            return self.head_style.font.clone();
+        }
+        if self.content_styles.is_empty() {
+            return None;
+        }
+        let relative = context.relative_row_index.unwrap_or(0);
+        self.content_styles[relative % self.content_styles.len()]
+            .font
+            .clone()
     }
 }
 

@@ -7,6 +7,57 @@ use crate::format::data_formatter::{
     excel_display_number, is_scientific_magnitude, java_plain_extreme_format,
     java_scientific_format,
 };
+use crate::{ExcelLocale, NumberFormatError};
+
+/// Excel `General` 数字格式器。
+///
+/// 对应 Java：`com.alibaba.excel.metadata.format.ExcelGeneralNumberFormat`。
+/// locale 与科学计数策略属于格式引擎状态，不由 EasyExcel 门面重复保存。
+#[derive(Debug, Clone)]
+pub struct ExcelGeneralNumberFormat {
+    locale: ExcelLocale,
+    use_scientific_format: bool,
+}
+
+impl ExcelGeneralNumberFormat {
+    /// 创建 General 格式器。
+    #[must_use]
+    pub const fn new(locale: ExcelLocale, use_scientific_format: bool) -> Self {
+        Self {
+            locale,
+            use_scientific_format,
+        }
+    }
+
+    /// 格式化一个数字。
+    #[must_use]
+    pub fn format(&self, number: f64) -> String {
+        format_general_with_options(
+            number,
+            self.use_scientific_format,
+            self.locale.formatter().decimal_separator,
+        )
+    }
+
+    /// Java `Format#parseObject` 明确不支持反向解析。
+    pub fn parse_object(&self, _source: &str) -> Result<f64, NumberFormatError> {
+        Err(NumberFormatError::new(
+            "ExcelGeneralNumberFormat does not support parsing".to_owned(),
+        ))
+    }
+
+    /// 返回区域设置。
+    #[must_use]
+    pub const fn locale(&self) -> &ExcelLocale {
+        &self.locale
+    }
+
+    /// 返回是否启用科学计数法。
+    #[must_use]
+    pub const fn use_scientific_format(&self) -> bool {
+        self.use_scientific_format
+    }
+}
 
 /// Formats a number in Excel "General" format. (Java
 /// `ExcelGeneralNumberFormat.format(Object, StringBuffer, FieldPosition)`)

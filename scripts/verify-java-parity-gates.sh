@@ -21,18 +21,36 @@ if [[ ! -d "$JAVA_TEST_ROOT" ]]; then
     exit 2
 fi
 
-JAVA_CORE_JAR="${EASYEXCEL_JAVA_CORE_JAR:-$HOME/.m2/repository/com/alibaba/easyexcel-core/4.0.3/easyexcel-core-4.0.3.jar}"
-if [[ ! -f "$JAVA_CORE_JAR" ]]; then
-    echo "EasyExcel 4.0.3 core JAR does not exist: $JAVA_CORE_JAR" >&2
-    exit 2
-fi
-
 if [[ -n "${JAVAP_BIN:-}" ]]; then
     JAVAP="$JAVAP_BIN"
 elif [[ -x /usr/libexec/java_home ]]; then
     JAVAP="$(/usr/libexec/java_home -v 17)/bin/javap"
 else
     JAVAP="$(command -v javap)"
+fi
+
+JAVA_TAG="$(git -C "$JAVA_REPO" describe --tags --exact-match HEAD 2>/dev/null || true)"
+if [[ "$JAVA_TAG" != "v4.0.3" ]]; then
+    echo "Java public API authority must be the exact v4.0.3 tag, got: ${JAVA_TAG:-<none>}" >&2
+    exit 2
+fi
+if [[ -n "$(git -C "$JAVA_REPO" status --porcelain --untracked-files=normal)" ]]; then
+    echo "Java public API authority requires a clean v4.0.3 worktree: $JAVA_REPO" >&2
+    exit 2
+fi
+
+# javap 必须读取本次从权威源码构建的模块产物，不能回退到 ~/.m2 中来源不明的同版本 JAR。
+JAVA_CORE_JAR="$JAVA_REPO/easyexcel-core/target/easyexcel-core-4.0.3.jar"
+JAVA_HOME_FOR_GATE="$(cd "$(dirname "$JAVAP")/.." && pwd)"
+MAVEN="$JAVA_REPO/mvnw"
+if [[ ! -x "$MAVEN" ]]; then
+    MAVEN="$(command -v mvn)"
+fi
+JAVA_HOME="$JAVA_HOME_FOR_GATE" "$MAVEN" \
+    -pl easyexcel-core -am -DskipTests package
+if [[ ! -f "$JAVA_CORE_JAR" ]]; then
+    echo "authoritative EasyExcel 4.0.3 core JAR was not produced: $JAVA_CORE_JAR" >&2
+    exit 2
 fi
 
 cd "$REPO_ROOT"
@@ -43,6 +61,7 @@ python3 scripts/generate_java_public_api.py \
     --jar "$JAVA_CORE_JAR" \
     --javap "$JAVAP" \
     --output docs/java-public-api-v4.0.3.json \
+    --markdown-output docs/java-public-api-v4.0.3.md \
     --check
 python3 scripts/generate_rust_public_api.py \
     --rust-root "$REPO_ROOT" \

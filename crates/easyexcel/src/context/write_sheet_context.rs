@@ -215,6 +215,14 @@ impl WriteSheetContext {
         self.mutations.add_chart(chart)
     }
 
+    /// 请求在保存前删除当前工作表中指定单元格的批注。
+    ///
+    /// 对应 Java：`HSSFCell/XSSFCell#removeCellComment()`。
+    pub fn remove_comment(&self, row_index: u32, column_index: u16) -> Result<()> {
+        self.mutations
+            .remove_comment(self.sheet_name.clone(), row_index, column_index)
+    }
+
     pub(crate) fn with_mutation_plan(mut self, mutations: WriteMutationPlan) -> Self {
         self.mutations = mutations;
         self

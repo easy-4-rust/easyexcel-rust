@@ -2,12 +2,16 @@
 
 use easyexcel_io::{Error, Result};
 use easyexcel_model::CellValue as ModelCellValue;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use super::{CsvCellStyle, CsvCellValue, CsvCharset, CsvDataFormat, CsvSheet};
 
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 CSV 输出的单工作表逻辑工作簿。
+static NEXT_CSV_WORKBOOK_ID: AtomicUsize = AtomicUsize::new(1);
+
+/// 对应 Java：com.alibaba.excel.metadata.csv.CsvWorkbook。 CSV 输出的单工作表逻辑工作簿。
 #[derive(Debug, Clone, PartialEq)]
 pub struct CsvWorkbook<V: CsvCellValue = ModelCellValue> {
+    identity: usize,
     out: String,
     locale: String,
     use_1904_windowing: bool,
@@ -30,6 +34,7 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
         with_bom: bool,
     ) -> Self {
         Self {
+            identity: NEXT_CSV_WORKBOOK_ID.fetch_add(1, Ordering::Relaxed),
             out: String::new(),
             locale: locale.into(),
             use_1904_windowing,
@@ -40,6 +45,12 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
             data_format: CsvDataFormat::new(),
             cell_styles: Vec::new(),
         }
+    }
+
+    /// 返回工作簿稳定身份，供组合模型替代 Java 父对象引用。
+    #[must_use]
+    pub const fn identity(&self) -> usize {
+        self.identity
     }
 
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回配置的区域标记。
@@ -217,7 +228,9 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
                 "CSV repeat sheet creation is not allowed".to_owned(),
             ));
         }
-        self.sheet = Some(CsvSheet::new(sheet_name));
+        let mut sheet = CsvSheet::new(sheet_name);
+        sheet.set_csv_workbook(Some(self.identity));
+        self.sheet = Some(sheet);
         self.sheet
             .as_mut()
             .ok_or_else(|| Error::Csv("CSV sheet assignment produced no sheet".to_owned()))
@@ -289,7 +302,12 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
     #[must_use] pub fn get_csv_cell_style_list(&self) -> &[CsvCellStyle] { self.cell_styles() }
     pub fn set_csv_cell_style_list(&mut self, value: Vec<CsvCellStyle>) { self.cell_styles = value; }
     pub fn set_csv_data_format(&mut self, value: CsvDataFormat) { self.data_format = value; }
-    pub fn set_csv_sheet(&mut self, value: Option<CsvSheet<V>>) { self.sheet = value; }
+    pub fn set_csv_sheet(&mut self, mut value: Option<CsvSheet<V>>) {
+        if let Some(sheet) = value.as_mut() {
+            sheet.set_csv_workbook(Some(self.identity));
+        }
+        self.sheet = value;
+    }
 
     /// CSV 不保存名称、图片、字体或打印区域。
     #[must_use] pub const fn get_all_names(&self) -> Vec<&str> { Vec::new() }

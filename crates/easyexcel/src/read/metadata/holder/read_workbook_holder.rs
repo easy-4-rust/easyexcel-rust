@@ -6,6 +6,7 @@ use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 
 use super::abstract_read_holder::AbstractReadHolder;
+use super::read_holder::delegate_read_holder_contract;
 
 /// 对应 Java：`ReadWorkbookHolder extends AbstractReadHolder`.
 ///
@@ -99,8 +100,14 @@ impl ReadWorkbookHolder {
             None,
             crate::HolderEnum::Workbook,
         );
+        holder.input_stream = value.get_input_stream().map(<[u8]>::to_vec);
         holder.file = value.file().map(Path::to_path_buf);
         holder.excel_type = value.excel_type();
+        holder.auto_close_stream = value.get_auto_close_stream().unwrap_or(true);
+        holder.ignore_empty_row = value.get_ignore_empty_row().unwrap_or(true);
+        holder.mandatory_use_input_stream = value
+            .get_mandatory_use_input_stream()
+            .unwrap_or(false);
         holder.read_workbook = Some(value);
         holder
     }
@@ -213,8 +220,11 @@ impl ReadWorkbookHolder {
     }
 
     /// 对应 Java：com.alibaba.excel.read.metadata.holder.ReadWorkbookHolder。 Stores format-discovered sheets.
-    pub fn set_actual_sheet_data_list(&mut self, sheets: Vec<ReadSheet>) {
-        self.actual_sheet_data_list = Some(sheets);
+    pub fn set_actual_sheet_data_list(
+        &mut self,
+        sheets: impl Into<Option<Vec<ReadSheet>>>,
+    ) {
+        self.actual_sheet_data_list = sheets.into();
     }
 
     /// 返回调用参数 Sheet 列表。
@@ -224,8 +234,11 @@ impl ReadWorkbookHolder {
     }
 
     /// 设置调用参数 Sheet 列表。
-    pub fn set_parameter_sheet_data_list(&mut self, sheets: Vec<ReadSheet>) {
-        self.parameter_sheet_data_list = Some(sheets);
+    pub fn set_parameter_sheet_data_list(
+        &mut self,
+        sheets: impl Into<Option<Vec<ReadSheet>>>,
+    ) {
+        self.parameter_sheet_data_list = sheets.into();
     }
 
     /// 标记一个 Sheet 已读取，返回是否首次插入。
@@ -281,3 +294,5 @@ impl Deref for ReadWorkbookHolder {
 impl DerefMut for ReadWorkbookHolder {
     fn deref_mut(&mut self) -> &mut Self::Target { &mut self.abstract_holder }
 }
+
+delegate_read_holder_contract!(ReadWorkbookHolder, abstract_holder);

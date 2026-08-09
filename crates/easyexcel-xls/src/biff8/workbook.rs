@@ -1,17 +1,17 @@
 //! In-memory BIFF8 workbook model and OLE/CFB serialization.
 //!
 //! Java mapping: Alibaba `EasyExcel` `excelType(ExcelTypeEnum.XLS)` → POI HSSF.
-//! This module is a **minimal** BIFF8 writer (not a full HSSF port):
-//! - Supported: single/multi sheet, header + data rows, string / number / bool /
-//!   date / datetime cells, SST shared strings, 1900 date system, column widths
-//!   (COLINFO), row heights (ROW), basic FONT/XF (bold/italic/size/indexed or
-//!   approximated RGB fill), MERGECELLS ranges.
+//! This module is the single generated-workbook BIFF8 engine (not a full HSSF port):
+//! - Supported: multi-sheet values/formulas, errors, rich SST, 1900/1904 date
+//!   windows, visibility, dimensions, FONT/XF/fill/border, merges, hyperlinks,
+//!   comments, charts, protection and workbook CryptoAPI encryption.
 //! - Template scalar/collection fill and in-place OLE patching are implemented by
 //!   the independent template package. URL hyperlinks, comments, rich text,
 //!   borders, native Bar/Line/Pie charts, VBA preservation and `CryptoAPI`
-//!   password encryption are supported by the stateful BIFF8 path.
+//!   password encryption are consumed by both the stateful writer and the
+//!   format-neutral `xls::write` adapter.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::io::{Cursor, Write};
 use std::path::Path;
 
@@ -21,13 +21,15 @@ use easyexcel_io::{Error as ExcelError, Result};
 use super::cached::Biff8Cached;
 use super::encode::{
     BIFF8_VERSION, BLANK, BOF, BOOLERR, BOUNDSHEET, CALCMODE, CODENAME, CODEPAGE, COLINFO,
-    CONTINUE, DATEMODE, DIMENSION, DT_GLOBALS, DT_WORKSHEET, EOF, EXTERNSHEET, EXTSST, FILEPASS,
+    CONTINUE, DATEMODE, DBCELL, DEFCOLWIDTH, DEFAULTROWHEIGHT, DIMENSION, DT_GLOBALS,
+    DT_WORKSHEET, EOF, EXTERNSHEET, EXTSST, FILEPASS,
     FONT, FORMAT, FORMULA, HYPERLINK, INTERFACEEND, INTERFACEHDR, LABELSST, MAX_RECORD_DATA, MMS,
-    MSODRAWING, MSODRAWINGGROUP, MULBLANK, MULRK, NOTE, NUMBER, OBJ, PANE, RK, ROW, SST, STRING,
-    OBJECTPROTECT, PASSWORD, PROTECT, SCENPROTECT, STYLE, SUPBOOK, TXO, WINDOW2, WRITEACCESS, XF,
+    INDEX, MSODRAWING, MSODRAWINGGROUP, MULBLANK, MULRK, NOTE, NUMBER, OBJ, PANE, RK, ROW, SST,
+    OBJECTPROTECT, PASSWORD, PROTECT, SCENPROTECT, STANDARDWIDTH, STYLE, SUPBOOK, TXO, WINDOW1,
+    WINDOW2, WRITEACCESS, XF,
     XF_DATE, XF_DATETIME, XF_GENERAL, encode_rk, encode_short_unicode_string,
-    encode_unicode_string, pack_colinfo, pack_merge_range, pack_row, record, write_merge_cells,
-    write_palette_record,
+    encode_unicode_string, pack_colinfo_metadata, pack_default_row, pack_merge_range,
+    pack_row_metadata, pack_window1, record, write_merge_cells, write_palette_record,
 };
 use super::style::Biff8StyleTable;
 

@@ -9,6 +9,7 @@ mod excel_web_error;
 mod excel_web_error_code;
 mod excel_web_policy;
 mod excel_web_runtime;
+mod http_headers;
 mod temp_artifact;
 mod web_execution_context;
 
@@ -21,4 +22,7 @@ pub use excel_web_error::ExcelWebError;
 pub use excel_web_error_code::ExcelWebErrorCode;
 pub use excel_web_policy::ExcelWebPolicy;
 pub use excel_web_runtime::ExcelWebRuntime;
+pub use http_headers::{
+    XLSX_CONTENT_TYPE, excel_attachment_content_disposition, excel_xlsx_attachment_headers,
+};
 pub use web_execution_context::WebExecutionContext;

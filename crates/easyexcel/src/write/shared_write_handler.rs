@@ -6,8 +6,9 @@ use std::collections::HashSet;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::core::{
-    ExcelCellStyle, ExcelColumn, ExcelWriteMetadata, Result, WriteCellContext, WriteHandler,
-    WriteHandlerCapability, WriteRowContext, WriteSheetContext, WriteWorkbookContext,
+    ExcelCellStyle, ExcelColumn, ExcelWriteMetadata, Result, WriteCellContext, WriteFont,
+    WriteHandler, WriteHandlerCapability, WriteRowContext, WriteSheetContext,
+    WriteWorkbookContext,
 };
 use crate::event::NotRepeatExecutor;
 
@@ -150,6 +151,10 @@ impl WriteHandler for SharedWriteHandler {
 
     fn style_cell_style(&self, context: &WriteCellContext) -> Option<ExcelCellStyle> {
         self.with_ref(|handler| handler.style_cell_style(context))
+    }
+
+    fn style_write_font(&self, context: &WriteCellContext) -> Option<WriteFont> {
+        self.with_ref(|handler| handler.style_write_font(context))
     }
 
     fn style_column_width(&self, column_index: usize) -> Option<u16> {

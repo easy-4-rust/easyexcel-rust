@@ -72,7 +72,7 @@ impl ExcelWriterBuilder {
         self
     }
 
-    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Encrypts XLSX output.
+    /// 对应 Java：com.alibaba.excel.write.builder.ExcelWriterBuilder。 Encrypts XLSX with ECMA-376 Agile or BIFF8 XLS with CryptoAPI `FILEPASS`.
     #[must_use]
     pub fn password(mut self, password: impl Into<String>) -> Self {
         self.write_workbook.set_password(password);
@@ -84,6 +84,33 @@ impl ExcelWriterBuilder {
     pub fn in_memory(mut self, enabled: bool) -> Self {
         self.write_workbook.set_in_memory(enabled);
         self.memory_selection = Some(enabled);
+        self
+    }
+
+    /// 显式选择常量内存后端。
+    ///
+    /// 这是 [`Self::in_memory`] 的等价反向表达：`true` 强制流式，`false`
+    /// 强制内存。未调用两者时保持 `AutoUndecided`，由 Stateful journal 在
+    /// 不重复执行 Handler 的前提下支持后续晋升。
+    #[must_use]
+    pub fn constant_memory(mut self, enabled: bool) -> Self {
+        self.write_workbook.set_in_memory(!enabled);
+        self.memory_selection = Some(!enabled);
+        self
+    }
+
+    /// 启用 SXSSF 风格的 gzip 临时文件，并显式选择常量内存后端。
+    ///
+    /// 对应 Java：`SXSSFWorkbook#setCompressTempFiles(boolean)`。该选项为
+    /// `true` 时是调用方的明确后端选择，不允许 Auto 因后续 Handler 需要
+    /// 随机访问而静默退回内存模式。
+    #[must_use]
+    pub fn compress_temp_files(mut self, enabled: bool) -> Self {
+        self.write_workbook.options.compress_temp_files = enabled;
+        if enabled {
+            self.write_workbook.set_in_memory(false);
+            self.memory_selection = Some(false);
+        }
         self
     }
 

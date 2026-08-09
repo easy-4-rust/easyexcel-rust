@@ -5,7 +5,7 @@
 /// Java retains the POI `BorderStyle` codes; Rust drops them because the
 /// underlying backend does not need them. Variant names match the Java
 /// POI enum names.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 /// 对应 Java：com.alibaba.excel.enums.poi.BorderStyleEnum。
 pub enum ExcelBorderStyle {
     /// No border.

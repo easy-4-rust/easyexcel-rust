@@ -76,7 +76,8 @@ pub struct WriteOptions {
     pub loop_merges: Vec<LoopMergeStrategy>,
     /// 可选的动态多级标题路径，每列一个路径。
     pub dynamic_head: Option<Vec<Vec<String>>>,
-    /// 用于 ECMA-376 Agile Encryption 的 XLSX 输出密码。
+    /// 工作簿输出密码：XLSX 使用 ECMA-376 Agile Encryption，BIFF8 XLS
+    /// 使用逐记录 CryptoAPI `FILEPASS`。
     pub password: Option<String>,
     /// BIFF8 模板中 VBA 项目的保留、删除或替换策略。
     pub biff8_macro_policy: easyexcel_xls::biff8::Biff8MacroPolicy,

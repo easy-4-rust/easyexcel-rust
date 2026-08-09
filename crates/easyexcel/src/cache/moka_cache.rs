@@ -7,7 +7,11 @@ use crate::core::Result;
 
 use super::read_cache::{ReadCache, SharedStringCacheAdapter};
 
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 生命周期内完整保留共享字符串对象的 Moka `ReadCache` 适配器。
+/// Moka 共享字符串缓存的 Java `ReadCache` 生命周期适配器。
+///
+/// 实际对象存储由 `easyexcel-cache` 承载。本类型只提供显式选择 Moka
+/// 后端时的适配，不代表已经退役的 Java Ehcache：后者的磁盘/活跃缓存语义
+/// 由 `SharedStringCachePolicy` 与 Memory/File/Moka 后端组合替代。
 pub struct MokaCache {
     adapter: SharedStringCacheAdapter,
 }

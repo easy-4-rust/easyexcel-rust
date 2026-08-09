@@ -9,5 +9,6 @@ pub mod web;
 
 pub use web::{
     ExcelExport, ExcelImport, ExcelProblemDetails, ExcelRequestMetadata, ExcelRows, ExcelWebError,
-    ExcelWebErrorCode, ExcelWebPolicy, ExcelWebRuntime, WebExecutionContext,
+    ExcelWebErrorCode, ExcelWebPolicy, ExcelWebRuntime, WebExecutionContext, XLSX_CONTENT_TYPE,
+    excel_attachment_content_disposition, excel_xlsx_attachment_headers,
 };

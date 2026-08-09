@@ -39,6 +39,7 @@ pub(crate) fn recalc_cached_values(sheets: &[Biff8Sheet]) -> Vec<HashMap<(u16, u
                 Biff8Value::RichText(rich) => Cell::Text(rich.text.clone()),
                 Biff8Value::Number(number) => Cell::Number(*number),
                 Biff8Value::Bool(flag) => Cell::Bool(*flag),
+                Biff8Value::Error(code) => Cell::Error(CellError::from_biff_code(*code)),
                 Biff8Value::Formula(expr) => Cell::Formula {
                     expr: expr.clone(),
                     cached: CellValue::Empty,

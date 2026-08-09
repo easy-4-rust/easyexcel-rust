@@ -50,6 +50,8 @@ impl ReadListener<crate::CellValue> for SyncReadListener {
     }
 }
 
+impl crate::event::AnalysisEventListener<crate::CellValue> for SyncReadListener {}
+
 #[cfg(test)]
 mod tests_extra {
     use super::*;

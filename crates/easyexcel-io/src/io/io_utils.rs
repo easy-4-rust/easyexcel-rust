@@ -6,6 +6,9 @@ use std::io::{self, Read, Write};
 
 use crate::Error as ExcelError;
 
+/// Java `IoUtils.EOF`：流读取到末尾时使用的哨兵值。
+pub const EOF: i32 = -1;
+
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 Mirrors `org.apache.commons.io.IOUtils#copy`.
 ///
 /// Copies all bytes from `reader` into `writer` using a 4 KiB stack

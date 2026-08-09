@@ -47,6 +47,23 @@ pub fn read_workbook_stream_with_password(path: &Path, password: Option<&str>) -
     Ok(workbook)
 }
 
+/// 从 XLS 路径读取并遍历解密后的 BIFF records。
+///
+/// 该入口把 OLE2 stream 选择、密码处理和物理 record 遍历保留在格式引擎内；
+/// 上层事件适配器只需处理 `(sid, payload)`。
+///
+/// # Errors
+///
+/// 文件、复合文档、密码、BIFF record 或回调处理失败时返回错误。
+pub fn walk_path_records_with_password(
+    path: &Path,
+    password: Option<&str>,
+    process: impl FnMut(u16, &[u8]) -> Result<()>,
+) -> Result<()> {
+    let workbook = read_workbook_stream_with_password(path, password)?;
+    walk_biff_records(&workbook, process)
+}
+
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 Walks every physical BIFF record in a workbook stream.
 ///
 /// Unlike the former display-only parser, this reports truncated headers and

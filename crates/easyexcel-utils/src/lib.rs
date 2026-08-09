@@ -3,6 +3,6 @@
 pub mod utils;
 
 pub use utils::{
-    boolean_utils, coordinate_utils, int_utils, list_utils, map_utils, sheet_utils, string_utils,
-    validation,
+    boolean_utils, coordinate_utils, int_utils, list_utils, map_utils, position_utils, sheet_utils,
+    string_utils, validation,
 };
