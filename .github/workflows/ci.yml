@@ -65,6 +65,64 @@ jobs:
           components: clippy,llvm-tools-preview,rustfmt
       - uses: taiki-e/install-action@cargo-llvm-cov
       - run: ./scripts/coverage.sh
+      - name: Upload coverage HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html-${{ github.sha }}
+          path: coverage/
+          retention-days: 30
+      - name: Upload coverage lcov
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov-${{ github.sha }}
+          path: coverage/lcov.info
+          retention-days: 90
+
+  # T5.2: PR coverage — generates lcov for diff analysis (no gate).
+  # TODO(pending): PR comment integration requires a third-party action
+  # such as orgoro/coverage, tylermachen/pr-coverage, or a Cobertura
+  # converter (mattgruenke/lcov-to-cobertura) + 5monkeys/cobertura-action.
+  # Uncomment the comment step below once a suitable action is chosen.
+  coverage-pr:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      LANG: zh_CN.UTF-8
+      LC_ALL: zh_CN.UTF-8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install zh_CN locale and zlib dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y locales zlib1g-dev
+          sudo locale-gen zh_CN.UTF-8
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.97.1
+          components: clippy,llvm-tools-preview,rustfmt
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Generate lcov report (no gate)
+        run: |
+          cargo llvm-cov clean --workspace
+          cargo llvm-cov \
+            --workspace \
+            --all-features \
+            --ignore-filename-regex 'easyexcel-derive/src/lib\.rs|easyexcel-reader/src/locale_generated\.rs' \
+            --lcov \
+            --output-path lcov.info
+      - name: Upload PR coverage lcov
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov-pr-${{ github.event.pull_request.number }}
+          path: lcov.info
+          retention-days: 30
+      # TODO(pending): PR comment with coverage diff
+      # Requires third-party action, e.g.:
+      # - uses: orgoro/coverage@v3
+      #   with:
+      #     lcov-file: lcov.info
+      #     threshold: 95
+      #     token: ${{ secrets.GITHUB_TOKEN }}
 
   msrv:
     # 核心与 Salvo 适配器分别验证各自 MSRV；质量工具链仍固定为 1.97.1。
