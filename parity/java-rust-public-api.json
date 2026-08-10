@@ -13519,11 +13519,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.metadata.Font#setFontHeightInPoints(S)V",
       "rust_ids": [
-        "easyexcel:6bf47d2d9d097afa434f",
-        "easyexcel:77c1b19eb29615d4d5b6"
+        "easyexcel:6bf47d2d9d097afa434f"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with Font#getFontHeightInPoints",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -13943,11 +13942,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.metadata.Holder#holderType()Lcom/alibaba/excel/enums/HolderEnum;",
       "rust_ids": [
-        "easyexcel:44887275ed60b9ee7668",
-        "easyexcel:9ad1dfec820fffe6e25a"
+        "easyexcel:44887275ed60b9ee7668"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Trait method definition in Holder trait",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -15939,11 +15937,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.metadata.csv.CsvSheet",
       "rust_ids": [
-        "easyexcel:01e1d984b0e3119b5ba3",
-        "easyexcel:c96b744ed8adff0051ec"
+        "easyexcel:01e1d984b0e3119b5ba3"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Type alias in easyexcel crate (pub type CsvSheet)",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -18101,11 +18098,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.metadata.csv.CsvWorkbook",
       "rust_ids": [
-        "easyexcel:6725a44ac3d77c0a9bc0",
-        "easyexcel:6d8bf8faf894bd0f1dce"
+        "easyexcel:6725a44ac3d77c0a9bc0"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Type alias in easyexcel crate (pub type CsvWorkbook)",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -20259,11 +20255,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.metadata.data.HyperlinkData#getHyperlinkType()Lcom/alibaba/excel/metadata/data/HyperlinkData$HyperlinkType;",
       "rust_ids": [
-        "easyexcel:5c7ab345ca1dca648571",
-        "easyexcel:eba9d99a75112ddc8171"
+        "easyexcel:5c7ab345ca1dca648571"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with HyperlinkData#setHyperlinkType",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -21265,11 +21260,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.metadata.data.WriteCellData#setWriteCellStyle(Lcom/alibaba/excel/write/metadata/style/WriteCellStyle;)V",
       "rust_ids": [
-        "easyexcel:30263488998ae9e1f9bd",
         "easyexcel:ab16fe9256fbbbc2caa3"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with WriteCellData#getWriteCellStyle",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -23711,11 +23705,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.read.metadata.ReadSheet#setSheetNo(Ljava/lang/Integer;)V",
       "rust_ids": [
-        "easyexcel:aa32c0d4b63fa3f60241",
         "easyexcel:f0a0632de49f5ae67e8b"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with ReadSheet#getSheetNo",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -23931,11 +23924,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.read.metadata.ReadWorkbook#setAutoCloseStream(Ljava/lang/Boolean;)V",
       "rust_ids": [
-        "easyexcel:2190831f9199651c0313",
-        "easyexcel:cd9c7daf3823d4b79301"
+        "easyexcel:2190831f9199651c0313"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with ReadWorkbook#getAutoCloseStream",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -23943,11 +23935,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.read.metadata.ReadWorkbook#setCharset(Ljava/nio/charset/Charset;)V",
       "rust_ids": [
-        "easyexcel:3efbe5b8912581057ced",
         "easyexcel:fa43d3be2a4b92c7af66"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with ReadWorkbook#getCharset",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -23986,11 +23977,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.read.metadata.ReadWorkbook#setFile(Ljava/io/File;)V",
       "rust_ids": [
-        "easyexcel:23270863217f80bae0e5",
-        "easyexcel:2dfc380211ffed106d1f"
+        "easyexcel:23270863217f80bae0e5"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with ReadWorkbook#getFile",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -23998,11 +23988,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.read.metadata.ReadWorkbook#setIgnoreEmptyRow(Ljava/lang/Boolean;)V",
       "rust_ids": [
-        "easyexcel:ad107d275ae53ffcf9d6",
-        "easyexcel:f2c9863d411f5cdf3f8c"
+        "easyexcel:ad107d275ae53ffcf9d6"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with ReadWorkbook#getIgnoreEmptyRow",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -24039,11 +24028,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.read.metadata.ReadWorkbook#setReadCache(Lcom/alibaba/excel/cache/ReadCache;)V",
       "rust_ids": [
-        "easyexcel:1f682971356a2093d291",
         "easyexcel:cc2c295b1b3c8b01cfad"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with ReadWorkbook#getReadCache",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -24858,11 +24846,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.read.metadata.holder.ReadWorkbookHolder#setActualSheetDataList(Ljava/util/List;)V",
       "rust_ids": [
-        "easyexcel:14d7906f1a5a296fb774",
         "easyexcel:51d311c181dd8ee83abe"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with ReadWorkbookHolder#getActualSheetDataList",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -25423,11 +25410,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.read.metadata.holder.xls.XlsReadWorkbookHolder#setNeedReadSheet(Ljava/lang/Boolean;)V",
       "rust_ids": [
-        "easyexcel:455ab8f014aa6d90d874",
-        "easyexcel:f4838a2ea87b665b67b5"
+        "easyexcel:455ab8f014aa6d90d874"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with XlsReadWorkbookHolder#getNeedReadSheet",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -31806,11 +31792,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.metadata.WriteSheet#setSheetNo(Ljava/lang/Integer;)V",
       "rust_ids": [
-        "easyexcel:c20b485eeec856b67cdf",
-        "easyexcel:d6dba27823aada1da62b"
+        "easyexcel:c20b485eeec856b67cdf"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with WriteSheet#getSheetNo",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -31869,11 +31854,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.metadata.WriteTable#setTableNo(Ljava/lang/Integer;)V",
       "rust_ids": [
-        "easyexcel:95285e0475202395ae01",
         "easyexcel:f328ae7efd82acba81b0"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with WriteTable#getTableNo",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -32047,11 +32031,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.metadata.WriteWorkbook#setAutoCloseStream(Ljava/lang/Boolean;)V",
       "rust_ids": [
-        "easyexcel:84f5009e93d589958ec7",
         "easyexcel:bf08eefc79d4cf8e8388"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with WriteWorkbook#getAutoCloseStream",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -32059,11 +32042,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.metadata.WriteWorkbook#setCharset(Ljava/nio/charset/Charset;)V",
       "rust_ids": [
-        "easyexcel:9152cfa9602e7a7e3da4",
-        "easyexcel:f80009f47c1296bfc761"
+        "easyexcel:9152cfa9602e7a7e3da4"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with WriteWorkbook#getCharset",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -32071,11 +32053,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.metadata.WriteWorkbook#setExcelType(Lcom/alibaba/excel/support/ExcelTypeEnum;)V",
       "rust_ids": [
-        "easyexcel:2b78230fca14d2d8fcfa",
-        "easyexcel:9856554ad38b8eb00396"
+        "easyexcel:2b78230fca14d2d8fcfa"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with WriteWorkbook#getExcelType",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -32083,11 +32064,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.metadata.WriteWorkbook#setFile(Ljava/io/File;)V",
       "rust_ids": [
-        "easyexcel:138a3e410d7ed56b73ed",
         "easyexcel:f53fa80c1fce748f9f0f"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with WriteWorkbook#getFile",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -32095,11 +32075,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.metadata.WriteWorkbook#setInMemory(Ljava/lang/Boolean;)V",
       "rust_ids": [
-        "easyexcel:11117ba23402608dbc34",
-        "easyexcel:4577685c4e90f0d97609"
+        "easyexcel:11117ba23402608dbc34"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with WriteWorkbook#getInMemory",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -32136,11 +32115,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.metadata.WriteWorkbook#setTemplateFile(Ljava/io/File;)V",
       "rust_ids": [
-        "easyexcel:601184a3f8b51f58006e",
-        "easyexcel:9b53279ab1076c7f6042"
+        "easyexcel:601184a3f8b51f58006e"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with WriteWorkbook#getTemplateFile",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -32157,11 +32135,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.metadata.WriteWorkbook#setWithBom(Ljava/lang/Boolean;)V",
       "rust_ids": [
-        "easyexcel:b675c5991e0600e68b4d",
         "easyexcel:e6da07114999844eed29"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with WriteWorkbook#getWithBom",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -32169,11 +32146,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.metadata.WriteWorkbook#setWriteExcelOnException(Ljava/lang/Boolean;)V",
       "rust_ids": [
-        "easyexcel:d10cbeca12e68076d258",
         "easyexcel:d7d75404563d272ff77e"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with WriteWorkbook#getWriteExcelOnException",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -32428,11 +32404,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.metadata.fill.FillConfig#getAutoStyle()Ljava/lang/Boolean;",
       "rust_ids": [
-        "easyexcel:5128d465e5ffac77f051",
         "easyexcel:8e0d0e22c5346a380212"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with FillConfig#setAutoStyle",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -32440,11 +32415,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.metadata.fill.FillConfig#getDirection()Lcom/alibaba/excel/enums/WriteDirectionEnum;",
       "rust_ids": [
-        "easyexcel:36dd8e675390f0335efa",
-        "easyexcel:67887ee1580c6f8387a5"
+        "easyexcel:36dd8e675390f0335efa"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with FillConfig#setDirection",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -32452,11 +32426,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.metadata.fill.FillConfig#getForceNewRow()Ljava/lang/Boolean;",
       "rust_ids": [
-        "easyexcel:86bd988809d1c590ea90",
-        "easyexcel:ba4b40b43d3903a38c05"
+        "easyexcel:86bd988809d1c590ea90"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with FillConfig#setForceNewRow",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
@@ -33191,11 +33164,10 @@
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.metadata.holder.AbstractWriteHolder#setExcelWriteHeadProperty(Lcom/alibaba/excel/write/property/ExcelWriteHeadProperty;)V",
       "rust_ids": [
-        "easyexcel:9e0f9e000f8bed8fc3e6",
         "easyexcel:d3561778086a531e7101"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "ambiguous"
+      "semantic_notes": "Field accessor shared with AbstractWriteHolder#getExcelWriteHeadProperty",
+      "status": "candidate"
     },
     {
       "behavior_tests": [],
