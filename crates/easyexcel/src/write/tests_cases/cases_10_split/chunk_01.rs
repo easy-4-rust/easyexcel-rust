@@ -189,7 +189,7 @@ fn registered_style_strategies_rewrite_cell_style_width_and_height() -> Result<(
         Box::new(SimpleColumnWidthStyleStrategy::uniform(40)),
         Box::new(SimpleRowHeightStyleStrategy::new(Some(30), Some(45))),
         Box::new(HorizontalCellStyleStrategy::with_head_and_content(
-            head, content,
+            head.into(), content.into(),
         )),
         Box::new(LongestMatchColumnWidthStyleStrategy::new()),
     ];

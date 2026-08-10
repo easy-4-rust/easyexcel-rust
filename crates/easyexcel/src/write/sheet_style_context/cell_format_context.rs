@@ -44,7 +44,7 @@ impl<'a> CellFormatContext<'a> {
 
     /// 对应 Java：`ignoreFillStyle`: retain non-style write flags while
     /// suppressing explicit, annotation and strategy style materialization.
-    pub(crate) const fn without_fill_style(mut self) -> Self {
+    pub(crate) fn without_fill_style(mut self) -> Self {
         self.explicit = None;
         self.cell = None;
         self.font = None;

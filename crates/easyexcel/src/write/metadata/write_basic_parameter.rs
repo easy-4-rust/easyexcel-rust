@@ -85,7 +85,7 @@ impl WriteBasicParameter {
             basic_parameter: BasicParameter {
                 head: options.dynamic_head.clone(),
                 auto_trim: Some(options.auto_trim),
-                use_1904windowing: Some(options.use_1904_windowing),
+                use1904windowing: Some(options.use_1904_windowing),
                 locale: Some(options.locale.clone()),
                 use_scientific_format: Some(options.use_scientific_format),
                 filed_cache_location: Some(options.filed_cache_location),

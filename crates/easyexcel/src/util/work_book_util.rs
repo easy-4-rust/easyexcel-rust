@@ -73,7 +73,7 @@ pub fn fill_data_format(cell_data: &mut WriteCellData, format: Option<&str>, def
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{CellValue, ExcelCellStyle};
+    use crate::{CellValue, WriteCellStyle};
 
     #[derive(Default)]
     struct TestWorkBook {
@@ -162,7 +162,8 @@ mod tests {
             cell.data_format_data().and_then(|value| value.format()),
             Some("yyyy-mm-dd")
         );
-        assert_eq!(cell.write_cell_style(), Some(&ExcelCellStyle::default()));
+        let default_style = WriteCellStyle::default();
+        assert_eq!(cell.write_cell_style(), Some(&default_style));
 
         fill_data_format(&mut cell, Some("0.00"), "General");
         assert_eq!(

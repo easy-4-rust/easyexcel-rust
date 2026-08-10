@@ -5,7 +5,7 @@
 
 use std::str::FromStr;
 
-use bigdecimal::{BigDecimal, RoundingMode, ToPrimitive};
+use bigdecimal::{BigDecimal, ToPrimitive};
 use num_bigint::BigInt;
 
 include!("number_utils/excel_math_context_precision_to_parse_long.rs");

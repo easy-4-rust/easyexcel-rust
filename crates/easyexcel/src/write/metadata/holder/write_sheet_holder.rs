@@ -7,7 +7,8 @@ use crate::write::holder::abstract_write_holder::AbstractWriteHolder;
 use crate::write::metadata::holder::write_holder::delegate_write_holder_contract;
 use crate::write::holder::write_table_holder::WriteTableHolder;
 use crate::write::metadata::WriteBasicParameter;
-use crate::{HolderEnum, WriteLastRowTypeEnum, WriteSheet};
+use crate::write::metadata::WriteSheet;
+use crate::{HolderEnum, WriteLastRowTypeEnum};
 
 /// 对应 Java：`WriteSheetHolder extends AbstractWriteHolder`.
 ///

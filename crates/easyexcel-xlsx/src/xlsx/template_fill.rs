@@ -110,7 +110,7 @@ pub fn replace_collection_fills_in_sheet_with_decorations(
     if fills.is_empty() {
         return Ok(Vec::new());
     }
-    let mut decoration_placements = Vec::new();
+    let mut decoration_placements: Vec<TemplateDecorationPlacement> = Vec::new();
     let shared_strings = shared_strings(entries);
     let entry = entries
         .iter_mut()

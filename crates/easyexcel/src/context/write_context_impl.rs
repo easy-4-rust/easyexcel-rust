@@ -98,7 +98,7 @@ impl WriteContextImpl {
     }
 
     /// 选择或创建当前工作表。对应 Java：`WriteContext#currentSheet`。
-    pub fn current_sheet(&mut self, write_sheet: &crate::WriteSheet, _write_type: crate::WriteType) {
+    pub fn current_sheet(&mut self, write_sheet: &crate::write::metadata::WriteSheet, _write_type: crate::WriteType) {
         self.set_sheet_context(write_sheet.sheet_name.clone());
         self.table_no = None;
     }

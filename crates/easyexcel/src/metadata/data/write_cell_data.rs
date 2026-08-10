@@ -259,7 +259,7 @@ impl WriteCellData {
     }
 
     /// 设置后端原始样式。对应 Java：`setOriginCellStyle(CellStyle)`。
-    pub const fn set_origin_cell_style(&mut self, style: Option<WriteCellStyle>) {
+    pub fn set_origin_cell_style(&mut self, style: Option<WriteCellStyle>) {
         self.origin_cell_style = style;
     }
 

@@ -117,7 +117,7 @@ fn image_anchor_layout_and_validation_cover_java_coordinate_boundaries() -> Resu
                 )),
                 images: Vec::new(),
             },
-            style,
+            style.clone(),
             &ImageLayout::default(),
         )
         .is_err()
@@ -155,7 +155,7 @@ fn decimal_writer_rejects_values_outside_xlsx_numeric_range() {
             0,
             &TEST_COLUMN,
             &CellValue::Decimal(huge),
-            style,
+            style.clone(),
             &ImageLayout::default(),
         )
         .is_err()

@@ -375,7 +375,7 @@ fn write_mutation_cell(
             worksheet,
             row_index,
             column_index,
-            image,
+            &ImageData::new(image.clone()),
             &ImageLayout::default(),
         ),
     }

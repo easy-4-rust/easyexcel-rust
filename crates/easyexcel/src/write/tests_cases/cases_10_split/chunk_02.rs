@@ -27,8 +27,8 @@ fn write_font_merges_size_and_color_into_strategy_styles() -> Result<()> {
     let directory = tempdir()?;
     let path = directory.path().join("write-font-strategy.xlsx");
     let strategy = HorizontalCellStyleStrategy::with_head_and_content(
-        ExcelCellStyle::new(),
-        ExcelCellStyle::new(),
+        ExcelCellStyle::new().into(),
+        ExcelCellStyle::new().into(),
     )
     .with_head_write_font(
         &WriteFont::new()

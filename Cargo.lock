@@ -928,6 +928,7 @@ dependencies = [
  "easyexcel-xlsx",
  "encoding_rs",
  "flate2",
+ "indexmap",
  "mockall",
  "num-bigint",
  "rust_xlsxwriter",
@@ -954,7 +955,6 @@ dependencies = [
  "serde_json",
  "tokio",
  "tokio-util",
- "urlencoding",
 ]
 
 [[package]]
@@ -973,7 +973,6 @@ dependencies = [
  "tokio",
  "tokio-util",
  "tower",
- "urlencoding",
 ]
 
 [[package]]
@@ -1163,7 +1162,6 @@ dependencies = [
  "serde_json",
  "tokio",
  "tokio-util",
- "urlencoding",
 ]
 
 [[package]]
@@ -1214,7 +1212,6 @@ dependencies = [
  "serde_json",
  "tokio",
  "tokio-util",
- "urlencoding",
 ]
 
 [[package]]
@@ -1228,7 +1225,6 @@ dependencies = [
  "rocket",
  "serde_json",
  "tokio-util",
- "urlencoding",
 ]
 
 [[package]]
@@ -1242,7 +1238,6 @@ dependencies = [
  "salvo",
  "serde_json",
  "tokio-util",
- "urlencoding",
 ]
 
 [[package]]
@@ -1290,7 +1285,6 @@ dependencies = [
  "serde_json",
  "tokio",
  "tokio-util",
- "urlencoding",
  "warp",
 ]
 
@@ -1309,6 +1303,7 @@ dependencies = [
  "tokio",
  "tokio-util",
  "tracing",
+ "urlencoding",
 ]
 
 [[package]]

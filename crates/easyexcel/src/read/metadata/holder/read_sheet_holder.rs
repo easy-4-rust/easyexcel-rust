@@ -128,7 +128,7 @@ impl ReadSheetHolder {
     pub fn set_temp_cell_data(&mut self, value: Option<ReadCellData>) { self.temp_cell_data = value; }
     #[must_use] pub const fn get_read_sheet(&self) -> &ReadSheet { &self.read_sheet }
     pub fn set_read_sheet(&mut self, value: ReadSheet) { self.read_sheet = value; }
-    #[must_use] pub const fn get_parent_read_workbook_holder(&self) -> Option<&ReadWorkbookHolder> {
+    #[must_use] pub fn get_parent_read_workbook_holder(&self) -> Option<&ReadWorkbookHolder> {
         self.parent_read_workbook_holder.as_deref()
     }
     pub fn set_parent_read_workbook_holder(&mut self, value: Option<ReadWorkbookHolder>) {

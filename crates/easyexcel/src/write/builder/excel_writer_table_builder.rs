@@ -427,13 +427,11 @@ mod tests {
     #[test]
     fn merge_table_options_overrides_head_settings() {
         let sheet = WriteOptions::default();
-        let table = WriteTable {
-            options: WriteOptions {
-                need_head: false,
-                relative_head_row_index: 4,
-                ..WriteOptions::default()
-            },
-            ..WriteTable::new()
+        let mut table = WriteTable::new();
+        table.options = WriteOptions {
+            need_head: false,
+            relative_head_row_index: 4,
+            ..WriteOptions::default()
         };
         let merged = merge_table_options(&sheet, &table);
         assert!(!merged.need_head);

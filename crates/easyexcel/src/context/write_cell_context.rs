@@ -149,7 +149,7 @@ impl WriteCellContext {
     /// Attaches typed column metadata.
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。
-    pub const fn with_column(mut self, column: &'static ExcelColumn) -> Self {
+    pub fn with_column(mut self, column: &'static ExcelColumn) -> Self {
         self.field = if column.field.is_empty() {
             None
         } else {

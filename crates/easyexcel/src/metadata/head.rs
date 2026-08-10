@@ -113,14 +113,14 @@ impl Head {
     /// Returns whether the column index was forced. (Java `getForceIndex()`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.metadata.Head。
-    pub const fn force_index(&self) -> bool {
+    pub fn force_index(&self) -> bool {
         self.force_index.unwrap_or(false)
     }
 
     /// Returns whether the header name was forced. (Java `getForceName()`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.metadata.Head。
-    pub const fn force_name(&self) -> bool {
+    pub fn force_name(&self) -> bool {
         self.force_name.unwrap_or(false)
     }
 

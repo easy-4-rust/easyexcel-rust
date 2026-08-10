@@ -628,11 +628,9 @@ impl OoxmlTemplatePackage {
             )?
             .into_bytes();
             let relationship = format!(
-                concat!(
-                    "<Relationship Id=\"{new_image_id}\" ",
-                    "Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\" ",
-                    "Target=\"../media/image{image_number}.{extension}\"/>"
-                )
+                "<Relationship Id=\"{new_image_id}\" \
+                 Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\" \
+                 Target=\"../media/image{image_number}.{extension}\"/>"
             );
             target_drawing_rels = insert_before_close_tag(
                 &target_drawing_rels,
@@ -649,13 +647,11 @@ impl OoxmlTemplatePackage {
                 "r:embed=\"rId1\"",
             );
             let drawing_rels = format!(
-                concat!(
-                    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>",
-                    "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">",
-                    "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\" ",
-                    "Target=\"../media/image{image_number}.{extension}\"/>",
-                    "</Relationships>"
-                )
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\
+                 <Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\
+                 <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\" \
+                 Target=\"../media/image{image_number}.{extension}\"/>\
+                 </Relationships>"
             );
             self.entries.push(OoxmlZipEntry {
                 name: drawing_path.clone(),
@@ -972,13 +968,11 @@ impl OoxmlTemplatePackage {
                 "r:id=\"rId1\"",
             );
             let drawing_rels = format!(
-                concat!(
-                    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>",
-                    "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">",
-                    "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart\" ",
-                    "Target=\"../charts/chart{chart_number}.xml\"/>",
-                    "</Relationships>"
-                )
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\
+                 <Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\
+                 <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart\" \
+                 Target=\"../charts/chart{chart_number}.xml\"/>\
+                 </Relationships>"
             );
             self.entries.push(OoxmlZipEntry {
                 name: drawing_path.clone(),

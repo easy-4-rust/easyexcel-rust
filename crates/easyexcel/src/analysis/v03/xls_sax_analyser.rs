@@ -3,6 +3,7 @@
 use std::path::{Path, PathBuf};
 
 use crate::core::{AnalysisContext, ExcelError, ExcelRow, ReadListener, Result};
+use crate::context::analysis_context::AnalysisContextLifecycle;
 
 use crate::analysis::excel_read_executor::{ExcelReadExecutor, NoopDynamicReadListener};
 use crate::analysis::v03::xls_list_sheet_listener::XlsListSheetListener;

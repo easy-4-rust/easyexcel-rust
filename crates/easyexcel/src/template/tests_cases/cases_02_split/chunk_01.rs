@@ -293,16 +293,16 @@ fn fill_config_and_wrapper_match_java_defaults_and_builders() {
 
     let defaults = FillConfig::default();
     assert_eq!(defaults, FillConfig::new());
-    assert_eq!(defaults.get_direction(), FillDirection::Vertical);
-    assert!(!defaults.get_force_new_row());
-    assert!(defaults.get_auto_style());
+    assert_eq!(defaults.get_direction(), Some(FillDirection::Vertical));
+    assert!(!defaults.get_force_new_row().unwrap_or(false));
+    assert!(defaults.get_auto_style().unwrap_or(false));
 
     let configured = FillConfig::new()
         .direction(FillDirection::Horizontal)
         .force_new_row(true)
         .auto_style(false);
-    assert_eq!(configured.get_direction(), FillDirection::Horizontal);
-    assert!(configured.get_force_new_row());
-    assert!(!configured.get_auto_style());
+    assert_eq!(configured.get_direction(), Some(FillDirection::Horizontal));
+    assert!(configured.get_force_new_row().unwrap_or(false));
+    assert!(!configured.get_auto_style().unwrap_or(false));
 }
 

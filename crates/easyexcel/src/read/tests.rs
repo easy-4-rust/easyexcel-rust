@@ -351,6 +351,8 @@ fn options() -> ReadOptions {
         converters: crate::core::ConverterRegistry::default(),
         read_cache: ReadCacheMode::default(),
         read_cache_selector: None,
+        use_default_listener: true,
+        xlsx_sax_parser_factory_name: None,
     }
 }
 

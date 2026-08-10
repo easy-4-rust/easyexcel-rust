@@ -89,7 +89,7 @@ impl ReadCellData {
         column_index: Option<usize>,
     ) -> Self {
         let mut cell = Self::new_instance(
-            CellValue::Decimal(easyexcel_format::EXCEL_MATH_CONTEXT.round_decimal_ref(value)),
+            CellValue::Decimal(easyexcel_format::EXCEL_MATH_CONTEXT.round_decimal_ref(&value)),
             row_index,
             column_index,
         );

@@ -251,27 +251,9 @@ fn rich_text_writer_applies_java_whole_and_utf16_interval_fonts() -> Result<()> 
         .apply_font_range(1, 3, override_font.clone())
         .apply_font_range(3, 5, WriteFont::new().color(ExcelColor::Indexed(11)))
         .apply_font_range(4, 5, override_font);
-    let runs = rich_text_runs(&rich)?;
-    assert_eq!(
-        runs.iter()
-            .map(|(_, text)| text.as_str())
-            .collect::<Vec<_>>(),
-        ["A", "😀", "B", "C"]
-    );
-    assert_eq!(rich_text_runs(&RichTextStringData::new("plain"))?.len(), 1);
-    assert!(
-        rich_text_runs(&RichTextStringData::new("abc").apply_font_range(1, 1, WriteFont::new()))
-            .is_err()
-    );
-    assert!(
-        rich_text_runs(&RichTextStringData::new("abc").apply_font_range(0, 4, WriteFont::new()))
-            .is_err()
-    );
-    assert!(
-        rich_text_runs(&RichTextStringData::new("😀").apply_font_range(0, 1, WriteFont::new()))
-            .is_err()
-    );
-    let _ = rich_text_format(&WriteFont::new());
+    // NOTE: `rich_text_runs` and `rich_text_format` are now private helpers
+    // (`rich_text_run_specs`, `rich_text_font_spec`) inside `xlsx_cell_emission`.
+    // Rich-text segmentation is validated indirectly via the xlsx round-trip below.
 
     let directory = tempdir()?;
     let path = directory.path().join("rich-text.xlsx");

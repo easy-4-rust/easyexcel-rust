@@ -566,7 +566,7 @@ impl<'a> ExcelTemplateWriter<'a> {
         if !decorations.is_empty() {
             let package = easyexcel_xlsx::OoxmlPackage::from_entries(entries);
             let mut package = easyexcel_xlsx::OoxmlTemplatePackage::from_package(package);
-            let mut sheet_names = BTreeMap::new();
+            let mut sheet_names: BTreeMap<String, String> = BTreeMap::new();
             for (worksheet, placement) in decorations {
                 let sheet_name = if let Some(sheet_name) = sheet_names.get(&worksheet) {
                     sheet_name.clone()

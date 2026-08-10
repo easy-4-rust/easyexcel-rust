@@ -12,7 +12,7 @@ use crate::read::ReadOptions;
 ///
 /// 读取基本参数，包含表头行数和自定义监听器列表（对应 Java `ReadBasicParameter`）。
 /// 实际字段已分散到 `ReadOptions` 和 builder 中。
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ReadBasicParameter {
     /// Java 父类 `BasicParameter` 的完整字段。
     pub basic_parameter: BasicParameter,
@@ -35,7 +35,7 @@ impl ReadBasicParameter {
         Self {
             basic_parameter: BasicParameter {
                 auto_trim: Some(options.auto_trim),
-                use_1904windowing: Some(options.use_1904_windowing),
+                use1904windowing: Some(options.use_1904_windowing),
                 use_scientific_format: Some(options.scientific_format.is_enabled()),
                 ..BasicParameter::default()
             },
