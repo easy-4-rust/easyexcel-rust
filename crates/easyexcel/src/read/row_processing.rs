@@ -102,10 +102,10 @@ pub(crate) fn read_sheet(
                     current,
                     std::mem::take(&mut current_cells),
                     SourceRowMetadata {
-                        formulas: std::mem::take(&mut current_formulas),
-                        display_values: std::mem::take(&mut current_display_values),
-                        decimal_values: std::mem::take(&mut current_decimal_values),
-                        present_columns: std::mem::take(&mut current_present_columns),
+                        formulas: Some(std::mem::take(&mut current_formulas)),
+                        display_values: Some(std::mem::take(&mut current_display_values)),
+                        decimal_values: Some(std::mem::take(&mut current_decimal_values)),
+                        present_columns: Some(std::mem::take(&mut current_present_columns)),
                     },
                     options,
                     &mut headers,
@@ -129,11 +129,15 @@ pub(crate) fn read_sheet(
             }
             current_index = Some(row);
         }
-        if let Some(value) = cell.display_value {
-            current_display_values.insert(column, value);
+        if dispatch_plan.retain_display_values() {
+            if let Some(value) = cell.display_value {
+                current_display_values.insert(column, value);
+            }
         }
-        if let Some(value) = cell.decimal_value {
-            current_decimal_values.insert(column, value);
+        if dispatch_plan.retain_decimal_values() {
+            if let Some(value) = cell.decimal_value {
+                current_decimal_values.insert(column, value);
+            }
         }
         if current_cells.len() <= column {
             current_cells.resize(column + 1, CellValue::Empty);
@@ -142,8 +146,10 @@ pub(crate) fn read_sheet(
             current_present_columns.insert(column);
         }
         current_cells[column] = cell.value;
-        if let Some(formula) = cell.formula {
-            current_formulas.insert(column, formula);
+        if dispatch_plan.retain_formulas() {
+            if let Some(formula) = cell.formula {
+                current_formulas.insert(column, formula);
+            }
         }
     }
 
@@ -155,10 +161,10 @@ pub(crate) fn read_sheet(
             row,
             current_cells,
             SourceRowMetadata {
-                formulas: current_formulas,
-                display_values: current_display_values,
-                decimal_values: current_decimal_values,
-                present_columns: current_present_columns,
+                formulas: Some(current_formulas),
+                display_values: Some(current_display_values),
+                decimal_values: Some(current_decimal_values),
+                present_columns: Some(current_present_columns),
             },
             options,
             &mut headers,
@@ -267,8 +273,8 @@ pub(crate) fn read_range(
             row_index,
             cells,
             SourceRowMetadata {
-                display_values,
-                present_columns,
+                display_values: Some(display_values),
+                present_columns: Some(present_columns),
                 ..SourceRowMetadata::default()
             },
             options,
@@ -346,9 +352,9 @@ pub(crate) fn read_model_sheet(
             row_index,
             cells,
             SourceRowMetadata {
-                formulas,
-                display_values,
-                present_columns,
+                formulas: Some(formulas),
+                display_values: Some(display_values),
+                present_columns: Some(present_columns),
                 ..SourceRowMetadata::default()
             },
             options,
@@ -399,9 +405,9 @@ where
     // 已固定列位置，不为 CSV 的每一行构造 0..len 的 HashSet；与 XLSX
     // ReadDispatchPlan 的 capability 判定保持一致。
     let present_columns = if T::schema().is_empty() {
-        (0..cells.len()).collect()
+        Some((0..cells.len()).collect())
     } else {
-        HashSet::new()
+        None
     };
     let mut consumer = TypedRowConsumer::<T> { listener };
     dispatch_row(

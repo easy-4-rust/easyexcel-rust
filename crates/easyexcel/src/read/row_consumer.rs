@@ -18,8 +18,23 @@ include!("row_consumer/read_flow.rs");
 include!("row_consumer/source_row_metadata.rs");
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) trait RowConsumer {
-    /// 返回消费者是否区分“源 XML 中不存在”与“显式空单元格”。
+    /// 返回消费者是否区分”源 XML 中不存在”与”显式空单元格”。
     fn requires_present_columns(&self) -> bool {
+        true
+    }
+
+    /// 返回消费者是否需要公式元数据。
+    fn requires_formulas(&self) -> bool {
+        true
+    }
+
+    /// 返回消费者是否需要显示值。
+    fn requires_display_values(&self) -> bool {
+        true
+    }
+
+    /// 返回消费者是否需要精确 decimal 值。
+    fn requires_decimal_values(&self) -> bool {
         true
     }
 
