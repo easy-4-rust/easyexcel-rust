@@ -217,6 +217,60 @@
           "sha256": "2754f07d735bd5070cb1c8dad803126a8a53f0efe83f3fdc7edcec2e9cfdf510"
         }
       ]
+    },
+    {
+      "id": "excel-writer.supplier-fill.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.ExcelWriter#fill(Ljava/util/function/Supplier;Lcom/alibaba/excel/write/metadata/WriteSheet;)Lcom/alibaba/excel/ExcelWriter;",
+        "com.alibaba.excel.ExcelWriter#fill(Ljava/util/function/Supplier;Lcom/alibaba/excel/write/metadata/fill/FillConfig;Lcom/alibaba/excel/write/metadata/WriteSheet;)Lcom/alibaba/excel/ExcelWriter;"
+      ],
+      "rust_ids": [
+        "easyexcel:82718e00ce4e57ee5268",
+        "easyexcel:2b2a88388aece71875d0"
+      ],
+      "commands": [
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel-test",
+          "--test",
+          "public_api_excel_writer_evidence_tests"
+        ]
+      ],
+      "source_files": [
+        {
+          "path": "tests/easyexcel-test/tests/public_api_excel_writer_evidence_tests.rs"
+        }
+      ]
+    },
+    {
+      "id": "excel-writer.supplier-write.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.ExcelWriter#write(Ljava/util/function/Supplier;Lcom/alibaba/excel/write/metadata/WriteSheet;)Lcom/alibaba/excel/ExcelWriter;",
+        "com.alibaba.excel.ExcelWriter#write(Ljava/util/function/Supplier;Lcom/alibaba/excel/write/metadata/WriteSheet;Lcom/alibaba/excel/write/metadata/WriteTable;)Lcom/alibaba/excel/ExcelWriter;"
+      ],
+      "rust_ids": [
+        "easyexcel:67de85b07f0457ee22e5",
+        "easyexcel:7d11d095a52ed3d22339"
+      ],
+      "commands": [
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel-test",
+          "--test",
+          "public_api_excel_writer_evidence_tests"
+        ]
+      ],
+      "source_files": [
+        {
+          "path": "tests/easyexcel-test/tests/public_api_excel_writer_evidence_tests.rs"
+        }
+      ]
     }
   ]
 }

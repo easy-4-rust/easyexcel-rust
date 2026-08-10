@@ -457,6 +457,94 @@
           "sha256": "a6785b5e92a8b4fc7501cfcbbaa16ebef8f1797dbb3dc5b09f5ef7931070eb22"
         }
       ]
+    },
+    {
+      "id": "facade.read-overloads.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.EasyExcelFactory#read()Lcom/alibaba/excel/read/builder/ExcelReaderBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#read(Ljava/io/File;)Lcom/alibaba/excel/read/builder/ExcelReaderBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#read(Ljava/io/File;Lcom/alibaba/excel/read/listener/ReadListener;)Lcom/alibaba/excel/read/builder/ExcelReaderBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#read(Ljava/io/InputStream;)Lcom/alibaba/excel/read/builder/ExcelReaderBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#read(Ljava/io/InputStream;Lcom/alibaba/excel/read/listener/ReadListener;)Lcom/alibaba/excel/read/builder/ExcelReaderBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#read(Ljava/lang/String;)Lcom/alibaba/excel/read/builder/ExcelReaderBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#read(Ljava/lang/String;Lcom/alibaba/excel/read/listener/ReadListener;)Lcom/alibaba/excel/read/builder/ExcelReaderBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#readSheet()Lcom/alibaba/excel/read/builder/ExcelReaderSheetBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#readSheet(Ljava/lang/Integer;)Lcom/alibaba/excel/read/builder/ExcelReaderSheetBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#readSheet(Ljava/lang/Integer;Ljava/lang/String;)Lcom/alibaba/excel/read/builder/ExcelReaderSheetBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#readSheet(Ljava/lang/String;)Lcom/alibaba/excel/read/builder/ExcelReaderSheetBuilder;"
+      ],
+      "rust_ids": [
+        "easyexcel:ca06c282eef2209cb6f9",
+        "easyexcel:4b3076190112fbb205fe",
+        "easyexcel:302c8a97d664be937960",
+        "easyexcel:e2a097d0d1e7170357c3",
+        "easyexcel:aae5f559311ef65afcdf",
+        "easyexcel:5572defce14b6ede0bc9",
+        "easyexcel:c488a7d893f7d1db7a02",
+        "easyexcel:9750c8058b53cb65bb1d",
+        "easyexcel:86ea830245a5bb3de0fb",
+        "easyexcel:31c0e04a5139eb30ed29",
+        "easyexcel:da55db4c17dc004b9c36",
+        "easyexcel:3b8788cc8b19b845ee90"
+      ],
+      "commands": [
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel-test",
+          "--test",
+          "public_api_facade_evidence_tests"
+        ]
+      ],
+      "source_files": [
+        {
+          "path": "tests/easyexcel-test/tests/public_api_facade_evidence_tests.rs"
+        }
+      ]
+    },
+    {
+      "id": "facade.write-overloads.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.EasyExcelFactory#write()Lcom/alibaba/excel/write/builder/ExcelWriterBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#write(Ljava/io/File;)Lcom/alibaba/excel/write/builder/ExcelWriterBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#write(Ljava/io/File;Ljava/lang/Class;)Lcom/alibaba/excel/write/builder/ExcelWriterBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#write(Ljava/io/OutputStream;)Lcom/alibaba/excel/write/builder/ExcelWriterBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#write(Ljava/io/OutputStream;Ljava/lang/Class;)Lcom/alibaba/excel/write/builder/ExcelWriterBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#write(Ljava/lang/String;)Lcom/alibaba/excel/write/builder/ExcelWriterBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#write(Ljava/lang/String;Ljava/lang/Class;)Lcom/alibaba/excel/write/builder/ExcelWriterBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#writerSheet()Lcom/alibaba/excel/write/builder/ExcelWriterSheetBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#writerSheet(Ljava/lang/Integer;)Lcom/alibaba/excel/write/builder/ExcelWriterSheetBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#writerSheet(Ljava/lang/Integer;Ljava/lang/String;)Lcom/alibaba/excel/write/builder/ExcelWriterSheetBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#writerSheet(Ljava/lang/String;)Lcom/alibaba/excel/write/builder/ExcelWriterSheetBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#writerTable()Lcom/alibaba/excel/write/builder/ExcelWriterTableBuilder;",
+        "com.alibaba.excel.EasyExcelFactory#writerTable(Ljava/lang/Integer;)Lcom/alibaba/excel/write/builder/ExcelWriterTableBuilder;"
+      ],
+      "rust_ids": [
+        "easyexcel:e107371ab995ed463b10",
+        "easyexcel:d0aed66174b4e5363a3b",
+        "easyexcel:9fba5593a676e9247ead",
+        "easyexcel:8a5223482a09a723e612",
+        "easyexcel:0d33c578ba89cbdf47b8",
+        "easyexcel:d0ecd72313181d1f1ce2"
+      ],
+      "commands": [
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel-test",
+          "--test",
+          "public_api_facade_evidence_tests"
+        ]
+      ],
+      "source_files": [
+        {
+          "path": "tests/easyexcel-test/tests/public_api_facade_evidence_tests.rs"
+        }
+      ]
     }
   ]
 }

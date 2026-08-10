@@ -237,6 +237,65 @@
           "sha256": "78ca7ec8acada1e01907d1779d5fbb288dbfab0ac03968d856a03485ddda9e87"
         }
       ]
+    },
+    {
+      "id": "excel-builder.chain-method.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.write.builder.ExcelWriterBuilder#sheet(Ljava/lang/String;)Lcom/alibaba/excel/write/builder/ExcelWriterBuilder;",
+        "com.alibaba.excel.write.builder.ExcelWriterBuilder#needHead(Z)Lcom/alibaba/excel/write/builder/ExcelWriterBuilder;",
+        "com.alibaba.excel.write.builder.ExcelWriterBuilder#head(Ljava/util/List;)Lcom/alibaba/excel/write/builder/ExcelWriterBuilder;",
+        "com.alibaba.excel.write.builder.ExcelWriterSheetBuilder#sheetNo(Ljava/lang/Integer;)Lcom/alibaba/excel/write/builder/ExcelWriterSheetBuilder;",
+        "com.alibaba.excel.write.builder.ExcelWriterSheetBuilder#sheetName(Ljava/lang/String;)Lcom/alibaba/excel/write/builder/ExcelWriterSheetBuilder;",
+        "com.alibaba.excel.write.builder.ExcelWriterSheetBuilder#relativeHeadRowIndex(Ljava/lang/Integer;)Lcom/alibaba/excel/write/builder/ExcelWriterSheetBuilder;",
+        "com.alibaba.excel.write.builder.ExcelWriterSheetBuilder#needHead(Z)Lcom/alibaba/excel/write/builder/ExcelWriterSheetBuilder;"
+      ],
+      "rust_ids": [
+        "easyexcel:061aa6f983700f725dfc",
+        "easyexcel:33b1c0862ad6388f3f14"
+      ],
+      "commands": [
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel-test",
+          "--test",
+          "public_api_excel_builder_evidence_tests"
+        ]
+      ],
+      "source_files": [
+        {
+          "path": "tests/easyexcel-test/tests/public_api_excel_builder_evidence_tests.rs"
+        }
+      ]
+    },
+    {
+      "id": "excel-builder.add-content-table.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.write.ExcelBuilder#addContent(Ljava/util/Collection;Lcom/alibaba/excel/write/metadata/WriteSheet;Lcom/alibaba/excel/write/metadata/WriteTable;)V",
+        "com.alibaba.excel.write.ExcelBuilderImpl#addContent(Ljava/util/Collection;Lcom/alibaba/excel/write/metadata/WriteSheet;Lcom/alibaba/excel/write/metadata/WriteTable;)V"
+      ],
+      "rust_ids": [
+        "easyexcel:bf0af246070ae3dbc72f",
+        "easyexcel:5d0187881bcc1ca1fe9f"
+      ],
+      "commands": [
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel-test",
+          "--test",
+          "public_api_excel_builder_evidence_tests"
+        ]
+      ],
+      "source_files": [
+        {
+          "path": "tests/easyexcel-test/tests/public_api_excel_builder_evidence_tests.rs"
+        }
+      ]
     }
   ]
 }

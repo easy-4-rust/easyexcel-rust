@@ -1392,6 +1392,104 @@
           "sha256": "d12ce5104da16856bb1cb1ee815687188c4f9654e7348dda7caf85bba02bbf32"
         }
       ]
+    },
+    {
+      "id": "excel-analyser.xls-record-handlers.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.analysis.v03.handlers.BofRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.BoundSheetRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.LabelSstRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.FormulaRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.StringRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.RkRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.BlankRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.BoolErrRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.NumberRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.IndexRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.EofRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.MergeCellsRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.NoteRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.LabelRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
+        "com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V"
+      ],
+      "rust_ids": [
+        "easyexcel:836729bdb3203e8f9a18",
+        "easyexcel:98f4a775eec3b400531b",
+        "easyexcel:438a7decebc772bc95be",
+        "easyexcel:3e9b77d53d375578dbd3",
+        "easyexcel:76bb8ec351575fd079c9",
+        "easyexcel:2fa6cf04658d7acb62a2",
+        "easyexcel:45aaefe501e1eb5962c0",
+        "easyexcel:1a744214dc43fb0e6514",
+        "easyexcel:ff57925b9c089ad10d4b",
+        "easyexcel:d014383e8d9e95beafb2",
+        "easyexcel:9db16d625378da47a583",
+        "easyexcel:7ecf5de9fe6f46e21851",
+        "easyexcel:b3adb0ea72f75048158e",
+        "easyexcel:0c99c64c8bf9541e046c",
+        "easyexcel:9cc23babe1e72044d86c",
+        "easyexcel:7514ea9e2679ceba6cc4",
+        "easyexcel:bcd78da4aac1494e5979",
+        "easyexcel:6301a1b831cdcc501889"
+      ],
+      "commands": [
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel-test",
+          "--test",
+          "public_api_excel_analyser_evidence_tests"
+        ]
+      ],
+      "source_files": [
+        {
+          "path": "tests/easyexcel-test/tests/public_api_excel_analyser_evidence_tests.rs"
+        }
+      ]
+    },
+    {
+      "id": "excel-analyser.xlsx-tag-handlers.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#startElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;Lorg/xml/sax/Attributes;)V",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#endElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;)V",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#characters(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;[CII)V",
+        "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#support(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;)Z",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#<init>()V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#support(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;)Z",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler#<init>()V",
+        "com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler#characters(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;[CII)V"
+      ],
+      "rust_ids": [
+        "easyexcel:f3c08588ee9998d9ec63",
+        "easyexcel:1fca69bff13ccc40ba38",
+        "easyexcel:c3e46f2f1c64cbf6e5bc",
+        "easyexcel:defc56cc07bc8105f44e",
+        "easyexcel:c32e76473da7e9eed513",
+        "easyexcel:4a038cc2f5e7505ace5b",
+        "easyexcel:54d0245ad179b60e8a66",
+        "easyexcel:cff36dbfb2621457467a"
+      ],
+      "commands": [
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel-test",
+          "--test",
+          "public_api_excel_analyser_evidence_tests"
+        ]
+      ],
+      "source_files": [
+        {
+          "path": "tests/easyexcel-test/tests/public_api_excel_analyser_evidence_tests.rs"
+        }
+      ]
     }
   ]
 }

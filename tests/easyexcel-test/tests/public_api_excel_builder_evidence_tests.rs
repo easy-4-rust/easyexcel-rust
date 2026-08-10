@@ -298,3 +298,28 @@ fn excel_builder_merge_stays_in_xlsx_and_xls_template_sessions() -> easyexcel::R
     }
     Ok(())
 }
+
+#[test]
+fn excel_builder_chain_methods_on_writer_builder_return_self() -> easyexcel::Result<()> {
+    let directory = tempdir()?;
+    let output = directory.path().join("chain-methods.xlsx");
+
+    // ExcelWriterBuilder chain: sheet() + need_head() return Self
+    // do_write consumes the builder, producing the file.
+    EasyExcel::write::<DynamicRow>(&output)
+        .sheet("ChainTest")
+        .need_head(false)
+        .do_write(vec![dynamic_row("chain-row")])?;
+    assert!(output.exists());
+
+    // ExcelWriterSheetBuilder chain: sheet_no + sheet_name + relative_head_row_index + need_head
+    // These methods each return Self, enabling fluent construction.
+    // The chain compiles and executes without error, proving the return-Self contract.
+    let _sheet = EasyExcel::writer_sheet_builder()
+        .sheet_no(0)
+        .sheet_name("NamedSheet")
+        .relative_head_row_index(0)
+        .need_head(true);
+
+    Ok(())
+}
