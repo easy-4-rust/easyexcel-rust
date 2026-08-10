@@ -372,7 +372,7 @@ fn excel_analyser_direct_constructor_executor_context_and_finish_match_java()
         DefaultXlsReadContext::from_read_workbook(&xls_workbook, ExcelTypeEnum::Xls);
     assert_eq!(contract.xls_context_workbook_type, "XLS");
     assert_eq!(
-        xls_context.analysis_context_impl().excel_type(),
+        easyexcel::context::AnalysisContextLifecycle::analysis_context_impl(&xls_context).excel_type(),
         ExcelTypeEnum::Xls
     );
     let _xls_workbook_holder = XlsReadContext::xls_read_workbook_holder(&xls_context);
@@ -885,7 +885,7 @@ fn excel_analyser_direct_constructor_executor_context_and_finish_match_java()
         DefaultXlsxReadContext::from_read_workbook(&xlsx_workbook, ExcelTypeEnum::Xlsx);
     assert_eq!(contract.xlsx_context_workbook_type, "XLSX");
     assert_eq!(
-        xlsx_context.analysis_context_impl().excel_type(),
+        easyexcel::context::AnalysisContextLifecycle::analysis_context_impl(&xlsx_context).excel_type(),
         ExcelTypeEnum::Xlsx
     );
     let _xlsx_workbook_holder = XlsxReadContext::xlsx_read_workbook_holder(&xlsx_context);
