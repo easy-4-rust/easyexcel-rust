@@ -20,7 +20,7 @@ impl WorkbookHandlerExecutionChain {
     }
     /// Java `getNext`。
     #[must_use]
-    pub const fn get_next(&self) -> Option<&WorkbookHandlerExecutionChain> {
+    pub fn get_next(&self) -> Option<&WorkbookHandlerExecutionChain> {
         self.next.as_deref()
     }
     /// Java `setNext`。

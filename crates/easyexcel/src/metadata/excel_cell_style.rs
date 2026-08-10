@@ -14,7 +14,7 @@ use crate::write::metadata::style::write_font::merge_excel_font_style;
 ///
 /// 对应 Java：无直接对应对象；这是对注解常量和格式引擎公共字段的 Rust
 /// 惯用替代。动态字体名称等运行期状态保留在 `WriteCellStyle` / `WriteFont`。
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub struct ExcelCellStyle {
     /// 工作表受保护时是否隐藏公式。
     pub hidden: Option<bool>,

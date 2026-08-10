@@ -7,7 +7,7 @@
 /// Cache location strategy.
 ///
 /// Rust port of Java `CacheLocationEnum`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 /// 对应 Java：com.alibaba.excel.enums.CacheLocationEnum。
 pub enum CacheLocationEnum {
     /// Stored in `ThreadLocal`; cleared when the read or write completes.

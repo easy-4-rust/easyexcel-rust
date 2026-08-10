@@ -20,7 +20,7 @@ pub fn format(
         (None, None, None),
         |configuration| {
             (
-                Some(configuration.use_1904windowing()),
+                Some(configuration.use1904windowing()),
                 resolve_locale(configuration.locale()),
                 Some(configuration.use_scientific_format()),
             )

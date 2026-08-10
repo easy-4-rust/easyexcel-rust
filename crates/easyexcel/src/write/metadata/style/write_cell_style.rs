@@ -312,8 +312,9 @@ mod tests_extra {
             bold: Some(true),
             ..ExcelFontStyle::default()
         };
-        let style = WriteCellStyle::new().with_font(font);
-        assert_eq!(style.font, Some(font));
+        let expected = write_font_from_excel_font_style(font.clone());
+        let style = WriteCellStyle::new().with_excel_font_style(font);
+        assert_eq!(style.font, Some(expected));
         let plain = WriteCellStyle::new();
         assert_eq!(plain.font, None);
     }
@@ -620,13 +621,13 @@ mod tests {
             ..ExcelFontStyle::default()
         };
         let source = WriteCellStyle {
-            font: Some(source_font),
+            font: Some(write_font_from_excel_font_style(source_font)),
             ..WriteCellStyle::new()
         };
         let target = WriteCellStyle::new();
         let merged = merge_write_cell_style(&source, target);
         assert!(merged.font.is_some());
-        assert_eq!(merged.font.unwrap().bold, Some(true));
+        assert_eq!(merged.font.unwrap().get_bold(), Some(true));
     }
 
     #[test]
@@ -640,17 +641,17 @@ mod tests {
             ..ExcelFontStyle::default()
         };
         let source = WriteCellStyle {
-            font: Some(source_font),
+            font: Some(write_font_from_excel_font_style(source_font)),
             ..WriteCellStyle::new()
         };
         let target = WriteCellStyle {
-            font: Some(target_font),
+            font: Some(write_font_from_excel_font_style(target_font)),
             ..WriteCellStyle::new()
         };
         let merged = merge_write_cell_style(&source, target);
         let font = merged.font.unwrap();
-        assert_eq!(font.bold, Some(true));
-        assert_eq!(font.italic, Some(true));
+        assert_eq!(font.get_bold(), Some(true));
+        assert_eq!(font.get_italic(), Some(true));
     }
 
     #[test]

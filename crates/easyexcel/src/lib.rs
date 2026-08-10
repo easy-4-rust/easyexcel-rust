@@ -175,6 +175,15 @@ mod tests_extra;
 pub use converters::read_converter_context::ReadConverterContext;
 pub use converters::write_converter_context::WriteConverterContext;
 
+// 枚举 / 类型重导出（保持 crate::TypeName 路径兼容）
+pub use crate::enums::holder_enum::HolderEnum;
+pub use crate::enums::row_type_enum::RowTypeEnum;
+pub use crate::enums::write_direction_enum::WriteDirectionEnum;
+pub use crate::write::metadata::style::write_cell_style::WriteCellStyle;
+pub use crate::read::metadata::{ReadSheet, ReadWorkbook};
+pub use crate::write::metadata::{WriteTable, WriteWorkbook};
+pub use crate::context::xlsx::xlsx_read_context::XlsxReadContext;
+
 pub use util::java_date::JavaDate;
 
 pub use read::read_cache::ReadCacheMode;

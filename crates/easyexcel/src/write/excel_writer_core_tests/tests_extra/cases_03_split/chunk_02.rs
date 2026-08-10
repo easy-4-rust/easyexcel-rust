@@ -244,6 +244,7 @@
             cell: None,
             font: None,
             handler_cell: None,
+            handler_font: None,
             converted_cell: None,
             converted_data_format: Some("0.00"),
             ignore_fill_style: false,

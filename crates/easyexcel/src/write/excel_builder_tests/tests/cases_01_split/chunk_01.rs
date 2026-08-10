@@ -1,21 +1,21 @@
 #[test]
     fn fill_config_initializes_java_defaults_and_preserves_overrides() {
         let mut defaults = FillConfig::new();
-        assert_eq!(defaults.direction, None);
-        assert!(!defaults.force_new_row);
-        assert!(defaults.auto_style);
-        assert!(!defaults.has_init());
+        assert_eq!(defaults.get_direction(), None);
+        assert_eq!(defaults.get_force_new_row(), None);
+        assert_eq!(defaults.get_auto_style(), None);
+        assert!(!defaults.is_has_init());
         defaults.init();
         defaults.init();
-        assert!(defaults.has_init());
+        assert!(defaults.is_has_init());
 
         let configured = FillConfig::new()
             .direction(WriteDirection::Horizontal)
             .force_new_row(true)
             .auto_style(false);
-        assert_eq!(configured.direction, Some(WriteDirection::Horizontal));
-        assert!(configured.force_new_row);
-        assert!(!configured.auto_style);
+        assert_eq!(configured.get_direction(), Some(WriteDirection::Horizontal));
+        assert_eq!(configured.get_force_new_row(), Some(true));
+        assert_eq!(configured.get_auto_style(), Some(false));
     }
 
 #[test]

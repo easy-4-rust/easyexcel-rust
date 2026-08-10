@@ -164,7 +164,18 @@ macro_rules! float_conversion {
                     value: Option<&CellValue>,
                     context: &ConvertContext,
                 ) -> Result<Self, ExcelError> {
-                    parse_float(value, context, stringify!($ty))
+                    // 热路径：Float/Int 直接数值转换，跳过 String 往返。
+                    // 对应 Java DoubleConverter/FloatConverter 对 numeric cell 的直读语义。
+                    let cell = value.unwrap_or(&CellValue::Empty);
+                    match cell {
+                        CellValue::Float(inner) => {
+                            // f64→Self（f64 恒等，f32 截断）；保持 non_finite 一致性。
+                            Ok(*inner as Self)
+                        }
+                        CellValue::Int(inner) => Ok(*inner as Self),
+                        // 非数值变体仍走 String 解析，保留 Java 兼容的格式语义。
+                        _ => parse_float(value, context, stringify!($ty)),
+                    }
                 }
             }
 

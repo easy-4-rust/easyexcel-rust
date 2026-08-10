@@ -3,6 +3,7 @@
 pub struct GzipSheetDataWriter {
     inner: EngineSpillWriter,
     styles: Vec<JournalCellStyle>,
+    style_index: HashMap<JournalCellStyle, u32>,
 }
 
 impl GzipSheetDataWriter {
@@ -17,6 +18,7 @@ impl GzipSheetDataWriter {
             inner: EngineSpillWriter::create(dir, sheet_name, "easyexcel-sxssf-", ".xml.gz")
                 .map_err(ExcelError::from)?,
             styles: Vec::new(),
+            style_index: HashMap::new(),
         })
     }
 
@@ -31,6 +33,7 @@ impl GzipSheetDataWriter {
             inner: EngineSpillWriter::create_owned(sheet_name, "easyexcel-sxssf-", ".xml.gz")
                 .map_err(ExcelError::from)?,
             styles: Vec::new(),
+            style_index: HashMap::new(),
         })
     }
 
@@ -59,17 +62,15 @@ impl GzipSheetDataWriter {
         for cell in &row.cells {
             let value = to_spill_value(&cell.value)?;
             if let Some(style) = &cell.style {
-                let style_id = if let Some(index) = self.styles.iter().position(|item| item == style)
-                {
-                    u32::try_from(index).map_err(|_| {
-                        ExcelError::Format("stateful journal style index exceeds u32".to_owned())
-                    })?
+                let style_id = if let Some(&index) = self.style_index.get(style) {
+                    index
                 } else {
-                    let index = self.styles.len();
-                    self.styles.push(style.clone());
-                    u32::try_from(index).map_err(|_| {
+                    let index = u32::try_from(self.styles.len()).map_err(|_| {
                         ExcelError::Format("stateful journal style count exceeds u32".to_owned())
-                    })?
+                    })?;
+                    self.styles.push(style.clone());
+                    self.style_index.insert(style.clone(), index);
+                    index
                 };
                 values.push(GzipCellValue::Styled {
                     value: Box::new(value),
@@ -86,8 +87,8 @@ impl GzipSheetDataWriter {
             values.push(GzipCellValue::JournalMergeRange {
                 first_row: range.first_row,
                 last_row: range.last_row,
-                first_col: range.first_col,
-                last_col: range.last_col,
+                first_col: range.first_column,
+                last_col: range.last_column,
             });
         }
         self.inner.write_row(&values).map_err(ExcelError::from)

@@ -55,8 +55,8 @@ impl GzipSpillReader {
                 } => merge_ranges.push(crate::write::merge_range::MergeRange {
                     first_row,
                     last_row,
-                    first_col,
-                    last_col,
+                    first_column: first_col,
+                    last_column: last_col,
                 }),
                 GzipCellValue::Styled { value, style_id } => {
                     let style = self

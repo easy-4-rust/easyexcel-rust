@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://easyexcel.rs/schemas/benchmark-neutral-fixtures-v2.json",
+  "title": "EasyExcel neutral benchmark fixtures",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "benchmark_spec_sha256",
+    "generator",
+    "review",
+    "fixtures"
+  ],
+  "properties": {
+    "schema_version": {"const": 2},
+    "benchmark_spec_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "generator": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "name",
+            "version",
+            "command",
+            "artifact_name",
+            "artifact_sha256"
+          ],
+          "properties": {
+            "kind": {"const": "independent"},
+            "name": {"type": "string", "minLength": 1},
+            "version": {"type": "string", "minLength": 1},
+            "command": {"type": "string", "minLength": 1},
+            "artifact_name": {"type": "string", "minLength": 1},
+            "artifact_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        }
+      ]
+    },
+    "review": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "reviewer", "reviewed_at", "notes"],
+          "properties": {
+            "status": {"const": "approved"},
+            "reviewer": {"type": "string", "minLength": 1},
+            "reviewed_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "notes": {"type": "string", "minLength": 1}
+          }
+        }
+      ]
+    },
+    "fixtures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "format", "rows", "path", "sha256"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "format": {"enum": ["xlsx", "xls", "csv"]},
+          "rows": {"type": "integer", "minimum": 1},
+          "path": {"type": "string", "minLength": 1},
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    }
+  }
+}

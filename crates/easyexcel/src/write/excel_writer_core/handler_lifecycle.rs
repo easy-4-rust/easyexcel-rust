@@ -32,8 +32,8 @@ pub(crate) fn apply_loop_merges(
         applied.push(crate::write::merge_range::MergeRange {
             first_row: row_index,
             last_row,
-            first_col: strategy.column_index,
-            last_col: last_column,
+            first_column: strategy.column_index,
+            last_column: last_column,
         });
     }
     Ok(applied)

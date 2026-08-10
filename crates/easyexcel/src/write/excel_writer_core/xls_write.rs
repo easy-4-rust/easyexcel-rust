@@ -311,7 +311,10 @@ where
                         .column(column)
                         .with_handler_cell(effective_handler_cell_style(handlers, &context))
                         .with_handler_font(collect_handler_write_font(handlers, &context));
-                    cell_data.map_or(format_ctx, |cell| format_ctx.with_converted_cell(cell))
+                    match cell_data {
+                        Some(cell) => format_ctx.with_converted_cell(cell),
+                        None => format_ctx,
+                    }
                 };
                 let cell =
                     cell_value_to_biff8_styled(&context.value, &mut book.styles, format_ctx)?;

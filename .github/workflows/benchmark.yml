@@ -1,0 +1,181 @@
+name: Java Rust Benchmark Gate
+
+on:
+  pull_request:
+    paths:
+      - "benchmarks/**"
+      - ".github/workflows/benchmark.yml"
+  schedule:
+    - cron: "30 18 * * *"
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Benchmark profile
+        type: choice
+        options: [pr, nightly, release]
+        default: pr
+      baseline_candidate:
+        description: Emit a reviewable nightly/release baseline candidate without consuming a historical baseline
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: easyexcel-java-rust-benchmark-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  benchmark:
+    runs-on: ${{ (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.profile == 'pr')) && 'ubuntu-latest' || 'easyexcel-benchmark-linux-x64' }}
+    timeout-minutes: 600
+    steps:
+      - name: Select profile
+        id: profile
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "value=nightly" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event_name }}" == "release" ]]; then
+            echo "value=release" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ inputs.profile || 'pr' }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out Rust implementation and benchmark contract
+        uses: actions/checkout@v4
+        with:
+          path: rust
+
+      - name: Check out clean Java 4.0.3 authority
+        uses: actions/checkout@v4
+        with:
+          repository: easy-4-java/easyexcel
+          ref: v4.0.3
+          path: java
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.97.1
+
+      - name: Build contract runners outside timed processes
+        shell: bash
+        run: |
+          EASYEXCEL_GIT_SHA="$(git -C rust rev-parse HEAD)" \
+          EASYEXCEL_RUSTC="$(rustc --version)" \
+          cargo build --locked --release \
+            --manifest-path rust/Cargo.toml \
+            -p easyexcel-benchmark-runner
+          (cd java && ./mvnw -q -pl easyexcel-test -am -DskipTests test-compile)
+          (cd java && ./mvnw -q -pl easyexcel-test dependency:build-classpath \
+            -DincludeScope=test \
+            -Dmdep.outputFile=target/benchmark-classpath.txt)
+          module_classes="$(find java -type d -path '*/target/classes' -print | paste -sd: -)"
+          dependencies="$(cat java/easyexcel-test/target/benchmark-classpath.txt)"
+          java_test_classes="$PWD/java/easyexcel-test/target/test-classes"
+          classpath="$java_test_classes:$module_classes:$dependencies"
+          javac -encoding UTF-8 -cp "$classpath" -d "$java_test_classes" \
+            $(find rust/benchmarks/java-runner/src -name '*.java' -print | sort)
+          echo "JAVA_BENCHMARK_CLASSPATH=$classpath" >> "$GITHUB_ENV"
+          echo "JAVA_GIT_SHA=$(git -C java rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "RUST_GIT_SHA=$(git -C rust rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Validate benchmark harness
+        working-directory: rust
+        shell: bash
+        run: |
+          python3 -m py_compile benchmarks/scripts/*.py benchmarks/scripts/tests/*.py
+          python3 -m unittest discover -s benchmarks/scripts/tests -v
+
+      - name: Attest release runners
+        if: steps.profile.outputs.value == 'release'
+        shell: bash
+        run: |
+          python3 rust/benchmarks/scripts/prepare_release_artifacts.py \
+            --rust-repo rust \
+            --java-repo java \
+            --rust-bin rust/target/release/easyexcel-benchmark-runner \
+            --java-bin "$JAVA_HOME/bin/java" \
+            --java-classpath "$JAVA_BENCHMARK_CLASSPATH" \
+            --output artifacts/release-runner-artifact.json
+
+      - name: Run complete shared matrix
+        shell: bash
+        run: |
+          profile="${{ steps.profile.outputs.value }}"
+          artifact_args=()
+          if [[ "$profile" == "release" ]]; then
+            artifact_args=(--artifact-manifest artifacts/release-runner-artifact.json)
+          fi
+          python3 rust/benchmarks/scripts/run_matrix.py \
+            --profile "$profile" \
+            --rust-bin rust/target/release/easyexcel-benchmark-runner \
+            --java-bin "$JAVA_HOME/bin/java" \
+            --java-classpath "$JAVA_BENCHMARK_CLASSPATH" \
+            --java-repo java \
+            --rust-repo rust \
+            "${artifact_args[@]}" \
+            --output-dir "artifacts/$profile/matrix"
+
+      - name: Run four-phase 70/30 soak
+        if: steps.profile.outputs.value == 'release'
+        shell: bash
+        run: |
+          python3 rust/benchmarks/scripts/run_soak.py \
+            --rust-bin rust/target/release/easyexcel-benchmark-runner \
+            --java-bin "$JAVA_HOME/bin/java" \
+            --java-classpath "$JAVA_BENCHMARK_CLASSPATH" \
+            --java-repo java \
+            --rust-repo rust \
+            --artifact-manifest artifacts/release-runner-artifact.json \
+            --output-dir artifacts/release/soak
+
+      - name: Compare and enforce all gates
+        shell: bash
+        run: |
+          profile="${{ steps.profile.outputs.value }}"
+          baseline="rust/benchmarks/baselines/${profile}-ubuntu-x64.json"
+          baseline_args=()
+          candidate_args=()
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.baseline_candidate }}" == "true" ]]; then
+            candidate_args=(--baseline-candidate)
+          elif [[ -f "$baseline" ]]; then
+            baseline_args=(--baseline "$baseline")
+          elif [[ "$profile" != "pr" ]]; then
+            baseline_args=(--require-baseline)
+          fi
+          release_args=()
+          inputs=("artifacts/$profile/matrix/raw-results.jsonl")
+          if [[ "$profile" == "release" ]]; then
+            release_args=(
+              --expected-java-git-sha "$JAVA_GIT_SHA"
+              --expected-rust-git-sha "$RUST_GIT_SHA"
+              --soak-manifest artifacts/release/soak/soak-manifest.json
+            )
+            inputs+=(artifacts/release/soak/raw-results.jsonl)
+          fi
+          python3 rust/benchmarks/scripts/compare_results.py \
+            --profile "$profile" \
+            --spec rust/benchmarks/spec/benchmark-suite-v1.json \
+            --output "artifacts/$profile/report.json" \
+            "${candidate_args[@]}" \
+            "${baseline_args[@]}" \
+            "${release_args[@]}" \
+            "${inputs[@]}"
+
+      - name: Upload raw evidence and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: easyexcel-java-rust-${{ steps.profile.outputs.value }}-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: error

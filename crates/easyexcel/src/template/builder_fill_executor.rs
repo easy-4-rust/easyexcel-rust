@@ -426,9 +426,9 @@ mod tests {
             auto_style: false,
         });
 
-        assert_eq!(config.get_direction(), FillDirection::Horizontal);
-        assert!(config.get_force_new_row());
-        assert!(!config.get_auto_style());
+        assert_eq!(config.effective_direction(), FillDirection::Horizontal);
+        assert!(config.effective_force_new_row());
+        assert!(!config.effective_auto_style());
     }
 }
 
@@ -587,8 +587,8 @@ mod tests_extra {
     #[test]
     fn builder_fill_config_defaults_to_vertical_direction() {
         let config = to_template_fill_config(WriteFillConfig::new());
-        assert_eq!(config.get_direction(), FillDirection::Vertical);
-        assert!(!config.get_force_new_row());
-        assert!(config.get_auto_style());
+        assert_eq!(config.effective_direction(), FillDirection::Vertical);
+        assert!(!config.effective_force_new_row());
+        assert!(config.effective_auto_style());
     }
 }

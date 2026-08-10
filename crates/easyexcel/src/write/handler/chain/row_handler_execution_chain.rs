@@ -20,7 +20,7 @@ impl RowHandlerExecutionChain {
     }
     /// Java `getNext`。
     #[must_use]
-    pub const fn get_next(&self) -> Option<&RowHandlerExecutionChain> { self.next.as_deref() }
+    pub fn get_next(&self) -> Option<&RowHandlerExecutionChain> { self.next.as_deref() }
     /// Java `setNext`。
     pub fn set_next(&mut self, value: Option<RowHandlerExecutionChain>) {
         self.next = value.map(Box::new);

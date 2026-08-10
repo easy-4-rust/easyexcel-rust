@@ -111,6 +111,7 @@ pub use crate::support::Empty;
 pub use crate::support::csv_charset::CsvCharset;
 pub use crate::support::excel_error::ExcelError;
 pub use crate::write::metadata::style::write_font::WriteFont;
+pub use crate::write::metadata::style::write_cell_style::WriteCellStyle;
 pub use crate::write::write_cell_data::WriteCellData;
 
 #[cfg(test)]

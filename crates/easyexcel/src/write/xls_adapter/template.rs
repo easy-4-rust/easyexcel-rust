@@ -71,6 +71,18 @@ impl Biff8TemplatePackage {
             .map_err(ExcelError::from)
     }
 
+    /// Ensures a worksheet exists; creates an empty one when the name is new.
+    ///
+    /// # Errors
+    ///
+    /// Returns a format error when the workbook metadata cannot be updated.
+    pub fn ensure_sheet(&mut self, sheet_name: &str) -> Result<()> {
+        self.inner
+            .ensure_sheet(sheet_name)
+            .map(|_| ())
+            .map_err(ExcelError::from)
+    }
+
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 从当前最后一行后追加稀疏行。
     pub fn append_rows(
         &mut self,
@@ -221,7 +233,7 @@ impl Biff8TemplatePackage {
                             .into_iter()
                             .map(super::Biff8Sheet::new),
                     );
-                    crate::write::excel_writer_core::xls_write::add_biff8_chart(
+                    crate::write::excel_writer_core::add_biff8_chart(
                         &mut book,
                         &chart,
                     )?;

@@ -1544,7 +1544,7 @@ fn next_sheet_shape_id(records: &[RawRecord], sheet: &SheetSpan) -> u32 {
             ])));
         }
         if record.typ == MSO_DRAWING_SID {
-            let mut offset = 0;
+            let mut offset: usize = 0;
             while offset.saturating_add(12) <= record.data.len() {
                 let record_type = u16::from_le_bytes([
                     record.data[offset + 2],
@@ -2020,7 +2020,7 @@ fn extend_sheet_escher_for_comments(
         if record.typ != MSO_DRAWING_SID {
             continue;
         }
-        let mut offset = 0;
+        let mut offset: usize = 0;
         while offset.saturating_add(8) <= record.data.len() {
             let options = u16::from_le_bytes([record.data[offset], record.data[offset + 1]]);
             let record_type = u16::from_le_bytes([

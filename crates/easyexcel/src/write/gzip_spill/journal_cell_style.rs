@@ -5,7 +5,7 @@ use crate::write::sheet_style_context::CellFormatContext;
 ///
 /// 该对象只保存 Handler、Converter 和 `ignoreFillStyle` 在运行期产生的变化；
 /// Schema、Sheet 及全局样式在晋升重放时由原配置重建，避免按单元格复制静态样式。
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) struct JournalCellStyle {
     pub(crate) ignore_fill_style: bool,
     pub(crate) handler_cell: Option<ExcelCellStyle>,

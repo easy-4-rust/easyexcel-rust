@@ -6,6 +6,7 @@
 //! written; [`ExcelWriter`] materializes into a constant-memory worksheet only
 //! at `finish` (stream decode → write → ZIP), keeping peak RAM bounded.
 
+use std::collections::HashMap;
 use std::path::Path;
 
 use crate::core::{
@@ -405,5 +406,79 @@ mod tests {
         assert!(!file_has_gzip_magic(std::path::Path::new(
             "/nonexistent/path/definitely-missing.gz"
         )));
+    }
+
+    #[test]
+    fn write_journal_row_deduplicates_repeated_styles() {
+        use super::journal_cell::JournalCell;
+        use super::journal_cell_style::JournalCellStyle;
+        use super::journal_row::JournalRow;
+
+        let mut writer = GzipSheetDataWriter::create_owned("Dedup").expect("create");
+        let style = JournalCellStyle {
+            ignore_fill_style: true,
+            handler_cell: None,
+            handler_font: None,
+            converted_cell: None,
+            converted_data_format: None,
+        };
+        let cells: Vec<JournalCell> = (0..64)
+            .map(|i| JournalCell {
+                value: CellValue::Int(i),
+                style: Some(style.clone()),
+            })
+            .collect();
+        let row = JournalRow {
+            cells,
+            row_height: None,
+            merge_ranges: Vec::new(),
+        };
+        writer.write_journal_row(&row).expect("write");
+        let reader = writer.finish().expect("finish");
+        assert_eq!(reader.styles.len(), 1, "64 identical styles must deduplicate to 1");
+    }
+
+    #[test]
+    fn write_journal_row_keeps_distinct_styles_distinct_ids() {
+        use super::journal_cell::JournalCell;
+        use super::journal_cell_style::JournalCellStyle;
+        use super::journal_row::JournalRow;
+
+        let mut writer = GzipSheetDataWriter::create_owned("Distinct").expect("create");
+        let style_a = JournalCellStyle {
+            ignore_fill_style: true,
+            handler_cell: None,
+            handler_font: None,
+            converted_cell: None,
+            converted_data_format: None,
+        };
+        let style_b = JournalCellStyle {
+            ignore_fill_style: false,
+            handler_cell: None,
+            handler_font: None,
+            converted_cell: None,
+            converted_data_format: None,
+        };
+        let cells: Vec<JournalCell> = (0..4)
+            .map(|i| JournalCell {
+                value: CellValue::Int(i),
+                style: Some(if i % 2 == 0 {
+                    style_a.clone()
+                } else {
+                    style_b.clone()
+                }),
+            })
+            .collect();
+        let row = JournalRow {
+            cells,
+            row_height: None,
+            merge_ranges: Vec::new(),
+        };
+        writer.write_journal_row(&row).expect("write");
+        let reader = writer.finish().expect("finish");
+        assert_eq!(reader.styles.len(), 2, "two distinct styles must produce 2 entries");
+        // Verify style_a got index 0 and style_b got index 1.
+        assert_eq!(reader.styles[0], style_a);
+        assert_eq!(reader.styles[1], style_b);
     }
 }

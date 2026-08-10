@@ -10,10 +10,10 @@ use std::path::Path;
 use chrono::{NaiveDate, NaiveDateTime};
 use easyexcel_io::{Error, Result};
 
-use rust_xlsxwriter::{Chart, ChartType, Image, Note, ObjectMovement};
+use rust_xlsxwriter::{Chart, ChartType, Image, Note};
 pub use rust_xlsxwriter::{
     Color, Format, FormatAlign, FormatBorder, FormatPattern, FormatScript, FormatUnderline,
-    Workbook, Worksheet,
+    ObjectMovement, Workbook, Worksheet,
 };
 
 use super::encrypt::{ReadWriteSeek, encrypt_package_to};

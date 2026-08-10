@@ -121,20 +121,23 @@ fn excel_write_head_property_resolves_metadata_and_java_merge_ranges() -> Result
     assert_eq!(
         property.head_map()[&0]
             .head_style_property
+            .as_ref()
             .expect("field style")
-            .cell_style,
-        field_head_style
+            .write_cell_style(),
+        &field_head_style.into()
     );
     assert_eq!(
         property.head_map()[&1]
             .head_style_property
+            .as_ref()
             .expect("parent style")
-            .cell_style,
-        parent_head_style
+            .write_cell_style(),
+        &parent_head_style.into()
     );
     assert_eq!(
         property.head_map()[&1]
             .head_font_property
+            .as_ref()
             .expect("parent font")
             .bold,
         Some(true)

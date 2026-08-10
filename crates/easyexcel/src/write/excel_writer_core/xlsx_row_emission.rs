@@ -143,7 +143,8 @@ fn write_header_row_with_handlers(
                     .with_handler_cell(effective_handler_cell_style(handlers, &context))
                     .with_handler_font(collect_handler_write_font(handlers, &context))
             };
-            let format = cell_format(format_context);
+            let journal_style = crate::write::gzip_spill::JournalCellStyle::from_context(&format_context);
+            let format = cell_format(format_context.clone());
             match &context.value {
                 CellValue::String(value) | CellValue::Error(value) => {
                     generation::GeneratedCellValue::write_text(
@@ -174,7 +175,7 @@ fn write_header_row_with_handlers(
             }
             final_cells[final_column] = crate::write::gzip_spill::JournalCell {
                 value: context.value.clone(),
-                style: crate::write::gzip_spill::JournalCellStyle::from_context(&format_context),
+                style: journal_style,
             };
         }
     }
@@ -348,6 +349,7 @@ pub(crate) fn write_data_row_with_handlers(
                 Some(cell) => format_context.with_converted_cell(cell),
                 None => format_context,
             };
+            let journal_style = crate::write::gzip_spill::JournalCellStyle::from_context(&format_context);
             write_cell(
                 worksheet,
                 row_index,
@@ -359,7 +361,7 @@ pub(crate) fn write_data_row_with_handlers(
             )?;
             final_cells[*physical_index] = crate::write::gzip_spill::JournalCell {
                 value: value.clone(),
-                style: crate::write::gzip_spill::JournalCellStyle::from_context(&format_context),
+                style: journal_style,
             };
         }
         return Ok(crate::write::gzip_spill::JournalRow {
@@ -404,6 +406,7 @@ pub(crate) fn write_data_row_with_handlers(
                     None => format_context,
                 }
             };
+            let journal_style = crate::write::gzip_spill::JournalCellStyle::from_context(&format_context);
             write_cell(
                 worksheet,
                 row_index,
@@ -422,7 +425,7 @@ pub(crate) fn write_data_row_with_handlers(
             }
             final_cells[final_column] = crate::write::gzip_spill::JournalCell {
                 value: context.value.clone(),
-                style: crate::write::gzip_spill::JournalCellStyle::from_context(&format_context),
+                style: journal_style,
             };
         }
     }
@@ -556,9 +559,9 @@ pub(crate) fn replay_stateful_sheet_journal(
             generation::merge_range(
                 worksheet,
                 range.first_row,
-                range.first_col,
+                range.first_column,
                 range.last_row,
-                range.last_col,
+                range.last_column,
                 "",
                 &generation::new_format(),
             )

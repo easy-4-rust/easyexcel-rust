@@ -95,7 +95,7 @@ fn template_annotation_layout_stays_absolute_and_preserves_package() -> Result<(
     };
     let mut handlers: Vec<Box<dyn WriteHandler>> =
         vec![Box::new(HorizontalCellStyleStrategy::new(vec![
-            handler_style,
+            handler_style.into(),
         ]))];
     write_xlsx_with_handlers::<TemplateRow, _>(
         &output,
