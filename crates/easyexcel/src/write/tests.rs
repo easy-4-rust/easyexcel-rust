@@ -659,6 +659,31 @@ impl WriteHandler for ConvertedTypeProbe {
     }
 }
 
+/// Compute SHA-256 hex digest of a file on disk.
+#[allow(dead_code)]
+fn sha256_of_file(path: &Path) -> String {
+    use sha2::{Digest, Sha256};
+    let bytes = std::fs::read(path).expect("read file for sha256");
+    let hash = Sha256::digest(&bytes);
+    format!("{hash:x}")
+}
+
+/// Assert that all given file paths produce the same SHA-256 checksum.
+#[allow(dead_code)]
+fn assert_same_checksum(paths: &[&Path]) {
+    assert!(paths.len() >= 2, "need at least 2 paths to compare");
+    let first = sha256_of_file(paths[0]);
+    for path in &paths[1..] {
+        let current = sha256_of_file(path);
+        assert_eq!(
+            first, current,
+            "checksum mismatch: {} vs {}",
+            paths[0].display(),
+            path.display()
+        );
+    }
+}
+
 include!("tests_cases/cases_01.rs");
 include!("tests_cases/cases_02.rs");
 include!("tests_cases/cases_03.rs");
@@ -670,3 +695,4 @@ include!("tests_cases/cases_08.rs");
 include!("tests_cases/cases_09.rs");
 include!("tests_cases/cases_10.rs");
 include!("tests_cases/cases_11.rs");
+include!("tests_cases/cases_12_spill_matrix.rs");
