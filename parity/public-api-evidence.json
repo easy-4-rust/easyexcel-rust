@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "include": [
     "public-api-evidence/excel-writer.json",
     "public-api-evidence/excel-builder.json",
