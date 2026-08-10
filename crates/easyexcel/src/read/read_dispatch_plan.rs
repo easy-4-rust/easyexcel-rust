@@ -11,17 +11,28 @@ pub(crate) struct ReadDispatchPlan {
     retain_formulas: bool,
     retain_display_values: bool,
     retain_decimal_values: bool,
+    /// 当强类型消费者不需要 formulas/display/decimal/present 元数据时为 `true`。
+    /// 配合 extras 为空，可跳过 `SourceRowMetadata` 装配直接走轻量 `process_fast`。
+    typed_scalar_fast_path: bool,
 }
 
 impl ReadDispatchPlan {
     /// 根据最终消费者能力生成计划。
     #[must_use]
     pub(crate) fn compile(consumer: &dyn RowConsumer) -> Self {
+        let retain_present_columns = consumer.requires_present_columns();
+        let retain_formulas = consumer.requires_formulas();
+        let retain_display_values = consumer.requires_display_values();
+        let retain_decimal_values = consumer.requires_decimal_values();
         Self {
-            retain_present_columns: consumer.requires_present_columns(),
-            retain_formulas: consumer.requires_formulas(),
-            retain_display_values: consumer.requires_display_values(),
-            retain_decimal_values: consumer.requires_decimal_values(),
+            typed_scalar_fast_path: !retain_present_columns
+                && !retain_formulas
+                && !retain_display_values
+                && !retain_decimal_values,
+            retain_present_columns,
+            retain_formulas,
+            retain_display_values,
+            retain_decimal_values,
         }
     }
 
@@ -47,5 +58,11 @@ impl ReadDispatchPlan {
     #[must_use]
     pub(crate) const fn retain_decimal_values(&self) -> bool {
         self.retain_decimal_values
+    }
+
+    /// 当所有元数据收集均为 `false` 时为 `true`，表示可跳过 `SourceRowMetadata` 装配。
+    #[must_use]
+    pub(crate) const fn typed_scalar_fast_path(&self) -> bool {
+        self.typed_scalar_fast_path
     }
 }

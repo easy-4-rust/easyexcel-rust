@@ -53,6 +53,31 @@ pub(crate) trait RowConsumer {
     fn extra(&mut self, extra: &CellExtra, context: &AnalysisContext) -> Result<ReadFlow>;
 
     fn after(&mut self, context: &AnalysisContext) -> Result<()>;
+
+    /// 轻量快路径：跳过 `SourceRowMetadata` 装配，直接处理纯单元格数据。
+    ///
+    /// 默认实现回退到完整 `process`；`TypedRowConsumer` 会覆盖此方法以避免
+    /// 构造空 HashMap/HashSet 和 `SourceRowMetadata`。
+    #[allow(clippy::too_many_arguments)]
+    fn process_fast(
+        &mut self,
+        sheet_no: usize,
+        sheet_name: &str,
+        row_index: u32,
+        cells: Vec<CellValue>,
+        options: &ReadOptions,
+        headers: &mut Arc<HashMap<String, usize>>,
+    ) -> Result<ReadFlow> {
+        self.process(
+            sheet_no,
+            sheet_name,
+            row_index,
+            cells,
+            SourceRowMetadata::default(),
+            options,
+            headers,
+        )
+    }
 }
 
 include!("row_consumer/typed_row_consumer.rs");
