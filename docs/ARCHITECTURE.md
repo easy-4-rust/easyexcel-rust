@@ -301,6 +301,28 @@ xls-event-read 优化轨迹：
   70K rows/s   (+483%)
 ```
 
+#### Optimization Trajectory Chart
+
+```mermaid
+xychart-beta
+    title "xlsx-event-read Optimization Trajectory (rows/s)"
+    x-axis ["Initial", "CompiledExcelFormat", "Integer fast path", "scratch+dispatch+derive"]
+    y-axis "rows/s" 0 --> 700000
+    line [130000, 181000, 205000, 618000]
+```
+
+#### Memory Model Overview
+
+```mermaid
+pie title "Memory Complexity by Mode"
+    "O(document) - read_sync" : 4
+    "O(batch) - streaming read" : 2
+    "O(window) - SXSSF write" : 2
+    "O(template) - template fill" : 1
+```
+
+> Values are relative weights: `O(document)` scales with file size, `O(batch)` with batch size, `O(window)` with flush window, `O(template)` with template size.
+
 ## Core Traits
 
 | Trait | Location | Java Mirror |

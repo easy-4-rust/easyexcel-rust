@@ -360,6 +360,17 @@ impl Converter<String> for YesNoConverter {
 - **不同环境** — 真实的同机 A/B 对比需要 Linux release baseline（`benchmarks/baselines/release-ubuntu-x64.json`）。上表数据来自不同机器，应理解为方向性参考，而非绝对对比。
 - 所有吞吐量数字均为 3 次测量的**中位数**，非单次峰值。
 
+```mermaid
+xychart-beta
+    title "Rust vs Java 吞吐量对比 (rows/s)"
+    x-axis ["xlsx-event-read", "xlsx-stream-write"]
+    y-axis "rows/s" 0 --> 700000
+    bar [307000, 105000]
+    bar [618000, 277000]
+```
+
+> **图例**：第一组柱 = Java（历史 benchmark，307K-343K 区间），第二组柱 = Rust（macOS Apple Silicon 100K rows）。Java 无 xls-event-read 历史数据；Rust 实测 70K rows/s。
+
 ### 完整 Benchmark 结果（macOS 100K rows）
 
 | 场景 | Cold (rows/s) | Steady (rows/s) |
@@ -379,6 +390,14 @@ impl Converter<String> for YesNoConverter {
 事件读取：130K → 181K（CompiledExcelFormat）→ 205K（整数快路径）→ 618K（scratch 复用 + typed dispatch + derive 原语直读）
 流式写入：105K → 257K（Handler Arc 共享 + Rc<RefCell> 单线程链 + 能力快路径）
 xls 事件读取：12K → 70K（LazySst 延迟解码，构造加速 61.8x）
+```
+
+```mermaid
+pie title "xlsx-event-read 优化提升贡献 (rows/s)"
+    "SAX 流式基线" : 130
+    "格式预编译 (+51K)" : 51
+    "数值快路径 (+24K)" : 24
+    "scratch+dispatch+derive (+413K)" : 413
 ```
 
 ### 如何复现

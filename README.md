@@ -329,6 +329,17 @@ EasyExcel::write::<User>("output.xlsx")
 - **Different environments** — a true A/B comparison requires a Linux release baseline (`benchmarks/baselines/release-ubuntu-x64.json`). The numbers above are from different machines and should be interpreted as directional, not absolute.
 - All throughput numbers are **medians** of 3 measurements, not single-peak values.
 
+```mermaid
+xychart-beta
+    title "Rust vs Java Throughput (rows/s)"
+    x-axis ["xlsx-event-read", "xlsx-stream-write"]
+    y-axis "rows/s" 0 --> 700000
+    bar [307000, 105000]
+    bar [618000, 277000]
+```
+
+> **Chart legend**: First bar group = Java (historical benchmark, 307K-343K range), Second bar group = Rust (macOS Apple Silicon 100K rows). Java has no historical xls-event-read data; Rust achieves 70K rows/s.
+
 ### Full Benchmark Results (macOS 100K rows)
 
 | Scenario | Cold (rows/s) | Steady (rows/s) |
@@ -348,6 +359,14 @@ Source: `docs/ci/NIGHTLY_DRYRUN_REPORT.md`
 Event read: 130K → 181K (CompiledExcelFormat) → 205K (integer fast path) → 618K (scratch reuse + typed dispatch + derive primitive)
 Stream write: 105K → 257K (Handler Arc + Rc<RefCell> + capability fast path)
 xls-event-read: 12K → 70K (LazySst deferred SST decode, 61.8x construction speedup)
+```
+
+```mermaid
+pie title "xlsx-event-read Optimization Contribution (rows/s)"
+    "SAX streaming baseline" : 130
+    "CompiledExcelFormat (+51K)" : 51
+    "Integer fast path (+24K)" : 24
+    "scratch+dispatch+derive (+413K)" : 413
 ```
 
 ### How to Reproduce
