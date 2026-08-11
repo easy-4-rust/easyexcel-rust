@@ -11,7 +11,8 @@ fn trimmean(ctx: &mut dyn Context, args: &[Value]) -> Value {
             if ns.is_empty() {
                 return Value::Error(CellError::Div0);
             }
-            ns.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            // 修复: NaN 时 partial_cmp 返回 None，unwrap 会 panic；NaN 视为 Equal
+            ns.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
             let trim = (ns.len() as f64 * p / 2.0).floor() as usize;
             let trimmed = &ns[trim..ns.len() - trim];
             if trimmed.is_empty() {

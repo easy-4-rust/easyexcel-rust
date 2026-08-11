@@ -64,7 +64,8 @@ fn large(ctx: &mut dyn Context, args: &[Value]) -> Value {
             if k == 0 || k > ns.len() {
                 return Value::Error(CellError::Num);
             }
-            ns.sort_by(|a, b| b.partial_cmp(a).unwrap()); // descending
+            // 修复: NaN 时 partial_cmp 返回 None，unwrap 会 panic；NaN 视为 Equal
+            ns.sort_by(|a, b| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal)); // descending
             Value::Number(ns[k - 1])
         }
         Err(e) => Value::Error(e),
@@ -82,7 +83,8 @@ fn small(ctx: &mut dyn Context, args: &[Value]) -> Value {
             if k == 0 || k > ns.len() {
                 return Value::Error(CellError::Num);
             }
-            ns.sort_by(|a, b| a.partial_cmp(b).unwrap()); // ascending
+            // 修复: NaN 时 partial_cmp 返回 None，unwrap 会 panic；NaN 视为 Equal
+            ns.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal)); // ascending
             Value::Number(ns[k - 1])
         }
         Err(e) => Value::Error(e),
@@ -241,7 +243,8 @@ fn percentile_inc(ctx: &mut dyn Context, args: &[Value]) -> Value {
             if ns.is_empty() {
                 return Value::Error(CellError::Num);
             }
-            ns.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            // 修复: NaN 时 partial_cmp 返回 None，unwrap 会 panic；NaN 视为 Equal
+            ns.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
             let n = ns.len();
             if n == 1 {
                 return Value::Number(ns[0]);
@@ -277,7 +280,8 @@ fn percentile_exc(ctx: &mut dyn Context, args: &[Value]) -> Value {
             if p <= 0.0 || p >= 1.0 || p < lo_p || p > hi_p {
                 return Value::Error(CellError::Num);
             }
-            ns.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            // 修复: NaN 时 partial_cmp 返回 None，unwrap 会 panic；NaN 视为 Equal
+            ns.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
             let rank = p * (n + 1) as f64 - 1.0;
             let lo = rank.floor() as usize;
             let hi = (lo + 1).min(n - 1);
@@ -338,7 +342,8 @@ fn percentrank_inc(ctx: &mut dyn Context, args: &[Value]) -> Value {
             if ns.is_empty() {
                 return Value::Error(CellError::NA);
             }
-            ns.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            // 修复: NaN 时 partial_cmp 返回 None，unwrap 会 panic；NaN 视为 Equal
+            ns.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
             let n = ns.len();
             if x < ns[0] || x > ns[n - 1] {
                 return Value::Error(CellError::NA);
@@ -378,7 +383,8 @@ fn percentrank_exc(ctx: &mut dyn Context, args: &[Value]) -> Value {
             if ns.is_empty() {
                 return Value::Error(CellError::NA);
             }
-            ns.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            // 修复: NaN 时 partial_cmp 返回 None，unwrap 会 panic；NaN 视为 Equal
+            ns.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
             let n = ns.len();
             if x <= ns[0] || x >= ns[n - 1] {
                 return Value::Error(CellError::NA);
