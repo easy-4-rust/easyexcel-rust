@@ -2,6 +2,11 @@
 
 [简体中文](README.zh-CN.md)
 
+> **Document purpose**: Documents the format detection, streaming contracts, resource limits and I/O error crate for contributors and engine implementors. Application code should depend on `easyexcel` facade.
+>
+> **Version**: 0.1.3
+> **Last updated**: 2026-08-11
+
 Shared format detection, streaming row contracts, modes, resource limits and typed I/O errors.
 
 > Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
@@ -30,6 +35,18 @@ flowchart LR
 
 Dependency direction remains from the facade or format engines toward foundations; this crate never depends back on an application.
 
+## Capabilities and boundaries
+
+| Area | Can do | Cannot do |
+|:---|:---|:---|
+| Format detection | Identify XLSX, XLS and CSV by file extension and magic bytes. | Detect ODS, Numbers or other non-Excel formats. |
+| Streaming contracts | Define `RowSource` (push-based reader) and `RowSink` (push-based writer) boundaries. | Perform actual file I/O (delegates to format crates). |
+| Resource limits | Enforce max input/output bytes, sheets, rows, formula cells, cell chars and columns. | Dynamically adjust limits mid-stream. |
+| Error layer | Provide unified `Error` and `Result` types for all engine I/O. | Replace application-level error handling. |
+| Gzip cell records | Read/write gzipped cell record streams for large files. | Handle non-gzipped raw cell streams. |
+| Temp file strategy | Create temporary files via `EasyExcelTempFileCreationStrategy`. | Manage temp file lifecycle beyond creation. |
+| Sheet selection | Filter rows by sheet name or index via `SheetSelection`. | Modify workbook structure during read. |
+
 ## Capability matrix
 
 | Capability | Status | Details |
@@ -46,6 +63,11 @@ Dependency direction remains from the facade or format engines toward foundation
 | `RowSource`, `RowSink` | Push-based row streaming boundary. |
 | `ResourceLimits` | Reusable safety contract. |
 | `Error`, `Result` | Stable engine I/O error layer. |
+| `StreamCell`, `StreamInfo` | Sparse cell and stream metadata. |
+| `GzipCellRecordReader`, `GzipCellRecordWriter` | Gzipped cell record I/O. |
+| `SheetSelection` | Sheet name/index filter for row selection. |
+| `ByteOrderMark` | BOM detection and handling. |
+| `SharedByteBuffer` | Reusable byte buffer for streaming. |
 
 The current `src/lib.rs` re-exports and their implementations are authoritative. This README does not present private implementation objects as stable API.
 
@@ -57,6 +79,13 @@ easyexcel = "0.1.3"
 ```
 
 `easyexcel-io` is an independently published internal engine crate. Applications should use `easyexcel::io`; direct dependencies are reserved for EasyExcel engine implementors.
+
+| Item | Value |
+|:---|:---|
+| MSRV | Rust 1.88 |
+| Edition | 2024 |
+| Resolver | 3 |
+| License | Apache-2.0 |
 
 ## Basic usage
 
@@ -90,6 +119,24 @@ let limits = ResourceLimits::new(
 .with_max_columns(4_096);
 
 assert_eq!(limits.max_sheets(), 32);
+Ok(())
+}
+```
+
+## Sheet selection example
+
+```rust
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+use easyexcel::io::SheetSelection;
+
+// Select by name
+let sel = SheetSelection::Name("Orders".to_owned());
+assert!(easyexcel::io::row_is_selected(&sel, "Orders", 0));
+assert!(!easyexcel::io::row_is_selected(&sel, "Summary", 0));
+
+// Select by index
+let sel = SheetSelection::Index(0);
+assert!(easyexcel::io::row_is_selected(&sel, "Sheet1", 0));
 Ok(())
 }
 ```
@@ -128,3 +175,10 @@ The diagram shows the public dependency direction, not that this crate depends o
 - [Compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
 - [Changelog](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [Chinese README](README.zh-CN.md)
+
+---
+
+**Document version**: V1.0.0
+**Created**: 2026-08-11
+**Last updated**: 2026-08-11
+**Document status**: Pending review

@@ -2,6 +2,11 @@
 
 [English](README.md)
 
+> **文档说明**：面向贡献者和引擎实现者说明兼容 Java 语义的数字、日期与显示格式引擎。业务应用应依赖 `easyexcel` 门面。
+>
+> **版本**：0.1.3
+> **最后更新**：2026-08-11
+
 兼容 Java EasyExcel 语义的数字、日期与显示格式算法。
 
 > 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
@@ -28,6 +33,17 @@ flowchart LR
 
 依赖方向必须保持从门面或格式引擎指向基础模块；本 crate 不反向依赖业务应用。
 
+## 能力与边界
+
+| 领域 | 能做什么 | 不能做什么 |
+|:---|:---|:---|
+| 数字格式化 | 使用内建 Excel 格式码渲染数字（General、整数、小数、科学计数、百分比、分数）。 | 将数字字符串解析回数值。 |
+| 日期格式化 | 使用 `yyyy`、`mm`、`dd`、`hh`、`ss` 模式渲染 Excel 序列日期。 | 从原始文本解析日期字符串。 |
+| 区域支持 | 解析 `zh-CN`、`en-US`、`POSIX` 和 BCP-47 locale 名称以获取格式化数据。 | 提供完整 ICU 级别的区域排序或翻译。 |
+| 自定义格式码 | 编译并应用用户定义的 Excel 格式码，支持颜色和条件段。 | 对单元格求值条件格式规则。 |
+| 舍入 | Java 兼容的 `NumberRoundingMode`，支持可配置精度。 | 任意精度区间算术。 |
+| 容器 I/O | 不适用。 | 读写 XLSX/XLS/CSV 容器（委托给格式 crate）。 |
+
 ## 能力矩阵
 
 | 能力 | 状态 | 说明 |
@@ -44,6 +60,10 @@ flowchart LR
 | `format_with_code` | 按 Excel 格式代码渲染数字。 |
 | `builtin_format_code` | 解析标准格式编号。 |
 | `NumberRoundingMode` | Java 兼容舍入元数据。 |
+| `DataFormatter` | 用于重复单元格渲染的有状态格式化器。 |
+| `compile_format_code` | 预编译格式码以供重复使用。 |
+| `is_date_format_code` | 检测格式码是否为日期类。 |
+| `format_raw_cell_contents` | 自动类型检测渲染原始单元格值。 |
 
 API 的权威定义来自当前 `src/lib.rs` 重导出与对应实现；README 不把内部私有对象描述为稳定契约。
 
@@ -55,6 +75,13 @@ easyexcel = "0.1.3"
 ```
 
 `easyexcel-format` 是内部显示格式引擎。业务应用应统一使用稳定的 `easyexcel::format` 门面。
+
+| 项目 | 值 |
+|:---|:---|
+| MSRV | Rust 1.88 |
+| Edition | 2024 |
+| Resolver | 3 |
+| License | Apache-2.0 |
 
 ## 基础使用
 
@@ -85,6 +112,25 @@ use easyexcel::format::{
 assert_eq!(builtin_format_code(0), Some("General"));
 assert!(resolve_builtin_format_code(14).is_some());
 assert!(is_date_format_code("yyyy-mm-dd"));
+Ok(())
+}
+```
+
+## 区域化格式示例
+
+```rust
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+use easyexcel::format::{ExcelLocale, format_with_code};
+
+let locale_us = ExcelLocale::from_name("en-US").expect("supported locale");
+let locale_cn = ExcelLocale::from_name("zh-CN").expect("supported locale");
+
+let value = 1234567.89;
+let us_display = format_with_code(value, "#,##0.00", false, &locale_us.formatter());
+let cn_display = format_with_code(value, "#,##0.00", false, &locale_cn.formatter());
+
+assert!(us_display.is_some());
+assert!(cn_display.is_some());
 Ok(())
 }
 ```
@@ -123,3 +169,10 @@ flowchart LR
 - [兼容性矩阵](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
 - [变更日志](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [英文 README](README.md)
+
+---
+
+**文档版本**：V1.0.0
+**创建日期**：2026-08-11
+**最后更新**：2026-08-11
+**文档状态**：待评审
