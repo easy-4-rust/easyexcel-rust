@@ -393,4 +393,158 @@ mod tests {
     fn variadic_is_max() {
         assert_eq!(VARIADIC, usize::MAX);
     }
+
+    // ── Criteria::parse 测试 ───────────────────────────────────────────
+
+    #[test]
+    fn criteria_parse_number() {
+        let c = Criteria::parse(&Value::Number(5.0));
+        // Numeric criterion: Eq 5.0
+        assert!(c.matches(&Value::Number(5.0)));
+        assert!(!c.matches(&Value::Number(4.0)));
+    }
+
+    #[test]
+    fn criteria_parse_gt() {
+        let c = Criteria::parse(&Value::Text(">10".into()));
+        assert!(c.matches(&Value::Number(11.0)));
+        assert!(!c.matches(&Value::Number(10.0)));
+        assert!(!c.matches(&Value::Number(9.0)));
+    }
+
+    #[test]
+    fn criteria_parse_lt() {
+        let c = Criteria::parse(&Value::Text("<10".into()));
+        assert!(c.matches(&Value::Number(9.0)));
+        assert!(!c.matches(&Value::Number(10.0)));
+    }
+
+    #[test]
+    fn criteria_parse_ge() {
+        let c = Criteria::parse(&Value::Text(">=10".into()));
+        assert!(c.matches(&Value::Number(10.0)));
+        assert!(c.matches(&Value::Number(11.0)));
+        assert!(!c.matches(&Value::Number(9.0)));
+    }
+
+    #[test]
+    fn criteria_parse_le() {
+        let c = Criteria::parse(&Value::Text("<=10".into()));
+        assert!(c.matches(&Value::Number(10.0)));
+        assert!(!c.matches(&Value::Number(11.0)));
+    }
+
+    #[test]
+    fn criteria_parse_ne() {
+        let c = Criteria::parse(&Value::Text("<>10".into()));
+        assert!(c.matches(&Value::Number(9.0)));
+        assert!(!c.matches(&Value::Number(10.0)));
+    }
+
+    #[test]
+    fn criteria_parse_eq_prefix() {
+        let c = Criteria::parse(&Value::Text("=hello".into()));
+        assert!(c.matches(&Value::Text("hello".into())));
+        assert!(!c.matches(&Value::Text("world".into())));
+    }
+
+    #[test]
+    fn criteria_parse_ne_text() {
+        let c = Criteria::parse(&Value::Text("<>hello".into()));
+        assert!(!c.matches(&Value::Text("hello".into())));
+        assert!(c.matches(&Value::Text("world".into())));
+    }
+
+    #[test]
+    fn criteria_parse_bool_true() {
+        let c = Criteria::parse(&Value::Bool(true));
+        // TRUE → "TRUE" → matches text "true"
+        assert!(c.matches(&Value::Bool(true)));
+        assert!(!c.matches(&Value::Bool(false)));
+    }
+
+    #[test]
+    fn criteria_parse_bool_false() {
+        let c = Criteria::parse(&Value::Bool(false));
+        assert!(c.matches(&Value::Bool(false)));
+        assert!(!c.matches(&Value::Bool(true)));
+    }
+
+    #[test]
+    fn criteria_parse_empty_criterion() {
+        let c = Criteria::parse(&Value::Text("".into()));
+        // Empty criterion matches empty cells
+        assert!(c.matches(&Value::Empty));
+        assert!(!c.matches(&Value::Number(1.0)));
+    }
+
+    #[test]
+    fn criteria_parse_wildcard() {
+        let c = Criteria::parse(&Value::Text("he*o".into()));
+        assert!(c.matches(&Value::Text("hello".into())));
+        assert!(c.matches(&Value::Text("hero".into())));
+        assert!(!c.matches(&Value::Text("hi".into())));
+    }
+
+    #[test]
+    fn criteria_parse_question_wildcard() {
+        let c = Criteria::parse(&Value::Text("he?lo".into()));
+        assert!(c.matches(&Value::Text("hello".into())));
+        assert!(!c.matches(&Value::Text("heo".into())));
+    }
+
+    #[test]
+    fn criteria_parse_non_numeric_gt() {
+        // ">abc" is text comparison, not numeric
+        let c = Criteria::parse(&Value::Text(">abc".into()));
+        assert!(c.matches(&Value::Text("bcd".into())));
+        assert!(!c.matches(&Value::Text("aab".into())));
+    }
+
+    #[test]
+    fn criteria_parse_ne_num_vs_text() {
+        // Criterion is numeric "<>5", cell is text → only <> matches
+        let c = Criteria::parse(&Value::Text("<>5".into()));
+        assert!(c.matches(&Value::Text("hello".into())));
+        assert!(!c.matches(&Value::Number(5.0)));
+    }
+
+    #[test]
+    fn criteria_parse_text_match_case_insensitive() {
+        let c = Criteria::parse(&Value::Text("Hello".into()));
+        assert!(c.matches(&Value::Text("hello".into())));
+        assert!(c.matches(&Value::Text("HELLO".into())));
+    }
+
+    #[test]
+    fn criteria_parse_number_cell_text_criterion() {
+        // Criterion is numeric 42, cell is number 42
+        let c = Criteria::parse(&Value::Number(42.0));
+        assert!(c.matches(&Value::Number(42.0)));
+        assert!(!c.matches(&Value::Number(43.0)));
+    }
+
+    #[test]
+    fn criteria_parse_error_value() {
+        let c = Criteria::parse(&Value::Error(CellError::NA));
+        // Error → empty string → Eq empty → only matches Empty
+        assert!(c.matches(&Value::Empty));
+        assert!(!c.matches(&Value::Number(1.0)));
+    }
+
+    #[test]
+    fn criteria_parse_ge_text() {
+        let c = Criteria::parse(&Value::Text(">=apple".into()));
+        assert!(c.matches(&Value::Text("apple".into())));
+        assert!(c.matches(&Value::Text("banana".into())));
+        assert!(!c.matches(&Value::Text("aaa".into())));
+    }
+
+    #[test]
+    fn criteria_parse_le_text() {
+        let c = Criteria::parse(&Value::Text("<=m".into()));
+        assert!(c.matches(&Value::Text("a".into())));
+        assert!(c.matches(&Value::Text("m".into())));
+        assert!(!c.matches(&Value::Text("z".into())));
+    }
 }

@@ -297,4 +297,112 @@ mod tests {
         assert!(debug.contains("need_head"));
         assert!(debug.contains("relative_head_row_index"));
     }
+
+    #[test]
+    fn setters_update_values() {
+        let mut param = WriteBasicParameter::default();
+        param.set_need_head(Some(true));
+        assert_eq!(param.get_need_head(), Some(true));
+
+        param.set_relative_head_row_index(Some(5));
+        assert_eq!(param.get_relative_head_row_index(), Some(5));
+
+        param.set_automatic_merge_head(Some(true));
+        assert_eq!(param.get_automatic_merge_head(), Some(true));
+
+        param.set_use_default_style(Some(false));
+        assert_eq!(param.get_use_default_style(), Some(false));
+
+        param.set_order_by_include_column(Some(true));
+        assert_eq!(param.get_order_by_include_column(), Some(true));
+    }
+
+    #[test]
+    fn column_filter_setters() {
+        let mut param = WriteBasicParameter::default();
+        param.set_exclude_column_indexes(Some(vec![0, 1]));
+        assert_eq!(param.get_exclude_column_indexes(), Some([0_usize, 1].as_slice()));
+
+        param.set_exclude_column_field_names(Some(vec!["id".to_owned()]));
+        assert_eq!(param.get_exclude_column_field_names(), Some(["id".to_string()].as_slice()));
+
+        param.set_include_column_indexes(Some(vec![2, 3]));
+        assert_eq!(param.get_include_column_indexes(), Some([2_usize, 3].as_slice()));
+
+        param.set_include_column_field_names(Some(vec!["name".to_owned()]));
+        assert_eq!(param.get_include_column_field_names(), Some(["name".to_string()].as_slice()));
+
+        // 清除
+        param.set_exclude_column_indexes(None);
+        assert!(param.get_exclude_column_indexes().is_none());
+        param.set_exclude_column_field_names(None);
+        assert!(param.get_exclude_column_field_names().is_none());
+        param.set_include_column_indexes(None);
+        assert!(param.get_include_column_indexes().is_none());
+        param.set_include_column_field_names(None);
+        assert!(param.get_include_column_field_names().is_none());
+    }
+
+    #[test]
+    fn custom_write_handler_list_setter_and_getter() {
+        let mut param = WriteBasicParameter::default();
+        assert!(param.get_custom_write_handler_list().is_empty());
+        param.set_custom_write_handler_list(vec!["handler1".to_owned(), "handler2".to_owned()]);
+        assert_eq!(param.get_custom_write_handler_list().len(), 2);
+    }
+
+    #[test]
+    fn basic_parameter_accessors() {
+        let mut param = WriteBasicParameter::default();
+        let _ = param.get_basic_parameter();
+        let _ = param.get_basic_parameter_mut();
+    }
+
+    #[test]
+    fn from_options_populates_all_fields() {
+        use crate::WriteOptions;
+        let options = WriteOptions {
+            need_head: true,
+            relative_head_row_index: 3,
+            use_default_style: false,
+            automatic_merge_head: true,
+            order_by_include_column: true,
+            exclude_column_indexes: vec![0, 2],
+            exclude_column_field_names: vec!["id".to_owned()],
+            include_column_indexes: Some(vec![1, 3]),
+            include_column_field_names: Some(vec!["name".to_owned()]),
+            auto_trim: true,
+            ..WriteOptions::default()
+        };
+        let param = WriteBasicParameter::from_options(&options);
+        assert_eq!(param.get_need_head(), Some(true));
+        assert_eq!(param.get_relative_head_row_index(), Some(3));
+        assert_eq!(param.get_use_default_style(), Some(false));
+        assert_eq!(param.get_automatic_merge_head(), Some(true));
+        assert_eq!(param.get_order_by_include_column(), Some(true));
+        assert_eq!(param.get_exclude_column_indexes(), Some([0_usize, 2].as_slice()));
+        assert_eq!(param.get_exclude_column_field_names(), Some(["id".to_string()].as_slice()));
+        assert_eq!(param.get_include_column_indexes(), Some([1_usize, 3].as_slice()));
+        assert_eq!(param.get_include_column_field_names(), Some(["name".to_string()].as_slice()));
+    }
+
+    #[test]
+    fn hash_consistent_with_eq() {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+
+        let a = WriteBasicParameter {
+            need_head: Some(true),
+            ..WriteBasicParameter::default()
+        };
+        let b = WriteBasicParameter {
+            need_head: Some(true),
+            ..WriteBasicParameter::default()
+        };
+        let mut ha = DefaultHasher::new();
+        let mut hb = DefaultHasher::new();
+        a.hash(&mut ha);
+        b.hash(&mut hb);
+        assert_eq!(ha.finish(), hb.finish());
+    }
 }

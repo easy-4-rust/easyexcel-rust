@@ -168,4 +168,71 @@ mod tests_extra {
         assert_eq!(ExcelTypeEnum::from_extension("txt"), None);
         assert_eq!(ExcelTypeEnum::from_extension(""), None);
     }
+
+    #[test]
+    fn java_name_returns_enum_constant_names() {
+        assert_eq!(ExcelTypeEnum::Csv.java_name(), "CSV");
+        assert_eq!(ExcelTypeEnum::Xls.java_name(), "XLS");
+        assert_eq!(ExcelTypeEnum::Xlsx.java_name(), "XLSX");
+    }
+
+    #[test]
+    fn magic_returns_correct_bytes() {
+        assert_eq!(ExcelTypeEnum::Xlsx.magic(), &[0x50, 0x4b, 0x03, 0x04]);
+        assert_eq!(
+            ExcelTypeEnum::Xls.magic(),
+            &[0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]
+        );
+        assert!(ExcelTypeEnum::Csv.magic().is_empty());
+    }
+
+    #[test]
+    fn get_magic_is_alias_for_magic() {
+        assert_eq!(ExcelTypeEnum::Xlsx.get_magic(), ExcelTypeEnum::Xlsx.magic());
+        assert_eq!(ExcelTypeEnum::Xls.get_magic(), ExcelTypeEnum::Xls.magic());
+    }
+
+    #[test]
+    fn all_contains_three_variants() {
+        assert_eq!(ExcelTypeEnum::ALL.len(), 3);
+        assert!(ExcelTypeEnum::ALL.contains(&ExcelTypeEnum::Csv));
+        assert!(ExcelTypeEnum::ALL.contains(&ExcelTypeEnum::Xls));
+        assert!(ExcelTypeEnum::ALL.contains(&ExcelTypeEnum::Xlsx));
+    }
+
+    #[test]
+    fn from_str_parses_java_names() {
+        use std::str::FromStr;
+        assert_eq!(ExcelTypeEnum::from_str("CSV").unwrap(), ExcelTypeEnum::Csv);
+        assert_eq!(ExcelTypeEnum::from_str("XLS").unwrap(), ExcelTypeEnum::Xls);
+        assert_eq!(
+            ExcelTypeEnum::from_str("XLSX").unwrap(),
+            ExcelTypeEnum::Xlsx
+        );
+        assert!(ExcelTypeEnum::from_str("UNKNOWN").is_err());
+        assert!(ExcelTypeEnum::from_str("").is_err());
+    }
+
+    #[test]
+    fn value_of_with_input_stream() {
+        let mut workbook = crate::ReadWorkbook::new();
+        workbook.set_input_stream(Some(vec![0x50, 0x4B, 0x03, 0x04, 0x00]));
+        let result = ExcelTypeEnum::value_of(&workbook).unwrap();
+        assert_eq!(result, ExcelTypeEnum::Xlsx);
+    }
+
+    #[test]
+    fn value_of_returns_error_without_file_or_stream() {
+        let workbook = crate::ReadWorkbook::new();
+        assert!(ExcelTypeEnum::value_of(&workbook).is_err());
+    }
+
+    #[test]
+    fn value_of_prefers_explicit_type() {
+        let mut workbook = crate::ReadWorkbook::new();
+        workbook.set_excel_type(crate::support::ExcelTypeEnum::Xls);
+        workbook.set_input_stream(Some(vec![0x50, 0x4B, 0x03, 0x04]));
+        let result = ExcelTypeEnum::value_of(&workbook).unwrap();
+        assert_eq!(result, ExcelTypeEnum::Xls);
+    }
 }

@@ -548,3 +548,491 @@ pub fn remove_attribute(xml: &str, attribute: &str) -> String {
     };
     xml.replacen(&format!(" {attribute}=\"{current}\""), "", 1)
 }
+
+#[cfg(test)]
+mod tcv_trm_tests {
+    use super::*;
+
+    // ── render_cell 覆盖 ──────────────────────────────────────────────
+
+    #[test]
+    fn render_cell_empty() {
+        let cell = render_cell("A1", &TemplateCellValue::Empty, None);
+        assert_eq!(cell, "<c r=\"A1\"></c>");
+    }
+
+    #[test]
+    fn render_cell_text() {
+        let cell = render_cell("B2", &TemplateCellValue::Text("hello".into()), Some(1));
+        assert!(cell.contains("t=\"inlineStr\""));
+        assert!(cell.contains("s=\"1\""));
+        assert!(cell.contains("hello"));
+    }
+
+    #[test]
+    fn render_cell_text_escapes_special_chars() {
+        let cell = render_cell("A1", &TemplateCellValue::Text("<>&\"'".into()), None);
+        assert!(cell.contains("&lt;&gt;&amp;&quot;&apos;"));
+    }
+
+    #[test]
+    fn render_cell_bool_true() {
+        let cell = render_cell("A1", &TemplateCellValue::Bool(true), None);
+        assert!(cell.contains("t=\"b\""));
+        assert!(cell.contains("<v>1</v>"));
+    }
+
+    #[test]
+    fn render_cell_bool_false() {
+        let cell = render_cell("A1", &TemplateCellValue::Bool(false), None);
+        assert!(cell.contains("<v>0</v>"));
+    }
+
+    #[test]
+    fn render_cell_number() {
+        let cell = render_cell("A1", &TemplateCellValue::Number("42.5".into()), None);
+        assert!(cell.contains("<v>42.5</v>"));
+    }
+
+    #[test]
+    fn render_cell_date() {
+        let cell = render_cell("A1", &TemplateCellValue::Date("2024-01-01".into()), None);
+        assert!(cell.contains("t=\"d\""));
+        assert!(cell.contains("2024-01-01"));
+    }
+
+    #[test]
+    fn render_cell_formula() {
+        let cell = render_cell("A1", &TemplateCellValue::Formula("SUM(A1:A10)".into()), None);
+        assert!(cell.contains("<f>SUM(A1:A10)</f>"));
+    }
+
+    #[test]
+    fn render_cell_formula_escapes() {
+        let cell = render_cell("A1", &TemplateCellValue::Formula("IF(A1>0,\"yes\",\"no\")".into()), None);
+        assert!(cell.contains("&gt;"));
+    }
+
+    #[test]
+    fn render_cell_error() {
+        let cell = render_cell("A1", &TemplateCellValue::Error("#VALUE!".into()), None);
+        assert!(cell.contains("t=\"e\""));
+        assert!(cell.contains("#VALUE!"));
+    }
+
+    #[test]
+    fn render_cell_rich_text() {
+        use crate::xlsx::template_xml::TemplateRichText;
+        let rt = TemplateRichText::plain("rich");
+        let cell = render_cell("A1", &TemplateCellValue::RichText(rt), None);
+        assert!(cell.contains("t=\"inlineStr\""));
+        assert!(cell.contains("rich"));
+    }
+
+    #[test]
+    fn render_cell_with_style() {
+        let cell = render_cell("A1", &TemplateCellValue::Number("1".into()), Some(5));
+        assert!(cell.contains("s=\"5\""));
+    }
+
+    // ── set_cell_value 覆盖 ───────────────────────────────────────────
+
+    #[test]
+    fn set_cell_value_updates_existing_cell() {
+        let xml = r#"<?xml version="1.0"?><worksheet><dimension ref="A1:A1"/><sheetData><row r="1"><c r="A1"><v>old</v></c></row></sheetData></worksheet>"#;
+        let result = set_cell_value(xml, 0, 0, &TemplateCellValue::Number("new".into())).unwrap();
+        assert!(result.contains("new"));
+        assert!(!result.contains("old"));
+    }
+
+    #[test]
+    fn set_cell_value_adds_to_existing_row() {
+        let xml = r#"<?xml version="1.0"?><worksheet><dimension ref="A1:A1"/><sheetData><row r="1"><c r="A1"><v>1</v></c></row></sheetData></worksheet>"#;
+        let result = set_cell_value(xml, 0, 1, &TemplateCellValue::Number("2".into())).unwrap();
+        assert!(result.contains("B1"));
+        assert!(result.contains("<v>2</v>"));
+    }
+
+    #[test]
+    fn set_cell_value_creates_new_row_and_cell() {
+        let xml = r#"<?xml version="1.0"?><worksheet><dimension ref="A1:A1"/><sheetData><row r="1"><c r="A1"><v>1</v></c></row></sheetData></worksheet>"#;
+        let result = set_cell_value(xml, 5, 0, &TemplateCellValue::Text("new".into())).unwrap();
+        assert!(result.contains("A6"));
+    }
+
+    #[test]
+    fn set_cell_value_for_empty_sheet_data() {
+        let xml = r#"<?xml version="1.0"?><worksheet><dimension ref="A1"/><sheetData/></worksheet>"#;
+        let result = set_cell_value(xml, 0, 0, &TemplateCellValue::Number("1".into())).unwrap();
+        assert!(result.contains("A1"));
+    }
+
+    // ── apply_sheet_protection 覆盖 ───────────────────────────────────
+
+    #[test]
+    fn apply_sheet_protection_inserts_new() {
+        let xml = r#"<?xml version="1.0"?><worksheet><sheetData/></worksheet>"#;
+        let result = apply_sheet_protection(xml, "pass").unwrap();
+        assert!(result.contains("sheetProtection"));
+        assert!(result.contains("password="));
+    }
+
+    #[test]
+    fn apply_sheet_protection_replaces_existing() {
+        let xml = r#"<?xml version="1.0"?><worksheet><sheetProtection password="0000" sheet="1" objects="1" scenarios="1"/><sheetData/></worksheet>"#;
+        let result = apply_sheet_protection(xml, "newpass").unwrap();
+        assert!(result.contains("sheetProtection"));
+        // 不应包含旧密码
+        let count = result.matches("sheetProtection").count();
+        assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn apply_sheet_protection_inserts_before_worksheet_end_without_sheet_data() {
+        let xml = "<?xml version=\"1.0\"?><worksheet></worksheet>";
+        let result = apply_sheet_protection(xml, "pass").unwrap();
+        assert!(result.contains("sheetProtection"));
+    }
+
+    // ── cell_style_index 覆盖 ─────────────────────────────────────────
+
+    #[test]
+    fn cell_style_index_finds_style() {
+        let xml = r#"<row><c r="A1" s="3"><v>1</v></c></row>"#;
+        assert_eq!(cell_style_index(xml, "A1"), Some(3));
+    }
+
+    #[test]
+    fn cell_style_index_returns_none_for_missing() {
+        let xml = r#"<row><c r="A1"><v>1</v></c></row>"#;
+        assert_eq!(cell_style_index(xml, "A1"), None);
+    }
+
+    #[test]
+    fn cell_style_index_returns_none_for_missing_cell() {
+        let xml = r#"<row><c r="A1" s="3"><v>1</v></c></row>"#;
+        assert_eq!(cell_style_index(xml, "B1"), None);
+    }
+
+    // ── worksheet_max_row 覆盖 ────────────────────────────────────────
+
+    #[test]
+    fn worksheet_max_row_finds_max() {
+        let xml = r#"<sheetData><row r="1"/><row r="5"/><row r="3"/></sheetData>"#;
+        assert_eq!(worksheet_max_row(xml), 5);
+    }
+
+    #[test]
+    fn worksheet_max_row_returns_zero_for_empty() {
+        assert_eq!(worksheet_max_row("<sheetData/>"), 0);
+    }
+
+    // ── column_name 覆盖 ──────────────────────────────────────────────
+
+    #[test]
+    fn column_name_single_letter() {
+        assert_eq!(column_name(1), "A");
+        assert_eq!(column_name(26), "Z");
+    }
+
+    #[test]
+    fn column_name_multi_letter() {
+        assert_eq!(column_name(27), "AA");
+        assert_eq!(column_name(28), "AB");
+    }
+
+    #[test]
+    fn column_name_empty_for_zero() {
+        assert_eq!(column_name(0), "");
+    }
+
+    // ── escape_xml 覆盖 ───────────────────────────────────────────────
+
+    #[test]
+    fn escape_xml_all_special_chars() {
+        assert_eq!(escape_xml("<>&\"'"), "&lt;&gt;&amp;&quot;&apos;");
+    }
+
+    #[test]
+    fn escape_xml_no_special_chars() {
+        assert_eq!(escape_xml("hello world"), "hello world");
+    }
+
+    // ── expand_self_closing_sheet_data 覆盖 ───────────────────────────
+
+    #[test]
+    fn expand_self_closing_sheet_data_expands() {
+        let xml = "<worksheet><sheetData/></worksheet>";
+        let result = expand_self_closing_sheet_data(xml).unwrap();
+        assert!(result.contains("</sheetData>"));
+    }
+
+    #[test]
+    fn expand_self_closing_sheet_data_noop_if_already_open() {
+        let xml = "<worksheet><sheetData><row/></sheetData></worksheet>";
+        let result = expand_self_closing_sheet_data(xml).unwrap();
+        assert_eq!(result, xml);
+    }
+
+    #[test]
+    fn expand_self_closing_sheet_data_error_for_missing() {
+        let result = expand_self_closing_sheet_data("<worksheet/>");
+        assert!(result.is_err());
+    }
+
+    // ── update_worksheet_dimension 覆盖 ───────────────────────────────
+
+    #[test]
+    fn update_worksheet_dimension_updates_ref() {
+        let xml = r#"<?xml version="1.0"?><worksheet><dimension ref="A1:A1"/><sheetData><row r="1"><c r="A1"><v>1</v></c><c r="C1"><v>2</v></c></row><row r="3"><c r="B3"><v>3</v></c></row></sheetData></worksheet>"#;
+        let result = update_worksheet_dimension(xml);
+        assert!(result.contains("A1:C3"));
+    }
+
+    #[test]
+    fn update_worksheet_dimension_noop_for_empty() {
+        let xml = r#"<?xml version="1.0"?><worksheet><dimension ref="A1"/><sheetData/></worksheet>"#;
+        let result = update_worksheet_dimension(xml);
+        assert!(result.contains("A1"));
+    }
+
+    // ── parse_cell_reference 覆盖 ─────────────────────────────────────
+
+    #[test]
+    fn parse_cell_reference_simple() {
+        assert_eq!(parse_cell_reference("A1"), Some((1, 1)));
+        assert_eq!(parse_cell_reference("B2"), Some((2, 2)));
+    }
+
+    #[test]
+    fn parse_cell_reference_with_dollar() {
+        assert_eq!(parse_cell_reference("$A$1"), Some((1, 1)));
+        assert_eq!(parse_cell_reference("$B$10"), Some((2, 10)));
+    }
+
+    #[test]
+    fn parse_cell_reference_returns_none_for_invalid() {
+        assert_eq!(parse_cell_reference(""), None);
+        assert_eq!(parse_cell_reference("123"), None);
+        assert_eq!(parse_cell_reference("A0"), None);
+    }
+
+    // ── attribute_value 覆盖 ──────────────────────────────────────────
+
+    #[test]
+    fn attribute_value_finds_value() {
+        let xml = r#"<element name="test" value="123">"#;
+        assert_eq!(attribute_value(xml, "name"), Some("test"));
+        assert_eq!(attribute_value(xml, "value"), Some("123"));
+    }
+
+    #[test]
+    fn attribute_value_returns_none_for_missing() {
+        let xml = r#"<element name="test">"#;
+        assert_eq!(attribute_value(xml, "missing"), None);
+    }
+
+    // ── all_cells 覆盖 ────────────────────────────────────────────────
+
+    #[test]
+    fn all_cells_finds_multiple_cells() {
+        let xml = r#"<row><c r="A1"><v>1</v></c><c r="B1"><v>2</v></c></row>"#;
+        let cells = all_cells(xml);
+        assert_eq!(cells.len(), 2);
+    }
+
+    #[test]
+    fn all_cells_handles_self_closing() {
+        let xml = r#"<row><c r="A1"/></row>"#;
+        let cells = all_cells(xml);
+        assert_eq!(cells.len(), 1);
+    }
+
+    #[test]
+    fn all_cells_empty_for_no_cells() {
+        let cells = all_cells("<row/>");
+        assert!(cells.is_empty());
+    }
+
+    // ── element_value 覆盖 ────────────────────────────────────────────
+
+    #[test]
+    fn element_value_finds_text() {
+        let xml = "<author>Alice</author>";
+        assert_eq!(element_value(xml, "author"), Some("Alice"));
+    }
+
+    #[test]
+    fn element_value_returns_none_for_missing() {
+        assert_eq!(element_value("<other/>", "author"), None);
+    }
+
+    // ── replace_attribute 覆盖 ────────────────────────────────────────
+
+    #[test]
+    fn replace_attribute_updates() {
+        let xml = r#"<element name="old">"#;
+        let result = replace_attribute(xml, "name", "new");
+        assert_eq!(result, r#"<element name="new">"#);
+    }
+
+    #[test]
+    fn replace_attribute_noop_for_missing() {
+        let xml = "<element>";
+        let result = replace_attribute(xml, "missing", "value");
+        assert_eq!(result, xml);
+    }
+
+    // ── replace_tag_attribute 覆盖 ────────────────────────────────────
+
+    #[test]
+    fn replace_tag_attribute_updates() {
+        let xml = r#"<dimension ref="A1:A1"/>"#;
+        let result = replace_tag_attribute(xml, "dimension", "ref", "A1:B2");
+        assert!(result.contains("A1:B2"));
+    }
+
+    #[test]
+    fn replace_tag_attribute_noop_for_missing_tag() {
+        let xml = "<worksheet/>";
+        let result = replace_tag_attribute(xml, "dimension", "ref", "A1:B2");
+        assert_eq!(result, xml);
+    }
+
+    // ── remove_attribute 覆盖 ─────────────────────────────────────────
+
+    #[test]
+    fn remove_attribute_removes() {
+        let xml = r#"<element name="test" id="1">"#;
+        let result = remove_attribute(xml, "name");
+        assert!(!result.contains("name="));
+        assert!(result.contains("id=\"1\""));
+    }
+
+    #[test]
+    fn remove_attribute_noop_for_missing() {
+        let xml = r#"<element id="1">"#;
+        let result = remove_attribute(xml, "name");
+        assert_eq!(result, xml);
+    }
+
+    // ── append_sparse_rows 覆盖 ───────────────────────────────────────
+
+    #[test]
+    fn append_sparse_rows_adds_to_empty_sheet() {
+        let xml = r#"<?xml version="1.0"?><worksheet><dimension ref="A1"/><sheetData/></worksheet>"#;
+        let rows = vec![vec![(0, TemplateCellValue::Number("1".into()))]];
+        let (result, next) = append_sparse_rows(xml, &rows, &[], &[], &[]).unwrap();
+        assert_eq!(next, 2);
+        assert!(result.contains("<row r=\"1\">"));
+    }
+
+    #[test]
+    fn append_sparse_rows_adds_to_existing() {
+        let xml = r#"<?xml version="1.0"?><worksheet><dimension ref="A1"/><sheetData><row r="1"><c r="A1"><v>1</v></c></row></sheetData></worksheet>"#;
+        let rows = vec![vec![(0, TemplateCellValue::Number("2".into()))]];
+        let (result, next) = append_sparse_rows(xml, &rows, &[], &[], &[]).unwrap();
+        assert_eq!(next, 3);
+        assert!(result.contains("<row r=\"2\">"));
+    }
+
+    #[test]
+    fn append_sparse_rows_with_height() {
+        let xml = r#"<?xml version="1.0"?><worksheet><dimension ref="A1"/><sheetData/></worksheet>"#;
+        let rows = vec![vec![(0, TemplateCellValue::Number("1".into()))]];
+        let heights = vec![Some(30)];
+        let (result, _) = append_sparse_rows(xml, &rows, &heights, &[], &[]).unwrap();
+        assert!(result.contains("ht=\"30\""));
+        assert!(result.contains("customHeight=\"1\""));
+    }
+
+    #[test]
+    fn append_sparse_rows_with_absent() {
+        let xml = r#"<?xml version="1.0"?><worksheet><dimension ref="A1"/><sheetData/></worksheet>"#;
+        let rows = vec![
+            vec![(0, TemplateCellValue::Number("1".into()))],
+            vec![(0, TemplateCellValue::Number("2".into()))],
+        ];
+        let absent = vec![false, true];
+        let (result, next) = append_sparse_rows(xml, &rows, &[], &[], &absent).unwrap();
+        assert_eq!(next, 3);
+        // 只有一行被追加
+        assert!(result.contains("<row r=\"1\">"));
+    }
+
+    #[test]
+    fn append_sparse_rows_with_styles() {
+        let xml = r#"<?xml version="1.0"?><worksheet><dimension ref="A1"/><sheetData/></worksheet>"#;
+        let rows = vec![vec![(0, TemplateCellValue::Number("1".into()))]];
+        let styles = vec![vec![Some(3)]];
+        let (result, _) = append_sparse_rows(xml, &rows, &[], &styles, &[]).unwrap();
+        assert!(result.contains("s=\"3\""));
+    }
+
+    // ── apply_column_widths 覆盖 ──────────────────────────────────────
+
+    #[test]
+    fn apply_column_widths_inserts_before_sheet_data() {
+        let xml = "<worksheet><sheetData/></worksheet>";
+        let result = apply_column_widths(xml, &[(0, 20)]).unwrap();
+        assert!(result.contains("<cols>"));
+        assert!(result.contains("width=\"20\""));
+    }
+
+    #[test]
+    fn apply_column_widths_appends_to_existing_cols() {
+        let xml = r#"<worksheet><cols><col min="1" max="1" width="10" customWidth="1"/></cols><sheetData/></worksheet>"#;
+        let result = apply_column_widths(xml, &[(1, 30)]).unwrap();
+        assert!(result.contains("width=\"30\""));
+    }
+
+    #[test]
+    fn apply_column_widths_replaces_self_closing_cols() {
+        let xml = "<worksheet><cols/><sheetData/></worksheet>";
+        let result = apply_column_widths(xml, &[(0, 15)]).unwrap();
+        assert!(result.contains("<cols>"));
+        assert!(result.contains("width=\"15\""));
+    }
+
+    // ── apply_merge_ranges 覆盖 ───────────────────────────────────────
+
+    #[test]
+    fn apply_merge_ranges_inserts_new() {
+        // 使用一个不会与 dimension ref 重复的合并范围
+        let xml = r#"<?xml version="1.0"?><worksheet><dimension ref="A1:A1"/><sheetData><row r="1"><c r="A1"><v>1</v></c></row></sheetData></worksheet>"#;
+        let ranges = vec![TemplateMergeRange { first_row: 0, first_column: 0, last_row: 2, last_column: 2 }];
+        let result = apply_merge_ranges(xml, &ranges).unwrap();
+        assert!(result.contains("<mergeCells"));
+        assert!(result.contains("A1:C3"));
+    }
+
+    #[test]
+    fn apply_merge_ranges_appends_to_existing() {
+        let xml = r#"<?xml version="1.0"?><worksheet><dimension ref="A1:C3"/><sheetData><row r="1"><c r="A1"><v>1</v></c></row></sheetData><mergeCells count="1"><mergeCell ref="A1:B2"/></mergeCells></worksheet>"#;
+        let ranges = vec![TemplateMergeRange { first_row: 2, first_column: 0, last_row: 2, last_column: 2 }];
+        let result = apply_merge_ranges(xml, &ranges).unwrap();
+        assert!(result.contains("A3:C3"));
+        assert!(result.contains("count=\"2\""));
+    }
+
+    #[test]
+    fn apply_merge_ranges_noop_if_already_present() {
+        let xml = r#"<?xml version="1.0"?><worksheet><sheetData/><mergeCells count="1"><mergeCell ref="A1:B2"/></mergeCells></worksheet>"#;
+        let ranges = vec![TemplateMergeRange { first_row: 0, first_column: 0, last_row: 1, last_column: 1 }];
+        let result = apply_merge_ranges(xml, &ranges).unwrap();
+        assert_eq!(result, xml);
+    }
+
+    // ── TemplateCellValue::as_text 覆盖 ───────────────────────────────
+
+    #[test]
+    fn as_text_all_variants() {
+        assert_eq!(TemplateCellValue::Empty.as_text(), "");
+        assert_eq!(TemplateCellValue::Text("hi".into()).as_text(), "hi");
+        assert_eq!(TemplateCellValue::Bool(true).as_text(), "true");
+        assert_eq!(TemplateCellValue::Number("42".into()).as_text(), "42");
+        assert_eq!(TemplateCellValue::Date("2024-01".into()).as_text(), "2024-01");
+        assert_eq!(TemplateCellValue::Formula("SUM".into()).as_text(), "SUM");
+        assert_eq!(TemplateCellValue::Error("#ERR".into()).as_text(), "#ERR");
+    }
+}

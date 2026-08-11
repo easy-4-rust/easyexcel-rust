@@ -169,4 +169,93 @@ mod tests_extra {
         let context = WriteCellContext::new("S", 0, 0, CellValue::Empty);
         strategy.merge("Sheet1", &context, None, Some(0));
     }
+
+    #[test]
+    fn new_valid_parameters() {
+        let s = LoopMergeStrategy::new(3, 2, 0).unwrap();
+        assert_eq!(s.each_rows(), 3);
+        assert_eq!(s.column_extend(), 2);
+        assert_eq!(s.column_index(), 0);
+    }
+
+    #[test]
+    fn new_rejects_each_rows_zero() {
+        assert!(LoopMergeStrategy::new(0, 1, 0).is_err());
+    }
+
+    #[test]
+    fn new_rejects_column_extend_zero() {
+        assert!(LoopMergeStrategy::new(2, 0, 0).is_err());
+    }
+
+    #[test]
+    fn new_rejects_both_one() {
+        assert!(LoopMergeStrategy::new(1, 1, 0).is_err());
+    }
+
+    #[test]
+    fn new_accepts_each_rows_one_with_column_extend() {
+        let s = LoopMergeStrategy::new(1, 3, 0).unwrap();
+        assert_eq!(s.each_rows(), 1);
+        assert_eq!(s.column_extend(), 3);
+    }
+
+    #[test]
+    fn with_column_creates_single_column_strategy() {
+        let s = LoopMergeStrategy::with_column(5, 2).unwrap();
+        assert_eq!(s.each_rows(), 5);
+        assert_eq!(s.column_extend(), 1);
+        assert_eq!(s.column_index(), 2);
+    }
+
+    #[test]
+    fn with_column_rejects_negative_params() {
+        assert!(LoopMergeStrategy::with_column(-1, 0).is_err());
+        assert!(LoopMergeStrategy::with_column(0, 0).is_err());
+        assert!(LoopMergeStrategy::with_column(2, -1).is_err());
+    }
+
+    #[test]
+    fn from_property_creates_strategy() {
+        let prop = LoopMergeProperty::new(3, 2);
+        let s = LoopMergeStrategy::from_property(prop, Some(1)).unwrap();
+        assert_eq!(s.each_rows(), 3);
+        assert_eq!(s.column_extend(), 2);
+        assert_eq!(s.column_index(), 1);
+    }
+
+    #[test]
+    fn from_property_rejects_none_column_index() {
+        let prop = LoopMergeProperty::new(3, 2);
+        assert!(LoopMergeStrategy::from_property(prop, None).is_err());
+    }
+
+    #[test]
+    fn write_handler_order_returns_default() {
+        let s = LoopMergeStrategy::new(2, 1, 0).unwrap();
+        assert_eq!(s.order(), crate::constant::order_constant::DEFAULT_ORDER);
+    }
+
+    #[test]
+    fn style_loop_merge_returns_property_and_column() {
+        let s = LoopMergeStrategy::new(3, 2, 5).unwrap();
+        let (prop, col) = s.style_loop_merge().unwrap();
+        assert_eq!(prop.each_row, 3);
+        assert_eq!(prop.column_extend, 2);
+        assert_eq!(col, 5);
+    }
+
+    #[test]
+    fn debug_format_works() {
+        let s = LoopMergeStrategy::new(2, 1, 0).unwrap();
+        let debug = format!("{:?}", s);
+        assert!(debug.contains("LoopMergeStrategy"));
+    }
+
+    #[test]
+    fn clone_and_eq() {
+        let a = LoopMergeStrategy::new(2, 1, 0).unwrap();
+        let b = a;
+        assert_eq!(a, b);
+    }
 }

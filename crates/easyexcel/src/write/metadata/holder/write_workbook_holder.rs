@@ -474,4 +474,195 @@ mod tests_extra {
         holder.set_excel_write_head_property(ExcelWriteHeadProperty::new());
         assert_eq!(NoopHandler.order(), 0);
     }
+
+    #[test]
+    fn java_getter_aliases_match_primary_getters() {
+        let mut holder = WriteWorkbookHolder::new("/tmp/test.xlsx");
+
+        // 文件路径
+        assert_eq!(holder.get_file(), holder.path());
+        holder.set_file("/tmp/new.xlsx");
+        assert_eq!(holder.get_file(), "/tmp/new.xlsx");
+
+        // Excel 类型
+        assert_eq!(holder.get_excel_type(), crate::support::ExcelTypeEnum::Xlsx);
+        holder.set_excel_type(crate::support::ExcelTypeEnum::Xls);
+        assert_eq!(holder.get_excel_type(), crate::support::ExcelTypeEnum::Xls);
+
+        // 工作簿
+        assert!(holder.get_workbook().is_none());
+        holder.set_workbook(Some(vec![1, 2, 3]));
+        assert_eq!(holder.get_workbook(), Some([1_u8, 2, 3].as_slice()));
+        holder.set_workbook(None);
+        assert!(holder.get_workbook().is_none());
+
+        // 缓存工作簿
+        assert!(holder.get_cached_workbook().is_none());
+        holder.set_cached_workbook(Some(vec![4, 5]));
+        assert_eq!(holder.get_cached_workbook(), Some([4_u8, 5].as_slice()));
+
+        // 输出流
+        assert!(holder.get_output_stream().is_none());
+        holder.set_output_stream(Some(vec![6, 7]));
+        assert_eq!(holder.get_output_stream(), Some([6_u8, 7].as_slice()));
+
+        // 模板输入流
+        assert!(holder.get_template_input_stream().is_none());
+        holder.set_template_input_stream(Some(vec![8, 9]));
+        assert_eq!(holder.get_template_input_stream(), Some([8_u8, 9].as_slice()));
+
+        // 临时模板输入流
+        assert!(holder.get_temp_template_input_stream().is_none());
+        holder.set_temp_template_input_stream(Some(vec![10]));
+        assert_eq!(holder.get_temp_template_input_stream(), Some([10_u8].as_slice()));
+
+        // 写入上下文
+        assert!(holder.get_workbook_write_handler_context().is_none());
+    }
+
+    #[test]
+    fn holder_type_returns_workbook() {
+        let holder = WriteWorkbookHolder::new("out.xlsx");
+        assert_eq!(holder.holder_type(), crate::HolderEnum::Workbook);
+    }
+
+    #[test]
+    fn auto_close_stream_setter_and_getter() {
+        let mut holder = WriteWorkbookHolder::new("out.xlsx");
+        assert!(holder.auto_close_stream());
+        assert!(holder.get_auto_close_stream());
+        holder.set_auto_close_stream(false);
+        assert!(!holder.auto_close_stream());
+        assert!(!holder.get_auto_close_stream());
+    }
+
+    #[test]
+    fn in_memory_setter_and_getter() {
+        let mut holder = WriteWorkbookHolder::new("out.xlsx");
+        assert!(holder.in_memory().is_none());
+        assert!(holder.get_in_memory().is_none());
+        holder.set_in_memory(Some(true));
+        assert_eq!(holder.in_memory(), Some(true));
+        assert_eq!(holder.get_in_memory(), Some(true));
+    }
+
+    #[test]
+    fn mandatory_use_input_stream_setter_and_getter() {
+        let mut holder = WriteWorkbookHolder::new("out.xlsx");
+        assert!(!holder.mandatory_use_input_stream());
+        assert!(!holder.get_mandatory_use_input_stream());
+        holder.set_mandatory_use_input_stream(true);
+        assert!(holder.mandatory_use_input_stream());
+        assert!(holder.get_mandatory_use_input_stream());
+    }
+
+    #[test]
+    fn write_excel_on_exception_setter_and_getter() {
+        let mut holder = WriteWorkbookHolder::new("out.xlsx");
+        assert!(!holder.write_excel_on_exception());
+        assert!(!holder.get_write_excel_on_exception());
+        holder.set_write_excel_on_exception(true);
+        assert!(holder.write_excel_on_exception());
+        assert!(holder.get_write_excel_on_exception());
+    }
+
+    #[test]
+    fn with_bom_setter_and_getter() {
+        let mut holder = WriteWorkbookHolder::new("out.xlsx");
+        assert!(holder.with_bom());
+        assert!(holder.get_with_bom());
+        holder.set_with_bom(false);
+        assert!(!holder.with_bom());
+        assert!(!holder.get_with_bom());
+    }
+
+    #[test]
+    fn charset_setter_and_getter() {
+        let mut holder = WriteWorkbookHolder::new("out.xlsx");
+        assert_eq!(holder.charset(), "UTF-8");
+        assert_eq!(holder.get_charset(), "UTF-8");
+        holder.set_charset("GBK");
+        assert_eq!(holder.charset(), "GBK");
+    }
+
+    #[test]
+    fn password_setter_and_getter() {
+        let mut holder = WriteWorkbookHolder::new("out.xlsx");
+        assert!(holder.password().is_none());
+        assert!(holder.get_password().is_none());
+        holder.set_password(Some("secret".to_owned()));
+        assert_eq!(holder.password(), Some("secret"));
+        assert_eq!(holder.get_password(), Some("secret"));
+    }
+
+    #[test]
+    fn template_file_setter_and_getter() {
+        let mut holder = WriteWorkbookHolder::new("out.xlsx");
+        assert!(holder.template_file().is_none());
+        assert!(holder.get_template_file().is_none());
+        holder.set_template_file(Some("/tmp/template.xlsx".to_owned()));
+        assert_eq!(holder.template_file(), Some("/tmp/template.xlsx"));
+        assert_eq!(holder.get_template_file(), Some("/tmp/template.xlsx"));
+    }
+
+    #[test]
+    fn initialized_sheet_indexes_setter_and_getter() {
+        let mut holder = WriteWorkbookHolder::new("out.xlsx");
+        assert!(holder.initialized_sheet_indexes().is_empty());
+        assert!(holder.get_has_been_initialized_sheet_index_map().is_empty());
+        let mut map = std::collections::HashMap::new();
+        map.insert(0, "Sheet1".to_owned());
+        holder.set_has_been_initialized_sheet_index_map(map);
+        assert_eq!(holder.initialized_sheet_indexes().len(), 1);
+    }
+
+    #[test]
+    fn initialized_sheet_names_setter_and_getter() {
+        let mut holder = WriteWorkbookHolder::new("out.xlsx");
+        assert!(holder.initialized_sheet_names().is_empty());
+        assert!(holder.get_has_been_initialized_sheet_name_map().is_empty());
+    }
+
+    #[test]
+    fn cell_style_index_map_setter_and_getter() {
+        let mut holder = WriteWorkbookHolder::new("out.xlsx");
+        assert!(holder.cell_style_index_map().is_empty());
+        assert!(holder.get_cell_style_index_map().is_empty());
+    }
+
+    #[test]
+    fn data_format_map_setter_and_getter() {
+        let mut holder = WriteWorkbookHolder::new("out.xlsx");
+        assert!(holder.data_format_map().is_empty());
+        assert!(holder.get_data_format_map().is_empty());
+    }
+
+    #[test]
+    fn font_map_setter_and_getter() {
+        let mut holder = WriteWorkbookHolder::new("out.xlsx");
+        assert!(holder.font_map().is_empty());
+        assert!(holder.get_font_map().is_empty());
+    }
+
+    #[test]
+    fn create_font_returns_none_for_empty() {
+        let mut holder = WriteWorkbookHolder::new("out.xlsx");
+        let result = holder.create_font(None, None, true);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn create_data_format_returns_none_for_none() {
+        let mut holder = WriteWorkbookHolder::new("out.xlsx");
+        let result = holder.create_data_format(None, true);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn create_cell_style_returns_origin_when_write_is_none() {
+        let mut holder = WriteWorkbookHolder::new("out.xlsx");
+        let origin = Some(WriteCellStyle::default());
+        let result = holder.create_cell_style(None, origin.as_ref());
+        assert!(result.is_some());
+    }
 }

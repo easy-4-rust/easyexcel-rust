@@ -126,3 +126,210 @@ fn unique_sheet_name(requested: &str, index: usize, used: &mut HashSet<String>) 
     }
     candidate
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::CellValue;
+
+    // --- TabularDocument 基本测试 --------------------------------------
+
+    #[test]
+    fn new_creates_empty_document() {
+        let doc = TabularDocument::new();
+        assert!(doc.tables().is_empty());
+    }
+
+    #[test]
+    fn from_tables_creates_document() {
+        let table = TabularTable::new("Test");
+        let doc = TabularDocument::from_tables(vec![table]);
+        assert_eq!(doc.tables().len(), 1);
+        assert_eq!(doc.tables()[0].name(), "Test");
+    }
+
+    #[test]
+    fn push_table_adds_table() {
+        let mut doc = TabularDocument::new();
+        doc.push_table(TabularTable::new("Sheet1"));
+        doc.push_table(TabularTable::new("Sheet2"));
+        assert_eq!(doc.tables().len(), 2);
+    }
+
+    // --- to_workbook 测试 ----------------------------------------------
+
+    #[test]
+    fn to_workbook_empty_document_has_one_sheet() {
+        let doc = TabularDocument::new();
+        let wb = doc.to_workbook();
+        // 空文档应该有一个默认 Sheet1
+        assert_eq!(wb.sheets.len(), 1);
+    }
+
+    #[test]
+    fn to_workbook_with_data() {
+        let mut table = TabularTable::new("Data");
+        table.push_row(vec![
+            TabularCell::header(CellValue::Text("Name".into())),
+            TabularCell::header(CellValue::Text("Age".into())),
+        ]);
+        table.push_row(vec![
+            TabularCell::new(CellValue::Text("Alice".into())),
+            TabularCell::new(CellValue::Number(25.0)),
+        ]);
+        let doc = TabularDocument::from_tables(vec![table]);
+        let wb = doc.to_workbook();
+        assert_eq!(wb.sheets.len(), 1);
+    }
+
+    #[test]
+    fn to_workbook_with_header_style() {
+        let mut table = TabularTable::new("Styled");
+        table.push_row(vec![
+            TabularCell::header(CellValue::Text("Col1".into())),
+            TabularCell::new(CellValue::Number(1.0)),
+        ]);
+        let doc = TabularDocument::from_tables(vec![table]);
+        let wb = doc.to_workbook_with_header_style(true);
+        assert_eq!(wb.sheets.len(), 1);
+    }
+
+    #[test]
+    fn to_workbook_without_header_style() {
+        let mut table = TabularTable::new("NoStyle");
+        table.push_row(vec![
+            TabularCell::header(CellValue::Text("Col1".into())),
+            TabularCell::new(CellValue::Number(1.0)),
+        ]);
+        let doc = TabularDocument::from_tables(vec![table]);
+        let wb = doc.to_workbook_with_header_style(false);
+        assert_eq!(wb.sheets.len(), 1);
+    }
+
+    #[test]
+    fn to_workbook_empty_value_skipped() {
+        let mut table = TabularTable::new("Skip");
+        table.push_row(vec![
+            TabularCell::new(CellValue::Empty),
+            TabularCell::new(CellValue::Number(42.0)),
+        ]);
+        let doc = TabularDocument::from_tables(vec![table]);
+        let wb = doc.to_workbook();
+        assert_eq!(wb.sheets.len(), 1);
+    }
+
+    #[test]
+    fn to_workbook_multiple_tables() {
+        let t1 = TabularTable::new("Table1");
+        let t2 = TabularTable::new("Table2");
+        let doc = TabularDocument::from_tables(vec![t1, t2]);
+        let wb = doc.to_workbook();
+        assert_eq!(wb.sheets.len(), 2);
+    }
+
+    // --- from_workbook 测试 --------------------------------------------
+
+    #[test]
+    fn from_workbook_roundtrip() {
+        let mut table = TabularTable::new("RT");
+        table.push_row(vec![
+            TabularCell::header(CellValue::Text("X".into())),
+            TabularCell::new(CellValue::Number(99.0)),
+        ]);
+        let doc = TabularDocument::from_tables(vec![table]);
+        let wb = doc.to_workbook();
+        let doc2 = TabularDocument::from_workbook(&wb);
+        assert_eq!(doc2.tables().len(), 1);
+    }
+
+    // --- unique_sheet_name 测试 ----------------------------------------
+
+    #[test]
+    fn unique_sheet_name_basic() {
+        let mut used = HashSet::new();
+        let name = unique_sheet_name("Test", 0, &mut used);
+        assert_eq!(name, "Test");
+    }
+
+    #[test]
+    fn unique_sheet_name_sanitizes_special_chars() {
+        let mut used = HashSet::new();
+        // ":" "\" "/" "?" "*" "[" "]" are removed; "H" remains → "ABCDEFGH"
+        let name = unique_sheet_name("A:B\\C/D?E*F[G]H", 0, &mut used);
+        assert_eq!(name, "ABCDEFGH");
+    }
+
+    #[test]
+    fn unique_sheet_name_empty_fallback() {
+        let mut used = HashSet::new();
+        let name = unique_sheet_name("", 0, &mut used);
+        assert_eq!(name, "Table1");
+    }
+
+    #[test]
+    fn unique_sheet_name_whitespace_fallback() {
+        let mut used = HashSet::new();
+        let name = unique_sheet_name("   ", 0, &mut used);
+        assert_eq!(name, "Table1");
+    }
+
+    #[test]
+    fn unique_sheet_name_deduplicates() {
+        let mut used = HashSet::new();
+        let n1 = unique_sheet_name("Sheet", 0, &mut used);
+        let n2 = unique_sheet_name("Sheet", 0, &mut used);
+        assert_eq!(n1, "Sheet");
+        assert_eq!(n2, "Sheet-2");
+    }
+
+    #[test]
+    fn unique_sheet_name_deduplicates_case_insensitive() {
+        let mut used = HashSet::new();
+        let n1 = unique_sheet_name("Sheet", 0, &mut used);
+        let n2 = unique_sheet_name("SHEET", 0, &mut used);
+        assert_eq!(n1, "Sheet");
+        assert_eq!(n2, "SHEET-2");
+    }
+
+    #[test]
+    fn unique_sheet_name_truncates_long_name() {
+        let mut used = HashSet::new();
+        let long = "A".repeat(50);
+        let name = unique_sheet_name(&long, 0, &mut used);
+        assert!(name.len() <= 31);
+    }
+
+    #[test]
+    fn unique_sheet_name_truncates_with_suffix() {
+        let mut used = HashSet::new();
+        let long = "B".repeat(50);
+        let n1 = unique_sheet_name(&long, 0, &mut used);
+        let n2 = unique_sheet_name(&long, 0, &mut used);
+        assert!(n1.len() <= 31);
+        assert!(n2.len() <= 31);
+        assert_ne!(n1, n2);
+    }
+
+    // --- PartialEq / Clone / Debug 测试 --------------------------------
+
+    #[test]
+    fn document_equality() {
+        let doc1 = TabularDocument::new();
+        let doc2 = TabularDocument::new();
+        assert_eq!(doc1, doc2);
+    }
+
+    #[test]
+    fn document_clone() {
+        let doc = TabularDocument::new();
+        let cloned = doc.clone();
+        assert_eq!(doc, cloned);
+    }
+
+    #[test]
+    fn document_debug() {
+        let doc = TabularDocument::new();
+        let dbg = format!("{:?}", doc);
+        assert!(dbg.contains("TabularDocument"));
+    }
+}

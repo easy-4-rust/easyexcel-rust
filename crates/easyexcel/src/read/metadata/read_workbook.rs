@@ -411,4 +411,149 @@ mod tests {
         assert_eq!(workbook.excel_type(), None);
         assert_eq!(ReadWorkbook::default().excel_type(), None);
     }
+
+    #[test]
+    fn file_setter_and_getter() {
+        let mut workbook = ReadWorkbook::new();
+        assert!(workbook.file().is_none());
+        assert!(workbook.get_file().is_none());
+        workbook.set_file("/tmp/test.xlsx");
+        assert_eq!(workbook.file().unwrap().to_str().unwrap(), "/tmp/test.xlsx");
+    }
+
+    #[test]
+    fn input_stream_setter_and_getter() {
+        let mut workbook = ReadWorkbook::new();
+        assert!(workbook.get_input_stream().is_none());
+        workbook.set_input_stream(Some(vec![1, 2, 3]));
+        assert_eq!(workbook.get_input_stream(), Some([1_u8, 2, 3].as_slice()));
+        workbook.set_input_stream(None);
+        assert!(workbook.get_input_stream().is_none());
+    }
+
+    #[test]
+    fn nullable_overrides() {
+        let mut workbook = ReadWorkbook::new();
+        assert!(workbook.get_auto_close_stream().is_none());
+        assert!(workbook.get_ignore_empty_row().is_none());
+        assert!(workbook.get_mandatory_use_input_stream().is_none());
+
+        workbook.set_auto_close_stream(false);
+        assert_eq!(workbook.get_auto_close_stream(), Some(false));
+
+        workbook.set_ignore_empty_row(true);
+        assert_eq!(workbook.get_ignore_empty_row(), Some(true));
+
+        workbook.set_mandatory_use_input_stream(true);
+        assert_eq!(workbook.get_mandatory_use_input_stream(), Some(true));
+    }
+
+    #[test]
+    fn java_aliases_match_primary_getters() {
+        let mut workbook = ReadWorkbook::new();
+        workbook.set_file("/tmp/test.xlsx");
+        workbook.set_excel_type(crate::support::ExcelTypeEnum::Xls);
+        workbook.set_password("secret");
+        workbook.set_charset(crate::CsvCharset::from("utf-8"));
+        workbook.set_custom_object(crate::CustomReadObject::new(42_u32));
+        workbook.set_read_cache(ReadCacheMode::File);
+        workbook.set_read_cache_selector(StoredReadCacheSelector::Simple(
+            SimpleReadCacheSelector::new(),
+        ));
+
+        assert_eq!(
+            workbook.get_file(),
+            workbook.file()
+        );
+        assert_eq!(
+            workbook.get_excel_type(),
+            workbook.excel_type()
+        );
+        assert_eq!(
+            workbook.get_password(),
+            workbook.password()
+        );
+        assert_eq!(
+            workbook.get_charset().name(),
+            workbook.charset().name()
+        );
+        assert!(workbook.get_custom_object().is_some());
+        assert_eq!(
+            workbook.get_read_cache(),
+            workbook.read_cache()
+        );
+        assert!(workbook.get_read_cache_selector().is_some());
+    }
+
+    #[test]
+    fn read_default_return_setter_and_getter() {
+        let mut workbook = ReadWorkbook::new();
+        assert_eq!(
+            workbook.get_read_default_return(),
+            crate::ReadDefaultReturn::default()
+        );
+        workbook.set_read_default_return(crate::ReadDefaultReturn::ActualData);
+        assert_eq!(
+            workbook.get_read_default_return(),
+            crate::ReadDefaultReturn::ActualData
+        );
+    }
+
+    #[test]
+    fn extra_read_set_setter_and_getter() {
+        let mut workbook = ReadWorkbook::new();
+        assert!(workbook.get_extra_read_set().is_empty());
+        let mut set = std::collections::HashSet::new();
+        set.insert(crate::CellExtraType::Comment);
+        workbook.set_extra_read_set(set);
+        assert!(workbook.get_extra_read_set().contains(&crate::CellExtraType::Comment));
+    }
+
+    #[test]
+    fn use_default_listener_setter_and_getter() {
+        let mut workbook = ReadWorkbook::new();
+        assert_eq!(workbook.get_use_default_listener(), Some(true));
+        workbook.set_use_default_listener(false);
+        assert_eq!(workbook.get_use_default_listener(), Some(false));
+    }
+
+    #[test]
+    fn xlsx_sax_parser_factory_name_setter_and_getter() {
+        let mut workbook = ReadWorkbook::new();
+        assert!(workbook.get_xlsx_sax_parser_factory_name().is_none());
+        assert!(workbook.get_xlsx_saxparser_factory_name().is_none());
+        workbook.set_xlsx_sax_parser_factory_name(Some("com.example.Factory".to_owned()));
+        assert_eq!(
+            workbook.get_xlsx_sax_parser_factory_name(),
+            Some("com.example.Factory")
+        );
+        assert_eq!(
+            workbook.get_xlsx_saxparser_factory_name(),
+            Some("com.example.Factory")
+        );
+        workbook.set_xlsx_saxparser_factory_name(None);
+        assert!(workbook.get_xlsx_sax_parser_factory_name().is_none());
+    }
+
+    #[test]
+    fn basic_parameter_accessors() {
+        let mut workbook = ReadWorkbook::new();
+        let _ = workbook.get_read_basic_parameter();
+        let _ = workbook.get_read_basic_parameter_mut();
+    }
+
+    #[test]
+    fn from_options_preserves_configuration() {
+        let options = ReadOptions {
+            sheet: crate::SheetSelector::Name("Sheet1".to_owned()),
+            ignore_empty_row: true,
+            password: Some("secret".to_owned()),
+            head_row_number: 2,
+            ..ReadOptions::default()
+        };
+        let workbook = ReadWorkbook::from(options);
+        assert!(workbook.ignore_empty_row());
+        assert_eq!(workbook.password(), Some("secret"));
+        assert_eq!(workbook.head_row_number(), 2);
+    }
 }

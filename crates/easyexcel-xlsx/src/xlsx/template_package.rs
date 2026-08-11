@@ -2227,4 +2227,1056 @@ mod tests {
         let result = extract_xml_element("<worksheet/>", "missing");
         assert_eq!(result, None);
     }
+
+    // ── 额外 import ────────────────────────────────────────────────────
+
+    use super::{
+        chart_anchor, drawing_image_relationship_id, drawing_relationship_id,
+        image_anchor, insert_drawing_reference, relationship_target,
+        relationship_target_by_type, remove_vml_comment_shape, template_column_width_pixels,
+        template_row_height_pixels, vml_comment_shape, with_next_drawing_object_id,
+        with_next_vml_shape_id, OoxmlTemplatePackage, entry_index, entry_string, xml_elements,
+    };
+    use super::super::ooxml_package::OoxmlPackage;
+
+    /// 构建最小 OOXML 模板包，包含 workbook.xml、workbook.xml.rels、
+    /// [Content_Types].xml、xl/styles.xml 和 xl/worksheets/sheet1.xml。
+    fn minimal_template_package() -> OoxmlTemplatePackage {
+        let workbook = br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+          xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>"#;
+        let rels = br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>"#;
+        let content_types = br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+</Types>"#;
+        let styles = br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="1"><font><sz val="11"/></font></fonts>
+<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>
+<borders count="1"><border/></borders>
+<cellStyleXfs count="1"><xf/></cellStyleXfs>
+<cellXfs count="1"><xf/></cellXfs>
+</styleSheet>"#;
+        let worksheet = br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+           xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<dimension ref="A1"/><sheetData></sheetData></worksheet>"#;
+
+        let entries = vec![
+            OoxmlZipEntry { name: "xl/workbook.xml".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: workbook.to_vec() },
+            OoxmlZipEntry { name: "xl/_rels/workbook.xml.rels".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: rels.to_vec() },
+            OoxmlZipEntry { name: "[Content_Types].xml".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: content_types.to_vec() },
+            OoxmlZipEntry { name: "xl/styles.xml".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: styles.to_vec() },
+            OoxmlZipEntry { name: "xl/worksheets/sheet1.xml".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: worksheet.to_vec() },
+        ];
+        OoxmlTemplatePackage::from_package(OoxmlPackage::from_entries(entries))
+    }
+
+    /// 带行数据的模板包
+    fn template_package_with_rows() -> OoxmlTemplatePackage {
+        let workbook = br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+          xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>"#;
+        let rels = br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>"#;
+        let content_types = br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+</Types>"#;
+        let styles = br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="1"><font><sz val="11"/></font></fonts>
+<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>
+<borders count="1"><border/></borders>
+<cellStyleXfs count="1"><xf/></cellStyleXfs>
+<cellXfs count="1"><xf/></cellXfs>
+</styleSheet>"#;
+        let worksheet = br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+           xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<dimension ref="A1:B3"/>
+<sheetData>
+<row r="1"><c r="A1" t="inlineStr"><is><t>Hello</t></is></c><c r="B1"><v>42</v></c></row>
+<row r="3"><c r="A3"><v>99</v></c></row>
+</sheetData></worksheet>"#;
+        let entries = vec![
+            OoxmlZipEntry { name: "xl/workbook.xml".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: workbook.to_vec() },
+            OoxmlZipEntry { name: "xl/_rels/workbook.xml.rels".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: rels.to_vec() },
+            OoxmlZipEntry { name: "[Content_Types].xml".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: content_types.to_vec() },
+            OoxmlZipEntry { name: "xl/styles.xml".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: styles.to_vec() },
+            OoxmlZipEntry { name: "xl/worksheets/sheet1.xml".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: worksheet.to_vec() },
+        ];
+        OoxmlTemplatePackage::from_package(OoxmlPackage::from_entries(entries))
+    }
+
+    // ── relationship_target 覆盖 ──────────────────────────────────────
+
+    #[test]
+    fn relationship_target_finds_by_id() {
+        let xml = r#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>"#;
+        let target = relationship_target(xml, "rId1").unwrap();
+        assert_eq!(target, "worksheets/sheet1.xml");
+        let target2 = relationship_target(xml, "rId2").unwrap();
+        assert_eq!(target2, "styles.xml");
+    }
+
+    #[test]
+    fn relationship_target_returns_none_for_missing() {
+        let xml = r#"<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Target="worksheets/sheet1.xml"/>
+</Relationships>"#;
+        assert!(relationship_target(xml, "rId99").is_none());
+    }
+
+    // ── relationship_target_by_type 覆盖 ─────────────────────────────
+
+    #[test]
+    fn relationship_target_by_type_finds_by_suffix() {
+        let xml = r#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Target="../comments1.xml"/>
+<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing" Target="../drawings/vmlDrawing1.vml"/>
+</Relationships>"#;
+        let comments = relationship_target_by_type(xml, "/comments").unwrap();
+        assert_eq!(comments, "../comments1.xml");
+        let vml = relationship_target_by_type(xml, "/vmlDrawing").unwrap();
+        assert_eq!(vml, "../drawings/vmlDrawing1.vml");
+    }
+
+    #[test]
+    fn relationship_target_by_type_returns_none_for_missing() {
+        let xml = r#"<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>"#;
+        assert!(relationship_target_by_type(xml, "/comments").is_none());
+    }
+
+    // ── vml_comment_shape 覆盖 ────────────────────────────────────────
+
+    #[test]
+    fn vml_comment_shape_finds_matching_shape() {
+        let xml = r#"<xml xmlns:v="urn:schemas-microsoft-com:vml">
+<v:shape><x:Row>2</x:Row><x:Column>3</x:Column></v:shape>
+<v:shape><x:Row>5</x:Row><x:Column>1</x:Column></v:shape>
+</xml>"#;
+        let shape = vml_comment_shape(xml, 2, 3).unwrap();
+        assert!(shape.is_some());
+        assert!(shape.unwrap().contains("<x:Row>2</x:Row>"));
+    }
+
+    #[test]
+    fn vml_comment_shape_returns_none_for_no_match() {
+        let xml = r#"<xml><v:shape><x:Row>2</x:Row><x:Column>3</x:Column></v:shape></xml>"#;
+        let shape = vml_comment_shape(xml, 99, 99).unwrap();
+        assert!(shape.is_none());
+    }
+
+    #[test]
+    fn vml_comment_shape_matches_with_short_row_column_tags() {
+        let xml = r#"<xml><v:shape><Row>1</Row><Column>0</Column></v:shape></xml>"#;
+        let shape = vml_comment_shape(xml, 1, 0).unwrap();
+        assert!(shape.is_some());
+    }
+
+    #[test]
+    fn vml_comment_shape_error_for_unterminated() {
+        let xml = r#"<xml><v:shape><x:Row>1</x:Row>"#;
+        let result = vml_comment_shape(xml, 1, 0);
+        assert!(result.is_err());
+    }
+
+    // ── with_next_vml_shape_id 覆盖 ───────────────────────────────────
+
+    #[test]
+    fn with_next_vml_shape_id_assigns_new_id() {
+        let target_vml = r#"<xml><v:shape id="_x0000_s1026"><x:Row>1</x:Row></v:shape></xml>"#;
+        let source_shape = r#"<v:shape id="_x0000_s1026"><x:Row>2</x:Row></v:shape>"#;
+        let result = with_next_vml_shape_id(target_vml, source_shape).unwrap();
+        assert!(result.contains("id=\"_x0000_s1027\""));
+    }
+
+    #[test]
+    fn with_next_vml_shape_id_starts_at_one_for_empty() {
+        let target_vml = "<xml/>";
+        let source_shape = r#"<v:shape id="_x0000_s1026"><x:Row>1</x:Row></v:shape>"#;
+        let result = with_next_vml_shape_id(target_vml, source_shape).unwrap();
+        assert!(result.contains("id=\"_x0000_s1\""));
+    }
+
+    #[test]
+    fn with_next_vml_shape_id_error_for_no_id() {
+        let target_vml = "<xml/>";
+        let source_shape = "<v:shape><x:Row>1</x:Row></v:shape>";
+        let result = with_next_vml_shape_id(target_vml, source_shape);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn with_next_vml_shape_id_error_for_no_closing_bracket() {
+        let target_vml = "<xml/>";
+        let source_shape = "<v:shape";
+        let result = with_next_vml_shape_id(target_vml, source_shape);
+        assert!(result.is_err());
+    }
+
+    // ── remove_vml_comment_shape 覆盖 ─────────────────────────────────
+
+    #[test]
+    fn remove_vml_comment_shape_removes_matching() {
+        let xml = r#"<xml>
+<v:shape><x:Row>1</x:Row><x:Column>2</x:Column>data</v:shape>
+<v:shape><x:Row>3</x:Row><x:Column>4</x:Column>keep</v:shape>
+</xml>"#;
+        let (result, removed) = remove_vml_comment_shape(xml, 1, 2).unwrap();
+        assert!(removed);
+        assert!(!result.contains("data"));
+        assert!(result.contains("keep"));
+    }
+
+    #[test]
+    fn remove_vml_comment_shape_returns_false_for_no_match() {
+        let xml = r#"<xml><v:shape><x:Row>1</x:Row><x:Column>2</x:Column></v:shape></xml>"#;
+        let (result, removed) = remove_vml_comment_shape(xml, 99, 99).unwrap();
+        assert!(!removed);
+        assert_eq!(result, xml);
+    }
+
+    #[test]
+    fn remove_vml_comment_shape_short_tags() {
+        let xml = r#"<xml><v:shape><Row>5</Row><Column>0</Column></v:shape></xml>"#;
+        let (_, removed) = remove_vml_comment_shape(xml, 5, 0).unwrap();
+        assert!(removed);
+    }
+
+    #[test]
+    fn remove_vml_comment_shape_error_for_unterminated() {
+        let xml = r#"<xml><v:shape><x:Row>1</x:Row>"#;
+        let result = remove_vml_comment_shape(xml, 1, 0);
+        assert!(result.is_err());
+    }
+
+    // ── chart_anchor 覆盖 ─────────────────────────────────────────────
+
+    #[test]
+    fn chart_anchor_finds_two_cell_anchor() {
+        let xml = r#"<xdr:wsDr xmlns:xdr="...">
+<xdr:twoCellAnchor><xdr:graphicFrame><c:chart r:id="rId1"/></xdr:graphicFrame></xdr:twoCellAnchor>
+</xdr:wsDr>"#;
+        let anchor = chart_anchor(xml).unwrap();
+        assert!(anchor.contains("twoCellAnchor"));
+        assert!(anchor.contains("rId1"));
+    }
+
+    #[test]
+    fn chart_anchor_finds_one_cell_anchor() {
+        let xml = r#"<xdr:wsDr>
+<xdr:oneCellAnchor><xdr:graphicFrame><c:chart r:id="rId2"/></xdr:graphicFrame></xdr:oneCellAnchor>
+</xdr:wsDr>"#;
+        let anchor = chart_anchor(xml).unwrap();
+        assert!(anchor.contains("oneCellAnchor"));
+    }
+
+    #[test]
+    fn chart_anchor_finds_absolute_anchor() {
+        let xml = r#"<xdr:wsDr>
+<xdr:absoluteAnchor><xdr:graphicFrame><c:chart r:id="rId3"/></xdr:graphicFrame></xdr:absoluteAnchor>
+</xdr:wsDr>"#;
+        let anchor = chart_anchor(xml).unwrap();
+        assert!(anchor.contains("absoluteAnchor"));
+    }
+
+    #[test]
+    fn chart_anchor_returns_none_for_empty() {
+        assert!(chart_anchor("<xdr:wsDr/>").is_none());
+    }
+
+    // ── image_anchor 覆盖 ─────────────────────────────────────────────
+
+    #[test]
+    fn image_anchor_finds_pic_anchor() {
+        let xml = r#"<xdr:wsDr>
+<xdr:twoCellAnchor><xdr:pic><xdr:nvPicPr/></xdr:pic></xdr:twoCellAnchor>
+</xdr:wsDr>"#;
+        let anchor = image_anchor(xml).unwrap();
+        assert!(anchor.contains("xdr:pic"));
+    }
+
+    #[test]
+    fn image_anchor_finds_short_pic_tag() {
+        let xml = r#"<xdr:wsDr>
+<xdr:twoCellAnchor><pic><nvPicPr/></pic></xdr:twoCellAnchor>
+</xdr:wsDr>"#;
+        let anchor = image_anchor(xml).unwrap();
+        assert!(anchor.contains("<pic"));
+    }
+
+    #[test]
+    fn image_anchor_skips_non_pic_anchors() {
+        let xml = r#"<xdr:wsDr>
+<xdr:twoCellAnchor><xdr:graphicFrame/></xdr:twoCellAnchor>
+<xdr:oneCellAnchor><xdr:pic><xdr:nvPicPr/></xdr:pic></xdr:oneCellAnchor>
+</xdr:wsDr>"#;
+        let anchor = image_anchor(xml).unwrap();
+        assert!(anchor.contains("oneCellAnchor"));
+    }
+
+    #[test]
+    fn image_anchor_returns_none_for_empty() {
+        assert!(image_anchor("<xdr:wsDr/>").is_none());
+    }
+
+    // ── drawing_image_relationship_id 覆盖 ────────────────────────────
+
+    #[test]
+    fn drawing_image_relationship_id_finds_a_blip() {
+        let xml = r#"<xdr:pic><xdr:nvPicPr/><xdr:blipFill><a:blip r:embed="rId1"/></xdr:blipFill></xdr:pic>"#;
+        let id = drawing_image_relationship_id(xml).unwrap();
+        assert_eq!(id, "rId1");
+    }
+
+    #[test]
+    fn drawing_image_relationship_id_finds_short_blip() {
+        // 注意：xml_elements 对 "blip" 也会匹配 <blipFill>，因此直接用 <blip> 元素
+        let xml = r#"<pic><blip r:embed="rId2"/></pic>"#;
+        let id = drawing_image_relationship_id(xml).unwrap();
+        assert_eq!(id, "rId2");
+    }
+
+    #[test]
+    fn drawing_image_relationship_id_returns_none_for_missing() {
+        let xml = "<pic/>";
+        assert!(drawing_image_relationship_id(xml).is_none());
+    }
+
+    // ── with_next_drawing_object_id 覆盖 ──────────────────────────────
+
+    #[test]
+    fn with_next_drawing_object_id_assigns_next_id() {
+        let target = r#"<xdr:wsDr><xdr:twoCellAnchor><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="3" name="Picture 3"/></xdr:nvPicPr></xdr:pic></xdr:twoCellAnchor></xdr:wsDr>"#;
+        let source = r#"<xdr:twoCellAnchor><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="1" name="Picture 1"/></xdr:nvPicPr></xdr:pic></xdr:twoCellAnchor>"#;
+        let result = with_next_drawing_object_id(target, source).unwrap();
+        assert!(result.contains("id=\"4\""));
+        assert!(result.contains("name=\"Picture 4\""));
+    }
+
+    #[test]
+    fn with_next_drawing_object_id_error_for_no_cnvp() {
+        let target = "<xdr:wsDr/>";
+        let source = "<xdr:twoCellAnchor/>";
+        let result = with_next_drawing_object_id(target, source);
+        assert!(result.is_err());
+    }
+
+    // ── template_column_width_pixels 覆盖 ─────────────────────────────
+
+    #[test]
+    fn template_column_width_pixels_uses_col_definition() {
+        let xml = r#"<worksheet><cols><col min="1" max="5" width="20"/></cols></worksheet>"#;
+        // column 0 => one_based 1, width 20 => (20*7+5).round() = 145
+        assert_eq!(template_column_width_pixels(xml, 0), 145);
+    }
+
+    #[test]
+    fn template_column_width_pixels_falls_back_to_default() {
+        let xml = r#"<worksheet><sheetFormatPr defaultColWidth="10"/></worksheet>"#;
+        // width 10 => (10*7+5).round() = 75
+        assert_eq!(template_column_width_pixels(xml, 0), 75);
+    }
+
+    #[test]
+    fn template_column_width_pixels_default_64() {
+        let xml = "<worksheet/>";
+        assert_eq!(template_column_width_pixels(xml, 0), 64);
+    }
+
+    #[test]
+    fn template_column_width_pixels_filters_non_positive() {
+        let xml = r#"<worksheet><cols><col min="1" max="5" width="-1"/></cols></worksheet>"#;
+        // width -1 is not finite positive, falls back to 64
+        assert_eq!(template_column_width_pixels(xml, 0), 64);
+    }
+
+    // ── template_row_height_pixels 覆盖 ───────────────────────────────
+
+    #[test]
+    fn template_row_height_pixels_uses_row_ht() {
+        let xml = r#"<worksheet><sheetData><row r="1" ht="30"/></sheetData></worksheet>"#;
+        // row 0 => one_based 1, ht 30 => (30*4/3).round() = 40
+        assert_eq!(template_row_height_pixels(xml, 0), 40);
+    }
+
+    #[test]
+    fn template_row_height_pixels_falls_back_to_default() {
+        let xml = r#"<worksheet><sheetFormatPr defaultRowHeight="15"/></worksheet>"#;
+        // height 15 => (15*4/3).round() = 20
+        assert_eq!(template_row_height_pixels(xml, 0), 20);
+    }
+
+    #[test]
+    fn template_row_height_pixels_default_20() {
+        let xml = "<worksheet/>";
+        assert_eq!(template_row_height_pixels(xml, 0), 20);
+    }
+
+    // ── drawing_relationship_id 覆盖 ──────────────────────────────────
+
+    #[test]
+    fn drawing_relationship_id_finds_drawing_element() {
+        let xml = r#"<worksheet><drawing r:id="rId2"/></worksheet>"#;
+        let id = drawing_relationship_id(xml).unwrap();
+        assert_eq!(id, "rId2");
+    }
+
+    #[test]
+    fn drawing_relationship_id_returns_none_for_missing() {
+        let xml = "<worksheet/>";
+        assert!(drawing_relationship_id(xml).is_none());
+    }
+
+    // ── insert_drawing_reference 覆盖 ─────────────────────────────────
+
+    #[test]
+    fn insert_drawing_reference_inserts_before_worksheet_end() {
+        let xml = "<worksheet><sheetData/></worksheet>";
+        let result = insert_drawing_reference(xml, "rId1").unwrap();
+        assert!(result.contains("<drawing r:id=\"rId1\"/>"));
+        assert!(result.contains("</worksheet>"));
+    }
+
+    #[test]
+    fn insert_drawing_reference_inserts_before_legacy_drawing() {
+        let xml = "<worksheet><sheetData/><legacyDrawing r:id=\"rId3\"/></worksheet>";
+        let result = insert_drawing_reference(xml, "rId1").unwrap();
+        let drawing_pos = result.find("<drawing").unwrap();
+        let legacy_pos = result.find("<legacyDrawing").unwrap();
+        assert!(drawing_pos < legacy_pos);
+    }
+
+    #[test]
+    fn insert_drawing_reference_error_for_missing_end() {
+        let result = insert_drawing_reference("<worksheet>", "rId1");
+        assert!(result.is_err());
+    }
+
+    // ── upsert_hyperlink_element 额外路径 ─────────────────────────────
+
+    #[test]
+    fn upsert_hyperlink_element_into_self_closing_hyperlinks() {
+        let xml = r#"<worksheet><sheetData/><hyperlinks/></worksheet>"#;
+        let hyperlink = r#"<hyperlink ref="A1" r:id="rId1"/>"#;
+        let result = upsert_hyperlink_element(xml, hyperlink).unwrap();
+        assert!(result.contains("<hyperlinks>"));
+        assert!(result.contains("</hyperlinks>"));
+        assert!(result.contains("A1"));
+    }
+
+    #[test]
+    fn upsert_hyperlink_element_creates_before_print_options() {
+        let xml = r#"<worksheet><sheetData/><printOptions/></worksheet>"#;
+        let hyperlink = r#"<hyperlink ref="A1" r:id="rId1"/>"#;
+        let result = upsert_hyperlink_element(xml, hyperlink).unwrap();
+        let hyper_pos = result.find("<hyperlinks>").unwrap();
+        let print_pos = result.find("<printOptions").unwrap();
+        assert!(hyper_pos < print_pos);
+    }
+
+    #[test]
+    fn upsert_hyperlink_element_creates_before_drawing() {
+        let xml = r#"<worksheet><sheetData/><drawing r:id="rId2"/></worksheet>"#;
+        let hyperlink = r#"<hyperlink ref="A1" r:id="rId1"/>"#;
+        let result = upsert_hyperlink_element(xml, hyperlink).unwrap();
+        assert!(result.contains("<hyperlinks>"));
+    }
+
+    // ── validate_row_shapes 额外路径 ──────────────────────────────────
+
+    #[test]
+    fn validate_row_shapes_rejects_cell_styles_inner_mismatch() {
+        let rows: Vec<Vec<(usize, TemplateCellValue)>> = vec![
+            vec![(0, TemplateCellValue::Number("1".into()))],
+            vec![(0, TemplateCellValue::Number("2".into())), (1, TemplateCellValue::Number("3".into()))],
+        ];
+        let styles: Vec<Vec<Option<u32>>> = vec![vec![None], vec![None]]; // inner len 1 != 2
+        assert!(validate_row_shapes(&rows, &[], &styles, &[]).is_err());
+    }
+
+    // ── xml_element_by_attribute 额外路径 ─────────────────────────────
+
+    #[test]
+    fn xml_element_by_attribute_finds_closed_element() {
+        let xml = r#"<comments><comment ref="A1"><text>hello</text></comment></comments>"#;
+        let result = xml_element_by_attribute(xml, "comment", "ref", "A1").unwrap();
+        assert!(result.is_some());
+        assert!(result.unwrap().contains("hello"));
+    }
+
+    #[test]
+    fn xml_element_by_attribute_error_for_unterminated() {
+        let xml = r#"<comments><comment ref="A1""#;
+        let result = xml_element_by_attribute(xml, "comment", "ref", "A1");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn xml_element_by_attribute_skips_tag_name_prefix() {
+        // e.g., <hyperlinkExtra> should not match <hyperlink>
+        let xml = r#"<hyperlinkExtra ref="A1"/><hyperlink ref="B2" r:id="rId1"/>"#;
+        let result = xml_element_by_attribute(xml, "hyperlink", "ref", "B2").unwrap();
+        assert!(result.is_some());
+    }
+
+    // ── remove_xml_element_by_attribute 额外路径 ──────────────────────
+
+    #[test]
+    fn remove_xml_element_by_attribute_error_for_unterminated() {
+        let xml = r#"<comments><comment ref="A1""#;
+        let result = remove_xml_element_by_attribute(xml, "comment", "ref", "A1");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn remove_xml_element_by_attribute_error_for_missing_close() {
+        let xml = r#"<comments><comment ref="A1"><text>hello</text>"#;
+        let result = remove_xml_element_by_attribute(xml, "comment", "ref", "A1");
+        assert!(result.is_err());
+    }
+
+    // ── replace_xml_attribute 额外路径 ────────────────────────────────
+
+    #[test]
+    fn replace_xml_attribute_error_for_no_closing_bracket() {
+        let xml = "<element id=\"old\"";
+        let result = replace_xml_attribute(xml, "id", "new");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn replace_xml_attribute_error_for_unterminated_value() {
+        let xml = "<element id=\"unclosed";
+        let result = replace_xml_attribute(xml, "id", "new");
+        assert!(result.is_err());
+    }
+
+    // ── xml_elements 覆盖 ─────────────────────────────────────────────
+
+    #[test]
+    fn xml_elements_finds_multiple() {
+        // 注意：xml_elements 通过前缀匹配，<sheets> 也会匹配 <sheet
+        let xml = r#"<root><item name="A"/><item name="B"/></root>"#;
+        let items: Vec<&str> = xml_elements(xml, "item").collect();
+        assert_eq!(items.len(), 2);
+    }
+
+    // ── entry_index 覆盖 ──────────────────────────────────────────────
+
+    #[test]
+    fn entry_index_finds_existing() {
+        let entries = vec![OoxmlZipEntry {
+            name: "xl/workbook.xml".into(),
+            is_dir: false,
+            compression: CompressionMethod::Stored,
+            unix_mode: None,
+            bytes: Vec::new(),
+        }];
+        assert_eq!(entry_index(&entries, "xl/workbook.xml").unwrap(), 0);
+    }
+
+    #[test]
+    fn entry_index_error_for_missing() {
+        let result = entry_index(&[], "missing.xml");
+        assert!(result.is_err());
+    }
+
+    // ── entry_string 覆盖 ─────────────────────────────────────────────
+
+    #[test]
+    fn entry_string_returns_utf8_content() {
+        let entry = OoxmlZipEntry {
+            name: "test.xml".into(),
+            is_dir: false,
+            compression: CompressionMethod::Stored,
+            unix_mode: None,
+            bytes: b"<test/>".to_vec(),
+        };
+        assert_eq!(entry_string(&entry).unwrap(), "<test/>");
+    }
+
+    #[test]
+    fn entry_string_error_for_invalid_utf8() {
+        let entry = OoxmlZipEntry {
+            name: "test.xml".into(),
+            is_dir: false,
+            compression: CompressionMethod::Stored,
+            unix_mode: None,
+            bytes: vec![0xff, 0xfe],
+        };
+        assert!(entry_string(&entry).is_err());
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // OoxmlTemplatePackage 结构体方法覆盖
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn from_package_round_trips() {
+        let pkg = minimal_template_package();
+        // into_package 取回底层包
+        let inner = pkg.into_package();
+        let pkg2 = OoxmlTemplatePackage::from_package(inner);
+        let names = pkg2.sheet_names().unwrap();
+        assert_eq!(names, vec!["Sheet1"]);
+    }
+
+    #[test]
+    fn sheet_names_returns_ordered_names() {
+        // 构建含两个工作表的模板
+        let mut pkg = minimal_template_package();
+        pkg.create_sheet("第二页").unwrap();
+        let names = pkg.sheet_names().unwrap();
+        assert_eq!(names, vec!["Sheet1", "第二页"]);
+    }
+
+    #[test]
+    fn next_row_for_sheet_empty_returns_zero() {
+        let pkg = minimal_template_package();
+        assert_eq!(pkg.next_row_for_sheet("Sheet1").unwrap(), 0);
+    }
+
+    #[test]
+    fn next_row_for_sheet_with_data_returns_next() {
+        let pkg = template_package_with_rows();
+        // 行 1 和行 3 存在，最大行号 3，返回 4
+        assert_eq!(pkg.next_row_for_sheet("Sheet1").unwrap(), 4);
+    }
+
+    #[test]
+    fn next_row_for_sheet_error_for_missing_sheet() {
+        let pkg = minimal_template_package();
+        assert!(pkg.next_row_for_sheet("不存在").is_err());
+    }
+
+    #[test]
+    fn worksheet_path_by_name_finds_sheet() {
+        let pkg = minimal_template_package();
+        let path = pkg.worksheet_path_by_name("Sheet1").unwrap();
+        assert!(path.contains("sheet1"));
+    }
+
+    #[test]
+    fn worksheet_path_by_name_error_for_missing() {
+        let pkg = minimal_template_package();
+        assert!(pkg.worksheet_path_by_name("Missing").is_err());
+    }
+
+    #[test]
+    fn worksheet_path_by_index_works() {
+        let pkg = minimal_template_package();
+        let (name, path) = pkg.worksheet_path_by_index(0).unwrap();
+        assert_eq!(name, "Sheet1");
+        assert!(path.contains("sheet1"));
+    }
+
+    #[test]
+    fn worksheet_path_by_index_error_for_out_of_range() {
+        let pkg = minimal_template_package();
+        assert!(pkg.worksheet_path_by_index(99).is_err());
+    }
+
+    #[test]
+    fn sheet_name_by_worksheet_path_resolves() {
+        let pkg = minimal_template_package();
+        let path = pkg.worksheet_path_by_name("Sheet1").unwrap();
+        let name = pkg.sheet_name_by_worksheet_path(&path).unwrap();
+        assert_eq!(name, "Sheet1");
+    }
+
+    #[test]
+    fn sheet_name_by_worksheet_path_error_for_missing() {
+        let pkg = minimal_template_package();
+        assert!(pkg.sheet_name_by_worksheet_path("xl/worksheets/sheet99.xml").is_err());
+    }
+
+    // ── ensure_sheet 覆盖 ─────────────────────────────────────────────
+
+    #[test]
+    fn ensure_sheet_noop_if_exists() {
+        let mut pkg = minimal_template_package();
+        pkg.ensure_sheet("Sheet1").unwrap();
+        assert_eq!(pkg.sheet_names().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn ensure_sheet_creates_new() {
+        let mut pkg = minimal_template_package();
+        pkg.ensure_sheet("NewSheet").unwrap();
+        assert_eq!(pkg.sheet_names().unwrap(), vec!["Sheet1", "NewSheet"]);
+    }
+
+    // ── create_sheet 覆盖 ─────────────────────────────────────────────
+
+    #[test]
+    fn create_sheet_adds_workbook_and_content_types() {
+        let mut pkg = minimal_template_package();
+        pkg.create_sheet("Sheet2").unwrap();
+        let names = pkg.sheet_names().unwrap();
+        assert_eq!(names.len(), 2);
+        assert_eq!(names[1], "Sheet2");
+        // 验证可以获取路径
+        let path = pkg.worksheet_path_by_name("Sheet2").unwrap();
+        assert!(path.contains("sheet"));
+    }
+
+    #[test]
+    fn create_sheet_with_special_characters_in_name() {
+        let mut pkg = minimal_template_package();
+        pkg.create_sheet("A & B < C").unwrap();
+        let names = pkg.sheet_names().unwrap();
+        assert_eq!(names.len(), 2);
+        // 属性值包含转义后的 XML 实体
+        assert!(names[1].contains("A"));
+    }
+
+    // ── append_rows 覆盖 ──────────────────────────────────────────────
+
+    #[test]
+    fn append_rows_empty_returns_next_row() {
+        let mut pkg = template_package_with_rows();
+        let next = pkg.append_rows("Sheet1", &[], &[], &[], &[]).unwrap();
+        assert_eq!(next, 4);
+    }
+
+    #[test]
+    fn append_rows_adds_data() {
+        let mut pkg = minimal_template_package();
+        let rows = vec![
+            vec![(0, TemplateCellValue::Text("hello".into()))],
+            vec![(1, TemplateCellValue::Number("42".into()))],
+        ];
+        let next = pkg.append_rows("Sheet1", &rows, &[], &[], &[]).unwrap();
+        assert_eq!(next, 3);
+        // 验证下一行为 3
+        let next2 = pkg.next_row_for_sheet("Sheet1").unwrap();
+        assert_eq!(next2, 3);
+    }
+
+    #[test]
+    fn append_rows_with_heights_and_styles() {
+        let mut pkg = minimal_template_package();
+        let rows = vec![
+            vec![(0, TemplateCellValue::Number("1".into()))],
+        ];
+        let heights = vec![Some(30)];
+        let styles = vec![vec![Some(1)]];
+        pkg.append_rows("Sheet1", &rows, &heights, &styles, &[]).unwrap();
+    }
+
+    #[test]
+    fn append_rows_with_absent_rows() {
+        let mut pkg = minimal_template_package();
+        let rows = vec![
+            vec![(0, TemplateCellValue::Number("1".into()))],
+            vec![(0, TemplateCellValue::Number("2".into()))],
+        ];
+        let absent = vec![false, true]; // 第二行缺席
+        let next = pkg.append_rows("Sheet1", &rows, &[], &[], &absent).unwrap();
+        assert_eq!(next, 3); // 只追加了一行
+    }
+
+    #[test]
+    fn append_rows_error_for_shape_mismatch() {
+        let mut pkg = minimal_template_package();
+        let rows = vec![vec![(0, TemplateCellValue::Number("1".into()))]];
+        let heights = vec![Some(20), Some(30)]; // 长度不匹配
+        let result = pkg.append_rows("Sheet1", &rows, &heights, &[], &[]);
+        assert!(result.is_err());
+    }
+
+    // ── apply_sheet_layout 覆盖 ───────────────────────────────────────
+
+    #[test]
+    fn apply_sheet_layout_noop_if_empty() {
+        let mut pkg = minimal_template_package();
+        pkg.apply_sheet_layout("Sheet1", &[], &[]).unwrap();
+    }
+
+    #[test]
+    fn apply_sheet_layout_sets_column_widths() {
+        let mut pkg = minimal_template_package();
+        pkg.apply_sheet_layout("Sheet1", &[(0, 20), (1, 30)], &[]).unwrap();
+    }
+
+    #[test]
+    fn apply_sheet_layout_sets_merge_ranges() {
+        use super::super::template_xml::TemplateMergeRange;
+        let mut pkg = minimal_template_package();
+        let ranges = vec![TemplateMergeRange {
+            first_row: 0,
+            first_column: 0,
+            last_row: 1,
+            last_column: 1,
+        }];
+        pkg.apply_sheet_layout("Sheet1", &[], &ranges).unwrap();
+    }
+
+    // ── set_cell 覆盖 ─────────────────────────────────────────────────
+
+    #[test]
+    fn set_cell_updates_value() {
+        let mut pkg = template_package_with_rows();
+        pkg.set_cell("Sheet1", 0, 0, &TemplateCellValue::Text("updated".into())).unwrap();
+    }
+
+    #[test]
+    fn set_cell_error_for_missing_sheet() {
+        let mut pkg = minimal_template_package();
+        let result = pkg.set_cell("Missing", 0, 0, &TemplateCellValue::Empty);
+        assert!(result.is_err());
+    }
+
+    // ── protect_sheet 覆盖 ────────────────────────────────────────────
+
+    #[test]
+    fn protect_sheet_adds_protection() {
+        let mut pkg = minimal_template_package();
+        pkg.protect_sheet("Sheet1", "password123").unwrap();
+        let path = pkg.worksheet_path_by_name("Sheet1").unwrap();
+        let xml = pkg.entry_xml(&path).unwrap();
+        assert!(xml.contains("sheetProtection"));
+    }
+
+    // ── import_compiled_styles 覆盖 ───────────────────────────────────
+
+    #[test]
+    fn import_compiled_styles_empty_returns_empty() {
+        let mut pkg = minimal_template_package();
+        let result = pkg.import_compiled_styles(&[], 0).unwrap();
+        assert!(result.is_empty());
+    }
+
+    // ── to_bytes / save_to_writer 覆盖 ────────────────────────────────
+
+    #[test]
+    fn to_bytes_produces_valid_zip() {
+        let pkg = minimal_template_package();
+        let bytes = pkg.to_bytes().unwrap();
+        assert!(!bytes.is_empty());
+        // 验证可以重新加载
+        let reloaded = OoxmlTemplatePackage::from_bytes(&bytes).unwrap();
+        assert_eq!(reloaded.sheet_names().unwrap(), vec!["Sheet1"]);
+    }
+
+    #[test]
+    fn save_to_writer_writes_bytes() {
+        let pkg = minimal_template_package();
+        let mut buf = Vec::new();
+        pkg.save_to_writer(&mut buf).unwrap();
+        assert!(!buf.is_empty());
+    }
+
+    // ── from_bytes 覆盖 ───────────────────────────────────────────────
+
+    #[test]
+    fn from_bytes_round_trips() {
+        let pkg = minimal_template_package();
+        let bytes = pkg.to_bytes().unwrap();
+        let reloaded = OoxmlTemplatePackage::from_bytes(&bytes).unwrap();
+        assert_eq!(reloaded.sheet_names().unwrap(), vec!["Sheet1"]);
+    }
+
+    #[test]
+    fn from_bytes_error_for_invalid_zip() {
+        let result = OoxmlTemplatePackage::from_bytes(&[0xff, 0xfe, 0x00]);
+        assert!(result.is_err());
+    }
+
+    // ── Deref / DerefMut 覆盖 ─────────────────────────────────────────
+
+    #[test]
+    fn deref_allows_entry_access() {
+        let pkg = minimal_template_package();
+        // 通过 Deref 访问 OoxmlPackage 的方法
+        let inner = &*pkg;
+        assert!(!inner.is_empty());
+    }
+
+    #[test]
+    fn deref_mut_allows_entry_modification() {
+        let mut pkg = minimal_template_package();
+        let inner = &mut *pkg;
+        let count = inner.len();
+        inner.push(OoxmlZipEntry {
+            name: "test.txt".into(),
+            is_dir: false,
+            compression: CompressionMethod::Stored,
+            unix_mode: None,
+            bytes: b"test".to_vec(),
+        });
+        assert_eq!(inner.len(), count + 1);
+    }
+
+    // ── 多工作表场景覆盖 ──────────────────────────────────────────────
+
+    #[test]
+    fn multi_sheet_create_and_append() {
+        let mut pkg = minimal_template_package();
+        pkg.create_sheet("数据").unwrap();
+        pkg.create_sheet("汇总").unwrap();
+        assert_eq!(pkg.sheet_names().unwrap().len(), 3);
+
+        // 在每个表追加数据
+        let rows = vec![vec![(0, TemplateCellValue::Number("100".into()))]];
+        pkg.append_rows("Sheet1", &rows, &[], &[], &[]).unwrap();
+        pkg.append_rows("数据", &rows, &[], &[], &[]).unwrap();
+        pkg.append_rows("汇总", &rows, &[], &[], &[]).unwrap();
+
+        // 验证每张表都有数据
+        assert_eq!(pkg.next_row_for_sheet("Sheet1").unwrap(), 2);
+        assert_eq!(pkg.next_row_for_sheet("数据").unwrap(), 2);
+        assert_eq!(pkg.next_row_for_sheet("汇总").unwrap(), 2);
+    }
+
+    // ── set_template_hyperlink 覆盖 ───────────────────────────────────
+
+    use super::super::template_fill::{TemplateHyperlink, TemplateHyperlinkType};
+
+    #[test]
+    fn set_template_hyperlink_url_type() {
+        let mut pkg = minimal_template_package();
+        let hyperlink = TemplateHyperlink::new("https://example.com", TemplateHyperlinkType::Url);
+        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink).unwrap();
+    }
+
+    #[test]
+    fn set_template_hyperlink_email_type() {
+        let mut pkg = minimal_template_package();
+        let hyperlink = TemplateHyperlink::new("test@example.com", TemplateHyperlinkType::Email);
+        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink).unwrap();
+    }
+
+    #[test]
+    fn set_template_hyperlink_file_type() {
+        let mut pkg = minimal_template_package();
+        let hyperlink = TemplateHyperlink::new("/path/to/file.xlsx", TemplateHyperlinkType::File);
+        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink).unwrap();
+    }
+
+    #[test]
+    fn set_template_hyperlink_document_type() {
+        let mut pkg = minimal_template_package();
+        let hyperlink = TemplateHyperlink::new("Sheet2!A1", TemplateHyperlinkType::Document);
+        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink).unwrap();
+    }
+
+    #[test]
+    fn set_template_hyperlink_replaces_existing() {
+        let mut pkg = minimal_template_package();
+        let hyperlink = TemplateHyperlink::new("https://first.com", TemplateHyperlinkType::Url);
+        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink).unwrap();
+        let hyperlink2 = TemplateHyperlink::new("https://second.com", TemplateHyperlinkType::Url);
+        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink2).unwrap();
+        // 验证 second.com 关系存在（在 rels 文件中）
+        let rels_path = "xl/worksheets/_rels/sheet1.xml.rels";
+        let rels_xml = pkg.entry_xml(rels_path).unwrap();
+        assert!(rels_xml.contains("second.com"));
+    }
+
+    #[test]
+    fn set_template_hyperlink_rollback_on_error() {
+        let mut pkg = minimal_template_package();
+        let hyperlink = TemplateHyperlink::new("https://example.com", TemplateHyperlinkType::Url);
+        let result = pkg.set_template_hyperlink("不存在", 0, 0, &hyperlink);
+        assert!(result.is_err());
+        // 包应保持原状
+        assert_eq!(pkg.sheet_names().unwrap(), vec!["Sheet1"]);
+    }
+
+    // ── import_chart 覆盖（错误路径）───────────────────────────────────
+
+    #[test]
+    fn import_chart_error_for_missing_drawing() {
+        let mut pkg = minimal_template_package();
+        // 编译的 XLSX 中没有 drawing 关系
+        let result = pkg.import_chart(&[], "Sheet1");
+        assert!(result.is_err());
+    }
+
+    // ── set_template_comment 覆盖 ─────────────────────────────────────
+
+    use super::super::template_fill::TemplateComment;
+
+    #[test]
+    fn set_template_comment_basic() {
+        let mut pkg = minimal_template_package();
+        let comment = TemplateComment {
+            text: "测试批注".into(),
+            author: Some("作者".into()),
+            visible: Some(true),
+            movement: Some(0),
+        };
+        pkg.set_template_comment("Sheet1", 0, 0, &comment).unwrap();
+    }
+
+    // ── import_compiled_styles_onto 覆盖 ──────────────────────────────
+
+    #[test]
+    fn import_compiled_styles_onto_empty_returns_empty() {
+        let mut pkg = minimal_template_package();
+        let result = pkg.import_compiled_styles_onto(&[], &[]).unwrap();
+        assert!(result.is_empty());
+    }
+
+    // ── remove_comment 覆盖 ───────────────────────────────────────────
+
+    #[test]
+    fn remove_comment_returns_false_for_no_comments() {
+        let mut pkg = minimal_template_package();
+        let result = pkg.remove_comment("Sheet1", 0, 0).unwrap();
+        assert!(!result);
+    }
+
+    // ── save_to_path 覆盖 ─────────────────────────────────────────────
+
+    #[test]
+    fn save_to_path_writes_file() {
+        let pkg = minimal_template_package();
+        let dir = std::env::temp_dir().join("easyexcel_test_template_package");
+        let _ = std::fs::create_dir_all(&dir);
+        let path = dir.join("test_output.xlsx");
+        pkg.save_to_path(&path).unwrap();
+        assert!(path.exists());
+        let bytes = std::fs::read(&path).unwrap();
+        assert!(!bytes.is_empty());
+        let _ = std::fs::remove_file(&path);
+    }
+
+    // ── import_image 覆盖 ─────────────────────────────────────────────
+
+    #[test]
+    fn import_image_rollback_on_error() {
+        let mut pkg = minimal_template_package();
+        let image = super::super::template_fill::TemplateImage::new(vec![0x89, 0x50, 0x4E, 0x47]);
+        // 编译一个空 XLSX 应该失败（没有图片），触发回滚
+        let result = pkg.set_template_image("Sheet1", 0, 0, &image);
+        assert!(result.is_err());
+        // 包应保持原状
+        assert_eq!(pkg.sheet_names().unwrap(), vec!["Sheet1"]);
+    }
 }
