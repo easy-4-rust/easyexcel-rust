@@ -78,14 +78,15 @@ jobs:
           path: coverage/lcov.info
           retention-days: 90
 
-  # T5.2: PR coverage — generates lcov for diff analysis (no gate).
-  # TODO(pending): PR comment integration requires a third-party action
-  # such as orgoro/coverage, tylermachen/pr-coverage, or a Cobertura
-  # converter (mattgruenke/lcov-to-cobertura) + 5monkeys/cobertura-action.
-  # Uncomment the comment step below once a suitable action is chosen.
+  # T5.2: PR coverage — generates lcov for diff analysis (no gate),
+  # then converts to Cobertura XML and posts coverage summary as PR comment.
+  # Third-party actions: lcov_cobertura (Python, lcov→Cobertura XML conversion)
+  # + 5monkeys/cobertura-action (PR comment with coverage breakdown).
   coverage-pr:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     env:
       LANG: zh_CN.UTF-8
       LC_ALL: zh_CN.UTF-8
@@ -116,13 +117,15 @@ jobs:
           name: coverage-lcov-pr-${{ github.event.pull_request.number }}
           path: lcov.info
           retention-days: 30
-      # TODO(pending): PR comment with coverage diff
-      # Requires third-party action, e.g.:
-      # - uses: orgoro/coverage@v3
-      #   with:
-      #     lcov-file: lcov.info
-      #     threshold: 95
-      #     token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Convert lcov to Cobertura XML
+        run: |
+          pip install lcov_cobertura
+          lcov_cobertura lcov.info -o coverage.xml -b "${{ github.workspace }}"
+      - name: Post coverage comment on PR
+        uses: 5monkeys/cobertura-action@master
+        with:
+          path: coverage.xml
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
 
   msrv:
     # 核心与 Salvo 适配器分别验证各自 MSRV；质量工具链仍固定为 1.97.1。
