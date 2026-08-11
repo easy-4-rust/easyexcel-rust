@@ -1,6 +1,7 @@
 //! CSV、TSV、字符集检测、类型推断和流式编解码。
 
 pub mod csv;
+mod stubs;
 
 pub use csv::{
     CsvCell, CsvCellStyle, CsvCellValue, CsvCharset, CsvDataFormat, CsvEncoding, CsvEncodingWriter,

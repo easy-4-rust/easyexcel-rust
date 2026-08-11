@@ -222,10 +222,6 @@ impl<V: CsvCellValue> CsvCell<V> {
         self.cached_formula_result_type()
     }
 
-    /// CSV 不支持数组公式。
-    #[must_use]
-    pub const fn is_part_of_array_formula_group(&self) -> bool { false }
-
     /// 返回数字负载分类。
     #[must_use]
     /// 对应 Java：无直接对应对象；Rust 架构扩展。
@@ -252,24 +248,6 @@ impl<V: CsvCellValue> CsvCell<V> {
         self.cell_style.as_ref()
     }
     pub const fn get_cell_style(&self) -> Option<&CsvCellStyle> { self.cell_style() }
-
-    /// CSV 不承载批注和超链接；与 Java CSV 适配器的 no-op 语义一致。
-    pub const fn remove_cell_comment(&mut self) {}
-    /// Java CSV 返回 `null`。
-    #[must_use] pub const fn get_cell_comment(&self) -> Option<()> { None }
-    /// Java CSV 为空操作。
-    pub const fn set_cell_comment(&mut self, _comment: Option<()>) {}
-    pub const fn remove_hyperlink(&mut self) {}
-    /// Java CSV 返回 `null`。
-    #[must_use] pub const fn get_hyperlink(&self) -> Option<()> { None }
-    /// Java CSV 为空操作。
-    pub const fn set_hyperlink(&mut self, _hyperlink: Option<()>) {}
-    /// Java CSV 返回 `null`，因为 CSV 不支持数组公式。
-    #[must_use] pub const fn get_array_formula_range(&self) -> Option<()> { None }
-    pub const fn set_as_active_cell(&mut self) {}
-    pub const fn is_part_of_array_formula_group_java(&self) -> bool {
-        self.is_part_of_array_formula_group()
-    }
 
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回写入 CSV 记录的显示文本。
     #[must_use]

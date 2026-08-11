@@ -246,54 +246,6 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
         self.try_create_sheet(sheet_name)
     }
 
-    /// CSV 没有字体表，对齐 Java 的固定返回值。
-    #[must_use]
-    pub const fn number_of_fonts(&self) -> usize {
-        0
-    }
-    pub const fn get_number_of_fonts(&self) -> usize { self.number_of_fonts() }
-    pub const fn get_number_of_fonts_as_int(&self) -> usize { self.number_of_fonts() }
-
-    /// CSV 没有名称表，对齐 Java 的固定返回值。
-    #[must_use]
-    pub const fn number_of_names(&self) -> usize {
-        0
-    }
-    pub const fn get_number_of_names(&self) -> usize { self.number_of_names() }
-
-    /// CSV 工作簿本身不持久化隐藏状态。
-    #[must_use]
-    pub const fn is_hidden(&self) -> bool {
-        false
-    }
-
-    /// CSV 工作簿本身不执行公式重算。
-    #[must_use]
-    pub const fn force_formula_recalculation(&self) -> bool {
-        false
-    }
-    pub const fn get_force_formula_recalculation(&self) -> bool {
-        self.force_formula_recalculation()
-    }
-
-    /// Java CSV Workbook 对 POI 非 CSV 能力的确定性默认语义。
-    pub const fn get_active_sheet_index(&self) -> usize { 0 }
-    pub const fn get_first_visible_tab(&self) -> usize { 0 }
-    pub const fn get_sheet_index(&self, _name: &str) -> usize { 0 }
-    pub const fn get_missing_cell_policy(&self) -> u8 { 0 }
-    pub const fn is_sheet_hidden(&self, _index: usize) -> bool { false }
-    pub const fn is_sheet_very_hidden(&self, _index: usize) -> bool { false }
-    pub const fn set_active_sheet(&mut self, _index: usize) {}
-    pub const fn set_first_visible_tab(&mut self, _index: usize) {}
-    pub const fn set_selected_tab(&mut self, _index: usize) {}
-    pub const fn set_sheet_order(&mut self, _name: &str, _index: usize) {}
-    pub const fn set_sheet_name(&mut self, _index: usize, _name: &str) {}
-    pub const fn set_hidden(&mut self, _hidden: bool) {}
-    pub const fn set_sheet_hidden(&mut self, _index: usize, _hidden: bool) {}
-    pub const fn set_force_formula_recalculation(&mut self, _value: bool) {}
-    pub fn iterator(&self) -> impl Iterator<Item = &CsvSheet<V>> { self.sheets() }
-    pub fn sheet_iterator(&self) -> impl Iterator<Item = &CsvSheet<V>> { self.sheets() }
-
     /// Java `getCellStyleAt`。
     #[must_use]
     pub fn get_cell_style_at(&self, index: usize) -> Option<&CsvCellStyle> {
@@ -308,20 +260,6 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
         }
         self.sheet = value;
     }
-
-    /// CSV 不保存名称、图片、字体或打印区域。
-    #[must_use] pub const fn get_all_names(&self) -> Vec<&str> { Vec::new() }
-    #[must_use] pub const fn get_names(&self, _name: &str) -> Vec<&str> { Vec::new() }
-    #[must_use] pub const fn get_all_pictures(&self) -> Vec<&[u8]> { Vec::new() }
-    #[must_use] pub const fn get_print_area(&self, _sheet_index: usize) -> Option<&str> { None }
-    #[must_use] pub const fn get_font_at(&self, _index: usize) -> Option<&str> { None }
-    #[must_use] pub const fn find_font(&self) -> Option<&str> { None }
-    #[must_use] pub const fn get_sheet_visibility(&self, _sheet_index: usize) -> &'static str { "VISIBLE" }
-    #[must_use] pub const fn get_spreadsheet_version(&self) -> &'static str { "EXCEL2007" }
-    pub const fn set_sheet_visibility(&mut self, _sheet_index: usize, _visibility: &str) {}
-    pub const fn set_print_area(&mut self, _sheet_index: usize, _reference: &str) {}
-    pub const fn remove_print_area(&mut self, _sheet_index: usize) {}
-    pub const fn flush_data(&mut self) {}
 
     /// 删除唯一工作表；越界与 Java 一样产生可见错误。
     pub fn remove_sheet_at(&mut self, index: usize) -> Result<()> {
@@ -347,16 +285,4 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
     pub fn link_external_workbook(&mut self, _name: &str) -> Result<usize> {
         Err(Error::Unsupported("CSV cannot link external workbook".to_owned()))
     }
-    pub const fn remove_name(&mut self, _name: &str) {}
-    pub const fn set_missing_cell_policy(&mut self, _policy: u8) {}
-    /// Java CSV 为空操作。
-    pub const fn add_tool_pack(&mut self) {}
-    /// Java CSV 返回 `null`。
-    #[must_use] pub const fn create_evaluation_workbook(&self) -> Option<()> { None }
-    /// Java CSV 返回 `null`。
-    #[must_use] pub const fn get_creation_helper(&self) -> Option<()> { None }
-    /// Java CSV 返回 `null`。
-    #[must_use] pub const fn get_cell_reference_type(&self) -> Option<()> { None }
-    /// Java CSV 为空操作。
-    pub const fn set_cell_reference_type(&mut self, _value: Option<()>) {}
 }
