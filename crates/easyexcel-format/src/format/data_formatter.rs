@@ -436,8 +436,11 @@ mod tests_extra {
     }
 
     #[test]
-    fn format_raw_cell_contents_stub_returns_none() {
-        // 对应 Java：格式化由 easyexcel-reader 的 ssfmt 完成
-        assert_eq!(format_raw_cell_contents(1.5, "0.00"), None);
+    fn format_raw_cell_contents_applies_format_code() {
+        // 对应 Java：DataFormatter.formatRawCellContents 已通过 ssfmt 实现
+        assert_eq!(
+            format_raw_cell_contents(1.5, "0.00"),
+            Some("1.50".to_owned())
+        );
     }
 }

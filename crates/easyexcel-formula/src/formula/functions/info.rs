@@ -408,4 +408,213 @@ mod tests {
         let r = isformula_fn(&mut c, &[rng(0, 0, 0, 0)]);
         assert_eq!(r, Value::Bool(false));
     }
+
+    // ── 补充 info 函数测试 ──────────────────────────────────────────────
+
+    #[test]
+    fn error_type_all_variants() {
+        let mut c = TestCtx::new();
+        assert_eq!(
+            error_type_fn(&mut c, &[Value::Error(CellError::Null)]),
+            Value::Number(1.0)
+        );
+        assert_eq!(
+            error_type_fn(&mut c, &[Value::Error(CellError::Div0)]),
+            Value::Number(2.0)
+        );
+        assert_eq!(
+            error_type_fn(&mut c, &[Value::Error(CellError::Value)]),
+            Value::Number(3.0)
+        );
+        assert_eq!(
+            error_type_fn(&mut c, &[Value::Error(CellError::Ref)]),
+            Value::Number(4.0)
+        );
+        assert_eq!(
+            error_type_fn(&mut c, &[Value::Error(CellError::Name)]),
+            Value::Number(5.0)
+        );
+        assert_eq!(
+            error_type_fn(&mut c, &[Value::Error(CellError::Num)]),
+            Value::Number(6.0)
+        );
+        assert_eq!(
+            error_type_fn(&mut c, &[Value::Error(CellError::NA)]),
+            Value::Number(7.0)
+        );
+        assert_eq!(
+            error_type_fn(&mut c, &[Value::Error(CellError::GettingData)]),
+            Value::Number(8.0)
+        );
+        assert_eq!(
+            error_type_fn(&mut c, &[Value::Error(CellError::Spill)]),
+            Value::Number(9.0)
+        );
+        assert_eq!(
+            error_type_fn(&mut c, &[Value::Error(CellError::Calc)]),
+            Value::Number(14.0)
+        );
+    }
+
+    #[test]
+    fn type_fn_all_variants() {
+        let mut c = TestCtx::new();
+        assert_eq!(type_fn(&mut c, &[Value::Number(1.0)]), Value::Number(1.0));
+        assert_eq!(
+            type_fn(&mut c, &[Value::Text("x".into())]),
+            Value::Number(2.0)
+        );
+        assert_eq!(type_fn(&mut c, &[Value::Bool(true)]), Value::Number(4.0));
+        assert_eq!(
+            type_fn(&mut c, &[Value::Error(CellError::NA)]),
+            Value::Number(16.0)
+        );
+        assert_eq!(type_fn(&mut c, &[Value::Empty]), Value::Number(1.0));
+        // Array → 64
+        assert_eq!(
+            type_fn(&mut c, &[Value::Array(crate::formula::value::Array::scalar(
+                Value::Number(1.0)
+            ))]),
+            Value::Number(64.0)
+        );
+        // Lambda → 128
+        use std::rc::Rc;
+        use crate::formula::value::Lambda;
+        use crate::formula::ast::Expr;
+        assert_eq!(
+            type_fn(&mut c, &[Value::Lambda(Rc::new(Lambda {
+                params: vec![],
+                body: Expr::Number(1.0),
+            }))]),
+            Value::Number(128.0)
+        );
+    }
+
+    #[test]
+    fn sheet_fn_with_text() {
+        let mut c = TestCtx::new();
+        let r = sheet_fn(&mut c, &[Value::Text("Sheet1".into())]);
+        assert_eq!(r, Value::Number(1.0));
+    }
+
+    #[test]
+    fn sheet_fn_unknown_name() {
+        let mut c = TestCtx::new();
+        let r = sheet_fn(&mut c, &[Value::Text("Unknown".into())]);
+        assert_eq!(r, Value::Error(CellError::NA));
+    }
+
+    #[test]
+    fn sheet_fn_non_text_ref_arg() {
+        let mut c = TestCtx::new();
+        let r = sheet_fn(&mut c, &[Value::Number(1.0)]);
+        assert_eq!(r, Value::Error(CellError::Value));
+    }
+
+    #[test]
+    fn sheets_fn_with_ref() {
+        let mut c = TestCtx::new();
+        let r = sheets_fn(&mut c, &[rng(0, 0, 0, 0)]);
+        assert_eq!(r, Value::Number(1.0));
+    }
+
+    #[test]
+    fn sheets_fn_invalid_arg() {
+        let mut c = TestCtx::new();
+        let r = sheets_fn(&mut c, &[Value::Number(1.0)]);
+        assert_eq!(r, Value::Error(CellError::Value));
+    }
+
+    #[test]
+    fn cell_fn_address() {
+        let mut c = TestCtx::new();
+        let r = cell_fn(&mut c, &[Value::Text("address".into()), rng(2, 1, 2, 1)]);
+        assert_eq!(r, Value::Text("$B$3".into()));
+    }
+
+    #[test]
+    fn cell_fn_type_empty() {
+        let mut c = TestCtx::new();
+        // 空单元格 → "b"
+        let r = cell_fn(&mut c, &[Value::Text("type".into()), rng(0, 0, 0, 0)]);
+        assert_eq!(r, Value::Text("b".into()));
+    }
+
+    #[test]
+    fn cell_fn_type_number() {
+        let mut c = TestCtx::with_cells(&[(0, 0, Value::Number(42.0))]);
+        let r = cell_fn(&mut c, &[Value::Text("type".into()), rng(0, 0, 0, 0)]);
+        assert_eq!(r, Value::Text("v".into()));
+    }
+
+    #[test]
+    fn cell_fn_type_text() {
+        let mut c = TestCtx::with_cells(&[(0, 0, Value::Text("hi".into()))]);
+        let r = cell_fn(&mut c, &[Value::Text("type".into()), rng(0, 0, 0, 0)]);
+        assert_eq!(r, Value::Text("l".into()));
+    }
+
+    #[test]
+    fn cell_fn_sheet() {
+        let mut c = TestCtx::new();
+        let r = cell_fn(&mut c, &[Value::Text("sheet".into()), rng(0, 0, 0, 0)]);
+        assert_eq!(r, Value::Number(1.0));
+    }
+
+    #[test]
+    fn cell_fn_unknown_info_type() {
+        let mut c = TestCtx::new();
+        let r = cell_fn(&mut c, &[Value::Text("foobar".into()), rng(0, 0, 0, 0)]);
+        assert_eq!(r, Value::Error(CellError::NA));
+    }
+
+    #[test]
+    fn cell_fn_non_ref_arg() {
+        let mut c = TestCtx::new();
+        let r = cell_fn(&mut c, &[Value::Text("row".into()), Value::Number(1.0)]);
+        assert_eq!(r, Value::Error(CellError::Value));
+    }
+
+    #[test]
+    fn info_fn_numfile() {
+        let mut c = TestCtx::new();
+        let r = info_fn(&mut c, &[Value::Text("numfile".into())]);
+        assert_eq!(r, Value::Number(1.0));
+    }
+
+    #[test]
+    fn info_fn_system() {
+        let mut c = TestCtx::new();
+        let r = info_fn(&mut c, &[Value::Text("system".into())]);
+        assert_eq!(r, Value::Text("pcdos".into()));
+    }
+
+    #[test]
+    fn info_fn_unknown() {
+        let mut c = TestCtx::new();
+        let r = info_fn(&mut c, &[Value::Text("foobar".into())]);
+        assert_eq!(r, Value::Error(CellError::NA));
+    }
+
+    #[test]
+    fn iseven_isodd_error() {
+        let mut c = TestCtx::new();
+        assert_eq!(
+            iseven_fn(&mut c, &[Value::Text("x".into())]),
+            Value::Error(CellError::Value)
+        );
+        assert_eq!(
+            isodd_fn(&mut c, &[Value::Text("x".into())]),
+            Value::Error(CellError::Value)
+        );
+    }
+
+    #[test]
+    fn n_fn_error() {
+        let mut c = TestCtx::new();
+        assert_eq!(
+            n_fn(&mut c, &[Value::Error(CellError::NA)]),
+            Value::Error(CellError::NA)
+        );
+    }
 }

@@ -86,3 +86,186 @@ impl ContentStyle {
         StyleProperty::from_write_cell_style(self.to_write_cell_style())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_has_java_sentinel_values() {
+        let cs = ContentStyle::default();
+        assert_eq!(cs.data_format(), -1);
+        assert_eq!(cs.hidden(), BooleanEnum::Default);
+        assert_eq!(cs.locked(), BooleanEnum::Default);
+        assert_eq!(cs.quote_prefix(), BooleanEnum::Default);
+        assert_eq!(cs.horizontal_alignment(), HorizontalAlignmentEnum::Default);
+        assert_eq!(cs.wrapped(), BooleanEnum::Default);
+        assert_eq!(cs.vertical_alignment(), VerticalAlignmentEnum::Default);
+        assert_eq!(cs.rotation(), -1);
+        assert_eq!(cs.indent(), -1);
+        assert_eq!(cs.border_left(), BorderStyleEnum::Default);
+        assert_eq!(cs.border_right(), BorderStyleEnum::Default);
+        assert_eq!(cs.border_top(), BorderStyleEnum::Default);
+        assert_eq!(cs.border_bottom(), BorderStyleEnum::Default);
+        assert_eq!(cs.left_border_color(), -1);
+        assert_eq!(cs.right_border_color(), -1);
+        assert_eq!(cs.top_border_color(), -1);
+        assert_eq!(cs.bottom_border_color(), -1);
+        assert_eq!(cs.fill_pattern_type(), FillPatternTypeEnum::Default);
+        assert_eq!(cs.fill_background_color(), -1);
+        assert_eq!(cs.fill_foreground_color(), -1);
+        assert_eq!(cs.shrink_to_fit(), BooleanEnum::Default);
+    }
+
+    #[test]
+    fn new_returns_default() {
+        let cs = ContentStyle::new();
+        assert_eq!(cs, ContentStyle::default());
+    }
+
+    #[test]
+    fn setters_and_getters_roundtrip() {
+        let mut cs = ContentStyle::new();
+        cs.set_data_format(5);
+        assert_eq!(cs.data_format(), 5);
+
+        cs.set_hidden(BooleanEnum::True);
+        assert_eq!(cs.hidden(), BooleanEnum::True);
+
+        cs.set_locked(BooleanEnum::False);
+        assert_eq!(cs.locked(), BooleanEnum::False);
+
+        cs.set_quote_prefix(BooleanEnum::True);
+        assert_eq!(cs.quote_prefix(), BooleanEnum::True);
+
+        cs.set_horizontal_alignment(HorizontalAlignmentEnum::Center);
+        assert_eq!(cs.horizontal_alignment(), HorizontalAlignmentEnum::Center);
+
+        cs.set_wrapped(BooleanEnum::True);
+        assert_eq!(cs.wrapped(), BooleanEnum::True);
+
+        cs.set_vertical_alignment(VerticalAlignmentEnum::Top);
+        assert_eq!(cs.vertical_alignment(), VerticalAlignmentEnum::Top);
+
+        cs.set_rotation(45);
+        assert_eq!(cs.rotation(), 45);
+
+        cs.set_indent(2);
+        assert_eq!(cs.indent(), 2);
+
+        cs.set_border_left(BorderStyleEnum::Thin);
+        assert_eq!(cs.border_left(), BorderStyleEnum::Thin);
+
+        cs.set_border_right(BorderStyleEnum::Medium);
+        assert_eq!(cs.border_right(), BorderStyleEnum::Medium);
+
+        cs.set_border_top(BorderStyleEnum::Dashed);
+        assert_eq!(cs.border_top(), BorderStyleEnum::Dashed);
+
+        cs.set_border_bottom(BorderStyleEnum::Double);
+        assert_eq!(cs.border_bottom(), BorderStyleEnum::Double);
+
+        cs.set_left_border_color(10);
+        assert_eq!(cs.left_border_color(), 10);
+
+        cs.set_right_border_color(20);
+        assert_eq!(cs.right_border_color(), 20);
+
+        cs.set_top_border_color(30);
+        assert_eq!(cs.top_border_color(), 30);
+
+        cs.set_bottom_border_color(40);
+        assert_eq!(cs.bottom_border_color(), 40);
+
+        cs.set_fill_pattern_type(FillPatternTypeEnum::SolidForeground);
+        assert_eq!(cs.fill_pattern_type(), FillPatternTypeEnum::SolidForeground);
+
+        cs.set_fill_background_color(50);
+        assert_eq!(cs.fill_background_color(), 50);
+
+        cs.set_fill_foreground_color(60);
+        assert_eq!(cs.fill_foreground_color(), 60);
+
+        cs.set_shrink_to_fit(BooleanEnum::True);
+        assert_eq!(cs.shrink_to_fit(), BooleanEnum::True);
+    }
+
+    #[test]
+    fn to_write_cell_style_defaults_produce_none_fields() {
+        let cs = ContentStyle::default();
+        let wcs = cs.to_write_cell_style();
+        // 默认 sentinel 值应映射为 None
+        assert!(wcs.hidden.is_none());
+        assert!(wcs.locked.is_none());
+        assert!(wcs.quote_prefix.is_none());
+        assert!(wcs.horizontal_alignment.is_none());
+        assert!(wcs.wrapped.is_none());
+        assert!(wcs.vertical_alignment.is_none());
+        assert!(wcs.rotation.is_none());
+        assert!(wcs.indent.is_none());
+        assert!(wcs.border_left.is_none());
+        assert!(wcs.border_right.is_none());
+        assert!(wcs.border_top.is_none());
+        assert!(wcs.border_bottom.is_none());
+        assert!(wcs.fill_pattern.is_none());
+        assert!(wcs.shrink_to_fit.is_none());
+    }
+
+    #[test]
+    fn to_write_cell_style_with_values() {
+        let mut cs = ContentStyle::new();
+        cs.set_hidden(BooleanEnum::True);
+        cs.set_locked(BooleanEnum::False);
+        cs.set_horizontal_alignment(HorizontalAlignmentEnum::Left);
+        cs.set_vertical_alignment(VerticalAlignmentEnum::Bottom);
+        cs.set_rotation(15);
+        cs.set_indent(3);
+        cs.set_border_left(BorderStyleEnum::Thin);
+        cs.set_fill_pattern_type(FillPatternTypeEnum::SolidForeground);
+        cs.set_shrink_to_fit(BooleanEnum::True);
+        cs.set_data_format(1);
+
+        let wcs = cs.to_write_cell_style();
+        assert_eq!(wcs.hidden, Some(true));
+        assert_eq!(wcs.locked, Some(false));
+        assert_eq!(wcs.horizontal_alignment, Some(crate::ExcelHorizontalAlignment::Left));
+        assert_eq!(wcs.vertical_alignment, Some(crate::ExcelVerticalAlignment::Bottom));
+        assert_eq!(wcs.rotation, Some(15));
+        assert_eq!(wcs.indent, Some(3));
+        assert_eq!(wcs.border_left, Some(crate::ExcelBorderStyle::Thin));
+        assert_eq!(wcs.fill_pattern, Some(crate::ExcelFillPattern::Solid));
+        assert_eq!(wcs.shrink_to_fit, Some(true));
+    }
+
+    #[test]
+    fn to_write_cell_style_negative_rotation_is_none() {
+        let mut cs = ContentStyle::new();
+        cs.set_rotation(-1);
+        let wcs = cs.to_write_cell_style();
+        assert!(wcs.rotation.is_none());
+    }
+
+    #[test]
+    fn to_property_produces_non_default() {
+        let mut cs = ContentStyle::new();
+        cs.set_hidden(BooleanEnum::True);
+        let prop = cs.to_property();
+        assert_eq!(prop.get_hidden(), Some(true));
+    }
+
+    #[test]
+    fn copy_clone_eq() {
+        let cs = ContentStyle::new();
+        let b = cs;
+        let c = cs.clone();
+        assert_eq!(cs, b);
+        assert_eq!(cs, c);
+    }
+
+    #[test]
+    fn debug_contains_struct_name() {
+        let cs = ContentStyle::new();
+        let text = format!("{cs:?}");
+        assert!(text.contains("ContentStyle"));
+    }
+}

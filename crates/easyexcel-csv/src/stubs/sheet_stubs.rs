@@ -320,3 +320,196 @@ impl<V: CsvCellValue> CsvSheet<V> {
     /// 对应 Java: CsvSheet#getFooter no-op
     #[must_use] pub const fn get_footer(&self) -> Option<&str> { None }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::csv::CsvSheet;
+    use easyexcel_model::CellValue;
+
+    type TestSheet = CsvSheet<CellValue>;
+
+    #[test]
+    fn merged_region_stubs() {
+        let mut sheet = TestSheet::new("S");
+        assert_eq!(sheet.add_merged_region(), 0);
+        assert_eq!(sheet.add_merged_region_unsafe(), 0);
+        assert_eq!(sheet.number_of_merged_regions(), 0);
+        assert_eq!(sheet.get_num_merged_regions(), 0);
+        assert!(sheet.get_merged_region(0).is_none());
+        assert!(sheet.get_merged_regions().is_empty());
+        sheet.remove_merged_region(0);
+        sheet.remove_merged_regions(&[0, 1]);
+        sheet.validate_merged_regions();
+    }
+
+    #[test]
+    fn column_width_and_hidden_stubs() {
+        let sheet = TestSheet::new("S");
+        assert_eq!(sheet.column_width(0), 0);
+        assert_eq!(sheet.get_column_width(0), 0);
+        assert!(!sheet.is_column_hidden(0));
+    }
+
+    #[test]
+    fn freeze_pane_and_split_pane_stubs() {
+        let mut sheet = TestSheet::new("S");
+        sheet.create_freeze_pane(1, 1);
+        sheet.create_split_pane(1, 1, 1, 1);
+        sheet.show_in_pane(0, 0);
+    }
+
+    #[test]
+    fn zoom_stubs() {
+        let mut sheet = TestSheet::new("S");
+        sheet.set_zoom(100);
+        assert_eq!(sheet.get_zoom(), 0);
+    }
+
+    #[test]
+    fn formula_recalc_stubs() {
+        let mut sheet = TestSheet::new("S");
+        assert!(!sheet.force_formula_recalculation());
+        assert!(!sheet.get_force_formula_recalculation());
+        sheet.set_force_formula_recalculation(true);
+        assert!(!sheet.force_formula_recalculation());
+    }
+
+    #[test]
+    fn view_property_getters() {
+        let sheet = TestSheet::new("S");
+        assert_eq!(sheet.get_default_column_width(), 0);
+        assert_eq!(sheet.get_default_row_height(), 0);
+        assert_eq!(sheet.get_default_row_height_in_points(), 0.0);
+        assert!(!sheet.get_horizontally_center());
+        assert!(!sheet.get_vertically_center());
+        assert!(!sheet.is_display_zeros());
+        assert!(!sheet.is_display_formulas());
+        assert!(!sheet.is_print_gridlines());
+        assert!(!sheet.is_selected());
+        assert!(!sheet.is_right_to_left());
+        assert_eq!(sheet.get_top_row(), 0);
+        assert_eq!(sheet.get_left_col(), 0);
+        assert_eq!(sheet.get_margin(0), 0.0);
+    }
+
+    #[test]
+    fn view_property_setters_are_noop() {
+        let mut sheet = TestSheet::new("S");
+        sheet.set_default_column_width(10);
+        sheet.set_default_row_height(20);
+        sheet.set_default_row_height_in_points(20.0);
+        sheet.set_horizontally_center(true);
+        sheet.set_vertically_center(true);
+        sheet.set_display_zeros(true);
+        sheet.set_display_formulas(true);
+        sheet.set_print_gridlines(true);
+        sheet.set_selected(true);
+        sheet.set_right_to_left(true);
+    }
+
+    #[test]
+    fn shift_rows_and_columns_are_noop() {
+        let mut sheet = TestSheet::new("S");
+        sheet.shift_rows(0, 5, 1);
+        sheet.shift_columns(0, 5, 1);
+    }
+
+    #[test]
+    fn row_iterator_delegates() {
+        let mut sheet = TestSheet::new("S");
+        sheet.try_create_row(0).unwrap();
+        assert_eq!(sheet.row_iterator().count(), 1);
+    }
+
+    #[test]
+    fn column_style_outline_breaks_stubs() {
+        let sheet = TestSheet::new("S");
+        assert!(sheet.get_column_style(0).is_none());
+        assert_eq!(sheet.get_column_width_in_pixels(0), 0.0);
+        assert_eq!(sheet.get_column_outline_level(0), 0);
+        assert!(sheet.get_column_breaks().is_empty());
+        assert!(sheet.get_row_breaks().is_empty());
+        assert!(!sheet.is_column_broken(0));
+        assert!(!sheet.is_row_broken(0));
+        assert!(sheet.get_pane_information().is_none());
+    }
+
+    #[test]
+    fn break_and_group_setters_are_noop() {
+        let mut sheet = TestSheet::new("S");
+        sheet.set_column_break(0);
+        sheet.remove_column_break(0);
+        sheet.set_row_break(0);
+        sheet.remove_row_break(0);
+        sheet.group_column(0, 5);
+        sheet.ungroup_column(0, 5);
+        sheet.group_row(0, 5);
+        sheet.ungroup_row(0, 5);
+        sheet.set_column_group_collapsed(0, true);
+        sheet.set_row_group_collapsed(0, true);
+        sheet.set_column_hidden(0, true);
+        sheet.set_default_column_style(0, None);
+        sheet.auto_size_column(0, false);
+    }
+
+    #[test]
+    fn display_print_state_stubs() {
+        let sheet = TestSheet::new("S");
+        assert!(!sheet.is_display_gridlines());
+        assert!(!sheet.is_display_row_col_headings());
+        assert!(!sheet.is_print_row_and_column_headings());
+        assert!(!sheet.get_autobreaks());
+        assert!(!sheet.get_display_guts());
+        assert!(!sheet.get_fit_to_page());
+        assert!(!sheet.get_row_sums_below());
+        assert!(!sheet.get_row_sums_right());
+        assert!(!sheet.get_scenario_protect());
+        assert!(!sheet.get_protect());
+    }
+
+    #[test]
+    fn display_print_setters_are_noop() {
+        let mut sheet = TestSheet::new("S");
+        sheet.set_display_gridlines(true);
+        sheet.set_display_row_col_headings(true);
+        sheet.set_print_row_and_column_headings(true);
+        sheet.set_autobreaks(true);
+        sheet.set_display_guts(true);
+        sheet.set_fit_to_page(true);
+        sheet.set_row_sums_below(true);
+        sheet.set_row_sums_right(true);
+        sheet.set_margin(0, 1.0);
+        sheet.set_auto_filter("A1:C3");
+        sheet.set_repeating_columns(None);
+        sheet.set_repeating_rows(None);
+    }
+
+    #[test]
+    fn repeating_and_active_cell_stubs() {
+        let mut sheet = TestSheet::new("S");
+        assert!(sheet.get_repeating_columns().is_none());
+        assert!(sheet.get_repeating_rows().is_none());
+        assert!(sheet.get_active_cell().is_none());
+        sheet.set_active_cell("A1");
+    }
+
+    #[test]
+    fn comment_hyperlink_validation_drawing_stubs() {
+        let mut sheet = TestSheet::new("S");
+        assert!(sheet.get_cell_comments().is_empty());
+        assert!(sheet.get_cell_comment("A1").is_none());
+        assert!(sheet.get_hyperlink_list().is_empty());
+        assert!(sheet.get_data_validations().is_empty());
+        sheet.add_validation_data("test");
+        assert!(sheet.get_drawing_patriarch().is_none());
+        assert!(sheet.create_drawing_patriarch().is_none());
+        assert!(sheet.set_array_formula("SUM", "A1:A3").is_none());
+        assert!(sheet.remove_array_formula(0, 0).is_none());
+        assert!(sheet.get_hyperlink(0, 0).is_none());
+        assert!(sheet.get_sheet_conditional_formatting().is_none());
+        assert!(sheet.get_data_validation_helper().is_none());
+        assert!(sheet.get_print_setup().is_none());
+        assert!(sheet.get_header().is_none());
+        assert!(sheet.get_footer().is_none());
+    }
+}

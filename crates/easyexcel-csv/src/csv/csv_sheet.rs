@@ -231,3 +231,214 @@ impl<V: CsvCellValue> CsvSheet<V> {
     }
 
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use easyexcel_model::CellValue as ModelCellValue;
+
+    type TestSheet = CsvSheet<ModelCellValue>;
+
+    #[test]
+    fn new_sheet_has_name_and_defaults() {
+        let sheet = TestSheet::new("MySheet");
+        assert_eq!(sheet.name(), "MySheet");
+        assert_eq!(sheet.get_sheet_name(), "MySheet");
+        assert_eq!(sheet.row_cache_count(), 100);
+        assert!(sheet.last_row_index().is_none());
+        assert!(sheet.last_row_num().is_none());
+        assert!(sheet.first_row_num().is_none());
+        assert_eq!(sheet.physical_number_of_rows(), 0);
+    }
+
+    #[test]
+    fn identity_is_unique() {
+        let s1 = TestSheet::new("A");
+        let s2 = TestSheet::new("B");
+        assert_ne!(s1.identity(), s2.identity());
+    }
+
+    #[test]
+    fn try_create_row_in_order() {
+        let mut sheet = TestSheet::new("S");
+        sheet.try_create_row(0).unwrap();
+        sheet.try_create_row(1).unwrap();
+        sheet.try_create_row(2).unwrap();
+        assert_eq!(sheet.last_row_index(), Some(2));
+        assert_eq!(sheet.last_row_num(), Some(2));
+        assert_eq!(sheet.first_row_num(), Some(0));
+        assert_eq!(sheet.physical_number_of_rows(), 3);
+    }
+
+    #[test]
+    fn try_create_row_out_of_order_errors() {
+        let mut sheet = TestSheet::new("S");
+        sheet.try_create_row(0).unwrap();
+        assert!(sheet.try_create_row(5).is_err());
+    }
+
+    #[test]
+    fn create_row_delegates() {
+        let mut sheet = TestSheet::new("S");
+        sheet.create_row(0).unwrap();
+        assert_eq!(sheet.physical_number_of_rows(), 1);
+    }
+
+    #[test]
+    fn row_lookup() {
+        let mut sheet = TestSheet::new("S");
+        sheet.try_create_row(0).unwrap();
+        let row = sheet.row(0).unwrap();
+        assert_eq!(row.row_index(), 0);
+    }
+
+    #[test]
+    fn row_not_found_errors() {
+        let sheet = TestSheet::new("S");
+        assert!(sheet.row(0).is_err());
+    }
+
+    #[test]
+    fn get_row_alias() {
+        let mut sheet = TestSheet::new("S");
+        sheet.try_create_row(0).unwrap();
+        assert!(sheet.get_row(0).is_ok());
+    }
+
+    #[test]
+    fn take_last_row() {
+        let mut sheet = TestSheet::new("S");
+        sheet.try_create_row(0).unwrap();
+        sheet.try_create_row(1).unwrap();
+        let row = sheet.take_last_row().unwrap();
+        assert_eq!(row.row_index(), 1);
+        assert_eq!(sheet.physical_number_of_rows(), 1);
+    }
+
+    #[test]
+    fn take_last_row_empty_returns_none() {
+        let mut sheet = TestSheet::new("S");
+        assert!(sheet.take_last_row().is_none());
+    }
+
+    #[test]
+    fn rows_iterator() {
+        let mut sheet = TestSheet::new("S");
+        sheet.try_create_row(0).unwrap();
+        sheet.try_create_row(1).unwrap();
+        assert_eq!(sheet.rows().count(), 2);
+    }
+
+    #[test]
+    fn remove_row_unsupported() {
+        let mut sheet = TestSheet::new("S");
+        assert!(sheet.remove_row(0).is_err());
+    }
+
+    #[test]
+    fn set_row_cache_count_clamps_to_one() {
+        let mut sheet = TestSheet::new("S");
+        sheet.set_row_cache_count(0);
+        assert_eq!(sheet.row_cache_count(), 1);
+    }
+
+    #[test]
+    fn set_row_cache_count_drains_excess() {
+        let mut sheet = TestSheet::new("S");
+        for i in 0..5 {
+            sheet.try_create_row(i).unwrap();
+        }
+        assert_eq!(sheet.physical_number_of_rows(), 5);
+        sheet.set_row_cache_count(3);
+        assert_eq!(sheet.row_cache_count(), 3);
+        assert_eq!(sheet.physical_number_of_rows(), 3);
+    }
+
+    #[test]
+    fn print_data_returns_excess() {
+        let mut sheet = TestSheet::new("S");
+        sheet.set_row_cache_count(2);
+        sheet.try_create_row(0).unwrap();
+        sheet.try_create_row(1).unwrap();
+        // 第三行触发 print_data
+        sheet.try_create_row(2).unwrap();
+        let flushed = sheet.print_data();
+        assert_eq!(flushed.len(), 1);
+    }
+
+    #[test]
+    fn print_data_returns_empty_when_under_limit() {
+        let mut sheet = TestSheet::new("S");
+        sheet.try_create_row(0).unwrap();
+        assert!(sheet.print_data().is_empty());
+    }
+
+    #[test]
+    fn drain_flushable_rows() {
+        let mut sheet = TestSheet::new("S");
+        sheet.set_row_cache_count(2);
+        for i in 0..5 {
+            sheet.try_create_row(i).unwrap();
+        }
+        let drained = sheet.drain_flushable_rows();
+        assert_eq!(drained.len(), 3); // 5 - 2 = 3
+        assert_eq!(sheet.physical_number_of_rows(), 2);
+    }
+
+    #[test]
+    fn set_next_row_index() {
+        let mut sheet = TestSheet::new("S");
+        sheet.set_next_row_index(5);
+        assert_eq!(sheet.last_row_index(), Some(4));
+    }
+
+    #[test]
+    fn csv_workbook_id_propagation() {
+        let mut sheet = TestSheet::new("S");
+        sheet.set_csv_workbook(Some(42));
+        assert_eq!(sheet.get_csv_workbook(), Some(42));
+        sheet.try_create_row(0).unwrap();
+        assert_eq!(sheet.row_cache().front().unwrap().get_csv_workbook(), Some(42));
+        assert_eq!(sheet.row_cache().front().unwrap().get_csv_sheet(), Some(sheet.identity()));
+    }
+
+    #[test]
+    fn out_buffer() {
+        let mut sheet = TestSheet::new("S");
+        assert_eq!(sheet.get_out(), "");
+        sheet.set_out("buffer content");
+        assert_eq!(sheet.get_out(), "buffer content");
+    }
+
+    #[test]
+    fn csv_printer_flag() {
+        let mut sheet = TestSheet::new("S");
+        assert!(!sheet.get_csv_printer());
+        sheet.set_csv_printer(true);
+        assert!(sheet.get_csv_printer());
+    }
+
+    #[test]
+    fn row_cache_mut_returns_mutable() {
+        let mut sheet = TestSheet::new("S");
+        sheet.try_create_row(0).unwrap();
+        let cache = sheet.row_cache_mut();
+        assert_eq!(cache.len(), 1);
+    }
+
+    #[test]
+    fn set_row_cache_replaces_and_propagates() {
+        let mut sheet = TestSheet::new("S");
+        let mut deque = VecDeque::new();
+        deque.push_back(CsvRow::new(0));
+        deque.push_back(CsvRow::new(1));
+        sheet.set_csv_workbook(Some(99));
+        sheet.set_row_cache(deque);
+        assert_eq!(sheet.physical_number_of_rows(), 2);
+        assert_eq!(sheet.last_row_index(), Some(1));
+        for row in sheet.row_cache() {
+            assert_eq!(row.get_csv_workbook(), Some(99));
+            assert_eq!(row.get_csv_sheet(), Some(sheet.identity()));
+        }
+    }
+}

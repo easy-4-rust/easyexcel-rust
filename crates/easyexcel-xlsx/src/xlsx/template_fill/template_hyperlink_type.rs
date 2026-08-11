@@ -68,3 +68,166 @@ impl TemplateHyperlinkType {
         }
     }
 }
+
+#[cfg(test)]
+mod template_hyperlink_type_tests {
+    use super::*;
+
+    // --- generation_target 测试 ---
+
+    /// Url 类型直接返回原地址。
+    #[test]
+    fn generation_target_url_passthrough() {
+        assert_eq!(
+            TemplateHyperlinkType::Url.generation_target("https://example.com"),
+            "https://example.com"
+        );
+    }
+
+    /// Document 类型在无前缀时加 `internal:`。
+    #[test]
+    fn generation_target_document_adds_prefix() {
+        assert_eq!(
+            TemplateHyperlinkType::Document.generation_target("Sheet1!A1"),
+            "internal:Sheet1!A1"
+        );
+    }
+
+    /// Document 类型在已有前缀时保持不变。
+    #[test]
+    fn generation_target_document_keeps_existing_prefix() {
+        assert_eq!(
+            TemplateHyperlinkType::Document.generation_target("internal:Sheet1!A1"),
+            "internal:Sheet1!A1"
+        );
+    }
+
+    /// Email 类型在无前缀时加 `mailto:`。
+    #[test]
+    fn generation_target_email_adds_prefix() {
+        assert_eq!(
+            TemplateHyperlinkType::Email.generation_target("user@example.com"),
+            "mailto:user@example.com"
+        );
+    }
+
+    /// Email 类型已有 mailto: 前缀时保持不变。
+    #[test]
+    fn generation_target_email_keeps_existing_prefix() {
+        assert_eq!(
+            TemplateHyperlinkType::Email.generation_target("mailto:user@example.com"),
+            "mailto:user@example.com"
+        );
+    }
+
+    /// Email 类型大小写不敏感匹配 mailto:。
+    #[test]
+    fn generation_target_email_case_insensitive_mailto() {
+        assert_eq!(
+            TemplateHyperlinkType::Email.generation_target("MAILTO:user@example.com"),
+            "MAILTO:user@example.com"
+        );
+    }
+
+    /// File 类型在无前缀时加 `external:`。
+    #[test]
+    fn generation_target_file_adds_prefix() {
+        assert_eq!(
+            TemplateHyperlinkType::File.generation_target("/path/to/file"),
+            "external:/path/to/file"
+        );
+    }
+
+    /// File 类型已有前缀时保持不变。
+    #[test]
+    fn generation_target_file_keeps_existing_prefix() {
+        assert_eq!(
+            TemplateHyperlinkType::File.generation_target("external:/path/to/file"),
+            "external:/path/to/file"
+        );
+    }
+
+    // --- package_target 测试 ---
+
+    /// Document 类型的 package_target 去掉 `internal:` 前缀。
+    #[test]
+    fn package_target_document_strips_prefix() {
+        assert_eq!(
+            TemplateHyperlinkType::Document.package_target("internal:Sheet1!A1"),
+            "Sheet1!A1"
+        );
+    }
+
+    /// Document 类型无前缀时原样返回。
+    #[test]
+    fn package_target_document_no_prefix_passthrough() {
+        assert_eq!(
+            TemplateHyperlinkType::Document.package_target("Sheet1!A1"),
+            "Sheet1!A1"
+        );
+    }
+
+    /// Email 类型无 mailto: 前缀时补上。
+    #[test]
+    fn package_target_email_adds_mailto() {
+        assert_eq!(
+            TemplateHyperlinkType::Email.package_target("user@example.com"),
+            "mailto:user@example.com"
+        );
+    }
+
+    /// Email 类型已有 mailto: 前缀时保持不变。
+    #[test]
+    fn package_target_email_keeps_existing_mailto() {
+        assert_eq!(
+            TemplateHyperlinkType::Email.package_target("mailto:user@example.com"),
+            "mailto:user@example.com"
+        );
+    }
+
+    /// File 类型去掉 `external:` 前缀。
+    #[test]
+    fn package_target_file_strips_prefix() {
+        assert_eq!(
+            TemplateHyperlinkType::File.package_target("external:/path/to/file"),
+            "/path/to/file"
+        );
+    }
+
+    /// File 类型无前缀时原样返回。
+    #[test]
+    fn package_target_file_no_prefix_passthrough() {
+        assert_eq!(
+            TemplateHyperlinkType::File.package_target("/path/to/file"),
+            "/path/to/file"
+        );
+    }
+
+    /// Url 类型的 package_target 直接返回原地址。
+    #[test]
+    fn package_target_url_passthrough() {
+        assert_eq!(
+            TemplateHyperlinkType::Url.package_target("https://example.com"),
+            "https://example.com"
+        );
+    }
+
+    /// 两种方法往返：generation_target → package_target 还原 URL。
+    #[test]
+    fn roundtrip_url_address() {
+        let addr = "https://example.com/path?q=1";
+        let generated = TemplateHyperlinkType::Url.generation_target(addr);
+        let pkg = TemplateHyperlinkType::Url.package_target(&generated);
+        assert_eq!(pkg, addr);
+    }
+
+    /// 两种方法往返：Document 内部地址。
+    #[test]
+    fn roundtrip_document_address() {
+        let addr = "Sheet1!A1";
+        let generated = TemplateHyperlinkType::Document.generation_target(addr);
+        assert_eq!(generated, "internal:Sheet1!A1");
+        let pkg = TemplateHyperlinkType::Document.package_target(&generated);
+        assert_eq!(pkg, addr);
+    }
+}

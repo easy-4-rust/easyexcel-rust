@@ -1829,10 +1829,15 @@ fn extract_xml_element(xml: &str, tag: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        EMPTY_WORKSHEET_XML, OoxmlZipEntry, blank_worksheet_with_inherited_format,
-        extract_xml_element, insert_before_close_tag, next_relationship_id, next_sheet_id,
-        next_worksheet_part_name,
+        EMPTY_WORKSHEET_XML, OoxmlZipEntry, a1_reference, blank_worksheet_with_inherited_format,
+        ensure_content_type_default, ensure_content_type_override, extract_xml_element,
+        image_content_type, insert_before_close_tag, next_numeric_attribute, next_part_number,
+        next_relationship_id, next_sheet_id, next_worksheet_part_name,
+        remove_xml_element_by_attribute, replace_xml_attribute, upsert_hyperlink_element,
+        validate_row_shapes, xml_element_by_attribute, xml_element_inner_by_index,
+        xml_element_inners,
     };
+    use crate::xlsx::template_xml::TemplateCellValue;
     use zip::CompressionMethod;
 
     fn worksheet_entry(bytes: Vec<u8>) -> OoxmlZipEntry {
@@ -1919,5 +1924,307 @@ mod tests {
             next_sheet_id(r#"<sheets><sheet sheetId="2"/><sheet sheetId="7"/></sheets>"#),
             8
         );
+    }
+
+    // ── a1_reference 覆盖 ──────────────────────────────────────────────────
+
+    #[test]
+    fn a1_reference_single_letter_column() {
+        assert_eq!(a1_reference(0, 0), "A1");
+        assert_eq!(a1_reference(0, 1), "B1");
+        assert_eq!(a1_reference(0, 25), "Z1");
+    }
+
+    #[test]
+    fn a1_reference_multi_letter_column() {
+        assert_eq!(a1_reference(0, 26), "AA1");
+        assert_eq!(a1_reference(0, 27), "AB1");
+    }
+
+    #[test]
+    fn a1_reference_row_offset() {
+        assert_eq!(a1_reference(4, 0), "A5");
+        assert_eq!(a1_reference(99, 0), "A100");
+    }
+
+    // ── image_content_type 覆盖 ────────────────────────────────────────────
+
+    #[test]
+    fn image_content_type_png() {
+        assert_eq!(image_content_type("png").unwrap(), "image/png");
+    }
+
+    #[test]
+    fn image_content_type_jpg() {
+        assert_eq!(image_content_type("jpg").unwrap(), "image/jpeg");
+    }
+
+    #[test]
+    fn image_content_type_jpeg() {
+        assert_eq!(image_content_type("jpeg").unwrap(), "image/jpeg");
+    }
+
+    #[test]
+    fn image_content_type_gif() {
+        assert_eq!(image_content_type("gif").unwrap(), "image/gif");
+    }
+
+    #[test]
+    fn image_content_type_bmp() {
+        assert_eq!(image_content_type("bmp").unwrap(), "image/bmp");
+    }
+
+    #[test]
+    fn image_content_type_unsupported() {
+        assert!(image_content_type("webp").is_err());
+        assert!(image_content_type("svg").is_err());
+    }
+
+    // ── xml_element_inners 覆盖 ────────────────────────────────────────────
+
+    #[test]
+    fn xml_element_inners_finds_multiple_elements() {
+        let xml = "<authors><author>Alice</author><author>Bob</author></authors>";
+        let inners = xml_element_inners(xml, "author");
+        assert_eq!(inners, vec!["Alice", "Bob"]);
+    }
+
+    #[test]
+    fn xml_element_inners_returns_empty_for_missing() {
+        let xml = "<authors/>";
+        let inners = xml_element_inners(xml, "author");
+        assert!(inners.is_empty());
+    }
+
+    #[test]
+    fn xml_element_inner_by_index_returns_correct_element() {
+        let xml = "<authors><author>Alice</author><author>Bob</author></authors>";
+        assert_eq!(xml_element_inner_by_index(xml, "author", 0), Some("Alice"));
+        assert_eq!(xml_element_inner_by_index(xml, "author", 1), Some("Bob"));
+        assert_eq!(xml_element_inner_by_index(xml, "author", 2), None);
+    }
+
+    // ── xml_element_by_attribute 覆盖 ──────────────────────────────────────
+
+    #[test]
+    fn xml_element_by_attribute_finds_matching_element() {
+        let xml = r#"<hyperlinks><hyperlink ref="A1" r:id="rId1"/></hyperlinks>"#;
+        let result = xml_element_by_attribute(xml, "hyperlink", "ref", "A1").unwrap();
+        assert!(result.is_some());
+        assert!(result.unwrap().contains("rId1"));
+    }
+
+    #[test]
+    fn xml_element_by_attribute_returns_none_for_no_match() {
+        let xml = r#"<hyperlinks><hyperlink ref="A1" r:id="rId1"/></hyperlinks>"#;
+        let result = xml_element_by_attribute(xml, "hyperlink", "ref", "B2").unwrap();
+        assert!(result.is_none());
+    }
+
+    // ── remove_xml_element_by_attribute 覆盖 ───────────────────────────────
+
+    #[test]
+    fn remove_xml_element_by_attribute_removes_self_closing() {
+        let xml = r#"<hyperlinks><hyperlink ref="A1" r:id="rId1"/><hyperlink ref="B2" r:id="rId2"/></hyperlinks>"#;
+        let (result, removed) = remove_xml_element_by_attribute(xml, "hyperlink", "ref", "A1").unwrap();
+        assert!(removed);
+        assert!(!result.contains("rId1"));
+        assert!(result.contains("rId2"));
+    }
+
+    #[test]
+    fn remove_xml_element_by_attribute_returns_false_when_not_found() {
+        let xml = r#"<hyperlinks><hyperlink ref="A1" r:id="rId1"/></hyperlinks>"#;
+        let (result, removed) = remove_xml_element_by_attribute(xml, "hyperlink", "ref", "C3").unwrap();
+        assert!(!removed);
+        assert_eq!(result, xml);
+    }
+
+    #[test]
+    fn remove_xml_element_by_attribute_removes_element_with_children() {
+        let xml = "<comments><comment ref=\"A1\"><text>hello</text></comment></comments>";
+        let (result, removed) = remove_xml_element_by_attribute(xml, "comment", "ref", "A1").unwrap();
+        assert!(removed);
+        assert!(!result.contains("hello"));
+    }
+
+    // ── replace_xml_attribute 覆盖 ─────────────────────────────────────────
+
+    #[test]
+    fn replace_xml_attribute_updates_value() {
+        let xml = r#"<element id="old" name="test"/>"#;
+        let result = replace_xml_attribute(xml, "id", "new").unwrap();
+        assert!(result.contains(r#"id="new""#));
+        assert!(!result.contains("old"));
+    }
+
+    #[test]
+    fn replace_xml_attribute_missing_attribute() {
+        let xml = r#"<element name="test"/>"#;
+        let result = replace_xml_attribute(xml, "id", "new");
+        assert!(result.is_err());
+    }
+
+    // ── upsert_hyperlink_element 覆盖 ──────────────────────────────────────
+
+    #[test]
+    fn upsert_hyperlink_element_into_existing_hyperlinks() {
+        let xml = r#"<worksheet><hyperlinks><hyperlink ref="A1"/></hyperlinks></worksheet>"#;
+        let hyperlink = r#"<hyperlink ref="B2" r:id="rId1"/>"#;
+        let result = upsert_hyperlink_element(xml, hyperlink).unwrap();
+        assert!(result.contains("B2"));
+        assert!(result.contains("A1"));
+    }
+
+    #[test]
+    fn upsert_hyperlink_element_creates_hyperlinks_section() {
+        let xml = r#"<worksheet><sheetData/></worksheet>"#;
+        let hyperlink = r#"<hyperlink ref="A1" r:id="rId1"/>"#;
+        let result = upsert_hyperlink_element(xml, hyperlink).unwrap();
+        assert!(result.contains("<hyperlinks>"));
+        assert!(result.contains("A1"));
+    }
+
+    // ── validate_row_shapes 覆盖 ───────────────────────────────────────────
+
+    #[test]
+    fn validate_row_shapes_accepts_matching_shapes() {
+        let rows: Vec<Vec<(usize, TemplateCellValue)>> = vec![
+            vec![(0, TemplateCellValue::Number("1".into()))],
+            vec![(0, TemplateCellValue::Number("2".into()))],
+        ];
+        let heights: Vec<Option<u16>> = vec![Some(20), Some(30)];
+        let styles: Vec<Vec<Option<u32>>> = vec![vec![None], vec![None]];
+        let absent: Vec<bool> = vec![false, false];
+        assert!(validate_row_shapes(&rows, &heights, &styles, &absent).is_ok());
+    }
+
+    #[test]
+    fn validate_row_shapes_rejects_mismatched_absent_count() {
+        let rows: Vec<Vec<(usize, TemplateCellValue)>> = vec![
+            vec![(0, TemplateCellValue::Number("1".into()))],
+        ];
+        let absent: Vec<bool> = vec![false, true, false]; // 3 != 1
+        assert!(validate_row_shapes(&rows, &[], &[], &absent).is_err());
+    }
+
+    #[test]
+    fn validate_row_shapes_rejects_mismatched_height_count() {
+        let rows: Vec<Vec<(usize, TemplateCellValue)>> = vec![
+            vec![(0, TemplateCellValue::Number("1".into()))],
+        ];
+        let heights: Vec<Option<u16>> = vec![Some(20), Some(30)]; // 2 != 1
+        assert!(validate_row_shapes(&rows, &heights, &[], &[]).is_err());
+    }
+
+    #[test]
+    fn validate_row_shapes_rejects_mismatched_style_count() {
+        let rows: Vec<Vec<(usize, TemplateCellValue)>> = vec![
+            vec![(0, TemplateCellValue::Number("1".into()))],
+        ];
+        let styles: Vec<Vec<Option<u32>>> = vec![vec![None], vec![None]]; // 2 != 1
+        assert!(validate_row_shapes(&rows, &[], &styles, &[]).is_err());
+    }
+
+    #[test]
+    fn validate_row_shapes_accepts_empty_optional_slices() {
+        let rows: Vec<Vec<(usize, TemplateCellValue)>> = vec![
+            vec![(0, TemplateCellValue::Number("1".into()))],
+        ];
+        assert!(validate_row_shapes(&rows, &[], &[], &[]).is_ok());
+    }
+
+    // ── next_part_number 覆盖 ──────────────────────────────────────────────
+
+    #[test]
+    fn next_part_number_starts_at_one() {
+        let entries: Vec<OoxmlZipEntry> = vec![];
+        assert_eq!(next_part_number(&entries, "xl/media/image", ".png"), 1);
+    }
+
+    #[test]
+    fn next_part_number_advances_beyond_existing() {
+        let entries = vec![OoxmlZipEntry {
+            name: "xl/media/image3.png".to_owned(),
+            is_dir: false,
+            compression: CompressionMethod::Stored,
+            unix_mode: None,
+            bytes: Vec::new(),
+        }];
+        assert_eq!(next_part_number(&entries, "xl/media/image", ".png"), 4);
+    }
+
+    // ── next_numeric_attribute 覆盖 ────────────────────────────────────────
+
+    #[test]
+    fn next_numeric_attribute_starts_at_one() {
+        assert_eq!(next_numeric_attribute("", "Id=\"rId"), 1);
+    }
+
+    #[test]
+    fn next_numeric_attribute_advances_beyond_existing() {
+        let xml = r#"<Relationship Id="rId3"/><Relationship Id="rId7"/>"#;
+        assert_eq!(next_numeric_attribute(xml, "Id=\"rId"), 8);
+    }
+
+    // ── ensure_content_type_override 覆盖 ──────────────────────────────────
+
+    #[test]
+    fn ensure_content_type_override_adds_missing_override() {
+        let mut entries = vec![OoxmlZipEntry {
+            name: "[Content_Types].xml".to_owned(),
+            is_dir: false,
+            compression: CompressionMethod::Stored,
+            unix_mode: None,
+            bytes: br#"<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"></Types>"#.to_vec(),
+        }];
+        ensure_content_type_override(&mut entries, "/xl/comments1.xml", "application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml").unwrap();
+        let xml = String::from_utf8(entries[0].bytes.clone()).unwrap();
+        assert!(xml.contains("PartName=\"/xl/comments1.xml\""));
+    }
+
+    #[test]
+    fn ensure_content_type_override_skips_existing() {
+        let xml = br#"<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Override PartName="/xl/comments1.xml" ContentType="application/test"/></Types>"#;
+        let mut entries = vec![OoxmlZipEntry {
+            name: "[Content_Types].xml".to_owned(),
+            is_dir: false,
+            compression: CompressionMethod::Stored,
+            unix_mode: None,
+            bytes: xml.to_vec(),
+        }];
+        ensure_content_type_override(&mut entries, "/xl/comments1.xml", "application/test").unwrap();
+        // 不应修改内容（已存在）
+        assert_eq!(entries[0].bytes, xml.to_vec());
+    }
+
+    // ── ensure_content_type_default 覆盖 ───────────────────────────────────
+
+    #[test]
+    fn ensure_content_type_default_adds_missing_default() {
+        let mut entries = vec![OoxmlZipEntry {
+            name: "[Content_Types].xml".to_owned(),
+            is_dir: false,
+            compression: CompressionMethod::Stored,
+            unix_mode: None,
+            bytes: br#"<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"></Types>"#.to_vec(),
+        }];
+        ensure_content_type_default(&mut entries, "png", "image/png").unwrap();
+        let xml = String::from_utf8(entries[0].bytes.clone()).unwrap();
+        assert!(xml.contains("Extension=\"png\""));
+    }
+
+    // ── extract_xml_element 覆盖 ───────────────────────────────────────────
+
+    #[test]
+    fn extract_xml_element_self_closing() {
+        let result = extract_xml_element("<worksheet><cols/></worksheet>", "cols");
+        assert_eq!(result, Some("<cols/>".to_owned()));
+    }
+
+    #[test]
+    fn extract_xml_element_not_found() {
+        let result = extract_xml_element("<worksheet/>", "missing");
+        assert_eq!(result, None);
     }
 }

@@ -40,3 +40,38 @@ impl Default for MarkdownConversionReport {
         Self::new(MarkdownConversionMode::Workbook)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_initializes_zeros() {
+        let r = MarkdownConversionReport::new(MarkdownConversionMode::Event);
+        assert_eq!(r.mode_used, MarkdownConversionMode::Event);
+        assert_eq!(r.sheets_processed, 0);
+        assert_eq!(r.tables_processed, 0);
+        assert_eq!(r.rows_processed, 0);
+        assert_eq!(r.cells_processed, 0);
+        assert_eq!(r.output_bytes, 0);
+        assert!(r.warnings.is_empty());
+    }
+
+    #[test]
+    fn default_uses_workbook_mode() {
+        let r = MarkdownConversionReport::default();
+        assert_eq!(r.mode_used, MarkdownConversionMode::Workbook);
+    }
+
+    #[test]
+    fn serialize_deserialize_roundtrip() {
+        let mut r = MarkdownConversionReport::new(MarkdownConversionMode::Event);
+        r.tables_processed = 2;
+        r.rows_processed = 10;
+        r.cells_processed = 50;
+        r.output_bytes = 1024;
+        let json = serde_json::to_string(&r).unwrap();
+        let restored: MarkdownConversionReport = serde_json::from_str(&json).unwrap();
+        assert_eq!(r, restored);
+    }
+}

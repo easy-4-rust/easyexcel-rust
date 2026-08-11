@@ -8,3 +8,21 @@ pub enum MarkdownValuePolicy {
     /// 输出未格式化的标量值。
     Raw,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_is_formatted() {
+        assert_eq!(MarkdownValuePolicy::default(), MarkdownValuePolicy::Formatted);
+    }
+
+    #[test]
+    fn serialize_roundtrip() {
+        let json = serde_json::to_string(&MarkdownValuePolicy::Raw).unwrap();
+        assert_eq!(json, "\"raw\"");
+        let restored: MarkdownValuePolicy = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored, MarkdownValuePolicy::Raw);
+    }
+}

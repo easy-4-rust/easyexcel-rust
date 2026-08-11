@@ -224,3 +224,257 @@ impl StyleProperty {
     #[must_use]
     pub const fn write_font(&self) -> Option<&WriteFont> { self.get_write_font() }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_returns_all_none() {
+        // 对应 Java：StyleProperty 无参构造器
+        let style = StyleProperty::new();
+        assert!(style.get_data_format_data().is_none());
+        assert!(style.get_write_font().is_none());
+        assert!(style.get_hidden().is_none());
+        assert!(style.get_locked().is_none());
+        assert!(style.get_quote_prefix().is_none());
+        assert!(style.get_horizontal_alignment().is_none());
+        assert!(style.get_wrapped().is_none());
+        assert!(style.get_vertical_alignment().is_none());
+        assert!(style.get_rotation().is_none());
+        assert!(style.get_indent().is_none());
+        assert!(style.get_border_left().is_none());
+        assert!(style.get_border_right().is_none());
+        assert!(style.get_border_top().is_none());
+        assert!(style.get_border_bottom().is_none());
+        assert!(style.get_left_border_color().is_none());
+        assert!(style.get_right_border_color().is_none());
+        assert!(style.get_top_border_color().is_none());
+        assert!(style.get_bottom_border_color().is_none());
+        assert!(style.get_fill_pattern_type().is_none());
+        assert!(style.get_fill_background_color().is_none());
+        assert!(style.get_fill_foreground_color().is_none());
+        assert!(style.get_shrink_to_fit().is_none());
+    }
+
+    #[test]
+    fn empty_alias_for_new() {
+        // 对应 Java：empty() 等价于 new()
+        assert_eq!(StyleProperty::new(), StyleProperty::empty());
+    }
+
+    #[test]
+    fn default_trait_returns_empty() {
+        // 对应 Java：Default 派生
+        let style = StyleProperty::default();
+        assert_eq!(style, StyleProperty::new());
+    }
+
+    #[test]
+    fn from_cell_style_creates_property() {
+        // 对应 Java：fromCellStyle 转换
+        let cell_style = ExcelCellStyle::default();
+        let style = StyleProperty::from_cell_style(cell_style);
+        let _ = style;
+    }
+
+    #[test]
+    fn from_write_cell_style_creates_property() {
+        // 对应 Java：fromWriteCellStyle 转换
+        let write_style = WriteCellStyle::new();
+        let style = StyleProperty::from_write_cell_style(write_style);
+        let _ = style;
+    }
+
+    #[test]
+    fn write_cell_style_accessor() {
+        // 对应 Java：getWriteCellStyle
+        let style = StyleProperty::new();
+        let _wcs: &WriteCellStyle = style.write_cell_style();
+    }
+
+    #[test]
+    fn into_write_cell_style_consumes() {
+        // 对应 Java：intoWriteCellStyle
+        let style = StyleProperty::new();
+        let _wcs: WriteCellStyle = style.into_write_cell_style();
+    }
+
+    #[test]
+    fn hidden_setter_and_getter() {
+        // 对应 Java：hidden getter/setter
+        let mut style = StyleProperty::new();
+        assert!(style.hidden().is_none());
+        style.set_hidden(Some(true));
+        assert_eq!(style.hidden(), Some(true));
+        assert_eq!(style.get_hidden(), Some(true));
+    }
+
+    #[test]
+    fn locked_setter_and_getter() {
+        // 对应 Java：locked getter/setter
+        let mut style = StyleProperty::new();
+        style.set_locked(Some(true));
+        assert_eq!(style.locked(), Some(true));
+    }
+
+    #[test]
+    fn quote_prefix_setter_and_getter() {
+        // 对应 Java：quotePrefix getter/setter
+        let mut style = StyleProperty::new();
+        style.set_quote_prefix(Some(false));
+        assert_eq!(style.quote_prefix(), Some(false));
+    }
+
+    #[test]
+    fn horizontal_alignment_setter_and_getter() {
+        // 对应 Java：horizontalAlignment getter/setter
+        let mut style = StyleProperty::new();
+        style.set_horizontal_alignment(Some(ExcelHorizontalAlignment::Center));
+        assert_eq!(style.horizontal_alignment(), Some(ExcelHorizontalAlignment::Center));
+    }
+
+    #[test]
+    fn wrapped_setter_and_getter() {
+        // 对应 Java：wrapped getter/setter
+        let mut style = StyleProperty::new();
+        style.set_wrapped(Some(true));
+        assert_eq!(style.wrapped(), Some(true));
+    }
+
+    #[test]
+    fn vertical_alignment_setter_and_getter() {
+        // 对应 Java：verticalAlignment getter/setter
+        let mut style = StyleProperty::new();
+        style.set_vertical_alignment(Some(ExcelVerticalAlignment::Center));
+        assert_eq!(style.vertical_alignment(), Some(ExcelVerticalAlignment::Center));
+    }
+
+    #[test]
+    fn rotation_setter_and_getter() {
+        // 对应 Java：rotation getter/setter
+        let mut style = StyleProperty::new();
+        style.set_rotation(Some(45));
+        assert_eq!(style.rotation(), Some(45));
+    }
+
+    #[test]
+    fn indent_setter_and_getter() {
+        // 对应 Java：indent getter/setter
+        let mut style = StyleProperty::new();
+        style.set_indent(Some(2));
+        assert_eq!(style.indent(), Some(2));
+    }
+
+    #[test]
+    fn border_left_setter_and_getter() {
+        // 对应 Java：borderLeft getter/setter
+        let mut style = StyleProperty::new();
+        style.set_border_left(Some(ExcelBorderStyle::Thin));
+        assert_eq!(style.border_left(), Some(ExcelBorderStyle::Thin));
+    }
+
+    #[test]
+    fn border_right_setter_and_getter() {
+        // 对应 Java：borderRight getter/setter
+        let mut style = StyleProperty::new();
+        style.set_border_right(Some(ExcelBorderStyle::Medium));
+        assert_eq!(style.border_right(), Some(ExcelBorderStyle::Medium));
+    }
+
+    #[test]
+    fn border_top_setter_and_getter() {
+        // 对应 Java：borderTop getter/setter
+        let mut style = StyleProperty::new();
+        style.set_border_top(Some(ExcelBorderStyle::Thick));
+        assert_eq!(style.border_top(), Some(ExcelBorderStyle::Thick));
+    }
+
+    #[test]
+    fn border_bottom_setter_and_getter() {
+        // 对应 Java：borderBottom getter/setter
+        let mut style = StyleProperty::new();
+        style.set_border_bottom(Some(ExcelBorderStyle::Hair));
+        assert_eq!(style.border_bottom(), Some(ExcelBorderStyle::Hair));
+    }
+
+    #[test]
+    fn border_color_setters_and_getters() {
+        // 对应 Java：borderColor getter/setter
+        let mut style = StyleProperty::new();
+        style.set_left_border_color(Some(ExcelColor::Rgb(0xFF0000)));
+        assert_eq!(style.left_border_color(), Some(ExcelColor::Rgb(0xFF0000)));
+        style.set_right_border_color(Some(ExcelColor::Rgb(0x00FF00)));
+        assert_eq!(style.right_border_color(), Some(ExcelColor::Rgb(0x00FF00)));
+        style.set_top_border_color(Some(ExcelColor::Rgb(0x0000FF)));
+        assert_eq!(style.top_border_color(), Some(ExcelColor::Rgb(0x0000FF)));
+        style.set_bottom_border_color(Some(ExcelColor::Indexed(1)));
+        assert_eq!(style.bottom_border_color(), Some(ExcelColor::Indexed(1)));
+    }
+
+    #[test]
+    fn fill_setters_and_getters() {
+        // 对应 Java：fill getter/setter
+        let mut style = StyleProperty::new();
+        style.set_fill_pattern_type(Some(ExcelFillPattern::Solid));
+        assert_eq!(style.fill_pattern_type(), Some(ExcelFillPattern::Solid));
+        style.set_fill_background_color(Some(ExcelColor::Rgb(0xCCCCCC)));
+        assert_eq!(style.fill_background_color(), Some(ExcelColor::Rgb(0xCCCCCC)));
+        style.set_fill_foreground_color(Some(ExcelColor::Rgb(0x333333)));
+        assert_eq!(style.fill_foreground_color(), Some(ExcelColor::Rgb(0x333333)));
+    }
+
+    #[test]
+    fn shrink_to_fit_setter_and_getter() {
+        // 对应 Java：shrinkToFit getter/setter
+        let mut style = StyleProperty::new();
+        style.set_shrink_to_fit(Some(true));
+        assert_eq!(style.shrink_to_fit(), Some(true));
+    }
+
+    #[test]
+    fn data_format_data_setter_and_getter() {
+        // 对应 Java：dataFormatData getter/setter
+        let mut style = StyleProperty::new();
+        assert!(style.data_format_data().is_none());
+        style.set_data_format_data(None);
+        assert!(style.data_format_data().is_none());
+    }
+
+    #[test]
+    fn write_font_setter_and_getter() {
+        // 对应 Java：writeFont getter/setter
+        let mut style = StyleProperty::new();
+        assert!(style.write_font().is_none());
+        style.set_write_font(Some(WriteFont::new()));
+        assert!(style.write_font().is_some());
+        style.set_write_font(None);
+        assert!(style.write_font().is_none());
+    }
+
+    #[test]
+    fn clone_produces_equal_instance() {
+        // 对应 Java：clone
+        let mut style = StyleProperty::new();
+        style.set_hidden(Some(true));
+        style.set_locked(Some(true));
+        let cloned = style.clone();
+        assert_eq!(style, cloned);
+    }
+
+    #[test]
+    fn hash_consistency() {
+        // 对应 Java：相同内容哈希一致
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        let mut a = StyleProperty::new();
+        a.set_hidden(Some(true));
+        let mut b = StyleProperty::new();
+        b.set_hidden(Some(true));
+        let mut h1 = DefaultHasher::new();
+        let mut h2 = DefaultHasher::new();
+        a.hash(&mut h1);
+        b.hash(&mut h2);
+        assert_eq!(h1.finish(), h2.finish());
+    }
+}

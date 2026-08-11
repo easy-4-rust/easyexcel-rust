@@ -15,3 +15,28 @@ pub enum MarkdownMergePolicy {
     #[serde(rename = "error")]
     Error,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_is_anchor_with_warning() {
+        assert_eq!(MarkdownMergePolicy::default(), MarkdownMergePolicy::AnchorWithWarning);
+    }
+
+    #[test]
+    fn serialize_roundtrip() {
+        let variants = [
+            MarkdownMergePolicy::AnchorWithWarning,
+            MarkdownMergePolicy::RepeatAnchor,
+            MarkdownMergePolicy::HtmlFallback,
+            MarkdownMergePolicy::Error,
+        ];
+        for v in variants {
+            let json = serde_json::to_string(&v).unwrap();
+            let restored: MarkdownMergePolicy = serde_json::from_str(&json).unwrap();
+            assert_eq!(v, restored);
+        }
+    }
+}

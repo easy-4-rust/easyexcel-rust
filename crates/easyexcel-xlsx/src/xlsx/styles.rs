@@ -680,3 +680,133 @@ fn fmt_f64(v: f64) -> String {
 fn escape(s: &str) -> String {
     super::xmlutil::xml_escape(s)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 空样式表解析。
+    #[test]
+    fn parse_styles_empty_xfs() {
+        let xml = br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+                <fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>
+                <fills count="2">
+                    <fill><patternFill patternType="none"/></fill>
+                    <fill><patternFill patternType="gray125"/></fill>
+                </fills>
+                <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+                <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+                <cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>
+                <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+            </styleSheet>"#;
+        let styles = parse_styles(xml).unwrap();
+        assert_eq!(styles.len(), 1);
+        assert_eq!(styles[0].number_format, "");
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 带自定义数字格式的样式解析。
+    #[test]
+    fn parse_styles_with_custom_number_format() {
+        let xml = br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+                <numFmts count="1"><numFmt numFmtId="164" formatCode="yyyy-mm-dd"/></numFmts>
+                <fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>
+                <fills count="2">
+                    <fill><patternFill patternType="none"/></fill>
+                    <fill><patternFill patternType="gray125"/></fill>
+                </fills>
+                <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+                <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+                <cellXfs count="1"><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>
+                <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+            </styleSheet>"#;
+        let styles = parse_styles(xml).unwrap();
+        assert_eq!(styles.len(), 1);
+        assert_eq!(styles[0].number_format, "yyyy-mm-dd");
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 带粗体字体的样式解析。
+    #[test]
+    fn parse_styles_with_bold_font() {
+        let xml = br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+                <fonts count="2">
+                    <font><sz val="11"/><name val="Calibri"/></font>
+                    <font><b/><sz val="11"/><name val="Calibri"/></font>
+                </fonts>
+                <fills count="2">
+                    <fill><patternFill patternType="none"/></fill>
+                    <fill><patternFill patternType="gray125"/></fill>
+                </fills>
+                <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+                <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+                <cellXfs count="1"><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0"/></cellXfs>
+                <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+            </styleSheet>"#;
+        let styles = parse_styles(xml).unwrap();
+        assert_eq!(styles.len(), 1);
+        assert!(styles[0].font.bold);
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 write_styles roundtrip 测试。
+    #[test]
+    fn write_styles_roundtrip() {
+        let mut table = StyleTable::default();
+        let mut st = CellStyle::default();
+        st.font.bold = true;
+        st.font.size = 14.0;
+        st.halign = HAlign::Center;
+        st.number_format = "0.00".into();
+        let _ = table.intern(st);
+
+        let xml = write_styles(&table);
+        let parsed = parse_styles(&xml).unwrap();
+        // 默认样式 + 我们添加的样式
+        assert!(parsed.len() >= 1);
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 fmt_f64 整数路径。
+    #[test]
+    fn fmt_f64_integer_path() {
+        assert_eq!(fmt_f64(42.0), "42");
+        assert_eq!(fmt_f64(0.0), "0");
+        assert_eq!(fmt_f64(-10.0), "-10");
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 fmt_f64 小数路径。
+    #[test]
+    fn fmt_f64_decimal_path() {
+        assert_eq!(fmt_f64(3.14), "3.14");
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 fmt_f64 非有限值路径。
+    #[test]
+    fn fmt_f64_non_finite() {
+        assert_eq!(fmt_f64(f64::INFINITY), "inf");
+        assert_eq!(fmt_f64(f64::NAN), "NaN");
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 halign_str 各变体。
+    #[test]
+    fn halign_str_all_variants() {
+        assert_eq!(halign_str(HAlign::General), "general");
+        assert_eq!(halign_str(HAlign::Left), "left");
+        assert_eq!(halign_str(HAlign::Center), "center");
+        assert_eq!(halign_str(HAlign::Right), "right");
+        assert_eq!(halign_str(HAlign::Fill), "fill");
+        assert_eq!(halign_str(HAlign::Justify), "justify");
+        assert_eq!(halign_str(HAlign::CenterContinuous), "centerContinuous");
+        assert_eq!(halign_str(HAlign::Distributed), "distributed");
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 valign_str 各变体。
+    #[test]
+    fn valign_str_all_variants() {
+        assert_eq!(valign_str(VAlign::Top), "top");
+        assert_eq!(valign_str(VAlign::Bottom), "bottom");
+        assert_eq!(valign_str(VAlign::Center), "center");
+        assert_eq!(valign_str(VAlign::Justify), "justify");
+        assert_eq!(valign_str(VAlign::Distributed), "distributed");
+    }
+}

@@ -180,6 +180,7 @@ pub fn wildcard_match(pattern: &str, text: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::formula::value::Value;
 
     #[test]
     fn registry_builds_without_dupes() {
@@ -193,5 +194,203 @@ mod tests {
         assert!(r.get("SUM").is_some());
         assert!(r.get("not").is_some());
         assert!(r.is_volatile("RAND"));
+    }
+
+    // ── Registry::get 边界测试 ──────────────────────────────────────────
+
+    #[test]
+    fn registry_get_xlfn_prefix() {
+        let r = Registry::standard();
+        // _xlfn. 前缀应被自动剥离
+        assert!(r.get("_xlfn.SUM").is_some());
+        assert!(r.get("_xlfn.VLOOKUP").is_some());
+        // IF 是特殊形式（lazy），不在注册表中，get 返回 None 也正常
+        assert!(r.get("_xlfn.ABS").is_some());
+    }
+
+    #[test]
+    fn registry_get_unknown_returns_none() {
+        let r = Registry::standard();
+        assert!(r.get("NONEXISTENT_FUNCTION").is_none());
+        assert!(r.get("").is_none());
+    }
+
+    #[test]
+    fn registry_is_volatile_nonvolatile() {
+        let r = Registry::standard();
+        assert!(!r.is_volatile("SUM"));
+        assert!(!r.is_volatile("IF"));
+        assert!(!r.is_volatile("NONEXISTENT"));
+    }
+
+    #[test]
+    fn registry_is_empty_false() {
+        let r = Registry::standard();
+        assert!(!r.is_empty());
+    }
+
+    #[test]
+    fn registry_default_trait() {
+        let r = Registry::default();
+        assert!(r.len() >= 80);
+    }
+
+    // ── first_error 测试 ────────────────────────────────────────────────
+
+    #[test]
+    fn first_error_no_errors() {
+        assert!(first_error(&[Value::Number(1.0), Value::Text("x".into())]).is_none());
+    }
+
+    #[test]
+    fn first_error_returns_first() {
+        assert_eq!(
+            first_error(&[Value::Number(1.0), Value::Error(CellError::NA)]),
+            Some(CellError::NA)
+        );
+    }
+
+    #[test]
+    fn first_error_empty_args() {
+        assert!(first_error(&[]).is_none());
+    }
+
+    // ── collect_numbers 测试 ────────────────────────────────────────────
+
+    #[test]
+    fn collect_numbers_scalar_args() {
+        use crate::formula::functions::testutil::TestCtx;
+        let mut ctx = TestCtx::new();
+        let args = vec![Value::Number(1.0), Value::Number(2.0), Value::Number(3.0)];
+        let result = collect_numbers(&mut ctx, &args, false).unwrap();
+        assert_eq!(result, vec![1.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn collect_numbers_bool_coerced() {
+        use crate::formula::functions::testutil::TestCtx;
+        let mut ctx = TestCtx::new();
+        let args = vec![Value::Bool(true), Value::Bool(false)];
+        let result = collect_numbers(&mut ctx, &args, false).unwrap();
+        assert_eq!(result, vec![1.0, 0.0]);
+    }
+
+    #[test]
+    fn collect_numbers_empty_skipped() {
+        use crate::formula::functions::testutil::TestCtx;
+        let mut ctx = TestCtx::new();
+        let args = vec![Value::Number(1.0), Value::Empty, Value::Number(2.0)];
+        let result = collect_numbers(&mut ctx, &args, false).unwrap();
+        assert_eq!(result, vec![1.0, 2.0]);
+    }
+
+    #[test]
+    fn collect_numbers_error_short_circuits() {
+        use crate::formula::functions::testutil::TestCtx;
+        let mut ctx = TestCtx::new();
+        let args = vec![Value::Number(1.0), Value::Error(CellError::NA)];
+        assert_eq!(
+            collect_numbers(&mut ctx, &args, false),
+            Err(CellError::NA)
+        );
+    }
+
+    #[test]
+    fn collect_numbers_text_scalar_errors() {
+        use crate::formula::functions::testutil::TestCtx;
+        let mut ctx = TestCtx::new();
+        let args = vec![Value::Text("hello".into())];
+        assert_eq!(
+            collect_numbers(&mut ctx, &args, false),
+            Err(CellError::Value)
+        );
+    }
+
+    #[test]
+    fn collect_numbers_numeric_text_scalar_coerced() {
+        use crate::formula::functions::testutil::TestCtx;
+        let mut ctx = TestCtx::new();
+        let args = vec![Value::Text("42".into())];
+        let result = collect_numbers(&mut ctx, &args, false).unwrap();
+        assert_eq!(result, vec![42.0]);
+    }
+
+    #[test]
+    fn collect_numbers_lambda_errors() {
+        use crate::formula::functions::testutil::TestCtx;
+        use std::rc::Rc;
+        use crate::formula::value::Lambda;
+        use crate::formula::ast::Expr;
+        let mut ctx = TestCtx::new();
+        let args = vec![Value::Lambda(Rc::new(Lambda {
+            params: vec!["x".into()],
+            body: Expr::Name("x".into()),
+        }))];
+        assert_eq!(
+            collect_numbers(&mut ctx, &args, false),
+            Err(CellError::Value)
+        );
+    }
+
+    // ── wildcard_match 测试 ─────────────────────────────────────────────
+
+    #[test]
+    fn wildcard_exact() {
+        assert!(wildcard_match("hello", "hello"));
+        assert!(!wildcard_match("hello", "world"));
+    }
+
+    #[test]
+    fn wildcard_star() {
+        assert!(wildcard_match("he*", "hello"));
+        assert!(wildcard_match("*llo", "hello"));
+        assert!(wildcard_match("h*o", "hello"));
+        assert!(wildcard_match("*", "anything"));
+        assert!(wildcard_match("*", ""));
+    }
+
+    #[test]
+    fn wildcard_question() {
+        assert!(wildcard_match("he?lo", "hello"));
+        assert!(!wildcard_match("he?o", "hello"));
+        assert!(wildcard_match("???", "abc"));
+        assert!(!wildcard_match("??", "abc"));
+    }
+
+    #[test]
+    fn wildcard_escape() {
+        assert!(wildcard_match("~*", "*"));
+        assert!(wildcard_match("~?", "?"));
+        assert!(!wildcard_match("~*", "x"));
+    }
+
+    #[test]
+    fn wildcard_combined() {
+        assert!(wildcard_match("h*?o", "hello"));
+        assert!(wildcard_match("*?", "ab"));
+    }
+
+    #[test]
+    fn wildcard_no_match() {
+        assert!(!wildcard_match("abc", "xyz"));
+        assert!(!wildcard_match("abc*", "xyz"));
+    }
+
+    // ── numeric_of 测试 ────────────────────────────────────────────────
+
+    #[test]
+    fn numeric_of_numbers() {
+        assert_eq!(numeric_of(&Value::Number(5.0)), Some(5.0));
+        assert_eq!(numeric_of(&Value::Bool(true)), Some(1.0));
+        assert_eq!(numeric_of(&Value::Bool(false)), Some(0.0));
+        assert_eq!(numeric_of(&Value::Text("x".into())), None);
+        assert_eq!(numeric_of(&Value::Empty), None);
+    }
+
+    // ── VARIADIC 常量 ──────────────────────────────────────────────────
+
+    #[test]
+    fn variadic_is_max() {
+        assert_eq!(VARIADIC, usize::MAX);
     }
 }

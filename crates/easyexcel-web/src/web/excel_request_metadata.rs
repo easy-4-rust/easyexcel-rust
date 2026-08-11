@@ -103,3 +103,182 @@ fn file_name_from_content_disposition(value: &str) -> Option<String> {
         (!file_name.is_empty()).then(|| file_name.to_string())
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn resolve_with_explicit_file_name() {
+        let m = ExcelRequestMetadata::resolve(
+            Some("report.xlsx"),
+            None,
+            None,
+            Some("req-1"),
+        )
+        .unwrap();
+        assert_eq!(m.file_name(), Some("report.xlsx"));
+        assert_eq!(m.extension(), "xlsx");
+        assert_eq!(m.request_id(), Some("req-1"));
+    }
+
+    #[test]
+    fn resolve_with_content_disposition() {
+        let m = ExcelRequestMetadata::resolve(
+            None,
+            Some("attachment; filename=\"data.csv\""),
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(m.file_name(), Some("data.csv"));
+        assert_eq!(m.extension(), "csv");
+        assert_eq!(m.request_id(), None);
+    }
+
+    #[test]
+    fn resolve_with_content_type_xlsx() {
+        let m = ExcelRequestMetadata::resolve(
+            None,
+            None,
+            Some("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+            None,
+        )
+        .unwrap();
+        assert_eq!(m.extension(), "xlsx");
+        assert_eq!(m.file_name(), None);
+    }
+
+    #[test]
+    fn resolve_with_content_type_xls() {
+        let m = ExcelRequestMetadata::resolve(
+            None,
+            None,
+            Some("application/vnd.ms-excel"),
+            None,
+        )
+        .unwrap();
+        assert_eq!(m.extension(), "xls");
+    }
+
+    #[test]
+    fn resolve_with_content_type_csv() {
+        let m = ExcelRequestMetadata::resolve(
+            None,
+            None,
+            Some("text/csv"),
+            None,
+        )
+        .unwrap();
+        assert_eq!(m.extension(), "csv");
+    }
+
+    #[test]
+    fn resolve_with_content_type_tsv() {
+        let m = ExcelRequestMetadata::resolve(
+            None,
+            None,
+            Some("text/tab-separated-values"),
+            None,
+        )
+        .unwrap();
+        assert_eq!(m.extension(), "csv");
+    }
+
+    #[test]
+    fn resolve_unsupported_type_is_error() {
+        let r = ExcelRequestMetadata::resolve(None, None, Some("application/json"), None);
+        assert!(r.is_err());
+    }
+
+    #[test]
+    fn resolve_no_info_is_error() {
+        let r = ExcelRequestMetadata::resolve(None, None, None, None);
+        assert!(r.is_err());
+    }
+
+    #[test]
+    fn resolve_empty_explicit_name_falls_back() {
+        let m = ExcelRequestMetadata::resolve(
+            Some("  "),
+            None,
+            Some("text/csv"),
+            None,
+        )
+        .unwrap();
+        assert_eq!(m.extension(), "csv");
+        assert_eq!(m.file_name(), None);
+    }
+
+    #[test]
+    fn resolve_xlsm_extension() {
+        let m = ExcelRequestMetadata::resolve(
+            Some("macro.xlsm"),
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(m.extension(), "xlsx");
+    }
+
+    #[test]
+    fn resolve_tsv_extension() {
+        let m = ExcelRequestMetadata::resolve(
+            Some("data.tsv"),
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(m.extension(), "csv");
+    }
+
+    #[test]
+    fn resolve_txt_extension() {
+        let m = ExcelRequestMetadata::resolve(
+            Some("data.txt"),
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(m.extension(), "csv");
+    }
+
+    #[test]
+    fn resolve_unsupported_extension_falls_back_to_content_type() {
+        let m = ExcelRequestMetadata::resolve(
+            Some("data.json"),
+            None,
+            Some("text/csv"),
+            None,
+        )
+        .unwrap();
+        assert_eq!(m.extension(), "csv");
+    }
+
+    #[test]
+    fn resolve_empty_request_id_is_none() {
+        let m = ExcelRequestMetadata::resolve(
+            Some("data.xlsx"),
+            None,
+            None,
+            Some("  "),
+        )
+        .unwrap();
+        assert_eq!(m.request_id(), None);
+    }
+
+    #[test]
+    fn resolve_content_type_with_charset() {
+        let m = ExcelRequestMetadata::resolve(
+            None,
+            None,
+            Some("text/csv; charset=utf-8"),
+            None,
+        )
+        .unwrap();
+        assert_eq!(m.extension(), "csv");
+    }
+}

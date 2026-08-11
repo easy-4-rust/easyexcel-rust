@@ -105,7 +105,13 @@ fn encode_cell_record(row: u16, col: u8, xf: u16, value: &Biff8Value) -> Result<
             }
         }
         Biff8Value::Formula(expr) => {
-            let rgce = super::ptg::encode_formula_rpn(expr)?;
+            // 空公式表达式：rgce 为空（BIFF8 允许 FORMULA 记录 rgce 长度为 0，
+            // 仅存储缓存值，Excel/LibreOffice 打开时不会重算）。
+            let rgce = if expr.trim().is_empty() {
+                Vec::new()
+            } else {
+                super::ptg::encode_formula_rpn(expr)?
+            };
             data.extend_from_slice(&0.0f64.to_le_bytes());
             data.extend_from_slice(&0u16.to_le_bytes());
             data.extend_from_slice(&0u32.to_le_bytes());

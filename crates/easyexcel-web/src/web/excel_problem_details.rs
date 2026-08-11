@@ -79,3 +79,56 @@ impl ExcelProblemDetails {
         self.retryable
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_sets_all_fields() {
+        let pd = ExcelProblemDetails::new(
+            ExcelWebErrorCode::FileTooLarge,
+            "file exceeded 10MB",
+            "req-123",
+        );
+        assert_eq!(pd.type_uri(), "https://easyexcel.rs/problems/file_too_large");
+        assert_eq!(pd.title(), "FILE TOO LARGE");
+        assert_eq!(pd.status(), 413);
+        assert_eq!(pd.code(), ExcelWebErrorCode::FileTooLarge);
+        assert_eq!(pd.detail(), "file exceeded 10MB");
+        assert_eq!(pd.request_id(), "req-123");
+        assert!(!pd.retryable());
+    }
+
+    #[test]
+    fn new_retryable_error() {
+        let pd = ExcelWebErrorCode::ProcessingTimeout;
+        let details = ExcelProblemDetails::new(pd, "took too long", "req-456");
+        assert!(details.retryable());
+        assert_eq!(details.status(), 504);
+    }
+
+    #[test]
+    fn new_internal_error() {
+        let pd = ExcelProblemDetails::new(
+            ExcelWebErrorCode::Internal,
+            "something broke",
+            "req-789",
+        );
+        assert_eq!(pd.status(), 500);
+        assert!(!pd.retryable());
+        assert_eq!(pd.type_uri(), "https://easyexcel.rs/problems/internal");
+    }
+
+    #[test]
+    fn serialize_deserialize_roundtrip() {
+        let pd = ExcelProblemDetails::new(
+            ExcelWebErrorCode::InvalidFormat,
+            "bad xlsx",
+            "req-abc",
+        );
+        let json = serde_json::to_string(&pd).unwrap();
+        let restored: ExcelProblemDetails = serde_json::from_str(&json).unwrap();
+        assert_eq!(pd, restored);
+    }
+}

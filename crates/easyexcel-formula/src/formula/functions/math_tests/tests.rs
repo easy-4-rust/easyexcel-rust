@@ -3,3 +3,4 @@
     use crate::formula::functions::testutil::{TestCtx, rng};
 
     include!("tests/cases_01.rs");
+    include!("tests/cases_02.rs");

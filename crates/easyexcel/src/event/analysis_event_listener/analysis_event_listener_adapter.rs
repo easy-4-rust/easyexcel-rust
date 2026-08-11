@@ -80,3 +80,148 @@ where
         ReadListener::has_next(&mut self.inner, context)
     }
 }
+
+#[cfg(test)]
+mod adapter_tests {
+    use super::*;
+    use std::cell::RefCell;
+
+    /// 测试用监听器，记录回调次数。
+    struct TestListener {
+        invoke_count: RefCell<usize>,
+        head_map_count: RefCell<usize>,
+        after_count: RefCell<usize>,
+    }
+
+    impl TestListener {
+        fn new() -> Self {
+            Self {
+                invoke_count: RefCell::new(0),
+                head_map_count: RefCell::new(0),
+                after_count: RefCell::new(0),
+            }
+        }
+    }
+
+    impl crate::ReadListener<crate::CellValue> for TestListener {
+        fn invoke(
+            &mut self,
+            _data: crate::CellValue,
+            _context: &crate::AnalysisContext,
+        ) -> crate::Result<()> {
+            *self.invoke_count.borrow_mut() += 1;
+            Ok(())
+        }
+
+        fn do_after_all_analysed(
+            &mut self,
+            _context: &crate::AnalysisContext,
+        ) -> crate::Result<()> {
+            *self.after_count.borrow_mut() += 1;
+            Ok(())
+        }
+    }
+
+    impl crate::event::AnalysisEventListener<crate::CellValue> for TestListener {
+        fn invoke_head_map(
+            &mut self,
+            _head_map: std::collections::HashMap<usize, String>,
+            _context: &crate::AnalysisContext,
+        ) {
+            *self.head_map_count.borrow_mut() += 1;
+        }
+    }
+
+    #[test]
+    fn new_creates_adapter() {
+        let listener = TestListener::new();
+        let adapter = AnalysisEventListenerAdapter::new(listener);
+        assert_eq!(*adapter.inner().invoke_count.borrow(), 0);
+    }
+
+    #[test]
+    fn inner_returns_reference() {
+        let listener = TestListener::new();
+        let adapter = AnalysisEventListenerAdapter::new(listener);
+        let _inner: &TestListener = adapter.inner();
+    }
+
+    #[test]
+    fn inner_mut_returns_mutable_reference() {
+        let listener = TestListener::new();
+        let mut adapter = AnalysisEventListenerAdapter::new(listener);
+        let _inner: &mut TestListener = adapter.inner_mut();
+    }
+
+    #[test]
+    fn into_inner_consumes_adapter() {
+        let listener = TestListener::new();
+        let adapter = AnalysisEventListenerAdapter::new(listener);
+        let inner = adapter.into_inner();
+        assert_eq!(*inner.invoke_count.borrow(), 0);
+    }
+
+    #[test]
+    fn read_listener_invoke_delegates() {
+        let listener = TestListener::new();
+        let mut adapter = AnalysisEventListenerAdapter::new(listener);
+        let context = crate::AnalysisContext::new("Sheet1", 0, 0);
+        adapter
+            .invoke(crate::CellValue::Int(1), &context)
+            .unwrap();
+        assert_eq!(*adapter.inner().invoke_count.borrow(), 1);
+    }
+
+    #[test]
+    fn read_listener_do_after_all_analysed_delegates() {
+        let listener = TestListener::new();
+        let mut adapter = AnalysisEventListenerAdapter::new(listener);
+        let context = crate::AnalysisContext::new("Sheet1", 0, 0);
+        adapter.do_after_all_analysed(&context).unwrap();
+        assert_eq!(*adapter.inner().after_count.borrow(), 1);
+    }
+
+    #[test]
+    fn invoke_head_converts_map_and_calls_invoke_head_map() {
+        let listener = TestListener::new();
+        let mut adapter = AnalysisEventListenerAdapter::new(listener);
+        let context = crate::AnalysisContext::new("Sheet1", 0, 0);
+        let mut head = std::collections::HashMap::new();
+        head.insert("Name".to_owned(), 0);
+        head.insert("Age".to_owned(), 1);
+        adapter.invoke_head(&head, &context).unwrap();
+        assert_eq!(*adapter.inner().head_map_count.borrow(), 1);
+    }
+
+    #[test]
+    fn has_next_delegates_to_inner() {
+        let listener = TestListener::new();
+        let mut adapter = AnalysisEventListenerAdapter::new(listener);
+        let context = crate::AnalysisContext::new("Sheet1", 0, 0);
+        // 默认 ReadListener::has_next 返回 true
+        assert!(adapter.has_next(&context));
+    }
+
+    #[test]
+    fn on_exception_delegates_to_inner() {
+        let listener = TestListener::new();
+        let mut adapter = AnalysisEventListenerAdapter::new(listener);
+        let context = crate::AnalysisContext::new("Sheet1", 0, 0);
+        let error = crate::ExcelError::Format("test".to_owned());
+        let action = adapter.on_exception(&error, &context);
+        // 默认 ReadListener::on_exception 返回 Stop
+        assert_eq!(action, crate::core::ErrorAction::Stop);
+    }
+
+    #[test]
+    fn extra_delegates_to_inner() {
+        let listener = TestListener::new();
+        let mut adapter = AnalysisEventListenerAdapter::new(listener);
+        let context = crate::AnalysisContext::new("Sheet1", 0, 0);
+        let extra = crate::CellExtra::new(
+            crate::core::enum_cell_extra_type::CellExtraType::Merge,
+            None, 0, 1, 0, 1,
+        );
+        adapter.extra(&extra, &context).unwrap();
+    }
+}

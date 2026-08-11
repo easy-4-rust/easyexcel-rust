@@ -542,4 +542,353 @@ mod tests {
         let report = eng.recalc(&mut wb);
         assert_eq!(report.circular.len(), 2);
     }
+
+    // ── Agent 68 panic 回归测试：NaN 比较不 panic ──────────────────────────
+
+    #[test]
+    fn recalc_nan_comparison_no_panic() {
+        // 将 NaN 写入单元格，然后用公式引用它触发 partial_cmp NaN 路径
+        // 关键验证：不 panic（无论返回什么值）
+        let mut wb = Workbook::new();
+        wb.sheet_mut(0)
+            .unwrap()
+            .set_a1("A1", Cell::Number(f64::NAN));
+        set_formula(&mut wb, "B1", "=A1+1");
+        set_formula(&mut wb, "B2", "=A1>0");
+        set_formula(&mut wb, "B3", "=A1<0");
+        set_formula(&mut wb, "B4", "=A1=0");
+        let mut eng = Engine::new();
+        eng.recalc(&mut wb);
+        // NaN 运算不 panic 即为通过；结果可能是 Number(NaN) 或 Error
+        // 不对具体值做断言，仅验证执行完成
+    }
+
+    #[test]
+    fn eval_formula_strips_equals_prefix() {
+        use easyexcel_model::value::CellValue;
+        let mut wb = Workbook::new();
+        wb.sheet_mut(0).unwrap().set_a1("A1", Cell::Number(42.0));
+        let mut eng = Engine::new();
+        let at = CellRef {
+            sheet: 0,
+            row: 5,
+            col: 5,
+        };
+        // 带 = 前缀，引用 A1 → 得到 Ref → to_cell_value 变 Error(Value)
+        // 但 SUM(A1) 会解引用 → 得到 42.0
+        let v1 = eng.eval_formula(&wb, at, "=SUM(A1)").to_cell_value();
+        assert_eq!(v1, CellValue::Number(42.0));
+        // 不带 = 前缀也能解析（parse 内部会 strip_prefix）
+        let v2 = eng.eval_formula(&wb, at, "SUM(A1)").to_cell_value();
+        assert_eq!(v2, CellValue::Number(42.0));
+    }
+
+    #[test]
+    fn eval_formula_parse_error_returns_name() {
+        use easyexcel_model::value::CellValue;
+        let wb = Workbook::new();
+        let mut eng = Engine::new();
+        let at = CellRef {
+            sheet: 0,
+            row: 0,
+            col: 0,
+        };
+        let v = eng.eval_formula(&wb, at, "!!!invalid").to_cell_value();
+        assert_eq!(v, CellValue::Error(CellError::Name));
+    }
+
+    #[test]
+    fn recalc_empty_workbook() {
+        let mut wb = Workbook::new();
+        let mut eng = Engine::new();
+        let report = eng.recalc(&mut wb);
+        assert_eq!(report.evaluated, 0);
+        assert!(report.circular.is_empty());
+    }
+
+    #[test]
+    fn recalc_with_parse_errors_skips_cells() {
+        let mut wb = Workbook::new();
+        set_formula(&mut wb, "A1", "=INVALID_FORMULA_TOO_MANY_CHARS!!!+!!!"); // parse error
+        set_formula(&mut wb, "A2", "=1+1"); // valid
+        let mut eng = Engine::new();
+        let report = eng.recalc(&mut wb);
+        assert_eq!(report.evaluated, 1);
+    }
+
+    // ── RangeDep::contains ──────────────────────────────────────────────
+
+    #[test]
+    fn range_dep_contains() {
+        let rd = RangeDep {
+            sheet: 0,
+            r0: 1,
+            c0: 1,
+            r1: 5,
+            c1: 5,
+        };
+        assert!(rd.contains(0, 1, 1));
+        assert!(rd.contains(0, 5, 5));
+        assert!(rd.contains(0, 3, 3));
+        assert!(!rd.contains(1, 3, 3)); // 不同 sheet
+        assert!(!rd.contains(0, 0, 3)); // row 越界
+        assert!(!rd.contains(0, 3, 0)); // col 越界
+        assert!(!rd.contains(0, 6, 3)); // row 越界
+        assert!(!rd.contains(0, 3, 6)); // col 越界
+    }
+
+    // ── as_spill_payload ────────────────────────────────────────────────
+
+    #[test]
+    fn as_spill_payload_scalar_is_none() {
+        assert!(as_spill_payload(&Value::Number(1.0)).is_none());
+        assert!(as_spill_payload(&Value::Text("x".into())).is_none());
+        assert!(as_spill_payload(&Value::Bool(true)).is_none());
+        assert!(as_spill_payload(&Value::Empty).is_none());
+    }
+
+    #[test]
+    fn as_spill_payload_array() {
+        let arr = Value::Array(super::super::value::Array::new(
+            2,
+            3,
+            vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+                Value::Number(4.0),
+                Value::Number(5.0),
+                Value::Number(6.0),
+            ],
+        ));
+        assert_eq!(as_spill_payload(&arr), Some((2, 3)));
+    }
+
+    #[test]
+    fn as_spill_payload_single_ref_is_none() {
+        let r = super::super::value::RefRange {
+            sheet: 0,
+            start_row: 0,
+            start_col: 0,
+            end_row: 0,
+            end_col: 0,
+        };
+        assert!(as_spill_payload(&Value::Ref(r)).is_none());
+    }
+
+    #[test]
+    fn as_spill_payload_multi_ref() {
+        let r = super::super::value::RefRange {
+            sheet: 0,
+            start_row: 0,
+            start_col: 0,
+            end_row: 2,
+            end_col: 1,
+        };
+        assert_eq!(as_spill_payload(&Value::Ref(r)), Some((3, 2)));
+    }
+
+    // ── spill_fits 边界条件 ─────────────────────────────────────────────
+
+    #[test]
+    fn spill_fits_oversized_rejected() {
+        let wb = Workbook::new();
+        let pass_spills = std::collections::BTreeMap::new();
+        // 超过 1_048_576 限制
+        assert!(!spill_fits(&wb, 0, 0, 0, 2000, 600, &pass_spills));
+    }
+
+    #[test]
+    fn spill_fits_invalid_sheet() {
+        let wb = Workbook::new();
+        let pass_spills = std::collections::BTreeMap::new();
+        assert!(!spill_fits(&wb, 99, 0, 0, 2, 2, &pass_spills));
+    }
+
+    #[test]
+    fn spill_fits_with_collision() {
+        let mut wb = Workbook::new();
+        wb.sheet_mut(0)
+            .unwrap()
+            .set_a1("B2", Cell::Text("block".into()));
+        let pass_spills = std::collections::BTreeMap::new();
+        // A1:B2 会碰撞 B2
+        assert!(!spill_fits(&wb, 0, 0, 0, 2, 2, &pass_spills));
+    }
+
+    #[test]
+    fn spill_fits_clear() {
+        let wb = Workbook::new();
+        let pass_spills = std::collections::BTreeMap::new();
+        assert!(spill_fits(&wb, 0, 0, 0, 3, 3, &pass_spills));
+    }
+
+    // ── 多公式依赖排序 ──────────────────────────────────────────────────
+
+    #[test]
+    fn recalc_diamond_dependency() {
+        // A1=1, A2=A1+1, A3=A1+2, A4=A2+A3
+        let mut wb = Workbook::new();
+        wb.sheet_mut(0).unwrap().set_a1("A1", Cell::Number(10.0));
+        set_formula(&mut wb, "A2", "=A1+1");
+        set_formula(&mut wb, "A3", "=A1+2");
+        set_formula(&mut wb, "A4", "=A2+A3");
+        let mut eng = Engine::new();
+        eng.recalc(&mut wb);
+        assert_eq!(
+            wb.sheet_mut(0).unwrap().value(3, 0),
+            easyexcel_model::value::CellValue::Number(23.0)
+        );
+    }
+
+    #[test]
+    fn recalc_independent_formulas() {
+        let mut wb = Workbook::new();
+        wb.sheet_mut(0).unwrap().set_a1("A1", Cell::Number(5.0));
+        set_formula(&mut wb, "B1", "=A1*2");
+        set_formula(&mut wb, "C1", "=A1*3");
+        set_formula(&mut wb, "D1", "=100");
+        let mut eng = Engine::new();
+        let report = eng.recalc(&mut wb);
+        assert_eq!(report.evaluated, 3);
+        assert_eq!(
+            wb.sheet_mut(0).unwrap().value(0, 1),
+            easyexcel_model::value::CellValue::Number(10.0)
+        );
+        assert_eq!(
+            wb.sheet_mut(0).unwrap().value(0, 2),
+            easyexcel_model::value::CellValue::Number(15.0)
+        );
+        assert_eq!(
+            wb.sheet_mut(0).unwrap().value(0, 3),
+            easyexcel_model::value::CellValue::Number(100.0)
+        );
+    }
+
+    // ── eval_formula 函数调用 ───────────────────────────────────────────
+
+    #[test]
+    fn eval_formula_function_calls() {
+        use easyexcel_model::value::CellValue;
+        let mut wb = Workbook::new();
+        wb.sheet_mut(0).unwrap().set_a1("A1", Cell::Number(10.0));
+        wb.sheet_mut(0).unwrap().set_a1("A2", Cell::Number(20.0));
+        let mut eng = Engine::new();
+        let at = CellRef {
+            sheet: 0,
+            row: 0,
+            col: 0,
+        };
+        assert_eq!(
+            eng.eval_formula(&wb, at, "=SUM(A1:A2)").to_cell_value(),
+            CellValue::Number(30.0)
+        );
+        assert_eq!(
+            eng.eval_formula(&wb, at, "=MAX(A1:A2)").to_cell_value(),
+            CellValue::Number(20.0)
+        );
+        assert_eq!(
+            eng.eval_formula(&wb, at, "=MIN(A1:A2)").to_cell_value(),
+            CellValue::Number(10.0)
+        );
+        assert_eq!(
+            eng.eval_formula(&wb, at, "=COUNT(A1:A2)").to_cell_value(),
+            CellValue::Number(2.0)
+        );
+    }
+
+    #[test]
+    fn eval_formula_string_concat() {
+        use easyexcel_model::value::CellValue;
+        let mut wb = Workbook::new();
+        wb.sheet_mut(0)
+            .unwrap()
+            .set_a1("A1", Cell::Text("Hello".into()));
+        wb.sheet_mut(0)
+            .unwrap()
+            .set_a1("A2", Cell::Text(" World".into()));
+        let mut eng = Engine::new();
+        let at = CellRef {
+            sheet: 0,
+            row: 0,
+            col: 0,
+        };
+        assert_eq!(
+            eng.eval_formula(&wb, at, "=A1&A2").to_cell_value(),
+            CellValue::Text("Hello World".into())
+        );
+    }
+
+    #[test]
+    fn eval_formula_comparison() {
+        use easyexcel_model::value::CellValue;
+        let mut wb = Workbook::new();
+        wb.sheet_mut(0).unwrap().set_a1("A1", Cell::Number(5.0));
+        let mut eng = Engine::new();
+        let at = CellRef {
+            sheet: 0,
+            row: 0,
+            col: 0,
+        };
+        assert_eq!(
+            eng.eval_formula(&wb, at, "=A1>3").to_cell_value(),
+            CellValue::Bool(true)
+        );
+        assert_eq!(
+            eng.eval_formula(&wb, at, "=A1<3").to_cell_value(),
+            CellValue::Bool(false)
+        );
+        assert_eq!(
+            eng.eval_formula(&wb, at, "=A1=5").to_cell_value(),
+            CellValue::Bool(true)
+        );
+    }
+
+    // ── 缓存行为验证 ────────────────────────────────────────────────────
+
+    #[test]
+    fn ast_cache_hit() {
+        let wb = Workbook::new();
+        let mut eng = Engine::new();
+        let at = CellRef {
+            sheet: 0,
+            row: 0,
+            col: 0,
+        };
+        // 同一公式两次求值，第二次应命中缓存
+        let v1 = eng.eval_formula(&wb, at, "=1+2").to_cell_value();
+        let v2 = eng.eval_formula(&wb, at, "=1+2").to_cell_value();
+        assert_eq!(v1, v2);
+        // 缓存大小应为 1
+        assert_eq!(eng.ast_cache.len(), 1);
+    }
+
+    // ── Engine::default ─────────────────────────────────────────────────
+
+    #[test]
+    fn engine_default_trait() {
+        let eng = Engine::default();
+        assert!(eng.registry.len() >= 80);
+    }
+
+    // ── write_cached 对非公式单元格的 no-op ─────────────────────────────
+
+    #[test]
+    fn write_cached_non_formula_cell_is_noop() {
+        let mut wb = Workbook::new();
+        wb.sheet_mut(0).unwrap().set_a1("A1", Cell::Number(42.0));
+        write_cached(&mut wb, 0, 0, 0, easyexcel_model::value::CellValue::Number(999.0));
+        // A1 是 Number 不是 Formula，write_cached 应无效果
+        assert_eq!(
+            wb.sheet_mut(0).unwrap().value(0, 0),
+            easyexcel_model::value::CellValue::Number(42.0)
+        );
+    }
+
+    #[test]
+    fn write_cached_invalid_sheet() {
+        let mut wb = Workbook::new();
+        // sheet 99 不存在，write_cached 不应 panic
+        write_cached(&mut wb, 99, 0, 0, easyexcel_model::value::CellValue::Number(1.0));
+    }
 }

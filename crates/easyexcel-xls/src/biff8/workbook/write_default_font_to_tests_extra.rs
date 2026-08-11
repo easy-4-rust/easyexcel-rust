@@ -517,7 +517,13 @@ fn write_formula(
     cached: Option<&Biff8Cached>,
     link_table: &super::ptg::Biff8LinkTable,
 ) -> Result<()> {
-    let rgce = super::ptg::encode_formula_rpn_with_link_table(expr, link_table)?;
+    // 空公式表达式：rgce 为空（BIFF8 允许 FORMULA 记录 rgce 长度为 0，
+    // 仅存储缓存值，Excel/LibreOffice 打开时不会重算）。
+    let rgce = if expr.trim().is_empty() {
+        Vec::new()
+    } else {
+        super::ptg::encode_formula_rpn_with_link_table(expr, link_table)?
+    };
     let mut data = Vec::with_capacity(22 + rgce.len());
     cell_header(&mut data, row, col, xf);
     match cached {

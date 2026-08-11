@@ -738,3 +738,699 @@ fn trimrange(ctx: &mut dyn Context, args: &[Value]) -> Value {
     }
     slice(&arr, (r0, r1), (c0, c1))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::formula::functions::testutil::TestCtx;
+    use crate::formula::value::Array;
+
+    fn arr_1d(data: Vec<f64>) -> Value {
+        Value::Array(Array::new(1, data.len(), data.into_iter().map(Value::Number).collect()))
+    }
+
+    fn arr_2d(rows: usize, cols: usize, data: Vec<f64>) -> Value {
+        Value::Array(Array::new(rows, cols, data.into_iter().map(Value::Number).collect()))
+    }
+
+    // ── SORT ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn sort_basic() {
+        let mut c = TestCtx::new();
+        // 1×3 行向量，按第 1 列（默认）排序 — 已排好
+        let r = sort(&mut c, &[arr_1d(vec![1.0, 2.0, 3.0]), Value::Empty, Value::Empty]);
+        assert_eq!(r, arr_1d(vec![1.0, 2.0, 3.0]));
+    }
+
+    #[test]
+    fn sort_column_vector() {
+        let mut c = TestCtx::new();
+        // 3×1 列向量，按第 1 列排序
+        let col = Value::Array(Array::new(3, 1, vec![Value::Number(3.0), Value::Number(1.0), Value::Number(2.0)]));
+        let r = sort(&mut c, &[col, Value::Empty, Value::Empty]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.data[0], Value::Number(1.0));
+            assert_eq!(a.data[1], Value::Number(2.0));
+            assert_eq!(a.data[2], Value::Number(3.0));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn sort_descending() {
+        let mut c = TestCtx::new();
+        let col = Value::Array(Array::new(3, 1, vec![Value::Number(3.0), Value::Number(1.0), Value::Number(2.0)]));
+        let r = sort(
+            &mut c,
+            &[col, Value::Empty, Value::Number(-1.0)],
+        );
+        if let Value::Array(a) = r {
+            assert_eq!(a.data[0], Value::Number(3.0));
+            assert_eq!(a.data[1], Value::Number(2.0));
+            assert_eq!(a.data[2], Value::Number(1.0));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn sort_invalid_index() {
+        let mut c = TestCtx::new();
+        let r = sort(
+            &mut c,
+            &[
+                arr_1d(vec![1.0, 2.0]),
+                Value::Number(-1.0),
+                Value::Empty,
+            ],
+        );
+        assert_eq!(r, Value::Error(CellError::Value));
+    }
+
+    // ── UNIQUE ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn unique_basic() {
+        let mut c = TestCtx::new();
+        // 列向量去重
+        let col = Value::Array(Array::new(5, 1, vec![
+            Value::Number(1.0), Value::Number(2.0), Value::Number(2.0), Value::Number(3.0), Value::Number(1.0),
+        ]));
+        let r = unique(&mut c, &[col]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 3);
+            assert_eq!(a.data[0], Value::Number(1.0));
+            assert_eq!(a.data[1], Value::Number(2.0));
+            assert_eq!(a.data[2], Value::Number(3.0));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn unique_exactly_once() {
+        let mut c = TestCtx::new();
+        let col = Value::Array(Array::new(4, 1, vec![
+            Value::Number(1.0), Value::Number(2.0), Value::Number(2.0), Value::Number(3.0),
+        ]));
+        let r = unique(
+            &mut c,
+            &[
+                col,
+                Value::Empty,
+                Value::Bool(true),
+            ],
+        );
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 2);
+            assert_eq!(a.data[0], Value::Number(1.0));
+            assert_eq!(a.data[1], Value::Number(3.0));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn unique_all_same() {
+        let mut c = TestCtx::new();
+        let col = Value::Array(Array::new(3, 1, vec![
+            Value::Number(5.0), Value::Number(5.0), Value::Number(5.0),
+        ]));
+        let r = unique(&mut c, &[col]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 1);
+            assert_eq!(a.data[0], Value::Number(5.0));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    // ── FILTER ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn filter_basic() {
+        let mut c = TestCtx::new();
+        // 列向量 + 列向量过滤
+        let data = Value::Array(Array::new(4, 1, vec![
+            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
+        ]));
+        let mask = Value::Array(Array::new(4, 1, vec![
+            Value::Number(0.0), Value::Number(1.0), Value::Number(0.0), Value::Number(1.0),
+        ]));
+        let r = filter(&mut c, &[data, mask]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 2);
+            assert_eq!(a.data[0], Value::Number(2.0));
+            assert_eq!(a.data[1], Value::Number(4.0));
+        } else {
+            panic!("expected Array, got {r:?}");
+        }
+    }
+
+    #[test]
+    fn filter_no_match_with_fallback() {
+        let mut c = TestCtx::new();
+        let data = Value::Array(Array::new(2, 1, vec![Value::Number(1.0), Value::Number(2.0)]));
+        let mask = Value::Array(Array::new(2, 1, vec![Value::Number(0.0), Value::Number(0.0)]));
+        let r = filter(
+            &mut c,
+            &[data, mask, Value::Text("none".into())],
+        );
+        assert_eq!(r, Value::Text("none".into()));
+    }
+
+    #[test]
+    fn filter_no_match_no_fallback() {
+        let mut c = TestCtx::new();
+        let data = Value::Array(Array::new(2, 1, vec![Value::Number(1.0), Value::Number(2.0)]));
+        let mask = Value::Array(Array::new(2, 1, vec![Value::Number(0.0), Value::Number(0.0)]));
+        let r = filter(&mut c, &[data, mask]);
+        assert_eq!(r, Value::Error(CellError::Calc));
+    }
+
+    // ── SEQUENCE ────────────────────────────────────────────────────────
+
+    #[test]
+    fn sequence_column() {
+        let mut c = TestCtx::new();
+        let r = sequence(&mut c, &[Value::Number(5.0)]);
+        // SEQUENCE(rows) → rows×1 列向量
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 5);
+            assert_eq!(a.cols, 1);
+            assert_eq!(a.data[0], Value::Number(1.0));
+            assert_eq!(a.data[4], Value::Number(5.0));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn sequence_2d() {
+        let mut c = TestCtx::new();
+        let r = sequence(
+            &mut c,
+            &[
+                Value::Number(2.0),
+                Value::Number(3.0),
+                Value::Number(10.0),
+                Value::Number(5.0),
+            ],
+        );
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 2);
+            assert_eq!(a.cols, 3);
+            assert_eq!(a.data[0], Value::Number(10.0));
+            assert_eq!(a.data[1], Value::Number(15.0));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn sequence_invalid_dims() {
+        let mut c = TestCtx::new();
+        let r = sequence(&mut c, &[Value::Number(-1.0)]);
+        assert_eq!(r, Value::Error(CellError::Value));
+    }
+
+    // ── VSTACK / HSTACK ─────────────────────────────────────────────────
+
+    #[test]
+    fn vstack_basic() {
+        let mut c = TestCtx::new();
+        let a1 = Value::Array(Array::new(1, 2, vec![Value::Number(1.0), Value::Number(2.0)]));
+        let a2 = Value::Array(Array::new(1, 2, vec![Value::Number(3.0), Value::Number(4.0)]));
+        let r = vstack(&mut c, &[a1, a2]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 2);
+            assert_eq!(a.cols, 2);
+            assert_eq!(a.data, vec![Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0)]);
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn vstack_empty() {
+        let mut c = TestCtx::new();
+        let r = vstack(&mut c, &[Value::Array(Array::new(0, 0, vec![]))]);
+        assert_eq!(r, Value::Error(CellError::Calc));
+    }
+
+    #[test]
+    fn hstack_basic() {
+        let mut c = TestCtx::new();
+        let a1 = Value::Array(Array::new(2, 1, vec![Value::Number(1.0), Value::Number(2.0)]));
+        let a2 = Value::Array(Array::new(2, 1, vec![Value::Number(3.0), Value::Number(4.0)]));
+        let r = hstack(&mut c, &[a1, a2]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 2);
+            assert_eq!(a.cols, 2);
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    // ── TOROW / TOCOL ───────────────────────────────────────────────────
+
+    #[test]
+    fn torow_basic() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(2, 2, vec![
+            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
+        ]));
+        let r = torow(&mut c, &[arr]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 1);
+            assert_eq!(a.cols, 4);
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn tocol_basic() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(2, 2, vec![
+            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
+        ]));
+        let r = tocol(&mut c, &[arr]);
+        // 默认按行扫描 (by_col=false): 1,2,3,4
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 4);
+            assert_eq!(a.cols, 1);
+            assert_eq!(a.data[0], Value::Number(1.0));
+            assert_eq!(a.data[1], Value::Number(2.0));
+            assert_eq!(a.data[2], Value::Number(3.0));
+            assert_eq!(a.data[3], Value::Number(4.0));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn torow_skip_blanks() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(
+            1,
+            3,
+            vec![Value::Number(1.0), Value::Empty, Value::Number(3.0)],
+        ));
+        let r = torow(&mut c, &[arr, Value::Number(1.0)]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.cols, 2);
+            assert_eq!(a.data[0], Value::Number(1.0));
+            assert_eq!(a.data[1], Value::Number(3.0));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    // ── TAKE / DROP ─────────────────────────────────────────────────────
+
+    #[test]
+    fn take_basic() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(4, 1, vec![
+            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
+        ]));
+        let r = take(&mut c, &[arr, Value::Number(2.0)]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 2);
+            assert_eq!(a.data[0], Value::Number(1.0));
+            assert_eq!(a.data[1], Value::Number(2.0));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn take_negative() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(4, 1, vec![
+            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
+        ]));
+        let r = take(&mut c, &[arr, Value::Number(-2.0)]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 2);
+            assert_eq!(a.data[0], Value::Number(3.0));
+            assert_eq!(a.data[1], Value::Number(4.0));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn drop_basic() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(4, 1, vec![
+            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
+        ]));
+        let r = drop_fn(&mut c, &[arr, Value::Number(1.0)]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 3);
+            assert_eq!(a.data[0], Value::Number(2.0));
+            assert_eq!(a.data[2], Value::Number(4.0));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn drop_negative() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(4, 1, vec![
+            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
+        ]));
+        let r = drop_fn(&mut c, &[arr, Value::Number(-1.0)]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 3);
+            assert_eq!(a.data[0], Value::Number(1.0));
+            assert_eq!(a.data[2], Value::Number(3.0));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    // ── EXPAND ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn expand_basic() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(2, 2, vec![
+            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
+        ]));
+        let r = expand(
+            &mut c,
+            &[arr, Value::Number(3.0), Value::Number(3.0), Value::Number(0.0)],
+        );
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 3);
+            assert_eq!(a.cols, 3);
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn expand_too_small() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(2, 2, vec![
+            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
+        ]));
+        let r = expand(&mut c, &[arr, Value::Number(1.0), Value::Number(1.0)]);
+        assert_eq!(r, Value::Error(CellError::Value));
+    }
+
+    // ── CHOOSEROWS / CHOOSECOLS ─────────────────────────────────────────
+
+    #[test]
+    fn chooserows_basic() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(3, 1, vec![
+            Value::Number(10.0), Value::Number(20.0), Value::Number(30.0),
+        ]));
+        let r = chooserows(&mut c, &[arr, Value::Number(3.0), Value::Number(1.0)]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 2);
+            assert_eq!(a.data[0], Value::Number(30.0));
+            assert_eq!(a.data[1], Value::Number(10.0));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn chooserows_negative() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(3, 1, vec![
+            Value::Number(10.0), Value::Number(20.0), Value::Number(30.0),
+        ]));
+        let r = chooserows(&mut c, &[arr, Value::Number(-1.0)]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 1);
+            assert_eq!(a.data[0], Value::Number(30.0));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn chooserows_out_of_bounds() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(2, 1, vec![Value::Number(10.0), Value::Number(20.0)]));
+        let r = chooserows(&mut c, &[arr, Value::Number(5.0)]);
+        assert_eq!(r, Value::Error(CellError::Value));
+    }
+
+    #[test]
+    fn choosecols_basic() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(1, 3, vec![
+            Value::Number(10.0), Value::Number(20.0), Value::Number(30.0),
+        ]));
+        let r = choosecols(&mut c, &[arr, Value::Number(2.0)]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.cols, 1);
+            assert_eq!(a.data[0], Value::Number(20.0));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    // ── WRAPROWS / WRAPCOLS ─────────────────────────────────────────────
+
+    #[test]
+    fn wraprows_basic() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(4, 1, vec![
+            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
+        ]));
+        let r = wraprows(&mut c, &[arr, Value::Number(2.0)]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 2);
+            assert_eq!(a.cols, 2);
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn wraprows_with_padding() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(3, 1, vec![
+            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0),
+        ]));
+        let r = wraprows(&mut c, &[arr, Value::Number(2.0), Value::Number(0.0)]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 2);
+            assert_eq!(a.cols, 2);
+            assert_eq!(a.get(1, 1), Some(&Value::Number(0.0)));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn wraprows_invalid_count() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(2, 1, vec![Value::Number(1.0), Value::Number(2.0)]));
+        let r = wraprows(&mut c, &[arr, Value::Number(0.0)]);
+        assert_eq!(r, Value::Error(CellError::Value));
+    }
+
+    #[test]
+    fn wrapcols_basic() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(4, 1, vec![
+            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
+        ]));
+        let r = wrapcols(&mut c, &[arr, Value::Number(2.0)]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 2);
+            assert_eq!(a.cols, 2);
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    // ── TRIMRANGE ───────────────────────────────────────────────────────
+
+    #[test]
+    fn trimrange_basic() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(
+            3,
+            2,
+            vec![
+                Value::Empty, Value::Empty,
+                Value::Number(1.0), Value::Number(2.0),
+                Value::Empty, Value::Empty,
+            ],
+        ));
+        let r = trimrange(&mut c, &[arr]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 1);
+            assert_eq!(a.cols, 2);
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn trimrange_trim_none() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(
+            3,
+            1,
+            vec![Value::Empty, Value::Number(1.0), Value::Empty],
+        ));
+        let r = trimrange(&mut c, &[arr, Value::Number(0.0)]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 3);
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    // ── RANDARRAY ───────────────────────────────────────────────────────
+
+    #[test]
+    fn randarray_basic() {
+        let mut c = TestCtx::new();
+        let r = randarray(&mut c, &[Value::Number(2.0), Value::Number(3.0)]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.rows, 2);
+            assert_eq!(a.cols, 3);
+            for v in &a.data {
+                if let Value::Number(n) = v {
+                    assert!(*n >= 0.0 && *n < 1.0);
+                }
+            }
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn randarray_invalid_dims() {
+        let mut c = TestCtx::new();
+        let r = randarray(&mut c, &[Value::Number(-1.0)]);
+        assert_eq!(r, Value::Error(CellError::Value));
+    }
+
+    #[test]
+    fn randarray_min_greater_than_max() {
+        let mut c = TestCtx::new();
+        let r = randarray(
+            &mut c,
+            &[
+                Value::Number(1.0),
+                Value::Number(1.0),
+                Value::Number(10.0),
+                Value::Number(5.0),
+            ],
+        );
+        assert_eq!(r, Value::Error(CellError::Value));
+    }
+
+    // ── SORTBY ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn sortby_basic() {
+        let mut c = TestCtx::new();
+        let data = Value::Array(Array::new(3, 1, vec![
+            Value::Number(3.0), Value::Number(1.0), Value::Number(2.0),
+        ]));
+        let key = Value::Array(Array::new(3, 1, vec![
+            Value::Number(30.0), Value::Number(10.0), Value::Number(20.0),
+        ]));
+        let r = sortby(&mut c, &[data, key]);
+        if let Value::Array(a) = r {
+            assert_eq!(a.data[0], Value::Number(1.0));
+            assert_eq!(a.data[1], Value::Number(2.0));
+            assert_eq!(a.data[2], Value::Number(3.0));
+        } else {
+            panic!("expected Array");
+        }
+    }
+
+    #[test]
+    fn sortby_empty_keys() {
+        let mut c = TestCtx::new();
+        let arr = Value::Array(Array::new(2, 1, vec![Value::Number(1.0), Value::Number(2.0)]));
+        let r = sortby(&mut c, &[arr]);
+        assert_eq!(r, Value::Error(CellError::Value));
+    }
+
+    // ── norm_index ──────────────────────────────────────────────────────
+
+    #[test]
+    fn norm_index_basic() {
+        assert_eq!(norm_index(1, 3), Some(0));
+        assert_eq!(norm_index(3, 3), Some(2));
+        assert_eq!(norm_index(-1, 3), Some(2));
+        assert_eq!(norm_index(-3, 3), Some(0));
+        assert_eq!(norm_index(0, 3), None);
+        assert_eq!(norm_index(4, 3), None);
+        assert_eq!(norm_index(-4, 3), None);
+    }
+
+    // ── take_range / drop_range ─────────────────────────────────────────
+
+    #[test]
+    fn take_range_positive() {
+        assert_eq!(take_range(2, 5), (0, 2));
+        assert_eq!(take_range(10, 5), (0, 5));
+    }
+
+    #[test]
+    fn take_range_negative() {
+        assert_eq!(take_range(-2, 5), (3, 5));
+        assert_eq!(take_range(-10, 5), (0, 5));
+    }
+
+    #[test]
+    fn drop_range_positive() {
+        assert_eq!(drop_range(2, 5), (2, 5));
+        assert_eq!(drop_range(10, 5), (5, 5));
+    }
+
+    #[test]
+    fn drop_range_negative() {
+        assert_eq!(drop_range(-2, 5), (0, 3));
+        assert_eq!(drop_range(-10, 5), (0, 0));
+    }
+
+    // ── int_arg / bool_arg ──────────────────────────────────────────────
+
+    #[test]
+    fn int_arg_default() {
+        assert_eq!(int_arg(&[], 0, 42), Ok(42));
+        assert_eq!(int_arg(&[Value::Empty], 0, 42), Ok(42));
+    }
+
+    #[test]
+    fn int_arg_value() {
+        assert_eq!(int_arg(&[Value::Number(5.0)], 0, 0), Ok(5));
+    }
+
+    #[test]
+    fn int_arg_error() {
+        assert!(int_arg(&[Value::Text("x".into())], 0, 0).is_err());
+    }
+
+    #[test]
+    fn bool_arg_default() {
+        assert_eq!(bool_arg(&[], 0, true), Ok(true));
+        assert_eq!(bool_arg(&[Value::Empty], 0, false), Ok(false));
+    }
+
+    #[test]
+    fn bool_arg_value() {
+        assert_eq!(bool_arg(&[Value::Bool(true)], 0, false), Ok(true));
+    }
+}

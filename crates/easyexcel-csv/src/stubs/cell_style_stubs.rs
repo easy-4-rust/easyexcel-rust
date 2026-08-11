@@ -268,3 +268,134 @@ impl CsvCellStyle {
     /// 对应 Java: CsvCellStyle#cloneStyleFrom no-op
     pub const fn clone_style_from(&mut self, _source: &Self) {}
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::csv::CsvCellStyle;
+
+    #[test]
+    fn font_stubs_return_fixed_values() {
+        let style = CsvCellStyle::new(0);
+        assert_eq!(style.font_index(), 0);
+        assert_eq!(style.get_font_index(), 0);
+        assert_eq!(style.get_font_index_as_int(), 0);
+    }
+
+    #[test]
+    fn font_setter_is_noop() {
+        let mut style = CsvCellStyle::new(0);
+        style.set_font(None);
+    }
+
+    #[test]
+    fn hidden_locked_quote_prefix_wrap_text_rotation_indention_shrink_to_fit() {
+        let style = CsvCellStyle::new(0);
+        assert!(!style.hidden());
+        assert!(!style.get_hidden());
+        assert!(!style.locked());
+        assert!(!style.get_locked());
+        assert!(!style.quote_prefixed());
+        assert!(!style.get_quote_prefixed());
+        assert!(!style.wrap_text());
+        assert!(!style.get_wrap_text());
+        assert_eq!(style.rotation(), 0);
+        assert_eq!(style.get_rotation(), 0);
+        assert_eq!(style.indention(), 0);
+        assert_eq!(style.get_indention(), 0);
+        assert!(!style.shrink_to_fit());
+        assert!(!style.get_shrink_to_fit());
+    }
+
+    #[test]
+    fn setters_are_noop() {
+        let mut style = CsvCellStyle::new(0);
+        style.set_hidden(true);
+        style.set_locked(true);
+        style.set_quote_prefixed(true);
+        style.set_wrap_text(true);
+        style.set_rotation(45);
+        style.set_indention(3);
+        style.set_shrink_to_fit(true);
+        // 值不变
+        assert!(!style.hidden());
+    }
+
+    #[test]
+    fn alignment_stubs_return_none() {
+        let style = CsvCellStyle::new(0);
+        assert!(style.alignment().is_none());
+        assert!(style.get_alignment().is_none());
+        assert!(style.vertical_alignment().is_none());
+        assert!(style.get_vertical_alignment().is_none());
+    }
+
+    #[test]
+    fn alignment_setters_are_noop() {
+        let mut style = CsvCellStyle::new(0);
+        style.set_alignment(Some(1));
+        style.set_vertical_alignment(Some(2));
+    }
+
+    #[test]
+    fn border_stubs_return_none_or_zero() {
+        let style = CsvCellStyle::new(0);
+        assert!(style.border_left().is_none());
+        assert!(style.border_right().is_none());
+        assert!(style.border_top().is_none());
+        assert!(style.border_bottom().is_none());
+        assert_eq!(style.left_border_color(), 0);
+        assert_eq!(style.right_border_color(), 0);
+        assert_eq!(style.top_border_color(), 0);
+        assert_eq!(style.bottom_border_color(), 0);
+        assert_eq!(style.get_border_left(), None);
+        assert_eq!(style.get_border_right(), None);
+        assert_eq!(style.get_border_top(), None);
+        assert_eq!(style.get_border_bottom(), None);
+        assert_eq!(style.get_left_border_color(), 0);
+        assert_eq!(style.get_right_border_color(), 0);
+        assert_eq!(style.get_top_border_color(), 0);
+        assert_eq!(style.get_bottom_border_color(), 0);
+    }
+
+    #[test]
+    fn border_setters_are_noop() {
+        let mut style = CsvCellStyle::new(0);
+        style.set_border_left(Some(1));
+        style.set_border_right(Some(1));
+        style.set_border_top(Some(1));
+        style.set_border_bottom(Some(1));
+        style.set_left_border_color(1);
+        style.set_right_border_color(1);
+        style.set_top_border_color(1);
+        style.set_bottom_border_color(1);
+    }
+
+    #[test]
+    fn fill_stubs_return_none_or_zero() {
+        let style = CsvCellStyle::new(0);
+        assert!(style.fill_pattern().is_none());
+        assert!(style.get_fill_pattern().is_none());
+        assert_eq!(style.fill_background_color(), 0);
+        assert_eq!(style.get_fill_background_color(), 0);
+        assert!(style.get_fill_background_color_color().is_none());
+        assert_eq!(style.fill_foreground_color(), 0);
+        assert_eq!(style.get_fill_foreground_color(), 0);
+        assert!(style.get_fill_foreground_color_color().is_none());
+    }
+
+    #[test]
+    fn fill_setters_are_noop() {
+        let mut style = CsvCellStyle::new(0);
+        style.set_fill_pattern(Some(1));
+        style.set_fill_background_color(1);
+        style.set_fill_foreground_color(1);
+    }
+
+    #[test]
+    fn clone_style_from_is_noop() {
+        let source = CsvCellStyle::new(5);
+        let mut target = CsvCellStyle::new(0);
+        target.clone_style_from(&source);
+        assert_eq!(target.index(), 0);
+    }
+}

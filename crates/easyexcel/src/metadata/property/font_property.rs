@@ -208,3 +208,211 @@ impl FontProperty {
     /// 设置粗体标志。
     pub const fn set_bold(&mut self, value: Option<bool>) { self.bold = value; }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::{ExcelColor, ExcelFontScript, ExcelFontStyle, ExcelUnderline};
+
+    #[test]
+    fn new_returns_all_none() {
+        // 对应 Java：FontProperty 无参构造器所有字段为 null
+        let font = FontProperty::new();
+        assert!(font.font_name().is_none());
+        assert!(font.font_height_in_points().is_none());
+        assert!(font.italic().is_none());
+        assert!(font.strikeout().is_none());
+        assert!(font.color().is_none());
+        assert!(font.type_offset().is_none());
+        assert!(font.underline().is_none());
+        assert!(font.charset().is_none());
+        assert!(font.bold().is_none());
+    }
+
+    #[test]
+    fn default_trait_returns_all_none() {
+        // 对应 Java：Default 派生
+        let font = FontProperty::default();
+        assert!(font.font_name().is_none());
+    }
+
+    #[test]
+    fn build_from_excel_font_style() {
+        // 对应 Java：FontProperty.build(ExcelFontStyle)
+        let style = ExcelFontStyle {
+            font_name: Some("Arial"),
+            font_height_in_points: Some(12.0),
+            italic: Some(true),
+            strikeout: Some(false),
+            color: None,
+            type_offset: None,
+            underline: None,
+            charset: Some(1),
+            bold: Some(true),
+        };
+        let font = FontProperty::build(style);
+        assert_eq!(font.font_name(), Some("Arial"));
+        assert_eq!(font.font_height_in_points(), Some(12.0));
+        assert_eq!(font.italic(), Some(true));
+        assert_eq!(font.strikeout(), Some(false));
+        assert_eq!(font.charset(), Some(1));
+        assert_eq!(font.bold(), Some(true));
+    }
+
+    #[test]
+    fn build_from_empty_style() {
+        // 对应 Java：FontProperty.build 空样式
+        let style = ExcelFontStyle::default();
+        let font = FontProperty::build(style);
+        assert!(font.font_name().is_none());
+    }
+
+    #[test]
+    fn to_write_font_populates_all_fields() {
+        // 对应 Java：toWriteFont 转换
+        let mut font = FontProperty::new();
+        font.set_font_name(Some("Arial".to_owned()));
+        font.set_font_height_in_points(Some(14.0));
+        font.set_italic(Some(true));
+        font.set_strikeout(Some(false));
+        font.set_bold(Some(true));
+        font.set_charset(Some(2));
+        let write_font = font.to_write_font();
+        // 验证转换不 panic 且返回 WriteFont
+        let _ = write_font;
+    }
+
+    #[test]
+    fn to_write_font_empty_font() {
+        // 对应 Java：空 FontProperty 转换不 panic
+        let font = FontProperty::new();
+        let write_font = font.to_write_font();
+        let _ = write_font;
+    }
+
+    #[test]
+    fn font_name_setter_and_getter() {
+        // 对应 Java：fontName getter/setter
+        let mut font = FontProperty::new();
+        assert!(font.get_font_name().is_none());
+        font.set_font_name(Some("Times".to_owned()));
+        assert_eq!(font.get_font_name(), Some("Times"));
+        font.set_font_name(None);
+        assert!(font.get_font_name().is_none());
+    }
+
+    #[test]
+    fn font_height_in_points_setter_and_getter() {
+        // 对应 Java：fontHeightInPoints getter/setter
+        let mut font = FontProperty::new();
+        assert!(font.get_font_height_in_points().is_none());
+        font.set_font_height_in_points(Some(16.0));
+        assert_eq!(font.get_font_height_in_points(), Some(16.0));
+    }
+
+    #[test]
+    fn italic_setter_and_getter() {
+        // 对应 Java：italic getter/setter
+        let mut font = FontProperty::new();
+        font.set_italic(Some(true));
+        assert_eq!(font.get_italic(), Some(true));
+        assert_eq!(font.italic(), Some(true));
+    }
+
+    #[test]
+    fn strikeout_setter_and_getter() {
+        // 对应 Java：strikeout getter/setter
+        let mut font = FontProperty::new();
+        font.set_strikeout(Some(true));
+        assert_eq!(font.get_strikeout(), Some(true));
+    }
+
+    #[test]
+    fn color_setter_and_getter() {
+        // 对应 Java：color getter/setter
+        let mut font = FontProperty::new();
+        assert!(font.get_color().is_none());
+        font.set_color(Some(ExcelColor::Rgb(0xFF0000)));
+        assert_eq!(font.get_color(), Some(ExcelColor::Rgb(0xFF0000)));
+    }
+
+    #[test]
+    fn type_offset_setter_and_getter() {
+        // 对应 Java：typeOffset getter/setter
+        let mut font = FontProperty::new();
+        font.set_type_offset(Some(ExcelFontScript::Superscript));
+        assert_eq!(font.get_type_offset(), Some(ExcelFontScript::Superscript));
+    }
+
+    #[test]
+    fn underline_setter_and_getter() {
+        // 对应 Java：underline getter/setter
+        let mut font = FontProperty::new();
+        font.set_underline(Some(ExcelUnderline::Single));
+        assert_eq!(font.get_underline(), Some(ExcelUnderline::Single));
+    }
+
+    #[test]
+    fn charset_setter_and_getter() {
+        // 对应 Java：charset getter/setter
+        let mut font = FontProperty::new();
+        font.set_charset(Some(134));
+        assert_eq!(font.get_charset(), Some(134));
+    }
+
+    #[test]
+    fn bold_setter_and_getter() {
+        // 对应 Java：bold getter/setter
+        let mut font = FontProperty::new();
+        font.set_bold(Some(true));
+        assert_eq!(font.get_bold(), Some(true));
+        assert_eq!(font.bold(), Some(true));
+    }
+
+    #[test]
+    fn partial_eq_considers_nan_equal() {
+        // 对应 Java：java_double_bits 将 NaN 规范化为统一比特
+        let mut a = FontProperty::new();
+        a.set_font_height_in_points(Some(f64::NAN));
+        let mut b = FontProperty::new();
+        b.set_font_height_in_points(Some(f64::NAN));
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn partial_eq_different_fonts_not_equal() {
+        // 对应 Java：不同字体名称不相等
+        let mut a = FontProperty::new();
+        a.set_font_name(Some("Arial".to_owned()));
+        let mut b = FontProperty::new();
+        b.set_font_name(Some("Times".to_owned()));
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn hash_consistency() {
+        // 对应 Java：相同内容哈希一致
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        let mut a = FontProperty::new();
+        a.set_font_name(Some("Arial".to_owned()));
+        a.set_bold(Some(true));
+        let mut b = FontProperty::new();
+        b.set_font_name(Some("Arial".to_owned()));
+        b.set_bold(Some(true));
+        let mut h1 = DefaultHasher::new();
+        let mut h2 = DefaultHasher::new();
+        a.hash(&mut h1);
+        b.hash(&mut h2);
+        assert_eq!(h1.finish(), h2.finish());
+    }
+
+    #[test]
+    fn clone_produces_equal_instance() {
+        // 对应 Java：clone
+        let mut font = FontProperty::new();
+        font.set_font_name(Some("Arial".to_owned()));
+        let cloned = font.clone();
+        assert_eq!(font, cloned);
+    }
+}

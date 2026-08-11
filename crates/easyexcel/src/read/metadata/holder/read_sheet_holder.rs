@@ -151,3 +151,146 @@ impl DerefMut for ReadSheetHolder {
 }
 
 delegate_read_holder_contract!(ReadSheetHolder, abstract_holder);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_creates_holder_with_sheet_info() {
+        // 对应 Java：ReadSheetHolder(sheetNo, sheetName)
+        let holder = ReadSheetHolder::new(0, "Sheet1");
+        assert_eq!(holder.get_sheet_no(), 0);
+        assert_eq!(holder.get_sheet_name(), "Sheet1");
+        assert_eq!(holder.get_row_index(), -1);
+        assert!(!holder.get_ended());
+    }
+
+    #[test]
+    fn default_construction_creates_empty_holder() {
+        // 对应 Java：ReadSheetHolder 默认构造器
+        let holder = ReadSheetHolder::default_construction();
+        assert_eq!(holder.get_sheet_no(), -1);
+        assert_eq!(holder.get_sheet_name(), "");
+    }
+
+    #[test]
+    fn set_sheet_no_and_get() {
+        // 对应 Java：setSheetNo / getSheetNo
+        let mut holder = ReadSheetHolder::new(0, "S1");
+        holder.set_sheet_no(5);
+        assert_eq!(holder.get_sheet_no(), 5);
+    }
+
+    #[test]
+    fn set_sheet_name_and_get() {
+        // 对应 Java：setSheetName / getSheetName
+        let mut holder = ReadSheetHolder::new(0, "S1");
+        holder.set_sheet_name("NewName");
+        assert_eq!(holder.get_sheet_name(), "NewName");
+    }
+
+    #[test]
+    fn set_row_index_and_get() {
+        // 对应 Java：setRowIndex / getRowIndex
+        let mut holder = ReadSheetHolder::new(0, "S1");
+        holder.set_row_index(10);
+        assert_eq!(holder.get_row_index(), 10);
+    }
+
+    #[test]
+    fn set_ended_and_get() {
+        // 对应 Java：setEnded / getEnded
+        let mut holder = ReadSheetHolder::new(0, "S1");
+        holder.set_ended(true);
+        assert!(holder.get_ended());
+    }
+
+    #[test]
+    fn approximate_total_row_number_accessor() {
+        // 对应 Java：approximateTotalRowNumber getter/setter
+        let mut holder = ReadSheetHolder::new(0, "S1");
+        assert!(holder.get_approximate_total_row_number().is_none());
+        holder.set_approximate_total_row_number(Some(100));
+        assert_eq!(holder.get_approximate_total_row_number(), Some(100));
+    }
+
+    #[test]
+    fn total_is_alias_for_approximate() {
+        // 对应 Java：total 别名
+        let mut holder = ReadSheetHolder::new(0, "S1");
+        holder.set_total(Some(50));
+        assert_eq!(holder.get_total(), Some(50));
+        assert_eq!(holder.get_approximate_total_row_number(), Some(50));
+    }
+
+    #[test]
+    fn max_not_empty_data_head_size_accessor() {
+        // 对应 Java：maxNotEmptyDataHeadSize getter/setter
+        let mut holder = ReadSheetHolder::new(0, "S1");
+        assert!(holder.get_max_not_empty_data_head_size().is_none());
+        holder.set_max_not_empty_data_head_size(Some(10));
+        assert_eq!(holder.get_max_not_empty_data_head_size(), Some(10));
+    }
+
+    #[test]
+    fn cell_map_accessor() {
+        // 对应 Java：cellMap getter/setter
+        let mut holder = ReadSheetHolder::new(0, "S1");
+        assert!(holder.get_cell_map().is_empty());
+        holder.set_cell_map(vec![
+            (0, CellValue::String("a".to_owned())),
+            (1, CellValue::Int(1)),
+        ]);
+        assert_eq!(holder.get_cell_map().len(), 2);
+    }
+
+    #[test]
+    fn cell_extra_accessor() {
+        // 对应 Java：cellExtra getter/setter
+        let mut holder = ReadSheetHolder::new(0, "S1");
+        assert!(holder.get_cell_extra().is_none());
+        holder.set_cell_extra(None);
+        assert!(holder.get_cell_extra().is_none());
+    }
+
+    #[test]
+    fn temp_cell_data_accessor() {
+        // 对应 Java：tempCellData getter/setter
+        let mut holder = ReadSheetHolder::new(0, "S1");
+        assert!(holder.get_temp_cell_data().is_none());
+        holder.set_temp_cell_data(None);
+        assert!(holder.get_temp_cell_data().is_none());
+    }
+
+    #[test]
+    fn holder_type_is_sheet() {
+        // 对应 Java：HolderEnum.Sheet
+        let holder = ReadSheetHolder::new(0, "S1");
+        assert_eq!(holder.holder_type(), HolderEnum::Sheet);
+    }
+
+    #[test]
+    fn abstract_holder_accessor() {
+        // 对应 Java：abstractHolder 访问器
+        let mut holder = ReadSheetHolder::new(0, "S1");
+        let _ah: &AbstractReadHolder = holder.abstract_holder();
+        let _ahm: &mut AbstractReadHolder = holder.abstract_holder_mut();
+    }
+
+    #[test]
+    fn clone_produces_equal() {
+        // 对应 Java：clone
+        let holder = ReadSheetHolder::new(1, "Test");
+        let cloned = holder.clone();
+        assert_eq!(holder.sheet_no, cloned.sheet_no);
+        assert_eq!(holder.sheet_name, cloned.sheet_name);
+    }
+
+    #[test]
+    fn debug_format_does_not_panic() {
+        // 对应 Java：toString
+        let holder = ReadSheetHolder::new(0, "S1");
+        let _debug = format!("{holder:?}");
+    }
+}

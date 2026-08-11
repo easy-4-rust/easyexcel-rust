@@ -73,11 +73,18 @@ fn primitive_cell_read(kind: &str, crate_path: &TokenStream) -> TokenStream {
                 other => Err(context.invalid(other, "f64")),
             }?
         }},
+        // String 字段优先使用 display value（对应 Java StringNumberConverter
+        // 通过 DataFormatter 保留格式化尾零，如 "24.20" 而非 "24.2"）；
+        // 无 display value 时回退到 CellValue::as_text。
         "String" => quote! {
-            row.cell(column).map_or_else(
-                ::std::string::String::new,
-                #crate_path::CellValue::as_text,
-            )
+            if let ::core::option::Option::Some(dv) = row.display_value(column) {
+                ::std::borrow::ToOwned::to_owned(dv)
+            } else {
+                row.cell(column).map_or_else(
+                    ::std::string::String::new,
+                    #crate_path::CellValue::as_text,
+                )
+            }
         },
         "bool" => quote! {{
             let cell = row.cell(column).unwrap_or(&#crate_path::CellValue::Empty);

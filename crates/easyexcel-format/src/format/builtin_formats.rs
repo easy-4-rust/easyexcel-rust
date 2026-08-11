@@ -28,10 +28,13 @@ pub const GENERAL: u16 = 0;
 #[must_use]
 pub fn get_builtin_format(index: u16, default_format: &str) -> &str {
     get_builtin_format_for_locale(Some(index), Some(default_format), None)
-        .unwrap_or(default_format)
+        .unwrap_or("General")
 }
 
 /// 按 Java 的查找顺序解析内建格式，并保留调用者提供的默认格式。
+///
+/// 查找顺序与 Java 一致：`ALL_LANGUAGES` 优先（含索引 0 = "General"），
+/// 其次 CN/US 区域表，最后回退 `default_format`（空值视为无默认）。
 #[must_use]
 pub fn get_builtin_format_for_locale<'a>(
     index: Option<u16>,
@@ -39,9 +42,6 @@ pub fn get_builtin_format_for_locale<'a>(
     locale: Option<&ExcelLocale>,
 ) -> Option<&'a str> {
     let index = index?;
-    if index == 0 {
-        return default_format;
-    }
     if let Some(format) = BUILTIN_FORMATS_ALL_LANGUAGES
         .get(index as usize)
         .copied()
@@ -56,7 +56,7 @@ pub fn get_builtin_format_for_locale<'a>(
         .get(index as usize)
         .copied()
         .flatten()
-        .or(default_format)
+        .or(default_format.filter(|v| !v.is_empty()))
 }
 
 /// 对应 Java：com.alibaba.excel.constant.BuiltinFormats。 Resolves a builtin format code the same way `EasyExcel` STRING display does.
@@ -301,9 +301,9 @@ mod tests_extra {
         assert_eq!(get_builtin_format(0, ""), "General");
         assert_eq!(get_builtin_format(14, ""), "yyyy/m/d");
         assert_eq!(get_builtin_format(49, ""), "@");
-        // 超出表范围回退 General
+        // 超出表范围：空默认回退 General，非空默认使用调用者提供的格式
         assert_eq!(get_builtin_format(99, ""), "General");
-        assert_eq!(get_builtin_format(99, "0.00"), "General");
+        assert_eq!(get_builtin_format(99, "0.00"), "0.00");
     }
 
     #[test]
@@ -315,7 +315,7 @@ mod tests_extra {
         assert_eq!(builtin_format_code(27), Some("yyyy\"年\"m\"月\""));
         assert_eq!(builtin_format_code(99), None);
         let all = switch_builtin_formats();
-        assert_eq!(all.len(), 50);
+        assert_eq!(all.len(), 82);
         assert_eq!(all[0], Some("General"));
     }
 }

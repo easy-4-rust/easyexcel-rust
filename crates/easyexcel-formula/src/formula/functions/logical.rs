@@ -83,4 +83,52 @@ mod tests {
             Value::Bool(true)
         );
     }
+
+    // ── 补充逻辑函数测试 ────────────────────────────────────────────────
+
+    #[test]
+    fn not_fn_error() {
+        let mut c = TestCtx::new();
+        assert_eq!(
+            not(&mut c, &[Value::Text("x".into())]),
+            Value::Error(CellError::Value)
+        );
+    }
+
+    #[test]
+    fn xor_fn_no_args() {
+        let mut c = TestCtx::new();
+        // 空参数 → #VALUE!
+        let result = xor(&mut c, &[]);
+        assert_eq!(result, Value::Error(CellError::Value));
+    }
+
+    #[test]
+    fn xor_fn_text_ignored() {
+        let mut c = TestCtx::new();
+        // 文本在范围中被忽略
+        let result = xor(
+            &mut c,
+            &[Value::Text("x".into()), Value::Bool(true)],
+        );
+        assert_eq!(result, Value::Bool(true));
+    }
+
+    #[test]
+    fn xor_fn_error_propagation() {
+        let mut c = TestCtx::new();
+        assert_eq!(
+            xor(&mut c, &[Value::Error(CellError::NA)]),
+            Value::Error(CellError::NA)
+        );
+    }
+
+    #[test]
+    fn xor_fn_all_false() {
+        let mut c = TestCtx::new();
+        assert_eq!(
+            xor(&mut c, &[Value::Bool(false), Value::Bool(false)]),
+            Value::Bool(false)
+        );
+    }
 }

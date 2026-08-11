@@ -170,3 +170,133 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
     /// 对应 Java: CsvWorkbook#setCellReferenceType no-op
     pub const fn set_cell_reference_type(&mut self, _value: Option<()>) {}
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::csv::{CsvCharset, CsvWorkbook};
+
+    type TestWorkbook = CsvWorkbook;
+
+    fn make_wb() -> TestWorkbook {
+        CsvWorkbook::new("", false, false, CsvCharset::utf8(), false)
+    }
+
+    #[test]
+    fn font_stubs() {
+        let wb = make_wb();
+        assert_eq!(wb.number_of_fonts(), 0);
+        assert_eq!(wb.get_number_of_fonts(), 0);
+        assert_eq!(wb.get_number_of_fonts_as_int(), 0);
+    }
+
+    #[test]
+    fn name_stubs() {
+        let wb = make_wb();
+        assert_eq!(wb.number_of_names(), 0);
+        assert_eq!(wb.get_number_of_names(), 0);
+    }
+
+    #[test]
+    fn is_hidden_stub() {
+        let wb = make_wb();
+        assert!(!wb.is_hidden());
+    }
+
+    #[test]
+    fn formula_recalc_stubs() {
+        let wb = make_wb();
+        assert!(!wb.force_formula_recalculation());
+        assert!(!wb.get_force_formula_recalculation());
+        let mut wb = make_wb();
+        wb.set_force_formula_recalculation(true);
+        assert!(!wb.force_formula_recalculation());
+    }
+
+    #[test]
+    fn sheet_navigation_stubs() {
+        let wb = make_wb();
+        assert_eq!(wb.get_active_sheet_index(), 0);
+        assert_eq!(wb.get_first_visible_tab(), 0);
+        assert_eq!(wb.get_sheet_index("any"), 0);
+        let mut wb = make_wb();
+        wb.set_active_sheet(1);
+        wb.set_first_visible_tab(1);
+        wb.set_selected_tab(1);
+        wb.set_sheet_order("any", 1);
+        wb.set_sheet_name(0, "new");
+    }
+
+    #[test]
+    fn sheet_visibility_stubs() {
+        let wb = make_wb();
+        assert!(!wb.is_sheet_hidden(0));
+        assert!(!wb.is_sheet_very_hidden(0));
+        assert_eq!(wb.get_sheet_visibility(0), "VISIBLE");
+        let mut wb = make_wb();
+        wb.set_hidden(true);
+        wb.set_sheet_hidden(0, true);
+        wb.set_sheet_visibility(0, "HIDDEN");
+        // 所有 setter 都是 no-op
+        assert!(!wb.is_sheet_hidden(0));
+    }
+
+    #[test]
+    fn iterator_stubs_delegate() {
+        let mut wb = make_wb();
+        wb.create_sheet().unwrap();
+        assert_eq!(wb.iterator().count(), 1);
+        assert_eq!(wb.sheet_iterator().count(), 1);
+    }
+
+    #[test]
+    fn missing_cell_policy_stubs() {
+        let wb = make_wb();
+        assert_eq!(wb.get_missing_cell_policy(), 0);
+        let mut wb = make_wb();
+        wb.set_missing_cell_policy(1);
+    }
+
+    #[test]
+    fn name_management_stubs() {
+        let wb = make_wb();
+        assert!(wb.get_all_names().is_empty());
+        assert!(wb.get_names("any").is_empty());
+        let mut wb = make_wb();
+        wb.remove_name("any");
+    }
+
+    #[test]
+    fn picture_stubs() {
+        let wb = make_wb();
+        assert!(wb.get_all_pictures().is_empty());
+    }
+
+    #[test]
+    fn print_area_stubs() {
+        let wb = make_wb();
+        assert!(wb.get_print_area(0).is_none());
+        let mut wb = make_wb();
+        wb.set_print_area(0, "A1:B2");
+        wb.remove_print_area(0);
+    }
+
+    #[test]
+    fn font_query_stubs() {
+        let wb = make_wb();
+        assert!(wb.get_font_at(0).is_none());
+        assert!(wb.find_font().is_none());
+    }
+
+    #[test]
+    fn misc_stubs() {
+        let wb = make_wb();
+        assert_eq!(wb.get_spreadsheet_version(), "EXCEL2007");
+        assert!(wb.create_evaluation_workbook().is_none());
+        assert!(wb.get_creation_helper().is_none());
+        assert!(wb.get_cell_reference_type().is_none());
+        let mut wb = make_wb();
+        wb.flush_data();
+        wb.add_tool_pack();
+        wb.set_cell_reference_type(None);
+    }
+}

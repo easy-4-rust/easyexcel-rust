@@ -138,8 +138,133 @@ pub fn xml_escape(s: &str) -> String {
     out
 }
 
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 Does the string have leading or trailing whitespace requiring
-/// `xml:space="preserve"`?
-pub fn needs_preserve(s: &str) -> bool {
-    s.starts_with([' ', '\t', '\n', '\r']) || s.ends_with([' ', '\t', '\n', '\r'])
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Does the string have leading or trailing whitespace requiring
+    /// `xml:space="preserve"`?
+    pub fn needs_preserve(s: &str) -> bool {
+        s.starts_with([' ', '\t', '\n', '\r']) || s.ends_with([' ', '\t', '\n', '\r'])
+    }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── local_tag_name 覆盖 ────────────────────────────────────────────────
+
+    #[test]
+    fn local_tag_name_strips_namespace() {
+        assert_eq!(local_tag_name("x:sheetData"), "sheetData");
+        assert_eq!(local_tag_name("ns:workbook"), "workbook");
+    }
+
+    #[test]
+    fn local_tag_name_returns_plain_name() {
+        assert_eq!(local_tag_name("sheetData"), "sheetData");
+    }
+
+    // ── parse_attribute_pairs 覆盖 ─────────────────────────────────────────
+
+    #[test]
+    fn parse_attribute_pairs_parses_key_value() {
+        let result = parse_attribute_pairs("name=Sheet1 rId=rId1");
+        assert_eq!(result.get("name").unwrap(), "Sheet1");
+        assert_eq!(result.get("rId").unwrap(), "rId1");
+    }
+
+    #[test]
+    fn parse_attribute_pairs_handles_empty_string() {
+        let result = parse_attribute_pairs("");
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn parse_attribute_pairs_ignores_tokens_without_equals() {
+        let result = parse_attribute_pairs("valid=x ignored");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result.get("valid").unwrap(), "x");
+    }
+
+    // ── decode_ooxml_escape 覆盖 ───────────────────────────────────────────
+
+    #[test]
+    fn decode_ooxml_escape_converts_hex_sequence() {
+        // _x0041_ = 'A'
+        assert_eq!(decode_ooxml_escape("_x0041_"), "A");
+    }
+
+    #[test]
+    fn decode_ooxml_escape_handles_no_escape() {
+        assert_eq!(decode_ooxml_escape("plain text"), "plain text");
+    }
+
+    #[test]
+    fn decode_ooxml_escape_handles_multiple_escapes() {
+        // _x0041_ = 'A', _x0042_ = 'B'
+        assert_eq!(decode_ooxml_escape("_x0041__x0042_"), "AB");
+    }
+
+    #[test]
+    fn decode_ooxml_escape_handles_mixed_content() {
+        assert_eq!(decode_ooxml_escape("hello_x0020_world"), "hello world");
+    }
+
+    #[test]
+    fn decode_ooxml_escape_handles_invalid_hex_gracefully() {
+        // _xGGGG_ 不是有效十六进制，保持原样
+        assert_eq!(decode_ooxml_escape("_xGGGG_"), "_xGGGG_");
+    }
+
+    #[test]
+    fn decode_ooxml_escape_handles_partial_escape() {
+        // _x004 不完整序列
+        assert_eq!(decode_ooxml_escape("_x004"), "_x004");
+    }
+
+    // ── xml_escape 覆盖 ────────────────────────────────────────────────────
+
+    #[test]
+    fn xml_escape_escapes_all_special_chars() {
+        assert_eq!(xml_escape("a&b<c>d\"e'f"), "a&amp;b&lt;c&gt;d&quot;e&apos;f");
+    }
+
+    #[test]
+    fn xml_escape_handles_empty_string() {
+        assert_eq!(xml_escape(""), "");
+    }
+
+    #[test]
+    fn xml_escape_handles_no_special_chars() {
+        assert_eq!(xml_escape("hello world"), "hello world");
+    }
+
+    // ── needs_preserve 覆盖 ────────────────────────────────────────────────
+
+    #[test]
+    fn needs_preserve_detects_leading_space() {
+        assert!(needs_preserve(" hello"));
+    }
+
+    #[test]
+    fn needs_preserve_detects_trailing_space() {
+        assert!(needs_preserve("hello "));
+    }
+
+    #[test]
+    fn needs_preserve_detects_leading_tab() {
+        assert!(needs_preserve("\thello"));
+    }
+
+    #[test]
+    fn needs_preserve_detects_trailing_newline() {
+        assert!(needs_preserve("hello\n"));
+    }
+
+    #[test]
+    fn needs_preserve_returns_false_for_clean_string() {
+        assert!(!needs_preserve("hello"));
+    }
+
+    #[test]
+    fn needs_preserve_returns_false_for_empty_string() {
+        assert!(!needs_preserve(""));
+    }
 }

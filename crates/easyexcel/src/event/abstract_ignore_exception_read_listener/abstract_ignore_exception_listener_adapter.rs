@@ -87,3 +87,151 @@ where
         true
     }
 }
+
+#[cfg(test)]
+mod adapter_tests {
+    use super::*;
+    use std::cell::Cell;
+
+    /// 测试用静默监听器。
+    struct SilentTestListener {
+        invoke_count: Cell<usize>,
+        silent_exception_count: Cell<usize>,
+        silent_extra_count: Cell<usize>,
+        after_count: Cell<usize>,
+    }
+
+    impl SilentTestListener {
+        fn new() -> Self {
+            Self {
+                invoke_count: Cell::new(0),
+                silent_exception_count: Cell::new(0),
+                silent_extra_count: Cell::new(0),
+                after_count: Cell::new(0),
+            }
+        }
+    }
+
+    impl ReadListener<crate::CellValue> for SilentTestListener {
+        fn invoke(
+            &mut self,
+            _data: crate::CellValue,
+            _context: &AnalysisContext,
+        ) -> crate::core::analysis_context::Result<()> {
+            self.invoke_count.set(self.invoke_count.get() + 1);
+            Ok(())
+        }
+
+        fn do_after_all_analysed(
+            &mut self,
+            _context: &AnalysisContext,
+        ) -> crate::core::analysis_context::Result<()> {
+            self.after_count.set(self.after_count.get() + 1);
+            Ok(())
+        }
+    }
+
+    impl crate::event::AbstractIgnoreExceptionReadListener<crate::CellValue> for SilentTestListener {
+        fn on_exception_silent(
+            &mut self,
+            _error: &crate::core::excel_error::ExcelError,
+            _context: &AnalysisContext,
+        ) {
+            self.silent_exception_count.set(self.silent_exception_count.get() + 1);
+        }
+
+        fn extra_silent(&mut self, _extra: &CellExtra, _context: &AnalysisContext) {
+            self.silent_extra_count.set(self.silent_extra_count.get() + 1);
+        }
+    }
+
+    #[test]
+    fn new_creates_adapter() {
+        let listener = SilentTestListener::new();
+        let adapter = AbstractIgnoreExceptionListenerAdapter::new(listener);
+        assert_eq!(adapter.inner().invoke_count.get(), 0);
+    }
+
+    #[test]
+    fn inner_returns_reference() {
+        let listener = SilentTestListener::new();
+        let adapter = AbstractIgnoreExceptionListenerAdapter::new(listener);
+        let _inner: &SilentTestListener = adapter.inner();
+    }
+
+    #[test]
+    fn inner_mut_returns_mutable_reference() {
+        let listener = SilentTestListener::new();
+        let mut adapter = AbstractIgnoreExceptionListenerAdapter::new(listener);
+        let _inner: &mut SilentTestListener = adapter.inner_mut();
+    }
+
+    #[test]
+    fn into_inner_consumes_adapter() {
+        let listener = SilentTestListener::new();
+        let adapter = AbstractIgnoreExceptionListenerAdapter::new(listener);
+        let inner = adapter.into_inner();
+        assert_eq!(inner.invoke_count.get(), 0);
+    }
+
+    #[test]
+    fn on_exception_delegates_to_silent() {
+        let listener = SilentTestListener::new();
+        let mut adapter = AbstractIgnoreExceptionListenerAdapter::new(listener);
+        let context = AnalysisContext::new("Sheet1", 0, 0);
+        let error = crate::core::excel_error::ExcelError::Format("test".to_owned());
+        let action = adapter.on_exception(&error, &context);
+        // 忽略异常适配器应返回 Continue
+        assert_eq!(action, crate::core::ErrorAction::Continue);
+        assert_eq!(adapter.inner().silent_exception_count.get(), 1);
+    }
+
+    #[test]
+    fn invoke_delegates_to_inner() {
+        let listener = SilentTestListener::new();
+        let mut adapter = AbstractIgnoreExceptionListenerAdapter::new(listener);
+        let context = AnalysisContext::new("Sheet1", 0, 0);
+        adapter.invoke(crate::CellValue::Int(1), &context).unwrap();
+        assert_eq!(adapter.inner().invoke_count.get(), 1);
+    }
+
+    #[test]
+    fn invoke_head_delegates_to_inner() {
+        let listener = SilentTestListener::new();
+        let mut adapter = AbstractIgnoreExceptionListenerAdapter::new(listener);
+        let context = AnalysisContext::new("Sheet1", 0, 0);
+        let mut head = HashMap::new();
+        head.insert("Name".to_owned(), 0);
+        adapter.invoke_head(&head, &context).unwrap();
+    }
+
+    #[test]
+    fn extra_delegates_to_extra_silent() {
+        let listener = SilentTestListener::new();
+        let mut adapter = AbstractIgnoreExceptionListenerAdapter::new(listener);
+        let context = AnalysisContext::new("Sheet1", 0, 0);
+        let extra = CellExtra::new(
+            crate::core::enum_cell_extra_type::CellExtraType::Merge,
+            None, 0, 1, 0, 1,
+        );
+        adapter.extra(&extra, &context).unwrap();
+        assert_eq!(adapter.inner().silent_extra_count.get(), 1);
+    }
+
+    #[test]
+    fn do_after_all_analysed_delegates() {
+        let listener = SilentTestListener::new();
+        let mut adapter = AbstractIgnoreExceptionListenerAdapter::new(listener);
+        let context = AnalysisContext::new("Sheet1", 0, 0);
+        adapter.do_after_all_analysed(&context).unwrap();
+        assert_eq!(adapter.inner().after_count.get(), 1);
+    }
+
+    #[test]
+    fn has_next_always_returns_true() {
+        let listener = SilentTestListener::new();
+        let mut adapter = AbstractIgnoreExceptionListenerAdapter::new(listener);
+        let context = AnalysisContext::new("Sheet1", 0, 0);
+        assert!(adapter.has_next(&context));
+    }
+}

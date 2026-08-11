@@ -59,3 +59,42 @@ impl<V: CsvCellValue> CsvCell<V> {
         self.is_part_of_array_formula_group()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::csv::CsvCell;
+    use easyexcel_model::CellValue;
+
+    type TestCell = CsvCell<CellValue>;
+
+    #[test]
+    fn comment_stubs_are_noop() {
+        let mut cell = TestCell::new(0);
+        cell.set_cell_comment(None);
+        assert!(cell.get_cell_comment().is_none());
+        cell.remove_cell_comment();
+    }
+
+    #[test]
+    fn hyperlink_stubs_are_noop() {
+        let mut cell = TestCell::new(0);
+        cell.set_hyperlink(None);
+        assert!(cell.get_hyperlink().is_none());
+        cell.remove_hyperlink();
+    }
+
+    #[test]
+    fn array_formula_stubs_are_noop() {
+        let cell = TestCell::new(0);
+        assert!(!cell.is_part_of_array_formula_group());
+        assert!(!cell.is_part_of_array_formula_group_java());
+        assert!(cell.get_array_formula_range().is_none());
+    }
+
+    #[test]
+    fn set_as_active_cell_is_noop() {
+        let mut cell = TestCell::new(0);
+        cell.set_as_active_cell();
+        // 不崩溃即可
+    }
+}

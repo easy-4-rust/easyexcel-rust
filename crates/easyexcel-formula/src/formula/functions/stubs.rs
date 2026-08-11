@@ -51,3 +51,35 @@ pub const EXT_FUNCTIONS: &[&str] = &[
     "CALL",
     "REGISTER.ID",
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::formula::functions::testutil::TestCtx;
+
+    #[test]
+    fn ext_functions_all_registered() {
+        let r = crate::formula::functions::Registry::standard();
+        for name in EXT_FUNCTIONS {
+            assert!(
+                r.get(name).is_some(),
+                "EXT function {name} should be registered"
+            );
+        }
+    }
+
+    #[test]
+    fn unsupported_returns_na() {
+        let mut ctx = TestCtx::new();
+        for name in EXT_FUNCTIONS {
+            let r = unsupported(&mut ctx, &[]);
+            assert_eq!(r, Value::Error(CellError::NA), "{name} should return #N/A");
+        }
+    }
+
+    #[test]
+    fn ext_functions_count() {
+        // 验证列表不为空且合理
+        assert!(EXT_FUNCTIONS.len() >= 20);
+    }
+}

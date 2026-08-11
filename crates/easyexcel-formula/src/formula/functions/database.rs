@@ -600,4 +600,100 @@ mod tests {
         assert!(r.get("DVAR").is_some());
         assert!(r.get("DVARP").is_some());
     }
+
+    // ── 补充数据库函数测试 ──────────────────────────────────────────────
+
+    #[test]
+    fn dsum_empty_result() {
+        // criteria 匹配不到任何行 → 返回 0
+        let mut ctx2 = TestCtx::with_cells(&[
+            (0, 0, Value::Text("Age".into())),
+            (1, 0, Value::Number(10.0)),
+            (2, 0, Value::Number(20.0)),
+            (3, 0, Value::Text("Age".into())),
+            (4, 0, Value::Number(99.0)),
+        ]);
+        let result = dsum(
+            &mut ctx2,
+            &[rng(0, 0, 2, 0), Value::Text("Age".into()), rng(3, 0, 4, 0)],
+        );
+        assert_eq!(result, Value::Number(0.0));
+    }
+
+    #[test]
+    fn dcount_empty_result() {
+        let mut ctx2 = TestCtx::with_cells(&[
+            (0, 0, Value::Text("Age".into())),
+            (1, 0, Value::Number(10.0)),
+            (3, 0, Value::Text("Age".into())),
+            (4, 0, Value::Number(99.0)),
+        ]);
+        let result = dcount(
+            &mut ctx2,
+            &[rng(0, 0, 1, 0), Value::Text("Age".into()), rng(3, 0, 4, 0)],
+        );
+        assert_eq!(result, Value::Number(0.0));
+    }
+
+    #[test]
+    fn dmax_empty_result() {
+        let mut ctx2 = TestCtx::with_cells(&[
+            (0, 0, Value::Text("Age".into())),
+            (1, 0, Value::Number(10.0)),
+            (3, 0, Value::Text("Age".into())),
+            (4, 0, Value::Number(99.0)),
+        ]);
+        let result = dmax(
+            &mut ctx2,
+            &[rng(0, 0, 1, 0), Value::Text("Age".into()), rng(3, 0, 4, 0)],
+        );
+        assert_eq!(result, Value::Number(0.0));
+    }
+
+    #[test]
+    fn dmin_empty_result() {
+        let mut ctx2 = TestCtx::with_cells(&[
+            (0, 0, Value::Text("Age".into())),
+            (1, 0, Value::Number(10.0)),
+            (3, 0, Value::Text("Age".into())),
+            (4, 0, Value::Number(99.0)),
+        ]);
+        let result = dmin(
+            &mut ctx2,
+            &[rng(0, 0, 1, 0), Value::Text("Age".into()), rng(3, 0, 4, 0)],
+        );
+        assert_eq!(result, Value::Number(0.0));
+    }
+
+    #[test]
+    fn dstdev_single_value() {
+        // 只有一个匹配值 → #DIV/0!
+        let mut ctx2 = TestCtx::with_cells(&[
+            (0, 0, Value::Text("Age".into())),
+            (1, 0, Value::Number(25.0)),
+            (3, 0, Value::Text("Age".into())),
+            (4, 0, Value::Number(25.0)),
+        ]);
+        let result = dstdev(
+            &mut ctx2,
+            &[rng(0, 0, 1, 0), Value::Text("Age".into()), rng(3, 0, 4, 0)],
+        );
+        assert_eq!(result, Value::Error(CellError::Div0));
+    }
+
+    #[test]
+    fn dvarp_single_value() {
+        let mut ctx2 = TestCtx::with_cells(&[
+            (0, 0, Value::Text("Age".into())),
+            (1, 0, Value::Number(25.0)),
+            (3, 0, Value::Text("Age".into())),
+            (4, 0, Value::Number(25.0)),
+        ]);
+        let result = dvarp(
+            &mut ctx2,
+            &[rng(0, 0, 1, 0), Value::Text("Age".into()), rng(3, 0, 4, 0)],
+        );
+        // DVARP 只匹配到一行 → n=1 → 方差为 0.0
+        assert_eq!(result, Value::Number(0.0));
+    }
 }
