@@ -29,3 +29,9 @@ include!(
 include!(
     "core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs"
 );
+include!(
+    "core_annotation_style_handler_1to1_tests_cases/annotation_index_and_name_data_test.rs"
+);
+include!(
+    "core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs"
+);
