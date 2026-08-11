@@ -28,6 +28,18 @@ replace the stub before any nightly or release gate can pass.
 
 Consumers **must** reject a baseline where `pending_generation` is `true`.
 
+### macOS nightly baseline (local short test)
+
+The current `nightly-ubuntu-x64.json` was generated locally on macOS Apple
+Silicon with reduced parameters (100K rows, 1 warmup, 3 measurements per
+temperature).  This serves as a development-time smoke baseline only.
+
+**本 baseline 是本机 macOS 100K rows 短测，不替代 Linux 1M rows release 基线。**
+
+The `release-ubuntu-x64.json` stub (`pending_generation: true`) must be
+replaced by a real baseline produced on the fixed Linux runner described
+below before any release gate can pass.
+
 ## Baseline generation runbook
 
 This runbook describes how to produce a reviewed stable baseline on the
