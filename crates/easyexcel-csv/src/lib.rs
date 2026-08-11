@@ -1,5 +1,7 @@
 //! CSV、TSV、字符集检测、类型推断和流式编解码。
 
+#![allow(missing_docs)]
+
 pub mod csv;
 mod stubs;
 

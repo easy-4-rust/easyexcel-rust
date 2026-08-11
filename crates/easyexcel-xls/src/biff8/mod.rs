@@ -36,7 +36,9 @@ pub use encrypt::{
     Biff8CryptoApiEncryption, decrypt_crypto_api_workbook_stream,
     encrypt_crypto_api_workbook_stream, prepare_crypto_api_encryption,
 };
-pub(crate) use format::{builtin_format_code, builtin_format_id};
+pub(crate) use format::builtin_format_code;
+#[allow(unused_imports)]
+pub(crate) use format::builtin_format_id;
 pub use numeric::{
     Biff8NumericCell, Biff8NumericSheets, Biff8SheetDisplays, decode_rk, format_numeric_displays,
     load_numeric_displays, load_numeric_displays_with_password, parse_format_record,

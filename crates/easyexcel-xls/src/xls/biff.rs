@@ -4,6 +4,7 @@
 
 // ---- Record type constants -------------------------------------------------
 
+#[allow(unused_imports)]
 pub use crate::biff8::record_sid::{
     BLANK_SID as BLANK, BOF_SID as BOF, BOOL_ERR_SID as BOOLERR, BOUND_SHEET_SID as BOUNDSHEET,
     CODE_PAGE_SID as CODEPAGE, CONTINUE_SID as CONTINUE, DATE_MODE_SID as DATEMODE,

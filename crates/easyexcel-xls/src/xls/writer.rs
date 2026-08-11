@@ -162,7 +162,7 @@ pub fn to_biff8_book(workbook: &Workbook) -> Result<Biff8Book> {
                     source.name, range.end.col
                 ))
             })?;
-            target.add_merge(Biff8Merge::try_from_bounds(
+            let _ = target.add_merge(Biff8Merge::try_from_bounds(
                 range.start.row,
                 range.end.row,
                 first_column,

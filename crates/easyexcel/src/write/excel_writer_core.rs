@@ -33,7 +33,7 @@ use easyexcel_xlsx::xlsx::generation::{
 
 use crate::write::append_rows::append_rows_to_worksheet_with_gzip_and_context;
 use crate::write::creators::{
-    Biff8RowCreator, XlsxCell, XlsxRowCreator, XlsxSheetCreator, XlsxWorkBookCreator,
+    Biff8RowCreator, XlsxCell, XlsxRowCreator, XlsxSheetCreator,
 };
 use crate::write::handler_execution_scope::HandlerExecutionScope;
 use crate::write::image_layout::ImageLayout;
@@ -42,7 +42,7 @@ use crate::write::sheet_style_context::{CellFormatContext, SheetStyleContext};
 use crate::write::xls_adapter::{
     Biff8Book, Biff8Cell, Biff8Color, Biff8Comment, Biff8FillPattern, Biff8HyperlinkKind,
     Biff8Merge, Biff8Sheet, Biff8StyleRequest, Biff8StyleTable, GeneratedBiff8CellValue,
-    apply_excel_cell_style, apply_excel_font_style, apply_write_font,
+    apply_excel_cell_style, apply_write_font,
     date_to_excel_serial_with_windowing, datetime_to_excel_serial_with_windowing,
     writer_horizontal_alignment, writer_vertical_alignment,
 };
@@ -108,7 +108,6 @@ pub use crate::write::metadata::collection_row_data::CollectionRowData;
 pub use crate::write::metadata::map_row_data::MapRowData;
 pub use crate::write::metadata::row_data::RowData as MirroredRowData;
 use crate::write::metadata::style::write_cell_style::merge_write_cell_style;
-use crate::write::metadata::style::write_font::merge_excel_font_style as merge_handler_font_style;
 pub use crate::write::metadata::style::write_font::{
     excel_font_style_from_write_font, merge_excel_font_style, merge_write_font,
     write_font_from_excel_font_style,

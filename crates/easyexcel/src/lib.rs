@@ -5,6 +5,11 @@
 //! 当前作用域供测试（`super::*`）使用，不再定义任何类型。所有 facade 类型
 //! 拆分到独立文件（每个类型一个 `.rs`，命名 1:1 对应 Java 类）。
 
+// Java API 镜像方法（getter/setter/builder）大量缺中文 doc 注释，
+// 后续逐步补充；暂不因 missing_docs 产生 warning 噪音。
+#![allow(missing_docs)]
+//! 拆分到独立文件（每个类型一个 `.rs`，命名 1:1 对应 Java 类）。
+
 pub mod analysis;
 pub mod annotation;
 pub mod cache;

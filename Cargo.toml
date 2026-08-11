@@ -135,6 +135,7 @@ zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 [workspace.lints.rust]
 unsafe_code = "forbid"
 missing_docs = "warn"
+dead_code = "allow"
 
 [workspace.lints.clippy]
 all = "warn"

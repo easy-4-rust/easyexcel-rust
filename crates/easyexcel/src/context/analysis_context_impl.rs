@@ -3,7 +3,7 @@
 use std::collections::HashSet;
 
 use crate::HolderEnum;
-use crate::core::{AnalysisContext, CellValue, CustomReadObject, ExcelError, Result};
+use crate::core::{AnalysisContext, CustomReadObject, ExcelError, Result};
 use crate::support::ExcelTypeEnum;
 
 use crate::ReadOptions;

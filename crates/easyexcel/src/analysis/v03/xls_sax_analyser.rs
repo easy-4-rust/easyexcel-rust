@@ -8,7 +8,7 @@ use crate::core::{AnalysisContext, ExcelError, ExcelRow, ReadListener, Result};
 use crate::analysis::excel_read_executor::{ExcelReadExecutor, NoopDynamicReadListener};
 use crate::analysis::v03::xls_list_sheet_listener::XlsListSheetListener;
 use crate::analysis::v03::xls_record_dispatcher::{XlsRecordDispatchState, XlsRecordDispatcher};
-use crate::context::{DefaultXlsReadContext, ReadSheet, XlsReadContext};
+use crate::context::{DefaultXlsReadContext, ReadSheet};
 use crate::{ReadOptions, read_xls};
 
 /// 对应 Java：`XlsSaxAnalyser implements HSSFListener, ExcelReadExecutor`.

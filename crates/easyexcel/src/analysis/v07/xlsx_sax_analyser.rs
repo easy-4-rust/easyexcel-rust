@@ -6,7 +6,7 @@ use crate::context::analysis_context::AnalysisContextLifecycle;
 use crate::core::{AnalysisContext, ExcelError, ExcelRow, ReadListener, Result};
 
 use crate::analysis::excel_read_executor::{ExcelReadExecutor, NoopDynamicReadListener};
-use crate::context::{DefaultXlsxReadContext, ReadSheet, XlsxReadContext};
+use crate::context::{DefaultXlsxReadContext, ReadSheet};
 use crate::read::list_xlsx_sheets;
 use crate::{ReadOptions, read_xlsx};
 

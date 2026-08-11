@@ -12,9 +12,7 @@ mod template_sheet;
 mod template_writer;
 
 pub use builder_fill_executor::{BuilderFillExecutor, create_builder_fill_executor};
-pub(crate) use builder_fill_executor::{
-    CompiledTemplateFillStyles, create_builder_fill_executor_with_styles,
-};
+pub(crate) use builder_fill_executor::CompiledTemplateFillStyles;
 pub use fill_config::{FillConfig, FillConfigBuilder, FillDirection};
 pub use fill_wrapper::FillWrapper;
 pub use template_data::{IntoTemplateValue, TemplateData};
