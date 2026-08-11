@@ -28,13 +28,13 @@ use zip::ZipArchive;
 use super::*;
 
 #[allow(unused_imports)]
+use crate::write::create_work_book;
+#[allow(unused_imports)]
+use crate::write::creators::{XlsxSheetCreator, XlsxWorkBookCreator};
+#[allow(unused_imports)]
 use crate::write::handler_execution_scope::load_annotation_handlers;
 #[allow(unused_imports)]
 use crate::write::shared_write_handler::SharedWriteHandler;
-#[allow(unused_imports)]
-use crate::write::creators::{XlsxWorkBookCreator, XlsxSheetCreator};
-#[allow(unused_imports)]
-use crate::write::create_work_book;
 
 #[allow(dead_code)]
 fn test_error(error: impl std::fmt::Display) -> ExcelError {

@@ -32,9 +32,7 @@ use easyexcel_xlsx::xlsx::generation::{
 };
 
 use crate::write::append_rows::append_rows_to_worksheet_with_gzip_and_context;
-use crate::write::creators::{
-    Biff8RowCreator, XlsxCell, XlsxRowCreator, XlsxSheetCreator,
-};
+use crate::write::creators::{Biff8RowCreator, XlsxCell, XlsxRowCreator, XlsxSheetCreator};
 use crate::write::handler_execution_scope::HandlerExecutionScope;
 use crate::write::image_layout::ImageLayout;
 use crate::write::shared_write_handler::StatefulSheetState;
@@ -42,9 +40,9 @@ use crate::write::sheet_style_context::{CellFormatContext, SheetStyleContext};
 use crate::write::xls_adapter::{
     Biff8Book, Biff8Cell, Biff8Color, Biff8Comment, Biff8FillPattern, Biff8HyperlinkKind,
     Biff8Merge, Biff8Sheet, Biff8StyleRequest, Biff8StyleTable, GeneratedBiff8CellValue,
-    apply_excel_cell_style, apply_write_font,
-    date_to_excel_serial_with_windowing, datetime_to_excel_serial_with_windowing,
-    writer_horizontal_alignment, writer_vertical_alignment,
+    apply_excel_cell_style, apply_write_font, date_to_excel_serial_with_windowing,
+    datetime_to_excel_serial_with_windowing, writer_horizontal_alignment,
+    writer_vertical_alignment,
 };
 
 #[cfg(test)]
