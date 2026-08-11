@@ -5,10 +5,18 @@
 框架中立的 Web 运行时，提供有界电子表格上传、背压行流与流式下载。
 
 > 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+>
+> 最后更新: 2026-08-11 · 状态: 活跃
 
 ## 概述
 
 本 crate 是 EasyExcel-Rust Workspace 的正式发布模块。本文面向需要理解模块职责、直接调用底层 API 或维护格式引擎的 Rust 开发者。普通业务项目应优先通过 `easyexcel` 门面访问重导出的能力。
+
+## Crate 定位
+
+`easyexcel-web` 是**框架中立的 Web 执行内核**。它拥有每个 HTTP 适配器都需要的共享逻辑：分块上传落盘到受控临时文件、资源限制（文件字节数、总行数）、背压行通道、上传/处理超时、并发任务许可、取消传播、临时文件自动清理以及 RFC 9457 风格错误映射。
+
+七个框架适配器（`easyexcel-axum`、`easyexcel-actix`、`easyexcel-hyper`、`easyexcel-poem`、`easyexcel-rocket`、`easyexcel-salvo`、`easyexcel-warp`）是薄传输桥接层，负责转换框架原生请求/响应类型，所有重活均委托给本内核。共享行为由 [`tests/easyexcel-web-conformance`](https://github.com/easy-4-rust/easyexcel-rust/tree/main/tests/easyexcel-web-conformance) 套件验证。
 
 ## 一览
 
@@ -32,6 +40,18 @@ flowchart LR
 ```
 
 依赖方向必须保持从门面或格式引擎指向基础模块；本 crate 不反向依赖业务应用。
+
+## 能力与边界
+
+| easyexcel-web 做什么 | easyexcel-web 不做什么 |
+|:---|:---|
+| 分块上传落盘到有界临时文件 | 框架特定 extractor / responder（使用适配器 crate） |
+| 资源限制：文件字节数、总行数 | 业务校验、鉴权或持久化 |
+| 带背压的异步行通道 | 工作表数 / 公式单元格数限制（取决于解析器） |
+| 上传与处理超时 | 完整上传前的 XLS/XLSX 随机访问 |
+| 并发任务许可 | |
+| 临时文件自动清理 | |
+| RFC 9457 风格错误映射（`ExcelWebErrorCode`） | |
 
 ## 能力矩阵
 
@@ -151,6 +171,7 @@ flowchart LR
 
 - [项目仓库](https://github.com/easy-4-rust/easyexcel-rust)
 - [API 文档](https://docs.rs/easyexcel-web)
+- [Web 一致性测试套件](https://github.com/easy-4-rust/easyexcel-rust/tree/main/tests/easyexcel-web-conformance) -- 七个适配器的共享断言
 - [兼容性矩阵](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
 - [变更日志](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [英文 README](README.md)

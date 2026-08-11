@@ -5,10 +5,18 @@
 Framework-neutral Web runtime for bounded spreadsheet uploads, backpressured row streams and streaming downloads.
 
 > Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+>
+> Last updated: 2026-08-11 · Status: active
 
 ## Overview
 
 This crate is a published module in the EasyExcel-Rust workspace. It is intended for Rust developers who need its boundary, direct engine API or implementation details. Application code should normally consume the re-exported surface through the `easyexcel` facade.
+
+## Crate positioning
+
+`easyexcel-web` is the **framework-neutral Web execution kernel**. It owns the shared logic that every HTTP adapter needs: chunked upload spooling to controlled temporary files, resource limits (file bytes, total rows), backpressured row channels, upload/processing timeouts, concurrent task permits, cancellation propagation, automatic temp-file cleanup and RFC 9457-style error mapping.
+
+The seven framework adapters (`easyexcel-axum`, `easyexcel-actix`, `easyexcel-hyper`, `easyexcel-poem`, `easyexcel-rocket`, `easyexcel-salvo`, `easyexcel-warp`) are thin transport bridges that convert framework-native request/response types and delegate all heavy lifting to this kernel. Shared behavior is verified by the [`tests/easyexcel-web-conformance`](https://github.com/easy-4-rust/easyexcel-rust/tree/main/tests/easyexcel-web-conformance) suite.
 
 ## At a glance
 
@@ -32,6 +40,18 @@ flowchart LR
 ```
 
 Dependency direction remains from the facade or format engines toward foundations; this crate never depends back on an application.
+
+## Capabilities and Boundaries
+
+| What easyexcel-web does | What easyexcel-web does NOT do |
+|:---|:---|
+| Chunked upload spooling to bounded temp files | Framework-specific extractor / responder (use adapter crates) |
+| Resource limits: file bytes, total rows | Business validation, authorization or persistence |
+| Backpressured async row channels | Sheet-count / formula-cell limits (parser-dependent) |
+| Upload and processing timeouts | XLS/XLSX random-access before full upload arrives |
+| Concurrent task permits | |
+| Automatic temp-file cleanup | |
+| RFC 9457-style error mapping (`ExcelWebErrorCode`) | |
 
 ## Capability matrix
 
@@ -151,6 +171,7 @@ The diagram shows the public dependency direction, not that this crate depends o
 
 - [Repository](https://github.com/easy-4-rust/easyexcel-rust)
 - [API documentation](https://docs.rs/easyexcel-web)
+- [Web conformance suite](https://github.com/easy-4-rust/easyexcel-rust/tree/main/tests/easyexcel-web-conformance) -- shared assertions for all seven adapters
 - [Compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
 - [Changelog](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [Chinese README](README.zh-CN.md)

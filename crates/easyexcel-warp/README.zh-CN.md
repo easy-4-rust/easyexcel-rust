@@ -5,6 +5,8 @@
 面向 Warp 的 EasyExcel 原生请求提取与响应适配器。
 
 > 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+>
+> 最后更新: 2026-08-11 · 状态: 活跃
 
 ## 概述
 
@@ -32,6 +34,15 @@ flowchart LR
 
 适配器不得重新实现 Excel 解析、写入或资源策略。业务行在有界通道中消费，下载通过异步文件流交给 Warp。
 
+## 能力与边界
+
+| easyexcel-warp 做什么 | easyexcel-warp 不做什么 |
+|:---|:---|
+| 类型化 `Filter` 提取背压行流 | 上传落盘 / 资源限制 / 超时（在 `easyexcel-web` 中） |
+| `Reply` 流式下载 XLSX/XLS/CSV | 业务校验、鉴权或持久化 |
+| `ExcelWarpRejection` + `recover_excel_rejection` 错误映射 | 重新实现 Excel 解析或写入 |
+| `excel_request` filter 捕获运行时 | TUI / HTML 表单处理 |
+
 ## 能力矩阵
 
 | 能力 | 状态 | 实现 |
@@ -51,6 +62,17 @@ easyexcel-warp = "0.1.3"
 ```
 
 所有工作簿 API 仍通过 `easyexcel::...` 使用；只有 Warp 原生 filter、reply 与 rejection 类型来自本适配器。适配器依赖 `easyexcel`，门面反向重导出会形成循环依赖。两个 crate 必须保持同一发布线。
+
+## 来自 examples 的用法
+
+可运行示例位于 [`examples/warp`](https://github.com/easy-4-rust/easyexcel-rust/tree/main/examples/warp)。默认端口：**8085**。
+
+```bash
+cargo run -p example-warp
+# 监听 http://127.0.0.1:8085
+# POST /upload   - 上传 Excel 文件
+# GET  /download - 下载示例 XLSX
+```
 
 ## 定义行模型
 
@@ -179,7 +201,8 @@ flowchart TB
 
 - [项目仓库](https://github.com/easy-4-rust/easyexcel-rust)
 - [API 文档](https://docs.rs/easyexcel-warp)
-- [easyexcel-web](https://crates.io/crates/easyexcel-web)
+- [easyexcel-web](https://crates.io/crates/easyexcel-web) -- 共享 Web 执行内核
+- [Web 一致性测试套件](https://github.com/easy-4-rust/easyexcel-rust/tree/main/tests/easyexcel-web-conformance)
 - [可运行示例](https://github.com/easy-4-rust/easyexcel-rust/tree/main/examples/warp)
 - [兼容性矩阵](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
 - [英文 README](README.md)

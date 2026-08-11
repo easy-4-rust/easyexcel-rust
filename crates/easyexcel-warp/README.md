@@ -5,6 +5,8 @@
 Native EasyExcel request extraction and response adapter for Warp.
 
 > Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+>
+> Last updated: 2026-08-11 · Status: active
 
 ## Overview
 
@@ -32,6 +34,15 @@ flowchart LR
 
 The adapter does not reimplement spreadsheet parsing, writing or resource policy. Business rows are consumed through a bounded channel and downloads are exposed to Warp as an asynchronous file stream.
 
+## Capabilities and Boundaries
+
+| What easyexcel-warp does | What easyexcel-warp does NOT do |
+|:---|:---|
+| Typed `Filter` for backpressured row stream extraction | Upload spooling / resource limits / timeouts (in `easyexcel-web`) |
+| `Reply` for streaming XLSX/XLS/CSV download | Business validation, authorization or persistence |
+| `ExcelWarpRejection` + `recover_excel_rejection` for error mapping | Reimplementing spreadsheet parsing or writing |
+| Runtime captured by `excel_request` filter | TUI / HTML form handling |
+
 ## Capability matrix
 
 | Capability | Status | Implementation |
@@ -51,6 +62,17 @@ easyexcel-warp = "0.1.3"
 ```
 
 All workbook APIs remain under `easyexcel::...`; only Warp-native filter, reply and rejection types come from this adapter. The adapter depends on `easyexcel`, so facade-side re-export would create a cycle. Keep both crates on the same release line.
+
+## Usage from examples
+
+The runnable example is in [`examples/warp`](https://github.com/easy-4-rust/easyexcel-rust/tree/main/examples/warp). Default port: **8085**.
+
+```bash
+cargo run -p example-warp
+# Listening on http://127.0.0.1:8085
+# POST /upload   - upload an Excel file
+# GET  /download - download a sample XLSX
+```
 
 ## Define the row model
 
@@ -179,7 +201,8 @@ Reverse dependencies such as `easyexcel-web -> easyexcel-warp` or `easyexcel -> 
 
 - [Repository](https://github.com/easy-4-rust/easyexcel-rust)
 - [API documentation](https://docs.rs/easyexcel-warp)
-- [easyexcel-web](https://crates.io/crates/easyexcel-web)
+- [easyexcel-web](https://crates.io/crates/easyexcel-web) -- shared Web execution kernel
+- [Web conformance suite](https://github.com/easy-4-rust/easyexcel-rust/tree/main/tests/easyexcel-web-conformance)
 - [Runnable example](https://github.com/easy-4-rust/easyexcel-rust/tree/main/examples/warp)
 - [Compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
 - [Chinese README](README.zh-CN.md)
