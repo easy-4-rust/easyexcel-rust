@@ -216,6 +216,53 @@ impl<R: BufRead + Seek> StreamingRecordIter<R> {
     }
 }
 
+impl<R: BufRead + Seek> StreamingRecordIter<R> {
+    /// 读取下一条**物理** BIFF record（不合并 CONTINUE 链）。
+    ///
+    /// 与 [`next()`](Iterator::next) 不同，该方法不自动合并后续的 `CONTINUE`
+    /// 记录。每次调用只返回一个物理 record 的 `(sid, payload)`；
+    /// `CONTINUE` 记录作为独立 record 返回，由调用方决定如何处理。
+    ///
+    /// 适用于 [`XlsRecordDispatcher`](crate::analysis::v03::XlsRecordDispatcher)
+    /// 等需要逐条处理物理 record 并自行管理 CONTINUE 链生命周期的场景。
+    ///
+    /// # 返回值
+    ///
+    /// - `Some(Ok((sid, payload)))`：成功读取一条物理 record。
+    /// - `Some(Err(...))`：读取过程中遇到 I/O 错误或 record 损坏。
+    /// - `None`：已到达流末尾（pos >= end）或遇到全零填充。
+    ///
+    /// # 全零填充
+    ///
+    /// 如果读到的 4 字节 header 全为零，视为流结束（与
+    /// [`walk_biff_records`](super::record_stream::walk_biff_records) 行为一致），
+    /// 返回 `None` 而非错误。
+    ///
+    /// 对应 Java：无直接对应对象；Rust 架构扩展（Phase 3 集成用）。
+    pub fn next_raw(&mut self) -> Option<Result<(u16, Vec<u8>)>> {
+        if self.pos >= self.end {
+            return None;
+        }
+
+        let (sid, payload_len) = match self.read_header() {
+            Ok(header) => header,
+            Err(e) => return Some(Err(e)),
+        };
+
+        // 全零 header 视为流结束（与 walk_biff_records 的 all-zeros 检查一致）
+        if sid == 0 && payload_len == 0 {
+            return None;
+        }
+
+        let payload = match self.read_payload(payload_len) {
+            Ok(p) => p,
+            Err(e) => return Some(Err(e)),
+        };
+
+        Some(Ok((sid, payload)))
+    }
+}
+
 impl<R: BufRead + Seek> Iterator for StreamingRecordIter<R> {
     type Item = Result<(u16, Vec<u8>)>;
 
@@ -457,5 +504,88 @@ mod tests {
         assert_eq!(payload, vec![0xAA]);
         // end 已达到，不应读到零填充
         assert!(iter.next().is_none());
+    }
+
+    // --- next_raw() 测试 ---
+
+    #[test]
+    fn next_raw_reads_single_record() {
+        let data = make_record(0x0203, &[0xAA, 0xBB]);
+        let mut iter = make_iter(&data);
+
+        let (sid, payload) = iter.next_raw().unwrap().unwrap();
+        assert_eq!(sid, 0x0203);
+        assert_eq!(payload, vec![0xAA, 0xBB]);
+        assert!(iter.next_raw().is_none());
+    }
+
+    #[test]
+    fn next_raw_does_not_merge_continue() {
+        // 主 record（SST） + 2 个 CONTINUE
+        let mut data = Vec::new();
+        data.extend_from_slice(&make_record(0x00FC, &[0x01, 0x02])); // SST
+        data.extend_from_slice(&make_record(CONTINUE_SID, &[0x03, 0x04])); // CONTINUE
+        data.extend_from_slice(&make_record(CONTINUE_SID, &[0x05])); // CONTINUE
+        data.extend_from_slice(&make_record(0x000A, &[])); // EOF
+
+        let mut iter = make_iter(&data);
+
+        // next_raw 返回每条物理 record，不合并 CONTINUE
+        let (sid, payload) = iter.next_raw().unwrap().unwrap();
+        assert_eq!(sid, 0x00FC);
+        assert_eq!(payload, vec![0x01, 0x02]);
+
+        let (sid, payload) = iter.next_raw().unwrap().unwrap();
+        assert_eq!(sid, CONTINUE_SID);
+        assert_eq!(payload, vec![0x03, 0x04]);
+
+        let (sid, payload) = iter.next_raw().unwrap().unwrap();
+        assert_eq!(sid, CONTINUE_SID);
+        assert_eq!(payload, vec![0x05]);
+
+        let (sid, payload) = iter.next_raw().unwrap().unwrap();
+        assert_eq!(sid, 0x000A);
+        assert!(payload.is_empty());
+
+        assert!(iter.next_raw().is_none());
+    }
+
+    #[test]
+    fn next_raw_stops_on_zero_header() {
+        // 一条有效 record 后跟全零填充
+        let mut data = make_record(0x0203, &[0xAA]);
+        data.extend_from_slice(&[0; 8]); // 全零填充
+
+        let len = data.len() as u64;
+        let mut iter = StreamingRecordIter::new(Cursor::new(data), 0, len).unwrap();
+
+        let (sid, _) = iter.next_raw().unwrap().unwrap();
+        assert_eq!(sid, 0x0203);
+        // 全零 header 应返回 None
+        assert!(iter.next_raw().is_none());
+    }
+
+    #[test]
+    fn next_raw_handles_empty_stream() {
+        let data: Vec<u8> = Vec::new();
+        let mut iter = make_iter(&data);
+        assert!(iter.next_raw().is_none());
+    }
+
+    #[test]
+    fn next_raw_and_next_produce_same_first_record() {
+        // 验证 next_raw 和 next 对第一条 record 返回相同结果（无 CONTINUE 时）
+        let mut data = Vec::new();
+        data.extend_from_slice(&make_record(0x0203, &[1, 2, 3]));
+        data.extend_from_slice(&make_record(0x000A, &[]));
+
+        let data_clone = data.clone();
+        let mut iter_raw = make_iter(&data);
+        let mut iter_merged = make_iter(&data_clone);
+
+        let (sid_r, p_r) = iter_raw.next_raw().unwrap().unwrap();
+        let (sid_m, p_m) = iter_merged.next().unwrap().unwrap();
+        assert_eq!(sid_r, sid_m);
+        assert_eq!(p_r, p_m);
     }
 }
