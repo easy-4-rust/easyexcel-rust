@@ -1,0 +1,940 @@
+{
+  "schema_version": 2,
+  "evidence": [
+    {
+      "id": "annotation.column_width.compile.v1",
+      "kind": "compile_probe",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.ColumnWidth",
+        "com.alibaba.excel.annotation.write.style.ColumnWidth#value()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::column_width::ColumnWidth",
+        "easyexcel_derive::annotation::write_style::column_width::ColumnWidth::value"
+      ],
+      "profiles": [
+        "stable-default-features",
+        "stable-all-features"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--no-run"],
+        ["cargo", "test", "-p", "easyexcel-test", "--all-features", "--test", "public_api_style_annotations_evidence_tests", "--no-run"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/column_width.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    },
+    {
+      "id": "annotation.column_width.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.ColumnWidth",
+        "com.alibaba.excel.annotation.write.style.ColumnWidth#value()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::column_width::ColumnWidth",
+        "easyexcel_derive::annotation::write_style::column_width::ColumnWidth::value"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "column_width"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/column_width.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"},
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"}
+      ]
+    },
+    {
+      "id": "annotation.column_width.java-golden.v1",
+      "kind": "java_golden",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.ColumnWidth",
+        "com.alibaba.excel.annotation.write.style.ColumnWidth#value()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::column_width::ColumnWidth",
+        "easyexcel_derive::annotation::write_style::column_width::ColumnWidth::value"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "column_width"]
+      ],
+      "source_files": [
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    },
+    {
+      "id": "annotation.head_row_height.compile.v1",
+      "kind": "compile_probe",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.HeadRowHeight",
+        "com.alibaba.excel.annotation.write.style.HeadRowHeight#value()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_row_height::HeadRowHeight",
+        "easyexcel_derive::annotation::write_style::head_row_height::HeadRowHeight::value"
+      ],
+      "profiles": [
+        "stable-default-features",
+        "stable-all-features"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--no-run"],
+        ["cargo", "test", "-p", "easyexcel-test", "--all-features", "--test", "public_api_style_annotations_evidence_tests", "--no-run"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/head_row_height.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    },
+    {
+      "id": "annotation.head_row_height.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.HeadRowHeight",
+        "com.alibaba.excel.annotation.write.style.HeadRowHeight#value()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_row_height::HeadRowHeight",
+        "easyexcel_derive::annotation::write_style::head_row_height::HeadRowHeight::value"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "head_row_height"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/head_row_height.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"},
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"}
+      ]
+    },
+    {
+      "id": "annotation.head_row_height.java-golden.v1",
+      "kind": "java_golden",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.HeadRowHeight",
+        "com.alibaba.excel.annotation.write.style.HeadRowHeight#value()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_row_height::HeadRowHeight",
+        "easyexcel_derive::annotation::write_style::head_row_height::HeadRowHeight::value"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "head_row_height"]
+      ],
+      "source_files": [
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    },
+    {
+      "id": "annotation.content_row_height.compile.v1",
+      "kind": "compile_probe",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.ContentRowHeight",
+        "com.alibaba.excel.annotation.write.style.ContentRowHeight#value()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_row_height::ContentRowHeight",
+        "easyexcel_derive::annotation::write_style::content_row_height::ContentRowHeight::value"
+      ],
+      "profiles": [
+        "stable-default-features",
+        "stable-all-features"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--no-run"],
+        ["cargo", "test", "-p", "easyexcel-test", "--all-features", "--test", "public_api_style_annotations_evidence_tests", "--no-run"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/content_row_height.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    },
+    {
+      "id": "annotation.content_row_height.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.ContentRowHeight",
+        "com.alibaba.excel.annotation.write.style.ContentRowHeight#value()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_row_height::ContentRowHeight",
+        "easyexcel_derive::annotation::write_style::content_row_height::ContentRowHeight::value"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "content_row_height"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/content_row_height.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"},
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"}
+      ]
+    },
+    {
+      "id": "annotation.content_row_height.java-golden.v1",
+      "kind": "java_golden",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.ContentRowHeight",
+        "com.alibaba.excel.annotation.write.style.ContentRowHeight#value()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_row_height::ContentRowHeight",
+        "easyexcel_derive::annotation::write_style::content_row_height::ContentRowHeight::value"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "content_row_height"]
+      ],
+      "source_files": [
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    },
+    {
+      "id": "annotation.head_style.compile.v1",
+      "kind": "compile_probe",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.HeadStyle",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#dataFormat()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#hidden()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#locked()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#quotePrefix()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#horizontalAlignment()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#verticalAlignment()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#rotation()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#indent()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#shrinkToFit()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#wrapped()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderLeft()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderRight()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderTop()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderBottom()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderLeftColor()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderRightColor()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderTopColor()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderBottomColor()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillPatternType()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillBackgroundColor()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillForegroundColor()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::data_format",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::hidden",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::locked",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::quote_prefix",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::horizontal_alignment",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::vertical_alignment",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::rotation",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::indent",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::shrink_to_fit",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::wrapped",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_left",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_right",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_top",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_bottom",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_left_color",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_right_color",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_top_color",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_bottom_color",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::fill_pattern",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::fill_background_color",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::fill_foreground_color"
+      ],
+      "profiles": [
+        "stable-default-features",
+        "stable-all-features"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--no-run"],
+        ["cargo", "test", "-p", "easyexcel-test", "--all-features", "--test", "public_api_style_annotations_evidence_tests", "--no-run"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/head_style.rs"},
+        {"path": "crates/easyexcel-derive/src/annotation/style_parser/cell_style.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    },
+    {
+      "id": "annotation.head_style.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.HeadStyle",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#dataFormat()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#hidden()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#locked()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#quotePrefix()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#horizontalAlignment()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#verticalAlignment()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#rotation()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#indent()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#shrinkToFit()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#wrapped()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderLeft()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderRight()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderTop()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderBottom()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderLeftColor()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderRightColor()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderTopColor()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderBottomColor()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillPatternType()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillBackgroundColor()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillForegroundColor()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::data_format",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::hidden",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::locked",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::quote_prefix",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::horizontal_alignment",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::vertical_alignment",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::rotation",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::indent",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::shrink_to_fit",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::wrapped",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_left",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_right",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_top",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_bottom",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_left_color",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_right_color",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_top_color",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_bottom_color",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::fill_pattern",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::fill_background_color",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::fill_foreground_color"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "head_style"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/head_style.rs"},
+        {"path": "crates/easyexcel-derive/src/annotation/style_parser/cell_style.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"},
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"}
+      ]
+    },
+    {
+      "id": "annotation.head_style.java-golden.v1",
+      "kind": "java_golden",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.HeadStyle",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#dataFormat()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#hidden()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#locked()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#quotePrefix()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#horizontalAlignment()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#verticalAlignment()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#rotation()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#indent()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#shrinkToFit()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#wrapped()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderLeft()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderRight()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderTop()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderBottom()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderLeftColor()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderRightColor()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderTopColor()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderBottomColor()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillPatternType()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillBackgroundColor()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillForegroundColor()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::data_format",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::hidden",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::locked",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::quote_prefix",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::horizontal_alignment",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::vertical_alignment",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::rotation",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::indent",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::shrink_to_fit",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::wrapped",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_left",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_right",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_top",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_bottom",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_left_color",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_right_color",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_top_color",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_bottom_color",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::fill_pattern",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::fill_background_color",
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::fill_foreground_color"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "head_style"]
+      ],
+      "source_files": [
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    },
+    {
+      "id": "annotation.content_style.compile.v1",
+      "kind": "compile_probe",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.ContentStyle",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#dataFormat()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#hidden()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#locked()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#quotePrefix()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#horizontalAlignment()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#verticalAlignment()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#rotation()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#indent()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#shrinkToFit()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#wrapped()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderLeft()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderRight()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderTop()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderBottom()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderLeftColor()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderRightColor()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderTopColor()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderBottomColor()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillPatternType()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillBackgroundColor()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillForegroundColor()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::data_format",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::hidden",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::locked",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::quote_prefix",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::horizontal_alignment",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::vertical_alignment",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::rotation",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::indent",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::shrink_to_fit",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::wrapped",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_left",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_right",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_top",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_bottom",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_left_color",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_right_color",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_top_color",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_bottom_color",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::fill_pattern",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::fill_background_color",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::fill_foreground_color"
+      ],
+      "profiles": [
+        "stable-default-features",
+        "stable-all-features"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--no-run"],
+        ["cargo", "test", "-p", "easyexcel-test", "--all-features", "--test", "public_api_style_annotations_evidence_tests", "--no-run"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/content_style.rs"},
+        {"path": "crates/easyexcel-derive/src/annotation/style_parser/cell_style.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    },
+    {
+      "id": "annotation.content_style.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.ContentStyle",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#dataFormat()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#hidden()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#locked()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#quotePrefix()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#horizontalAlignment()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#verticalAlignment()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#rotation()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#indent()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#shrinkToFit()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#wrapped()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderLeft()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderRight()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderTop()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderBottom()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderLeftColor()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderRightColor()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderTopColor()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderBottomColor()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillPatternType()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillBackgroundColor()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillForegroundColor()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::data_format",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::hidden",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::locked",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::quote_prefix",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::horizontal_alignment",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::vertical_alignment",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::rotation",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::indent",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::shrink_to_fit",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::wrapped",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_left",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_right",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_top",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_bottom",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_left_color",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_right_color",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_top_color",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_bottom_color",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::fill_pattern",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::fill_background_color",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::fill_foreground_color"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "content_style"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/content_style.rs"},
+        {"path": "crates/easyexcel-derive/src/annotation/style_parser/cell_style.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"},
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"}
+      ]
+    },
+    {
+      "id": "annotation.content_style.java-golden.v1",
+      "kind": "java_golden",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.ContentStyle",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#dataFormat()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#hidden()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#locked()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#quotePrefix()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#horizontalAlignment()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#verticalAlignment()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#rotation()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#indent()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#shrinkToFit()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#wrapped()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderLeft()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderRight()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderTop()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderBottom()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderLeftColor()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderRightColor()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderTopColor()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderBottomColor()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillPatternType()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillBackgroundColor()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillForegroundColor()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::data_format",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::hidden",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::locked",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::quote_prefix",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::horizontal_alignment",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::vertical_alignment",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::rotation",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::indent",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::shrink_to_fit",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::wrapped",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_left",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_right",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_top",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_bottom",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_left_color",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_right_color",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_top_color",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_bottom_color",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::fill_pattern",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::fill_background_color",
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::fill_foreground_color"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "content_style"]
+      ],
+      "source_files": [
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    },
+    {
+      "id": "annotation.head_font_style.compile.v1",
+      "kind": "compile_probe",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#fontHeightInPoints()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#fontAsString()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#bold()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#italic()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#strikeout()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#underline()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#typeOffset()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#charset()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#color()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::font_height_in_points",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::font_name",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::bold",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::italic",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::strikeout",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::underline",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::type_offset",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::charset",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::color"
+      ],
+      "profiles": [
+        "stable-default-features",
+        "stable-all-features"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--no-run"],
+        ["cargo", "test", "-p", "easyexcel-test", "--all-features", "--test", "public_api_style_annotations_evidence_tests", "--no-run"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/head_font_style.rs"},
+        {"path": "crates/easyexcel-derive/src/annotation/style_parser/font_style.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    },
+    {
+      "id": "annotation.head_font_style.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#fontHeightInPoints()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#fontAsString()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#bold()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#italic()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#strikeout()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#underline()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#typeOffset()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#charset()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#color()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::font_height_in_points",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::font_name",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::bold",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::italic",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::strikeout",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::underline",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::type_offset",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::charset",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::color"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "head_font_style"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/head_font_style.rs"},
+        {"path": "crates/easyexcel-derive/src/annotation/style_parser/font_style.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"},
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"}
+      ]
+    },
+    {
+      "id": "annotation.head_font_style.java-golden.v1",
+      "kind": "java_golden",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#fontHeightInPoints()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#fontAsString()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#bold()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#italic()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#strikeout()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#underline()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#typeOffset()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#charset()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#color()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::font_height_in_points",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::font_name",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::bold",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::italic",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::strikeout",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::underline",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::type_offset",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::charset",
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::color"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "head_font_style"]
+      ],
+      "source_files": [
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    },
+    {
+      "id": "annotation.content_font_style.compile.v1",
+      "kind": "compile_probe",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#fontHeightInPoints()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#fontAsString()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#bold()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#italic()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#strikeout()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#underline()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#typeOffset()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#charset()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#color()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::font_height_in_points",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::font_name",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::bold",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::italic",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::strikeout",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::underline",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::type_offset",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::charset",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::color"
+      ],
+      "profiles": [
+        "stable-default-features",
+        "stable-all-features"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--no-run"],
+        ["cargo", "test", "-p", "easyexcel-test", "--all-features", "--test", "public_api_style_annotations_evidence_tests", "--no-run"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/content_font_style.rs"},
+        {"path": "crates/easyexcel-derive/src/annotation/style_parser/font_style.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    },
+    {
+      "id": "annotation.content_font_style.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#fontHeightInPoints()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#fontAsString()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#bold()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#italic()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#strikeout()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#underline()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#typeOffset()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#charset()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#color()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::font_height_in_points",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::font_name",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::bold",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::italic",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::strikeout",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::underline",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::type_offset",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::charset",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::color"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "content_font_style"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/content_font_style.rs"},
+        {"path": "crates/easyexcel-derive/src/annotation/style_parser/font_style.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"},
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"}
+      ]
+    },
+    {
+      "id": "annotation.content_font_style.java-golden.v1",
+      "kind": "java_golden",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#fontHeightInPoints()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#fontAsString()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#bold()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#italic()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#strikeout()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#underline()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#typeOffset()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#charset()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#color()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::font_height_in_points",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::font_name",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::bold",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::italic",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::strikeout",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::underline",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::type_offset",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::charset",
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::color"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "content_font_style"]
+      ],
+      "source_files": [
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    },
+    {
+      "id": "annotation.once_absolute_merge.compile.v1",
+      "kind": "compile_probe",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstRowIndex()",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastRowIndex()",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstColumnIndex()",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastColumnIndex()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge",
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge::first_row_index",
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge::last_row_index",
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge::first_column_index",
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge::last_column_index"
+      ],
+      "profiles": [
+        "stable-default-features",
+        "stable-all-features"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--no-run"],
+        ["cargo", "test", "-p", "easyexcel-test", "--all-features", "--test", "public_api_style_annotations_evidence_tests", "--no-run"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/once_absolute_merge.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    },
+    {
+      "id": "annotation.once_absolute_merge.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstRowIndex()",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastRowIndex()",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstColumnIndex()",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastColumnIndex()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge",
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge::first_row_index",
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge::last_row_index",
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge::first_column_index",
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge::last_column_index"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "once_absolute_merge"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/once_absolute_merge.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"},
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"}
+      ]
+    },
+    {
+      "id": "annotation.once_absolute_merge.java-golden.v1",
+      "kind": "java_golden",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstRowIndex()",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastRowIndex()",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstColumnIndex()",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastColumnIndex()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge",
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge::first_row_index",
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge::last_row_index",
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge::first_column_index",
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge::last_column_index"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "once_absolute_merge"]
+      ],
+      "source_files": [
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    },
+    {
+      "id": "annotation.content_loop_merge.compile.v1",
+      "kind": "compile_probe",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.ContentLoopMerge",
+        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#eachRow()",
+        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#columnExtend()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_loop_merge::ContentLoopMerge",
+        "easyexcel_derive::annotation::write_style::content_loop_merge::ContentLoopMerge::each_row",
+        "easyexcel_derive::annotation::write_style::content_loop_merge::ContentLoopMerge::column_extend"
+      ],
+      "profiles": [
+        "stable-default-features",
+        "stable-all-features"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--no-run"],
+        ["cargo", "test", "-p", "easyexcel-test", "--all-features", "--test", "public_api_style_annotations_evidence_tests", "--no-run"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/content_loop_merge.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    },
+    {
+      "id": "annotation.content_loop_merge.behavior.v1",
+      "kind": "behavior_test",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.ContentLoopMerge",
+        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#eachRow()",
+        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#columnExtend()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_loop_merge::ContentLoopMerge",
+        "easyexcel_derive::annotation::write_style::content_loop_merge::ContentLoopMerge::each_row",
+        "easyexcel_derive::annotation::write_style::content_loop_merge::ContentLoopMerge::column_extend"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "content_loop_merge"]
+      ],
+      "source_files": [
+        {"path": "crates/easyexcel-derive/src/annotation/write/style/content_loop_merge.rs"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"},
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"}
+      ]
+    },
+    {
+      "id": "annotation.content_loop_merge.java-golden.v1",
+      "kind": "java_golden",
+      "java_ids": [
+        "com.alibaba.excel.annotation.write.style.ContentLoopMerge",
+        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#eachRow()",
+        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#columnExtend()"
+      ],
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_loop_merge::ContentLoopMerge",
+        "easyexcel_derive::annotation::write_style::content_loop_merge::ContentLoopMerge::each_row",
+        "easyexcel_derive::annotation::write_style::content_loop_merge::ContentLoopMerge::column_extend"
+      ],
+      "commands": [
+        ["cargo", "test", "-p", "easyexcel-test", "--test", "public_api_style_annotations_evidence_tests", "--", "content_loop_merge"]
+      ],
+      "source_files": [
+        {"path": "tests/easyexcel-test/tests/golden/style_annotations.contract.json"},
+        {"path": "tests/easyexcel-test/tests/public_api_style_annotations_evidence_tests.rs"}
+      ]
+    }
+  ]
+}

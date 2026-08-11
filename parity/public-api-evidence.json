@@ -3,7 +3,9 @@
   "include": [
     "public-api-evidence/excel-writer.json",
     "public-api-evidence/excel-builder.json",
-    "public-api-evidence/excel-analyser.json"
+    "public-api-evidence/excel-analyser.json",
+    "public-api-evidence/poi-enums.json",
+    "public-api-evidence/style-annotations.json"
   ],
   "evidence": [
     {

@@ -1,0 +1,48 @@
+{
+  "authority": "com.alibaba:easyexcel:4.0.3",
+  "enums": {
+    "BorderStyleEnum": {
+      "java_class": "com.alibaba.excel.enums.poi.BorderStyleEnum",
+      "all_java_names": [
+        "DEFAULT", "NONE", "THIN", "MEDIUM", "DASHED", "DOTTED", "THICK", "DOUBLE",
+        "HAIR", "MEDIUM_DASHED", "DASH_DOT", "MEDIUM_DASH_DOT", "DASH_DOT_DOT",
+        "MEDIUM_DASH_DOT_DOT", "SLANTED_DASH_DOT"
+      ],
+      "all_count": 15,
+      "default_java_name": "DEFAULT",
+      "getter": "getPoiBorderStyle()"
+    },
+    "FillPatternTypeEnum": {
+      "java_class": "com.alibaba.excel.enums.poi.FillPatternTypeEnum",
+      "all_java_names": [
+        "DEFAULT", "NO_FILL", "SOLID_FOREGROUND", "FINE_DOTS", "ALT_BARS",
+        "SPARSE_DOTS", "THICK_HORZ_BANDS", "THICK_VERT_BANDS", "THICK_BACKWARD_DIAG",
+        "THICK_FORWARD_DIAG", "BIG_SPOTS", "BRICKS", "THIN_HORZ_BANDS", "THIN_VERT_BANDS",
+        "THIN_BACKWARD_DIAG", "THIN_FORWARD_DIAG", "SQUARES", "DIAMONDS", "LESS_DOTS",
+        "LEAST_DOTS"
+      ],
+      "all_count": 20,
+      "default_java_name": "DEFAULT",
+      "getter": "getPoiFillPatternType()"
+    },
+    "HorizontalAlignmentEnum": {
+      "java_class": "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum",
+      "all_java_names": [
+        "DEFAULT", "GENERAL", "LEFT", "CENTER", "RIGHT", "FILL", "JUSTIFY",
+        "CENTER_SELECTION", "DISTRIBUTED"
+      ],
+      "all_count": 9,
+      "default_java_name": "DEFAULT",
+      "getter": "getPoiHorizontalAlignment()"
+    },
+    "VerticalAlignmentEnum": {
+      "java_class": "com.alibaba.excel.enums.poi.VerticalAlignmentEnum",
+      "all_java_names": [
+        "DEFAULT", "TOP", "CENTER", "BOTTOM", "JUSTIFY", "DISTRIBUTED"
+      ],
+      "all_count": 6,
+      "default_java_name": "DEFAULT",
+      "getter": "getPoiVerticalAlignmentEnum()"
+    }
+  }
+}

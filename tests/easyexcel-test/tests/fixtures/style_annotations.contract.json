@@ -1,0 +1,121 @@
+{
+  "authority": "com.alibaba:easyexcel:4.0.3",
+  "column_width": {
+    "class": "com.alibaba.excel.annotation.write.style.ColumnWidth",
+    "value_type": "int",
+    "default_value": 8
+  },
+  "head_row_height": {
+    "class": "com.alibaba.excel.annotation.write.style.HeadRowHeight",
+    "value_type": "short",
+    "default_value": -1
+  },
+  "content_row_height": {
+    "class": "com.alibaba.excel.annotation.write.style.ContentRowHeight",
+    "value_type": "short",
+    "default_value": -1
+  },
+  "head_style": {
+    "class": "com.alibaba.excel.annotation.write.style.HeadStyle",
+    "members": [
+      {"name": "dataFormat", "type": "short", "default": 0},
+      {"name": "hidden", "type": "Boolean", "default": null},
+      {"name": "locked", "type": "Boolean", "default": null},
+      {"name": "quotePrefix", "type": "Boolean", "default": null},
+      {"name": "horizontalAlignment", "type": "HorizontalAlignment", "default": null},
+      {"name": "verticalAlignment", "type": "VerticalAlignment", "default": null},
+      {"name": "rotation", "type": "short", "default": 0},
+      {"name": "indent", "type": "short", "default": 0},
+      {"name": "shrinkToFit", "type": "Boolean", "default": null},
+      {"name": "wrapped", "type": "Boolean", "default": null},
+      {"name": "borderLeft", "type": "BorderStyle", "default": null},
+      {"name": "borderRight", "type": "BorderStyle", "default": null},
+      {"name": "borderTop", "type": "BorderStyle", "default": null},
+      {"name": "borderBottom", "type": "BorderStyle", "default": null},
+      {"name": "borderLeftColor", "type": "IndexedColors", "default": null},
+      {"name": "borderRightColor", "type": "IndexedColors", "default": null},
+      {"name": "borderTopColor", "type": "IndexedColors", "default": null},
+      {"name": "borderBottomColor", "type": "IndexedColors", "default": null},
+      {"name": "fillPatternType", "type": "FillPatternType", "default": null},
+      {"name": "fillBackgroundColor", "type": "IndexedColors", "default": null},
+      {"name": "fillForegroundColor", "type": "IndexedColors", "default": null}
+    ],
+    "member_count": 21
+  },
+  "content_style": {
+    "class": "com.alibaba.excel.annotation.write.style.ContentStyle",
+    "members": [
+      {"name": "dataFormat", "type": "short", "default": 0},
+      {"name": "hidden", "type": "Boolean", "default": null},
+      {"name": "locked", "type": "Boolean", "default": null},
+      {"name": "quotePrefix", "type": "Boolean", "default": null},
+      {"name": "horizontalAlignment", "type": "HorizontalAlignment", "default": null},
+      {"name": "verticalAlignment", "type": "VerticalAlignment", "default": null},
+      {"name": "rotation", "type": "short", "default": 0},
+      {"name": "indent", "type": "short", "default": 0},
+      {"name": "shrinkToFit", "type": "Boolean", "default": null},
+      {"name": "wrapped", "type": "Boolean", "default": null},
+      {"name": "borderLeft", "type": "BorderStyle", "default": null},
+      {"name": "borderRight", "type": "BorderStyle", "default": null},
+      {"name": "borderTop", "type": "BorderStyle", "default": null},
+      {"name": "borderBottom", "type": "BorderStyle", "default": null},
+      {"name": "borderLeftColor", "type": "IndexedColors", "default": null},
+      {"name": "borderRightColor", "type": "IndexedColors", "default": null},
+      {"name": "borderTopColor", "type": "IndexedColors", "default": null},
+      {"name": "borderBottomColor", "type": "IndexedColors", "default": null},
+      {"name": "fillPatternType", "type": "FillPatternType", "default": null},
+      {"name": "fillBackgroundColor", "type": "IndexedColors", "default": null},
+      {"name": "fillForegroundColor", "type": "IndexedColors", "default": null}
+    ],
+    "member_count": 21
+  },
+  "head_font_style": {
+    "class": "com.alibaba.excel.annotation.write.style.HeadFontStyle",
+    "members": [
+      {"name": "fontHeightInPoints", "type": "short", "default": 0},
+      {"name": "fontAsString", "type": "String", "default": null},
+      {"name": "bold", "type": "Boolean", "default": null},
+      {"name": "italic", "type": "Boolean", "default": null},
+      {"name": "strikeout", "type": "Boolean", "default": null},
+      {"name": "underline", "type": "Byte", "default": 0},
+      {"name": "typeOffset", "type": "short", "default": 0},
+      {"name": "charset", "type": "int", "default": 0},
+      {"name": "color", "type": "short", "default": 0}
+    ],
+    "member_count": 9
+  },
+  "content_font_style": {
+    "class": "com.alibaba.excel.annotation.write.style.ContentFontStyle",
+    "members": [
+      {"name": "fontHeightInPoints", "type": "short", "default": 0},
+      {"name": "fontAsString", "type": "String", "default": null},
+      {"name": "bold", "type": "Boolean", "default": null},
+      {"name": "italic", "type": "Boolean", "default": null},
+      {"name": "strikeout", "type": "Boolean", "default": null},
+      {"name": "underline", "type": "Byte", "default": 0},
+      {"name": "typeOffset", "type": "short", "default": 0},
+      {"name": "charset", "type": "int", "default": 0},
+      {"name": "color", "type": "short", "default": 0}
+    ],
+    "member_count": 9
+  },
+  "once_absolute_merge": {
+    "class": "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge",
+    "members": [
+      {"name": "firstRowIndex", "type": "int", "default": -1},
+      {"name": "lastRowIndex", "type": "int", "default": -1},
+      {"name": "firstColumnIndex", "type": "int", "default": -1},
+      {"name": "lastColumnIndex", "type": "int", "default": -1}
+    ],
+    "member_count": 4
+  },
+  "content_loop_merge": {
+    "class": "com.alibaba.excel.annotation.write.style.ContentLoopMerge",
+    "members": [
+      {"name": "eachRow", "type": "int", "default": 1},
+      {"name": "columnExtend", "type": "int", "default": 1}
+    ],
+    "member_count": 2
+  },
+  "total_java_members": 72
+}
