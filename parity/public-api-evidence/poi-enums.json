@@ -25,10 +25,10 @@
       "id": "poi-enum.border-style.values.compile.v1",
       "java_ids": [
         "com.alibaba.excel.enums.poi.BorderStyleEnum",
-        "com.alibaba.excel.enums.poi.BorderStyleEnum#values()",
-        "com.alibaba.excel.enums.poi.BorderStyleEnum#valueOf(String)",
+        "com.alibaba.excel.enums.poi.BorderStyleEnum#values()[Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.enums.poi.BorderStyleEnum#valueOf(Ljava/lang/String;)Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
         "com.alibaba.excel.enums.poi.BorderStyleEnum#DEFAULT",
-        "com.alibaba.excel.enums.poi.BorderStyleEnum#getPoiBorderStyle()"
+        "com.alibaba.excel.enums.poi.BorderStyleEnum#getPoiBorderStyle()Lorg/apache/poi/ss/usermodel/BorderStyle;"
       ],
       "kind": "compile_probe",
       "profiles": [
@@ -72,10 +72,10 @@
       "id": "poi-enum.border-style.behavior.v1",
       "java_ids": [
         "com.alibaba.excel.enums.poi.BorderStyleEnum",
-        "com.alibaba.excel.enums.poi.BorderStyleEnum#values()",
-        "com.alibaba.excel.enums.poi.BorderStyleEnum#valueOf(String)",
+        "com.alibaba.excel.enums.poi.BorderStyleEnum#values()[Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.enums.poi.BorderStyleEnum#valueOf(Ljava/lang/String;)Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
         "com.alibaba.excel.enums.poi.BorderStyleEnum#DEFAULT",
-        "com.alibaba.excel.enums.poi.BorderStyleEnum#getPoiBorderStyle()"
+        "com.alibaba.excel.enums.poi.BorderStyleEnum#getPoiBorderStyle()Lorg/apache/poi/ss/usermodel/BorderStyle;"
       ],
       "kind": "behavior_test",
       "rust_ids": [
@@ -125,10 +125,10 @@
       "id": "poi-enum.fill-pattern-type.values.compile.v1",
       "java_ids": [
         "com.alibaba.excel.enums.poi.FillPatternTypeEnum",
-        "com.alibaba.excel.enums.poi.FillPatternTypeEnum#values()",
-        "com.alibaba.excel.enums.poi.FillPatternTypeEnum#valueOf(String)",
+        "com.alibaba.excel.enums.poi.FillPatternTypeEnum#values()[Lcom/alibaba/excel/enums/poi/FillPatternTypeEnum;",
+        "com.alibaba.excel.enums.poi.FillPatternTypeEnum#valueOf(Ljava/lang/String;)Lcom/alibaba/excel/enums/poi/FillPatternTypeEnum;",
         "com.alibaba.excel.enums.poi.FillPatternTypeEnum#DEFAULT",
-        "com.alibaba.excel.enums.poi.FillPatternTypeEnum#getPoiFillPatternType()"
+        "com.alibaba.excel.enums.poi.FillPatternTypeEnum#getPoiFillPatternType()Lorg/apache/poi/ss/usermodel/FillPatternType;"
       ],
       "kind": "compile_probe",
       "profiles": [
@@ -172,10 +172,10 @@
       "id": "poi-enum.fill-pattern-type.behavior.v1",
       "java_ids": [
         "com.alibaba.excel.enums.poi.FillPatternTypeEnum",
-        "com.alibaba.excel.enums.poi.FillPatternTypeEnum#values()",
-        "com.alibaba.excel.enums.poi.FillPatternTypeEnum#valueOf(String)",
+        "com.alibaba.excel.enums.poi.FillPatternTypeEnum#values()[Lcom/alibaba/excel/enums/poi/FillPatternTypeEnum;",
+        "com.alibaba.excel.enums.poi.FillPatternTypeEnum#valueOf(Ljava/lang/String;)Lcom/alibaba/excel/enums/poi/FillPatternTypeEnum;",
         "com.alibaba.excel.enums.poi.FillPatternTypeEnum#DEFAULT",
-        "com.alibaba.excel.enums.poi.FillPatternTypeEnum#getPoiFillPatternType()"
+        "com.alibaba.excel.enums.poi.FillPatternTypeEnum#getPoiFillPatternType()Lorg/apache/poi/ss/usermodel/FillPatternType;"
       ],
       "kind": "behavior_test",
       "rust_ids": [
@@ -225,10 +225,10 @@
       "id": "poi-enum.horizontal-alignment.values.compile.v1",
       "java_ids": [
         "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum",
-        "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#values()",
-        "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#valueOf(String)",
+        "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#values()[Lcom/alibaba/excel/enums/poi/HorizontalAlignmentEnum;",
+        "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#valueOf(Ljava/lang/String;)Lcom/alibaba/excel/enums/poi/HorizontalAlignmentEnum;",
         "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#DEFAULT",
-        "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#getPoiHorizontalAlignment()"
+        "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#getPoiHorizontalAlignment()Lorg/apache/poi/ss/usermodel/HorizontalAlignment;"
       ],
       "kind": "compile_probe",
       "profiles": [
@@ -272,10 +272,10 @@
       "id": "poi-enum.horizontal-alignment.behavior.v1",
       "java_ids": [
         "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum",
-        "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#values()",
-        "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#valueOf(String)",
+        "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#values()[Lcom/alibaba/excel/enums/poi/HorizontalAlignmentEnum;",
+        "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#valueOf(Ljava/lang/String;)Lcom/alibaba/excel/enums/poi/HorizontalAlignmentEnum;",
         "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#DEFAULT",
-        "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#getPoiHorizontalAlignment()"
+        "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#getPoiHorizontalAlignment()Lorg/apache/poi/ss/usermodel/HorizontalAlignment;"
       ],
       "kind": "behavior_test",
       "rust_ids": [
@@ -325,10 +325,10 @@
       "id": "poi-enum.vertical-alignment.values.compile.v1",
       "java_ids": [
         "com.alibaba.excel.enums.poi.VerticalAlignmentEnum",
-        "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#values()",
-        "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#valueOf(String)",
+        "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#values()[Lcom/alibaba/excel/enums/poi/VerticalAlignmentEnum;",
+        "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#valueOf(Ljava/lang/String;)Lcom/alibaba/excel/enums/poi/VerticalAlignmentEnum;",
         "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#DEFAULT",
-        "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#getPoiVerticalAlignmentEnum()"
+        "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#getPoiVerticalAlignmentEnum()Lorg/apache/poi/ss/usermodel/VerticalAlignment;"
       ],
       "kind": "compile_probe",
       "profiles": [
@@ -372,10 +372,10 @@
       "id": "poi-enum.vertical-alignment.behavior.v1",
       "java_ids": [
         "com.alibaba.excel.enums.poi.VerticalAlignmentEnum",
-        "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#values()",
-        "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#valueOf(String)",
+        "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#values()[Lcom/alibaba/excel/enums/poi/VerticalAlignmentEnum;",
+        "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#valueOf(Ljava/lang/String;)Lcom/alibaba/excel/enums/poi/VerticalAlignmentEnum;",
         "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#DEFAULT",
-        "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#getPoiVerticalAlignmentEnum()"
+        "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#getPoiVerticalAlignmentEnum()Lorg/apache/poi/ss/usermodel/VerticalAlignment;"
       ],
       "kind": "behavior_test",
       "rust_ids": [

@@ -105,8 +105,7 @@ jobs:
             --profile nightly \
             --baseline benchmarks/baselines/nightly-ubuntu-x64.json \
             --require-baseline \
-            --output /tmp/compare-results.json \
-            --repo-root .
+            --output /tmp/compare-results.json
 
       # ── 上传比对报告 artifact ──
       - name: Upload comparison report

@@ -25,7 +25,7 @@
       "id": "annotation.column_width.compile.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.ColumnWidth",
-        "com.alibaba.excel.annotation.write.style.ColumnWidth#value()"
+        "com.alibaba.excel.annotation.write.style.ColumnWidth#value()I"
       ],
       "kind": "compile_probe",
       "profiles": [
@@ -63,7 +63,7 @@
       "id": "annotation.column_width.behavior.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.ColumnWidth",
-        "com.alibaba.excel.annotation.write.style.ColumnWidth#value()"
+        "com.alibaba.excel.annotation.write.style.ColumnWidth#value()I"
       ],
       "kind": "behavior_test",
       "rust_ids": [
@@ -100,7 +100,7 @@
       "id": "annotation.column_width.java-golden.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.ColumnWidth",
-        "com.alibaba.excel.annotation.write.style.ColumnWidth#value()"
+        "com.alibaba.excel.annotation.write.style.ColumnWidth#value()I"
       ],
       "kind": "java_golden",
       "rust_ids": [
@@ -142,7 +142,7 @@
       "id": "annotation.head_row_height.compile.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.HeadRowHeight",
-        "com.alibaba.excel.annotation.write.style.HeadRowHeight#value()"
+        "com.alibaba.excel.annotation.write.style.HeadRowHeight#value()S"
       ],
       "kind": "compile_probe",
       "profiles": [
@@ -180,7 +180,7 @@
       "id": "annotation.head_row_height.behavior.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.HeadRowHeight",
-        "com.alibaba.excel.annotation.write.style.HeadRowHeight#value()"
+        "com.alibaba.excel.annotation.write.style.HeadRowHeight#value()S"
       ],
       "kind": "behavior_test",
       "rust_ids": [
@@ -217,7 +217,7 @@
       "id": "annotation.head_row_height.java-golden.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.HeadRowHeight",
-        "com.alibaba.excel.annotation.write.style.HeadRowHeight#value()"
+        "com.alibaba.excel.annotation.write.style.HeadRowHeight#value()S"
       ],
       "kind": "java_golden",
       "rust_ids": [
@@ -259,7 +259,7 @@
       "id": "annotation.content_row_height.compile.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.ContentRowHeight",
-        "com.alibaba.excel.annotation.write.style.ContentRowHeight#value()"
+        "com.alibaba.excel.annotation.write.style.ContentRowHeight#value()S"
       ],
       "kind": "compile_probe",
       "profiles": [
@@ -297,7 +297,7 @@
       "id": "annotation.content_row_height.behavior.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.ContentRowHeight",
-        "com.alibaba.excel.annotation.write.style.ContentRowHeight#value()"
+        "com.alibaba.excel.annotation.write.style.ContentRowHeight#value()S"
       ],
       "kind": "behavior_test",
       "rust_ids": [
@@ -334,7 +334,7 @@
       "id": "annotation.content_row_height.java-golden.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.ContentRowHeight",
-        "com.alibaba.excel.annotation.write.style.ContentRowHeight#value()"
+        "com.alibaba.excel.annotation.write.style.ContentRowHeight#value()S"
       ],
       "kind": "java_golden",
       "rust_ids": [
@@ -376,27 +376,27 @@
       "id": "annotation.head_style.compile.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.HeadStyle",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#dataFormat()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#hidden()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#locked()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#quotePrefix()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#horizontalAlignment()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#verticalAlignment()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#rotation()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#indent()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#shrinkToFit()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#wrapped()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#borderLeft()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#borderRight()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#borderTop()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#borderBottom()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#dataFormat()S",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#hidden()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#locked()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#quotePrefix()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#horizontalAlignment()Lcom/alibaba/excel/enums/poi/HorizontalAlignmentEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#verticalAlignment()Lcom/alibaba/excel/enums/poi/VerticalAlignmentEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#rotation()S",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#indent()S",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#shrinkToFit()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#wrapped()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderLeft()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderRight()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderTop()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderBottom()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
         "com.alibaba.excel.annotation.write.style.HeadStyle#borderLeftColor()",
         "com.alibaba.excel.annotation.write.style.HeadStyle#borderRightColor()",
         "com.alibaba.excel.annotation.write.style.HeadStyle#borderTopColor()",
         "com.alibaba.excel.annotation.write.style.HeadStyle#borderBottomColor()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#fillPatternType()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#fillBackgroundColor()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#fillForegroundColor()"
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillPatternType()Lcom/alibaba/excel/enums/poi/FillPatternTypeEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillBackgroundColor()S",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillForegroundColor()S"
       ],
       "kind": "compile_probe",
       "profiles": [
@@ -458,27 +458,27 @@
       "id": "annotation.head_style.behavior.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.HeadStyle",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#dataFormat()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#hidden()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#locked()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#quotePrefix()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#horizontalAlignment()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#verticalAlignment()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#rotation()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#indent()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#shrinkToFit()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#wrapped()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#borderLeft()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#borderRight()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#borderTop()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#borderBottom()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#dataFormat()S",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#hidden()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#locked()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#quotePrefix()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#horizontalAlignment()Lcom/alibaba/excel/enums/poi/HorizontalAlignmentEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#verticalAlignment()Lcom/alibaba/excel/enums/poi/VerticalAlignmentEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#rotation()S",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#indent()S",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#shrinkToFit()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#wrapped()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderLeft()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderRight()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderTop()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderBottom()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
         "com.alibaba.excel.annotation.write.style.HeadStyle#borderLeftColor()",
         "com.alibaba.excel.annotation.write.style.HeadStyle#borderRightColor()",
         "com.alibaba.excel.annotation.write.style.HeadStyle#borderTopColor()",
         "com.alibaba.excel.annotation.write.style.HeadStyle#borderBottomColor()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#fillPatternType()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#fillBackgroundColor()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#fillForegroundColor()"
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillPatternType()Lcom/alibaba/excel/enums/poi/FillPatternTypeEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillBackgroundColor()S",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillForegroundColor()S"
       ],
       "kind": "behavior_test",
       "rust_ids": [
@@ -539,27 +539,27 @@
       "id": "annotation.head_style.java-golden.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.HeadStyle",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#dataFormat()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#hidden()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#locked()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#quotePrefix()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#horizontalAlignment()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#verticalAlignment()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#rotation()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#indent()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#shrinkToFit()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#wrapped()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#borderLeft()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#borderRight()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#borderTop()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#borderBottom()",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#dataFormat()S",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#hidden()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#locked()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#quotePrefix()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#horizontalAlignment()Lcom/alibaba/excel/enums/poi/HorizontalAlignmentEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#verticalAlignment()Lcom/alibaba/excel/enums/poi/VerticalAlignmentEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#rotation()S",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#indent()S",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#shrinkToFit()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#wrapped()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderLeft()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderRight()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderTop()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#borderBottom()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
         "com.alibaba.excel.annotation.write.style.HeadStyle#borderLeftColor()",
         "com.alibaba.excel.annotation.write.style.HeadStyle#borderRightColor()",
         "com.alibaba.excel.annotation.write.style.HeadStyle#borderTopColor()",
         "com.alibaba.excel.annotation.write.style.HeadStyle#borderBottomColor()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#fillPatternType()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#fillBackgroundColor()",
-        "com.alibaba.excel.annotation.write.style.HeadStyle#fillForegroundColor()"
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillPatternType()Lcom/alibaba/excel/enums/poi/FillPatternTypeEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillBackgroundColor()S",
+        "com.alibaba.excel.annotation.write.style.HeadStyle#fillForegroundColor()S"
       ],
       "kind": "java_golden",
       "rust_ids": [
@@ -621,27 +621,27 @@
       "id": "annotation.content_style.compile.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.ContentStyle",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#dataFormat()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#hidden()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#locked()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#quotePrefix()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#horizontalAlignment()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#verticalAlignment()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#rotation()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#indent()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#shrinkToFit()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#wrapped()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#borderLeft()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#borderRight()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#borderTop()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#borderBottom()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#dataFormat()S",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#hidden()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#locked()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#quotePrefix()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#horizontalAlignment()Lcom/alibaba/excel/enums/poi/HorizontalAlignmentEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#verticalAlignment()Lcom/alibaba/excel/enums/poi/VerticalAlignmentEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#rotation()S",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#indent()S",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#shrinkToFit()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#wrapped()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderLeft()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderRight()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderTop()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderBottom()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
         "com.alibaba.excel.annotation.write.style.ContentStyle#borderLeftColor()",
         "com.alibaba.excel.annotation.write.style.ContentStyle#borderRightColor()",
         "com.alibaba.excel.annotation.write.style.ContentStyle#borderTopColor()",
         "com.alibaba.excel.annotation.write.style.ContentStyle#borderBottomColor()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#fillPatternType()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#fillBackgroundColor()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#fillForegroundColor()"
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillPatternType()Lcom/alibaba/excel/enums/poi/FillPatternTypeEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillBackgroundColor()S",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillForegroundColor()S"
       ],
       "kind": "compile_probe",
       "profiles": [
@@ -703,27 +703,27 @@
       "id": "annotation.content_style.behavior.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.ContentStyle",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#dataFormat()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#hidden()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#locked()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#quotePrefix()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#horizontalAlignment()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#verticalAlignment()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#rotation()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#indent()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#shrinkToFit()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#wrapped()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#borderLeft()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#borderRight()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#borderTop()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#borderBottom()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#dataFormat()S",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#hidden()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#locked()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#quotePrefix()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#horizontalAlignment()Lcom/alibaba/excel/enums/poi/HorizontalAlignmentEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#verticalAlignment()Lcom/alibaba/excel/enums/poi/VerticalAlignmentEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#rotation()S",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#indent()S",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#shrinkToFit()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#wrapped()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderLeft()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderRight()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderTop()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderBottom()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
         "com.alibaba.excel.annotation.write.style.ContentStyle#borderLeftColor()",
         "com.alibaba.excel.annotation.write.style.ContentStyle#borderRightColor()",
         "com.alibaba.excel.annotation.write.style.ContentStyle#borderTopColor()",
         "com.alibaba.excel.annotation.write.style.ContentStyle#borderBottomColor()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#fillPatternType()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#fillBackgroundColor()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#fillForegroundColor()"
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillPatternType()Lcom/alibaba/excel/enums/poi/FillPatternTypeEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillBackgroundColor()S",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillForegroundColor()S"
       ],
       "kind": "behavior_test",
       "rust_ids": [
@@ -784,27 +784,27 @@
       "id": "annotation.content_style.java-golden.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.ContentStyle",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#dataFormat()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#hidden()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#locked()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#quotePrefix()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#horizontalAlignment()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#verticalAlignment()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#rotation()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#indent()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#shrinkToFit()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#wrapped()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#borderLeft()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#borderRight()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#borderTop()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#borderBottom()",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#dataFormat()S",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#hidden()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#locked()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#quotePrefix()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#horizontalAlignment()Lcom/alibaba/excel/enums/poi/HorizontalAlignmentEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#verticalAlignment()Lcom/alibaba/excel/enums/poi/VerticalAlignmentEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#rotation()S",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#indent()S",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#shrinkToFit()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#wrapped()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderLeft()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderRight()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderTop()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#borderBottom()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
         "com.alibaba.excel.annotation.write.style.ContentStyle#borderLeftColor()",
         "com.alibaba.excel.annotation.write.style.ContentStyle#borderRightColor()",
         "com.alibaba.excel.annotation.write.style.ContentStyle#borderTopColor()",
         "com.alibaba.excel.annotation.write.style.ContentStyle#borderBottomColor()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#fillPatternType()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#fillBackgroundColor()",
-        "com.alibaba.excel.annotation.write.style.ContentStyle#fillForegroundColor()"
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillPatternType()Lcom/alibaba/excel/enums/poi/FillPatternTypeEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillBackgroundColor()S",
+        "com.alibaba.excel.annotation.write.style.ContentStyle#fillForegroundColor()S"
       ],
       "kind": "java_golden",
       "rust_ids": [
@@ -866,15 +866,15 @@
       "id": "annotation.head_font_style.compile.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.HeadFontStyle",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#fontHeightInPoints()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#fontHeightInPoints()S",
         "com.alibaba.excel.annotation.write.style.HeadFontStyle#fontAsString()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#bold()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#italic()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#strikeout()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#underline()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#typeOffset()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#charset()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#color()"
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#bold()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#italic()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#strikeout()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#underline()B",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#typeOffset()S",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#charset()I",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#color()S"
       ],
       "kind": "compile_probe",
       "profiles": [
@@ -924,15 +924,15 @@
       "id": "annotation.head_font_style.behavior.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.HeadFontStyle",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#fontHeightInPoints()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#fontHeightInPoints()S",
         "com.alibaba.excel.annotation.write.style.HeadFontStyle#fontAsString()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#bold()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#italic()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#strikeout()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#underline()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#typeOffset()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#charset()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#color()"
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#bold()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#italic()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#strikeout()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#underline()B",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#typeOffset()S",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#charset()I",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#color()S"
       ],
       "kind": "behavior_test",
       "rust_ids": [
@@ -981,15 +981,15 @@
       "id": "annotation.head_font_style.java-golden.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.HeadFontStyle",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#fontHeightInPoints()",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#fontHeightInPoints()S",
         "com.alibaba.excel.annotation.write.style.HeadFontStyle#fontAsString()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#bold()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#italic()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#strikeout()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#underline()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#typeOffset()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#charset()",
-        "com.alibaba.excel.annotation.write.style.HeadFontStyle#color()"
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#bold()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#italic()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#strikeout()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#underline()B",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#typeOffset()S",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#charset()I",
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle#color()S"
       ],
       "kind": "java_golden",
       "rust_ids": [
@@ -1039,15 +1039,15 @@
       "id": "annotation.content_font_style.compile.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.ContentFontStyle",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#fontHeightInPoints()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#fontHeightInPoints()S",
         "com.alibaba.excel.annotation.write.style.ContentFontStyle#fontAsString()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#bold()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#italic()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#strikeout()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#underline()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#typeOffset()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#charset()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#color()"
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#bold()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#italic()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#strikeout()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#underline()B",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#typeOffset()S",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#charset()I",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#color()S"
       ],
       "kind": "compile_probe",
       "profiles": [
@@ -1097,15 +1097,15 @@
       "id": "annotation.content_font_style.behavior.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.ContentFontStyle",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#fontHeightInPoints()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#fontHeightInPoints()S",
         "com.alibaba.excel.annotation.write.style.ContentFontStyle#fontAsString()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#bold()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#italic()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#strikeout()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#underline()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#typeOffset()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#charset()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#color()"
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#bold()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#italic()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#strikeout()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#underline()B",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#typeOffset()S",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#charset()I",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#color()S"
       ],
       "kind": "behavior_test",
       "rust_ids": [
@@ -1154,15 +1154,15 @@
       "id": "annotation.content_font_style.java-golden.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.ContentFontStyle",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#fontHeightInPoints()",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#fontHeightInPoints()S",
         "com.alibaba.excel.annotation.write.style.ContentFontStyle#fontAsString()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#bold()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#italic()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#strikeout()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#underline()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#typeOffset()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#charset()",
-        "com.alibaba.excel.annotation.write.style.ContentFontStyle#color()"
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#bold()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#italic()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#strikeout()Lcom/alibaba/excel/enums/BooleanEnum;",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#underline()B",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#typeOffset()S",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#charset()I",
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle#color()S"
       ],
       "kind": "java_golden",
       "rust_ids": [
@@ -1212,10 +1212,10 @@
       "id": "annotation.once_absolute_merge.compile.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge",
-        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstRowIndex()",
-        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastRowIndex()",
-        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstColumnIndex()",
-        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastColumnIndex()"
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstRowIndex()I",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastRowIndex()I",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstColumnIndex()I",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastColumnIndex()I"
       ],
       "kind": "compile_probe",
       "profiles": [
@@ -1256,10 +1256,10 @@
       "id": "annotation.once_absolute_merge.behavior.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge",
-        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstRowIndex()",
-        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastRowIndex()",
-        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstColumnIndex()",
-        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastColumnIndex()"
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstRowIndex()I",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastRowIndex()I",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstColumnIndex()I",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastColumnIndex()I"
       ],
       "kind": "behavior_test",
       "rust_ids": [
@@ -1299,10 +1299,10 @@
       "id": "annotation.once_absolute_merge.java-golden.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge",
-        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstRowIndex()",
-        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastRowIndex()",
-        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstColumnIndex()",
-        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastColumnIndex()"
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstRowIndex()I",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastRowIndex()I",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstColumnIndex()I",
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastColumnIndex()I"
       ],
       "kind": "java_golden",
       "rust_ids": [
@@ -1347,8 +1347,8 @@
       "id": "annotation.content_loop_merge.compile.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.ContentLoopMerge",
-        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#eachRow()",
-        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#columnExtend()"
+        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#eachRow()I",
+        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#columnExtend()I"
       ],
       "kind": "compile_probe",
       "profiles": [
@@ -1387,8 +1387,8 @@
       "id": "annotation.content_loop_merge.behavior.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.ContentLoopMerge",
-        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#eachRow()",
-        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#columnExtend()"
+        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#eachRow()I",
+        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#columnExtend()I"
       ],
       "kind": "behavior_test",
       "rust_ids": [
@@ -1426,8 +1426,8 @@
       "id": "annotation.content_loop_merge.java-golden.v1",
       "java_ids": [
         "com.alibaba.excel.annotation.write.style.ContentLoopMerge",
-        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#eachRow()",
-        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#columnExtend()"
+        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#eachRow()I",
+        "com.alibaba.excel.annotation.write.style.ContentLoopMerge#columnExtend()I"
       ],
       "kind": "java_golden",
       "rust_ids": [
