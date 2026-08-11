@@ -2,67 +2,178 @@ name: CI
 
 on:
   push:
+    branches: [dev, main]
   pull_request:
   release:
     types: [published]
   workflow_dispatch:
 
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+  RUSTDOCFLAGS: -D warnings
+
+permissions:
+  contents: read
+
 jobs:
-  quality:
+  test:
+    name: Test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      # Java golden 期望文件在中文 locale 下导出（DateFormatTest 的 MMM 月份名）。
+      LANG: zh_CN.UTF-8
+      LC_ALL: zh_CN.UTF-8
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install zh_CN locale and zlib dev (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y locales zlib1g-dev
+          sudo locale-gen zh_CN.UTF-8
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # 固定与本地验证一致的 1.97.1（消除最新 stable 的规则漂移；
+          # 1.97.1 满足 salvo 0.89.3 的 rustc 1.89 要求）。
+          toolchain: 1.97.1
+          components: rustfmt, clippy
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --workspace --all-targets --all-features
+
+      - name: Test
+        run: cargo test --workspace --all-targets --all-features
+
+      - name: Doctest
+        run: cargo test --workspace --doc --all-features
+
+      - name: Examples build
+        run: cargo build --workspace --examples --all-features
+
+  clippy:
+    name: Clippy
     runs-on: ubuntu-latest
-    # Java golden 期望文件在中文 locale 下导出（DateFormatTest 的 MMM 月份名），
-    # 测试必须与生成环境一致；Rust 端跟随系统 locale（对齐 Java 默认 locale）
     env:
       LANG: zh_CN.UTF-8
       LC_ALL: zh_CN.UTF-8
-      RUSTDOCFLAGS: -D warnings
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+
       - name: Install zh_CN locale and zlib dev
         run: |
           sudo apt-get update
           sudo apt-get install -y locales zlib1g-dev
           sudo locale-gen zh_CN.UTF-8
-      - uses: dtolnay/rust-toolchain@master
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
-          # 固定与本地验证一致的 1.97.1（rustup，与 CI 官方发行完全一致），
-          # 消除最新 stable 的规则漂移；1.97.1 满足 salvo 0.89.3 的 rustc 1.89
-          # 要求，高于 Salvo 适配器的独立 MSRV 1.89。
           toolchain: 1.97.1
-          components: clippy,llvm-tools-preview,rustfmt
-      - uses: taiki-e/install-action@cargo-llvm-cov
-      - uses: taiki-e/install-action@cargo-audit
-      - uses: taiki-e/install-action@cargo-deny
-      - run: cargo audit
-      - run: cargo deny check advisories bans licenses sources
-      - run: cargo fmt --all -- --check
-      - name: Validate shared benchmark harness
+          components: clippy
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  fmt:
+    name: rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+          components: rustfmt
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+  doc:
+    name: Doc build
+    runs-on: ubuntu-latest
+    env:
+      LANG: zh_CN.UTF-8
+      LC_ALL: zh_CN.UTF-8
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install zh_CN locale and zlib dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y locales zlib1g-dev
+          sudo locale-gen zh_CN.UTF-8
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: cargo doc
+        run: cargo doc --workspace --all-features --no-deps
+
+  bench-build:
+    name: Bench build check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Validate benchmark harness (Python)
         run: |
           python3 -m py_compile benchmarks/scripts/*.py benchmarks/scripts/tests/*.py
           python3 -m unittest discover -s benchmarks/scripts/tests -v
-      - run: cargo doc --workspace --all-features --no-deps
-      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
-      - run: cargo test --workspace --all-features
 
-  # 覆盖率门禁只跑一次全量 llvm-cov（约 20 分钟），仅发布/手动触发时执行；
-  # 日常 push/PR 不跑（本地脚本 scripts/coverage.sh 可按需运行）。
+      - name: Build benchmarks
+        run: cargo build --workspace --benches --all-features
+
+  # 覆盖率门禁只跑一次全量 llvm-cov（约 20 分钟），仅发布/手动触发时执行。
   coverage:
     if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       LANG: zh_CN.UTF-8
       LC_ALL: zh_CN.UTF-8
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install zh_CN locale and zlib dev
         run: |
           sudo apt-get update
           sudo apt-get install -y locales zlib1g-dev
           sudo locale-gen zh_CN.UTF-8
-      - uses: dtolnay/rust-toolchain@master
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.97.1
-          components: clippy,llvm-tools-preview,rustfmt
+          components: llvm-tools-preview
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-llvm-cov
       - run: ./scripts/coverage.sh
       - name: Upload coverage HTML report
@@ -78,29 +189,30 @@ jobs:
           path: coverage/lcov.info
           retention-days: 90
 
-  # T5.2: PR coverage — generates lcov for diff analysis (no gate),
-  # then converts to Cobertura XML and posts coverage summary as PR comment.
-  # Third-party actions: lcov_cobertura (Python, lcov→Cobertura XML conversion)
-  # + 5monkeys/cobertura-action (PR comment with coverage breakdown).
+  # T5.2: PR coverage — generates lcov for diff analysis (no gate)。
   coverage-pr:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
+      contents: read
     env:
       LANG: zh_CN.UTF-8
       LC_ALL: zh_CN.UTF-8
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install zh_CN locale and zlib dev
         run: |
           sudo apt-get update
           sudo apt-get install -y locales zlib1g-dev
           sudo locale-gen zh_CN.UTF-8
-      - uses: dtolnay/rust-toolchain@master
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.97.1
-          components: clippy,llvm-tools-preview,rustfmt
+          components: llvm-tools-preview
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Generate lcov report (no gate)
         run: |
@@ -129,20 +241,33 @@ jobs:
 
   msrv:
     # 核心与 Salvo 适配器分别验证各自 MSRV；质量工具链仍固定为 1.97.1。
+    name: MSRV check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
+      - uses: actions/checkout@v5
+
+      - name: Install zh_CN locale and zlib dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y locales zlib1g-dev
+          sudo locale-gen zh_CN.UTF-8
+
+      - name: Install Rust 1.88
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.88
+
       - name: Check core workspace at Rust 1.88
         run: >-
           cargo check --workspace --all-features
           --exclude easyexcel-salvo
           --exclude easyexcel-demo-salvo
           --exclude easyexcel-web-conformance
-      - uses: dtolnay/rust-toolchain@master
+
+      - name: Install Rust 1.89
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.89
+
       - name: Check Salvo adapter at Rust 1.89
         run: cargo check -p easyexcel-salvo --all-features
