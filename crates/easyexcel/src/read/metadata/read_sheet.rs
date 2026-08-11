@@ -174,6 +174,7 @@ impl ReadSheet {
     pub fn copy_basic_parameter(&mut self, other: &ReadSheet) -> &mut Self {
         self.parameter = other.parameter.clone();
         self.head_row_number = other.head_row_number;
+        self.use_scientific_format = other.use_scientific_format;
         self
     }
 
