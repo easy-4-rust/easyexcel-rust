@@ -2,6 +2,11 @@
 
 [English](README.md)
 
+> **文档说明**：easyexcel-derive 引擎层 crate 文档，面向贡献者与引擎实现者说明模块边界。
+>
+> **版本**：0.1.3
+> **最后更新**：2026-08-11
+
 实现类型化 EasyExcel 行 schema、转换与 Java 注解元数据的过程宏。
 
 > 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
@@ -29,13 +34,54 @@ flowchart LR
 
 依赖方向必须保持从门面或格式引擎指向基础模块；本 crate 不反向依赖业务应用。
 
-## 能力矩阵
+## 能力与边界
 
-| 能力 | 状态 | 说明 |
+### 本 crate 能做什么
+
+- 从 `#[derive(ExcelRow)]` 生成静态 Excel 列元数据和双向行转换。
+- 将十四类 Java 注解映射为 `#[excel(...)]` 属性。
+- 提供超越 Java 的 Rust 扩展：公式、图片、批注、超链接、校验、条件和过滤元数据。
+- 编译期拒绝冲突的强制列索引。
+- 支持 `ignore_unannotated` 严格映射（仅包含 `ExcelProperty` 等价声明的字段）。
+- 生成 `schema()` 方法，用于运行时自省字段元数据。
+
+### 本 crate 不能做什么
+
+- 渲染文件格式输出：元数据支持与文件格式渲染是两个分离的关注点。
+- 替代运行时反射：`#[derive(ExcelRow)]` 生成静态 schema，不是动态字段访问。
+
+## 格式支持矩阵
+
+本 crate 是过程宏，不是文件格式引擎。其输出被所有格式引擎消费。
+
+| 维度 | Derive 输出 | 消费方 |
 |:---|:---|:---|
-| 类型化行派生 | 可用 | 生成 schema 与双向行转换。 |
-| Java 注解语义 | 受后端边界约束可用 | 十四类注解映射为 `#[excel(...)]`。 |
-| Rust 扩展 | 可用 | 公式、图片、批注、超链接、校验、条件与过滤元数据。 |
+| 列映射（`value`、`name`、`index`、`order`） | 静态元数据 | 所有格式引擎 |
+| 样式元数据（`column_width`、`head_row_height` 等） | 静态元数据 | XLS、XLSX |
+| 格式元数据（`date_time_format`、`number_format`） | 静态元数据 | XLS、XLSX、CSV |
+| 转换器（`converter = MyConverter`） | Trait 实现 | 所有格式引擎 |
+| 合并元数据（`content_loop_merge`、`once_absolute_merge`） | 静态元数据 | XLS、XLSX |
+| 严格映射（`ignore_unannotated`） | Schema 过滤 | 所有格式引擎 |
+| 默认值（`default = expression`） | Rust 扩展 | 所有格式引擎 |
+| 公式 / 图片 / 批注 / 超链接 | Rust 扩展元数据 | XLSX（主要） |
+
+## 注解映射
+
+| Java 注解 | Rust 属性 |
+|:---|:---|
+| `ExcelIgnore` | `ignore` |
+| `ExcelIgnoreUnannotated` | `ignore_unannotated` |
+| `ExcelProperty` | `property`、`value/head`、`name`、`index`、`order`、`converter` |
+| `DateTimeFormat` | `date_time_format`、`use_1904_windowing` |
+| `NumberFormat` | `number_format`、`rounding_mode` |
+| `ColumnWidth` | `column_width` |
+| `ContentFontStyle` / `HeadFontStyle` | `content_font_style(...)` / `head_font_style(...)` |
+| `ContentStyle` / `HeadStyle` | `content_style(...)` / `head_style(...)` |
+| `ContentLoopMerge` | `content_loop_merge(...)` |
+| `ContentRowHeight` / `HeadRowHeight` | `content_row_height` / `head_row_height` |
+| `OnceAbsoluteMerge` | `once_absolute_merge(...)` |
+
+多级 `ExcelProperty.value()` 映射为 `value = ["一级", "二级"]`。`default = expression` 是明确记录的 Rust 扩展。
 
 ## 公共 API
 
@@ -99,24 +145,6 @@ Ok(())
 }
 ```
 
-## 注解映射
-
-| Java 注解 | Rust 属性 |
-|:---|:---|
-| `ExcelIgnore` | `ignore` |
-| `ExcelIgnoreUnannotated` | `ignore_unannotated` |
-| `ExcelProperty` | `property`、`value/head`、`name`、`index`、`order`、`converter` |
-| `DateTimeFormat` | `date_time_format`、`use_1904_windowing` |
-| `NumberFormat` | `number_format`、`rounding_mode` |
-| `ColumnWidth` | `column_width` |
-| `ContentFontStyle` / `HeadFontStyle` | `content_font_style(...)` / `head_font_style(...)` |
-| `ContentStyle` / `HeadStyle` | `content_style(...)` / `head_style(...)` |
-| `ContentLoopMerge` | `content_loop_merge(...)` |
-| `ContentRowHeight` / `HeadRowHeight` | `content_row_height` / `head_row_height` |
-| `OnceAbsoluteMerge` | `once_absolute_merge(...)` |
-
-多级 `ExcelProperty.value()` 映射为 `value = ["一级", "二级"]`。`default = expression` 是明确记录的 Rust 扩展。
-
 ## 错误与能力边界
 
 - 用户应通过 `easyexcel::ExcelRow` 使用该宏，不应直接把过程宏 crate 作为运行时依赖。
@@ -151,3 +179,9 @@ flowchart LR
 - [兼容性矩阵](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
 - [变更日志](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [英文 README](README.md)
+
+---
+
+**文档版本**：V1.0.0
+**最后更新**：2026-08-11
+**文档状态**：已评审
