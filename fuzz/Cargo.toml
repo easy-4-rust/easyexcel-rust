@@ -1,0 +1,56 @@
+[package]
+name = "easyexcel-rust-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+# Parsing crates under test
+easyexcel-xlsx = { path = "../crates/easyexcel-xlsx" }
+easyexcel-xls  = { path = "../crates/easyexcel-xls" }
+easyexcel-csv  = { path = "../crates/easyexcel-csv" }
+easyexcel-formula = { path = "../crates/easyexcel-formula" }
+easyexcel-markdown = { path = "../crates/easyexcel-markdown" }
+easyexcel-io = { path = "../crates/easyexcel-io" }
+
+[[bin]]
+name = "fuzz_xlsx_parse"
+path = "fuzz_targets/fuzz_xlsx_parse.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_xls_parse"
+path = "fuzz_targets/fuzz_xls_parse.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_csv_parse"
+path = "fuzz_targets/fuzz_csv_parse.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_formula_parse"
+path = "fuzz_targets/fuzz_formula_parse.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_markdown_parse"
+path = "fuzz_targets/fuzz_markdown_parse.rs"
+test = false
+doc = false
+bench = false
