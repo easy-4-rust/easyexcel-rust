@@ -293,9 +293,11 @@ fn fill_config_and_wrapper_match_java_defaults_and_builders() {
 
     let defaults = FillConfig::default();
     assert_eq!(defaults, FillConfig::new());
-    assert_eq!(defaults.get_direction(), Some(FillDirection::Vertical));
-    assert!(!defaults.get_force_new_row().unwrap_or(false));
-    assert!(defaults.get_auto_style().unwrap_or(false));
+    // Java FillConfig 三个 nullable 字段默认为 null，effective_* 提供物化默认值
+    assert_eq!(defaults.get_direction(), None);
+    assert_eq!(defaults.effective_direction(), FillDirection::Vertical);
+    assert!(!defaults.effective_force_new_row());
+    assert!(defaults.effective_auto_style());
 
     let configured = FillConfig::new()
         .direction(FillDirection::Horizontal)

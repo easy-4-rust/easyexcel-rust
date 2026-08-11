@@ -176,7 +176,8 @@ mod tests {
     #[test]
     fn vertical_strategy_order_is_50_000() {
         let s = VerticalCellStyleStrategy::uniform(ExcelCellStyle::new(), ExcelCellStyle::new());
-        assert_eq!(s.order(), 50_000);
+        // Java `OrderConstant.DEFINE_STYLE` = -50_000
+        assert_eq!(s.order(), -50_000);
     }
 
     #[test]

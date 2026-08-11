@@ -157,8 +157,9 @@ fn parent_custom_dimension_handler_overrides_annotation_defaults() -> Result<()>
         .iter()
         .map(SharedWriteHandler::order)
         .collect::<Vec<_>>();
-    assert_eq!(&orders[..5], &[-60_000, -60_000, -50_000, -50_000, -50_000]);
-    assert!(orders[5..].iter().all(|order| *order == 0), "{orders:?}");
+    // DefaultStyle (-70_000) appears first, then annotation + override handlers.
+    assert_eq!(&orders[..6], &[-70_000, -60_000, -60_000, -50_000, -50_000, -50_000]);
+    assert!(orders[6..].iter().all(|order| *order == 0), "{orders:?}");
     writer.finish()?;
 
     let sheet_xml = zip_entry(&output, "xl/worksheets/sheet1.xml")?;

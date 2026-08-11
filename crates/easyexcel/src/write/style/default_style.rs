@@ -123,7 +123,8 @@ mod tests {
     #[test]
     fn default_style_order() {
         let style = DefaultStyle::new();
-        assert_eq!(style.order(), 0);
+        // Java `OrderConstant.DEFAULT_DEFINE_STYLE` = -70_000
+        assert_eq!(style.order(), -70_000);
     }
 
     #[test]

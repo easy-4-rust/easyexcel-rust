@@ -37,7 +37,7 @@ impl CsvExcelReadExecutor {
         let path = csv_read_context.file().map(PathBuf::from);
         let options = csv_read_context.options().clone();
         Self {
-            sheet_list: vec![ReadSheet::new(0)],
+            sheet_list: vec![ReadSheet::with_name(0, "Sheet1")],
             path,
             options,
             csv_read_context,
@@ -143,7 +143,7 @@ mod tests {
         )?;
 
         assert_eq!(listener.rows.len(), 1);
-        assert_eq!(executor.sheet_list()[0].sheet_name(), "");
+        assert_eq!(executor.sheet_list()[0].sheet_name(), "Sheet1");
         assert!(
             executor
                 .csv_read_context()

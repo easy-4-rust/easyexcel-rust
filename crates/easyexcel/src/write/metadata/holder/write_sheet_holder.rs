@@ -317,10 +317,11 @@ mod tests {
     #[test]
     fn write_sheet_holder_advance_row() {
         let mut holder = WriteSheetHolder::new("S", 0);
-        assert_eq!(holder.advance_row(), 1);
+        // CommonEmpty 初始状态返回 0（第一个可写行），第二次返回 1
+        assert_eq!(holder.advance_row(), 0);
         assert!(holder.has_data());
-        assert_eq!(holder.last_row_index(), 1);
-        assert_eq!(holder.advance_row(), 2);
+        assert_eq!(holder.last_row_index(), 0);
+        assert_eq!(holder.advance_row(), 1);
     }
 
     #[test]

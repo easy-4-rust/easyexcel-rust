@@ -1141,7 +1141,7 @@ mod tests_extra {
     fn load_entries_rejects_legacy_xls_paths() {
         let error = load_entries(Path::new("legacy-template.xls")).expect_err("xls 模板必须被拒绝");
         assert!(
-            matches!(error, ExcelError::Unsupported(ref message) if message.contains("not supported")),
+            matches!(error, ExcelError::Format(ref message) if message.contains("BIFF8")),
             "unexpected error: {error}"
         );
     }

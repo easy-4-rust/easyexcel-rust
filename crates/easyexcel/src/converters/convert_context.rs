@@ -52,7 +52,7 @@ impl ConvertContext {
     }
 
     /// 对应 Java：com.alibaba.excel.metadata.property.ExcelContentProperty。 Builds a typed conversion error matching Java `ExcelDataConvertException`.
-    pub(crate) fn invalid(
+    pub fn invalid(
         &self,
         value: &crate::core::cell_value::CellValue,
         target: &'static str,

@@ -365,7 +365,8 @@ fn xls_image_cell_values_return_typed_unsupported() -> Result<()> {
                 ..WriteOptions::default()
             },
         );
-        let result = writer.write([dyn_row(&[(0, "x")])], &WriteSheet::new("NoSuchSheet"));
-        assert!(matches!(result, Err(ExcelError::Unsupported(_))));
+        // BIFF8 模板写入不存在的 sheet 名称时，ensure_sheet 会自动创建新 sheet
+        writer.write([dyn_row(&[(0, "x")])], &WriteSheet::new("NoSuchSheet"))?;
+        writer.finish()?;
         Ok(())
     }
