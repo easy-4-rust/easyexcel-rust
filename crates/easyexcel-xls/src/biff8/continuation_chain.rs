@@ -33,9 +33,23 @@ impl Biff8ContinuationChain {
 
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 将当前分段链解码为共享字符串表。
     ///
+    /// 当 `xls-lazy-sst` feature 启用时返回延迟解码容器 `LazySst`，
+    /// 否则返回立即解码的 `Vec<Biff8SstString>`。
+    ///
     /// # Errors
     ///
     /// SST 元数据、字符串标志或 CONTINUE 边界损坏时返回错误。
+    #[cfg(feature = "xls-lazy-sst")]
+    pub fn decode_sst(&self) -> Result<super::lazy_sst::LazySst> {
+        super::lazy_sst::LazySst::new(self.segments())
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 将当前分段链解码为共享字符串表。
+    ///
+    /// # Errors
+    ///
+    /// SST 元数据、字符串标志或 CONTINUE 边界损坏时返回错误。
+    #[cfg(not(feature = "xls-lazy-sst"))]
     pub fn decode_sst(&self) -> Result<Vec<crate::xls::Biff8SstString>> {
         super::string::decode_sst_segments(self.segments())
     }

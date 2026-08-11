@@ -9,6 +9,8 @@ pub mod encode;
 mod encrypt;
 pub mod event_record;
 mod format;
+#[cfg(feature = "xls-lazy-sst")]
+pub mod lazy_sst;
 pub(crate) mod model;
 mod numeric;
 pub mod ptg;

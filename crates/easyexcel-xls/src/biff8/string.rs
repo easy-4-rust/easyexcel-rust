@@ -35,7 +35,8 @@ pub fn decode_unicode_string_segments(segments: &[Vec<u8>]) -> Result<String> {
     let mut cursor = SegmentCursor::new(segments);
     let character_count = cursor.read_u16("String character count")? as usize;
     let flags = cursor.read_u8_plain("String flags")?;
-    cursor.read_characters(character_count, flags & 0x01 != 0, "String")
+    // 使用 usize::MAX 作为哨兵索引，错误消息中标识为 Unicode STRING 记录
+    cursor.read_characters(character_count, flags & 0x01 != 0, usize::MAX)
 }
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 解码未分段的 BIFF8 `XLUnicodeString` 记录体。
@@ -63,30 +64,31 @@ impl<'a> SegmentCursor<'a> {
     }
 
     fn read_rich_extended_string(&mut self, index: usize) -> Result<crate::xls::Biff8SstString> {
-        let context = format!("SST string {index}");
-        let character_count = self.read_u16(&format!("{context} character count"))? as usize;
-        let flags = self.read_u8_plain(&format!("{context} flags"))?;
+        let character_count = self.read_u16_ctx(index, "character count")? as usize;
+        let flags = self.read_u8_ctx(index, "flags")?;
         let rich_run_count = if flags & 0x08 != 0 {
-            self.read_u16(&format!("{context} rich-run count"))? as usize
+            self.read_u16_ctx(index, "rich-run count")? as usize
         } else {
             0
         };
         let extension_size = if flags & 0x04 != 0 {
-            usize::try_from(self.read_u32(&format!("{context} extension size"))?)
-                .map_err(|_| ExcelError::Xls(format!("{context} extension size exceeds usize")))?
+            let raw = self.read_u32_ctx(index, "extension size")?;
+            usize::try_from(raw).map_err(|_| {
+                ExcelError::Xls(format!("SST string {index} extension size exceeds usize"))
+            })?
         } else {
             0
         };
 
-        let value = self.read_characters(character_count, flags & 0x01 != 0, context.as_str())?;
+        let value = self.read_characters(character_count, flags & 0x01 != 0, index)?;
         let mut formatting_runs = Vec::with_capacity(rich_run_count);
         for _ in 0..rich_run_count {
             formatting_runs.push((
-                self.read_u16(&format!("{context} rich-run character index"))?,
-                self.read_u16(&format!("{context} rich-run font index"))?,
+                self.read_u16_ctx(index, "rich-run character index")?,
+                self.read_u16_ctx(index, "rich-run font index")?,
             ));
         }
-        self.skip_plain(extension_size, &format!("{context} extension"))?;
+        self.skip_plain_ctx(extension_size, index, "extension")?;
         Ok(crate::xls::Biff8SstString::new(value, formatting_runs))
     }
 
@@ -94,28 +96,33 @@ impl<'a> SegmentCursor<'a> {
         &mut self,
         character_count: usize,
         mut wide: bool,
-        context: &str,
+        index: usize,
     ) -> Result<String> {
+        let label = if index == usize::MAX {
+            "Unicode STRING".to_owned()
+        } else {
+            format!("SST string {index}")
+        };
         let mut units = Vec::with_capacity(character_count.min(16_384));
         for _ in 0..character_count {
             if self.current_exhausted() {
                 self.advance_segment().ok_or_else(|| {
                     ExcelError::Xls(format!(
-                        "truncated {context} character data across BIFF CONTINUE records"
+                        "truncated {label} character data across BIFF CONTINUE records"
                     ))
                 })?;
                 let continuation_flags =
-                    self.read_u8_current(&format!("{context} continuation flags"))?;
+                    self.read_u8_current(&format!("{label} continuation flags"))?;
                 wide = continuation_flags & 0x01 != 0;
             }
 
             if wide {
                 let segment = self.current_segment().ok_or_else(|| {
-                    ExcelError::Xls(format!("truncated {context} UTF-16 character data"))
+                    ExcelError::Xls(format!("truncated {label} UTF-16 character data"))
                 })?;
                 if self.offset + 2 > segment.len() {
                     return Err(ExcelError::Xls(format!(
-                        "{context} UTF-16 code unit is split at a BIFF record boundary"
+                        "{label} UTF-16 code unit split at BIFF record boundary"
                     )));
                 }
                 units.push(u16::from_le_bytes([
@@ -125,7 +132,7 @@ impl<'a> SegmentCursor<'a> {
                 self.offset += 2;
             } else {
                 units.push(u16::from(
-                    self.read_u8_current(&format!("{context} compressed character"))?,
+                    self.read_u8_current(&format!("{label} compressed character"))?,
                 ));
             }
         }
@@ -172,6 +179,54 @@ impl<'a> SegmentCursor<'a> {
     fn skip_plain(&mut self, count: usize, context: &str) -> Result<()> {
         for _ in 0..count {
             let _ = self.read_u8_plain(context)?;
+        }
+        Ok(())
+    }
+
+    // -- 延迟格式化版本：仅在错误时分配 String --
+
+    fn read_u8_current_lazy(&mut self, index: usize, field: &str) -> Result<u8> {
+        let value = self
+            .current_segment()
+            .and_then(|segment| segment.get(self.offset))
+            .copied()
+            .ok_or_else(|| {
+                ExcelError::Xls(format!("SST string {index} truncated {field}"))
+            })?;
+        self.offset += 1;
+        Ok(value)
+    }
+
+    fn read_u8_ctx(&mut self, index: usize, field: &str) -> Result<u8> {
+        if self.current_exhausted() {
+            self.advance_segment().ok_or_else(|| {
+                ExcelError::Xls(format!(
+                    "SST string {index} {field} truncated across BIFF records"
+                ))
+            })?;
+        }
+        self.read_u8_current_lazy(index, field)
+    }
+
+    fn read_u16_ctx(&mut self, index: usize, field: &str) -> Result<u16> {
+        let mut bytes = [0u8; 2];
+        for byte in &mut bytes {
+            *byte = self.read_u8_ctx(index, field)?;
+        }
+        Ok(u16::from_le_bytes(bytes))
+    }
+
+    fn read_u32_ctx(&mut self, index: usize, field: &str) -> Result<u32> {
+        let mut bytes = [0u8; 4];
+        for byte in &mut bytes {
+            *byte = self.read_u8_ctx(index, field)?;
+        }
+        Ok(u32::from_le_bytes(bytes))
+    }
+
+    fn skip_plain_ctx(&mut self, count: usize, index: usize, field: &str) -> Result<()> {
+        for _ in 0..count {
+            let _ = self.read_u8_ctx(index, field)?;
         }
         Ok(())
     }

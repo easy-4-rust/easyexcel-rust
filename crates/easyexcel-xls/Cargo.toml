@@ -11,6 +11,12 @@ homepage.workspace = true
 keywords.workspace = true
 categories.workspace = true
 
+[features]
+default = ["xls-lazy-sst"]
+## 启用 SST 延迟解码：保留原始字节，首次按索引访问时才解码字符串。
+## 关闭此 feature 回退到旧的立即解码路径。
+xls-lazy-sst = []
+
 [dependencies]
 cfb.workspace = true
 chrono.workspace = true

@@ -38,6 +38,11 @@ easyexcel-tabular.workspace = true
 indexmap.workspace = true
 tempfile.workspace = true
 
+[features]
+default = ["xls-lazy-sst"]
+## 启用 XLS SST 延迟解码（传递给 easyexcel-xls）。
+xls-lazy-sst = ["easyexcel-xls/xls-lazy-sst"]
+
 [dev-dependencies]
 base64.workspace = true
 calamine.workspace = true

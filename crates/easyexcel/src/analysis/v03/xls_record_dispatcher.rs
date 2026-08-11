@@ -397,6 +397,14 @@ impl XlsRecordDispatcher {
             Biff8ContinuationStatus::Complete(Biff8DecodedContinuableRecord::SharedStrings(
                 strings,
             )) => {
+                // 当 xls-lazy-sst 启用时 strings 是 LazySst，需要转为 Vec
+                #[cfg(feature = "xls-lazy-sst")]
+                let strings: Vec<easyexcel_xls::Biff8SstString> =
+                    strings.to_vec().map_err(|e| {
+                        crate::core::ExcelError::Format(format!(
+                            "SST lazy decode failed: {e}"
+                        ))
+                    })?;
                 let unique = u32::try_from(strings.len()).map_err(|_| {
                     crate::core::ExcelError::Format(
                         "decoded SST size exceeds BIFF u32 range".to_owned(),
