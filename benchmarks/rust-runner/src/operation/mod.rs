@@ -1,32 +1,41 @@
 //! 单进程读写场景执行。
+//!
+//! 提供基准测试所需的写入（write）、读取（read）和往返（roundtrip）操作。
+//! 五个内部数据结构各自拆分为独立文件，通过本模块统一导出。
+
+mod event_listener;
+mod event_state;
+mod operation_result;
+mod parallel_map_config;
+mod serial_map_listener;
+
+pub(crate) use operation_result::OperationResult;
+pub(crate) use parallel_map_config::ParallelMapConfig;
 
 use std::path::Path;
 use std::{cell::RefCell, rc::Rc};
 
-use easyexcel::{AnalysisContext, EasyExcel, ParallelMapReadListener, ReadListener};
+use easyexcel::{EasyExcel, ParallelMapReadListener};
 
 use crate::benchmark_row::BenchmarkRow;
 use crate::benchmark_spec::ScenarioSpec;
-use crate::checksum::RowChecksum;
+
+use event_listener::EventListener;
+use event_state::EventState;
+use serial_map_listener::SerialMapListener;
 
 const XLS_DATA_ROWS_PER_SHEET: i64 = 65_535;
 
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 被测操作的可观察输出。
-pub(crate) struct OperationResult {
-    pub(crate) observed_rows: u64,
-    pub(crate) checksum: String,
-    pub(crate) file_size_bytes: u64,
-}
-
-/// 对应 Java：无直接对应对象；Rust 架构扩展。单工作簿纯函数映射并发参数。
-#[derive(Clone, Copy)]
-pub(crate) struct ParallelMapConfig {
-    pub(crate) worker_count: usize,
-    pub(crate) queue_capacity: usize,
-    pub(crate) work_factor: u32,
-}
-
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 执行统一写入场景。
+/// 执行统一写入场景。
+///
+/// # 参数
+/// - `scenario`: 场景规格
+/// - `path`: 输出文件路径
+/// - `rows`: 写入行数
+/// - `batch_size`: 批量写入大小
+///
+/// # 返回
+/// 写入完成后的 [`OperationResult`]。
 pub(crate) fn write(
     scenario: &ScenarioSpec,
     path: &Path,
@@ -88,7 +97,15 @@ pub(crate) fn write(
     })
 }
 
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 执行 Event 或 Workbook 读取场景。
+/// 执行 Event 或 Workbook 读取场景。
+///
+/// # 参数
+/// - `scenario`: 场景规格
+/// - `path`: 输入文件路径
+/// - `parallel_map`: 并行映射配置（`None` 表示串行读取）
+///
+/// # 返回
+/// 读取完成后的 [`OperationResult`]。
 pub(crate) fn read(
     scenario: &ScenarioSpec,
     path: &Path,
@@ -101,7 +118,7 @@ pub(crate) fn read(
         } else {
             builder.do_read_sync()?
         };
-        let mut checksum = RowChecksum::default();
+        let mut checksum = crate::checksum::RowChecksum::default();
         for row in &rows {
             checksum.update(row);
         }
@@ -148,7 +165,15 @@ pub(crate) fn read(
     })
 }
 
-/// 对应 Java：无直接对应对象；Rust 架构扩展。 执行 XLSX Workbook Mode 的读、元数据修改、保存与重新读取校验。
+/// 执行 XLSX Workbook Mode 的读、元数据修改、保存与重新读取校验。
+///
+/// # 参数
+/// - `scenario`: 场景规格
+/// - `input`: 输入文件路径
+/// - `output`: 输出文件路径
+///
+/// # 返回
+/// 往返操作完成后的 [`OperationResult`]。
 pub(crate) fn roundtrip(
     scenario: &ScenarioSpec,
     input: &Path,
@@ -171,8 +196,16 @@ pub(crate) fn roundtrip(
 }
 
 /// 对显式纯函数 mapper 建立确定、可重复且与输出 checksum 绑定的 CPU 工作量。
+///
 /// 返回值保持不变，因此串行与并行路径必须产生完全相同的行序列。
-fn apply_benchmark_map(row: BenchmarkRow, work_factor: u32) -> BenchmarkRow {
+///
+/// # 参数
+/// - `row`: 输入行数据
+/// - `work_factor`: 工作因子，控制 CPU 计算轮次
+///
+/// # 返回
+/// 与输入等价的行数据（仅产生 CPU 开销副作用）。
+pub(super) fn apply_benchmark_map(row: BenchmarkRow, work_factor: u32) -> BenchmarkRow {
     let mut fingerprint = row.id as u64 ^ row.score.to_bits().rotate_left(17);
     for round in 0..work_factor {
         fingerprint ^= u64::from(round).wrapping_mul(0x9e37_79b9_7f4a_7c15);
@@ -185,33 +218,4 @@ fn apply_benchmark_map(row: BenchmarkRow, work_factor: u32) -> BenchmarkRow {
     }
     std::hint::black_box(fingerprint);
     row
-}
-
-#[derive(Default)]
-struct EventState {
-    rows: u64,
-    checksum: RowChecksum,
-}
-
-struct EventListener(Rc<RefCell<EventState>>);
-
-struct SerialMapListener {
-    downstream: EventListener,
-    work_factor: u32,
-}
-
-impl ReadListener<BenchmarkRow> for SerialMapListener {
-    fn invoke(&mut self, data: BenchmarkRow, context: &AnalysisContext) -> easyexcel::Result<()> {
-        self.downstream
-            .invoke(apply_benchmark_map(data, self.work_factor), context)
-    }
-}
-
-impl ReadListener<BenchmarkRow> for EventListener {
-    fn invoke(&mut self, data: BenchmarkRow, _context: &AnalysisContext) -> easyexcel::Result<()> {
-        let mut state = self.0.borrow_mut();
-        state.rows += 1;
-        state.checksum.update(&data);
-        Ok(())
-    }
 }
