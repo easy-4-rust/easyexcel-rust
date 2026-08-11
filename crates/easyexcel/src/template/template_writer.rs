@@ -1051,7 +1051,7 @@ mod tests_extra {
             let sheet = book.sheet_mut("Sheet1");
             let text = |value: &str| {
                 crate::write::xls_adapter::Biff8Cell::general(
-                    crate::write::xls_adapter::Biff8Value::Text(value.to_owned()),
+                    easyexcel_xls::biff8::Biff8Value::Text(value.to_owned()),
                 )
             };
             sheet.set(0, 0, text("{.name}"))?;

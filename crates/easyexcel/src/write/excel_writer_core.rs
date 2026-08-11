@@ -48,7 +48,7 @@ use crate::write::xls_adapter::{
 };
 
 #[cfg(test)]
-use crate::write::xls_adapter::Biff8Value;
+use easyexcel_xls::biff8::Biff8Value;
 
 pub use crate::write::append_rows::{append_rows_to_worksheet, append_rows_to_worksheet_with_gzip};
 pub use crate::write::excel_writer::ExcelWriter;
