@@ -621,4 +621,276 @@ mod tests {
         assert!(!looks_like_date("hello"));
         assert!(!looks_like_date(""));
     }
+
+    use chrono::Datelike;
+
+    #[test]
+    fn parse_java_date_with_format_19_dash() {
+        let dt = parse_java_date("2025-04-04 16:05:50", [DATE_FORMAT_19]).unwrap();
+        assert_eq!(dt.date(), NaiveDate::from_ymd_opt(2025, 4, 4).unwrap());
+        assert_eq!(dt.time().hour(), 16);
+        assert_eq!(dt.time().minute(), 5);
+    }
+
+    #[test]
+    fn parse_java_date_with_format_19_slash() {
+        let dt = parse_java_date("2025/04/04 16:05:50", [DATE_FORMAT_19_FORWARD_SLASH]).unwrap();
+        assert_eq!(dt.date(), NaiveDate::from_ymd_opt(2025, 4, 4).unwrap());
+    }
+
+    #[test]
+    fn parse_java_date_with_format_10() {
+        let dt = parse_java_date("2025-04-04", [DATE_FORMAT_10]).unwrap();
+        assert_eq!(dt.date(), NaiveDate::from_ymd_opt(2025, 4, 4).unwrap());
+    }
+
+    #[test]
+    fn parse_java_date_with_format_14() {
+        let dt = parse_java_date("20250404160550", [DATE_FORMAT_14]).unwrap();
+        assert_eq!(dt.date(), NaiveDate::from_ymd_opt(2025, 4, 4).unwrap());
+    }
+
+    #[test]
+    fn parse_java_date_with_format_16_dash() {
+        let dt = parse_java_date("2025-04-04 16:05", [DATE_FORMAT_16]).unwrap();
+        assert_eq!(dt.date(), NaiveDate::from_ymd_opt(2025, 4, 4).unwrap());
+    }
+
+    #[test]
+    fn parse_java_date_with_format_16_slash() {
+        let dt = parse_java_date("2025/04/04 16:05", [DATE_FORMAT_16_FORWARD_SLASH]).unwrap();
+        assert_eq!(dt.date(), NaiveDate::from_ymd_opt(2025, 4, 4).unwrap());
+    }
+
+    #[test]
+    fn parse_java_date_with_format_17() {
+        let dt = parse_java_date("20250404 16:05:50", [DATE_FORMAT_17]).unwrap();
+        assert_eq!(dt.date(), NaiveDate::from_ymd_opt(2025, 4, 4).unwrap());
+    }
+
+    #[test]
+    fn parse_java_date_invalid_returns_error() {
+        assert!(parse_java_date("not a date", [DATE_FORMAT_19]).is_err());
+    }
+
+    #[test]
+    fn parse_java_date_tries_multiple_patterns() {
+        let dt =
+            parse_java_date("2025-04-04", [DATE_FORMAT_19, DATE_FORMAT_10]).unwrap();
+        assert_eq!(dt.date(), NaiveDate::from_ymd_opt(2025, 4, 4).unwrap());
+    }
+
+    #[test]
+    fn infer_java_date_pattern_recognizes_lengths() {
+        assert_eq!(infer_java_date_pattern("2025-04-04 16:05:50").unwrap(), DATE_FORMAT_19);
+        assert_eq!(infer_java_date_pattern("2025/04/04 16:05:50").unwrap(), DATE_FORMAT_19_FORWARD_SLASH);
+        assert_eq!(infer_java_date_pattern("2025-04-04 16:05").unwrap(), DATE_FORMAT_16);
+        assert_eq!(infer_java_date_pattern("2025/04/04 16:05").unwrap(), DATE_FORMAT_16_FORWARD_SLASH);
+        assert_eq!(infer_java_date_pattern("20250404 16:05:50").unwrap(), DATE_FORMAT_17);
+        assert_eq!(infer_java_date_pattern("20250404160550").unwrap(), DATE_FORMAT_14);
+        assert_eq!(infer_java_date_pattern("2025-04-04").unwrap(), DATE_FORMAT_10);
+        assert!(infer_java_date_pattern("short").is_err());
+    }
+
+    #[test]
+    fn format_java_date_renders() {
+        let dt = NaiveDate::from_ymd_opt(2025, 4, 4)
+            .unwrap()
+            .and_hms_opt(16, 5, 50)
+            .unwrap();
+        let result = format_java_date(dt, DATE_FORMAT_19);
+        assert_eq!(result, "2025-04-04 16:05:50");
+    }
+
+    #[test]
+    fn java_date_format_to_chrono_converts_tokens() {
+        assert_eq!(java_date_format_to_chrono("yyyy-MM-dd"), "%Y-%m-%d");
+        assert_eq!(java_date_format_to_chrono("HH:mm:ss"), "%H:%M:%S");
+        assert_eq!(java_date_format_to_chrono("yyyyMMdd"), "%Y%m%d");
+        assert_eq!(java_date_format_to_chrono("S"), "%3f");
+    }
+
+    #[test]
+    fn java_date_format_to_chrono_handles_quotes() {
+        assert_eq!(java_date_format_to_chrono("yyyy'年'MM'月'"), "%Y年%m月");
+    }
+
+    #[test]
+    fn chrono_date_format_passthrough_for_chrono_patterns() {
+        assert_eq!(chrono_date_format("%Y-%m-%d"), "%Y-%m-%d");
+    }
+
+    #[test]
+    fn chrono_date_format_converts_java_patterns() {
+        assert_eq!(chrono_date_format("yyyy-MM-dd"), "%Y-%m-%d");
+    }
+
+    #[test]
+    fn date_to_excel_serial_1900() {
+        let d = NaiveDate::from_ymd_opt(2008, 12, 31).unwrap();
+        assert_eq!(date_to_excel_serial(d, false), 39813.0);
+    }
+
+    #[test]
+    fn date_to_excel_serial_1904() {
+        let d = NaiveDate::from_ymd_opt(2008, 12, 31).unwrap();
+        let serial = date_to_excel_serial(d, true);
+        assert!((serial - (39813.0 - 1462.0)).abs() < 0.01);
+    }
+
+    #[test]
+    fn datetime_to_excel_serial_with_fraction() {
+        let dt = NaiveDate::from_ymd_opt(2008, 12, 31)
+            .unwrap()
+            .and_hms_opt(12, 0, 0)
+            .unwrap();
+        let serial = datetime_to_excel_serial(dt, false);
+        assert!((serial - 39813.5).abs() < 0.001);
+    }
+
+    #[test]
+    fn excel_parts_to_datetime_basic() {
+        let dt = excel_parts_to_datetime(39813, 0, false, false).unwrap();
+        assert_eq!(dt.date(), NaiveDate::from_ymd_opt(2008, 12, 31).unwrap());
+    }
+
+    #[test]
+    fn excel_parts_to_datetime_1904() {
+        let dt = excel_parts_to_datetime(0, 0, true, false).unwrap();
+        assert_eq!(dt.date(), NaiveDate::from_ymd_opt(1904, 1, 1).unwrap());
+    }
+
+    #[test]
+    fn excel_parts_to_datetime_round_seconds() {
+        let dt = excel_parts_to_datetime(39813, 43200000, false, true).unwrap();
+        assert_eq!(dt.time().hour(), 12);
+    }
+
+    #[test]
+    fn excel_parts_to_datetime_round_seconds_with_499ms() {
+        // 499ms should round down
+        let dt = excel_parts_to_datetime(39813, 43200499, false, true).unwrap();
+        assert_eq!(dt.time().hour(), 12);
+        assert_eq!(dt.time().minute(), 0);
+    }
+
+    #[test]
+    fn date_system_from_1904_windowing() {
+        assert_eq!(DateSystem::from_1904_windowing(true), DateSystem::Date1904);
+        assert_eq!(DateSystem::from_1904_windowing(false), DateSystem::Date1900);
+    }
+
+    #[test]
+    fn serial_to_datetime_1900_returns_none_for_negative() {
+        assert!(DateSystem::Date1900.serial_to_datetime(-1.0).is_none());
+    }
+
+    #[test]
+    fn serial_to_datetime_1900_returns_none_for_nan() {
+        assert!(DateSystem::Date1900.serial_to_datetime(f64::NAN).is_none());
+    }
+
+    #[test]
+    fn serial_to_datetime_1900_returns_none_for_infinity() {
+        assert!(DateSystem::Date1900.serial_to_datetime(f64::INFINITY).is_none());
+    }
+
+    #[test]
+    fn serial_to_datetime_1904_basic() {
+        let dt = DateSystem::Date1904.serial_to_datetime(0.0).unwrap();
+        assert_eq!(dt.date(), NaiveDate::from_ymd_opt(1904, 1, 1).unwrap());
+    }
+
+    #[test]
+    fn datetime_to_serial_roundtrip() {
+        let dt = NaiveDate::from_ymd_opt(2008, 12, 31)
+            .unwrap()
+            .and_hms_opt(12, 0, 0)
+            .unwrap();
+        let serial = DateSystem::Date1900.datetime_to_serial(dt);
+        let back = DateSystem::Date1900.serial_to_datetime(serial).unwrap();
+        assert_eq!(back.date(), dt.date());
+        assert_eq!(back.time().hour(), dt.time().hour());
+    }
+
+    #[test]
+    fn date_to_serial_1900_before_march() {
+        let d = NaiveDate::from_ymd_opt(1900, 2, 28).unwrap();
+        assert_eq!(DateSystem::Date1900.date_to_serial(d), 59);
+    }
+
+    #[test]
+    fn date_to_serial_1904() {
+        let d = NaiveDate::from_ymd_opt(1904, 1, 1).unwrap();
+        assert_eq!(DateSystem::Date1904.date_to_serial(d), 0);
+    }
+
+    #[test]
+    fn convert_serial_same_system() {
+        assert_eq!(DateSystem::Date1900.convert_serial_to(100.0, DateSystem::Date1900), 100.0);
+        assert_eq!(DateSystem::Date1904.convert_serial_to(100.0, DateSystem::Date1904), 100.0);
+    }
+
+    #[test]
+    fn ymd_to_serial_valid() {
+        let serial = ymd_to_serial(DateSystem::Date1900, 2008, 12, 31).unwrap();
+        assert!((serial - 39813.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn ymd_to_serial_invalid_date() {
+        assert!(ymd_to_serial(DateSystem::Date1900, 2008, 13, 1).is_none());
+    }
+
+    #[test]
+    fn serial_time_parts_basic() {
+        let (h, m, s) = serial_time_parts(39813.5);
+        assert_eq!((h, m, s), (12, 0, 0));
+    }
+
+    #[test]
+    fn serial_time_parts_fraction() {
+        let (h, m, s) = serial_time_parts(0.75);
+        assert_eq!((h, m, s), (18, 0, 0));
+    }
+
+    #[test]
+    fn is_internal_date_format_delegates() {
+        assert!(is_internal_date_format("yyyy-mm-dd"));
+        assert!(!is_internal_date_format("0.00"));
+    }
+
+    #[test]
+    fn excel_days_to_utc_basic() {
+        // Base is 1899-12-30; serial 1 = 1899-12-31, serial 2 = 1900-01-01
+        let dt = excel_days_to_utc(2);
+        let d = dt.date_naive();
+        assert_eq!(d.day(), 1);
+        assert_eq!(d.month(), 1);
+        assert_eq!(d.year(), 1900);
+        // serial 1 = 1899-12-31
+        let dt1 = excel_days_to_utc(1);
+        let d1 = dt1.date_naive();
+        assert_eq!(d1.day(), 31);
+        assert_eq!(d1.month(), 12);
+        assert_eq!(d1.year(), 1899);
+    }
+
+    #[test]
+    fn constants_are_correct() {
+        assert_eq!(DATE_FORMAT_10, "yyyy-MM-dd");
+        assert_eq!(DATE_FORMAT_14, "yyyyMMddHHmmss");
+        assert_eq!(DATE_FORMAT_16, "yyyy-MM-dd HH:mm");
+        assert_eq!(DATE_FORMAT_16_FORWARD_SLASH, "yyyy/MM/dd HH:mm");
+        assert_eq!(DATE_FORMAT_17, "yyyyMMdd HH:mm:ss");
+        assert_eq!(DATE_FORMAT_19, "yyyy-MM-dd HH:mm:ss");
+        assert_eq!(DATE_FORMAT_19_FORWARD_SLASH, "yyyy/MM/dd HH:mm:ss");
+        assert_eq!(DEFAULT_DATE_FORMAT, DATE_FORMAT_19);
+        assert_eq!(DEFAULT_LOCAL_DATE_FORMAT, DATE_FORMAT_10);
+        assert_eq!(SECONDS_PER_MINUTE, 60);
+        assert_eq!(MINUTES_PER_HOUR, 60);
+        assert_eq!(HOURS_PER_DAY, 24);
+        assert_eq!(SECONDS_PER_DAY, 86400);
+        assert_eq!(DAY_MILLISECONDS, 86_400_000);
+    }
 }

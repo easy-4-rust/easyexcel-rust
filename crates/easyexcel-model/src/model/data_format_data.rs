@@ -154,4 +154,122 @@ mod tests {
         assert_eq!(data.index(), Some(5));
         assert_eq!(data.format(), Some("0.00%"));
     }
+
+    #[test]
+    fn new_returns_default() {
+        let data = DataFormatData::new();
+        assert_eq!(data.index(), None);
+        assert_eq!(data.format(), None);
+    }
+
+    #[test]
+    fn get_index_and_get_format_aliases() {
+        let mut data = DataFormatData::new();
+        data.set_index(Some(42));
+        data.set_format(Some("0.00".to_owned()));
+        assert_eq!(data.get_index(), Some(42));
+        assert_eq!(data.get_format(), Some("0.00"));
+    }
+
+    #[test]
+    fn format_cow_returns_empty_for_none() {
+        let data = DataFormatData::new();
+        assert_eq!(data.format_cow(), Cow::Borrowed(""));
+    }
+
+    #[test]
+    fn merge_with_none_source_is_noop() {
+        let mut data = DataFormatData::new();
+        data.set_index(Some(5));
+        DataFormatData::merge(None, Some(&mut data));
+        assert_eq!(data.index(), Some(5));
+    }
+
+    #[test]
+    fn merge_with_none_target_is_noop() {
+        let source = DataFormatData {
+            index: Some(1),
+            format: Some("0.00".to_owned()),
+        };
+        DataFormatData::merge(Some(&source), None);
+    }
+
+    #[test]
+    fn merge_both_none_is_noop() {
+        DataFormatData::merge(None, None);
+    }
+
+    #[test]
+    fn resolve_none_returns_general() {
+        let data = DataFormatData::resolve(None);
+        assert_eq!(data.index(), Some(0));
+        assert_eq!(data.format(), None);
+    }
+
+    #[test]
+    fn resolve_with_valid_index_returns_clone() {
+        let source = DataFormatData {
+            index: Some(5),
+            format: Some("0.00".to_owned()),
+        };
+        let data = DataFormatData::resolve(Some(&source));
+        assert_eq!(data.index(), Some(5));
+        assert_eq!(data.format(), Some("0.00"));
+    }
+
+    #[test]
+    fn resolve_with_negative_index_uses_format() {
+        let source = DataFormatData {
+            index: Some(-1),
+            format: Some("0.00%".to_owned()),
+        };
+        let data = DataFormatData::resolve(Some(&source));
+        assert_eq!(data.index(), None);
+        assert_eq!(data.format(), Some("0.00%"));
+    }
+
+    #[test]
+    fn resolve_with_no_valid_index_and_no_format_returns_general() {
+        let source = DataFormatData {
+            index: None,
+            format: None,
+        };
+        let data = DataFormatData::resolve(Some(&source));
+        assert_eq!(data.index(), Some(0));
+    }
+
+    #[test]
+    fn resolve_with_empty_format_returns_general() {
+        let source = DataFormatData {
+            index: None,
+            format: Some("   ".to_owned()),
+        };
+        let data = DataFormatData::resolve(Some(&source));
+        assert_eq!(data.index(), Some(0));
+    }
+
+    #[test]
+    fn general_returns_index_zero() {
+        let data = DataFormatData::general();
+        assert_eq!(data.index(), Some(0));
+        assert_eq!(data.format(), None);
+    }
+
+    #[test]
+    fn set_format_with_none() {
+        let mut data = DataFormatData::new();
+        data.set_format(Some("0.00".to_owned()));
+        assert_eq!(data.format(), Some("0.00"));
+        data.set_format(None);
+        assert_eq!(data.format(), None);
+    }
+
+    #[test]
+    fn set_index_with_none() {
+        let mut data = DataFormatData::new();
+        data.set_index(Some(5));
+        assert_eq!(data.index(), Some(5));
+        data.set_index(None);
+        assert_eq!(data.index(), None);
+    }
 }

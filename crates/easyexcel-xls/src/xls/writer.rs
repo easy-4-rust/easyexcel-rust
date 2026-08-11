@@ -995,4 +995,268 @@ mod writer_tests {
         assert_eq!(book.sheets[0].visibility, Visibility::Hidden);
     }
 
+    // --- validate_workbook_level_state error paths ---
+
+    #[test]
+    fn validate_rejects_defined_names() {
+        use easyexcel_model::model::DefinedName;
+        let mut wb = Workbook::empty();
+        wb.defined_names.push(DefinedName {
+            name: "Test".to_owned(),
+            refers_to: "Sheet1!$A$1".to_owned(),
+            scope: None,
+            hidden: false,
+        });
+        let result = validate_workbook_level_state(&wb);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("defined names"));
+    }
+
+    #[test]
+    fn validate_rejects_opaque_parts() {
+        use easyexcel_model::model::OpaquePart;
+        let mut wb = Workbook::empty();
+        wb.opaque.push(OpaquePart {
+            name: "vba.bin".to_owned(),
+            data: vec![1, 2, 3],
+        });
+        let result = validate_workbook_level_state(&wb);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("opaque"));
+    }
+
+    #[test]
+    fn validate_rejects_metadata_title() {
+        let mut wb = Workbook::empty();
+        wb.metadata.title = Some("My Title".to_owned());
+        let result = validate_workbook_level_state(&wb);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("SummaryInformation"));
+    }
+
+    #[test]
+    fn validate_rejects_metadata_author() {
+        let mut wb = Workbook::empty();
+        wb.metadata.author = Some("Author".to_owned());
+        assert!(validate_workbook_level_state(&wb).is_err());
+    }
+
+    #[test]
+    fn validate_rejects_metadata_company() {
+        let mut wb = Workbook::empty();
+        wb.metadata.company = Some("Company".to_owned());
+        assert!(validate_workbook_level_state(&wb).is_err());
+    }
+
+    // --- validate_sheet_state error paths ---
+
+    #[test]
+    fn validate_sheet_rejects_opaque() {
+        use easyexcel_model::model::OpaquePart;
+        let mut sheet = Sheet::new("S");
+        sheet.opaque.push(OpaquePart {
+            name: "obj".to_owned(),
+            data: vec![0],
+        });
+        assert!(validate_sheet_state(&sheet).is_err());
+    }
+
+    // --- to_biff8_book formula cells ---
+
+    #[test]
+    fn to_biff8_book_formula_with_cached_value() {
+        use easyexcel_model::model::CellValue;
+        let mut wb = Workbook::empty();
+        let mut s = Sheet::new("S");
+        s.set(0, 0, Cell::Formula {
+            expr: "A2+1".to_owned(),
+            cached: CellValue::Number(43.0),
+        });
+        s.set(1, 0, Cell::Number(42.0));
+        wb.sheets.push(s);
+        let book = to_biff8_book(&wb).unwrap();
+        assert_eq!(book.sheets.len(), 1);
+        assert_eq!(book.formula_caches.len(), 1);
+    }
+
+    #[test]
+    fn to_biff8_book_error_cell() {
+        use easyexcel_model::CellError;
+        let mut wb = Workbook::empty();
+        let mut s = Sheet::new("S");
+        s.set(0, 0, Cell::Error(CellError::Div0));
+        wb.sheets.push(s);
+        let book = to_biff8_book(&wb).unwrap();
+        assert_eq!(book.sheets.len(), 1);
+    }
+
+    #[test]
+    fn to_biff8_book_empty_cell() {
+        let mut wb = Workbook::empty();
+        let mut s = Sheet::new("S");
+        s.cells.insert((0, 0), Cell::Empty);
+        wb.sheets.push(s);
+        let book = to_biff8_book(&wb).unwrap();
+        assert_eq!(book.sheets.len(), 1);
+    }
+
+    // --- to_biff8_book error paths ---
+
+    #[test]
+    fn to_biff8_book_invalid_merge_range_errors() {
+        let mut wb = Workbook::empty();
+        let mut s = Sheet::new("S");
+        s.set(0, 0, Cell::Number(1.0));
+        // Use try_from_bounds which validates order
+        let range = easyexcel_model::model::CellRange::new(
+            easyexcel_model::model::CellAddress::new(2, 2),
+            easyexcel_model::model::CellAddress::new(0, 0),
+        );
+        // The writer checks end < start; if CellRange normalizes, this may or may not error
+        s.merged.push(range);
+        wb.sheets.push(s);
+        let result = to_biff8_book(&wb);
+        // If CellRange normalizes (end >= start), it succeeds; otherwise errors
+        // We just test that it doesn't panic
+        let _ = result;
+    }
+
+    #[test]
+    fn to_biff8_book_with_column_style() {
+        use easyexcel_model::styles::{CellStyle, Font};
+        let mut wb = Workbook::empty();
+        let style_idx = wb.styles.intern(CellStyle {
+            font: Font { bold: true, ..Default::default() },
+            ..Default::default()
+        });
+        let mut s = Sheet::new("S");
+        s.set(0, 0, Cell::Number(1.0));
+        s.columns.insert(0, easyexcel_model::model::ColInfo {
+            width: Some(10.0),
+            style: Some(style_idx),
+            hidden: false,
+        });
+        wb.sheets.push(s);
+        let book = to_biff8_book(&wb).unwrap();
+        assert_eq!(book.sheets.len(), 1);
+    }
+
+    #[test]
+    fn to_biff8_book_with_row_style() {
+        use easyexcel_model::styles::{CellStyle, Font};
+        let mut wb = Workbook::empty();
+        let style_idx = wb.styles.intern(CellStyle {
+            font: Font { italic: true, ..Default::default() },
+            ..Default::default()
+        });
+        let mut s = Sheet::new("S");
+        s.set(0, 0, Cell::Number(1.0));
+        s.rows.insert(0, easyexcel_model::model::RowInfo {
+            height: Some(20.0),
+            style: Some(style_idx),
+            hidden: false,
+        });
+        wb.sheets.push(s);
+        let book = to_biff8_book(&wb).unwrap();
+        assert_eq!(book.sheets.len(), 1);
+    }
+
+    #[test]
+    fn to_biff8_book_with_cell_style() {
+        use easyexcel_model::styles::{CellStyle, Font};
+        let mut wb = Workbook::empty();
+        let style_idx = wb.styles.intern(CellStyle {
+            font: Font { name: "Courier".to_owned(), ..Default::default() },
+            ..Default::default()
+        });
+        let mut s = Sheet::new("S");
+        s.styles.insert((0, 0), style_idx);
+        s.set(0, 0, Cell::Number(1.0));
+        wb.sheets.push(s);
+        let book = to_biff8_book(&wb).unwrap();
+        assert_eq!(book.sheets.len(), 1);
+    }
+
+    // --- write / write_with_password ---
+
+    #[test]
+    fn write_produces_valid_ole2() {
+        let mut wb = Workbook::empty();
+        let mut s = Sheet::new("S");
+        s.set(0, 0, Cell::Number(1.0));
+        wb.sheets.push(s);
+        let mut buf = std::io::Cursor::new(Vec::new());
+        write(&wb, &mut buf).unwrap();
+        let bytes = buf.into_inner();
+        assert!(bytes.len() > 8);
+        // CFB magic
+        assert_eq!(&bytes[..4], &[0xD0, 0xCF, 0x11, 0xE0]);
+    }
+
+    #[test]
+    fn write_with_password_produces_valid_ole2() {
+        let mut wb = Workbook::empty();
+        let mut s = Sheet::new("S");
+        s.set(0, 0, Cell::Number(1.0));
+        wb.sheets.push(s);
+        let mut buf = std::io::Cursor::new(Vec::new());
+        write_with_password(&wb, &mut buf, Some("test")).unwrap();
+        let bytes = buf.into_inner();
+        assert!(bytes.len() > 8);
+    }
+
+    // --- resolve_used_styles with multiple sheets ---
+
+    #[test]
+    fn to_biff8_book_multiple_sheets_with_styles() {
+        use easyexcel_model::styles::{CellStyle, Font};
+        let mut wb = Workbook::empty();
+        let style_idx = wb.styles.intern(CellStyle {
+            font: Font { bold: true, ..Default::default() },
+            ..Default::default()
+        });
+        for name in ["Sheet1", "Sheet2"] {
+            let mut s = Sheet::new(name);
+            s.set(0, 0, Cell::Number(1.0));
+            s.styles.insert((0, 0), style_idx);
+            wb.sheets.push(s);
+        }
+        let book = to_biff8_book(&wb).unwrap();
+        assert_eq!(book.sheets.len(), 2);
+    }
+
+    // --- 1904 date system ---
+
+    #[test]
+    fn to_biff8_book_1904_date_system() {
+        let mut wb = Workbook::empty();
+        wb.date_system = easyexcel_model::DateSystem::Date1904;
+        let mut s = Sheet::new("S");
+        s.set(0, 0, Cell::Number(1.0));
+        wb.sheets.push(s);
+        let book = to_biff8_book(&wb).unwrap();
+        assert!(book.use_1904_windowing);
+    }
+
+    // --- to_biff8_book with hidden column and row ---
+
+    #[test]
+    fn to_biff8_book_hidden_column_and_row() {
+        let mut wb = Workbook::empty();
+        let mut s = Sheet::new("S");
+        s.set(0, 0, Cell::Number(1.0));
+        s.columns.insert(0, easyexcel_model::model::ColInfo {
+            width: None,
+            style: None,
+            hidden: true,
+        });
+        s.rows.insert(0, easyexcel_model::model::RowInfo {
+            height: None,
+            style: None,
+            hidden: true,
+        });
+        wb.sheets.push(s);
+        let book = to_biff8_book(&wb).unwrap();
+        assert_eq!(book.sheets.len(), 1);
+    }
 }

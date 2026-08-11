@@ -108,3 +108,56 @@ impl Default for ResourceLimits {
         Self::new(256 * 1024 * 1024, 256, 2_000_000, 500_000)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_sets_core_limits_and_defaults_for_extended() {
+        let rl = ResourceLimits::new(100, 10, 5000, 2000);
+        assert_eq!(rl.max_file_bytes(), 100);
+        assert_eq!(rl.max_sheets(), 10);
+        assert_eq!(rl.max_rows(), 5000);
+        assert_eq!(rl.max_formula_cells(), 2000);
+        assert_eq!(rl.max_output_bytes(), 256 * 1024 * 1024);
+        assert_eq!(rl.max_cell_chars(), 1024 * 1024);
+        assert_eq!(rl.max_columns(), 16_384);
+    }
+
+    #[test]
+    fn default_has_java_compatible_values() {
+        let rl = ResourceLimits::default();
+        assert_eq!(rl.max_file_bytes(), 256 * 1024 * 1024);
+        assert_eq!(rl.max_sheets(), 256);
+        assert_eq!(rl.max_rows(), 2_000_000);
+        assert_eq!(rl.max_formula_cells(), 500_000);
+    }
+
+    #[test]
+    fn builder_methods_override_defaults() {
+        let rl = ResourceLimits::default()
+            .with_max_output_bytes(1024)
+            .with_max_cell_chars(512)
+            .with_max_columns(100);
+        assert_eq!(rl.max_output_bytes(), 1024);
+        assert_eq!(rl.max_cell_chars(), 512);
+        assert_eq!(rl.max_columns(), 100);
+    }
+
+    #[test]
+    fn copy_and_clone_work() {
+        let rl = ResourceLimits::new(100, 10, 5000, 2000);
+        let rl2 = rl;
+        assert_eq!(rl, rl2);
+        let rl3 = rl.clone();
+        assert_eq!(rl, rl3);
+    }
+
+    #[test]
+    fn debug_format() {
+        let rl = ResourceLimits::new(100, 10, 5000, 2000);
+        let dbg = format!("{rl:?}");
+        assert!(dbg.contains("ResourceLimits"));
+    }
+}

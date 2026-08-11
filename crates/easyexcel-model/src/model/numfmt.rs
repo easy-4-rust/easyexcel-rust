@@ -486,4 +486,230 @@ mod tests {
             "(5.0)"
         );
     }
+
+    #[test]
+    fn builtin_format_code_returns_known_ids() {
+        assert_eq!(builtin_format_code(0), Some("General"));
+        assert_eq!(builtin_format_code(1), Some("0"));
+        assert_eq!(builtin_format_code(2), Some("0.00"));
+        assert_eq!(builtin_format_code(3), Some("#,##0"));
+        assert_eq!(builtin_format_code(9), Some("0%"));
+        assert_eq!(builtin_format_code(10), Some("0.00%"));
+        assert_eq!(builtin_format_code(11), Some("0.00E+00"));
+        assert_eq!(builtin_format_code(14), Some("mm-dd-yy"));
+        assert_eq!(builtin_format_code(49), Some("@"));
+        assert_eq!(builtin_format_code(50), None);
+        assert_eq!(builtin_format_code(100), None);
+    }
+
+    #[test]
+    fn is_date_format_ignores_quoted_tokens() {
+        assert!(!is_date_format(r#""yyyy"0"#));
+        assert!(!is_date_format(r#""m"0"#));
+        // Backslash escape: \m is literal, not a date token
+        assert!(!is_date_format(r#"\m\0"#));
+    }
+
+    #[test]
+    fn is_date_format_ignores_bracket_tokens() {
+        assert!(!is_date_format("[h]"));
+        assert!(!is_date_format("[m]"));
+    }
+
+    #[test]
+    fn is_date_format_id_with_custom_code() {
+        assert!(is_date_format_id(999, Some("yyyy-mm-dd")));
+        assert!(!is_date_format_id(999, Some("0.00")));
+        assert!(!is_date_format_id(999, None));
+    }
+
+    #[test]
+    fn format_fixed_decimal_count_trailing_zeros() {
+        assert_eq!(format_fixed_decimal(1.5, "0.00"), "1.50");
+        assert_eq!(format_fixed_decimal(1.5, "0.0"), "1.5");
+        assert_eq!(format_fixed_decimal(1.0, "0"), "1");
+        assert_eq!(format_fixed_decimal(1.5, "0.000"), "1.500");
+    }
+
+    #[test]
+    fn format_value_general_section() {
+        let sys = DateSystem::Date1900;
+        let result = format_value(42.0, "General", sys);
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn format_value_empty_section() {
+        let sys = DateSystem::Date1900;
+        let result = format_value(42.0, "", sys);
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn format_value_at_sign_section() {
+        let sys = DateSystem::Date1900;
+        let result = format_value(42.0, "@", sys);
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn format_value_zero_uses_third_section() {
+        let sys = DateSystem::Date1900;
+        // The third section is used for zero values; literal text + formatted "0"
+        assert_eq!(
+            format_value(0.0, "positive;negative;zero", sys),
+            "zero0"
+        );
+    }
+
+    #[test]
+    fn format_value_date_with_ampm() {
+        let sys = DateSystem::Date1900;
+        // serial 39813 = 2008-12-31
+        let result = format_value(39813.5, "h:mm AM/PM", sys);
+        assert!(result.contains("PM") || result.contains("AM"));
+    }
+
+    #[test]
+    fn format_value_date_with_ap() {
+        let sys = DateSystem::Date1900;
+        let result = format_value(39813.5, "h:mm a/p", sys);
+        assert!(result.contains("P") || result.contains("A"));
+    }
+
+    #[test]
+    fn format_value_date_escaped_chars() {
+        let sys = DateSystem::Date1900;
+        let result = format_value(39813.0, r#"yyyy"/"mm"/"dd"#, sys);
+        assert!(result.contains('/'));
+    }
+
+    #[test]
+    fn format_value_date_escaped_backslash() {
+        let sys = DateSystem::Date1900;
+        let result = format_value(39813.0, r#"yyyy\-mm\-dd"#, sys);
+        assert!(result.contains('-'));
+    }
+
+    #[test]
+    fn format_value_elapsed_time() {
+        let sys = DateSystem::Date1900;
+        let result = format_value(39813.5, "[h]", sys);
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn format_value_month_formats() {
+        let sys = DateSystem::Date1900;
+        // 2008-12-31
+        let r1 = format_value(39813.0, "m", sys);
+        assert_eq!(r1, "12");
+        let r2 = format_value(39813.0, "mm", sys);
+        assert_eq!(r2, "12");
+        let r3 = format_value(39813.0, "mmm", sys);
+        assert_eq!(r3, "Dec");
+        let r4 = format_value(39813.0, "mmmm", sys);
+        assert_eq!(r4, "December");
+    }
+
+    #[test]
+    fn format_value_day_formats() {
+        let sys = DateSystem::Date1900;
+        let r1 = format_value(39813.0, "d", sys);
+        assert_eq!(r1, "31");
+        let r2 = format_value(39813.0, "dd", sys);
+        assert_eq!(r2, "31");
+        let r3 = format_value(39813.0, "ddd", sys);
+        assert_eq!(r3, "Wed");
+        let r4 = format_value(39813.0, "dddd", sys);
+        assert_eq!(r4, "Wednesday");
+    }
+
+    #[test]
+    fn format_value_year_formats() {
+        let sys = DateSystem::Date1900;
+        let r1 = format_value(39813.0, "yy", sys);
+        assert_eq!(r1, "08");
+        let r2 = format_value(39813.0, "yyyy", sys);
+        assert_eq!(r2, "2008");
+    }
+
+    #[test]
+    fn format_value_seconds_format() {
+        let sys = DateSystem::Date1900;
+        let result = format_value(39813.5, "ss", sys);
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn format_value_hour_format() {
+        let sys = DateSystem::Date1900;
+        let result = format_value(39813.5, "hh", sys);
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn format_value_date_with_invalid_serial_falls_back() {
+        let sys = DateSystem::Date1900;
+        let result = format_value(-1.0, "yyyy-mm-dd", sys);
+        // Invalid serial falls back to general number format
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn format_numeric_with_literal_in_code() {
+        let sys = DateSystem::Date1900;
+        let result = format_value(42.0, r#"$"#, sys);
+        assert!(result.contains('$'));
+    }
+
+    #[test]
+    fn format_numeric_with_quoted_literal() {
+        let sys = DateSystem::Date1900;
+        let result = format_value(42.0, r#""USD"0"#, sys);
+        assert!(result.contains("USD"));
+    }
+
+    #[test]
+    fn split_sections_basic() {
+        let sections = split_sections("a;b;c");
+        assert_eq!(sections, vec!["a", "b", "c"]);
+    }
+
+    #[test]
+    fn split_sections_no_semicolon() {
+        let sections = split_sections("abc");
+        assert_eq!(sections, vec!["abc"]);
+    }
+
+    #[test]
+    fn split_sections_respects_quotes() {
+        let sections = split_sections(r#""a;b";c"#);
+        assert_eq!(sections, vec![r#""a;b""#, "c"]);
+    }
+
+    #[test]
+    fn near_time_context_detects_hour_before() {
+        assert!(near_time_context(b"h:mm", 2));
+        assert!(!near_time_context(b"mm", 0));
+    }
+
+    #[test]
+    fn near_time_context_detects_second_after() {
+        assert!(near_time_context(b"mm:ss", 0));
+    }
+
+    #[test]
+    fn fmt_pad_formats_correctly() {
+        assert_eq!(fmt_pad(5, 1), "5");
+        assert_eq!(fmt_pad(5, 2), "05");
+        assert_eq!(fmt_pad(12, 2), "12");
+    }
+
+    #[test]
+    fn group_thousands_formats_correctly() {
+        assert_eq!(group_thousands("1234567"), "1,234,567");
+        assert_eq!(group_thousands("1234567.89"), "1,234,567.89");
+        assert_eq!(group_thousands("123"), "123");
+    }
 }

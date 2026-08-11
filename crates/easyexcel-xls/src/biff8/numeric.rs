@@ -252,7 +252,7 @@ pub fn decode_rk(bytes: &[u8]) -> f64 {
 mod tests {
     use easyexcel_format::SpreadsheetLocale;
 
-    use super::{decode_rk, format_numeric_displays, load_numeric_displays, parse_format_record};
+    use super::{decode_rk, format_numeric_displays, load_numeric_displays, parse_format_record, scan_numeric_cells};
 
     fn record(sid: u16, payload: &[u8]) -> Vec<u8> {
         let mut output = Vec::new();
@@ -399,5 +399,156 @@ mod tests {
         let path = directory.path().join("invalid.xls");
         std::fs::write(&path, b"not an ole document").expect("write fixture");
         assert!(load_numeric_displays(&path, false, &SpreadsheetLocale::default()).is_err());
+    }
+
+    // --- scan_numeric_cells edge cases ---
+
+    #[test]
+    fn scan_empty_workbook_returns_empty() {
+        let sheets = scan_numeric_cells(&[]);
+        assert!(sheets.is_empty());
+    }
+
+    #[test]
+    fn scan_truncated_record_stops() {
+        // Record header declares 20 bytes but only 5 available
+        let mut data = Vec::new();
+        data.extend_from_slice(&0x0203u16.to_le_bytes()); // NUMBER SID
+        data.extend_from_slice(&20u16.to_le_bytes()); // length = 20
+        data.extend_from_slice(&[0, 1, 2, 3, 4]); // only 5 bytes
+        let sheets = scan_numeric_cells(&data);
+        assert!(sheets.is_empty());
+    }
+
+    #[test]
+    fn scan_unknown_sid_ignored() {
+        // BOF for sheet context, then unknown SID, then NUMBER
+        let mut data = worksheet_bof();
+        data.extend_from_slice(&[0xFF, 0x00, 0x04, 0x00, 1, 2, 3, 4]); // unknown SID
+        data.extend_from_slice(&xf_record(0));
+        data.extend_from_slice(&number_record(0, 0, 0, 42.0));
+        let sheets = scan_numeric_cells(&data);
+        assert_eq!(sheets.len(), 1);
+    }
+
+    #[test]
+    fn scan_number_with_unknown_xf_skipped() {
+        let mut data = worksheet_bof();
+        // No XF record, so index 0 is out of bounds
+        data.extend_from_slice(&number_record(0, 0, 0, 42.0));
+        let sheets = scan_numeric_cells(&data);
+        // Sheet exists but cell is skipped because xf index 0 is not in xfs vec
+        assert_eq!(sheets.len(), 1);
+        assert!(sheets[0].is_empty());
+    }
+
+    #[test]
+    fn scan_rk_record() {
+        let mut data = worksheet_bof();
+        data.extend_from_slice(&custom_format_record(5, "0.0"));
+        data.extend_from_slice(&xf_record(5));
+        // RK record: SID=0x027E, row(2), col(2), xf(2), rk(4)
+        let mut payload = Vec::new();
+        payload.extend_from_slice(&0u16.to_le_bytes()); // row
+        payload.extend_from_slice(&0u16.to_le_bytes()); // col
+        payload.extend_from_slice(&0u16.to_le_bytes()); // xf
+        payload.extend_from_slice(&rk_bytes(50)); // rk value = 50
+        data.extend_from_slice(&record(0x027E, &payload));
+        let sheets = scan_numeric_cells(&data);
+        assert_eq!(sheets.len(), 1);
+        assert!(sheets[0].contains_key(&(0, 0)));
+    }
+
+    #[test]
+    fn scan_globals_bof_does_not_start_sheet() {
+        // BOF with DT_GLOBALS type (0x0005) should NOT start a sheet context
+        let mut data = Vec::new();
+        data.extend_from_slice(&0x0809u16.to_le_bytes()); // BOF SID
+        data.extend_from_slice(&4u16.to_le_bytes());
+        data.extend_from_slice(&[0, 0, 0x05, 0x00]); // globals type
+        data.extend_from_slice(&number_record(0, 0, 0, 42.0));
+        // Without a worksheet BOF, the NUMBER record should be ignored
+        let sheets = scan_numeric_cells(&data);
+        assert!(sheets.is_empty());
+    }
+
+    #[test]
+    fn scan_format_record_too_short_ignored() {
+        let mut data = worksheet_bof();
+        // FORMAT with only 1 byte payload
+        data.extend_from_slice(&record(0x041E, &[0]));
+        data.extend_from_slice(&xf_record(0));
+        data.extend_from_slice(&number_record(0, 0, 0, 1.0));
+        let sheets = scan_numeric_cells(&data);
+        assert_eq!(sheets.len(), 1);
+    }
+
+    #[test]
+    fn scan_xf_record_too_short_pushes_zero_ifmt() {
+        let mut data = worksheet_bof();
+        // XF with only 2 bytes payload (less than 4 needed for ifmt)
+        data.extend_from_slice(&record(0x00E0, &[0, 0]));
+        data.extend_from_slice(&number_record(0, 0, 0, 1.0));
+        let sheets = scan_numeric_cells(&data);
+        assert_eq!(sheets.len(), 1);
+    }
+
+    #[test]
+    fn format_with_general_or_at_sign_skipped() {
+        let mut data = worksheet_bof();
+        data.extend_from_slice(&custom_format_record(5, "General"));
+        data.extend_from_slice(&xf_record(5));
+        data.extend_from_slice(&number_record(0, 0, 0, 42.0));
+        let displays = format_numeric_displays(&data, false, &SpreadsheetLocale::default());
+        assert!(displays[0].is_empty());
+    }
+
+    #[test]
+    fn format_with_at_sign_skipped() {
+        let mut data = worksheet_bof();
+        data.extend_from_slice(&custom_format_record(5, "@"));
+        data.extend_from_slice(&xf_record(5));
+        data.extend_from_slice(&number_record(0, 0, 0, 42.0));
+        let displays = format_numeric_displays(&data, false, &SpreadsheetLocale::default());
+        assert!(displays[0].is_empty());
+    }
+
+    #[test]
+    fn format_with_infinite_value_skipped() {
+        let mut data = worksheet_bof();
+        data.extend_from_slice(&custom_format_record(5, "0.0"));
+        data.extend_from_slice(&xf_record(5));
+        data.extend_from_slice(&number_record(0, 0, 0, f64::INFINITY));
+        let displays = format_numeric_displays(&data, false, &SpreadsheetLocale::default());
+        assert!(displays[0].is_empty());
+    }
+
+    #[test]
+    fn format_with_neg_infinity_skipped() {
+        let mut data = worksheet_bof();
+        data.extend_from_slice(&custom_format_record(5, "0.0"));
+        data.extend_from_slice(&xf_record(5));
+        data.extend_from_slice(&number_record(0, 0, 0, f64::NEG_INFINITY));
+        let displays = format_numeric_displays(&data, false, &SpreadsheetLocale::default());
+        assert!(displays[0].is_empty());
+    }
+
+    #[test]
+    fn multiple_sheets_in_stream() {
+        let mut data = Vec::new();
+        // Sheet 1
+        data.extend_from_slice(&worksheet_bof());
+        data.extend_from_slice(&custom_format_record(5, "0.0"));
+        data.extend_from_slice(&xf_record(5));
+        data.extend_from_slice(&number_record(0, 0, 0, 10.0));
+        // Sheet 2
+        data.extend_from_slice(&worksheet_bof());
+        data.extend_from_slice(&custom_format_record(6, "0.00"));
+        data.extend_from_slice(&xf_record(6));
+        data.extend_from_slice(&number_record(0, 0, 0, 20.0));
+        let sheets = scan_numeric_cells(&data);
+        assert_eq!(sheets.len(), 2);
+        assert!(sheets[0].contains_key(&(0, 0)));
+        assert!(sheets[1].contains_key(&(0, 0)));
     }
 }

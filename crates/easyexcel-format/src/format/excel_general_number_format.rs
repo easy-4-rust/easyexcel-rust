@@ -123,4 +123,71 @@ mod tests_extra {
         assert_eq!(format_general(0.0), "0");
         assert_eq!(format_general(-42.0), "-42");
     }
+
+    #[test]
+    fn format_general_with_options_non_dot_separator() {
+        let result = format_general_with_options(1.5, true, ',');
+        assert!(result.contains(','));
+    }
+
+    #[test]
+    fn format_general_with_options_no_scientific() {
+        let result = format_general_with_options(1E11, false, '.');
+        // Should use plain extreme format (no scientific notation)
+        assert!(!result.contains('E'));
+        assert!(!result.contains('e'));
+    }
+
+    #[test]
+    fn format_general_with_options_scientific() {
+        let result = format_general_with_options(1E11, true, '.');
+        assert!(result.contains('E'));
+    }
+
+    #[test]
+    fn format_general_with_options_infinity_and_nan() {
+        assert_eq!(format_general_with_options(f64::INFINITY, true, '.'), "inf");
+        assert_eq!(
+            format_general_with_options(f64::NEG_INFINITY, true, '.'),
+            "-inf"
+        );
+        assert_eq!(format_general_with_options(f64::NAN, true, '.'), "NaN");
+    }
+
+    #[test]
+    fn format_general_with_options_integer() {
+        assert_eq!(format_general_with_options(42.0, true, '.'), "42");
+    }
+
+    #[test]
+    fn format_general_with_options_fractional() {
+        let result = format_general_with_options(3.14159, true, '.');
+        assert!(result.starts_with("3.14"));
+    }
+
+    #[test]
+    fn format_general_with_options_trailing_zeros_stripped() {
+        let result = format_general_with_options(1.10000, true, '.');
+        assert_eq!(result, "1.1");
+    }
+
+    #[test]
+    fn excel_general_number_format_new_and_accessors() {
+        let fmt = ExcelGeneralNumberFormat::new(ExcelLocale::default(), true);
+        assert!(fmt.use_scientific_format());
+        assert_eq!(fmt.locale().formatter().decimal_separator, '.');
+    }
+
+    #[test]
+    fn excel_general_number_format_format_delegates() {
+        let fmt = ExcelGeneralNumberFormat::new(ExcelLocale::default(), true);
+        assert_eq!(fmt.format(0.0), "0");
+        assert_eq!(fmt.format(1.5), "1.5");
+    }
+
+    #[test]
+    fn excel_general_number_format_parse_object_returns_error() {
+        let fmt = ExcelGeneralNumberFormat::new(ExcelLocale::default(), true);
+        assert!(fmt.parse_object("anything").is_err());
+    }
 }

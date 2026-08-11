@@ -394,4 +394,43 @@ mod tests_extra {
         );
         Ok(())
     }
+
+    #[test]
+    fn decode_unicode_string_record_single_segment() -> Result<()> {
+        assert_eq!(
+            decode_unicode_string_record(&[2, 0, 0, b'h', b'i'])?,
+            "hi"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn decode_sst_empty_segments() {
+        // Empty segments vec should error (can't read total count)
+        let result = decode_sst_segments(&[]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn decode_sst_single_byte_segments_errors() {
+        // Only 1 byte - can't read u32 header
+        let result = decode_sst_segments(&[vec![0]]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn decode_sst_wide_string_with_continuation() -> Result<()> {
+        // First segment: SST header + start of wide string
+        let mut first = Vec::new();
+        first.extend_from_slice(&1u32.to_le_bytes()); // total
+        first.extend_from_slice(&1u32.to_le_bytes()); // unique
+        first.extend_from_slice(&3u16.to_le_bytes()); // char count = 3
+        first.push(0x01); // wide flag
+        first.extend_from_slice(&[0x60, 0x4F]); // 你 (first char)
+        // Second segment: continuation with compressed flag
+        let second = vec![0x00, 0x7D, 0x59]; // compressed flag + rest as wide bytes
+        let result = decode_sst_segments(&[first, second])?;
+        assert_eq!(result.len(), 1);
+        Ok(())
+    }
 }

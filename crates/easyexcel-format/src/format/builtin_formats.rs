@@ -318,4 +318,75 @@ mod tests_extra {
         assert_eq!(all.len(), 82);
         assert_eq!(all[0], Some("General"));
     }
+
+    #[test]
+    fn get_builtin_format_for_locale_with_none_returns_none() {
+        let result = get_builtin_format_for_locale(None, Some("default"), None);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn get_builtin_format_for_locale_with_empty_default() {
+        let result = get_builtin_format_for_locale(Some(0), Some(""), None);
+        assert_eq!(result, Some("General"));
+    }
+
+    #[test]
+    fn get_builtin_format_for_locale_with_reserved_default() {
+        let result = get_builtin_format_for_locale(Some(99), Some("reserved-foo"), None);
+        // reserved- prefix should be ignored, falls through to locale table
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn get_builtin_format_for_locale_us_locale() {
+        let us = ExcelLocale::from_name("en_US").unwrap();
+        // Index 5 is in ALL_LANGUAGES, so locale doesn't change it
+        let result = get_builtin_format_for_locale(Some(5), Some(""), Some(&us));
+        assert_eq!(result, Some("\"￥\"#,##0_);(\"￥\"#,##0)"));
+        // Index 27 is NOT in ALL_LANGUAGES, so CN/US locale matters
+        let cn_result = get_builtin_format_for_locale(Some(27), Some(""), None);
+        assert_eq!(cn_result, Some("yyyy\"年\"m\"月\""));
+    }
+
+    #[test]
+    fn switch_builtin_formats_for_locale_returns_us_for_us_tag() {
+        let us = ExcelLocale::from_name("en_US").unwrap();
+        let formats = switch_builtin_formats_for_locale(Some(&us));
+        assert_eq!(formats.len(), 82);
+        // US formats use $ instead of ￥
+        assert!(formats[5].unwrap().contains('$'));
+    }
+
+    #[test]
+    fn switch_builtin_formats_for_locale_returns_cn_for_cn() {
+        let formats = switch_builtin_formats_for_locale(None);
+        assert_eq!(formats.len(), 82);
+        assert!(formats[5].unwrap().contains('￥'));
+    }
+
+    #[test]
+    fn switch_builtin_formats_map_returns_correct_map() {
+        let cn_map = switch_builtin_formats_map(None);
+        assert!(cn_map.contains_key("General"));
+        assert_eq!(cn_map["General"], 0);
+
+        let us = ExcelLocale::from_name("en_US").unwrap();
+        let us_map = switch_builtin_formats_map(Some(&us));
+        assert!(us_map.contains_key("General"));
+    }
+
+    #[test]
+    fn constants_are_correct() {
+        assert_eq!(MIN_CUSTOM_DATA_FORMAT_INDEX, 82);
+        assert_eq!(GENERAL, 0);
+    }
+
+    #[test]
+    fn build_map_populates_all_non_none_entries() {
+        let map = build_map(&BUILTIN_FORMATS_CN);
+        assert!(map.len() > 50);
+        assert_eq!(map["General"], 0);
+        assert_eq!(map["@"], 49);
+    }
 }

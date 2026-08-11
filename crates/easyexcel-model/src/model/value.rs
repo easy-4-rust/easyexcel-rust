@@ -129,4 +129,88 @@ mod tests {
         assert_eq!(CellValue::Empty.as_number(), Some(0.0));
         assert_eq!(CellValue::Text("x".into()).as_number(), None);
     }
+
+    #[test]
+    fn format_number_general_non_finite() {
+        assert_eq!(format_number_general(f64::NAN), "NaN");
+        assert_eq!(format_number_general(f64::INFINITY), "Inf");
+        assert_eq!(format_number_general(f64::NEG_INFINITY), "-Inf");
+    }
+
+    #[test]
+    fn format_number_general_large_integer() {
+        // Numbers >= 1e15 don't use i64 formatting
+        let result = format_number_general(1e15);
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn cell_value_is_empty() {
+        assert!(CellValue::Empty.is_empty());
+        assert!(!CellValue::Number(0.0).is_empty());
+        assert!(!CellValue::Text("".into()).is_empty());
+        assert!(!CellValue::Bool(false).is_empty());
+    }
+
+    #[test]
+    fn cell_value_as_number_for_number() {
+        assert_eq!(CellValue::Number(42.5).as_number(), Some(42.5));
+    }
+
+    #[test]
+    fn cell_value_to_display_string() {
+        assert_eq!(CellValue::Empty.to_display_string(), "");
+        assert_eq!(CellValue::Number(42.0).to_display_string(), "42");
+        assert_eq!(CellValue::Text("hello".into()).to_display_string(), "hello");
+        assert_eq!(CellValue::Bool(true).to_display_string(), "TRUE");
+        assert_eq!(CellValue::Bool(false).to_display_string(), "FALSE");
+    }
+
+    #[test]
+    fn cell_value_to_display_string_for_error() {
+        let result = CellValue::Error(super::super::error::CellError::Value).to_display_string();
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn cell_value_default_is_empty() {
+        assert_eq!(CellValue::default(), CellValue::Empty);
+    }
+
+    #[test]
+    fn parse_number_text_basic() {
+        assert_eq!(parse_number_text("42"), Some(42.0));
+        assert_eq!(parse_number_text("3.14"), Some(3.14));
+        assert_eq!(parse_number_text("-5"), Some(-5.0));
+        assert_eq!(parse_number_text("1e3"), Some(1000.0));
+    }
+
+    #[test]
+    fn parse_number_text_percent() {
+        assert_eq!(parse_number_text("50%"), Some(0.5));
+        assert_eq!(parse_number_text("100%"), Some(1.0));
+        assert_eq!(parse_number_text(" 50% "), Some(0.5));
+    }
+
+    #[test]
+    fn parse_number_text_with_commas() {
+        assert_eq!(parse_number_text("1,234.5"), Some(1234.5));
+        assert_eq!(parse_number_text("1,000,000"), Some(1000000.0));
+    }
+
+    #[test]
+    fn parse_number_text_empty_and_whitespace() {
+        assert_eq!(parse_number_text(""), None);
+        assert_eq!(parse_number_text("   "), None);
+    }
+
+    #[test]
+    fn parse_number_text_trim() {
+        assert_eq!(parse_number_text("  42  "), Some(42.0));
+    }
+
+    #[test]
+    fn parse_number_text_invalid() {
+        assert_eq!(parse_number_text("abc"), None);
+    }
 }

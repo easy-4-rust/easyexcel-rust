@@ -606,3 +606,215 @@ pub fn parse_short(value: &str) -> Result<i16, NumberFormatError> {
 pub fn parse_long(value: &str) -> Result<i64, NumberFormatError> {
     parse_decimal(value, None).map(|value| decimal_to_java_i64(&value))
 }
+
+#[cfg(test)]
+mod math_context_tests {
+    use super::*;
+    use bigdecimal::BigDecimal;
+    use std::str::FromStr;
+
+    #[test]
+    fn excel_math_context_has_precision_15() {
+        assert_eq!(EXCEL_MATH_CONTEXT_PRECISION, 15);
+    }
+
+    #[test]
+    fn excel_math_context_lazy_lock_works() {
+        let _ctx = &*EXCEL_MATH_CONTEXT;
+        // Just accessing it initializes the LazyLock
+    }
+
+    #[test]
+    fn number_format_error_new_and_message() {
+        let err = NumberFormatError::new("test error");
+        assert_eq!(err.message(), "test error");
+    }
+
+    #[test]
+    fn finite_decimal_f64_converts_finite_values() {
+        let v = BigDecimal::from_str("123.45").unwrap();
+        assert_eq!(finite_decimal_f64(&v, "test").unwrap(), 123.45);
+    }
+
+    #[test]
+    fn finite_decimal_f64_rejects_overflow() {
+        let v = BigDecimal::from_str("1e999999999").unwrap();
+        assert!(finite_decimal_f64(&v, "test").is_err());
+    }
+
+    #[test]
+    fn decimal_integer_requires_text_for_small_integers() {
+        let v = BigDecimal::from_str("42").unwrap();
+        assert!(!decimal_integer_requires_text(&v).unwrap());
+    }
+
+    #[test]
+    fn decimal_integer_requires_text_for_large_integers() {
+        let v = BigDecimal::from_str("99999999999999999").unwrap();
+        assert!(decimal_integer_requires_text(&v).unwrap());
+    }
+
+    #[test]
+    fn decimal_integer_requires_text_for_negative_large() {
+        let v = BigDecimal::from_str("-99999999999999999").unwrap();
+        assert!(decimal_integer_requires_text(&v).unwrap());
+    }
+
+    #[test]
+    fn decimal_integer_requires_text_returns_false_for_fractional() {
+        let v = BigDecimal::from_str("99999999999999999.5").unwrap();
+        assert!(!decimal_integer_requires_text(&v).unwrap());
+    }
+
+    #[test]
+    fn excel_date_format_code_passthrough_without_percent() {
+        assert_eq!(excel_date_format_code(Some("yyyy-mm-dd"), "d"), "yyyy-mm-dd");
+        assert_eq!(excel_date_format_code(None, "d"), "d");
+    }
+
+    #[test]
+    fn excel_date_format_code_converts_chrono_tokens() {
+        assert_eq!(excel_date_format_code(Some("%Y-%m-%d"), "d"), "yyyy-mm-dd");
+        assert_eq!(excel_date_format_code(Some("%H:%M:%S"), "d"), "hh:mm:ss");
+        assert_eq!(excel_date_format_code(Some("%S"), "d"), "ss");
+        // %% is an escaped literal %; %%Y produces %% then yyyy
+        assert_eq!(excel_date_format_code(Some("%%%Y"), "d"), "%%yyyy");
+        // Unknown %X tokens pass through
+        assert_eq!(excel_date_format_code(Some("%Z"), "d"), "%Z");
+    }
+
+    #[test]
+    fn number_rounding_mode_bigdecimal_returns_some_for_all_except_unnecessary() {
+        assert!(NumberRoundingMode::Up.bigdecimal().is_some());
+        assert!(NumberRoundingMode::Down.bigdecimal().is_some());
+        assert!(NumberRoundingMode::Ceiling.bigdecimal().is_some());
+        assert!(NumberRoundingMode::Floor.bigdecimal().is_some());
+        assert!(NumberRoundingMode::HalfUp.bigdecimal().is_some());
+        assert!(NumberRoundingMode::HalfDown.bigdecimal().is_some());
+        assert!(NumberRoundingMode::HalfEven.bigdecimal().is_some());
+        assert!(NumberRoundingMode::Unnecessary.bigdecimal().is_none());
+    }
+
+    #[test]
+    fn number_rounding_mode_from_bigdecimal() {
+        assert_eq!(
+            NumberRoundingMode::from(bigdecimal::RoundingMode::HalfUp),
+            NumberRoundingMode::HalfUp
+        );
+        assert_eq!(
+            NumberRoundingMode::from(bigdecimal::RoundingMode::Up),
+            NumberRoundingMode::Up
+        );
+        assert_eq!(
+            NumberRoundingMode::from(bigdecimal::RoundingMode::Down),
+            NumberRoundingMode::Down
+        );
+        assert_eq!(
+            NumberRoundingMode::from(bigdecimal::RoundingMode::Ceiling),
+            NumberRoundingMode::Ceiling
+        );
+        assert_eq!(
+            NumberRoundingMode::from(bigdecimal::RoundingMode::Floor),
+            NumberRoundingMode::Floor
+        );
+        assert_eq!(
+            NumberRoundingMode::from(bigdecimal::RoundingMode::HalfDown),
+            NumberRoundingMode::HalfDown
+        );
+        assert_eq!(
+            NumberRoundingMode::from(bigdecimal::RoundingMode::HalfEven),
+            NumberRoundingMode::HalfEven
+        );
+    }
+
+    #[test]
+    fn format_decimal_with_none_pattern_returns_plain_string() {
+        let v = BigDecimal::from_str("123.45").unwrap();
+        let result = format_decimal(&v, false, None, NumberRoundingMode::HalfUp).unwrap();
+        assert_eq!(result, "123.45");
+    }
+
+    #[test]
+    fn format_decimal_with_empty_pattern_returns_plain_string() {
+        let v = BigDecimal::from_str("123.45").unwrap();
+        let result = format_decimal(&v, false, Some(""), NumberRoundingMode::HalfUp).unwrap();
+        assert_eq!(result, "123.45");
+    }
+
+    #[test]
+    fn format_decimal_with_pattern_formats() {
+        let v = BigDecimal::from_str("1234.5").unwrap();
+        let result = format_decimal(&v, false, Some("#,##0.00"), NumberRoundingMode::HalfUp).unwrap();
+        assert_eq!(result, "1,234.50");
+    }
+
+    #[test]
+    fn format_decimal_negative_uses_negative_subpattern() {
+        let v = BigDecimal::from_str("1234.5").unwrap();
+        let result = format_decimal(&v, true, Some("#,##0.00"), NumberRoundingMode::HalfUp).unwrap();
+        assert_eq!(result, "-1,234.50");
+    }
+
+    #[test]
+    fn format_non_finite_nan() {
+        let result = format_non_finite(NonFiniteNumber::Nan, None).unwrap();
+        assert_eq!(result, "NaN");
+    }
+
+    #[test]
+    fn format_non_finite_positive_infinity_no_pattern() {
+        let result = format_non_finite(NonFiniteNumber::PositiveInfinity, None).unwrap();
+        assert_eq!(result, "Infinity");
+    }
+
+    #[test]
+    fn format_non_finite_negative_infinity_no_pattern() {
+        let result = format_non_finite(NonFiniteNumber::NegativeInfinity, None).unwrap();
+        assert_eq!(result, "-Infinity");
+    }
+
+    #[test]
+    fn format_non_finite_with_pattern() {
+        let result = format_non_finite(NonFiniteNumber::PositiveInfinity, Some("0.00")).unwrap();
+        assert!(result.contains('∞'));
+    }
+
+    #[test]
+    fn parse_decimal_without_pattern() {
+        let result = parse_decimal("123.45", None).unwrap();
+        assert_eq!(result, BigDecimal::from_str("123.45").unwrap());
+    }
+
+    #[test]
+    fn parse_decimal_invalid_returns_error() {
+        assert!(parse_decimal("not_a_number", None).is_err());
+    }
+
+    #[test]
+    fn parse_decimal_with_pattern() {
+        let result = parse_decimal("1,234.50", Some("#,##0.00")).unwrap();
+        assert_eq!(result, BigDecimal::from_str("1234.50").unwrap());
+    }
+
+    #[test]
+    fn parse_short_converts_to_i16() {
+        let result = parse_short("123").unwrap();
+        assert_eq!(result, 123);
+    }
+
+    #[test]
+    fn parse_short_invalid_returns_error() {
+        assert!(parse_short("not_a_number").is_err());
+    }
+
+    #[test]
+    fn parse_long_converts_to_i64() {
+        let result = parse_long("123456789").unwrap();
+        assert_eq!(result, 123456789);
+    }
+
+    #[test]
+    fn parse_long_invalid_returns_error() {
+        assert!(parse_long("not_a_number").is_err());
+    }
+}
