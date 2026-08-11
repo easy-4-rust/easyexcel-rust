@@ -77,5 +77,6 @@
 
 ## 相关文档
 
+- [BENCHMARKS.md](BENCHMARKS.md) - 性能基准工作流（nightly regression gate）
 - [ARCHITECTURE.md](../ARCHITECTURE.md) - 项目架构
 - [compatibility.md](../compatibility.md) - 兼容性验证（含 evidence 6 覆盖率验证）
