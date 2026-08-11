@@ -18,6 +18,8 @@ mod protection;
 mod rich_text;
 pub mod record_sid;
 pub mod record_stream;
+#[cfg(feature = "xls-streaming-iter")]
+pub mod streaming_record_iter;
 pub mod string;
 mod style;
 mod template;

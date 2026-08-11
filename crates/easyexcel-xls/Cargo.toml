@@ -16,6 +16,9 @@ default = ["xls-lazy-sst"]
 ## 启用 SST 延迟解码：保留原始字节，首次按索引访问时才解码字符串。
 ## 关闭此 feature 回退到旧的立即解码路径。
 xls-lazy-sst = []
+## 启用流式 record 迭代器：从 BufRead + Seek 源按需读取 BIFF record，
+## 替代旧的需要整个子流切片的 Records<'a> 路径。
+xls-streaming-iter = []
 
 [dependencies]
 cfb.workspace = true
