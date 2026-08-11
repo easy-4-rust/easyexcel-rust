@@ -1,66 +1,13 @@
-/// 对应 Java：无直接对应对象；Rust XLSX 引擎扩展。模板超链接类型。
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TemplateHyperlinkType {
-    /// 普通 URL。
-    Url,
-    /// 工作簿内部位置。
-    Document,
-    /// 邮件地址。
-    Email,
-    /// 外部文件。
-    File,
-}
-
-impl TemplateHyperlinkType {
-    /// 将调用方地址规范化为生成式 XLSX 后端接受的目标。
-    ///
-    /// 工作簿内部、邮件与外部文件链接分别使用 `internal:`、`mailto:` 与
-    /// `external:` 前缀；已经带有前缀的地址保持不变。
-    #[must_use]
-    pub fn generation_target(self, address: &str) -> String {
-        match self {
-            Self::Url => address.to_owned(),
-            Self::Document if address.starts_with("internal:") => address.to_owned(),
-            Self::Document => format!("internal:{address}"),
-            Self::Email if address.to_ascii_lowercase().starts_with("mailto:") => {
-                address.to_owned()
-            }
-            Self::Email => format!("mailto:{address}"),
-            Self::File if address.starts_with("external:") => address.to_owned(),
-            Self::File => format!("external:{address}"),
-        }
-    }
-
-    /// 将地址规范化为 OOXML relationship/location 中保存的目标。
-    #[must_use]
-    pub fn package_target(self, address: &str) -> String {
-        match self {
-            Self::Document => address
-                .strip_prefix("internal:")
-                .unwrap_or(address)
-                .to_owned(),
-            Self::Email if !address.to_ascii_lowercase().starts_with("mailto:") => {
-                format!("mailto:{address}")
-            }
-            Self::File => address
-                .strip_prefix("external:")
-                .unwrap_or(address)
-                .to_owned(),
-            Self::Url | Self::Email => address.to_owned(),
-        }
-    }
-}
-
-/// 对应 Java：无直接对应对象；Rust XLSX 引擎扩展。绝对或相对坐标。
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub struct TemplateHyperlinkCoordinate {
-    /// 大于零时优先使用的绝对零基坐标。
-    pub absolute: Option<u32>,
-    /// 相对当前填充单元格的偏移。
-    pub relative: Option<i32>,
-}
+// 模板超链接元数据结构体。
+// 对应 Java：无直接对应对象；Rust XLSX 引擎扩展。
+// 拆分后仅保留 `TemplateHyperlink` 结构体及其私有辅助函数；
+// `TemplateHyperlinkType` 和 `TemplateHyperlinkCoordinate` 分别位于
+// 同级 `template_hyperlink_type.rs` 和 `template_hyperlink_coordinate.rs`。
 
 /// 对应 Java：无直接对应对象；Rust XLSX 引擎扩展。模板超链接元数据。
+///
+/// 描述一个模板超链接的地址、类型以及在工作表中的覆盖范围。
+/// 覆盖范围通过四个坐标（起始行/列、结束行/列）描述，支持绝对和相对模式。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TemplateHyperlink {
     /// Java `HyperlinkData.address`。
@@ -79,6 +26,13 @@ pub struct TemplateHyperlink {
 
 impl TemplateHyperlink {
     /// 创建仅覆盖当前单元格的超链接。
+    ///
+    /// # 参数
+    /// - `address`: 超链接地址。
+    /// - `hyperlink_type`: 超链接类别。
+    ///
+    /// # 返回
+    /// 新建的模板超链接，默认坐标均为零值（覆盖当前单元格）。
     #[must_use]
     pub fn new(address: impl Into<String>, hyperlink_type: TemplateHyperlinkType) -> Self {
         Self {
@@ -92,6 +46,16 @@ impl TemplateHyperlink {
     }
 
     /// 按 EasyExcel 绝对优先、零值回退相对坐标规则解析 A1 覆盖范围。
+    ///
+    /// # 参数
+    /// - `row`: 当前行号（零基）。
+    /// - `column`: 当前列号（零基）。
+    ///
+    /// # 返回
+    /// A1 格式的范围字符串（如 `A1` 或 `A1:B2`）。
+    ///
+    /// # 错误
+    /// 坐标超出 XLSX 工作表限制时返回错误。
     pub(crate) fn resolve_reference(&self, row: u32, column: u16) -> easyexcel_io::Result<String> {
         let first_row = resolve_coordinate(row, self.first_row, "first row")?;
         let first_column = resolve_coordinate(
