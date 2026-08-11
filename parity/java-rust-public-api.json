@@ -47,7 +47,8 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory",
       "rust_ids": [
-        "easyexcel:814c2bbb968c7d968d90"
+        "easyexcel:814c2bbb968c7d968d90",
+        "easyexcel:d9c3e78530200b9e75a8"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -64,14 +65,16 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#<init>()V",
       "rust_ids": [
-        "easyexcel:c5a531f694461013cc3c"
+        "easyexcel:c5a531f694461013cc3c",
+        "easyexcel:126e79a8e23ce3ce1e0f"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.read-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -81,14 +84,16 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#read()Lcom/alibaba/excel/read/builder/ExcelReaderBuilder;",
       "rust_ids": [
-        "easyexcel:126e79a8e23ce3ce1e0f"
+        "easyexcel:126e79a8e23ce3ce1e0f",
+        "easyexcel:ca06c282eef2209cb6f9"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.read-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -98,14 +103,16 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#read(Ljava/io/File;)Lcom/alibaba/excel/read/builder/ExcelReaderBuilder;",
       "rust_ids": [
-        "easyexcel:ca06c282eef2209cb6f9"
+        "easyexcel:ca06c282eef2209cb6f9",
+        "easyexcel:4b3076190112fbb205fe"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.read-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -132,14 +139,16 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#read(Ljava/io/File;Ljava/lang/Class;Lcom/alibaba/excel/read/listener/ReadListener;)Lcom/alibaba/excel/read/builder/ExcelReaderBuilder;",
       "rust_ids": [
-        "easyexcel:302c8a97d664be937960"
+        "easyexcel:302c8a97d664be937960",
+        "easyexcel:e2a097d0d1e7170357c3"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.read-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -149,14 +158,17 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#read(Ljava/io/InputStream;)Lcom/alibaba/excel/read/builder/ExcelReaderBuilder;",
       "rust_ids": [
-        "easyexcel:4b3076190112fbb205fe"
+        "easyexcel:4b3076190112fbb205fe",
+        "easyexcel:aae5f559311ef65afcdf",
+        "easyexcel:e2a097d0d1e7170357c3"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.read-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -166,7 +178,9 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#read(Ljava/io/InputStream;Lcom/alibaba/excel/read/listener/ReadListener;)Lcom/alibaba/excel/read/builder/ExcelReaderBuilder;",
       "rust_ids": [
-        "easyexcel:e2a097d0d1e7170357c3"
+        "easyexcel:e2a097d0d1e7170357c3",
+        "easyexcel:5572defce14b6ede0bc9",
+        "easyexcel:aae5f559311ef65afcdf"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -183,14 +197,16 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#read(Ljava/io/InputStream;Ljava/lang/Class;Lcom/alibaba/excel/read/listener/ReadListener;)Lcom/alibaba/excel/read/builder/ExcelReaderBuilder;",
       "rust_ids": [
-        "easyexcel:e2a097d0d1e7170357c3"
+        "easyexcel:e2a097d0d1e7170357c3",
+        "easyexcel:c488a7d893f7d1db7a02"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.read-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -200,14 +216,17 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#read(Ljava/lang/String;)Lcom/alibaba/excel/read/builder/ExcelReaderBuilder;",
       "rust_ids": [
-        "easyexcel:ca06c282eef2209cb6f9"
+        "easyexcel:ca06c282eef2209cb6f9",
+        "easyexcel:9750c8058b53cb65bb1d",
+        "easyexcel:5572defce14b6ede0bc9"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.read-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -217,7 +236,9 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#read(Ljava/lang/String;Lcom/alibaba/excel/read/listener/ReadListener;)Lcom/alibaba/excel/read/builder/ExcelReaderBuilder;",
       "rust_ids": [
-        "easyexcel:302c8a97d664be937960"
+        "easyexcel:302c8a97d664be937960",
+        "easyexcel:86ea830245a5bb3de0fb",
+        "easyexcel:c488a7d893f7d1db7a02"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -234,14 +255,16 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#read(Ljava/lang/String;Ljava/lang/Class;Lcom/alibaba/excel/read/listener/ReadListener;)Lcom/alibaba/excel/read/builder/ExcelReaderBuilder;",
       "rust_ids": [
-        "easyexcel:302c8a97d664be937960"
+        "easyexcel:302c8a97d664be937960",
+        "easyexcel:31c0e04a5139eb30ed29"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.read-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -251,14 +274,17 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#readSheet()Lcom/alibaba/excel/read/builder/ExcelReaderSheetBuilder;",
       "rust_ids": [
-        "easyexcel:aae5f559311ef65afcdf"
+        "easyexcel:aae5f559311ef65afcdf",
+        "easyexcel:da55db4c17dc004b9c36",
+        "easyexcel:9750c8058b53cb65bb1d"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.read-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -268,14 +294,17 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#readSheet(Ljava/lang/Integer;)Lcom/alibaba/excel/read/builder/ExcelReaderSheetBuilder;",
       "rust_ids": [
-        "easyexcel:5572defce14b6ede0bc9"
+        "easyexcel:5572defce14b6ede0bc9",
+        "easyexcel:3b8788cc8b19b845ee90",
+        "easyexcel:86ea830245a5bb3de0fb"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.read-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -285,14 +314,17 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#readSheet(Ljava/lang/Integer;Ljava/lang/String;)Lcom/alibaba/excel/read/builder/ExcelReaderSheetBuilder;",
       "rust_ids": [
-        "easyexcel:c488a7d893f7d1db7a02"
+        "easyexcel:c488a7d893f7d1db7a02",
+        "easyexcel:e107371ab995ed463b10",
+        "easyexcel:31c0e04a5139eb30ed29"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.read-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -302,14 +334,17 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#readSheet(Ljava/lang/String;)Lcom/alibaba/excel/read/builder/ExcelReaderSheetBuilder;",
       "rust_ids": [
-        "easyexcel:9750c8058b53cb65bb1d"
+        "easyexcel:9750c8058b53cb65bb1d",
+        "easyexcel:d0aed66174b4e5363a3b",
+        "easyexcel:da55db4c17dc004b9c36"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.write-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -319,14 +354,17 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#write()Lcom/alibaba/excel/write/builder/ExcelWriterBuilder;",
       "rust_ids": [
-        "easyexcel:86ea830245a5bb3de0fb"
+        "easyexcel:86ea830245a5bb3de0fb",
+        "easyexcel:9fba5593a676e9247ead",
+        "easyexcel:e107371ab995ed463b10"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.write-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -336,14 +374,17 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#write(Ljava/io/File;)Lcom/alibaba/excel/write/builder/ExcelWriterBuilder;",
       "rust_ids": [
-        "easyexcel:31c0e04a5139eb30ed29"
+        "easyexcel:31c0e04a5139eb30ed29",
+        "easyexcel:8a5223482a09a723e612",
+        "easyexcel:d0aed66174b4e5363a3b"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.write-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -353,14 +394,17 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#write(Ljava/io/File;Ljava/lang/Class;)Lcom/alibaba/excel/write/builder/ExcelWriterBuilder;",
       "rust_ids": [
-        "easyexcel:da55db4c17dc004b9c36"
+        "easyexcel:da55db4c17dc004b9c36",
+        "easyexcel:0d33c578ba89cbdf47b8",
+        "easyexcel:9fba5593a676e9247ead"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.write-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -370,14 +414,17 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#write(Ljava/io/OutputStream;)Lcom/alibaba/excel/write/builder/ExcelWriterBuilder;",
       "rust_ids": [
-        "easyexcel:3b8788cc8b19b845ee90"
+        "easyexcel:3b8788cc8b19b845ee90",
+        "easyexcel:d0ecd72313181d1f1ce2",
+        "easyexcel:8a5223482a09a723e612"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.write-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -387,14 +434,16 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#write(Ljava/io/OutputStream;Ljava/lang/Class;)Lcom/alibaba/excel/write/builder/ExcelWriterBuilder;",
       "rust_ids": [
-        "easyexcel:3b8788cc8b19b845ee90"
+        "easyexcel:3b8788cc8b19b845ee90",
+        "easyexcel:0d33c578ba89cbdf47b8"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.write-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -404,14 +453,16 @@
       ],
       "java_id": "com.alibaba.excel.EasyExcelFactory#write(Ljava/lang/String;)Lcom/alibaba/excel/write/builder/ExcelWriterBuilder;",
       "rust_ids": [
-        "easyexcel:31c0e04a5139eb30ed29"
+        "easyexcel:31c0e04a5139eb30ed29",
+        "easyexcel:d0ecd72313181d1f1ce2"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.write-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -428,7 +479,8 @@
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.write-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -445,7 +497,8 @@
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.write-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -462,7 +515,8 @@
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.write-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -479,7 +533,8 @@
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.write-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -496,7 +551,8 @@
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.write-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -513,7 +569,8 @@
     },
     {
       "behavior_tests": [
-        "facade.behavior.v1"
+        "facade.behavior.v1",
+        "facade.write-overloads.behavior.v1"
       ],
       "compile_probes": [
         "facade.compile.v1"
@@ -693,7 +750,8 @@
       ],
       "java_id": "com.alibaba.excel.ExcelReader#read([Lcom/alibaba/excel/read/metadata/ReadSheet;)Lcom/alibaba/excel/ExcelReader;",
       "rust_ids": [
-        "easyexcel:feb5bc0580ceefd71c47"
+        "easyexcel:feb5bc0580ceefd71c47",
+        "easyexcel:dde55cf61bc87dd878ff"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -802,7 +860,8 @@
     },
     {
       "behavior_tests": [
-        "excel-writer.behavior.v1"
+        "excel-writer.behavior.v1",
+        "excel-writer.supplier-fill.behavior.v1"
       ],
       "compile_probes": [
         "excel-writer.compile.v1"
@@ -812,14 +871,16 @@
       ],
       "java_id": "com.alibaba.excel.ExcelWriter#fill(Ljava/util/function/Supplier;Lcom/alibaba/excel/write/metadata/WriteSheet;)Lcom/alibaba/excel/ExcelWriter;",
       "rust_ids": [
-        "easyexcel:31201c55c2e517c4dc8a"
+        "easyexcel:31201c55c2e517c4dc8a",
+        "easyexcel:82718e00ce4e57ee5268"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-writer.behavior.v1"
+        "excel-writer.behavior.v1",
+        "excel-writer.supplier-fill.behavior.v1"
       ],
       "compile_probes": [
         "excel-writer.compile.v1"
@@ -829,7 +890,8 @@
       ],
       "java_id": "com.alibaba.excel.ExcelWriter#fill(Ljava/util/function/Supplier;Lcom/alibaba/excel/write/metadata/fill/FillConfig;Lcom/alibaba/excel/write/metadata/WriteSheet;)Lcom/alibaba/excel/ExcelWriter;",
       "rust_ids": [
-        "easyexcel:82718e00ce4e57ee5268"
+        "easyexcel:82718e00ce4e57ee5268",
+        "easyexcel:2b2a88388aece71875d0"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -887,7 +949,8 @@
     },
     {
       "behavior_tests": [
-        "excel-writer.behavior.v1"
+        "excel-writer.behavior.v1",
+        "excel-writer.supplier-write.behavior.v1"
       ],
       "compile_probes": [
         "excel-writer.compile.v1"
@@ -904,7 +967,8 @@
     },
     {
       "behavior_tests": [
-        "excel-writer.behavior.v1"
+        "excel-writer.behavior.v1",
+        "excel-writer.supplier-write.behavior.v1"
       ],
       "compile_probes": [
         "excel-writer.compile.v1"
@@ -1254,7 +1318,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.IgnorableXlsRecordHandler",
       "rust_ids": [
-        "easyexcel:fdfb9ccc1457a342b726"
+        "easyexcel:fdfb9ccc1457a342b726",
+        "easyexcel:81555cf0bd4838e11925"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1339,7 +1404,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.XlsRecordHandler",
       "rust_ids": [
-        "easyexcel:7ecf5de9fe6f46e21851"
+        "easyexcel:7ecf5de9fe6f46e21851",
+        "easyexcel:dff093a3f34497232a5c"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1356,7 +1422,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.XlsRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:b3adb0ea72f75048158e"
+        "easyexcel:b3adb0ea72f75048158e",
+        "easyexcel:5615b578d3620d43b8d4"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1373,7 +1440,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.XlsRecordHandler#support(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)Z",
       "rust_ids": [
-        "easyexcel:0c99c64c8bf9541e046c"
+        "easyexcel:0c99c64c8bf9541e046c",
+        "easyexcel:404d8baa2b50d1bc9dd8"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1475,7 +1543,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.AbstractXlsRecordHandler",
       "rust_ids": [
-        "easyexcel:5152647c2dc32516c297"
+        "easyexcel:5152647c2dc32516c297",
+        "easyexcel:2c2dad38b3c8838d7889"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1492,7 +1561,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.AbstractXlsRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:5152647c2dc32516c297"
+        "easyexcel:5152647c2dc32516c297",
+        "easyexcel:bf72835623d2bb92483b"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1509,7 +1579,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.AbstractXlsRecordHandler#support(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)Z",
       "rust_ids": [
-        "easyexcel:0c99c64c8bf9541e046c"
+        "easyexcel:0c99c64c8bf9541e046c",
+        "easyexcel:ec605e16a79b02ae0a99"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1526,7 +1597,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.BlankRecordHandler",
       "rust_ids": [
-        "easyexcel:7d9c42b61e571bc6c99b"
+        "easyexcel:7d9c42b61e571bc6c99b",
+        "easyexcel:df1cb0d5e1d286973549"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1543,14 +1615,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.BlankRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:33b656c06172f13cc0dc"
+        "easyexcel:33b656c06172f13cc0dc",
+        "easyexcel:0690e749c8e73f15d111"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -1560,7 +1634,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.BlankRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:88acc02bba3ca02683c5"
+        "easyexcel:88acc02bba3ca02683c5",
+        "easyexcel:20fb6af4110ca59641f7",
+        "easyexcel:1a744214dc43fb0e6514"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1577,7 +1653,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.BofRecordHandler",
       "rust_ids": [
-        "easyexcel:6301a1b831cdcc501889"
+        "easyexcel:6301a1b831cdcc501889",
+        "easyexcel:0c99c64c8bf9541e046c"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1594,14 +1671,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.BofRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:1f604fb20ea7f01c7dd1"
+        "easyexcel:1f604fb20ea7f01c7dd1",
+        "easyexcel:fdfb9ccc1457a342b726"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -1611,7 +1690,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.BofRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:d256e3bb2a4e0e270e73"
+        "easyexcel:d256e3bb2a4e0e270e73",
+        "easyexcel:6b45caab703bf15c6fd5",
+        "easyexcel:836729bdb3203e8f9a18"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1628,7 +1709,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.BoolErrRecordHandler",
       "rust_ids": [
-        "easyexcel:9110c1a37998e0258c98"
+        "easyexcel:9110c1a37998e0258c98",
+        "easyexcel:756eeddbc0b33551d928"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1645,14 +1727,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.BoolErrRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:63b977f9d25decd11275"
+        "easyexcel:63b977f9d25decd11275",
+        "easyexcel:44b56c85a465c196ee96"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -1662,7 +1746,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.BoolErrRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:b7b834be4932a47ea2b9"
+        "easyexcel:b7b834be4932a47ea2b9",
+        "easyexcel:f5b4e8256d5bb1c95ed1",
+        "easyexcel:ff57925b9c089ad10d4b"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1679,7 +1765,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.BoundSheetRecordHandler",
       "rust_ids": [
-        "easyexcel:9cc23babe1e72044d86c"
+        "easyexcel:9cc23babe1e72044d86c",
+        "easyexcel:60e5f5f6c8c92721a28c"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1696,14 +1783,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.BoundSheetRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:7514ea9e2679ceba6cc4"
+        "easyexcel:7514ea9e2679ceba6cc4",
+        "easyexcel:a0c2f5aecb9949779c18"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -1713,7 +1802,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.BoundSheetRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:bcd78da4aac1494e5979"
+        "easyexcel:bcd78da4aac1494e5979",
+        "easyexcel:5152647c2dc32516c297",
+        "easyexcel:98f4a775eec3b400531b"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1730,7 +1821,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler",
       "rust_ids": [
-        "easyexcel:acdbb64f72789de8ab13"
+        "easyexcel:acdbb64f72789de8ab13",
+        "easyexcel:dcf8b5bfb3bf119635de"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1747,14 +1839,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:d4e1baa95fa782813acb"
+        "easyexcel:d4e1baa95fa782813acb",
+        "easyexcel:9431f6909c74742e3f89"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -1764,7 +1858,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.DummyRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:df8cdc775740b74651ba"
+        "easyexcel:df8cdc775740b74651ba",
+        "easyexcel:6bdb8958fe3bb5d5cf7d",
+        "easyexcel:6301a1b831cdcc501889"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1781,7 +1877,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.EofRecordHandler",
       "rust_ids": [
-        "easyexcel:404d8baa2b50d1bc9dd8"
+        "easyexcel:404d8baa2b50d1bc9dd8",
+        "easyexcel:742575a09b14454e6932"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1798,14 +1895,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.EofRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:60e5f5f6c8c92721a28c"
+        "easyexcel:60e5f5f6c8c92721a28c",
+        "easyexcel:714f374e16b13a0d7415"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -1815,7 +1914,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.EofRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:a0c2f5aecb9949779c18"
+        "easyexcel:a0c2f5aecb9949779c18",
+        "easyexcel:95178caa961328abefa0",
+        "easyexcel:7ecf5de9fe6f46e21851"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1832,7 +1933,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.FormulaRecordHandler",
       "rust_ids": [
-        "easyexcel:bf72835623d2bb92483b"
+        "easyexcel:bf72835623d2bb92483b",
+        "easyexcel:5a151d799ed13bd579b2"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1849,14 +1951,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.FormulaRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:ec605e16a79b02ae0a99"
+        "easyexcel:ec605e16a79b02ae0a99",
+        "easyexcel:acdbb64f72789de8ab13"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -1866,7 +1970,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.FormulaRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:7f2288c60a4aaca40b9f"
+        "easyexcel:7f2288c60a4aaca40b9f",
+        "easyexcel:d4e1baa95fa782813acb",
+        "easyexcel:3e9b77d53d375578dbd3"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1883,7 +1989,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler",
       "rust_ids": [
-        "easyexcel:588c8b8c7a0338bb14fa"
+        "easyexcel:588c8b8c7a0338bb14fa",
+        "easyexcel:037314b6c9939cf795b0"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1900,14 +2007,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:2559e8ea5d71a7775bc7"
+        "easyexcel:2559e8ea5d71a7775bc7",
+        "easyexcel:709d7fe9867cb1bc7bde"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -1917,7 +2026,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:763e13f7d394768c29e5"
+        "easyexcel:763e13f7d394768c29e5",
+        "easyexcel:d9ae70fc3bc43bf34f40",
+        "easyexcel:7514ea9e2679ceba6cc4"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1934,7 +2045,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.HyperlinkRecordHandler#support(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)Z",
       "rust_ids": [
-        "easyexcel:0c64371e096a179f4362"
+        "easyexcel:0c64371e096a179f4362",
+        "easyexcel:f769f1abab21a0f8628d"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1951,7 +2063,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.IndexRecordHandler",
       "rust_ids": [
-        "easyexcel:81555cf0bd4838e11925"
+        "easyexcel:81555cf0bd4838e11925",
+        "easyexcel:9573029b6ffef0f4ffc0"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -1968,14 +2081,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.IndexRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:dff093a3f34497232a5c"
+        "easyexcel:dff093a3f34497232a5c",
+        "easyexcel:24f17a358cf8bf942311"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -1985,7 +2100,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.IndexRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:5615b578d3620d43b8d4"
+        "easyexcel:5615b578d3620d43b8d4",
+        "easyexcel:38850214da0e7ccc26fd",
+        "easyexcel:9db16d625378da47a583"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2002,7 +2119,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.LabelRecordHandler",
       "rust_ids": [
-        "easyexcel:f341bc7000661f885abd"
+        "easyexcel:f341bc7000661f885abd",
+        "easyexcel:2ad39bf8a2d7cd4ee77d"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2019,14 +2137,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.LabelRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:537072ac4fb6d31cb64e"
+        "easyexcel:537072ac4fb6d31cb64e",
+        "easyexcel:e53aaf08a5900d0a2717"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -2036,7 +2156,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.LabelRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:9573029b6ffef0f4ffc0"
+        "easyexcel:9573029b6ffef0f4ffc0",
+        "easyexcel:588c8b8c7a0338bb14fa",
+        "easyexcel:9cc23babe1e72044d86c"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2053,7 +2175,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.LabelSstRecordHandler",
       "rust_ids": [
-        "easyexcel:714f374e16b13a0d7415"
+        "easyexcel:714f374e16b13a0d7415",
+        "easyexcel:f6bc91043b06709623f0"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2070,14 +2193,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.LabelSstRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:95178caa961328abefa0"
+        "easyexcel:95178caa961328abefa0",
+        "easyexcel:22ce63a964f61d6f86f6"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -2087,7 +2212,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.LabelSstRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:2c2dad38b3c8838d7889"
+        "easyexcel:2c2dad38b3c8838d7889",
+        "easyexcel:6a6c0873fcb90e57dff3",
+        "easyexcel:438a7decebc772bc95be"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2104,7 +2231,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.MergeCellsRecordHandler",
       "rust_ids": [
-        "easyexcel:6b45caab703bf15c6fd5"
+        "easyexcel:6b45caab703bf15c6fd5",
+        "easyexcel:7f2288c60a4aaca40b9f"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2121,14 +2249,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.MergeCellsRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:df1cb0d5e1d286973549"
+        "easyexcel:df1cb0d5e1d286973549",
+        "easyexcel:6cee958377886fd0a0ce"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -2138,7 +2268,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.MergeCellsRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:0690e749c8e73f15d111"
+        "easyexcel:0690e749c8e73f15d111",
+        "easyexcel:0cdb78200cb244b669d9",
+        "easyexcel:b3adb0ea72f75048158e"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2155,7 +2287,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.MergeCellsRecordHandler#support(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)Z",
       "rust_ids": [
-        "easyexcel:20fb6af4110ca59641f7"
+        "easyexcel:20fb6af4110ca59641f7",
+        "easyexcel:342ad1cad87c46eb3913"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2172,7 +2305,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.NoteRecordHandler",
       "rust_ids": [
-        "easyexcel:756eeddbc0b33551d928"
+        "easyexcel:756eeddbc0b33551d928",
+        "easyexcel:284747758828af4d33c2"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2189,14 +2323,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.NoteRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:44b56c85a465c196ee96"
+        "easyexcel:44b56c85a465c196ee96",
+        "easyexcel:a2ad8733230576e7d617"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -2206,7 +2342,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.NoteRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:f5b4e8256d5bb1c95ed1"
+        "easyexcel:f5b4e8256d5bb1c95ed1",
+        "easyexcel:513d3aa81f99918e096d",
+        "easyexcel:0c99c64c8bf9541e046c"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2223,7 +2361,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.NoteRecordHandler#support(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)Z",
       "rust_ids": [
-        "easyexcel:91c853b02415078bee5a"
+        "easyexcel:91c853b02415078bee5a",
+        "easyexcel:ecc975b72f35713dd2b0"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2240,7 +2379,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.NumberRecordHandler",
       "rust_ids": [
-        "easyexcel:14e0646b59de117c1c57"
+        "easyexcel:14e0646b59de117c1c57",
+        "easyexcel:91c853b02415078bee5a"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2257,14 +2397,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.NumberRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:61912d21e71df755a36b"
+        "easyexcel:61912d21e71df755a36b",
+        "easyexcel:f341bc7000661f885abd"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -2274,7 +2416,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.NumberRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:45c49a3062ef5c36061f"
+        "easyexcel:45c49a3062ef5c36061f",
+        "easyexcel:537072ac4fb6d31cb64e",
+        "easyexcel:d014383e8d9e95beafb2"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2291,7 +2435,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler",
       "rust_ids": [
-        "easyexcel:ecc975b72f35713dd2b0"
+        "easyexcel:ecc975b72f35713dd2b0",
+        "easyexcel:ac817361c069e3eefd3b"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2308,14 +2453,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:2ad39bf8a2d7cd4ee77d"
+        "easyexcel:2ad39bf8a2d7cd4ee77d",
+        "easyexcel:1ee767feeeaf855d3e75"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -2325,7 +2472,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.ObjRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:e53aaf08a5900d0a2717"
+        "easyexcel:e53aaf08a5900d0a2717",
+        "easyexcel:18a2c992601386d87223",
+        "easyexcel:45aaefe501e1eb5962c0"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2342,7 +2491,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.RkRecordHandler",
       "rust_ids": [
-        "easyexcel:284747758828af4d33c2"
+        "easyexcel:284747758828af4d33c2",
+        "easyexcel:6307d314e55a59fbb869"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2359,14 +2509,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.RkRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:a2ad8733230576e7d617"
+        "easyexcel:a2ad8733230576e7d617",
+        "easyexcel:8b8d712eb991773d715d"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -2376,7 +2528,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.RkRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:513d3aa81f99918e096d"
+        "easyexcel:513d3aa81f99918e096d",
+        "easyexcel:ba7c0eda2f61bd910b08",
+        "easyexcel:2fa6cf04658d7acb62a2"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2393,7 +2547,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.SstRecordHandler",
       "rust_ids": [
-        "easyexcel:24f17a358cf8bf942311"
+        "easyexcel:24f17a358cf8bf942311",
+        "easyexcel:2559e8ea5d71a7775bc7"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2410,7 +2565,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.SstRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:38850214da0e7ccc26fd"
+        "easyexcel:38850214da0e7ccc26fd",
+        "easyexcel:763e13f7d394768c29e5"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2427,7 +2583,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.SstRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:742575a09b14454e6932"
+        "easyexcel:742575a09b14454e6932",
+        "easyexcel:0c64371e096a179f4362"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2444,7 +2601,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.StringRecordHandler",
       "rust_ids": [
-        "easyexcel:6cee958377886fd0a0ce"
+        "easyexcel:6cee958377886fd0a0ce",
+        "easyexcel:df8cdc775740b74651ba"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2461,14 +2619,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.StringRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:0cdb78200cb244b669d9"
+        "easyexcel:0cdb78200cb244b669d9",
+        "easyexcel:ef75d783260aa52e6b70"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -2478,7 +2638,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.StringRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:342ad1cad87c46eb3913"
+        "easyexcel:342ad1cad87c46eb3913",
+        "easyexcel:cc73c2a9698e90206c2c",
+        "easyexcel:76bb8ec351575fd079c9"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2495,7 +2657,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler",
       "rust_ids": [
-        "easyexcel:f6bc91043b06709623f0"
+        "easyexcel:f6bc91043b06709623f0",
+        "easyexcel:21b485444fb5c25d1493"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2512,14 +2675,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:22ce63a964f61d6f86f6"
+        "easyexcel:22ce63a964f61d6f86f6",
+        "easyexcel:5972f0c8557da8891e01"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xls-record-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -2529,7 +2694,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler#processRecord(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)V",
       "rust_ids": [
-        "easyexcel:6a6c0873fcb90e57dff3"
+        "easyexcel:6a6c0873fcb90e57dff3",
+        "easyexcel:10bd2c696e37bff22292",
+        "easyexcel:bcd78da4aac1494e5979"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2546,7 +2713,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v03.handlers.TextObjectRecordHandler#support(Lcom/alibaba/excel/context/xls/XlsReadContext;Lorg/apache/poi/hssf/record/Record;)Z",
       "rust_ids": [
-        "easyexcel:5a151d799ed13bd579b2"
+        "easyexcel:5a151d799ed13bd579b2",
+        "easyexcel:78d60bedba974ab565c2"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2563,7 +2731,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser",
       "rust_ids": [
-        "easyexcel:ef75d783260aa52e6b70"
+        "easyexcel:ef75d783260aa52e6b70",
+        "easyexcel:9db16d625378da47a583"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2580,7 +2749,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#<init>(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/io/InputStream;)V",
       "rust_ids": [
-        "easyexcel:cc73c2a9698e90206c2c"
+        "easyexcel:cc73c2a9698e90206c2c",
+        "easyexcel:7ecf5de9fe6f46e21851"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2597,7 +2767,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#FIELD:SHARED_STRINGS_PART_NAMELorg/apache/poi/openxml4j/opc/PackagePartName;",
       "rust_ids": [
-        "easyexcel:6307d314e55a59fbb869"
+        "easyexcel:6307d314e55a59fbb869",
+        "easyexcel:b3adb0ea72f75048158e"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2614,7 +2785,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#execute()V",
       "rust_ids": [
-        "easyexcel:8b8d712eb991773d715d"
+        "easyexcel:8b8d712eb991773d715d",
+        "easyexcel:0c99c64c8bf9541e046c"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2631,7 +2803,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.XlsxSaxAnalyser#sheetList()Ljava/util/List;",
       "rust_ids": [
-        "easyexcel:ba7c0eda2f61bd910b08"
+        "easyexcel:ba7c0eda2f61bd910b08",
+        "easyexcel:9cc23babe1e72044d86c"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2648,14 +2821,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler",
       "rust_ids": [
-        "easyexcel:ac817361c069e3eefd3b"
+        "easyexcel:ac817361c069e3eefd3b",
+        "easyexcel:7514ea9e2679ceba6cc4"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xlsx-tag-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -2665,14 +2840,17 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:1ee767feeeaf855d3e75"
+        "easyexcel:1ee767feeeaf855d3e75",
+        "easyexcel:bcd78da4aac1494e5979",
+        "easyexcel:54d0245ad179b60e8a66"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xlsx-tag-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -2682,7 +2860,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractCellValueTagHandler#characters(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;[CII)V",
       "rust_ids": [
-        "easyexcel:18a2c992601386d87223"
+        "easyexcel:18a2c992601386d87223",
+        "easyexcel:6301a1b831cdcc501889",
+        "easyexcel:cff36dbfb2621457467a"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2699,14 +2879,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler",
       "rust_ids": [
-        "easyexcel:037314b6c9939cf795b0"
+        "easyexcel:037314b6c9939cf795b0",
+        "easyexcel:1f604fb20ea7f01c7dd1"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xlsx-tag-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -2716,7 +2898,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#<init>()V",
       "rust_ids": [
-        "easyexcel:709d7fe9867cb1bc7bde"
+        "easyexcel:709d7fe9867cb1bc7bde",
+        "easyexcel:d256e3bb2a4e0e270e73",
+        "easyexcel:c32e76473da7e9eed513"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2733,7 +2917,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#characters(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;[CII)V",
       "rust_ids": [
-        "easyexcel:d9ae70fc3bc43bf34f40"
+        "easyexcel:d9ae70fc3bc43bf34f40",
+        "easyexcel:7d9c42b61e571bc6c99b"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2750,7 +2935,8 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#endElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;)V",
       "rust_ids": [
-        "easyexcel:f769f1abab21a0f8628d"
+        "easyexcel:f769f1abab21a0f8628d",
+        "easyexcel:33b656c06172f13cc0dc"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -2767,14 +2953,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#startElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;Lorg/xml/sax/Attributes;)V",
       "rust_ids": [
-        "easyexcel:21b485444fb5c25d1493"
+        "easyexcel:21b485444fb5c25d1493",
+        "easyexcel:88acc02bba3ca02683c5"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xlsx-tag-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -2784,7 +2972,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.AbstractXlsxTagHandler#support(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;)Z",
       "rust_ids": [
-        "easyexcel:5972f0c8557da8891e01"
+        "easyexcel:5972f0c8557da8891e01",
+        "easyexcel:9110c1a37998e0258c98",
+        "easyexcel:4a038cc2f5e7505ace5b"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -3109,14 +3299,16 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler",
       "rust_ids": [
-        "easyexcel:10bd2c696e37bff22292"
+        "easyexcel:10bd2c696e37bff22292",
+        "easyexcel:63b977f9d25decd11275"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xlsx-tag-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -3126,14 +3318,17 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#characters(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;[CII)V",
       "rust_ids": [
-        "easyexcel:78d60bedba974ab565c2"
+        "easyexcel:78d60bedba974ab565c2",
+        "easyexcel:b7b834be4932a47ea2b9",
+        "easyexcel:c3e46f2f1c64cbf6e5bc"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xlsx-tag-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -3143,14 +3338,17 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#endElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;)V",
       "rust_ids": [
-        "easyexcel:dcf8b5bfb3bf119635de"
+        "easyexcel:dcf8b5bfb3bf119635de",
+        "easyexcel:14e0646b59de117c1c57",
+        "easyexcel:1fca69bff13ccc40ba38"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xlsx-tag-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -3160,14 +3358,17 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#startElement(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;Ljava/lang/String;Lorg/xml/sax/Attributes;)V",
       "rust_ids": [
-        "easyexcel:9431f6909c74742e3f89"
+        "easyexcel:9431f6909c74742e3f89",
+        "easyexcel:61912d21e71df755a36b",
+        "easyexcel:f3c08588ee9998d9ec63"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
     },
     {
       "behavior_tests": [
-        "excel-analyser.behavior.v1"
+        "excel-analyser.behavior.v1",
+        "excel-analyser.xlsx-tag-handlers.behavior.v1"
       ],
       "compile_probes": [
         "excel-analyser.compile.v1"
@@ -3177,7 +3378,9 @@
       ],
       "java_id": "com.alibaba.excel.analysis.v07.handlers.XlsxTagHandler#support(Lcom/alibaba/excel/context/xlsx/XlsxReadContext;)Z",
       "rust_ids": [
-        "easyexcel:6bdb8958fe3bb5d5cf7d"
+        "easyexcel:6bdb8958fe3bb5d5cf7d",
+        "easyexcel:45c49a3062ef5c36061f",
+        "easyexcel:defc56cc07bc8105f44e"
       ],
       "semantic_notes": "verified by curated executable evidence catalog",
       "status": "verified"
@@ -3443,74 +3646,137 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.column_width.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.column_width.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.column_width.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ColumnWidth",
-      "rust_ids": [],
-      "semantic_notes": "Rust ColumnWidth derive-annotation sets column width",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::column_width::ColumnWidth"
+      ],
+      "semantic_notes": "Rust ColumnWidth derive-annotation sets column width; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.column_width.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.column_width.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.column_width.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ColumnWidth#value()I",
-      "rust_ids": [],
-      "semantic_notes": "Rust ColumnWidth derive-annotation sets column width",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::column_width::ColumnWidth::value"
+      ],
+      "semantic_notes": "Rust ColumnWidth derive-annotation sets column width; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentFontStyle",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle"
+      ],
+      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentFontStyle#bold()Lcom/alibaba/excel/enums/BooleanEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::bold"
+      ],
+      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentFontStyle#charset()I",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::charset"
+      ],
+      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentFontStyle#color()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::color"
+      ],
+      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentFontStyle#fontHeightInPoints()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::font_height_in_points"
+      ],
+      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
       "behavior_tests": [],
@@ -3523,144 +3789,270 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentFontStyle#italic()Lcom/alibaba/excel/enums/BooleanEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::italic"
+      ],
+      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentFontStyle#strikeout()Lcom/alibaba/excel/enums/BooleanEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::strikeout"
+      ],
+      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentFontStyle#typeOffset()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::type_offset"
+      ],
+      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentFontStyle#underline()B",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_font_style::ContentFontStyle::underline"
+      ],
+      "semantic_notes": "Rust ContentFontStyle derive-annotation has matching font fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_loop_merge.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_loop_merge.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_loop_merge.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentLoopMerge",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentLoopMerge derive-annotation controls loop merging",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_loop_merge::ContentLoopMerge"
+      ],
+      "semantic_notes": "Rust ContentLoopMerge derive-annotation controls loop merging; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_loop_merge.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_loop_merge.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_loop_merge.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentLoopMerge#columnExtend()I",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentLoopMerge derive-annotation controls loop merging",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_loop_merge::ContentLoopMerge::column_extend"
+      ],
+      "semantic_notes": "Rust ContentLoopMerge derive-annotation controls loop merging; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_loop_merge.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_loop_merge.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_loop_merge.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentLoopMerge#eachRow()I",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentLoopMerge derive-annotation controls loop merging",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_loop_merge::ContentLoopMerge::each_row"
+      ],
+      "semantic_notes": "Rust ContentLoopMerge derive-annotation controls loop merging; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_row_height.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_row_height.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_row_height.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentRowHeight",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentRowHeight derive-annotation sets content row height",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_row_height::ContentRowHeight"
+      ],
+      "semantic_notes": "Rust ContentRowHeight derive-annotation sets content row height; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_row_height.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_row_height.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_row_height.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentRowHeight#value()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentRowHeight derive-annotation sets content row height",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_row_height::ContentRowHeight::value"
+      ],
+      "semantic_notes": "Rust ContentRowHeight derive-annotation sets content row height; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle#borderBottom()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_bottom"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle#borderLeft()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_left"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle#borderRight()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_right"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle#borderTop()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::border_top"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
       "behavior_tests": [],
@@ -3673,74 +4065,137 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle#dataFormat()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::data_format"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle#fillBackgroundColor()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::fill_background_color"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle#fillForegroundColor()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::fill_foreground_color"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle#fillPatternType()Lcom/alibaba/excel/enums/poi/FillPatternTypeEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::fill_pattern"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle#hidden()Lcom/alibaba/excel/enums/BooleanEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::hidden"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle#horizontalAlignment()Lcom/alibaba/excel/enums/poi/HorizontalAlignmentEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::horizontal_alignment"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle#indent()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::indent"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
       "behavior_tests": [],
@@ -3753,24 +4208,42 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle#locked()Lcom/alibaba/excel/enums/BooleanEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::locked"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle#quotePrefix()Lcom/alibaba/excel/enums/BooleanEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::quote_prefix"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
       "behavior_tests": [],
@@ -3783,24 +4256,42 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle#rotation()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::rotation"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle#shrinkToFit()Lcom/alibaba/excel/enums/BooleanEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::shrink_to_fit"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
       "behavior_tests": [],
@@ -3813,74 +4304,137 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle#verticalAlignment()Lcom/alibaba/excel/enums/poi/VerticalAlignmentEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::vertical_alignment"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.content_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.content_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.content_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.ContentStyle#wrapped()Lcom/alibaba/excel/enums/BooleanEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::content_style::ContentStyle::wrapped"
+      ],
+      "semantic_notes": "Rust ContentStyle derive-annotation has matching style fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadFontStyle",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle"
+      ],
+      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadFontStyle#bold()Lcom/alibaba/excel/enums/BooleanEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::bold"
+      ],
+      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadFontStyle#charset()I",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::charset"
+      ],
+      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadFontStyle#color()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::color"
+      ],
+      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadFontStyle#fontHeightInPoints()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::font_height_in_points"
+      ],
+      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
       "behavior_tests": [],
@@ -3893,114 +4447,213 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadFontStyle#italic()Lcom/alibaba/excel/enums/BooleanEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::italic"
+      ],
+      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadFontStyle#strikeout()Lcom/alibaba/excel/enums/BooleanEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::strikeout"
+      ],
+      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadFontStyle#typeOffset()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::type_offset"
+      ],
+      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_font_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_font_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_font_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadFontStyle#underline()B",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_font_style::HeadFontStyle::underline"
+      ],
+      "semantic_notes": "Rust HeadFontStyle derive-annotation wraps ContentFontStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_row_height.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_row_height.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_row_height.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadRowHeight",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadRowHeight derive-annotation sets header row height",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_row_height::HeadRowHeight"
+      ],
+      "semantic_notes": "Rust HeadRowHeight derive-annotation sets header row height; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_row_height.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_row_height.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_row_height.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadRowHeight#value()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadRowHeight derive-annotation sets header row height",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_row_height::HeadRowHeight::value"
+      ],
+      "semantic_notes": "Rust HeadRowHeight derive-annotation sets header row height; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle#borderBottom()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_bottom"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle#borderLeft()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_left"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle#borderRight()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_right"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle#borderTop()Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::border_top"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
       "behavior_tests": [],
@@ -4013,74 +4666,137 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle#dataFormat()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::data_format"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle#fillBackgroundColor()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::fill_background_color"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle#fillForegroundColor()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::fill_foreground_color"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle#fillPatternType()Lcom/alibaba/excel/enums/poi/FillPatternTypeEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::fill_pattern"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle#hidden()Lcom/alibaba/excel/enums/BooleanEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::hidden"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle#horizontalAlignment()Lcom/alibaba/excel/enums/poi/HorizontalAlignmentEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::horizontal_alignment"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle#indent()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::indent"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
       "behavior_tests": [],
@@ -4093,24 +4809,42 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle#locked()Lcom/alibaba/excel/enums/BooleanEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::locked"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle#quotePrefix()Lcom/alibaba/excel/enums/BooleanEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::quote_prefix"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
       "behavior_tests": [],
@@ -4123,24 +4857,42 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle#rotation()S",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::rotation"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle#shrinkToFit()Lcom/alibaba/excel/enums/BooleanEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::shrink_to_fit"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
       "behavior_tests": [],
@@ -4153,74 +4905,137 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle#verticalAlignment()Lcom/alibaba/excel/enums/poi/VerticalAlignmentEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::vertical_alignment"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.head_style.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.head_style.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.head_style.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.HeadStyle#wrapped()Lcom/alibaba/excel/enums/BooleanEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::head_style::HeadStyle::wrapped"
+      ],
+      "semantic_notes": "Rust HeadStyle derive-annotation wraps ContentStyle fields; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.once_absolute_merge.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.once_absolute_merge.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.once_absolute_merge.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge",
-      "rust_ids": [],
-      "semantic_notes": "Rust OnceAbsoluteMerge derive-annotation controls one-time merge regions",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge"
+      ],
+      "semantic_notes": "Rust OnceAbsoluteMerge derive-annotation controls one-time merge regions; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.once_absolute_merge.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.once_absolute_merge.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.once_absolute_merge.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstColumnIndex()I",
-      "rust_ids": [],
-      "semantic_notes": "Rust OnceAbsoluteMerge derive-annotation controls one-time merge regions",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge::first_column_index"
+      ],
+      "semantic_notes": "Rust OnceAbsoluteMerge derive-annotation controls one-time merge regions; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.once_absolute_merge.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.once_absolute_merge.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.once_absolute_merge.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#firstRowIndex()I",
-      "rust_ids": [],
-      "semantic_notes": "Rust OnceAbsoluteMerge derive-annotation controls one-time merge regions",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge::first_row_index"
+      ],
+      "semantic_notes": "Rust OnceAbsoluteMerge derive-annotation controls one-time merge regions; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.once_absolute_merge.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.once_absolute_merge.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.once_absolute_merge.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastColumnIndex()I",
-      "rust_ids": [],
-      "semantic_notes": "Rust OnceAbsoluteMerge derive-annotation controls one-time merge regions",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge::last_column_index"
+      ],
+      "semantic_notes": "Rust OnceAbsoluteMerge derive-annotation controls one-time merge regions; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
-      "java_golden": [],
+      "behavior_tests": [
+        "annotation.once_absolute_merge.behavior.v1"
+      ],
+      "compile_probes": [
+        "annotation.once_absolute_merge.compile.v1"
+      ],
+      "java_golden": [
+        "annotation.once_absolute_merge.java-golden.v1"
+      ],
       "java_id": "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge#lastRowIndex()I",
-      "rust_ids": [],
-      "semantic_notes": "Rust OnceAbsoluteMerge derive-annotation controls one-time merge regions",
-      "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "rust_ids": [
+        "easyexcel_derive::annotation::write_style::once_absolute_merge::OnceAbsoluteMerge::last_row_index"
+      ],
+      "semantic_notes": "Rust OnceAbsoluteMerge derive-annotation controls one-time merge regions; verified by linked evidence catalog (compile_probe + behavior_test + java_golden)",
+      "status": "verified",
+      "implementation_strategy": "existing_implementation",
+      "verified_by": "evidence-catalog-link"
     },
     {
       "behavior_tests": [],
@@ -11466,15 +12281,24 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.border-style.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.border-style.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.BorderStyleEnum",
       "rust_ids": [
-        "easyexcel:6480c442919a991a99cb"
+        "easyexcel:6480c442919a991a99cb",
+        "easyexcel::enums::poi::border_style_enum::BorderStyleEnum"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "deterministic name-based candidate; evidence not yet verified; partial evidence: compile_probes, behavior_tests",
+      "status": "candidate",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
       "behavior_tests": [],
@@ -11507,14 +12331,26 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.border-style.behavior.v1",
+        "poi-enum.default-const.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.border-style.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.BorderStyleEnum#FIELD:DEFAULTLcom/alibaba/excel/enums/poi/BorderStyleEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust BorderStyleEnum has matching variant set (15 values)",
+      "rust_ids": [
+        "easyexcel::enums::poi::border_style_enum::BorderStyleEnum::poi_border_style",
+        "easyexcel::enums::poi::border_style_enum::BorderStyleEnum::Default"
+      ],
+      "semantic_notes": "Rust BorderStyleEnum has matching variant set (15 values); partial evidence: compile_probes, behavior_tests",
       "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "implementation_strategy": "existing_implementation",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
       "behavior_tests": [],
@@ -11627,45 +12463,84 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.border-style.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.border-style.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.BorderStyleEnum#getPoiBorderStyle()Lorg/apache/poi/ss/usermodel/BorderStyle;",
-      "rust_ids": [],
-      "semantic_notes": "Rust BorderStyleEnum has matching variant set (15 values)",
+      "rust_ids": [
+        "easyexcel::enums::poi::border_style_enum::BorderStyleEnum::Default"
+      ],
+      "semantic_notes": "Rust BorderStyleEnum has matching variant set (15 values); partial evidence: compile_probes, behavior_tests",
       "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "implementation_strategy": "existing_implementation",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.border-style.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.border-style.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.BorderStyleEnum#valueOf(Ljava/lang/String;)Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust BorderStyleEnum has matching variant set (15 values)",
+      "rust_ids": [
+        "easyexcel::enums::poi::border_style_enum::BorderStyleEnum::java_name"
+      ],
+      "semantic_notes": "Rust BorderStyleEnum has matching variant set (15 values); partial evidence: compile_probes, behavior_tests",
       "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "implementation_strategy": "existing_implementation",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.border-style.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.border-style.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.BorderStyleEnum#values()[Lcom/alibaba/excel/enums/poi/BorderStyleEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust BorderStyleEnum has matching variant set (15 values)",
+      "rust_ids": [
+        "easyexcel::enums::poi::border_style_enum::BorderStyleEnum::ALL"
+      ],
+      "semantic_notes": "Rust BorderStyleEnum has matching variant set (15 values); partial evidence: compile_probes, behavior_tests",
       "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "implementation_strategy": "existing_implementation",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.fill-pattern-type.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.fill-pattern-type.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.FillPatternTypeEnum",
       "rust_ids": [
-        "easyexcel:ca16ac6e760199c34fd8"
+        "easyexcel:ca16ac6e760199c34fd8",
+        "easyexcel::enums::poi::fill_pattern_type_enum::FillPatternTypeEnum"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "deterministic name-based candidate; evidence not yet verified; partial evidence: compile_probes, behavior_tests",
+      "status": "candidate",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
       "behavior_tests": [],
@@ -11698,14 +12573,26 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.fill-pattern-type.behavior.v1",
+        "poi-enum.default-const.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.fill-pattern-type.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.FillPatternTypeEnum#FIELD:DEFAULTLcom/alibaba/excel/enums/poi/FillPatternTypeEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust FillPatternTypeEnum has matching variant set (20 values)",
+      "rust_ids": [
+        "easyexcel::enums::poi::fill_pattern_type_enum::FillPatternTypeEnum::poi_fill_pattern_type",
+        "easyexcel::enums::poi::fill_pattern_type_enum::FillPatternTypeEnum::Default"
+      ],
+      "semantic_notes": "Rust FillPatternTypeEnum has matching variant set (20 values); partial evidence: compile_probes, behavior_tests",
       "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "implementation_strategy": "existing_implementation",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
       "behavior_tests": [],
@@ -11868,45 +12755,84 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.fill-pattern-type.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.fill-pattern-type.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.FillPatternTypeEnum#getPoiFillPatternType()Lorg/apache/poi/ss/usermodel/FillPatternType;",
-      "rust_ids": [],
-      "semantic_notes": "Rust FillPatternTypeEnum has matching variant set (20 values)",
+      "rust_ids": [
+        "easyexcel::enums::poi::fill_pattern_type_enum::FillPatternTypeEnum::Default"
+      ],
+      "semantic_notes": "Rust FillPatternTypeEnum has matching variant set (20 values); partial evidence: compile_probes, behavior_tests",
       "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "implementation_strategy": "existing_implementation",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.fill-pattern-type.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.fill-pattern-type.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.FillPatternTypeEnum#valueOf(Ljava/lang/String;)Lcom/alibaba/excel/enums/poi/FillPatternTypeEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust FillPatternTypeEnum has matching variant set (20 values)",
+      "rust_ids": [
+        "easyexcel::enums::poi::fill_pattern_type_enum::FillPatternTypeEnum::java_name"
+      ],
+      "semantic_notes": "Rust FillPatternTypeEnum has matching variant set (20 values); partial evidence: compile_probes, behavior_tests",
       "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "implementation_strategy": "existing_implementation",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.fill-pattern-type.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.fill-pattern-type.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.FillPatternTypeEnum#values()[Lcom/alibaba/excel/enums/poi/FillPatternTypeEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust FillPatternTypeEnum has matching variant set (20 values)",
+      "rust_ids": [
+        "easyexcel::enums::poi::fill_pattern_type_enum::FillPatternTypeEnum::ALL"
+      ],
+      "semantic_notes": "Rust FillPatternTypeEnum has matching variant set (20 values); partial evidence: compile_probes, behavior_tests",
       "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "implementation_strategy": "existing_implementation",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.horizontal-alignment.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.horizontal-alignment.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum",
       "rust_ids": [
-        "easyexcel:1693b9546a2992611124"
+        "easyexcel:1693b9546a2992611124",
+        "easyexcel::enums::poi::horizontal_alignment_enum::HorizontalAlignmentEnum"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "deterministic name-based candidate; evidence not yet verified; partial evidence: compile_probes, behavior_tests",
+      "status": "candidate",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
       "behavior_tests": [],
@@ -11929,14 +12855,26 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.horizontal-alignment.behavior.v1",
+        "poi-enum.default-const.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.horizontal-alignment.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#FIELD:DEFAULTLcom/alibaba/excel/enums/poi/HorizontalAlignmentEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HorizontalAlignmentEnum has matching variant set",
+      "rust_ids": [
+        "easyexcel::enums::poi::horizontal_alignment_enum::HorizontalAlignmentEnum::poi_horizontal_alignment",
+        "easyexcel::enums::poi::horizontal_alignment_enum::HorizontalAlignmentEnum::Default"
+      ],
+      "semantic_notes": "Rust HorizontalAlignmentEnum has matching variant set; partial evidence: compile_probes, behavior_tests",
       "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "implementation_strategy": "existing_implementation",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
       "behavior_tests": [],
@@ -11999,45 +12937,84 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.horizontal-alignment.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.horizontal-alignment.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#getPoiHorizontalAlignment()Lorg/apache/poi/ss/usermodel/HorizontalAlignment;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HorizontalAlignmentEnum has matching variant set",
+      "rust_ids": [
+        "easyexcel::enums::poi::horizontal_alignment_enum::HorizontalAlignmentEnum::Default"
+      ],
+      "semantic_notes": "Rust HorizontalAlignmentEnum has matching variant set; partial evidence: compile_probes, behavior_tests",
       "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "implementation_strategy": "existing_implementation",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.horizontal-alignment.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.horizontal-alignment.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#valueOf(Ljava/lang/String;)Lcom/alibaba/excel/enums/poi/HorizontalAlignmentEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HorizontalAlignmentEnum has matching variant set",
+      "rust_ids": [
+        "easyexcel::enums::poi::horizontal_alignment_enum::HorizontalAlignmentEnum::java_name"
+      ],
+      "semantic_notes": "Rust HorizontalAlignmentEnum has matching variant set; partial evidence: compile_probes, behavior_tests",
       "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "implementation_strategy": "existing_implementation",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.horizontal-alignment.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.horizontal-alignment.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.HorizontalAlignmentEnum#values()[Lcom/alibaba/excel/enums/poi/HorizontalAlignmentEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust HorizontalAlignmentEnum has matching variant set",
+      "rust_ids": [
+        "easyexcel::enums::poi::horizontal_alignment_enum::HorizontalAlignmentEnum::ALL"
+      ],
+      "semantic_notes": "Rust HorizontalAlignmentEnum has matching variant set; partial evidence: compile_probes, behavior_tests",
       "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "implementation_strategy": "existing_implementation",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.vertical-alignment.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.vertical-alignment.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.VerticalAlignmentEnum",
       "rust_ids": [
-        "easyexcel:80a8c63dcef218bba333"
+        "easyexcel:80a8c63dcef218bba333",
+        "easyexcel::enums::poi::vertical_alignment_enum::VerticalAlignmentEnum"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "deterministic name-based candidate; evidence not yet verified; partial evidence: compile_probes, behavior_tests",
+      "status": "candidate",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
       "behavior_tests": [],
@@ -12060,14 +13037,26 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.vertical-alignment.behavior.v1",
+        "poi-enum.default-const.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.vertical-alignment.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#FIELD:DEFAULTLcom/alibaba/excel/enums/poi/VerticalAlignmentEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust VerticalAlignmentEnum has matching variant set",
+      "rust_ids": [
+        "easyexcel::enums::poi::vertical_alignment_enum::VerticalAlignmentEnum::poi_vertical_alignment_enum",
+        "easyexcel::enums::poi::vertical_alignment_enum::VerticalAlignmentEnum::Default"
+      ],
+      "semantic_notes": "Rust VerticalAlignmentEnum has matching variant set; partial evidence: compile_probes, behavior_tests",
       "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "implementation_strategy": "existing_implementation",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
       "behavior_tests": [],
@@ -12100,34 +13089,64 @@
       "implementation_strategy": "existing_implementation"
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.vertical-alignment.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.vertical-alignment.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#getPoiVerticalAlignmentEnum()Lorg/apache/poi/ss/usermodel/VerticalAlignment;",
-      "rust_ids": [],
-      "semantic_notes": "Rust VerticalAlignmentEnum has matching variant set",
+      "rust_ids": [
+        "easyexcel::enums::poi::vertical_alignment_enum::VerticalAlignmentEnum::Default"
+      ],
+      "semantic_notes": "Rust VerticalAlignmentEnum has matching variant set; partial evidence: compile_probes, behavior_tests",
       "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "implementation_strategy": "existing_implementation",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.vertical-alignment.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.vertical-alignment.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#valueOf(Ljava/lang/String;)Lcom/alibaba/excel/enums/poi/VerticalAlignmentEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust VerticalAlignmentEnum has matching variant set",
+      "rust_ids": [
+        "easyexcel::enums::poi::vertical_alignment_enum::VerticalAlignmentEnum::java_name"
+      ],
+      "semantic_notes": "Rust VerticalAlignmentEnum has matching variant set; partial evidence: compile_probes, behavior_tests",
       "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "implementation_strategy": "existing_implementation",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
-      "behavior_tests": [],
-      "compile_probes": [],
+      "behavior_tests": [
+        "poi-enum.vertical-alignment.behavior.v1"
+      ],
+      "compile_probes": [
+        "poi-enum.vertical-alignment.values.compile.v1"
+      ],
       "java_golden": [],
       "java_id": "com.alibaba.excel.enums.poi.VerticalAlignmentEnum#values()[Lcom/alibaba/excel/enums/poi/VerticalAlignmentEnum;",
-      "rust_ids": [],
-      "semantic_notes": "Rust VerticalAlignmentEnum has matching variant set",
+      "rust_ids": [
+        "easyexcel::enums::poi::vertical_alignment_enum::VerticalAlignmentEnum::ALL"
+      ],
+      "semantic_notes": "Rust VerticalAlignmentEnum has matching variant set; partial evidence: compile_probes, behavior_tests",
       "status": "candidate",
-      "implementation_strategy": "existing_implementation"
+      "implementation_strategy": "existing_implementation",
+      "partial_evidence": [
+        "compile_probes",
+        "behavior_tests"
+      ]
     },
     {
       "behavior_tests": [],
@@ -29536,7 +30555,8 @@
     },
     {
       "behavior_tests": [
-        "excel-builder.behavior.v1"
+        "excel-builder.behavior.v1",
+        "excel-builder.add-content-table.behavior.v1"
       ],
       "compile_probes": [
         "excel-builder.compile.v1"
@@ -29672,7 +30692,8 @@
     },
     {
       "behavior_tests": [
-        "excel-builder.behavior.v1"
+        "excel-builder.behavior.v1",
+        "excel-builder.add-content-table.behavior.v1"
       ],
       "compile_probes": [
         "excel-builder.compile.v1"
@@ -30031,48 +31052,72 @@
       "status": "candidate"
     },
     {
-      "behavior_tests": [],
+      "behavior_tests": [
+        "excel-builder.chain-method.behavior.v1"
+      ],
       "compile_probes": [],
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.builder.ExcelWriterBuilder#sheet()Lcom/alibaba/excel/write/builder/ExcelWriterSheetBuilder;",
       "rust_ids": [
-        "easyexcel:8be43927593ff4f5e250"
+        "easyexcel:8be43927593ff4f5e250",
+        "easyexcel:061aa6f983700f725dfc"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "deterministic name-based candidate; evidence not yet verified; partial evidence: behavior_tests",
+      "status": "candidate",
+      "partial_evidence": [
+        "behavior_tests"
+      ]
     },
     {
-      "behavior_tests": [],
+      "behavior_tests": [
+        "excel-builder.chain-method.behavior.v1"
+      ],
       "compile_probes": [],
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.builder.ExcelWriterBuilder#sheet(Ljava/lang/Integer;)Lcom/alibaba/excel/write/builder/ExcelWriterSheetBuilder;",
       "rust_ids": [
-        "easyexcel:8be43927593ff4f5e250"
+        "easyexcel:8be43927593ff4f5e250",
+        "easyexcel:061aa6f983700f725dfc"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "deterministic name-based candidate; evidence not yet verified; partial evidence: behavior_tests",
+      "status": "candidate",
+      "partial_evidence": [
+        "behavior_tests"
+      ]
     },
     {
-      "behavior_tests": [],
+      "behavior_tests": [
+        "excel-builder.chain-method.behavior.v1"
+      ],
       "compile_probes": [],
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.builder.ExcelWriterBuilder#sheet(Ljava/lang/Integer;Ljava/lang/String;)Lcom/alibaba/excel/write/builder/ExcelWriterSheetBuilder;",
       "rust_ids": [
-        "easyexcel:8be43927593ff4f5e250"
+        "easyexcel:8be43927593ff4f5e250",
+        "easyexcel:061aa6f983700f725dfc"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "deterministic name-based candidate; evidence not yet verified; partial evidence: behavior_tests",
+      "status": "candidate",
+      "partial_evidence": [
+        "behavior_tests"
+      ]
     },
     {
-      "behavior_tests": [],
+      "behavior_tests": [
+        "excel-builder.chain-method.behavior.v1"
+      ],
       "compile_probes": [],
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.builder.ExcelWriterBuilder#sheet(Ljava/lang/String;)Lcom/alibaba/excel/write/builder/ExcelWriterSheetBuilder;",
       "rust_ids": [
-        "easyexcel:8be43927593ff4f5e250"
+        "easyexcel:8be43927593ff4f5e250",
+        "easyexcel:061aa6f983700f725dfc"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "deterministic name-based candidate; evidence not yet verified; partial evidence: behavior_tests",
+      "status": "candidate",
+      "partial_evidence": [
+        "behavior_tests"
+      ]
     },
     {
       "behavior_tests": [],
@@ -30236,26 +31281,36 @@
       "status": "candidate"
     },
     {
-      "behavior_tests": [],
+      "behavior_tests": [
+        "excel-builder.chain-method.behavior.v1"
+      ],
       "compile_probes": [],
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.builder.ExcelWriterSheetBuilder#sheetName(Ljava/lang/String;)Lcom/alibaba/excel/write/builder/ExcelWriterSheetBuilder;",
       "rust_ids": [
         "easyexcel:e0baa588edba4e40877e"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "deterministic name-based candidate; evidence not yet verified; partial evidence: behavior_tests",
+      "status": "candidate",
+      "partial_evidence": [
+        "behavior_tests"
+      ]
     },
     {
-      "behavior_tests": [],
+      "behavior_tests": [
+        "excel-builder.chain-method.behavior.v1"
+      ],
       "compile_probes": [],
       "java_golden": [],
       "java_id": "com.alibaba.excel.write.builder.ExcelWriterSheetBuilder#sheetNo(Ljava/lang/Integer;)Lcom/alibaba/excel/write/builder/ExcelWriterSheetBuilder;",
       "rust_ids": [
         "easyexcel:f66cbbfb1b329ead2d44"
       ],
-      "semantic_notes": "deterministic name-based candidate; evidence not yet verified",
-      "status": "candidate"
+      "semantic_notes": "deterministic name-based candidate; evidence not yet verified; partial evidence: behavior_tests",
+      "status": "candidate",
+      "partial_evidence": [
+        "behavior_tests"
+      ]
     },
     {
       "behavior_tests": [],
