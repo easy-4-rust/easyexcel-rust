@@ -1,35 +1,8 @@
-//! CSV 单元格中立模型。
-
-use std::fmt::Debug;
-
 use chrono::NaiveDateTime;
 use easyexcel_model::CellValue as ModelCellValue;
 
-use super::{CsvCellStyle, CsvRichTextString};
-
-include!("csv_cell/csv_numeric_cell_type.rs");
-
-include!("csv_cell/csv_cell_value.rs");
-
-/// Java/POI `CellType` 的 CSV 后端中立映射。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum CsvCellType {
-    /// 尚未设置类型。
-    #[default]
-    None,
-    /// 数字或日期序列。
-    Numeric,
-    /// 文本或富文本。
-    String,
-    /// 公式文本。
-    Formula,
-    /// 空单元格。
-    Blank,
-    /// 布尔值。
-    Boolean,
-    /// Excel 错误。
-    Error,
-}
+use super::{CsvCellType, CsvCellValue};
+use crate::csv::{CsvCellStyle, CsvRichTextString};
 
 /// 对应 Java：com.alibaba.excel.metadata.csv.CsvCell。 CSV 工作簿中的一个有类型单元格。
 #[derive(Debug, Clone, PartialEq)]
