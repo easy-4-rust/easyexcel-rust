@@ -12,16 +12,14 @@ pub mod model;
 
 pub use model::{
     Cell, CellAddress, CellError, CellRange, CellValue, ChartMutation, ChartRange, ChartSeries,
-    ChartType, ColInfo, DataFormatData, DateSystem,
-    DefinedName, Error, ExcelDataFormat, FrozenPanes, MergeRange, Metadata, OpaquePart, Result,
-    RowInfo, Sheet,
-    Spill, StoredRow, Table, TabularCell, TabularDocument, TabularTable, Visibility, Workbook,
-    DATE_FORMAT_10, DATE_FORMAT_14, DATE_FORMAT_16, DATE_FORMAT_16_FORWARD_SLASH, DATE_FORMAT_17,
-    DATE_FORMAT_19, DATE_FORMAT_19_FORWARD_SLASH, DAY_MILLISECONDS, DEFAULT_DATE_FORMAT,
-    DEFAULT_LOCAL_DATE_FORMAT, HOURS_PER_DAY, MINUTES_PER_HOUR, SECONDS_PER_DAY,
-    RichTextSegment, SECONDS_PER_MINUTE, chrono_date_format, date_to_excel_serial,
-    datetime_to_excel_serial, excel_parts_to_datetime, segment_utf16_text,
-    infer_java_date_pattern,
+    ChartType, ColInfo, DATE_FORMAT_10, DATE_FORMAT_14, DATE_FORMAT_16,
+    DATE_FORMAT_16_FORWARD_SLASH, DATE_FORMAT_17, DATE_FORMAT_19, DATE_FORMAT_19_FORWARD_SLASH,
+    DAY_MILLISECONDS, DEFAULT_DATE_FORMAT, DEFAULT_LOCAL_DATE_FORMAT, DataFormatData, DateSystem,
+    DefinedName, Error, ExcelDataFormat, FrozenPanes, HOURS_PER_DAY, MINUTES_PER_HOUR, MergeRange,
+    Metadata, OpaquePart, Result, RichTextSegment, RowInfo, SECONDS_PER_DAY, SECONDS_PER_MINUTE,
+    Sheet, Spill, StoredRow, Table, TabularCell, TabularDocument, TabularTable, Visibility,
+    Workbook, chrono_date_format, date_to_excel_serial, datetime_to_excel_serial,
+    excel_parts_to_datetime, infer_java_date_pattern, segment_utf16_text,
 };
 pub use model::{
     addr, chart_mutation, chart_range, chart_series, chart_type, data_format_data, dates, error,

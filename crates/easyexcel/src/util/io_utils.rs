@@ -29,10 +29,7 @@ pub fn to_byte_array(reader: &mut dyn Read) -> Result<Vec<u8>, ExcelError> {
 
 /// 按声明长度读取输入流。若提前结束则返回 I/O 错误。
 /// 对应 Java：`IoUtils#toByteArray(InputStream, int)`。
-pub fn to_byte_array_with_size(
-    reader: &mut dyn Read,
-    size: usize,
-) -> Result<Vec<u8>, ExcelError> {
+pub fn to_byte_array_with_size(reader: &mut dyn Read, size: usize) -> Result<Vec<u8>, ExcelError> {
     let mut bytes = vec![0_u8; size];
     reader.read_exact(&mut bytes)?;
     Ok(bytes)

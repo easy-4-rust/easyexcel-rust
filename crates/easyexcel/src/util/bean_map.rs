@@ -142,9 +142,18 @@ mod tests {
             field_types.insert(name, Some(ty));
         }
         let map = BeanMap::from_parts(values, field_types);
-        assert_eq!(map.property_type_id("f_string"), Some(TypeId::of::<String>()));
-        assert_eq!(map.property_type_id("f_std_string"), Some(TypeId::of::<String>()));
-        assert_eq!(map.property_type_id("f_alloc_string"), Some(TypeId::of::<String>()));
+        assert_eq!(
+            map.property_type_id("f_string"),
+            Some(TypeId::of::<String>())
+        );
+        assert_eq!(
+            map.property_type_id("f_std_string"),
+            Some(TypeId::of::<String>())
+        );
+        assert_eq!(
+            map.property_type_id("f_alloc_string"),
+            Some(TypeId::of::<String>())
+        );
         assert_eq!(map.property_type_id("f_bool"), Some(TypeId::of::<bool>()));
         assert_eq!(map.property_type_id("f_i8"), Some(TypeId::of::<i8>()));
         assert_eq!(map.property_type_id("f_i16"), Some(TypeId::of::<i16>()));

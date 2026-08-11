@@ -246,11 +246,7 @@ impl<'a> ExcelTemplateWriter<'a> {
     /// 将 facade writer 已持有的真实输出目标移交给模板引擎。
     ///
     /// 模板解析完成后才调用，避免解析失败时提前夺走调用方输出流。
-    pub(crate) fn redirect_output(
-        &mut self,
-        output: TemplateOutput<'a>,
-        auto_close_stream: bool,
-    ) {
+    pub(crate) fn redirect_output(&mut self, output: TemplateOutput<'a>, auto_close_stream: bool) {
         self.output = output;
         self.auto_close_stream = auto_close_stream;
     }
@@ -522,11 +518,7 @@ impl<'a> ExcelTemplateWriter<'a> {
         }
         if let Some(xls) = self.xls.as_ref() {
             let bytes = xls.to_bytes()?;
-            write_template_bytes_to_output(
-                &mut self.output,
-                &bytes,
-                self.auto_close_stream,
-            )?;
+            write_template_bytes_to_output(&mut self.output, &bytes, self.auto_close_stream)?;
             self.finished = true;
             return Ok(());
         }
@@ -840,9 +832,7 @@ pub(crate) fn write_template_bytes_to_output(
         }
         TemplateOutput::Managed { writer, close } => {
             easyexcel_io::write_all_and_flush(writer.as_mut(), bytes).map_err(ExcelError::from)?;
-            if auto_close_stream
-                && let Some(close) = close.take()
-            {
+            if auto_close_stream && let Some(close) = close.take() {
                 close().map_err(ExcelError::from)?;
             }
             Ok(())
@@ -912,9 +902,7 @@ pub(crate) fn discard_template_output(
             Ok(())
         }
         TemplateOutput::Managed { close, .. } => {
-            if auto_close_stream
-                && let Some(close) = close.take()
-            {
+            if auto_close_stream && let Some(close) = close.take() {
                 close().map_err(ExcelError::from)?;
             }
             Ok(())

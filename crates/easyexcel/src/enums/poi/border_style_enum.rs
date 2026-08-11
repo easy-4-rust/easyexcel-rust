@@ -24,21 +24,40 @@ pub enum BorderStyleEnum {
 impl BorderStyleEnum {
     /// 按 Java `values()` 声明顺序列出全部枚举值。
     pub const ALL: [Self; 15] = [
-        Self::Default, Self::None, Self::Thin, Self::Medium, Self::Dashed,
-        Self::Dotted, Self::Thick, Self::Double, Self::Hair, Self::MediumDashed,
-        Self::DashDot, Self::MediumDashDot, Self::DashDotDot,
-        Self::MediumDashDotDot, Self::SlantedDashDot,
+        Self::Default,
+        Self::None,
+        Self::Thin,
+        Self::Medium,
+        Self::Dashed,
+        Self::Dotted,
+        Self::Thick,
+        Self::Double,
+        Self::Hair,
+        Self::MediumDashed,
+        Self::DashDot,
+        Self::MediumDashDot,
+        Self::DashDotDot,
+        Self::MediumDashDotDot,
+        Self::SlantedDashDot,
     ];
 
     /// 返回 Java 枚举常量名。
     #[must_use]
     pub const fn java_name(self) -> &'static str {
         match self {
-            Self::Default => "DEFAULT", Self::None => "NONE", Self::Thin => "THIN",
-            Self::Medium => "MEDIUM", Self::Dashed => "DASHED", Self::Dotted => "DOTTED",
-            Self::Thick => "THICK", Self::Double => "DOUBLE", Self::Hair => "HAIR",
-            Self::MediumDashed => "MEDIUM_DASHED", Self::DashDot => "DASH_DOT",
-            Self::MediumDashDot => "MEDIUM_DASH_DOT", Self::DashDotDot => "DASH_DOT_DOT",
+            Self::Default => "DEFAULT",
+            Self::None => "NONE",
+            Self::Thin => "THIN",
+            Self::Medium => "MEDIUM",
+            Self::Dashed => "DASHED",
+            Self::Dotted => "DOTTED",
+            Self::Thick => "THICK",
+            Self::Double => "DOUBLE",
+            Self::Hair => "HAIR",
+            Self::MediumDashed => "MEDIUM_DASHED",
+            Self::DashDot => "DASH_DOT",
+            Self::MediumDashDot => "MEDIUM_DASH_DOT",
+            Self::DashDotDot => "DASH_DOT_DOT",
             Self::MediumDashDotDot => "MEDIUM_DASH_DOT_DOT",
             Self::SlantedDashDot => "SLANTED_DASH_DOT",
         }
@@ -78,7 +97,9 @@ impl std::str::FromStr for BorderStyleEnum {
 
     /// 解析 Java `valueOf(String)` 使用的精确枚举常量名。
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Self::ALL.into_iter().find(|item| item.java_name() == value)
+        Self::ALL
+            .into_iter()
+            .find(|item| item.java_name() == value)
             .ok_or_else(|| format!("unknown BorderStyleEnum value: {value}"))
     }
 }
@@ -100,9 +121,20 @@ mod tests {
     #[test]
     fn java_name_covers_all_variants() {
         let expected = [
-            "DEFAULT", "NONE", "THIN", "MEDIUM", "DASHED", "DOTTED",
-            "THICK", "DOUBLE", "HAIR", "MEDIUM_DASHED", "DASH_DOT",
-            "MEDIUM_DASH_DOT", "DASH_DOT_DOT", "MEDIUM_DASH_DOT_DOT",
+            "DEFAULT",
+            "NONE",
+            "THIN",
+            "MEDIUM",
+            "DASHED",
+            "DOTTED",
+            "THICK",
+            "DOUBLE",
+            "HAIR",
+            "MEDIUM_DASHED",
+            "DASH_DOT",
+            "MEDIUM_DASH_DOT",
+            "DASH_DOT_DOT",
+            "MEDIUM_DASH_DOT_DOT",
             "SLANTED_DASH_DOT",
         ];
         for (variant, name) in BorderStyleEnum::ALL.iter().zip(expected.iter()) {
@@ -131,22 +163,34 @@ mod tests {
 
     #[test]
     fn thin_maps_to_thin() {
-        assert_eq!(BorderStyleEnum::Thin.poi_border_style(), Some(crate::ExcelBorderStyle::Thin));
+        assert_eq!(
+            BorderStyleEnum::Thin.poi_border_style(),
+            Some(crate::ExcelBorderStyle::Thin)
+        );
     }
 
     #[test]
     fn medium_maps_to_medium() {
-        assert_eq!(BorderStyleEnum::Medium.poi_border_style(), Some(crate::ExcelBorderStyle::Medium));
+        assert_eq!(
+            BorderStyleEnum::Medium.poi_border_style(),
+            Some(crate::ExcelBorderStyle::Medium)
+        );
     }
 
     #[test]
     fn double_maps_to_double() {
-        assert_eq!(BorderStyleEnum::Double.poi_border_style(), Some(crate::ExcelBorderStyle::Double));
+        assert_eq!(
+            BorderStyleEnum::Double.poi_border_style(),
+            Some(crate::ExcelBorderStyle::Double)
+        );
     }
 
     #[test]
     fn none_maps_to_none() {
-        assert_eq!(BorderStyleEnum::None.poi_border_style(), Some(crate::ExcelBorderStyle::None));
+        assert_eq!(
+            BorderStyleEnum::None.poi_border_style(),
+            Some(crate::ExcelBorderStyle::None)
+        );
     }
 
     #[test]

@@ -29,11 +29,25 @@ pub enum FillPatternTypeEnum {
 impl FillPatternTypeEnum {
     /// 按 Java `values()` 声明顺序列出全部枚举值。
     pub const ALL: [Self; 20] = [
-        Self::Default, Self::NoFill, Self::SolidForeground, Self::FineDots,
-        Self::AltBars, Self::SparseDots, Self::ThickHorzBands, Self::ThickVertBands,
-        Self::ThickBackwardDiag, Self::ThickForwardDiag, Self::BigSpots, Self::Bricks,
-        Self::ThinHorzBands, Self::ThinVertBands, Self::ThinBackwardDiag,
-        Self::ThinForwardDiag, Self::Squares, Self::Diamonds, Self::LessDots,
+        Self::Default,
+        Self::NoFill,
+        Self::SolidForeground,
+        Self::FineDots,
+        Self::AltBars,
+        Self::SparseDots,
+        Self::ThickHorzBands,
+        Self::ThickVertBands,
+        Self::ThickBackwardDiag,
+        Self::ThickForwardDiag,
+        Self::BigSpots,
+        Self::Bricks,
+        Self::ThinHorzBands,
+        Self::ThinVertBands,
+        Self::ThinBackwardDiag,
+        Self::ThinForwardDiag,
+        Self::Squares,
+        Self::Diamonds,
+        Self::LessDots,
         Self::LeastDots,
     ];
 
@@ -41,16 +55,26 @@ impl FillPatternTypeEnum {
     #[must_use]
     pub const fn java_name(self) -> &'static str {
         match self {
-            Self::Default => "DEFAULT", Self::NoFill => "NO_FILL",
-            Self::SolidForeground => "SOLID_FOREGROUND", Self::FineDots => "FINE_DOTS",
-            Self::AltBars => "ALT_BARS", Self::SparseDots => "SPARSE_DOTS",
-            Self::ThickHorzBands => "THICK_HORZ_BANDS", Self::ThickVertBands => "THICK_VERT_BANDS",
+            Self::Default => "DEFAULT",
+            Self::NoFill => "NO_FILL",
+            Self::SolidForeground => "SOLID_FOREGROUND",
+            Self::FineDots => "FINE_DOTS",
+            Self::AltBars => "ALT_BARS",
+            Self::SparseDots => "SPARSE_DOTS",
+            Self::ThickHorzBands => "THICK_HORZ_BANDS",
+            Self::ThickVertBands => "THICK_VERT_BANDS",
             Self::ThickBackwardDiag => "THICK_BACKWARD_DIAG",
-            Self::ThickForwardDiag => "THICK_FORWARD_DIAG", Self::BigSpots => "BIG_SPOTS",
-            Self::Bricks => "BRICKS", Self::ThinHorzBands => "THIN_HORZ_BANDS",
-            Self::ThinVertBands => "THIN_VERT_BANDS", Self::ThinBackwardDiag => "THIN_BACKWARD_DIAG",
-            Self::ThinForwardDiag => "THIN_FORWARD_DIAG", Self::Squares => "SQUARES",
-            Self::Diamonds => "DIAMONDS", Self::LessDots => "LESS_DOTS", Self::LeastDots => "LEAST_DOTS",
+            Self::ThickForwardDiag => "THICK_FORWARD_DIAG",
+            Self::BigSpots => "BIG_SPOTS",
+            Self::Bricks => "BRICKS",
+            Self::ThinHorzBands => "THIN_HORZ_BANDS",
+            Self::ThinVertBands => "THIN_VERT_BANDS",
+            Self::ThinBackwardDiag => "THIN_BACKWARD_DIAG",
+            Self::ThinForwardDiag => "THIN_FORWARD_DIAG",
+            Self::Squares => "SQUARES",
+            Self::Diamonds => "DIAMONDS",
+            Self::LessDots => "LESS_DOTS",
+            Self::LeastDots => "LEAST_DOTS",
         }
     }
 
@@ -93,7 +117,9 @@ impl std::str::FromStr for FillPatternTypeEnum {
 
     /// 解析 Java `valueOf(String)` 使用的精确枚举常量名。
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Self::ALL.into_iter().find(|item| item.java_name() == value)
+        Self::ALL
+            .into_iter()
+            .find(|item| item.java_name() == value)
             .ok_or_else(|| format!("unknown FillPatternTypeEnum value: {value}"))
     }
 }
@@ -115,11 +141,26 @@ mod tests {
     #[test]
     fn java_name_covers_all_variants() {
         let expected = [
-            "DEFAULT", "NO_FILL", "SOLID_FOREGROUND", "FINE_DOTS",
-            "ALT_BARS", "SPARSE_DOTS", "THICK_HORZ_BANDS", "THICK_VERT_BANDS",
-            "THICK_BACKWARD_DIAG", "THICK_FORWARD_DIAG", "BIG_SPOTS", "BRICKS",
-            "THIN_HORZ_BANDS", "THIN_VERT_BANDS", "THIN_BACKWARD_DIAG",
-            "THIN_FORWARD_DIAG", "SQUARES", "DIAMONDS", "LESS_DOTS", "LEAST_DOTS",
+            "DEFAULT",
+            "NO_FILL",
+            "SOLID_FOREGROUND",
+            "FINE_DOTS",
+            "ALT_BARS",
+            "SPARSE_DOTS",
+            "THICK_HORZ_BANDS",
+            "THICK_VERT_BANDS",
+            "THICK_BACKWARD_DIAG",
+            "THICK_FORWARD_DIAG",
+            "BIG_SPOTS",
+            "BRICKS",
+            "THIN_HORZ_BANDS",
+            "THIN_VERT_BANDS",
+            "THIN_BACKWARD_DIAG",
+            "THIN_FORWARD_DIAG",
+            "SQUARES",
+            "DIAMONDS",
+            "LESS_DOTS",
+            "LEAST_DOTS",
         ];
         for (variant, name) in FillPatternTypeEnum::ALL.iter().zip(expected.iter()) {
             assert_eq!(variant.java_name(), *name);
@@ -133,15 +174,30 @@ mod tests {
 
     #[test]
     fn non_default_returns_some() {
-        assert!(FillPatternTypeEnum::SolidForeground.poi_fill_pattern_type().is_some());
-        assert!(FillPatternTypeEnum::FineDots.poi_fill_pattern_type().is_some());
-        assert!(FillPatternTypeEnum::Squares.poi_fill_pattern_type().is_some());
+        assert!(
+            FillPatternTypeEnum::SolidForeground
+                .poi_fill_pattern_type()
+                .is_some()
+        );
+        assert!(
+            FillPatternTypeEnum::FineDots
+                .poi_fill_pattern_type()
+                .is_some()
+        );
+        assert!(
+            FillPatternTypeEnum::Squares
+                .poi_fill_pattern_type()
+                .is_some()
+        );
     }
 
     #[test]
     fn get_poi_fill_pattern_type_matches_poi_fill_pattern_type() {
         for variant in FillPatternTypeEnum::ALL {
-            assert_eq!(variant.get_poi_fill_pattern_type(), variant.poi_fill_pattern_type());
+            assert_eq!(
+                variant.get_poi_fill_pattern_type(),
+                variant.poi_fill_pattern_type()
+            );
         }
     }
 

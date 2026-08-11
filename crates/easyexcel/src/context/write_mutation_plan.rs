@@ -122,8 +122,7 @@ impl WriteMutationPlan {
                     sheet_name,
                     row_index,
                     column_index,
-                    value:
-                        CellValue::Comment { .. } | CellValue::CommentWithMetadata { .. },
+                    value: CellValue::Comment { .. } | CellValue::CommentWithMetadata { .. },
                 } => {
                     // 后续 setCellComment 覆盖此前 removeCellComment。
                     actions.insert((sheet_name, row_index, column_index), false);
@@ -239,9 +238,7 @@ mod tests {
         let plan_b = WriteMutationPlan::default();
         assert_eq!(plan_a, plan_b);
 
-        plan_a
-            .set_cell("S", 0, 0, CellValue::Int(1))
-            .unwrap();
+        plan_a.set_cell("S", 0, 0, CellValue::Int(1)).unwrap();
         assert_ne!(plan_a, plan_b);
     }
 

@@ -18,17 +18,29 @@ pub enum HorizontalAlignmentEnum {
 impl HorizontalAlignmentEnum {
     /// 按 Java `values()` 声明顺序列出全部枚举值。
     pub const ALL: [Self; 9] = [
-        Self::Default, Self::General, Self::Left, Self::Center, Self::Right,
-        Self::Fill, Self::Justify, Self::CenterSelection, Self::Distributed,
+        Self::Default,
+        Self::General,
+        Self::Left,
+        Self::Center,
+        Self::Right,
+        Self::Fill,
+        Self::Justify,
+        Self::CenterSelection,
+        Self::Distributed,
     ];
 
     /// 返回 Java 枚举常量名。
     #[must_use]
     pub const fn java_name(self) -> &'static str {
         match self {
-            Self::Default => "DEFAULT", Self::General => "GENERAL", Self::Left => "LEFT",
-            Self::Center => "CENTER", Self::Right => "RIGHT", Self::Fill => "FILL",
-            Self::Justify => "JUSTIFY", Self::CenterSelection => "CENTER_SELECTION",
+            Self::Default => "DEFAULT",
+            Self::General => "GENERAL",
+            Self::Left => "LEFT",
+            Self::Center => "CENTER",
+            Self::Right => "RIGHT",
+            Self::Fill => "FILL",
+            Self::Justify => "JUSTIFY",
+            Self::CenterSelection => "CENTER_SELECTION",
             Self::Distributed => "DISTRIBUTED",
         }
     }
@@ -61,7 +73,9 @@ impl std::str::FromStr for HorizontalAlignmentEnum {
 
     /// 解析 Java `valueOf(String)` 使用的精确枚举常量名。
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Self::ALL.into_iter().find(|item| item.java_name() == value)
+        Self::ALL
+            .into_iter()
+            .find(|item| item.java_name() == value)
             .ok_or_else(|| format!("unknown HorizontalAlignmentEnum value: {value}"))
     }
 }
@@ -79,20 +93,42 @@ mod tests {
         assert_eq!(HorizontalAlignmentEnum::Right.java_name(), "RIGHT");
         assert_eq!(HorizontalAlignmentEnum::Fill.java_name(), "FILL");
         assert_eq!(HorizontalAlignmentEnum::Justify.java_name(), "JUSTIFY");
-        assert_eq!(HorizontalAlignmentEnum::CenterSelection.java_name(), "CENTER_SELECTION");
-        assert_eq!(HorizontalAlignmentEnum::Distributed.java_name(), "DISTRIBUTED");
+        assert_eq!(
+            HorizontalAlignmentEnum::CenterSelection.java_name(),
+            "CENTER_SELECTION"
+        );
+        assert_eq!(
+            HorizontalAlignmentEnum::Distributed.java_name(),
+            "DISTRIBUTED"
+        );
     }
 
     #[test]
     fn poi_horizontal_alignment_default_is_none() {
-        assert!(HorizontalAlignmentEnum::Default.poi_horizontal_alignment().is_none());
+        assert!(
+            HorizontalAlignmentEnum::Default
+                .poi_horizontal_alignment()
+                .is_none()
+        );
     }
 
     #[test]
     fn poi_horizontal_alignment_non_default() {
-        assert!(HorizontalAlignmentEnum::Left.poi_horizontal_alignment().is_some());
-        assert!(HorizontalAlignmentEnum::Center.poi_horizontal_alignment().is_some());
-        assert!(HorizontalAlignmentEnum::Right.poi_horizontal_alignment().is_some());
+        assert!(
+            HorizontalAlignmentEnum::Left
+                .poi_horizontal_alignment()
+                .is_some()
+        );
+        assert!(
+            HorizontalAlignmentEnum::Center
+                .poi_horizontal_alignment()
+                .is_some()
+        );
+        assert!(
+            HorizontalAlignmentEnum::Right
+                .poi_horizontal_alignment()
+                .is_some()
+        );
     }
 
     #[test]
@@ -105,8 +141,14 @@ mod tests {
 
     #[test]
     fn from_str_valid() {
-        assert_eq!("LEFT".parse::<HorizontalAlignmentEnum>(), Ok(HorizontalAlignmentEnum::Left));
-        assert_eq!("CENTER".parse::<HorizontalAlignmentEnum>(), Ok(HorizontalAlignmentEnum::Center));
+        assert_eq!(
+            "LEFT".parse::<HorizontalAlignmentEnum>(),
+            Ok(HorizontalAlignmentEnum::Left)
+        );
+        assert_eq!(
+            "CENTER".parse::<HorizontalAlignmentEnum>(),
+            Ok(HorizontalAlignmentEnum::Center)
+        );
     }
 
     #[test]
@@ -121,6 +163,9 @@ mod tests {
 
     #[test]
     fn default_is_default() {
-        assert_eq!(HorizontalAlignmentEnum::default(), HorizontalAlignmentEnum::Default);
+        assert_eq!(
+            HorizontalAlignmentEnum::default(),
+            HorizontalAlignmentEnum::Default
+        );
     }
 }

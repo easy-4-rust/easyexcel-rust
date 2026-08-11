@@ -15,7 +15,10 @@ mod tests {
 
     #[test]
     fn default_is_first_row() {
-        assert_eq!(MarkdownHeaderPolicy::default(), MarkdownHeaderPolicy::FirstRow);
+        assert_eq!(
+            MarkdownHeaderPolicy::default(),
+            MarkdownHeaderPolicy::FirstRow
+        );
     }
 
     #[test]

@@ -18,9 +18,8 @@ pub use easyexcel_web::XLSX_CONTENT_TYPE;
 /// 与 Java `WebTest` 保持一致。
 #[must_use]
 pub fn excel_xlsx_attachment_headers(file_name: &str) -> HeaderMap {
-    let disposition = easyexcel_web::excel_attachment_content_disposition(&format!(
-        "{file_name}.xlsx"
-    ));
+    let disposition =
+        easyexcel_web::excel_attachment_content_disposition(&format!("{file_name}.xlsx"));
 
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static(XLSX_CONTENT_TYPE));

@@ -6,4 +6,3 @@ pub enum CsvNumericCellType {
     /// Excel 日期序列。
     Date,
 }
-

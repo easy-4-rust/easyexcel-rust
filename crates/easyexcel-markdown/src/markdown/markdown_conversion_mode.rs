@@ -17,7 +17,10 @@ mod tests {
 
     #[test]
     fn default_is_auto() {
-        assert_eq!(MarkdownConversionMode::default(), MarkdownConversionMode::Auto);
+        assert_eq!(
+            MarkdownConversionMode::default(),
+            MarkdownConversionMode::Auto
+        );
     }
 
     #[test]

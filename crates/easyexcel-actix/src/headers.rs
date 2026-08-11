@@ -10,9 +10,8 @@ pub use easyexcel_web::XLSX_CONTENT_TYPE;
 /// `filename*=utf-8''` 语法一致。
 #[must_use]
 pub fn excel_xlsx_attachment_headers(file_name: &str) -> (HeaderValue, HeaderValue) {
-    let disposition = easyexcel_web::excel_attachment_content_disposition(&format!(
-        "{file_name}.xlsx"
-    ));
+    let disposition =
+        easyexcel_web::excel_attachment_content_disposition(&format!("{file_name}.xlsx"));
     let content_type = HeaderValue::from_static(XLSX_CONTENT_TYPE);
     let content_disposition = HeaderValue::from_str(&disposition)
         .unwrap_or_else(|_| HeaderValue::from_static("attachment;filename=download.xlsx"));

@@ -22,7 +22,11 @@ impl RowHeightProperty {
     }
     /// Java `getHeight` 别名。运行期属性只保存已经通过注解 sentinel 校验的非负高度。
     #[must_use]
-    pub const fn get_height(&self) -> u16 { self.height() }
+    pub const fn get_height(&self) -> u16 {
+        self.height()
+    }
     /// Java `setHeight` 的非空运行期映射。
-    pub const fn set_height(&mut self, value: u16) { self.height = value; }
+    pub const fn set_height(&mut self, value: u16) {
+        self.height = value;
+    }
 }

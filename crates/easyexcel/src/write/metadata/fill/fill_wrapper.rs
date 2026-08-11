@@ -42,11 +42,21 @@ impl FillWrapper {
         &self.rows
     }
     /// Java `getName`。
-    #[must_use] pub fn get_name(&self) -> Option<&str> { self.name() }
+    #[must_use]
+    pub fn get_name(&self) -> Option<&str> {
+        self.name()
+    }
     /// Java `setName`。
-    pub fn set_name(&mut self, value: Option<String>) { self.name = value; }
+    pub fn set_name(&mut self, value: Option<String>) {
+        self.name = value;
+    }
     /// Java `getCollectionData`。
-    #[must_use] pub fn get_collection_data(&self) -> &[TemplateData] { &self.rows }
+    #[must_use]
+    pub fn get_collection_data(&self) -> &[TemplateData] {
+        &self.rows
+    }
     /// Java `setCollectionData`。
-    pub fn set_collection_data(&mut self, value: Vec<TemplateData>) { self.rows = value; }
+    pub fn set_collection_data(&mut self, value: Vec<TemplateData>) {
+        self.rows = value;
+    }
 }

@@ -11,6 +11,7 @@ use std::sync::Arc;
 use easyexcel_io::io::file_utils::TemporaryInput;
 
 use crate::ExcelReader;
+use crate::ExcelTypeEnum;
 use crate::IntoSheetSelector;
 use crate::core::{
     CellExtraType, CompositeReadListener, Converter, CsvCharset, CustomReadObject, ExcelRow,
@@ -20,7 +21,6 @@ use crate::read::{
     ExcelLocale, ReadCacheMode, ReadOptions, ScientificFormatMode, SheetSelector,
     StoredReadCacheSelector,
 };
-use crate::ExcelTypeEnum;
 
 /// 对应 Java：com.alibaba.excel.read.builder.ExcelReaderBuilder。 Event-driven reader builder.
 pub struct ExcelReaderBuilder<T, L> {

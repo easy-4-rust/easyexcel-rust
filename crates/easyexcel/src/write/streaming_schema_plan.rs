@@ -46,9 +46,9 @@ impl StreamingSchemaPlan {
                 )
             })
             .collect();
-        let requires_handler_context = handlers.iter().any(|handler| {
-            handler.requires_row_context() || handler.requires_cell_context()
-        });
+        let requires_handler_context = handlers
+            .iter()
+            .any(|handler| handler.requires_row_context() || handler.requires_cell_context());
         Ok(Self {
             columns,
             date_formats,

@@ -115,31 +115,65 @@ impl AbstractHolder {
     }
 
     /// Java `getNewInitialization`。
-    #[must_use] pub const fn get_new_initialization(&self) -> bool { self.new_initialization }
+    #[must_use]
+    pub const fn get_new_initialization(&self) -> bool {
+        self.new_initialization
+    }
     /// Java `setNewInitialization`。
-    pub const fn set_new_initialization(&mut self, value: bool) { self.new_initialization = value; }
+    pub const fn set_new_initialization(&mut self, value: bool) {
+        self.new_initialization = value;
+    }
     /// Java `getHead` 别名。
-    #[must_use] pub fn get_head(&self) -> Option<&[Vec<String>]> { self.head.as_deref() }
+    #[must_use]
+    pub fn get_head(&self) -> Option<&[Vec<String>]> {
+        self.head.as_deref()
+    }
     /// Java `setHead`。
-    pub fn set_head(&mut self, value: Option<Vec<Vec<String>>>) { self.head = value; }
+    pub fn set_head(&mut self, value: Option<Vec<Vec<String>>>) {
+        self.head = value;
+    }
     /// Java `getClazz` 的 Rust 类型名映射。
-    #[must_use] pub fn get_clazz(&self) -> Option<&str> { self.clazz.as_deref() }
+    #[must_use]
+    pub fn get_clazz(&self) -> Option<&str> {
+        self.clazz.as_deref()
+    }
     /// Java `setClazz` 的 Rust 类型名映射。
-    pub fn set_clazz(&mut self, value: Option<String>) { self.clazz = value; }
+    pub fn set_clazz(&mut self, value: Option<String>) {
+        self.clazz = value;
+    }
     /// Java `getGlobalConfiguration`。
-    #[must_use] pub const fn get_global_configuration(&self) -> &GlobalConfiguration { &self.global_configuration }
+    #[must_use]
+    pub const fn get_global_configuration(&self) -> &GlobalConfiguration {
+        &self.global_configuration
+    }
     /// Java `setGlobalConfiguration`。
-    pub fn set_global_configuration(&mut self, value: GlobalConfiguration) { self.global_configuration = value; }
+    pub fn set_global_configuration(&mut self, value: GlobalConfiguration) {
+        self.global_configuration = value;
+    }
     /// Java `getConverterMap`。
-    #[must_use] pub const fn get_converter_map(&self) -> &ConverterRegistry { &self.converter_map }
+    #[must_use]
+    pub const fn get_converter_map(&self) -> &ConverterRegistry {
+        &self.converter_map
+    }
     /// Java `setConverterMap`。
-    pub fn set_converter_map(&mut self, value: ConverterRegistry) { self.converter_map = value; }
+    pub fn set_converter_map(&mut self, value: ConverterRegistry) {
+        self.converter_map = value;
+    }
     /// Java `converterMap()`。
-    #[must_use] pub const fn converter_map(&self) -> &ConverterRegistry { &self.converter_map }
+    #[must_use]
+    pub const fn converter_map(&self) -> &ConverterRegistry {
+        &self.converter_map
+    }
     /// Java `globalConfiguration()`。
-    #[must_use] pub const fn global_configuration(&self) -> &GlobalConfiguration { &self.global_configuration }
+    #[must_use]
+    pub const fn global_configuration(&self) -> &GlobalConfiguration {
+        &self.global_configuration
+    }
     /// Java `isNew()`。
-    #[must_use] pub const fn is_new(&self) -> bool { self.new_initialization }
+    #[must_use]
+    pub const fn is_new(&self) -> bool {
+        self.new_initialization
+    }
 }
 
 impl super::configuration_holder::MetadataHolder for AbstractHolder {

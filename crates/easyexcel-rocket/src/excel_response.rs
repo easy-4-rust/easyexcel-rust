@@ -52,10 +52,7 @@ where
         Response::build()
             .raw_header("Content-Type", content_type)
             .raw_header("Content-Length", content_length.to_string())
-            .raw_header(
-                "Content-Disposition",
-                disposition,
-            )
+            .raw_header("Content-Disposition", disposition)
             .streamed_body(self.export)
             .ok()
     }

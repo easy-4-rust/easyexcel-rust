@@ -116,9 +116,14 @@ impl WriteBasicParameter {
         self.custom_write_handler_list = value;
     }
     /// 返回 Java 父类参数。
-    #[must_use] pub const fn get_basic_parameter(&self) -> &BasicParameter { &self.basic_parameter }
+    #[must_use]
+    pub const fn get_basic_parameter(&self) -> &BasicParameter {
+        &self.basic_parameter
+    }
     /// 返回可变 Java 父类参数。
-    pub const fn get_basic_parameter_mut(&mut self) -> &mut BasicParameter { &mut self.basic_parameter }
+    pub const fn get_basic_parameter_mut(&mut self) -> &mut BasicParameter {
+        &mut self.basic_parameter
+    }
     /// Returns whether a header row is required. (Java `getNeedHead()`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.write.metadata.WriteBasicParameter。
@@ -154,7 +159,9 @@ impl WriteBasicParameter {
         self.order_by_include_column
     }
 
-    pub const fn set_need_head(&mut self, value: Option<bool>) { self.need_head = value; }
+    pub const fn set_need_head(&mut self, value: Option<bool>) {
+        self.need_head = value;
+    }
     pub const fn set_relative_head_row_index(&mut self, value: Option<i32>) {
         self.relative_head_row_index = value;
     }
@@ -167,25 +174,29 @@ impl WriteBasicParameter {
     pub const fn set_order_by_include_column(&mut self, value: Option<bool>) {
         self.order_by_include_column = value;
     }
-    #[must_use] pub fn get_exclude_column_indexes(&self) -> Option<&[usize]> {
+    #[must_use]
+    pub fn get_exclude_column_indexes(&self) -> Option<&[usize]> {
         self.exclude_column_indexes.as_deref()
     }
     pub fn set_exclude_column_indexes(&mut self, value: Option<Vec<usize>>) {
         self.exclude_column_indexes = value;
     }
-    #[must_use] pub fn get_exclude_column_field_names(&self) -> Option<&[String]> {
+    #[must_use]
+    pub fn get_exclude_column_field_names(&self) -> Option<&[String]> {
         self.exclude_column_field_names.as_deref()
     }
     pub fn set_exclude_column_field_names(&mut self, value: Option<Vec<String>>) {
         self.exclude_column_field_names = value;
     }
-    #[must_use] pub fn get_include_column_indexes(&self) -> Option<&[usize]> {
+    #[must_use]
+    pub fn get_include_column_indexes(&self) -> Option<&[usize]> {
         self.include_column_indexes.as_deref()
     }
     pub fn set_include_column_indexes(&mut self, value: Option<Vec<usize>>) {
         self.include_column_indexes = value;
     }
-    #[must_use] pub fn get_include_column_field_names(&self) -> Option<&[String]> {
+    #[must_use]
+    pub fn get_include_column_field_names(&self) -> Option<&[String]> {
         self.include_column_field_names.as_deref()
     }
     pub fn set_include_column_field_names(&mut self, value: Option<Vec<String>>) {
@@ -321,16 +332,28 @@ mod tests {
     fn column_filter_setters() {
         let mut param = WriteBasicParameter::default();
         param.set_exclude_column_indexes(Some(vec![0, 1]));
-        assert_eq!(param.get_exclude_column_indexes(), Some([0_usize, 1].as_slice()));
+        assert_eq!(
+            param.get_exclude_column_indexes(),
+            Some([0_usize, 1].as_slice())
+        );
 
         param.set_exclude_column_field_names(Some(vec!["id".to_owned()]));
-        assert_eq!(param.get_exclude_column_field_names(), Some(["id".to_string()].as_slice()));
+        assert_eq!(
+            param.get_exclude_column_field_names(),
+            Some(["id".to_string()].as_slice())
+        );
 
         param.set_include_column_indexes(Some(vec![2, 3]));
-        assert_eq!(param.get_include_column_indexes(), Some([2_usize, 3].as_slice()));
+        assert_eq!(
+            param.get_include_column_indexes(),
+            Some([2_usize, 3].as_slice())
+        );
 
         param.set_include_column_field_names(Some(vec!["name".to_owned()]));
-        assert_eq!(param.get_include_column_field_names(), Some(["name".to_string()].as_slice()));
+        assert_eq!(
+            param.get_include_column_field_names(),
+            Some(["name".to_string()].as_slice())
+        );
 
         // 清除
         param.set_exclude_column_indexes(None);
@@ -380,10 +403,22 @@ mod tests {
         assert_eq!(param.get_use_default_style(), Some(false));
         assert_eq!(param.get_automatic_merge_head(), Some(true));
         assert_eq!(param.get_order_by_include_column(), Some(true));
-        assert_eq!(param.get_exclude_column_indexes(), Some([0_usize, 2].as_slice()));
-        assert_eq!(param.get_exclude_column_field_names(), Some(["id".to_string()].as_slice()));
-        assert_eq!(param.get_include_column_indexes(), Some([1_usize, 3].as_slice()));
-        assert_eq!(param.get_include_column_field_names(), Some(["name".to_string()].as_slice()));
+        assert_eq!(
+            param.get_exclude_column_indexes(),
+            Some([0_usize, 2].as_slice())
+        );
+        assert_eq!(
+            param.get_exclude_column_field_names(),
+            Some(["id".to_string()].as_slice())
+        );
+        assert_eq!(
+            param.get_include_column_indexes(),
+            Some([1_usize, 3].as_slice())
+        );
+        assert_eq!(
+            param.get_include_column_field_names(),
+            Some(["name".to_string()].as_slice())
+        );
     }
 
     #[test]

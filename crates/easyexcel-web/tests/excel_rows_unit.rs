@@ -13,7 +13,7 @@ use bytes::Bytes;
 use easyexcel::ExcelRow;
 use easyexcel::io::ResourceLimits;
 use easyexcel_web::{
-    ExcelImport, ExcelWebErrorCode, ExcelWebPolicy, ExcelRows, WebExecutionContext,
+    ExcelImport, ExcelRows, ExcelWebErrorCode, ExcelWebPolicy, WebExecutionContext,
 };
 use futures_util::StreamExt;
 
@@ -100,14 +100,9 @@ async fn excel_rows_drop_cancels_background_task() {
         .with_row_channel_capacity(1);
     let context = WebExecutionContext::new("t12-drop", policy);
     let csv = five_row_csv();
-    let import = ExcelImport::<WebRow>::from_bytes(
-        Bytes::from(csv),
-        "csv",
-        None,
-        context,
-    )
-    .await
-    .expect("receive CSV");
+    let import = ExcelImport::<WebRow>::from_bytes(Bytes::from(csv), "csv", None, context)
+        .await
+        .expect("receive CSV");
 
     let mut rows = import.rows();
     // 仅消费首行，让后台 producer 仍持有容量为 1 的通道
@@ -240,11 +235,7 @@ async fn excel_rows_backpressure_does_not_drop_rows() {
     let mut rows = import.rows();
     let mut collected = Vec::with_capacity(5);
     for _ in 0..5 {
-        let row = rows
-            .next_row()
-            .await
-            .expect("row")
-            .expect("ok");
+        let row = rows.next_row().await.expect("row").expect("ok");
         // 慢消费者：每次 await 之间 sleep 10ms
         tokio::time::sleep(Duration::from_millis(10)).await;
         collected.push(row);
@@ -321,10 +312,7 @@ async fn excel_rows_implements_stream_trait() {
 
     let rows: ExcelRows<WebRow> = import.rows();
     // 用 StreamExt::next 消费；使用 futures_util 已经在 dev-deps 的依赖图里
-    let collected: Vec<WebRow> = rows
-        .map(|result| result.expect("ok row"))
-        .collect()
-        .await;
+    let collected: Vec<WebRow> = rows.map(|result| result.expect("ok row")).collect().await;
 
     assert_eq!(
         collected,

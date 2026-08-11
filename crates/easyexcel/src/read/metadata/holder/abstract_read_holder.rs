@@ -47,27 +47,56 @@ impl AbstractReadHolder {
             .map(|value| value.read_listener_list.clone())
             .unwrap_or_default();
         read_listener_list.extend(parameter.custom_read_listener_list.iter().cloned());
-        Self { abstract_holder, head_row_number, excel_read_head_property, read_listener_list }
+        Self {
+            abstract_holder,
+            head_row_number,
+            excel_read_head_property,
+            read_listener_list,
+        }
     }
 
     /// Java `getHeadRowNumber`。
-    #[must_use] pub const fn get_head_row_number(&self) -> u32 { self.head_row_number }
+    #[must_use]
+    pub const fn get_head_row_number(&self) -> u32 {
+        self.head_row_number
+    }
     /// Java `setHeadRowNumber`。
-    pub const fn set_head_row_number(&mut self, value: u32) { self.head_row_number = value; }
+    pub const fn set_head_row_number(&mut self, value: u32) {
+        self.head_row_number = value;
+    }
     /// Java `getExcelReadHeadProperty`。
-    #[must_use] pub const fn get_excel_read_head_property(&self) -> &ExcelReadHeadProperty { &self.excel_read_head_property }
+    #[must_use]
+    pub const fn get_excel_read_head_property(&self) -> &ExcelReadHeadProperty {
+        &self.excel_read_head_property
+    }
     /// Java `setExcelReadHeadProperty`。
-    pub fn set_excel_read_head_property(&mut self, value: ExcelReadHeadProperty) { self.excel_read_head_property = value; }
+    pub fn set_excel_read_head_property(&mut self, value: ExcelReadHeadProperty) {
+        self.excel_read_head_property = value;
+    }
     /// Java `getReadListenerList` 的后端中立视图。
-    #[must_use] pub fn get_read_listener_list(&self) -> &[String] { &self.read_listener_list }
+    #[must_use]
+    pub fn get_read_listener_list(&self) -> &[String] {
+        &self.read_listener_list
+    }
     /// Java `setReadListenerList` 的后端中立映射。
-    pub fn set_read_listener_list(&mut self, value: Vec<String>) { self.read_listener_list = value; }
+    pub fn set_read_listener_list(&mut self, value: Vec<String>) {
+        self.read_listener_list = value;
+    }
     /// Java `readListenerList()`。
-    #[must_use] pub fn read_listener_list(&self) -> &[String] { &self.read_listener_list }
+    #[must_use]
+    pub fn read_listener_list(&self) -> &[String] {
+        &self.read_listener_list
+    }
     /// Java `excelReadHeadProperty()`。
-    #[must_use] pub const fn excel_read_head_property(&self) -> &ExcelReadHeadProperty { &self.excel_read_head_property }
+    #[must_use]
+    pub const fn excel_read_head_property(&self) -> &ExcelReadHeadProperty {
+        &self.excel_read_head_property
+    }
     /// 返回父类 Holder 状态。
-    #[must_use] pub const fn abstract_holder(&self) -> &AbstractHolder { &self.abstract_holder }
+    #[must_use]
+    pub const fn abstract_holder(&self) -> &AbstractHolder {
+        &self.abstract_holder
+    }
 }
 
 impl Default for AbstractReadHolder {
@@ -108,11 +137,15 @@ impl ReadHolder for AbstractReadHolder {
 
 impl Deref for AbstractReadHolder {
     type Target = AbstractHolder;
-    fn deref(&self) -> &Self::Target { &self.abstract_holder }
+    fn deref(&self) -> &Self::Target {
+        &self.abstract_holder
+    }
 }
 
 impl DerefMut for AbstractReadHolder {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.abstract_holder }
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.abstract_holder
+    }
 }
 
 #[cfg(test)]

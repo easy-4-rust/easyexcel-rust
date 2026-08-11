@@ -62,37 +62,55 @@ impl Biff8Font {
 
     /// 返回字体高度，单位为二十分之一磅。
     #[must_use]
-    pub const fn height_twips(&self) -> u16 { self.height_twips }
+    pub const fn height_twips(&self) -> u16 {
+        self.height_twips
+    }
 
     /// 返回是否使用斜体。
     #[must_use]
-    pub const fn italic(&self) -> bool { self.italic }
+    pub const fn italic(&self) -> bool {
+        self.italic
+    }
 
     /// 返回是否使用删除线。
     #[must_use]
-    pub const fn strikeout(&self) -> bool { self.strikeout }
+    pub const fn strikeout(&self) -> bool {
+        self.strikeout
+    }
 
     /// 返回是否使用粗体。
     #[must_use]
-    pub const fn bold(&self) -> bool { self.bold }
+    pub const fn bold(&self) -> bool {
+        self.bold
+    }
 
     /// 返回 BIFF 字符集编号。
     #[must_use]
-    pub const fn charset(&self) -> u8 { self.charset }
+    pub const fn charset(&self) -> u8 {
+        self.charset
+    }
 
     /// 返回字体名称。
     #[must_use]
-    pub fn name(&self) -> &str { &self.name }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
 
     /// 返回有效的 BIFF 调色板索引。
     #[must_use]
-    pub const fn color_index(&self) -> Option<u8> { self.color_index }
+    pub const fn color_index(&self) -> Option<u8> {
+        self.color_index
+    }
 
     /// 返回 BIFF 上下标原始值：0 普通、1 上标、2 下标。
     #[must_use]
-    pub const fn script(&self) -> u16 { self.script }
+    pub const fn script(&self) -> u16 {
+        self.script
+    }
 
     /// 返回 BIFF 下划线原始值。
     #[must_use]
-    pub const fn underline(&self) -> u8 { self.underline }
+    pub const fn underline(&self) -> u8 {
+        self.underline
+    }
 }

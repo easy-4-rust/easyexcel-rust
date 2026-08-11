@@ -58,21 +58,41 @@ impl CellRange {
     }
 
     /// Java `getFirstRow` 别名。
-    #[must_use] pub const fn get_first_row(&self) -> i32 { self.first_row }
+    #[must_use]
+    pub const fn get_first_row(&self) -> i32 {
+        self.first_row
+    }
     /// Java `setFirstRow`。
-    pub const fn set_first_row(&mut self, value: i32) { self.first_row = value; }
+    pub const fn set_first_row(&mut self, value: i32) {
+        self.first_row = value;
+    }
     /// Java `getLastRow` 别名。
-    #[must_use] pub const fn get_last_row(&self) -> i32 { self.last_row }
+    #[must_use]
+    pub const fn get_last_row(&self) -> i32 {
+        self.last_row
+    }
     /// Java `setLastRow`。
-    pub const fn set_last_row(&mut self, value: i32) { self.last_row = value; }
+    pub const fn set_last_row(&mut self, value: i32) {
+        self.last_row = value;
+    }
     /// Java `getFirstCol` 别名。
-    #[must_use] pub const fn get_first_col(&self) -> i32 { self.first_col }
+    #[must_use]
+    pub const fn get_first_col(&self) -> i32 {
+        self.first_col
+    }
     /// Java `setFirstCol`。
-    pub const fn set_first_col(&mut self, value: i32) { self.first_col = value; }
+    pub const fn set_first_col(&mut self, value: i32) {
+        self.first_col = value;
+    }
     /// Java `getLastCol` 别名。
-    #[must_use] pub const fn get_last_col(&self) -> i32 { self.last_col }
+    #[must_use]
+    pub const fn get_last_col(&self) -> i32 {
+        self.last_col
+    }
     /// Java `setLastCol`。
-    pub const fn set_last_col(&mut self, value: i32) { self.last_col = value; }
+    pub const fn set_last_col(&mut self, value: i32) {
+        self.last_col = value;
+    }
 }
 
 #[cfg(test)]

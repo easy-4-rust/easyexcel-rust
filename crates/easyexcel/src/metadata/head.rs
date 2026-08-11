@@ -126,34 +126,58 @@ impl Head {
 
     /// Java `getColumnIndex` 别名。
     #[must_use]
-    pub fn get_column_index(&self) -> Option<i32> { self.column_index }
+    pub fn get_column_index(&self) -> Option<i32> {
+        self.column_index
+    }
     /// Java `setColumnIndex`。
-    pub fn set_column_index(&mut self, value: Option<i32>) { self.column_index = value; }
+    pub fn set_column_index(&mut self, value: Option<i32>) {
+        self.column_index = value;
+    }
     /// Java `getField` 的后端中立映射；Rust 以静态字段名替代反射 `Field`。
     #[must_use]
-    pub fn get_field(&self) -> Option<&str> { self.field_key.as_deref() }
+    pub fn get_field(&self) -> Option<&str> {
+        self.field_key.as_deref()
+    }
     /// Java `setField` 的后端中立映射。
-    pub fn set_field(&mut self, value: Option<String>) { self.field_key = value; }
+    pub fn set_field(&mut self, value: Option<String>) {
+        self.field_key = value;
+    }
     /// Java `getFieldName` 别名。
     #[must_use]
-    pub fn get_field_name(&self) -> Option<&str> { self.field_name.as_deref() }
+    pub fn get_field_name(&self) -> Option<&str> {
+        self.field_name.as_deref()
+    }
     /// Java `setFieldName`。
-    pub fn set_field_name(&mut self, value: Option<String>) { self.field_name = value; }
+    pub fn set_field_name(&mut self, value: Option<String>) {
+        self.field_name = value;
+    }
     /// Java `getHeadNameList` 别名。
     #[must_use]
-    pub fn get_head_name_list(&self) -> &[String] { &self.head_name_list }
+    pub fn get_head_name_list(&self) -> &[String] {
+        &self.head_name_list
+    }
     /// Java `setHeadNameList`。
-    pub fn set_head_name_list(&mut self, value: Vec<String>) { self.head_name_list = value; }
+    pub fn set_head_name_list(&mut self, value: Vec<String>) {
+        self.head_name_list = value;
+    }
     /// Java `getForceIndex` 别名。
     #[must_use]
-    pub const fn get_force_index(&self) -> Option<bool> { self.force_index }
+    pub const fn get_force_index(&self) -> Option<bool> {
+        self.force_index
+    }
     /// Java `setForceIndex`。
-    pub const fn set_force_index(&mut self, value: Option<bool>) { self.force_index = value; }
+    pub const fn set_force_index(&mut self, value: Option<bool>) {
+        self.force_index = value;
+    }
     /// Java `getForceName` 别名。
     #[must_use]
-    pub const fn get_force_name(&self) -> Option<bool> { self.force_name }
+    pub const fn get_force_name(&self) -> Option<bool> {
+        self.force_name
+    }
     /// Java `setForceName`。
-    pub const fn set_force_name(&mut self, value: Option<bool>) { self.force_name = value; }
+    pub const fn set_force_name(&mut self, value: Option<bool>) {
+        self.force_name = value;
+    }
     /// Java `getColumnWidthProperty`。
     #[must_use]
     pub const fn get_column_width_property(&self) -> Option<&ColumnWidthProperty> {
@@ -338,8 +362,8 @@ mod tests_extra {
     #[test]
     fn clone_produces_equal() {
         // 对应 Java：clone
-        let head = Head::new(1, Some("f".to_owned()), vec!["N".to_owned()], true, false)
-            .expect("head");
+        let head =
+            Head::new(1, Some("f".to_owned()), vec!["N".to_owned()], true, false).expect("head");
         let cloned = head.clone();
         assert_eq!(head, cloned);
     }

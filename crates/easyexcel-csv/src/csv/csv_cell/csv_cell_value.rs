@@ -72,15 +72,27 @@ impl CsvCellValue for ModelCellValue {
     }
 
     fn csv_number(&self) -> Option<f64> {
-        if let Self::Number(value) = self { Some(*value) } else { None }
+        if let Self::Number(value) = self {
+            Some(*value)
+        } else {
+            None
+        }
     }
 
     fn csv_bool(&self) -> Option<bool> {
-        if let Self::Bool(value) = self { Some(*value) } else { None }
+        if let Self::Bool(value) = self {
+            Some(*value)
+        } else {
+            None
+        }
     }
 
     fn csv_error(&self) -> Option<u8> {
-        if let Self::Error(value) = self { Some(value.biff_code()) } else { None }
+        if let Self::Error(value) = self {
+            Some(value.biff_code())
+        } else {
+            None
+        }
     }
 
     fn csv_numeric_cell_type(&self) -> Option<Self::NumericCellType> {

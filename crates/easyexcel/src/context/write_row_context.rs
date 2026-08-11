@@ -29,7 +29,10 @@ impl WriteRowContext {
     pub const fn row(&self) -> &WriteRowHandle {
         &self.row
     }
-    #[must_use] pub const fn get_row(&self) -> &WriteRowHandle { self.row() }
+    #[must_use]
+    pub const fn get_row(&self) -> &WriteRowHandle {
+        self.row()
+    }
 
     /// 对应 Java：com.alibaba.excel.write.handler.context.RowWriteHandlerContext。 Creates a row handler context.
     #[must_use]
@@ -129,7 +132,8 @@ impl WriteRowContext {
     pub const fn write_workbook_holder(&self) -> Option<&WriteWorkbookHolderView> {
         self.holders.workbook()
     }
-    #[must_use] pub const fn get_write_workbook_holder(&self) -> Option<&WriteWorkbookHolderView> {
+    #[must_use]
+    pub const fn get_write_workbook_holder(&self) -> Option<&WriteWorkbookHolderView> {
         self.write_workbook_holder()
     }
 
@@ -145,7 +149,8 @@ impl WriteRowContext {
             .sheet()
             .expect("row contexts always carry a sheet holder")
     }
-    #[must_use] pub fn get_write_sheet_holder(&self) -> &WriteSheetHolderView {
+    #[must_use]
+    pub fn get_write_sheet_holder(&self) -> &WriteSheetHolderView {
         self.write_sheet_holder()
     }
 
@@ -155,7 +160,8 @@ impl WriteRowContext {
     pub const fn write_table_holder(&self) -> Option<&WriteTableHolderView> {
         self.holders.table()
     }
-    #[must_use] pub const fn get_write_table_holder(&self) -> Option<&WriteTableHolderView> {
+    #[must_use]
+    pub const fn get_write_table_holder(&self) -> Option<&WriteTableHolderView> {
         self.write_table_holder()
     }
 
@@ -165,13 +171,16 @@ impl WriteRowContext {
     pub const fn write_context(&self) -> &WriteHolderContext {
         &self.holders
     }
-    #[must_use] pub const fn get_write_context(&self) -> &WriteHolderContext {
+    #[must_use]
+    pub const fn get_write_context(&self) -> &WriteHolderContext {
         self.write_context()
     }
 
     /// 返回物理行号。
     #[must_use]
-    pub const fn get_row_index(&self) -> u32 { self.row_index }
+    pub const fn get_row_index(&self) -> u32 {
+        self.row_index
+    }
     /// 设置物理行号并重建逻辑行句柄。
     pub fn set_row_index(&mut self, value: u32) {
         self.row_index = value;
@@ -184,20 +193,34 @@ impl WriteRowContext {
     }
     /// 返回相对行号。
     #[must_use]
-    pub const fn relative_row_index(&self) -> Option<usize> { self.relative_row_index }
-    #[must_use] pub const fn get_relative_row_index(&self) -> Option<usize> {
+    pub const fn relative_row_index(&self) -> Option<usize> {
+        self.relative_row_index
+    }
+    #[must_use]
+    pub const fn get_relative_row_index(&self) -> Option<usize> {
         self.relative_row_index()
     }
     /// 设置相对行号。
-    pub const fn set_relative_row_index(&mut self, value: Option<usize>) { self.relative_row_index = value; }
+    pub const fn set_relative_row_index(&mut self, value: Option<usize>) {
+        self.relative_row_index = value;
+    }
     /// 返回表头标志。
     #[must_use]
-    pub const fn head(&self) -> bool { self.is_head }
-    #[must_use] pub const fn get_head(&self) -> bool { self.head() }
+    pub const fn head(&self) -> bool {
+        self.is_head
+    }
+    #[must_use]
+    pub const fn get_head(&self) -> bool {
+        self.head()
+    }
     /// 设置表头标志。
-    pub const fn set_head(&mut self, value: bool) { self.is_head = value; }
+    pub const fn set_head(&mut self, value: bool) {
+        self.is_head = value;
+    }
     /// 替换全部 holder 视图。
-    pub fn set_write_context(&mut self, value: WriteHolderContext) { self.holders = value; }
+    pub fn set_write_context(&mut self, value: WriteHolderContext) {
+        self.holders = value;
+    }
     /// 替换 workbook holder 视图。
     pub fn set_write_workbook_holder(&mut self, value: WriteWorkbookHolderView) {
         self.holders = std::mem::take(&mut self.holders).with_workbook(value);

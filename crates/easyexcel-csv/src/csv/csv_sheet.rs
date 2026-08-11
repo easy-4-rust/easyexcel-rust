@@ -58,7 +58,10 @@ impl<V: CsvCellValue> CsvSheet<V> {
     }
 
     /// 返回父工作簿稳定身份。对应 Java Lombok `getCsvWorkbook`。
-    #[must_use] pub const fn get_csv_workbook(&self) -> Option<usize> { self.csv_workbook_id }
+    #[must_use]
+    pub const fn get_csv_workbook(&self) -> Option<usize> {
+        self.csv_workbook_id
+    }
     /// 设置父工作簿稳定身份，避免 Rust 自引用结构。
     pub fn set_csv_workbook(&mut self, value: Option<usize>) {
         self.csv_workbook_id = value;
@@ -68,20 +71,32 @@ impl<V: CsvCellValue> CsvSheet<V> {
         }
     }
     /// 返回输出缓冲。对应 Java Lombok `getOut`。
-    #[must_use] pub fn get_out(&self) -> &str { &self.out }
+    #[must_use]
+    pub fn get_out(&self) -> &str {
+        &self.out
+    }
     /// 设置输出缓冲。对应 Java Lombok `setOut`。
-    pub fn set_out(&mut self, value: impl Into<String>) { self.out = value.into(); }
+    pub fn set_out(&mut self, value: impl Into<String>) {
+        self.out = value.into();
+    }
     /// 返回 CSV printer 初始化状态的后端中立映射。
-    #[must_use] pub const fn get_csv_printer(&self) -> bool { self.csv_printer_initialized }
+    #[must_use]
+    pub const fn get_csv_printer(&self) -> bool {
+        self.csv_printer_initialized
+    }
     /// 设置 CSV printer 初始化状态的后端中立映射。
-    pub const fn set_csv_printer(&mut self, value: bool) { self.csv_printer_initialized = value; }
+    pub const fn set_csv_printer(&mut self, value: bool) {
+        self.csv_printer_initialized = value;
+    }
 
     /// 返回 Java `CsvSheet#getRowCacheCount` 对应的有界缓存行数。
     #[must_use]
     pub const fn row_cache_count(&self) -> usize {
         self.row_cache_count
     }
-    pub const fn get_row_cache_count(&self) -> usize { self.row_cache_count() }
+    pub const fn get_row_cache_count(&self) -> usize {
+        self.row_cache_count()
+    }
 
     /// 设置 Java `CsvSheet#setRowCacheCount` 对应的有界缓存行数。
     ///
@@ -103,7 +118,9 @@ impl<V: CsvCellValue> CsvSheet<V> {
     pub const fn last_row_index(&self) -> Option<u32> {
         self.last_row_index
     }
-    pub const fn get_last_row_index(&self) -> Option<u32> { self.last_row_index() }
+    pub const fn get_last_row_index(&self) -> Option<u32> {
+        self.last_row_index()
+    }
 
     /// 返回 Java `CsvSheet#getFirstRowNum` 的零基语义；空表返回 `None`。
     #[must_use]
@@ -114,28 +131,36 @@ impl<V: CsvCellValue> CsvSheet<V> {
             None
         }
     }
-    pub const fn get_first_row_num(&self) -> Option<u32> { self.first_row_num() }
+    pub const fn get_first_row_num(&self) -> Option<u32> {
+        self.first_row_num()
+    }
 
     /// 返回 Java `CsvSheet#getLastRowNum` 的零基语义；空表返回 `None`。
     #[must_use]
     pub const fn last_row_num(&self) -> Option<u32> {
         self.last_row_index
     }
-    pub const fn get_last_row_num(&self) -> Option<u32> { self.last_row_num() }
+    pub const fn get_last_row_num(&self) -> Option<u32> {
+        self.last_row_num()
+    }
 
     /// 返回当前仍驻留在有界窗口内的物理行数。
     #[must_use]
     pub fn physical_number_of_rows(&self) -> usize {
         self.row_cache.len()
     }
-    pub fn get_physical_number_of_rows(&self) -> usize { self.physical_number_of_rows() }
+    pub fn get_physical_number_of_rows(&self) -> usize {
+        self.physical_number_of_rows()
+    }
 
     /// 返回当前缓存窗口，语义对应 Java Lombok `getRowCache`。
     #[must_use]
     pub fn row_cache(&self) -> &VecDeque<CsvRow<V>> {
         &self.row_cache
     }
-    pub fn get_row_cache(&self) -> &VecDeque<CsvRow<V>> { self.row_cache() }
+    pub fn get_row_cache(&self) -> &VecDeque<CsvRow<V>> {
+        self.row_cache()
+    }
 
     /// 返回当前缓存窗口的可变引用，避免调用方通过整体替换破坏行号单调性。
     pub fn row_cache_mut(&mut self) -> &mut VecDeque<CsvRow<V>> {
@@ -229,7 +254,6 @@ impl<V: CsvCellValue> CsvSheet<V> {
     pub fn create_row(&mut self, row_index: u32) -> Result<&mut CsvRow<V>> {
         self.try_create_row(row_index)
     }
-
 }
 
 #[cfg(test)]
@@ -398,8 +422,14 @@ mod tests {
         sheet.set_csv_workbook(Some(42));
         assert_eq!(sheet.get_csv_workbook(), Some(42));
         sheet.try_create_row(0).unwrap();
-        assert_eq!(sheet.row_cache().front().unwrap().get_csv_workbook(), Some(42));
-        assert_eq!(sheet.row_cache().front().unwrap().get_csv_sheet(), Some(sheet.identity()));
+        assert_eq!(
+            sheet.row_cache().front().unwrap().get_csv_workbook(),
+            Some(42)
+        );
+        assert_eq!(
+            sheet.row_cache().front().unwrap().get_csv_sheet(),
+            Some(sheet.identity())
+        );
     }
 
     #[test]

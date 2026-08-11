@@ -173,11 +173,8 @@ pub fn replace_collection_fills_in_sheet_with_decorations(
                 };
                 validate_collection_target(target_row, target_column)?;
                 if let Some(placeholder) = cell_value(&template.cell, &shared_strings)
-                    && let Some(value) = exact_collection_value(
-                        &placeholder,
-                        data,
-                        fill.name.as_deref(),
-                    )
+                    && let Some(value) =
+                        exact_collection_value(&placeholder, data, fill.name.as_deref())
                 {
                     decoration_placements.extend(template_decoration_placements(
                         value,
@@ -370,8 +367,7 @@ fn replace_scalar_cells_in_xml_with_decorations(
                 }
                 render_typed_cell(cell, value, true)
             } else {
-                let filled =
-                    replace_template_values(&placeholder, &data.values, None, true, false);
+                let filled = replace_template_values(&placeholder, &data.values, None, true, false);
                 if filled == placeholder {
                     cell.to_owned()
                 } else {
@@ -427,9 +423,7 @@ pub fn render_typed_cell(cell: &str, value: &TemplateCellValue, auto_style: bool
         }
         TemplateCellValue::Comment { value, .. }
         | TemplateCellValue::Hyperlink { value, .. }
-        | TemplateCellValue::Images { value, .. } => {
-            render_typed_cell(cell, value, auto_style)
-        }
+        | TemplateCellValue::Images { value, .. } => render_typed_cell(cell, value, auto_style),
     }
 }
 

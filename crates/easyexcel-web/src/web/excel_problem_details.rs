@@ -91,7 +91,10 @@ mod tests {
             "file exceeded 10MB",
             "req-123",
         );
-        assert_eq!(pd.type_uri(), "https://easyexcel.rs/problems/file_too_large");
+        assert_eq!(
+            pd.type_uri(),
+            "https://easyexcel.rs/problems/file_too_large"
+        );
         assert_eq!(pd.title(), "FILE TOO LARGE");
         assert_eq!(pd.status(), 413);
         assert_eq!(pd.code(), ExcelWebErrorCode::FileTooLarge);
@@ -110,11 +113,8 @@ mod tests {
 
     #[test]
     fn new_internal_error() {
-        let pd = ExcelProblemDetails::new(
-            ExcelWebErrorCode::Internal,
-            "something broke",
-            "req-789",
-        );
+        let pd =
+            ExcelProblemDetails::new(ExcelWebErrorCode::Internal, "something broke", "req-789");
         assert_eq!(pd.status(), 500);
         assert!(!pd.retryable());
         assert_eq!(pd.type_uri(), "https://easyexcel.rs/problems/internal");
@@ -122,11 +122,7 @@ mod tests {
 
     #[test]
     fn serialize_deserialize_roundtrip() {
-        let pd = ExcelProblemDetails::new(
-            ExcelWebErrorCode::InvalidFormat,
-            "bad xlsx",
-            "req-abc",
-        );
+        let pd = ExcelProblemDetails::new(ExcelWebErrorCode::InvalidFormat, "bad xlsx", "req-abc");
         let json = serde_json::to_string(&pd).unwrap();
         let restored: ExcelProblemDetails = serde_json::from_str(&json).unwrap();
         assert_eq!(pd, restored);

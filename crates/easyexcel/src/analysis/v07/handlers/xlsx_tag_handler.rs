@@ -53,7 +53,9 @@ pub trait XlsxTagHandler {
         length: usize,
     ) {
         let _ = context;
-        if start >= ch.len() || length == 0 { return; }
+        if start >= ch.len() || length == 0 {
+            return;
+        }
         let end = start.saturating_add(length).min(ch.len());
         let value: String = ch[start..end].iter().collect();
         self.characters(&value);

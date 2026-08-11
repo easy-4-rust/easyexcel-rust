@@ -228,33 +228,21 @@ impl<'a> ScanCursor<'a> {
         let rich = flags & 0x08 != 0;
         let ext = flags & 0x04 != 0;
 
-        let c_run = if rich {
-            self.read_u16()? as usize
-        } else {
-            0
-        };
-        let cch_ext = if ext {
-            self.read_u32()? as usize
-        } else {
-            0
-        };
+        let c_run = if rich { self.read_u16()? as usize } else { 0 };
+        let cch_ext = if ext { self.read_u32()? as usize } else { 0 };
 
         self.skip_chars(_cch, compressed)?;
 
         // 跳过 rich runs (每 run 4 字节)
         let run_bytes = c_run.saturating_mul(4);
         if self.pos + run_bytes > self.data.len() {
-            return Err(ExcelError::Xls(
-                "truncated SST rich-run data".to_owned(),
-            ));
+            return Err(ExcelError::Xls("truncated SST rich-run data".to_owned()));
         }
         self.pos += run_bytes;
 
         // 跳过 extension
         if self.pos + cch_ext > self.data.len() {
-            return Err(ExcelError::Xls(
-                "truncated SST extension data".to_owned(),
-            ));
+            return Err(ExcelError::Xls("truncated SST extension data".to_owned()));
         }
         self.pos += cch_ext;
 
@@ -269,16 +257,8 @@ impl<'a> ScanCursor<'a> {
         let rich = flags & 0x08 != 0;
         let ext = flags & 0x04 != 0;
 
-        let c_run = if rich {
-            self.read_u16()? as usize
-        } else {
-            0
-        };
-        let cch_ext = if ext {
-            self.read_u32()? as usize
-        } else {
-            0
-        };
+        let c_run = if rich { self.read_u16()? as usize } else { 0 };
+        let cch_ext = if ext { self.read_u32()? as usize } else { 0 };
 
         let text = self.read_chars(cch, compressed, index)?;
 
@@ -306,12 +286,7 @@ impl<'a> ScanCursor<'a> {
     }
 
     /// 解码 `cch` 个字符（含 CONTINUE 边界 fresh grbit 处理）。
-    fn read_chars(
-        &mut self,
-        cch: usize,
-        mut compressed: bool,
-        index: usize,
-    ) -> Result<String> {
+    fn read_chars(&mut self, cch: usize, mut compressed: bool, index: usize) -> Result<String> {
         let mut units = Vec::with_capacity(cch.min(16_384));
         let mut read = 0usize;
         while read < cch {
@@ -325,14 +300,9 @@ impl<'a> ScanCursor<'a> {
                 compressed = grbit & 0x01 == 0;
             }
             if compressed {
-                units.push(u16::from(
-                    *self
-                        .data
-                        .get(self.pos)
-                        .ok_or_else(|| {
-                            ExcelError::Xls(format!("SST string {index} truncated char"))
-                        })?,
-                ));
+                units.push(u16::from(*self.data.get(self.pos).ok_or_else(|| {
+                    ExcelError::Xls(format!("SST string {index} truncated char"))
+                })?));
                 self.pos += 1;
             } else {
                 if self.pos + 2 > self.data.len() {

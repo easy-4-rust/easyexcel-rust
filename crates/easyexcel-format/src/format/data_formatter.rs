@@ -109,7 +109,11 @@ impl DataFormatter {
             self.use_1904_windowing,
             &self.locale.formatter(),
         )
-        .or_else(|| self.default_number_format.as_ref().map(|formatter| formatter(data)))
+        .or_else(|| {
+            self.default_number_format
+                .as_ref()
+                .map(|formatter| formatter(data))
+        })
         .unwrap_or(decimal_text)
     }
 

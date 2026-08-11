@@ -877,7 +877,13 @@ mod tests {
     fn write_cached_non_formula_cell_is_noop() {
         let mut wb = Workbook::new();
         wb.sheet_mut(0).unwrap().set_a1("A1", Cell::Number(42.0));
-        write_cached(&mut wb, 0, 0, 0, easyexcel_model::value::CellValue::Number(999.0));
+        write_cached(
+            &mut wb,
+            0,
+            0,
+            0,
+            easyexcel_model::value::CellValue::Number(999.0),
+        );
         // A1 是 Number 不是 Formula，write_cached 应无效果
         assert_eq!(
             wb.sheet_mut(0).unwrap().value(0, 0),
@@ -889,6 +895,12 @@ mod tests {
     fn write_cached_invalid_sheet() {
         let mut wb = Workbook::new();
         // sheet 99 不存在，write_cached 不应 panic
-        write_cached(&mut wb, 99, 0, 0, easyexcel_model::value::CellValue::Number(1.0));
+        write_cached(
+            &mut wb,
+            99,
+            0,
+            0,
+            easyexcel_model::value::CellValue::Number(1.0),
+        );
     }
 }

@@ -224,8 +224,7 @@ fn validate_scenario(
         && (scenario.mode != "workbook" || scenario.memory != "batched")
     {
         return Err(
-            "BIFF8 write benchmark must declare workbook mode with batched input delivery"
-                .into(),
+            "BIFF8 write benchmark must declare workbook mode with batched input delivery".into(),
         );
     }
     Ok(())

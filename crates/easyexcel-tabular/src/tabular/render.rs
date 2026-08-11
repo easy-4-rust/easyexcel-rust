@@ -219,7 +219,10 @@ mod tests {
     /// 对应 Java：无直接对应；Rust 扩展。 测试 HTML 转义。
     #[test]
     fn escape_html_replaces_special_chars() {
-        assert_eq!(escape_html("a&b<c>d\"e'f"), "a&amp;b&lt;c&gt;d&quot;e&#39;f");
+        assert_eq!(
+            escape_html("a&b<c>d\"e'f"),
+            "a&amp;b&lt;c&gt;d&quot;e&#39;f"
+        );
         assert_eq!(escape_html("no special"), "no special");
     }
 
@@ -239,7 +242,10 @@ mod tests {
     /// 对应 Java：无直接对应；Rust 扩展。 测试 covered_cells 计算。
     #[test]
     fn covered_cells_excludes_start_cell() {
-        let ranges = vec![CellRange::new(CellAddress::new(0, 0), CellAddress::new(1, 1))];
+        let ranges = vec![CellRange::new(
+            CellAddress::new(0, 0),
+            CellAddress::new(1, 1),
+        )];
         let covered = covered_cells(&ranges);
         // (0,0) 是起始单元格，不包含在 covered 中
         assert!(!covered.contains(&(0, 0)));

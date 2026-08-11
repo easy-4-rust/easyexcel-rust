@@ -424,7 +424,10 @@ mod tests {
         assert_eq!(infer_text_cell("  "), CellValue::Empty);
         assert_eq!(infer_text_cell("true"), CellValue::Bool(true));
         assert_eq!(infer_text_cell("FALSE"), CellValue::Bool(false));
-        assert_eq!(infer_text_cell("hello"), CellValue::Text("hello".to_owned()));
+        assert_eq!(
+            infer_text_cell("hello"),
+            CellValue::Text("hello".to_owned())
+        );
         // 数字文本
         let v = infer_text_cell("3.14");
         assert_eq!(v, CellValue::Number(3.14));

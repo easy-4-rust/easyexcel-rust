@@ -64,8 +64,10 @@ mod tests {
     #[test]
     fn write_multiple_records() {
         let mut buf = Vec::new();
-        buf.write_record(&Biff8Record::new(0x0001, vec![1])).unwrap();
-        buf.write_record(&Biff8Record::new(0x0002, vec![2, 3])).unwrap();
+        buf.write_record(&Biff8Record::new(0x0001, vec![1]))
+            .unwrap();
+        buf.write_record(&Biff8Record::new(0x0002, vec![2, 3]))
+            .unwrap();
         // 第一条：4+1=5 bytes，第二条：4+2=6 bytes，共 11
         assert_eq!(buf.len(), 11);
         // 第二条的 SID 在 offset 5
@@ -79,12 +81,7 @@ mod tests {
         let record = Biff8Record::new(0x0001, vec![0u8; 8225]); // MAX_RECORD_DATA = 8224
         let result = buf.write_record(&record);
         assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("payload exceeds")
-        );
+        assert!(result.unwrap_err().to_string().contains("payload exceeds"));
     }
 
     /// payload 恰好等于 MAX_RECORD_DATA 时成功。

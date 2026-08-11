@@ -4,6 +4,6 @@
 //! `easyexcel-format` 唯一实现；本模块只保留 Java 包路径。
 
 pub use easyexcel_format::{
-    DataFormatter, format_raw_cell_contents, java_compat_date_format_code,
-    java_compat_display, java_compat_format_code,
+    DataFormatter, format_raw_cell_contents, java_compat_date_format_code, java_compat_display,
+    java_compat_format_code,
 };

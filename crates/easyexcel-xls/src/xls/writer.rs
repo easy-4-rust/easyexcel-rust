@@ -8,18 +8,16 @@ use std::collections::{BTreeSet, HashMap};
 use std::io::{Seek, Write};
 
 use easyexcel_io::{Error, Result};
-use easyexcel_model::model::{Cell, CellValue, Workbook};
-use easyexcel_model::styles::{
-    BorderStyle, CellStyle, Color, FillPattern, HAlign, VAlign,
-};
 use easyexcel_model::DateSystem;
+use easyexcel_model::model::{Cell, CellValue, Workbook};
+use easyexcel_model::styles::{BorderStyle, CellStyle, Color, FillPattern, HAlign, VAlign};
 
 use crate::biff8::cached::Biff8Cached;
 use crate::biff8::encode::XF_GENERAL;
 use crate::biff8::{
-    Biff8Book, Biff8BorderStyle, Biff8Cell, Biff8Color, Biff8FillPattern,
-    Biff8HorizontalAlignment, Biff8Merge, Biff8NumberFormat, Biff8StyleRequest,
-    Biff8Underline, Biff8Value, Biff8VerticalAlignment,
+    Biff8Book, Biff8BorderStyle, Biff8Cell, Biff8Color, Biff8FillPattern, Biff8HorizontalAlignment,
+    Biff8Merge, Biff8NumberFormat, Biff8StyleRequest, Biff8Underline, Biff8Value,
+    Biff8VerticalAlignment,
 };
 
 /// 将格式中立工作簿写为 XLS。
@@ -97,7 +95,10 @@ pub fn to_biff8_book(workbook: &Workbook) -> Result<Biff8Book> {
 
         for (&column, info) in &source.columns {
             let column = usize::try_from(column).map_err(|_| {
-                Error::Xls(format!("column index overflow in '{}': {column}", source.name))
+                Error::Xls(format!(
+                    "column index overflow in '{}': {column}",
+                    source.name
+                ))
             })?;
             let width = info.width.map_or(Ok(default_column_width), |width| {
                 fixed_dimension(
@@ -109,13 +110,7 @@ pub fn to_biff8_book(workbook: &Workbook) -> Result<Biff8Book> {
                 )
             })?;
             let xf = resolve_style_index(info.style, &style_map, "column", column, &source.name)?;
-            target.set_column_metadata_at(
-                column,
-                width,
-                xf,
-                info.hidden,
-                info.width.is_some(),
-            )?;
+            target.set_column_metadata_at(column, width, xf, info.hidden, info.width.is_some())?;
         }
         for (&row, info) in &source.rows {
             let height = info.height.map_or(Ok(default_row_height), |height| {
@@ -156,10 +151,16 @@ pub fn to_biff8_book(workbook: &Workbook) -> Result<Biff8Book> {
                 )));
             }
             let first_column = u16::try_from(range.start.col).map_err(|_| {
-                Error::Xls(format!("merge column overflow in '{}': {}", source.name, range.start.col))
+                Error::Xls(format!(
+                    "merge column overflow in '{}': {}",
+                    source.name, range.start.col
+                ))
             })?;
             let last_column = u16::try_from(range.end.col).map_err(|_| {
-                Error::Xls(format!("merge column overflow in '{}': {}", source.name, range.end.col))
+                Error::Xls(format!(
+                    "merge column overflow in '{}': {}",
+                    source.name, range.end.col
+                ))
             })?;
             target.add_merge(Biff8Merge::try_from_bounds(
                 range.start.row,
@@ -202,7 +203,10 @@ pub fn to_biff8_book(workbook: &Workbook) -> Result<Biff8Book> {
             target.set(
                 row,
                 usize::try_from(column).map_err(|_| {
-                    Error::Xls(format!("column index overflow in '{}': {column}", source.name))
+                    Error::Xls(format!(
+                        "column index overflow in '{}': {column}",
+                        source.name
+                    ))
                 })?,
                 Biff8Cell::general(value).with_xf(xf),
             )?;
@@ -489,7 +493,12 @@ mod writer_tests {
         wb.active_sheet = 5;
         let result = validate_workbook_level_state(&wb);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("active sheet index"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("active sheet index")
+        );
     }
 
     // --- validate_sheet_state ---
@@ -505,7 +514,10 @@ mod writer_tests {
 
     #[test]
     fn cell_empty_to_blank() {
-        assert!(matches!(model_cell_to_biff8(&Cell::Empty), Biff8Value::Blank));
+        assert!(matches!(
+            model_cell_to_biff8(&Cell::Empty),
+            Biff8Value::Blank
+        ));
     }
 
     #[test]
@@ -543,7 +555,6 @@ mod writer_tests {
             other => panic!("expected Formula, got {other:?}"),
         }
     }
-
 
     // --- fixed_dimension ---
 
@@ -617,14 +628,38 @@ mod writer_tests {
 
     #[test]
     fn horizontal_alignment_all_variants() {
-        assert_eq!(horizontal_alignment(HAlign::General), Biff8HorizontalAlignment::General);
-        assert_eq!(horizontal_alignment(HAlign::Left), Biff8HorizontalAlignment::Left);
-        assert_eq!(horizontal_alignment(HAlign::Center), Biff8HorizontalAlignment::Center);
-        assert_eq!(horizontal_alignment(HAlign::Right), Biff8HorizontalAlignment::Right);
-        assert_eq!(horizontal_alignment(HAlign::Fill), Biff8HorizontalAlignment::Fill);
-        assert_eq!(horizontal_alignment(HAlign::Justify), Biff8HorizontalAlignment::Justify);
-        assert_eq!(horizontal_alignment(HAlign::CenterContinuous), Biff8HorizontalAlignment::CenterAcross);
-        assert_eq!(horizontal_alignment(HAlign::Distributed), Biff8HorizontalAlignment::Distributed);
+        assert_eq!(
+            horizontal_alignment(HAlign::General),
+            Biff8HorizontalAlignment::General
+        );
+        assert_eq!(
+            horizontal_alignment(HAlign::Left),
+            Biff8HorizontalAlignment::Left
+        );
+        assert_eq!(
+            horizontal_alignment(HAlign::Center),
+            Biff8HorizontalAlignment::Center
+        );
+        assert_eq!(
+            horizontal_alignment(HAlign::Right),
+            Biff8HorizontalAlignment::Right
+        );
+        assert_eq!(
+            horizontal_alignment(HAlign::Fill),
+            Biff8HorizontalAlignment::Fill
+        );
+        assert_eq!(
+            horizontal_alignment(HAlign::Justify),
+            Biff8HorizontalAlignment::Justify
+        );
+        assert_eq!(
+            horizontal_alignment(HAlign::CenterContinuous),
+            Biff8HorizontalAlignment::CenterAcross
+        );
+        assert_eq!(
+            horizontal_alignment(HAlign::Distributed),
+            Biff8HorizontalAlignment::Distributed
+        );
     }
 
     // --- vertical_alignment ---
@@ -632,10 +667,22 @@ mod writer_tests {
     #[test]
     fn vertical_alignment_all_variants() {
         assert_eq!(vertical_alignment(VAlign::Top), Biff8VerticalAlignment::Top);
-        assert_eq!(vertical_alignment(VAlign::Bottom), Biff8VerticalAlignment::Bottom);
-        assert_eq!(vertical_alignment(VAlign::Center), Biff8VerticalAlignment::Center);
-        assert_eq!(vertical_alignment(VAlign::Justify), Biff8VerticalAlignment::Justify);
-        assert_eq!(vertical_alignment(VAlign::Distributed), Biff8VerticalAlignment::Distributed);
+        assert_eq!(
+            vertical_alignment(VAlign::Bottom),
+            Biff8VerticalAlignment::Bottom
+        );
+        assert_eq!(
+            vertical_alignment(VAlign::Center),
+            Biff8VerticalAlignment::Center
+        );
+        assert_eq!(
+            vertical_alignment(VAlign::Justify),
+            Biff8VerticalAlignment::Justify
+        );
+        assert_eq!(
+            vertical_alignment(VAlign::Distributed),
+            Biff8VerticalAlignment::Distributed
+        );
     }
 
     // --- border_style ---
@@ -656,30 +703,90 @@ mod writer_tests {
 
     #[test]
     fn fill_pattern_none_solid_gray125() {
-        assert_eq!(fill_pattern(FillPattern::None).unwrap(), Biff8FillPattern::None);
-        assert_eq!(fill_pattern(FillPattern::Solid).unwrap(), Biff8FillPattern::Solid);
-        assert_eq!(fill_pattern(FillPattern::Gray125).unwrap(), Biff8FillPattern::Gray125);
+        assert_eq!(
+            fill_pattern(FillPattern::None).unwrap(),
+            Biff8FillPattern::None
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Solid).unwrap(),
+            Biff8FillPattern::Solid
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Gray125).unwrap(),
+            Biff8FillPattern::Gray125
+        );
     }
 
     #[test]
     fn fill_pattern_other_valid_codes() {
-        assert_eq!(fill_pattern(FillPattern::Other(2)).unwrap(), Biff8FillPattern::MediumGray);
-        assert_eq!(fill_pattern(FillPattern::Other(3)).unwrap(), Biff8FillPattern::DarkGray);
-        assert_eq!(fill_pattern(FillPattern::Other(4)).unwrap(), Biff8FillPattern::LightGray);
-        assert_eq!(fill_pattern(FillPattern::Other(5)).unwrap(), Biff8FillPattern::DarkHorizontal);
-        assert_eq!(fill_pattern(FillPattern::Other(6)).unwrap(), Biff8FillPattern::DarkVertical);
-        assert_eq!(fill_pattern(FillPattern::Other(7)).unwrap(), Biff8FillPattern::DarkDown);
-        assert_eq!(fill_pattern(FillPattern::Other(8)).unwrap(), Biff8FillPattern::DarkUp);
-        assert_eq!(fill_pattern(FillPattern::Other(9)).unwrap(), Biff8FillPattern::DarkGrid);
-        assert_eq!(fill_pattern(FillPattern::Other(10)).unwrap(), Biff8FillPattern::DarkTrellis);
-        assert_eq!(fill_pattern(FillPattern::Other(11)).unwrap(), Biff8FillPattern::LightHorizontal);
-        assert_eq!(fill_pattern(FillPattern::Other(12)).unwrap(), Biff8FillPattern::LightVertical);
-        assert_eq!(fill_pattern(FillPattern::Other(13)).unwrap(), Biff8FillPattern::LightDown);
-        assert_eq!(fill_pattern(FillPattern::Other(14)).unwrap(), Biff8FillPattern::LightUp);
-        assert_eq!(fill_pattern(FillPattern::Other(15)).unwrap(), Biff8FillPattern::LightGrid);
-        assert_eq!(fill_pattern(FillPattern::Other(16)).unwrap(), Biff8FillPattern::LightTrellis);
-        assert_eq!(fill_pattern(FillPattern::Other(17)).unwrap(), Biff8FillPattern::Gray125);
-        assert_eq!(fill_pattern(FillPattern::Other(18)).unwrap(), Biff8FillPattern::Gray0625);
+        assert_eq!(
+            fill_pattern(FillPattern::Other(2)).unwrap(),
+            Biff8FillPattern::MediumGray
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Other(3)).unwrap(),
+            Biff8FillPattern::DarkGray
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Other(4)).unwrap(),
+            Biff8FillPattern::LightGray
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Other(5)).unwrap(),
+            Biff8FillPattern::DarkHorizontal
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Other(6)).unwrap(),
+            Biff8FillPattern::DarkVertical
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Other(7)).unwrap(),
+            Biff8FillPattern::DarkDown
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Other(8)).unwrap(),
+            Biff8FillPattern::DarkUp
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Other(9)).unwrap(),
+            Biff8FillPattern::DarkGrid
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Other(10)).unwrap(),
+            Biff8FillPattern::DarkTrellis
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Other(11)).unwrap(),
+            Biff8FillPattern::LightHorizontal
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Other(12)).unwrap(),
+            Biff8FillPattern::LightVertical
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Other(13)).unwrap(),
+            Biff8FillPattern::LightDown
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Other(14)).unwrap(),
+            Biff8FillPattern::LightUp
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Other(15)).unwrap(),
+            Biff8FillPattern::LightGrid
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Other(16)).unwrap(),
+            Biff8FillPattern::LightTrellis
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Other(17)).unwrap(),
+            Biff8FillPattern::Gray125
+        );
+        assert_eq!(
+            fill_pattern(FillPattern::Other(18)).unwrap(),
+            Biff8FillPattern::Gray0625
+        );
     }
 
     #[test]
@@ -967,16 +1074,22 @@ mod writer_tests {
         s.set(0, 0, Cell::Number(1.0));
         s.default_col_width = 10.0;
         s.default_row_height = 20.0;
-        s.columns.insert(0, easyexcel_model::model::ColInfo {
-            width: Some(15.0),
-            style: None,
-            hidden: false,
-        });
-        s.rows.insert(0, easyexcel_model::model::RowInfo {
-            height: Some(25.0),
-            style: None,
-            hidden: false,
-        });
+        s.columns.insert(
+            0,
+            easyexcel_model::model::ColInfo {
+                width: Some(15.0),
+                style: None,
+                hidden: false,
+            },
+        );
+        s.rows.insert(
+            0,
+            easyexcel_model::model::RowInfo {
+                height: Some(25.0),
+                style: None,
+                hidden: false,
+            },
+        );
         wb.sheets.push(s);
         let book = to_biff8_book(&wb).unwrap();
         assert_eq!(book.sheets.len(), 1);
@@ -1031,7 +1144,12 @@ mod writer_tests {
         wb.metadata.title = Some("My Title".to_owned());
         let result = validate_workbook_level_state(&wb);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("SummaryInformation"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("SummaryInformation")
+        );
     }
 
     #[test]
@@ -1068,10 +1186,14 @@ mod writer_tests {
         use easyexcel_model::model::CellValue;
         let mut wb = Workbook::empty();
         let mut s = Sheet::new("S");
-        s.set(0, 0, Cell::Formula {
-            expr: "A2+1".to_owned(),
-            cached: CellValue::Number(43.0),
-        });
+        s.set(
+            0,
+            0,
+            Cell::Formula {
+                expr: "A2+1".to_owned(),
+                cached: CellValue::Number(43.0),
+            },
+        );
         s.set(1, 0, Cell::Number(42.0));
         wb.sheets.push(s);
         let book = to_biff8_book(&wb).unwrap();
@@ -1126,16 +1248,22 @@ mod writer_tests {
         use easyexcel_model::styles::{CellStyle, Font};
         let mut wb = Workbook::empty();
         let style_idx = wb.styles.intern(CellStyle {
-            font: Font { bold: true, ..Default::default() },
+            font: Font {
+                bold: true,
+                ..Default::default()
+            },
             ..Default::default()
         });
         let mut s = Sheet::new("S");
         s.set(0, 0, Cell::Number(1.0));
-        s.columns.insert(0, easyexcel_model::model::ColInfo {
-            width: Some(10.0),
-            style: Some(style_idx),
-            hidden: false,
-        });
+        s.columns.insert(
+            0,
+            easyexcel_model::model::ColInfo {
+                width: Some(10.0),
+                style: Some(style_idx),
+                hidden: false,
+            },
+        );
         wb.sheets.push(s);
         let book = to_biff8_book(&wb).unwrap();
         assert_eq!(book.sheets.len(), 1);
@@ -1146,16 +1274,22 @@ mod writer_tests {
         use easyexcel_model::styles::{CellStyle, Font};
         let mut wb = Workbook::empty();
         let style_idx = wb.styles.intern(CellStyle {
-            font: Font { italic: true, ..Default::default() },
+            font: Font {
+                italic: true,
+                ..Default::default()
+            },
             ..Default::default()
         });
         let mut s = Sheet::new("S");
         s.set(0, 0, Cell::Number(1.0));
-        s.rows.insert(0, easyexcel_model::model::RowInfo {
-            height: Some(20.0),
-            style: Some(style_idx),
-            hidden: false,
-        });
+        s.rows.insert(
+            0,
+            easyexcel_model::model::RowInfo {
+                height: Some(20.0),
+                style: Some(style_idx),
+                hidden: false,
+            },
+        );
         wb.sheets.push(s);
         let book = to_biff8_book(&wb).unwrap();
         assert_eq!(book.sheets.len(), 1);
@@ -1166,7 +1300,10 @@ mod writer_tests {
         use easyexcel_model::styles::{CellStyle, Font};
         let mut wb = Workbook::empty();
         let style_idx = wb.styles.intern(CellStyle {
-            font: Font { name: "Courier".to_owned(), ..Default::default() },
+            font: Font {
+                name: "Courier".to_owned(),
+                ..Default::default()
+            },
             ..Default::default()
         });
         let mut s = Sheet::new("S");
@@ -1212,7 +1349,10 @@ mod writer_tests {
         use easyexcel_model::styles::{CellStyle, Font};
         let mut wb = Workbook::empty();
         let style_idx = wb.styles.intern(CellStyle {
-            font: Font { bold: true, ..Default::default() },
+            font: Font {
+                bold: true,
+                ..Default::default()
+            },
             ..Default::default()
         });
         for name in ["Sheet1", "Sheet2"] {
@@ -1245,16 +1385,22 @@ mod writer_tests {
         let mut wb = Workbook::empty();
         let mut s = Sheet::new("S");
         s.set(0, 0, Cell::Number(1.0));
-        s.columns.insert(0, easyexcel_model::model::ColInfo {
-            width: None,
-            style: None,
-            hidden: true,
-        });
-        s.rows.insert(0, easyexcel_model::model::RowInfo {
-            height: None,
-            style: None,
-            hidden: true,
-        });
+        s.columns.insert(
+            0,
+            easyexcel_model::model::ColInfo {
+                width: None,
+                style: None,
+                hidden: true,
+            },
+        );
+        s.rows.insert(
+            0,
+            easyexcel_model::model::RowInfo {
+                height: None,
+                style: None,
+                hidden: true,
+            },
+        );
         wb.sheets.push(s);
         let book = to_biff8_book(&wb).unwrap();
         assert_eq!(book.sheets.len(), 1);

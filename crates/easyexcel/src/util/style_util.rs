@@ -19,7 +19,9 @@ pub fn build_cell_style(
     write_cell_style: Option<&WriteCellStyle>,
 ) -> WriteCellStyle {
     let origin = origin_cell_style.cloned().unwrap_or_default();
-    write_cell_style.map_or(origin.clone(), |style| merge_write_cell_style(style, origin))
+    write_cell_style.map_or(origin.clone(), |style| {
+        merge_write_cell_style(style, origin)
+    })
 }
 
 /// 解析数据格式元数据。

@@ -300,7 +300,10 @@ mod tests {
             ..ExcelCellStyle::default()
         };
         apply_excel_cell_style(&mut request, style);
-        assert_eq!(request.fill_foreground_color, Some(Biff8Color::Rgb(0xFF0000)));
+        assert_eq!(
+            request.fill_foreground_color,
+            Some(Biff8Color::Rgb(0xFF0000))
+        );
         // 自动设置 Solid 填充模式
         assert_eq!(request.fill_pattern, Some(Biff8FillPattern::Solid));
     }
@@ -358,10 +361,7 @@ mod tests {
             ..ExcelCellStyle::default()
         };
         apply_excel_cell_style(&mut request, style);
-        assert_eq!(
-            request.number_format,
-            Some(Biff8NumberFormat::Builtin(14))
-        );
+        assert_eq!(request.number_format, Some(Biff8NumberFormat::Builtin(14)));
     }
 
     #[test]

@@ -1,8 +1,7 @@
 use easyexcel_io::{Error as ExcelError, Result};
 
 use super::{
-    Biff8Globals, Biff8ObjectModel, Biff8Record, Biff8WorksheetModel, RecordSink,
-    RecordTransform,
+    Biff8Globals, Biff8ObjectModel, Biff8Record, Biff8WorksheetModel, RecordSink, RecordTransform,
 };
 use crate::biff8::encode::{BOF, BOUNDSHEET, DT_WORKSHEET, EOF, MSODRAWING, OBJ, TXO};
 
@@ -77,8 +76,7 @@ impl Biff8WorkbookModel {
                 .collect::<Vec<_>>();
             for record in sheet_records.iter().filter(|record| record.sid() == OBJ) {
                 if record.payload().len() >= 8 {
-                    let object_id =
-                        u16::from_le_bytes([record.payload()[6], record.payload()[7]]);
+                    let object_id = u16::from_le_bytes([record.payload()[6], record.payload()[7]]);
                     next_object_id = next_object_id.max(object_id.saturating_add(1));
                 }
             }
@@ -161,9 +159,11 @@ impl Biff8WorkbookModel {
         let mut next_sheet_offset = encoded_records_len(&globals)?;
         let mut sheet_offsets = Vec::with_capacity(self.worksheets.len());
         for sheet in &self.worksheets {
-            sheet_offsets.push(u32::try_from(next_sheet_offset).map_err(|_| {
-                ExcelError::Xls("BIFF8 Workbook stream exceeds 4GiB".to_owned())
-            })?);
+            sheet_offsets.push(
+                u32::try_from(next_sheet_offset).map_err(|_| {
+                    ExcelError::Xls("BIFF8 Workbook stream exceeds 4GiB".to_owned())
+                })?,
+            );
             next_sheet_offset = next_sheet_offset
                 .checked_add(encoded_records_len(sheet.records())?)
                 .ok_or_else(|| ExcelError::Xls("BIFF8 Workbook stream size overflow".to_owned()))?;

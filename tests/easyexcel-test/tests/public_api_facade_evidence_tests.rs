@@ -230,10 +230,7 @@ fn facade_read_overloads_produce_builders() -> easyexcel::Result<()> {
 
     // read(File, ReadListener) + read(InputStream, ReadListener)
     let rows = Arc::new(AtomicUsize::new(0));
-    let builder = EasyExcel::read::<DynamicRow, _>(
-        &path,
-        CountingListener(Arc::clone(&rows)),
-    );
+    let builder = EasyExcel::read::<DynamicRow, _>(&path, CountingListener(Arc::clone(&rows)));
     assert_rust_type(&builder, "ExcelReaderBuilder");
 
     let input2 = std::fs::read(&path)?;

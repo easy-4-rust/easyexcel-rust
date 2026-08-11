@@ -31,11 +31,11 @@ pub mod row;
 
 pub use abstract_cell_style_strategy::AbstractCellStyleStrategy;
 pub use abstract_vertical_cell_style_strategy::AbstractVerticalCellStyleStrategy;
-pub use default_style::DefaultStyle;
-pub use horizontal_cell_style_strategy::HorizontalCellStyleStrategy;
-pub use vertical_cell_style_strategy::VerticalCellStyleStrategy;
 pub use column::{
     AbstractColumnWidthStyleStrategy, AbstractHeadColumnWidthStyleStrategy,
     LongestMatchColumnWidthStyleStrategy, SimpleColumnWidthStyleStrategy,
 };
+pub use default_style::DefaultStyle;
+pub use horizontal_cell_style_strategy::HorizontalCellStyleStrategy;
 pub use row::{AbstractRowHeightStyleStrategy, SimpleRowHeightStyleStrategy};
+pub use vertical_cell_style_strategy::VerticalCellStyleStrategy;

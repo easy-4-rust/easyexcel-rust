@@ -1,10 +1,10 @@
 //! 对应 Java：`com.alibaba.excel.write.metadata.style.WriteCellStyle`.
 
 use crate::core::excel_border_style::ExcelBorderStyle;
+use crate::core::excel_cell_style::ExcelCellStyle;
 use crate::core::excel_color::ExcelColor;
 use crate::core::excel_data_format::ExcelDataFormat;
 use crate::core::excel_fill_pattern::ExcelFillPattern;
-use crate::core::excel_cell_style::ExcelCellStyle;
 use crate::core::excel_font_style::ExcelFontStyle;
 use crate::core::excel_horizontal_alignment::ExcelHorizontalAlignment;
 use crate::core::excel_vertical_alignment::ExcelVerticalAlignment;
@@ -68,49 +68,115 @@ pub struct WriteCellStyle {
 
 impl WriteCellStyle {
     /// Java `getDataFormatData` 别名。
-    #[must_use] pub const fn get_data_format_data(&self) -> Option<ExcelDataFormat> { self.data_format }
+    #[must_use]
+    pub const fn get_data_format_data(&self) -> Option<ExcelDataFormat> {
+        self.data_format
+    }
     /// Java `getWriteFont` 别名。
-    #[must_use] pub const fn get_write_font(&self) -> Option<&WriteFont> { self.font.as_ref() }
+    #[must_use]
+    pub const fn get_write_font(&self) -> Option<&WriteFont> {
+        self.font.as_ref()
+    }
     /// Java `getHidden` 别名。
-    #[must_use] pub const fn get_hidden(&self) -> Option<bool> { self.hidden }
+    #[must_use]
+    pub const fn get_hidden(&self) -> Option<bool> {
+        self.hidden
+    }
     /// Java `getLocked` 别名。
-    #[must_use] pub const fn get_locked(&self) -> Option<bool> { self.locked }
+    #[must_use]
+    pub const fn get_locked(&self) -> Option<bool> {
+        self.locked
+    }
     /// Java `getQuotePrefix` 别名。
-    #[must_use] pub const fn get_quote_prefix(&self) -> Option<bool> { self.quote_prefix }
+    #[must_use]
+    pub const fn get_quote_prefix(&self) -> Option<bool> {
+        self.quote_prefix
+    }
     /// Java `getHorizontalAlignment` 别名。
-    #[must_use] pub const fn get_horizontal_alignment(&self) -> Option<ExcelHorizontalAlignment> { self.horizontal_alignment }
+    #[must_use]
+    pub const fn get_horizontal_alignment(&self) -> Option<ExcelHorizontalAlignment> {
+        self.horizontal_alignment
+    }
     /// Java `getWrapped` 别名。
-    #[must_use] pub const fn get_wrapped(&self) -> Option<bool> { self.wrapped }
+    #[must_use]
+    pub const fn get_wrapped(&self) -> Option<bool> {
+        self.wrapped
+    }
     /// Java `getVerticalAlignment` 别名。
-    #[must_use] pub const fn get_vertical_alignment(&self) -> Option<ExcelVerticalAlignment> { self.vertical_alignment }
+    #[must_use]
+    pub const fn get_vertical_alignment(&self) -> Option<ExcelVerticalAlignment> {
+        self.vertical_alignment
+    }
     /// Java `getRotation` 别名。
-    #[must_use] pub const fn get_rotation(&self) -> Option<i16> { self.rotation }
+    #[must_use]
+    pub const fn get_rotation(&self) -> Option<i16> {
+        self.rotation
+    }
     /// Java `getIndent` 别名。
-    #[must_use] pub const fn get_indent(&self) -> Option<u8> { self.indent }
+    #[must_use]
+    pub const fn get_indent(&self) -> Option<u8> {
+        self.indent
+    }
     /// Java `getBorderLeft` 别名。
-    #[must_use] pub const fn get_border_left(&self) -> Option<ExcelBorderStyle> { self.border_left }
+    #[must_use]
+    pub const fn get_border_left(&self) -> Option<ExcelBorderStyle> {
+        self.border_left
+    }
     /// Java `getBorderRight` 别名。
-    #[must_use] pub const fn get_border_right(&self) -> Option<ExcelBorderStyle> { self.border_right }
+    #[must_use]
+    pub const fn get_border_right(&self) -> Option<ExcelBorderStyle> {
+        self.border_right
+    }
     /// Java `getBorderTop` 别名。
-    #[must_use] pub const fn get_border_top(&self) -> Option<ExcelBorderStyle> { self.border_top }
+    #[must_use]
+    pub const fn get_border_top(&self) -> Option<ExcelBorderStyle> {
+        self.border_top
+    }
     /// Java `getBorderBottom` 别名。
-    #[must_use] pub const fn get_border_bottom(&self) -> Option<ExcelBorderStyle> { self.border_bottom }
+    #[must_use]
+    pub const fn get_border_bottom(&self) -> Option<ExcelBorderStyle> {
+        self.border_bottom
+    }
     /// Java `getLeftBorderColor` 别名。
-    #[must_use] pub const fn get_left_border_color(&self) -> Option<ExcelColor> { self.left_border_color }
+    #[must_use]
+    pub const fn get_left_border_color(&self) -> Option<ExcelColor> {
+        self.left_border_color
+    }
     /// Java `getRightBorderColor` 别名。
-    #[must_use] pub const fn get_right_border_color(&self) -> Option<ExcelColor> { self.right_border_color }
+    #[must_use]
+    pub const fn get_right_border_color(&self) -> Option<ExcelColor> {
+        self.right_border_color
+    }
     /// Java `getTopBorderColor` 别名。
-    #[must_use] pub const fn get_top_border_color(&self) -> Option<ExcelColor> { self.top_border_color }
+    #[must_use]
+    pub const fn get_top_border_color(&self) -> Option<ExcelColor> {
+        self.top_border_color
+    }
     /// Java `getBottomBorderColor` 别名。
-    #[must_use] pub const fn get_bottom_border_color(&self) -> Option<ExcelColor> { self.bottom_border_color }
+    #[must_use]
+    pub const fn get_bottom_border_color(&self) -> Option<ExcelColor> {
+        self.bottom_border_color
+    }
     /// Java `getFillPatternType` 别名。
-    #[must_use] pub const fn get_fill_pattern_type(&self) -> Option<ExcelFillPattern> { self.fill_pattern }
+    #[must_use]
+    pub const fn get_fill_pattern_type(&self) -> Option<ExcelFillPattern> {
+        self.fill_pattern
+    }
     /// Java `getFillBackgroundColor` 别名。
-    #[must_use] pub const fn get_fill_background_color(&self) -> Option<ExcelColor> { self.fill_background_color }
+    #[must_use]
+    pub const fn get_fill_background_color(&self) -> Option<ExcelColor> {
+        self.fill_background_color
+    }
     /// Java `getFillForegroundColor` 别名。
-    #[must_use] pub const fn get_fill_foreground_color(&self) -> Option<ExcelColor> { self.fill_foreground_color }
+    #[must_use]
+    pub const fn get_fill_foreground_color(&self) -> Option<ExcelColor> {
+        self.fill_foreground_color
+    }
     /// Java `getShrinkToFit` 别名。
-    #[must_use] pub const fn get_shrink_to_fit(&self) -> Option<bool> { self.shrink_to_fit }
+    #[must_use]
+    pub const fn get_shrink_to_fit(&self) -> Option<bool> {
+        self.shrink_to_fit
+    }
 
     /// Creates an annotation style with every property unspecified. (Java `WriteCellStyle()`)
     #[must_use]
@@ -179,114 +245,202 @@ impl WriteCellStyle {
     }
     /// 返回隐藏标志。
     #[must_use]
-    pub const fn hidden(&self) -> Option<bool> { self.hidden }
+    pub const fn hidden(&self) -> Option<bool> {
+        self.hidden
+    }
     /// 设置隐藏标志。
-    pub const fn set_hidden(&mut self, value: Option<bool>) { self.hidden = value; }
+    pub const fn set_hidden(&mut self, value: Option<bool>) {
+        self.hidden = value;
+    }
     /// 返回锁定标志。
     #[must_use]
-    pub const fn locked(&self) -> Option<bool> { self.locked }
+    pub const fn locked(&self) -> Option<bool> {
+        self.locked
+    }
     /// 设置锁定标志。
-    pub const fn set_locked(&mut self, value: Option<bool>) { self.locked = value; }
+    pub const fn set_locked(&mut self, value: Option<bool>) {
+        self.locked = value;
+    }
     /// 返回 quote-prefix。
     #[must_use]
-    pub const fn quote_prefix(&self) -> Option<bool> { self.quote_prefix }
+    pub const fn quote_prefix(&self) -> Option<bool> {
+        self.quote_prefix
+    }
     /// 设置 quote-prefix。
-    pub const fn set_quote_prefix(&mut self, value: Option<bool>) { self.quote_prefix = value; }
+    pub const fn set_quote_prefix(&mut self, value: Option<bool>) {
+        self.quote_prefix = value;
+    }
     /// 返回水平对齐。
     #[must_use]
-    pub const fn horizontal_alignment(&self) -> Option<ExcelHorizontalAlignment> { self.horizontal_alignment }
+    pub const fn horizontal_alignment(&self) -> Option<ExcelHorizontalAlignment> {
+        self.horizontal_alignment
+    }
     /// 设置水平对齐。
-    pub const fn set_horizontal_alignment(&mut self, value: Option<ExcelHorizontalAlignment>) { self.horizontal_alignment = value; }
+    pub const fn set_horizontal_alignment(&mut self, value: Option<ExcelHorizontalAlignment>) {
+        self.horizontal_alignment = value;
+    }
     /// 返回换行标志。
     #[must_use]
-    pub const fn wrapped(&self) -> Option<bool> { self.wrapped }
+    pub const fn wrapped(&self) -> Option<bool> {
+        self.wrapped
+    }
     /// 设置换行标志。
-    pub const fn set_wrapped(&mut self, value: Option<bool>) { self.wrapped = value; }
+    pub const fn set_wrapped(&mut self, value: Option<bool>) {
+        self.wrapped = value;
+    }
     /// 返回垂直对齐。
     #[must_use]
-    pub const fn vertical_alignment(&self) -> Option<ExcelVerticalAlignment> { self.vertical_alignment }
+    pub const fn vertical_alignment(&self) -> Option<ExcelVerticalAlignment> {
+        self.vertical_alignment
+    }
     /// 设置垂直对齐。
-    pub const fn set_vertical_alignment(&mut self, value: Option<ExcelVerticalAlignment>) { self.vertical_alignment = value; }
+    pub const fn set_vertical_alignment(&mut self, value: Option<ExcelVerticalAlignment>) {
+        self.vertical_alignment = value;
+    }
     /// 返回旋转角。
     #[must_use]
-    pub const fn rotation(&self) -> Option<i16> { self.rotation }
+    pub const fn rotation(&self) -> Option<i16> {
+        self.rotation
+    }
     /// 设置旋转角。
-    pub const fn set_rotation(&mut self, value: Option<i16>) { self.rotation = value; }
+    pub const fn set_rotation(&mut self, value: Option<i16>) {
+        self.rotation = value;
+    }
     /// 返回缩进。
     #[must_use]
-    pub const fn indent(&self) -> Option<u8> { self.indent }
+    pub const fn indent(&self) -> Option<u8> {
+        self.indent
+    }
     /// 设置缩进。
-    pub const fn set_indent(&mut self, value: Option<u8>) { self.indent = value; }
+    pub const fn set_indent(&mut self, value: Option<u8>) {
+        self.indent = value;
+    }
     /// 返回左边框。
     #[must_use]
-    pub const fn border_left(&self) -> Option<ExcelBorderStyle> { self.border_left }
+    pub const fn border_left(&self) -> Option<ExcelBorderStyle> {
+        self.border_left
+    }
     /// 设置左边框。
-    pub const fn set_border_left(&mut self, value: Option<ExcelBorderStyle>) { self.border_left = value; }
+    pub const fn set_border_left(&mut self, value: Option<ExcelBorderStyle>) {
+        self.border_left = value;
+    }
     /// 返回右边框。
     #[must_use]
-    pub const fn border_right(&self) -> Option<ExcelBorderStyle> { self.border_right }
+    pub const fn border_right(&self) -> Option<ExcelBorderStyle> {
+        self.border_right
+    }
     /// 设置右边框。
-    pub const fn set_border_right(&mut self, value: Option<ExcelBorderStyle>) { self.border_right = value; }
+    pub const fn set_border_right(&mut self, value: Option<ExcelBorderStyle>) {
+        self.border_right = value;
+    }
     /// 返回上边框。
     #[must_use]
-    pub const fn border_top(&self) -> Option<ExcelBorderStyle> { self.border_top }
+    pub const fn border_top(&self) -> Option<ExcelBorderStyle> {
+        self.border_top
+    }
     /// 设置上边框。
-    pub const fn set_border_top(&mut self, value: Option<ExcelBorderStyle>) { self.border_top = value; }
+    pub const fn set_border_top(&mut self, value: Option<ExcelBorderStyle>) {
+        self.border_top = value;
+    }
     /// 返回下边框。
     #[must_use]
-    pub const fn border_bottom(&self) -> Option<ExcelBorderStyle> { self.border_bottom }
+    pub const fn border_bottom(&self) -> Option<ExcelBorderStyle> {
+        self.border_bottom
+    }
     /// 设置下边框。
-    pub const fn set_border_bottom(&mut self, value: Option<ExcelBorderStyle>) { self.border_bottom = value; }
+    pub const fn set_border_bottom(&mut self, value: Option<ExcelBorderStyle>) {
+        self.border_bottom = value;
+    }
     /// 返回左边框颜色。
     #[must_use]
-    pub const fn left_border_color(&self) -> Option<ExcelColor> { self.left_border_color }
+    pub const fn left_border_color(&self) -> Option<ExcelColor> {
+        self.left_border_color
+    }
     /// 设置左边框颜色。
-    pub const fn set_left_border_color(&mut self, value: Option<ExcelColor>) { self.left_border_color = value; }
+    pub const fn set_left_border_color(&mut self, value: Option<ExcelColor>) {
+        self.left_border_color = value;
+    }
     /// 返回右边框颜色。
     #[must_use]
-    pub const fn right_border_color(&self) -> Option<ExcelColor> { self.right_border_color }
+    pub const fn right_border_color(&self) -> Option<ExcelColor> {
+        self.right_border_color
+    }
     /// 设置右边框颜色。
-    pub const fn set_right_border_color(&mut self, value: Option<ExcelColor>) { self.right_border_color = value; }
+    pub const fn set_right_border_color(&mut self, value: Option<ExcelColor>) {
+        self.right_border_color = value;
+    }
     /// 返回上边框颜色。
     #[must_use]
-    pub const fn top_border_color(&self) -> Option<ExcelColor> { self.top_border_color }
+    pub const fn top_border_color(&self) -> Option<ExcelColor> {
+        self.top_border_color
+    }
     /// 设置上边框颜色。
-    pub const fn set_top_border_color(&mut self, value: Option<ExcelColor>) { self.top_border_color = value; }
+    pub const fn set_top_border_color(&mut self, value: Option<ExcelColor>) {
+        self.top_border_color = value;
+    }
     /// 返回下边框颜色。
     #[must_use]
-    pub const fn bottom_border_color(&self) -> Option<ExcelColor> { self.bottom_border_color }
+    pub const fn bottom_border_color(&self) -> Option<ExcelColor> {
+        self.bottom_border_color
+    }
     /// 设置下边框颜色。
-    pub const fn set_bottom_border_color(&mut self, value: Option<ExcelColor>) { self.bottom_border_color = value; }
+    pub const fn set_bottom_border_color(&mut self, value: Option<ExcelColor>) {
+        self.bottom_border_color = value;
+    }
     /// 返回填充图案。
     #[must_use]
-    pub const fn fill_pattern_type(&self) -> Option<ExcelFillPattern> { self.fill_pattern }
+    pub const fn fill_pattern_type(&self) -> Option<ExcelFillPattern> {
+        self.fill_pattern
+    }
     /// 设置填充图案。
-    pub const fn set_fill_pattern_type(&mut self, value: Option<ExcelFillPattern>) { self.fill_pattern = value; }
+    pub const fn set_fill_pattern_type(&mut self, value: Option<ExcelFillPattern>) {
+        self.fill_pattern = value;
+    }
     /// 返回填充背景色。
     #[must_use]
-    pub const fn fill_background_color(&self) -> Option<ExcelColor> { self.fill_background_color }
+    pub const fn fill_background_color(&self) -> Option<ExcelColor> {
+        self.fill_background_color
+    }
     /// 设置填充背景色。
-    pub const fn set_fill_background_color(&mut self, value: Option<ExcelColor>) { self.fill_background_color = value; }
+    pub const fn set_fill_background_color(&mut self, value: Option<ExcelColor>) {
+        self.fill_background_color = value;
+    }
     /// 返回填充前景色。
     #[must_use]
-    pub const fn fill_foreground_color(&self) -> Option<ExcelColor> { self.fill_foreground_color }
+    pub const fn fill_foreground_color(&self) -> Option<ExcelColor> {
+        self.fill_foreground_color
+    }
     /// 设置填充前景色。
-    pub const fn set_fill_foreground_color(&mut self, value: Option<ExcelColor>) { self.fill_foreground_color = value; }
+    pub const fn set_fill_foreground_color(&mut self, value: Option<ExcelColor>) {
+        self.fill_foreground_color = value;
+    }
     /// 返回 shrink-to-fit。
     #[must_use]
-    pub const fn shrink_to_fit(&self) -> Option<bool> { self.shrink_to_fit }
+    pub const fn shrink_to_fit(&self) -> Option<bool> {
+        self.shrink_to_fit
+    }
     /// 设置 shrink-to-fit。
-    pub const fn set_shrink_to_fit(&mut self, value: Option<bool>) { self.shrink_to_fit = value; }
+    pub const fn set_shrink_to_fit(&mut self, value: Option<bool>) {
+        self.shrink_to_fit = value;
+    }
     /// 返回数字格式。
     #[must_use]
-    pub const fn data_format_data(&self) -> Option<ExcelDataFormat> { self.data_format }
+    pub const fn data_format_data(&self) -> Option<ExcelDataFormat> {
+        self.data_format
+    }
     /// 设置数字格式。
-    pub const fn set_data_format_data(&mut self, value: Option<ExcelDataFormat>) { self.data_format = value; }
+    pub const fn set_data_format_data(&mut self, value: Option<ExcelDataFormat>) {
+        self.data_format = value;
+    }
     /// 返回字体。
     #[must_use]
-    pub const fn write_font(&self) -> Option<&WriteFont> { self.font.as_ref() }
+    pub const fn write_font(&self) -> Option<&WriteFont> {
+        self.font.as_ref()
+    }
     /// 设置字体。
-    pub fn set_write_font(&mut self, value: Option<WriteFont>) { self.font = value; }
+    pub fn set_write_font(&mut self, value: Option<WriteFont>) {
+        self.font = value;
+    }
     /// 合并源样式的非空字段到目标样式。
     ///
     /// 对应 Java 静态 `merge(source, target)` 的原位副作用。

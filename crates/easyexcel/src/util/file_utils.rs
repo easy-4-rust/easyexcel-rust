@@ -39,10 +39,7 @@ pub fn write_to_file(path: &Path, data: &[u8]) -> Result<(), ExcelError> {
 /// # Errors
 ///
 /// 输入读取、父目录创建或目标写入失败时返回错误。
-pub fn write_reader_to_file<R: Read>(
-    path: &Path,
-    input: &mut R,
-) -> Result<(), ExcelError> {
+pub fn write_reader_to_file<R: Read>(path: &Path, input: &mut R) -> Result<(), ExcelError> {
     write_reader_to_file_with_append(path, input, false)
 }
 
@@ -56,7 +53,10 @@ pub fn write_reader_to_file_with_append<R: Read>(
     input: &mut R,
     append: bool,
 ) -> Result<(), ExcelError> {
-    if let Some(parent) = path.parent().filter(|parent| !parent.as_os_str().is_empty()) {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
         std::fs::create_dir_all(parent)?;
     }
     let mut output = std::fs::OpenOptions::new()
@@ -89,7 +89,9 @@ pub fn read_file_to_byte_array(path: &Path) -> io::Result<Vec<u8>> {
 pub fn create_tmp_file(file_name: &str) -> io::Result<NamedTempFile> {
     let directory = get_temp_file_prefix();
     std::fs::create_dir_all(&directory)?;
-    tempfile::Builder::new().prefix(file_name).tempfile_in(directory)
+    tempfile::Builder::new()
+        .prefix(file_name)
+        .tempfile_in(directory)
 }
 
 /// 对应 Java：com.alibaba.excel.util.FileUtils。 在配置的缓存目录中创建临时文件。

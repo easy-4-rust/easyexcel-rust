@@ -21,8 +21,8 @@ use super::encrypt::{ReadWriteSeek, encrypt_package_to};
 mod generated_cell_value;
 mod generated_chart;
 
-pub use generated_chart::add_chart;
 pub use generated_cell_value::GeneratedCellValue;
+pub use generated_chart::add_chart;
 
 /// Worksheet XML/ZIP 输出聚合缓冲区。128 KiB 位于发布计划要求的
 /// 64–256 KiB 区间，可显著减少大表写入的小块系统调用。

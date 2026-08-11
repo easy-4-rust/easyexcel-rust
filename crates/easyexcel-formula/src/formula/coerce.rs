@@ -182,10 +182,7 @@ mod tests {
 
     #[test]
     fn to_number_error_propagates() {
-        assert_eq!(
-            to_number(&Value::Error(CellError::NA)),
-            Err(CellError::NA)
-        );
+        assert_eq!(to_number(&Value::Error(CellError::NA)), Err(CellError::NA));
         assert_eq!(
             to_number(&Value::Error(CellError::Ref)),
             Err(CellError::Ref)
@@ -443,7 +440,10 @@ mod tests {
     fn equal_basic() {
         assert!(equal(&Value::Number(5.0), &Value::Number(5.0)));
         assert!(!equal(&Value::Number(5.0), &Value::Number(6.0)));
-        assert!(equal(&Value::Text("abc".into()), &Value::Text("ABC".into())));
+        assert!(equal(
+            &Value::Text("abc".into()),
+            &Value::Text("ABC".into())
+        ));
         assert!(!equal(&Value::Number(1.0), &Value::Text("1".into())));
     }
 }

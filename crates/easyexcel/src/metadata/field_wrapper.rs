@@ -45,21 +45,40 @@ impl FieldWrapper {
     #[must_use]
     pub fn with_field_name(field_name: impl Into<String>, heads: Vec<String>) -> Self {
         let field_name = field_name.into();
-        Self { field: Some(field_name.clone()), field_name, heads }
+        Self {
+            field: Some(field_name.clone()),
+            field_name,
+            heads,
+        }
     }
 
     /// Java `getField` 的后端中立视图。
-    #[must_use] pub fn get_field(&self) -> Option<&str> { self.field.as_deref() }
+    #[must_use]
+    pub fn get_field(&self) -> Option<&str> {
+        self.field.as_deref()
+    }
     /// Java `setField` 的后端中立映射。
-    pub fn set_field(&mut self, value: Option<String>) { self.field = value; }
+    pub fn set_field(&mut self, value: Option<String>) {
+        self.field = value;
+    }
     /// Java `getFieldName` 别名。
-    #[must_use] pub fn get_field_name(&self) -> &str { &self.field_name }
+    #[must_use]
+    pub fn get_field_name(&self) -> &str {
+        &self.field_name
+    }
     /// Java `setFieldName`。
-    pub fn set_field_name(&mut self, value: impl Into<String>) { self.field_name = value.into(); }
+    pub fn set_field_name(&mut self, value: impl Into<String>) {
+        self.field_name = value.into();
+    }
     /// Java `getHeads` 别名。
-    #[must_use] pub fn get_heads(&self) -> &[String] { &self.heads }
+    #[must_use]
+    pub fn get_heads(&self) -> &[String] {
+        &self.heads
+    }
     /// Java `setHeads`。
-    pub fn set_heads(&mut self, value: Vec<String>) { self.heads = value; }
+    pub fn set_heads(&mut self, value: Vec<String>) {
+        self.heads = value;
+    }
 }
 
 #[cfg(test)]

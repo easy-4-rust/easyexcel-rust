@@ -2,13 +2,43 @@
 use super::ExcelAnalysisException;
 /// 仅终止当前 Sheet、仍触发 `doAfterAllAnalysed` 的控制流异常。
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct ExcelAnalysisStopSheetException { inner: ExcelAnalysisException }
-impl ExcelAnalysisStopSheetException {
-    #[must_use] pub const fn new() -> Self { Self { inner: ExcelAnalysisException::new() } }
-    #[must_use] pub fn with_message(v: impl Into<String>) -> Self { Self { inner: ExcelAnalysisException::with_message(v) } }
-    #[must_use] pub fn with_message_and_cause(v: impl Into<String>, cause: impl ToString) -> Self { Self { inner: ExcelAnalysisException::with_message_and_cause(v, cause) } }
-    #[must_use] pub fn with_cause(cause: impl ToString) -> Self { Self { inner: ExcelAnalysisException::with_cause(cause) } }
+pub struct ExcelAnalysisStopSheetException {
+    inner: ExcelAnalysisException,
 }
-impl std::fmt::Display for ExcelAnalysisStopSheetException { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { std::fmt::Display::fmt(&self.inner, f) } }
+impl ExcelAnalysisStopSheetException {
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
+            inner: ExcelAnalysisException::new(),
+        }
+    }
+    #[must_use]
+    pub fn with_message(v: impl Into<String>) -> Self {
+        Self {
+            inner: ExcelAnalysisException::with_message(v),
+        }
+    }
+    #[must_use]
+    pub fn with_message_and_cause(v: impl Into<String>, cause: impl ToString) -> Self {
+        Self {
+            inner: ExcelAnalysisException::with_message_and_cause(v, cause),
+        }
+    }
+    #[must_use]
+    pub fn with_cause(cause: impl ToString) -> Self {
+        Self {
+            inner: ExcelAnalysisException::with_cause(cause),
+        }
+    }
+}
+impl std::fmt::Display for ExcelAnalysisStopSheetException {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(&self.inner, f)
+    }
+}
 impl std::error::Error for ExcelAnalysisStopSheetException {}
-impl From<ExcelAnalysisStopSheetException> for crate::ExcelError { fn from(v: ExcelAnalysisStopSheetException) -> Self { crate::ExcelError::AnalysisStopSheet(v.to_string()) } }
+impl From<ExcelAnalysisStopSheetException> for crate::ExcelError {
+    fn from(v: ExcelAnalysisStopSheetException) -> Self {
+        crate::ExcelError::AnalysisStopSheet(v.to_string())
+    }
+}

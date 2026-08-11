@@ -98,7 +98,11 @@ impl WriteContextImpl {
     }
 
     /// 选择或创建当前工作表。对应 Java：`WriteContext#currentSheet`。
-    pub fn current_sheet(&mut self, write_sheet: &crate::write::metadata::WriteSheet, _write_type: crate::WriteType) {
+    pub fn current_sheet(
+        &mut self,
+        write_sheet: &crate::write::metadata::WriteSheet,
+        _write_type: crate::WriteType,
+    ) {
         self.set_sheet_context(write_sheet.sheet_name.clone());
         self.table_no = None;
     }
@@ -122,7 +126,9 @@ impl WriteContextImpl {
 
     /// 返回当前表格编号。
     #[must_use]
-    pub const fn write_table_holder(&self) -> Option<i32> { self.table_no }
+    pub const fn write_table_holder(&self) -> Option<i32> {
+        self.table_no
+    }
 
     /// Java 已废弃 `getCurrentSheet()` 兼容入口。
     #[must_use]
@@ -132,15 +138,21 @@ impl WriteContextImpl {
 
     /// Java 已废弃 `needHead()` 兼容入口。
     #[must_use]
-    pub const fn need_head(&self) -> bool { self.current_holder_state.need_head }
+    pub const fn need_head(&self) -> bool {
+        self.current_holder_state.need_head
+    }
 
     /// Java 已废弃 `getOutputStream()` 的路径后端中立表示。
     #[must_use]
-    pub const fn get_output_stream(&self) -> Option<&[u8]> { None }
+    pub const fn get_output_stream(&self) -> Option<&[u8]> {
+        None
+    }
 
     /// Java 已废弃 `getWorkbook()` 的后端中立工作簿视图。
     #[must_use]
-    pub const fn get_workbook(&self) -> &WriteWorkbookContext { &self.workbook_context }
+    pub const fn get_workbook(&self) -> &WriteWorkbookContext {
+        &self.workbook_context
+    }
 
     /// 初始化当前 Holder 的表头元数据。实际行写出由资源拥有型 writer 执行。
     /// 对应 Java：`WriteContextImpl#initHead`。

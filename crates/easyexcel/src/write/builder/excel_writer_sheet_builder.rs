@@ -5,9 +5,9 @@ use std::any::Any;
 
 use crate::core::{DynamicRow, ExcelError, ExcelRow, Result, WriteHandler};
 
+use crate::write::BuilderFillConfig;
 use crate::write::builder::excel_writer_table_builder::ExcelWriterTableBuilder;
 use crate::write::metadata::write_sheet::WriteSheet as WriteSheetMetadata;
-use crate::write::BuilderFillConfig;
 use crate::{ExcelWriter, WriteOptions, WriteSheet};
 
 /// 对应 Java：`ExcelWriterSheetBuilder.table()`。 A sheet builder optionally owning the writer that will execute it.
@@ -240,12 +240,7 @@ impl ExcelWriterSheetBuilder {
             ExcelError::Format("Must use ExcelWriterBuilder.sheet() to call do_fill()".to_owned())
         })?;
         let sheet = WriteSheet::<DynamicRow>::from_options(self.write_sheet.options.clone());
-        crate::excel_builder::do_fill_template_with_config(
-            writer,
-            data,
-            fill_config,
-            &sheet,
-        )
+        crate::excel_builder::do_fill_template_with_config(writer, data, fill_config, &sheet)
     }
 
     /// 惰性获取填充对象，supplier 只求值一次。

@@ -3,8 +3,8 @@
 //! 日期模式解析与日期换算由 `easyexcel-model` 提供；本模块只保留
 //! `EasyExcel` Java 风格的方法名称和错误适配。
 
-use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use bigdecimal::BigDecimal;
+use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use std::sync::{LazyLock, RwLock};
 
 use crate::core::excel_error::ExcelError;
@@ -95,14 +95,20 @@ impl DateUtils {
 
     /// 返回当前 Java `defaultDateFormat` 配置。
     #[must_use]
-    pub fn default_date_format() -> String { default_date_format() }
+    pub fn default_date_format() -> String {
+        default_date_format()
+    }
 
     /// 修改 Java `defaultDateFormat` 的 Rust 运行时配置。
-    pub fn set_default_date_format(value: impl Into<String>) { set_default_date_format(value); }
+    pub fn set_default_date_format(value: impl Into<String>) {
+        set_default_date_format(value);
+    }
 
     /// 返回当前 Java `defaultLocalDateFormat` 配置。
     #[must_use]
-    pub fn default_local_date_format() -> String { default_local_date_format() }
+    pub fn default_local_date_format() -> String {
+        default_local_date_format()
+    }
 
     /// 修改 Java `defaultLocalDateFormat` 的 Rust 运行时配置。
     pub fn set_default_local_date_format(value: impl Into<String>) {
@@ -163,25 +169,43 @@ impl DateUtils {
                 &default_format
             }
         };
-        date.format(&easyexcel_model::chrono_date_format(date_format)).to_string()
+        date.format(&easyexcel_model::chrono_date_format(date_format))
+            .to_string()
     }
     /// Java `format(Date)` 重载。
     #[must_use]
-    pub fn format_default(date: NaiveDateTime) -> String { Self::format(date, None) }
+    pub fn format_default(date: NaiveDateTime) -> String {
+        Self::format(date, None)
+    }
     /// Java Locale 重载；chrono 模式本身保持确定性，locale 作为显式兼容参数保留。
     #[must_use]
-    pub fn format_with_locale(date: NaiveDateTime, date_format: Option<&str>, _locale: &str) -> String {
+    pub fn format_with_locale(
+        date: NaiveDateTime,
+        date_format: Option<&str>,
+        _locale: &str,
+    ) -> String {
         Self::format(date, date_format)
     }
     /// Java LocalDate Locale 重载。
     #[must_use]
-    pub fn format_local_date_with_locale(date: NaiveDate, date_format: Option<&str>, _locale: &str) -> String {
+    pub fn format_local_date_with_locale(
+        date: NaiveDate,
+        date_format: Option<&str>,
+        _locale: &str,
+    ) -> String {
         Self::format_local_date(date, date_format)
     }
     /// 按 Excel serial 和日期窗口格式化 BigDecimal。
     #[must_use]
-    pub fn format_decimal(value: &BigDecimal, use_1904_windowing: bool, date_format: Option<&str>) -> String {
-        value.to_string().parse::<f64>().ok()
+    pub fn format_decimal(
+        value: &BigDecimal,
+        use_1904_windowing: bool,
+        date_format: Option<&str>,
+    ) -> String {
+        value
+            .to_string()
+            .parse::<f64>()
+            .ok()
             .and_then(|serial| Self::get_local_date_time(serial, use_1904_windowing))
             .map_or_else(String::new, |date| Self::format(date, date_format))
     }
@@ -213,10 +237,8 @@ impl DateUtils {
         }
         let whole_days = date.floor();
         let whole_days = i32::try_from(whole_days as i64).ok()?;
-        let milliseconds_in_day = ((date - f64::from(whole_days))
-            * DAY_MILLISECONDS as f64
-            + 0.5)
-            .floor() as i32;
+        let milliseconds_in_day =
+            ((date - f64::from(whole_days)) * DAY_MILLISECONDS as f64 + 0.5).floor() as i32;
         Self::set_calendar(
             whole_days,
             milliseconds_in_day,
@@ -405,12 +427,21 @@ mod tests {
         assert_eq!(DateUtils::DATE_FORMAT_10, DATE_FORMAT_10);
         assert_eq!(DateUtils::DATE_FORMAT_14, DATE_FORMAT_14);
         assert_eq!(DateUtils::DATE_FORMAT_16, DATE_FORMAT_16);
-        assert_eq!(DateUtils::DATE_FORMAT_16_FORWARD_SLASH, DATE_FORMAT_16_FORWARD_SLASH);
+        assert_eq!(
+            DateUtils::DATE_FORMAT_16_FORWARD_SLASH,
+            DATE_FORMAT_16_FORWARD_SLASH
+        );
         assert_eq!(DateUtils::DATE_FORMAT_17, DATE_FORMAT_17);
         assert_eq!(DateUtils::DATE_FORMAT_19, DATE_FORMAT_19);
-        assert_eq!(DateUtils::DATE_FORMAT_19_FORWARD_SLASH, DATE_FORMAT_19_FORWARD_SLASH);
+        assert_eq!(
+            DateUtils::DATE_FORMAT_19_FORWARD_SLASH,
+            DATE_FORMAT_19_FORWARD_SLASH
+        );
         assert_eq!(DateUtils::DEFAULT_DATE_FORMAT, DEFAULT_DATE_FORMAT);
-        assert_eq!(DateUtils::DEFAULT_LOCAL_DATE_FORMAT, DEFAULT_LOCAL_DATE_FORMAT);
+        assert_eq!(
+            DateUtils::DEFAULT_LOCAL_DATE_FORMAT,
+            DEFAULT_LOCAL_DATE_FORMAT
+        );
         assert_eq!(DateUtils::SECONDS_PER_MINUTE, SECONDS_PER_MINUTE);
         assert_eq!(DateUtils::MINUTES_PER_HOUR, MINUTES_PER_HOUR);
         assert_eq!(DateUtils::HOURS_PER_DAY, HOURS_PER_DAY);

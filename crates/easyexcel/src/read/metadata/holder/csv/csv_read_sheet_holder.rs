@@ -30,16 +30,22 @@ impl CsvReadSheetHolder {
         read_sheet: crate::ReadSheet,
         read_workbook_holder: &crate::read::holder::read_workbook_holder::ReadWorkbookHolder,
     ) -> Self {
-        Self { inner: ReadSheetHolder::from_read_sheet(read_sheet, read_workbook_holder) }
+        Self {
+            inner: ReadSheetHolder::from_read_sheet(read_sheet, read_workbook_holder),
+        }
     }
 }
 
 impl Deref for CsvReadSheetHolder {
     type Target = ReadSheetHolder;
-    fn deref(&self) -> &Self::Target { &self.inner }
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
 }
 impl DerefMut for CsvReadSheetHolder {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.inner }
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
 }
 
 delegate_read_holder_contract!(CsvReadSheetHolder, inner);

@@ -12,12 +12,12 @@ use crate::core::{
     WriteFillSheet,
 };
 
+use super::template_output::TemplateOutput;
+use super::template_writer::write_template_bytes_to_output;
 use crate::{
     ExcelTemplateWriter, FillConfig, FillDirection, FillWrapper, MergeRange, TemplateData,
     TemplateSheet,
 };
-use super::template_output::TemplateOutput;
-use super::template_writer::write_template_bytes_to_output;
 
 /// Stateful template fill executor for [`crate::write::ExcelBuilderImpl`].
 ///
@@ -84,8 +84,7 @@ impl BuilderFillExecutor {
                     "encrypted OOXML template requires a workbook password".to_owned(),
                 )
             })?;
-            bytes = easyexcel_xlsx::decrypt_package(&bytes, password)
-                .map_err(ExcelError::from)?;
+            bytes = easyexcel_xlsx::decrypt_package(&bytes, password).map_err(ExcelError::from)?;
         }
         if crate::write::xls_adapter::looks_like_xls(&bytes) {
             let xls = crate::write::xls_adapter::Biff8TemplatePackage::from_bytes_with_password(
@@ -103,10 +102,8 @@ impl BuilderFillExecutor {
                 finished: false,
             });
         }
-        let mut inner = ExcelTemplateWriter::from_template_bytes(
-            TemplateOutput::Path(output),
-            &bytes,
-        )?;
+        let mut inner =
+            ExcelTemplateWriter::from_template_bytes(TemplateOutput::Path(output), &bytes)?;
         inner.set_package_password(password.clone());
         Ok(Self {
             inner: Some(inner),
@@ -152,11 +149,7 @@ impl BuilderFillExecutor {
         template: impl AsRef<Path>,
         output: impl Into<PathBuf>,
     ) -> Result<Self> {
-        Self::new(
-            Some(template.as_ref().to_path_buf()),
-            None,
-            output.into(),
-        )
+        Self::new(Some(template.as_ref().to_path_buf()), None, output.into())
     }
 
     /// 将统一 `ExcelWriter` 的真实输出目标交给已完成模板解析的 executor。
@@ -346,10 +339,7 @@ impl WriteFillExecutor for BuilderFillExecutor {
                 let output = self.output.as_mut().ok_or_else(|| {
                     ExcelError::Format("template fill executor has no output target".to_owned())
                 })?;
-                super::template_writer::discard_template_output(
-                    output,
-                    self.auto_close_stream,
-                )?;
+                super::template_writer::discard_template_output(output, self.auto_close_stream)?;
             }
             self.finished = true;
             return Ok(());

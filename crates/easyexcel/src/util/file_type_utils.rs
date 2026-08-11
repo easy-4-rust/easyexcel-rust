@@ -14,7 +14,9 @@ pub static DEFAULT_IMAGE_TYPE: RwLock<ImageType> = RwLock::new(ImageType::Png);
 /// 对应 Java：`FileTypeUtils#getImageTypeFormat(byte[])`。
 #[must_use]
 pub fn get_image_type_format(image: &[u8]) -> i32 {
-    get_image_type(image).unwrap_or_else(default_image_type).get_value()
+    get_image_type(image)
+        .unwrap_or_else(default_image_type)
+        .get_value()
 }
 
 /// 按 Java 4.0.3 的公开规则识别 JPEG/PNG 图片类型。

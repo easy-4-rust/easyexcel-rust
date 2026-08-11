@@ -29,16 +29,11 @@ impl LoopMergeStrategy {
     /// # Errors
     ///
     /// 列下标为 null、负数或超过后端列范围时返回格式错误。
-    pub fn from_property(
-        property: LoopMergeProperty,
-        column_index: Option<i32>,
-    ) -> Result<Self> {
-        let column_index = column_index.ok_or_else(|| {
-            ExcelError::Format("ColumnIndex must not be null".to_owned())
-        })?;
-        let each_rows = i32::try_from(property.each_row).map_err(|_| {
-            ExcelError::Format("EachRows exceeds Java int range".to_owned())
-        })?;
+    pub fn from_property(property: LoopMergeProperty, column_index: Option<i32>) -> Result<Self> {
+        let column_index = column_index
+            .ok_or_else(|| ExcelError::Format("ColumnIndex must not be null".to_owned()))?;
+        let each_rows = i32::try_from(property.each_row)
+            .map_err(|_| ExcelError::Format("EachRows exceeds Java int range".to_owned()))?;
         Self::from_java_values(each_rows, i32::from(property.column_extend), column_index)
     }
 

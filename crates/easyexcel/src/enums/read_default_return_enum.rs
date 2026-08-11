@@ -22,15 +22,22 @@ impl ReadDefaultReturnEnum {
     /// Java `values()` 的声明顺序。
     pub const ALL: [Self; 3] = [Self::String, Self::ActualData, Self::ReadCellData];
     /// Java 枚举常量名。
-    #[must_use] pub const fn java_name(self) -> &'static str {
-        match self { Self::String => "STRING", Self::ActualData => "ACTUAL_DATA", Self::ReadCellData => "READ_CELL_DATA" }
+    #[must_use]
+    pub const fn java_name(self) -> &'static str {
+        match self {
+            Self::String => "STRING",
+            Self::ActualData => "ACTUAL_DATA",
+            Self::ReadCellData => "READ_CELL_DATA",
+        }
     }
 }
 
 impl std::str::FromStr for ReadDefaultReturnEnum {
     type Err = String;
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Self::ALL.into_iter().find(|item| item.java_name() == value)
+        Self::ALL
+            .into_iter()
+            .find(|item| item.java_name() == value)
             .ok_or_else(|| format!("unknown ReadDefaultReturnEnum value: {value}"))
     }
 }

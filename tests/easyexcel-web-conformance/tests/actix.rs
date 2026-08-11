@@ -2,14 +2,13 @@
 
 use actix_web::body::to_bytes;
 use actix_web::test::TestRequest;
-use actix_web::{FromRequest, ResponseError, Responder, web};
+use actix_web::{FromRequest, Responder, ResponseError, web};
 use easyexcel::io::Format;
 use easyexcel_actix::{ExcelRequest, ExcelResponse};
 use easyexcel_web_conformance::{
     ConformanceRow, ResponseSnapshot, corrupted_xlsx_fixture, download_rows, oversized_fixture,
-    runtime, strict_runtime, upload_fixture, verify_download, verify_error_response,
-    verify_upload, verify_upload_multisheet, verify_upload_xls, xlsx_multisheet_fixture,
-    xls_upload_fixture,
+    runtime, strict_runtime, upload_fixture, verify_download, verify_error_response, verify_upload,
+    verify_upload_multisheet, verify_upload_xls, xls_upload_fixture, xlsx_multisheet_fixture,
 };
 
 #[actix_web::test]

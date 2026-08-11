@@ -8,8 +8,8 @@
 use std::collections::HashMap;
 
 use crate::core::{AnalysisContext, CellExtra, ExcelError, ReadListener, Result};
-use crate::read::row_consumer::ReadFlow;
 use crate::read::processor::analysis_event_processor::AnalysisEventProcessor;
+use crate::read::row_consumer::ReadFlow;
 
 /// 默认分析事件处理器，对应 Java `DefaultAnalysisEventProcessor`。
 ///

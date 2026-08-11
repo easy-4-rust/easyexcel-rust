@@ -12,11 +12,10 @@ use zip::CompressionMethod;
 
 use super::ooxml_package::{OoxmlPackage, OoxmlZipEntry};
 use super::package::{relationship_part_name, resolve_target};
-use super::template_styles::{merge_compiled_styles, merge_compiled_styles_onto};
 use super::template_fill::{
-    TemplateComment, TemplateHyperlink, TemplateHyperlinkType, TemplateImage,
-    TemplateImageMovement,
+    TemplateComment, TemplateHyperlink, TemplateHyperlinkType, TemplateImage, TemplateImageMovement,
 };
+use super::template_styles::{merge_compiled_styles, merge_compiled_styles_onto};
 use super::template_xml::{
     TemplateCellValue, TemplateMergeRange, append_sparse_rows, apply_column_widths,
     apply_merge_ranges, apply_sheet_protection, attribute_value, cell_style_index, escape_xml,
@@ -302,9 +301,7 @@ impl OoxmlTemplatePackage {
         }
         self.entry_mut(&comments_path)?.bytes = comments_xml.into_bytes();
 
-        if let Some(vml_target) =
-            relationship_target_by_type(&relationships_xml, "/vmlDrawing")
-        {
+        if let Some(vml_target) = relationship_target_by_type(&relationships_xml, "/vmlDrawing") {
             let vml_path = resolve_target(&sheet_path, &vml_target)?;
             let vml_xml = self.entry_xml(&vml_path)?;
             let (vml_xml, _) = remove_vml_comment_shape(
@@ -329,12 +326,9 @@ impl OoxmlTemplatePackage {
         column_index: u16,
     ) -> Result<()> {
         let snapshot = self.clone();
-        if let Err(error) = self.import_comment_inner(
-            compiled_xlsx,
-            sheet_name,
-            row_index,
-            column_index,
-        ) {
+        if let Err(error) =
+            self.import_comment_inner(compiled_xlsx, sheet_name, row_index, column_index)
+        {
             *self = snapshot;
             return Err(error);
         }
@@ -429,9 +423,7 @@ impl OoxmlTemplatePackage {
 
         let hyperlink_element = match hyperlink.hyperlink_type {
             TemplateHyperlinkType::Document => {
-                let location = hyperlink
-                    .hyperlink_type
-                    .package_target(&hyperlink.address);
+                let location = hyperlink.hyperlink_type.package_target(&hyperlink.address);
                 format!(
                     "<hyperlink ref=\"{}\" location=\"{}\"/>",
                     escape_xml(&reference),
@@ -441,9 +433,7 @@ impl OoxmlTemplatePackage {
             TemplateHyperlinkType::Url
             | TemplateHyperlinkType::Email
             | TemplateHyperlinkType::File => {
-                let target = hyperlink
-                    .hyperlink_type
-                    .package_target(&hyperlink.address);
+                let target = hyperlink.hyperlink_type.package_target(&hyperlink.address);
                 let relationship_id = next_relationship_id(&relationships_xml);
                 let relationship = format!(
                     concat!(
@@ -454,11 +444,8 @@ impl OoxmlTemplatePackage {
                     relationship_id,
                     escape_xml(&target)
                 );
-                relationships_xml = insert_before_close_tag(
-                    &relationships_xml,
-                    "</Relationships>",
-                    &relationship,
-                )?;
+                relationships_xml =
+                    insert_before_close_tag(&relationships_xml, "</Relationships>", &relationship)?;
                 format!(
                     "<hyperlink ref=\"{}\" r:id=\"{}\"/>",
                     escape_xml(&reference),
@@ -495,12 +482,9 @@ impl OoxmlTemplatePackage {
         image: &TemplateImage,
     ) -> Result<()> {
         let snapshot = self.clone();
-        if let Err(error) = self.set_template_image_inner(
-            sheet_name,
-            row_index,
-            column_index,
-            image,
-        ) {
+        if let Err(error) =
+            self.set_template_image_inner(sheet_name, row_index, column_index, image)
+        {
             *self = snapshot;
             return Err(error);
         }
@@ -569,13 +553,16 @@ impl OoxmlTemplatePackage {
         let source_sheet_rels_path = relationship_part_name(&source_sheet_path);
         let source_sheet_rels = source.entry_xml(&source_sheet_rels_path)?;
         let source_drawing_target = relationship_target(&source_sheet_rels, &source_drawing_id)
-            .ok_or_else(|| Error::Xlsx("compiled image drawing relationship is missing".to_owned()))?;
+            .ok_or_else(|| {
+                Error::Xlsx("compiled image drawing relationship is missing".to_owned())
+            })?;
         let source_drawing_path = resolve_target(&source_sheet_path, &source_drawing_target)?;
         let source_drawing_xml = source.entry_xml(&source_drawing_path)?;
         let source_anchor = image_anchor(&source_drawing_xml)
             .ok_or_else(|| Error::Xlsx("compiled drawing has no image anchor".to_owned()))?;
-        let source_image_id = drawing_image_relationship_id(&source_anchor)
-            .ok_or_else(|| Error::Xlsx("compiled image anchor has no relationship id".to_owned()))?;
+        let source_image_id = drawing_image_relationship_id(&source_anchor).ok_or_else(|| {
+            Error::Xlsx("compiled image anchor has no relationship id".to_owned())
+        })?;
         let source_drawing_rels_path = relationship_part_name(&source_drawing_path);
         let source_drawing_rels = source.entry_xml(&source_drawing_rels_path)?;
         let source_image_target = relationship_target(&source_drawing_rels, &source_image_id)
@@ -608,7 +595,9 @@ impl OoxmlTemplatePackage {
         if let Some(target_drawing_id) = drawing_relationship_id(&target_sheet_xml) {
             let target_sheet_rels = self.entry_xml(&target_sheet_rels_path)?;
             let target_drawing_target = relationship_target(&target_sheet_rels, &target_drawing_id)
-                .ok_or_else(|| Error::Xlsx("template drawing relationship is missing".to_owned()))?;
+                .ok_or_else(|| {
+                    Error::Xlsx("template drawing relationship is missing".to_owned())
+                })?;
             let target_drawing_path = resolve_target(&target_sheet_path, &target_drawing_target)?;
             let target_drawing_rels_path = relationship_part_name(&target_drawing_path);
             let mut target_drawing_rels = self.entry_xml(&target_drawing_rels_path)?;
@@ -621,22 +610,16 @@ impl OoxmlTemplatePackage {
                     &format!("r:embed=\"{new_image_id}\""),
                 ),
             )?;
-            self.entry_mut(&target_drawing_path)?.bytes = insert_before_close_tag(
-                &drawing_xml,
-                "</xdr:wsDr>",
-                &imported_anchor,
-            )?
-            .into_bytes();
+            self.entry_mut(&target_drawing_path)?.bytes =
+                insert_before_close_tag(&drawing_xml, "</xdr:wsDr>", &imported_anchor)?
+                    .into_bytes();
             let relationship = format!(
                 "<Relationship Id=\"{new_image_id}\" \
                  Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\" \
                  Target=\"../media/image{image_number}.{extension}\"/>"
             );
-            target_drawing_rels = insert_before_close_tag(
-                &target_drawing_rels,
-                "</Relationships>",
-                &relationship,
-            )?;
+            target_drawing_rels =
+                insert_before_close_tag(&target_drawing_rels, "</Relationships>", &relationship)?;
             self.entry_mut(&target_drawing_rels_path)?.bytes = target_drawing_rels.into_bytes();
         } else {
             let drawing_number = next_part_number(&self.entries, "xl/drawings/drawing", ".xml");
@@ -721,19 +704,17 @@ impl OoxmlTemplatePackage {
         let source_comments_target = relationship_target_by_type(&source_rels, "/comments")
             .ok_or_else(|| Error::Xlsx("compiled comment relationship is missing".to_owned()))?;
         let source_vml_target = relationship_target_by_type(&source_rels, "/vmlDrawing")
-            .ok_or_else(|| Error::Xlsx("compiled comment VML relationship is missing".to_owned()))?;
+            .ok_or_else(|| {
+                Error::Xlsx("compiled comment VML relationship is missing".to_owned())
+            })?;
         let source_comments_path = resolve_target(&source_sheet_path, &source_comments_target)?;
         let source_vml_path = resolve_target(&source_sheet_path, &source_vml_target)?;
         let source_comments = source.entry_xml(&source_comments_path)?;
         let source_vml = source.entry_xml(&source_vml_path)?;
         let reference = a1_reference(row_index, column_index);
-        let source_comment = xml_element_by_attribute(
-            &source_comments,
-            "comment",
-            "ref",
-            &reference,
-        )?
-        .ok_or_else(|| Error::Xlsx(format!("compiled comment {reference} is missing")))?;
+        let source_comment =
+            xml_element_by_attribute(&source_comments, "comment", "ref", &reference)?
+                .ok_or_else(|| Error::Xlsx(format!("compiled comment {reference} is missing")))?;
         let source_shape = vml_comment_shape(
             &source_vml,
             usize::try_from(row_index).unwrap_or(usize::MAX),
@@ -755,18 +736,22 @@ impl OoxmlTemplatePackage {
 
         if let Some(comments_target) = existing_comments_target {
             let comments_path = resolve_target(&target_sheet_path, &comments_target)?;
-            let vml_target = relationship_target_by_type(&target_rels, "/vmlDrawing")
-                .ok_or_else(|| Error::Xlsx("template comments have no VML relationship".to_owned()))?;
+            let vml_target =
+                relationship_target_by_type(&target_rels, "/vmlDrawing").ok_or_else(|| {
+                    Error::Xlsx("template comments have no VML relationship".to_owned())
+                })?;
             let vml_path = resolve_target(&target_sheet_path, &vml_target)?;
             let comments_xml = self.entry_xml(&comments_path)?;
             let source_author_id = attribute_value(&source_comment, "authorId")
                 .and_then(|value| value.parse::<usize>().ok())
                 .ok_or_else(|| Error::Xlsx("compiled comment authorId is invalid".to_owned()))?;
-            let source_author = xml_element_inner_by_index(&source_comments, "author", source_author_id)
-                .ok_or_else(|| Error::Xlsx("compiled comment author is missing".to_owned()))?;
+            let source_author =
+                xml_element_inner_by_index(&source_comments, "author", source_author_id)
+                    .ok_or_else(|| Error::Xlsx("compiled comment author is missing".to_owned()))?;
             let target_authors = xml_element_inners(&comments_xml, "author");
-            let (comments_xml, target_author_id) = if let Some(index) =
-                target_authors.iter().position(|author| *author == source_author)
+            let (comments_xml, target_author_id) = if let Some(index) = target_authors
+                .iter()
+                .position(|author| *author == source_author)
             {
                 (comments_xml, index)
             } else {
@@ -779,17 +764,11 @@ impl OoxmlTemplatePackage {
                     target_authors.len(),
                 )
             };
-            let source_comment = replace_xml_attribute(
-                &source_comment,
-                "authorId",
-                &target_author_id.to_string(),
-            )?;
-            self.entry_mut(&comments_path)?.bytes = insert_before_close_tag(
-                &comments_xml,
-                "</commentList>",
-                &source_comment,
-            )?
-            .into_bytes();
+            let source_comment =
+                replace_xml_attribute(&source_comment, "authorId", &target_author_id.to_string())?;
+            self.entry_mut(&comments_path)?.bytes =
+                insert_before_close_tag(&comments_xml, "</commentList>", &source_comment)?
+                    .into_bytes();
 
             let vml_xml = self.entry_xml(&vml_path)?;
             let source_shape = with_next_vml_shape_id(&vml_xml, &source_shape)?;
@@ -820,20 +799,13 @@ impl OoxmlTemplatePackage {
         let comments_relationship = format!(
             "<Relationship Id=\"{comments_id}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments\" Target=\"../comments{comments_number}.xml\"/>"
         );
-        target_rels = insert_before_close_tag(
-            &target_rels,
-            "</Relationships>",
-            &comments_relationship,
-        )?;
+        target_rels =
+            insert_before_close_tag(&target_rels, "</Relationships>", &comments_relationship)?;
         let vml_id = next_relationship_id(&target_rels);
         let vml_relationship = format!(
             "<Relationship Id=\"{vml_id}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing\" Target=\"../drawings/vmlDrawing{vml_number}.vml\"/>"
         );
-        target_rels = insert_before_close_tag(
-            &target_rels,
-            "</Relationships>",
-            &vml_relationship,
-        )?;
+        target_rels = insert_before_close_tag(&target_rels, "</Relationships>", &vml_relationship)?;
         if let Ok(entry) = self.entry_mut(&target_rels_path) {
             entry.bytes = target_rels.into_bytes();
         } else {
@@ -895,17 +867,23 @@ impl OoxmlTemplatePackage {
         let source_sheet_rels_path = relationship_part_name(&source_sheet_path);
         let source_sheet_rels = source.entry_xml(&source_sheet_rels_path)?;
         let source_drawing_target = relationship_target(&source_sheet_rels, &source_drawing_id)
-            .ok_or_else(|| Error::Xlsx("compiled chart drawing relationship is missing".to_owned()))?;
+            .ok_or_else(|| {
+                Error::Xlsx("compiled chart drawing relationship is missing".to_owned())
+            })?;
         let source_drawing_path = resolve_target(&source_sheet_path, &source_drawing_target)?;
         let source_drawing_xml = source.entry_xml(&source_drawing_path)?;
         let source_anchor = chart_anchor(&source_drawing_xml)
             .ok_or_else(|| Error::Xlsx("compiled drawing has no chart anchor".to_owned()))?;
-        let source_anchor_chart_id = drawing_chart_relationship_id(&source_anchor)
-            .ok_or_else(|| Error::Xlsx("compiled chart anchor has no relationship id".to_owned()))?;
+        let source_anchor_chart_id =
+            drawing_chart_relationship_id(&source_anchor).ok_or_else(|| {
+                Error::Xlsx("compiled chart anchor has no relationship id".to_owned())
+            })?;
         let source_drawing_rels_path = relationship_part_name(&source_drawing_path);
         let source_drawing_rels = source.entry_xml(&source_drawing_rels_path)?;
-        let source_chart_target = relationship_target(&source_drawing_rels, &source_anchor_chart_id)
-            .ok_or_else(|| Error::Xlsx("compiled drawing chart relationship is missing".to_owned()))?;
+        let source_chart_target =
+            relationship_target(&source_drawing_rels, &source_anchor_chart_id).ok_or_else(
+                || Error::Xlsx("compiled drawing chart relationship is missing".to_owned()),
+            )?;
         let source_chart_path = resolve_target(&source_drawing_path, &source_chart_target)?;
         let source_chart = source
             .entries
@@ -932,7 +910,9 @@ impl OoxmlTemplatePackage {
         if let Some(target_drawing_id) = drawing_relationship_id(&target_sheet_xml) {
             let target_sheet_rels = self.entry_xml(&target_sheet_rels_path)?;
             let target_drawing_target = relationship_target(&target_sheet_rels, &target_drawing_id)
-                .ok_or_else(|| Error::Xlsx("template drawing relationship is missing".to_owned()))?;
+                .ok_or_else(|| {
+                    Error::Xlsx("template drawing relationship is missing".to_owned())
+                })?;
             let target_drawing_path = resolve_target(&target_sheet_path, &target_drawing_target)?;
             let target_drawing_rels_path = relationship_part_name(&target_drawing_path);
             let mut target_drawing_rels = self.entry_xml(&target_drawing_rels_path)?;
@@ -944,20 +924,14 @@ impl OoxmlTemplatePackage {
             let drawing_entry = self.entry_mut(&target_drawing_path)?;
             let drawing_xml = String::from_utf8(std::mem::take(&mut drawing_entry.bytes))
                 .map_err(|error| Error::Xlsx(error.to_string()))?;
-            drawing_entry.bytes = insert_before_close_tag(
-                &drawing_xml,
-                "</xdr:wsDr>",
-                &imported_anchor,
-            )?
-            .into_bytes();
+            drawing_entry.bytes =
+                insert_before_close_tag(&drawing_xml, "</xdr:wsDr>", &imported_anchor)?
+                    .into_bytes();
             let relationship = format!(
                 "<Relationship Id=\"{new_chart_id}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart\" Target=\"../charts/chart{chart_number}.xml\"/>"
             );
-            target_drawing_rels = insert_before_close_tag(
-                &target_drawing_rels,
-                "</Relationships>",
-                &relationship,
-            )?;
+            target_drawing_rels =
+                insert_before_close_tag(&target_drawing_rels, "</Relationships>", &relationship)?;
             self.entry_mut(&target_drawing_rels_path)?.bytes = target_drawing_rels.into_bytes();
         } else {
             let drawing_number = next_part_number(&self.entries, "xl/drawings/drawing", ".xml");
@@ -1308,9 +1282,9 @@ fn upsert_hyperlink_element(xml: &str, hyperlink: &str) -> Result<String> {
     }
     if let Some(start) = xml.find("<hyperlinks") {
         let end = start
-            + xml[start..]
-                .find("/>")
-                .ok_or_else(|| Error::Xlsx("template hyperlinks element is malformed".to_owned()))?
+            + xml[start..].find("/>").ok_or_else(|| {
+                Error::Xlsx("template hyperlinks element is malformed".to_owned())
+            })?
             + 2;
         return Ok(format!(
             "{}<hyperlinks>{hyperlink}</hyperlinks>{}",
@@ -1436,7 +1410,11 @@ fn remove_xml_element_by_attribute(
     while let Some(relative) = xml[offset..].find(&marker) {
         let start = offset + relative;
         let name_end = start + marker.len();
-        if xml.as_bytes().get(name_end).is_some_and(|byte| !byte.is_ascii_whitespace()) {
+        if xml
+            .as_bytes()
+            .get(name_end)
+            .is_some_and(|byte| !byte.is_ascii_whitespace())
+        {
             offset = name_end;
             continue;
         }
@@ -1478,7 +1456,11 @@ fn xml_element_by_attribute(
     while let Some(relative) = xml[offset..].find(&marker) {
         let start = offset + relative;
         let name_end = start + marker.len();
-        if xml.as_bytes().get(name_end).is_some_and(|byte| !byte.is_ascii_whitespace()) {
+        if xml
+            .as_bytes()
+            .get(name_end)
+            .is_some_and(|byte| !byte.is_ascii_whitespace())
+        {
             offset = name_end;
             continue;
         }
@@ -1513,7 +1495,11 @@ fn xml_element_inners<'a>(xml: &'a str, tag: &str) -> Vec<&'a str> {
     while let Some(relative) = xml[offset..].find(&marker) {
         let start = offset + relative;
         let name_end = start + marker.len();
-        if xml.as_bytes().get(name_end).is_some_and(|byte| !byte.is_ascii_whitespace() && *byte != b'>') {
+        if xml
+            .as_bytes()
+            .get(name_end)
+            .is_some_and(|byte| !byte.is_ascii_whitespace() && *byte != b'>')
+        {
             offset = name_end;
             continue;
         }
@@ -1617,7 +1603,11 @@ fn remove_vml_comment_shape(xml: &str, row: usize, column: usize) -> Result<(Str
 }
 
 fn chart_anchor(drawing_xml: &str) -> Option<String> {
-    for tag in ["xdr:twoCellAnchor", "xdr:oneCellAnchor", "xdr:absoluteAnchor"] {
+    for tag in [
+        "xdr:twoCellAnchor",
+        "xdr:oneCellAnchor",
+        "xdr:absoluteAnchor",
+    ] {
         let open = format!("<{tag}");
         let Some(start) = drawing_xml.find(&open) else {
             continue;
@@ -1630,7 +1620,11 @@ fn chart_anchor(drawing_xml: &str) -> Option<String> {
 }
 
 fn image_anchor(drawing_xml: &str) -> Option<String> {
-    for tag in ["xdr:twoCellAnchor", "xdr:oneCellAnchor", "xdr:absoluteAnchor"] {
+    for tag in [
+        "xdr:twoCellAnchor",
+        "xdr:oneCellAnchor",
+        "xdr:absoluteAnchor",
+    ] {
         let open = format!("<{tag}");
         let close = format!("</{tag}>");
         let mut offset = 0usize;
@@ -1755,9 +1749,8 @@ fn ensure_content_type_override(
         entry.bytes = xml.into_bytes();
         return Ok(());
     }
-    let override_tag = format!(
-        "<Override PartName=\"{part_name}\" ContentType=\"{content_type}\"/>"
-    );
+    let override_tag =
+        format!("<Override PartName=\"{part_name}\" ContentType=\"{content_type}\"/>");
     entry.bytes = insert_before_close_tag(&xml, "</Types>", &override_tag)?.into_bytes();
     Ok(())
 }
@@ -1777,9 +1770,8 @@ fn ensure_content_type_default(
         entry.bytes = xml.into_bytes();
         return Ok(());
     }
-    let default_tag = format!(
-        "<Default Extension=\"{extension}\" ContentType=\"{content_type}\"/>"
-    );
+    let default_tag =
+        format!("<Default Extension=\"{extension}\" ContentType=\"{content_type}\"/>");
     entry.bytes = insert_before_close_tag(&xml, "</Types>", &default_tag)?.into_bytes();
     Ok(())
 }
@@ -2026,7 +2018,8 @@ mod tests {
     #[test]
     fn remove_xml_element_by_attribute_removes_self_closing() {
         let xml = r#"<hyperlinks><hyperlink ref="A1" r:id="rId1"/><hyperlink ref="B2" r:id="rId2"/></hyperlinks>"#;
-        let (result, removed) = remove_xml_element_by_attribute(xml, "hyperlink", "ref", "A1").unwrap();
+        let (result, removed) =
+            remove_xml_element_by_attribute(xml, "hyperlink", "ref", "A1").unwrap();
         assert!(removed);
         assert!(!result.contains("rId1"));
         assert!(result.contains("rId2"));
@@ -2035,7 +2028,8 @@ mod tests {
     #[test]
     fn remove_xml_element_by_attribute_returns_false_when_not_found() {
         let xml = r#"<hyperlinks><hyperlink ref="A1" r:id="rId1"/></hyperlinks>"#;
-        let (result, removed) = remove_xml_element_by_attribute(xml, "hyperlink", "ref", "C3").unwrap();
+        let (result, removed) =
+            remove_xml_element_by_attribute(xml, "hyperlink", "ref", "C3").unwrap();
         assert!(!removed);
         assert_eq!(result, xml);
     }
@@ -2043,7 +2037,8 @@ mod tests {
     #[test]
     fn remove_xml_element_by_attribute_removes_element_with_children() {
         let xml = "<comments><comment ref=\"A1\"><text>hello</text></comment></comments>";
-        let (result, removed) = remove_xml_element_by_attribute(xml, "comment", "ref", "A1").unwrap();
+        let (result, removed) =
+            remove_xml_element_by_attribute(xml, "comment", "ref", "A1").unwrap();
         assert!(removed);
         assert!(!result.contains("hello"));
     }
@@ -2101,36 +2096,32 @@ mod tests {
 
     #[test]
     fn validate_row_shapes_rejects_mismatched_absent_count() {
-        let rows: Vec<Vec<(usize, TemplateCellValue)>> = vec![
-            vec![(0, TemplateCellValue::Number("1".into()))],
-        ];
+        let rows: Vec<Vec<(usize, TemplateCellValue)>> =
+            vec![vec![(0, TemplateCellValue::Number("1".into()))]];
         let absent: Vec<bool> = vec![false, true, false]; // 3 != 1
         assert!(validate_row_shapes(&rows, &[], &[], &absent).is_err());
     }
 
     #[test]
     fn validate_row_shapes_rejects_mismatched_height_count() {
-        let rows: Vec<Vec<(usize, TemplateCellValue)>> = vec![
-            vec![(0, TemplateCellValue::Number("1".into()))],
-        ];
+        let rows: Vec<Vec<(usize, TemplateCellValue)>> =
+            vec![vec![(0, TemplateCellValue::Number("1".into()))]];
         let heights: Vec<Option<u16>> = vec![Some(20), Some(30)]; // 2 != 1
         assert!(validate_row_shapes(&rows, &heights, &[], &[]).is_err());
     }
 
     #[test]
     fn validate_row_shapes_rejects_mismatched_style_count() {
-        let rows: Vec<Vec<(usize, TemplateCellValue)>> = vec![
-            vec![(0, TemplateCellValue::Number("1".into()))],
-        ];
+        let rows: Vec<Vec<(usize, TemplateCellValue)>> =
+            vec![vec![(0, TemplateCellValue::Number("1".into()))]];
         let styles: Vec<Vec<Option<u32>>> = vec![vec![None], vec![None]]; // 2 != 1
         assert!(validate_row_shapes(&rows, &[], &styles, &[]).is_err());
     }
 
     #[test]
     fn validate_row_shapes_accepts_empty_optional_slices() {
-        let rows: Vec<Vec<(usize, TemplateCellValue)>> = vec![
-            vec![(0, TemplateCellValue::Number("1".into()))],
-        ];
+        let rows: Vec<Vec<(usize, TemplateCellValue)>> =
+            vec![vec![(0, TemplateCellValue::Number("1".into()))]];
         assert!(validate_row_shapes(&rows, &[], &[], &[]).is_ok());
     }
 
@@ -2178,7 +2169,12 @@ mod tests {
             unix_mode: None,
             bytes: br#"<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"></Types>"#.to_vec(),
         }];
-        ensure_content_type_override(&mut entries, "/xl/comments1.xml", "application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml").unwrap();
+        ensure_content_type_override(
+            &mut entries,
+            "/xl/comments1.xml",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml",
+        )
+        .unwrap();
         let xml = String::from_utf8(entries[0].bytes.clone()).unwrap();
         assert!(xml.contains("PartName=\"/xl/comments1.xml\""));
     }
@@ -2193,7 +2189,8 @@ mod tests {
             unix_mode: None,
             bytes: xml.to_vec(),
         }];
-        ensure_content_type_override(&mut entries, "/xl/comments1.xml", "application/test").unwrap();
+        ensure_content_type_override(&mut entries, "/xl/comments1.xml", "application/test")
+            .unwrap();
         // 不应修改内容（已存在）
         assert_eq!(entries[0].bytes, xml.to_vec());
     }
@@ -2230,14 +2227,14 @@ mod tests {
 
     // ── 额外 import ────────────────────────────────────────────────────
 
+    use super::super::ooxml_package::OoxmlPackage;
     use super::{
-        chart_anchor, drawing_image_relationship_id, drawing_relationship_id,
-        image_anchor, insert_drawing_reference, relationship_target,
+        OoxmlTemplatePackage, chart_anchor, drawing_image_relationship_id, drawing_relationship_id,
+        entry_index, entry_string, image_anchor, insert_drawing_reference, relationship_target,
         relationship_target_by_type, remove_vml_comment_shape, template_column_width_pixels,
         template_row_height_pixels, vml_comment_shape, with_next_drawing_object_id,
-        with_next_vml_shape_id, OoxmlTemplatePackage, entry_index, entry_string, xml_elements,
+        with_next_vml_shape_id, xml_elements,
     };
-    use super::super::ooxml_package::OoxmlPackage;
 
     /// 构建最小 OOXML 模板包，包含 workbook.xml、workbook.xml.rels、
     /// [Content_Types].xml、xl/styles.xml 和 xl/worksheets/sheet1.xml。
@@ -2273,11 +2270,41 @@ mod tests {
 <dimension ref="A1"/><sheetData></sheetData></worksheet>"#;
 
         let entries = vec![
-            OoxmlZipEntry { name: "xl/workbook.xml".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: workbook.to_vec() },
-            OoxmlZipEntry { name: "xl/_rels/workbook.xml.rels".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: rels.to_vec() },
-            OoxmlZipEntry { name: "[Content_Types].xml".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: content_types.to_vec() },
-            OoxmlZipEntry { name: "xl/styles.xml".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: styles.to_vec() },
-            OoxmlZipEntry { name: "xl/worksheets/sheet1.xml".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: worksheet.to_vec() },
+            OoxmlZipEntry {
+                name: "xl/workbook.xml".into(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: workbook.to_vec(),
+            },
+            OoxmlZipEntry {
+                name: "xl/_rels/workbook.xml.rels".into(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: rels.to_vec(),
+            },
+            OoxmlZipEntry {
+                name: "[Content_Types].xml".into(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: content_types.to_vec(),
+            },
+            OoxmlZipEntry {
+                name: "xl/styles.xml".into(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: styles.to_vec(),
+            },
+            OoxmlZipEntry {
+                name: "xl/worksheets/sheet1.xml".into(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: worksheet.to_vec(),
+            },
         ];
         OoxmlTemplatePackage::from_package(OoxmlPackage::from_entries(entries))
     }
@@ -2318,11 +2345,41 @@ mod tests {
 <row r="3"><c r="A3"><v>99</v></c></row>
 </sheetData></worksheet>"#;
         let entries = vec![
-            OoxmlZipEntry { name: "xl/workbook.xml".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: workbook.to_vec() },
-            OoxmlZipEntry { name: "xl/_rels/workbook.xml.rels".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: rels.to_vec() },
-            OoxmlZipEntry { name: "[Content_Types].xml".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: content_types.to_vec() },
-            OoxmlZipEntry { name: "xl/styles.xml".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: styles.to_vec() },
-            OoxmlZipEntry { name: "xl/worksheets/sheet1.xml".into(), is_dir: false, compression: CompressionMethod::Stored, unix_mode: None, bytes: worksheet.to_vec() },
+            OoxmlZipEntry {
+                name: "xl/workbook.xml".into(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: workbook.to_vec(),
+            },
+            OoxmlZipEntry {
+                name: "xl/_rels/workbook.xml.rels".into(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: rels.to_vec(),
+            },
+            OoxmlZipEntry {
+                name: "[Content_Types].xml".into(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: content_types.to_vec(),
+            },
+            OoxmlZipEntry {
+                name: "xl/styles.xml".into(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: styles.to_vec(),
+            },
+            OoxmlZipEntry {
+                name: "xl/worksheets/sheet1.xml".into(),
+                is_dir: false,
+                compression: CompressionMethod::Stored,
+                unix_mode: None,
+                bytes: worksheet.to_vec(),
+            },
         ];
         OoxmlTemplatePackage::from_package(OoxmlPackage::from_entries(entries))
     }
@@ -2712,7 +2769,10 @@ mod tests {
     fn validate_row_shapes_rejects_cell_styles_inner_mismatch() {
         let rows: Vec<Vec<(usize, TemplateCellValue)>> = vec![
             vec![(0, TemplateCellValue::Number("1".into()))],
-            vec![(0, TemplateCellValue::Number("2".into())), (1, TemplateCellValue::Number("3".into()))],
+            vec![
+                (0, TemplateCellValue::Number("2".into())),
+                (1, TemplateCellValue::Number("3".into())),
+            ],
         ];
         let styles: Vec<Vec<Option<u32>>> = vec![vec![None], vec![None]]; // inner len 1 != 2
         assert!(validate_row_shapes(&rows, &[], &styles, &[]).is_err());
@@ -2911,7 +2971,10 @@ mod tests {
     #[test]
     fn sheet_name_by_worksheet_path_error_for_missing() {
         let pkg = minimal_template_package();
-        assert!(pkg.sheet_name_by_worksheet_path("xl/worksheets/sheet99.xml").is_err());
+        assert!(
+            pkg.sheet_name_by_worksheet_path("xl/worksheets/sheet99.xml")
+                .is_err()
+        );
     }
 
     // ── ensure_sheet 覆盖 ─────────────────────────────────────────────
@@ -2980,12 +3043,11 @@ mod tests {
     #[test]
     fn append_rows_with_heights_and_styles() {
         let mut pkg = minimal_template_package();
-        let rows = vec![
-            vec![(0, TemplateCellValue::Number("1".into()))],
-        ];
+        let rows = vec![vec![(0, TemplateCellValue::Number("1".into()))]];
         let heights = vec![Some(30)];
         let styles = vec![vec![Some(1)]];
-        pkg.append_rows("Sheet1", &rows, &heights, &styles, &[]).unwrap();
+        pkg.append_rows("Sheet1", &rows, &heights, &styles, &[])
+            .unwrap();
     }
 
     #[test]
@@ -3020,7 +3082,8 @@ mod tests {
     #[test]
     fn apply_sheet_layout_sets_column_widths() {
         let mut pkg = minimal_template_package();
-        pkg.apply_sheet_layout("Sheet1", &[(0, 20), (1, 30)], &[]).unwrap();
+        pkg.apply_sheet_layout("Sheet1", &[(0, 20), (1, 30)], &[])
+            .unwrap();
     }
 
     #[test]
@@ -3041,7 +3104,8 @@ mod tests {
     #[test]
     fn set_cell_updates_value() {
         let mut pkg = template_package_with_rows();
-        pkg.set_cell("Sheet1", 0, 0, &TemplateCellValue::Text("updated".into())).unwrap();
+        pkg.set_cell("Sheet1", 0, 0, &TemplateCellValue::Text("updated".into()))
+            .unwrap();
     }
 
     #[test]
@@ -3161,37 +3225,43 @@ mod tests {
     fn set_template_hyperlink_url_type() {
         let mut pkg = minimal_template_package();
         let hyperlink = TemplateHyperlink::new("https://example.com", TemplateHyperlinkType::Url);
-        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink).unwrap();
+        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink)
+            .unwrap();
     }
 
     #[test]
     fn set_template_hyperlink_email_type() {
         let mut pkg = minimal_template_package();
         let hyperlink = TemplateHyperlink::new("test@example.com", TemplateHyperlinkType::Email);
-        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink).unwrap();
+        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink)
+            .unwrap();
     }
 
     #[test]
     fn set_template_hyperlink_file_type() {
         let mut pkg = minimal_template_package();
         let hyperlink = TemplateHyperlink::new("/path/to/file.xlsx", TemplateHyperlinkType::File);
-        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink).unwrap();
+        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink)
+            .unwrap();
     }
 
     #[test]
     fn set_template_hyperlink_document_type() {
         let mut pkg = minimal_template_package();
         let hyperlink = TemplateHyperlink::new("Sheet2!A1", TemplateHyperlinkType::Document);
-        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink).unwrap();
+        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink)
+            .unwrap();
     }
 
     #[test]
     fn set_template_hyperlink_replaces_existing() {
         let mut pkg = minimal_template_package();
         let hyperlink = TemplateHyperlink::new("https://first.com", TemplateHyperlinkType::Url);
-        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink).unwrap();
+        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink)
+            .unwrap();
         let hyperlink2 = TemplateHyperlink::new("https://second.com", TemplateHyperlinkType::Url);
-        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink2).unwrap();
+        pkg.set_template_hyperlink("Sheet1", 0, 0, &hyperlink2)
+            .unwrap();
         // 验证 second.com 关系存在（在 rels 文件中）
         let rels_path = "xl/worksheets/_rels/sheet1.xml.rels";
         let rels_xml = pkg.entry_xml(rels_path).unwrap();

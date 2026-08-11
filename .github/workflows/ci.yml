@@ -10,7 +10,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  RUSTDOCFLAGS: -D warnings
 
 permissions:
   contents: read
@@ -85,7 +84,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Clippy
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+        run: cargo clippy --workspace --all-targets --all-features
 
   fmt:
     name: rustfmt

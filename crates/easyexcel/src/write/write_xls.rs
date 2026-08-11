@@ -59,14 +59,7 @@ where
         options.template_file.as_deref(),
         options.template_bytes.as_deref(),
     ) {
-        write_xls_onto_template::<T, I>(
-            path,
-            None,
-            options,
-            rows,
-            handlers,
-            &workbook_context,
-        )?;
+        write_xls_onto_template::<T, I>(path, None, options, rows, handlers, &workbook_context)?;
         return Ok(());
     }
 

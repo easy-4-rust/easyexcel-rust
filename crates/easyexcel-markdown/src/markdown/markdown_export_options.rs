@@ -144,51 +144,45 @@ mod tests {
 
     #[test]
     fn with_profile_human_readable_sets_merge_policy() {
-        let opts = MarkdownExportOptions::default()
-            .with_profile(MarkdownProfile::HumanReadable);
+        let opts = MarkdownExportOptions::default().with_profile(MarkdownProfile::HumanReadable);
         assert_eq!(opts.profile(), MarkdownProfile::HumanReadable);
         assert_eq!(opts.merges(), MarkdownMergePolicy::HtmlFallback);
     }
 
     #[test]
     fn with_mode() {
-        let opts = MarkdownExportOptions::default()
-            .with_mode(MarkdownConversionMode::Event);
+        let opts = MarkdownExportOptions::default().with_mode(MarkdownConversionMode::Event);
         assert_eq!(opts.mode(), MarkdownConversionMode::Event);
     }
 
     #[test]
     fn with_header() {
-        let opts = MarkdownExportOptions::default()
-            .with_header(MarkdownHeaderPolicy::Generated);
+        let opts = MarkdownExportOptions::default().with_header(MarkdownHeaderPolicy::Generated);
         assert_eq!(opts.header(), MarkdownHeaderPolicy::Generated);
     }
 
     #[test]
     fn with_formulas() {
-        let opts = MarkdownExportOptions::default()
-            .with_formulas(MarkdownFormulaPolicy::Expression);
+        let opts =
+            MarkdownExportOptions::default().with_formulas(MarkdownFormulaPolicy::Expression);
         assert_eq!(opts.formulas(), MarkdownFormulaPolicy::Expression);
     }
 
     #[test]
     fn with_merges() {
-        let opts = MarkdownExportOptions::default()
-            .with_merges(MarkdownMergePolicy::Error);
+        let opts = MarkdownExportOptions::default().with_merges(MarkdownMergePolicy::Error);
         assert_eq!(opts.merges(), MarkdownMergePolicy::Error);
     }
 
     #[test]
     fn with_values() {
-        let opts = MarkdownExportOptions::default()
-            .with_values(MarkdownValuePolicy::Raw);
+        let opts = MarkdownExportOptions::default().with_values(MarkdownValuePolicy::Raw);
         assert_eq!(opts.values(), MarkdownValuePolicy::Raw);
     }
 
     #[test]
     fn with_include_hidden() {
-        let opts = MarkdownExportOptions::default()
-            .with_include_hidden(true);
+        let opts = MarkdownExportOptions::default().with_include_hidden(true);
         assert!(opts.include_hidden());
     }
 

@@ -6,9 +6,7 @@
 use bigdecimal::BigDecimal;
 use num_bigint::BigInt;
 
-use crate::{
-    CellValue, ExcelContentProperty, ExcelError, NumberRoundingMode, WriteCellData,
-};
+use crate::{CellValue, ExcelContentProperty, ExcelError, NumberRoundingMode, WriteCellData};
 
 pub(crate) use easyexcel_format::NonFiniteNumber;
 /// 对应 Java：NumberUtils.parseShort。
@@ -130,7 +128,12 @@ pub fn format(
     let Some((pattern, rounding_mode)) = number_format(property) else {
         return Ok(value.to_string());
     };
-    format_decimal(value, value.to_string().starts_with('-'), Some(pattern), rounding_mode)
+    format_decimal(
+        value,
+        value.to_string().starts_with('-'),
+        Some(pattern),
+        rounding_mode,
+    )
 }
 
 /// 对应 Java：`NumberUtils.formatToCellData(Number, ExcelContentProperty)`。
@@ -352,7 +355,9 @@ mod tests {
 
     #[test]
     fn parse_double_with_property_no_property() {
-        assert!((parse_double_with_property("3.14", None).unwrap() - 3.14_f64).abs() < f64::EPSILON);
+        assert!(
+            (parse_double_with_property("3.14", None).unwrap() - 3.14_f64).abs() < f64::EPSILON
+        );
     }
 
     // --- parse_big_decimal_with_property ---

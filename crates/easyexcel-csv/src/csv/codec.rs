@@ -443,7 +443,10 @@ mod tests {
     #[test]
     fn infer_cell_iso_date_stays_text() {
         // ISO 日期存为文本以避免丢失格式
-        assert_eq!(infer_cell("2024-01-15"), Cell::Text("2024-01-15".to_string()));
+        assert_eq!(
+            infer_cell("2024-01-15"),
+            Cell::Text("2024-01-15".to_string())
+        );
     }
 
     #[test]

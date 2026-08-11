@@ -55,17 +55,31 @@ impl<V: CsvCellValue> CsvCell<V> {
         self.column_index
     }
     /// 返回父工作簿稳定身份。对应 Java Lombok `getCsvWorkbook`。
-    #[must_use] pub const fn get_csv_workbook(&self) -> Option<usize> { self.csv_workbook_id }
+    #[must_use]
+    pub const fn get_csv_workbook(&self) -> Option<usize> {
+        self.csv_workbook_id
+    }
     /// 设置父工作簿稳定身份。
-    pub const fn set_csv_workbook(&mut self, value: Option<usize>) { self.csv_workbook_id = value; }
+    pub const fn set_csv_workbook(&mut self, value: Option<usize>) {
+        self.csv_workbook_id = value;
+    }
     /// 返回父工作表稳定身份。对应 Java Lombok `getCsvSheet`。
     #[must_use]
-    pub const fn get_csv_sheet(&self) -> Option<usize> { self.csv_sheet_id }
+    pub const fn get_csv_sheet(&self) -> Option<usize> {
+        self.csv_sheet_id
+    }
     /// 设置父工作表稳定身份。
-    pub const fn set_csv_sheet(&mut self, value: Option<usize>) { self.csv_sheet_id = value; }
+    pub const fn set_csv_sheet(&mut self, value: Option<usize>) {
+        self.csv_sheet_id = value;
+    }
     /// 返回父行的零基行号。对应 Java Lombok `getCsvRow` 的稳定身份映射。
-    #[must_use] pub const fn get_csv_row(&self) -> u32 { self.row_index }
-    pub const fn get_column_index(&self) -> u16 { self.column_index() }
+    #[must_use]
+    pub const fn get_csv_row(&self) -> u32 {
+        self.row_index
+    }
+    pub const fn get_column_index(&self) -> u16 {
+        self.column_index()
+    }
 
     /// 返回有类型值。
     #[must_use]
@@ -149,75 +163,127 @@ impl<V: CsvCellValue> CsvCell<V> {
 
     /// 返回零基行下标。
     #[must_use]
-    pub const fn row_index(&self) -> u32 { self.row_index }
-    pub const fn get_row_index(&self) -> u32 { self.row_index() }
+    pub const fn row_index(&self) -> u32 {
+        self.row_index
+    }
+    pub const fn get_row_index(&self) -> u32 {
+        self.row_index()
+    }
 
     /// 返回 Java/POI 单元格类型。
     #[must_use]
-    pub const fn cell_type(&self) -> CsvCellType { self.cell_type }
-    pub const fn get_cell_type(&self) -> CsvCellType { self.cell_type() }
+    pub const fn cell_type(&self) -> CsvCellType {
+        self.cell_type
+    }
+    pub const fn get_cell_type(&self) -> CsvCellType {
+        self.cell_type()
+    }
 
     /// 返回公式文本。
     #[must_use]
-    pub fn cell_formula(&self) -> Option<&str> { self.formula_data.as_deref() }
-    pub fn get_cell_formula(&self) -> Option<&str> { self.cell_formula() }
-    pub fn get_formula_data(&self) -> Option<&str> { self.cell_formula() }
+    pub fn cell_formula(&self) -> Option<&str> {
+        self.formula_data.as_deref()
+    }
+    pub fn get_cell_formula(&self) -> Option<&str> {
+        self.cell_formula()
+    }
+    pub fn get_formula_data(&self) -> Option<&str> {
+        self.cell_formula()
+    }
     pub fn set_formula_data(&mut self, value: Option<String>) {
         match value {
             Some(value) => self.set_formula(value),
             None => {
                 self.formula_data = None;
-                if self.cell_type == CsvCellType::Formula { self.cell_type = CsvCellType::Blank; }
+                if self.cell_type == CsvCellType::Formula {
+                    self.cell_type = CsvCellType::Blank;
+                }
             }
         }
     }
 
     /// 返回数字值；非数字时按 Java CSV 默认返回 0。
     #[must_use]
-    pub fn numeric_cell_value(&self) -> f64 { self.value.csv_number().unwrap_or(0.0) }
-    pub fn get_numeric_cell_value(&self) -> f64 { self.numeric_cell_value() }
+    pub fn numeric_cell_value(&self) -> f64 {
+        self.value.csv_number().unwrap_or(0.0)
+    }
+    pub fn get_numeric_cell_value(&self) -> f64 {
+        self.numeric_cell_value()
+    }
 
     /// 返回日期时间值。
     #[must_use]
-    pub const fn local_date_time_cell_value(&self) -> Option<NaiveDateTime> { self.date_value }
+    pub const fn local_date_time_cell_value(&self) -> Option<NaiveDateTime> {
+        self.date_value
+    }
     pub const fn get_local_date_time_cell_value(&self) -> Option<NaiveDateTime> {
         self.local_date_time_cell_value()
     }
-    pub const fn get_date_cell_value(&self) -> Option<NaiveDateTime> { self.date_value }
-    pub const fn get_date_value(&self) -> Option<NaiveDateTime> { self.date_value }
+    pub const fn get_date_cell_value(&self) -> Option<NaiveDateTime> {
+        self.date_value
+    }
+    pub const fn get_date_value(&self) -> Option<NaiveDateTime> {
+        self.date_value
+    }
 
     /// 返回富文本值；普通字符串按需构造兼容包装。
     #[must_use]
     pub fn rich_string_cell_value(&self) -> CsvRichTextString {
-        self.rich_text.clone().unwrap_or_else(|| CsvRichTextString::new(self.value.csv_display_text()))
+        self.rich_text
+            .clone()
+            .unwrap_or_else(|| CsvRichTextString::new(self.value.csv_display_text()))
     }
-    pub fn get_rich_string_cell_value(&self) -> CsvRichTextString { self.rich_string_cell_value() }
-    pub fn get_rich_text_string(&self) -> CsvRichTextString { self.rich_string_cell_value() }
-    pub fn set_rich_text_string(&mut self, value: &CsvRichTextString) { self.set_rich_text(value); }
+    pub fn get_rich_string_cell_value(&self) -> CsvRichTextString {
+        self.rich_string_cell_value()
+    }
+    pub fn get_rich_text_string(&self) -> CsvRichTextString {
+        self.rich_string_cell_value()
+    }
+    pub fn set_rich_text_string(&mut self, value: &CsvRichTextString) {
+        self.set_rich_text(value);
+    }
 
     /// 返回字符串值。
     #[must_use]
-    pub fn string_cell_value(&self) -> String { self.value.csv_display_text() }
-    pub fn get_string_cell_value(&self) -> String { self.string_cell_value() }
-    pub fn get_string_value(&self) -> String { self.string_cell_value() }
+    pub fn string_cell_value(&self) -> String {
+        self.value.csv_display_text()
+    }
+    pub fn get_string_cell_value(&self) -> String {
+        self.string_cell_value()
+    }
+    pub fn get_string_value(&self) -> String {
+        self.string_cell_value()
+    }
     pub fn set_string_value(&mut self, value: impl Into<String>) {
         self.set_value(V::from_csv_text(value.into()));
     }
 
     /// 返回布尔值；非布尔时按 Java CSV 默认返回 false。
     #[must_use]
-    pub fn boolean_cell_value(&self) -> bool { self.value.csv_bool().unwrap_or(false) }
-    pub fn get_boolean_cell_value(&self) -> bool { self.boolean_cell_value() }
-    pub fn get_boolean_value(&self) -> Option<bool> { self.value.csv_bool() }
+    pub fn boolean_cell_value(&self) -> bool {
+        self.value.csv_bool().unwrap_or(false)
+    }
+    pub fn get_boolean_cell_value(&self) -> bool {
+        self.boolean_cell_value()
+    }
+    pub fn get_boolean_value(&self) -> Option<bool> {
+        self.value.csv_bool()
+    }
 
     /// 返回错误码；非错误时按 Java CSV 默认返回 0。
     #[must_use]
-    pub fn error_cell_value(&self) -> u8 { self.value.csv_error().unwrap_or(0) }
-    pub fn get_error_cell_value(&self) -> u8 { self.error_cell_value() }
+    pub fn error_cell_value(&self) -> u8 {
+        self.value.csv_error().unwrap_or(0)
+    }
+    pub fn get_error_cell_value(&self) -> u8 {
+        self.error_cell_value()
+    }
 
     /// Java cached formula result type 在 CSV 中等于当前类型。
     #[must_use]
-    pub const fn cached_formula_result_type(&self) -> CsvCellType { self.cell_type }
+    pub const fn cached_formula_result_type(&self) -> CsvCellType {
+        self.cell_type
+    }
     pub const fn get_cached_formula_result_type(&self) -> CsvCellType {
         self.cached_formula_result_type()
     }
@@ -233,7 +299,9 @@ impl<V: CsvCellValue> CsvCell<V> {
     }
     pub fn set_numeric_cell_type(&mut self, value: Option<V::NumericCellType>) {
         self.numeric_cell_type = value;
-        if value.is_some() { self.cell_type = CsvCellType::Numeric; }
+        if value.is_some() {
+            self.cell_type = CsvCellType::Numeric;
+        }
     }
 
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 应用 CSV 单元格样式。
@@ -247,22 +315,27 @@ impl<V: CsvCellValue> CsvCell<V> {
     pub const fn cell_style(&self) -> Option<&CsvCellStyle> {
         self.cell_style.as_ref()
     }
-    pub const fn get_cell_style(&self) -> Option<&CsvCellStyle> { self.cell_style() }
+    pub const fn get_cell_style(&self) -> Option<&CsvCellStyle> {
+        self.cell_style()
+    }
 
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回写入 CSV 记录的显示文本。
     #[must_use]
     pub fn display_text(&self) -> String {
-        self.date_value.map_or_else(|| self.value.csv_display_text(), |value| value.format("%Y-%m-%d %H:%M:%S").to_string())
+        self.date_value.map_or_else(
+            || self.value.csv_display_text(),
+            |value| value.format("%Y-%m-%d %H:%M:%S").to_string(),
+        )
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::csv::CsvRichTextString;
     use crate::csv::CsvNumericCellType;
-    use easyexcel_model::CellValue as ModelCellValue;
+    use crate::csv::CsvRichTextString;
     use chrono::NaiveDate;
+    use easyexcel_model::CellValue as ModelCellValue;
 
     type TestCell = CsvCell<ModelCellValue>;
 
@@ -361,7 +434,10 @@ mod tests {
     #[test]
     fn set_date_value() {
         let mut cell = TestCell::new(0);
-        let dt = NaiveDate::from_ymd_opt(2024, 1, 15).unwrap().and_hms_opt(10, 30, 0).unwrap();
+        let dt = NaiveDate::from_ymd_opt(2024, 1, 15)
+            .unwrap()
+            .and_hms_opt(10, 30, 0)
+            .unwrap();
         cell.set_date_value(dt);
         assert_eq!(cell.cell_type(), CsvCellType::Numeric);
         assert_eq!(cell.local_date_time_cell_value(), Some(dt));
@@ -483,7 +559,10 @@ mod tests {
     #[test]
     fn display_text_with_date() {
         let mut cell = TestCell::new(0);
-        let dt = NaiveDate::from_ymd_opt(2024, 6, 15).unwrap().and_hms_opt(12, 0, 0).unwrap();
+        let dt = NaiveDate::from_ymd_opt(2024, 6, 15)
+            .unwrap()
+            .and_hms_opt(12, 0, 0)
+            .unwrap();
         cell.set_date_value(dt);
         assert_eq!(cell.display_text(), "2024-06-15 12:00:00");
     }
@@ -507,7 +586,10 @@ mod tests {
     #[test]
     fn local_date_time_aliases() {
         let mut cell = TestCell::new(0);
-        let dt = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap().and_hms_opt(0, 0, 0).unwrap();
+        let dt = NaiveDate::from_ymd_opt(2024, 1, 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
         cell.set_date_value(dt);
         assert_eq!(cell.get_local_date_time_cell_value(), Some(dt));
         assert_eq!(cell.get_date_cell_value(), Some(dt));

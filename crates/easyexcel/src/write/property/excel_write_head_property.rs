@@ -170,8 +170,13 @@ impl ExcelWriteHeadProperty {
     pub const fn head_row_height_property(&self) -> Option<&RowHeightProperty> {
         self.head_row_height_property.as_ref()
     }
-    #[must_use] pub const fn get_head_row_height_property(&self) -> Option<&RowHeightProperty> { self.head_row_height_property() }
-    pub const fn set_head_row_height_property(&mut self, value: Option<RowHeightProperty>) { self.head_row_height_property = value; }
+    #[must_use]
+    pub const fn get_head_row_height_property(&self) -> Option<&RowHeightProperty> {
+        self.head_row_height_property()
+    }
+    pub const fn set_head_row_height_property(&mut self, value: Option<RowHeightProperty>) {
+        self.head_row_height_property = value;
+    }
 
     /// Returns the content row-height property. (Java getter)
     #[must_use]
@@ -179,8 +184,13 @@ impl ExcelWriteHeadProperty {
     pub const fn content_row_height_property(&self) -> Option<&RowHeightProperty> {
         self.content_row_height_property.as_ref()
     }
-    #[must_use] pub const fn get_content_row_height_property(&self) -> Option<&RowHeightProperty> { self.content_row_height_property() }
-    pub const fn set_content_row_height_property(&mut self, value: Option<RowHeightProperty>) { self.content_row_height_property = value; }
+    #[must_use]
+    pub const fn get_content_row_height_property(&self) -> Option<&RowHeightProperty> {
+        self.content_row_height_property()
+    }
+    pub const fn set_content_row_height_property(&mut self, value: Option<RowHeightProperty>) {
+        self.content_row_height_property = value;
+    }
 
     /// Returns the once-absolute merge property. (Java getter)
     #[must_use]
@@ -188,8 +198,16 @@ impl ExcelWriteHeadProperty {
     pub const fn once_absolute_merge_property(&self) -> Option<&OnceAbsoluteMergeProperty> {
         self.once_absolute_merge_property.as_ref()
     }
-    #[must_use] pub const fn get_once_absolute_merge_property(&self) -> Option<&OnceAbsoluteMergeProperty> { self.once_absolute_merge_property() }
-    pub const fn set_once_absolute_merge_property(&mut self, value: Option<OnceAbsoluteMergeProperty>) { self.once_absolute_merge_property = value; }
+    #[must_use]
+    pub const fn get_once_absolute_merge_property(&self) -> Option<&OnceAbsoluteMergeProperty> {
+        self.once_absolute_merge_property()
+    }
+    pub const fn set_once_absolute_merge_property(
+        &mut self,
+        value: Option<OnceAbsoluteMergeProperty>,
+    ) {
+        self.once_absolute_merge_property = value;
+    }
 
     /// Calculates every automatic header merge. (Java `headCellRangeList()`)
     #[must_use]

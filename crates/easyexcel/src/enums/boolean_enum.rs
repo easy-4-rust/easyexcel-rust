@@ -25,8 +25,13 @@ impl BooleanEnum {
     /// Java `values()` 的声明顺序。
     pub const ALL: [Self; 3] = [Self::Default, Self::True, Self::False];
     /// Java 枚举常量名。
-    #[must_use] pub const fn java_name(self) -> &'static str {
-        match self { Self::Default => "DEFAULT", Self::True => "TRUE", Self::False => "FALSE" }
+    #[must_use]
+    pub const fn java_name(self) -> &'static str {
+        match self {
+            Self::Default => "DEFAULT",
+            Self::True => "TRUE",
+            Self::False => "FALSE",
+        }
     }
     /// Resolves to a nullable `bool`.
     #[must_use]
@@ -41,13 +46,17 @@ impl BooleanEnum {
 
     /// Java `getBooleanValue()` 兼容别名。
     #[must_use]
-    pub const fn get_boolean_value(self) -> Option<bool> { self.value() }
+    pub const fn get_boolean_value(self) -> Option<bool> {
+        self.value()
+    }
 }
 
 impl std::str::FromStr for BooleanEnum {
     type Err = String;
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Self::ALL.into_iter().find(|item| item.java_name() == value)
+        Self::ALL
+            .into_iter()
+            .find(|item| item.java_name() == value)
             .ok_or_else(|| format!("unknown BooleanEnum value: {value}"))
     }
 }

@@ -273,8 +273,11 @@ mod tests {
 
     #[test]
     fn create_cache_auto_mode_selects_file_for_large() {
-        let cache = create_cache(ReadCacheMode::Auto, DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES + 1)
-            .expect("create");
+        let cache = create_cache(
+            ReadCacheMode::Auto,
+            DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES + 1,
+        )
+        .expect("create");
         assert_eq!(cache.len(), 0);
     }
 

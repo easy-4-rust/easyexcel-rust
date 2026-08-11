@@ -211,9 +211,7 @@ pub(super) fn apply_benchmark_map(row: BenchmarkRow, work_factor: u32) -> Benchm
         fingerprint ^= u64::from(round).wrapping_mul(0x9e37_79b9_7f4a_7c15);
         for byte in row.name.as_bytes() {
             fingerprint ^= u64::from(*byte);
-            fingerprint = fingerprint
-                .rotate_left(9)
-                .wrapping_mul(0x1000_0000_01b3);
+            fingerprint = fingerprint.rotate_left(9).wrapping_mul(0x1000_0000_01b3);
         }
     }
     std::hint::black_box(fingerprint);

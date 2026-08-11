@@ -20,7 +20,9 @@ impl CellHandlerExecutionChain {
     }
     /// Java `getNext`。
     #[must_use]
-    pub fn get_next(&self) -> Option<&CellHandlerExecutionChain> { self.next.as_deref() }
+    pub fn get_next(&self) -> Option<&CellHandlerExecutionChain> {
+        self.next.as_deref()
+    }
     /// Java `setNext`。
     pub fn set_next(&mut self, value: Option<CellHandlerExecutionChain>) {
         self.next = value.map(Box::new);

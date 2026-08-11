@@ -19,7 +19,10 @@ mod tests {
 
     #[test]
     fn default_is_cached_value() {
-        assert_eq!(MarkdownFormulaPolicy::default(), MarkdownFormulaPolicy::CachedValue);
+        assert_eq!(
+            MarkdownFormulaPolicy::default(),
+            MarkdownFormulaPolicy::CachedValue
+        );
     }
 
     #[test]

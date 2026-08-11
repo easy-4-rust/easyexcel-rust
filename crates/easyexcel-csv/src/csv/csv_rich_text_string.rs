@@ -55,9 +55,13 @@ impl CsvRichTextString {
         None
     }
     /// Java `getIndexOfFormattingRun()` returns zero for CSV.
-    pub const fn get_index_of_formatting_run(&self, _index: usize) -> usize { 0 }
+    pub const fn get_index_of_formatting_run(&self, _index: usize) -> usize {
+        0
+    }
     /// Java `getFontOfFormattingRun()` has no CSV font backing.
-    pub const fn get_font_of_formatting_run(&self, _index: usize) -> Option<u16> { None }
+    pub const fn get_font_of_formatting_run(&self, _index: usize) -> Option<u16> {
+        None
+    }
 
     /// CSV 对字体应用采取 Java 实现相同的 no-op 语义。
     pub const fn apply_font(&mut self, _start: usize, _end: usize, _font_index: u16) {}

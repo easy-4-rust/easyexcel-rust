@@ -31,16 +31,25 @@ pub(crate) fn convert_text_to_rust_value(
                 return source
                     .parse::<$type>()
                     .map(|value| value.to_string())
-                    .map_err(|_| ExcelError::Format(format!(
-                        "cannot convert '{source}' to {}",
-                        std::any::type_name::<$type>()
-                    )));
+                    .map_err(|_| {
+                        ExcelError::Format(format!(
+                            "cannot convert '{source}' to {}",
+                            std::any::type_name::<$type>()
+                        ))
+                    });
             }
         };
     }
-    numeric!(i8); numeric!(i16); numeric!(i32); numeric!(i64);
-    numeric!(u8); numeric!(u16); numeric!(u32); numeric!(u64);
-    numeric!(f32); numeric!(f64);
+    numeric!(i8);
+    numeric!(i16);
+    numeric!(i32);
+    numeric!(i64);
+    numeric!(u8);
+    numeric!(u16);
+    numeric!(u32);
+    numeric!(u64);
+    numeric!(f32);
+    numeric!(f64);
     Err(ExcelError::Unsupported(format!(
         "ConverterUtils.convertToJavaObject has no converter for target TypeId {target_type:?}"
     )))
@@ -72,7 +81,8 @@ fn convert_read_cell_without_registered_converter(
         return Ok(Box::new(text.to_owned()));
     }
     if target_type == TypeId::of::<bool>() {
-        return source.boolean_value()
+        return source
+            .boolean_value()
             .map(|value| Box::new(value) as Box<dyn Any>)
             .ok_or_else(|| ExcelError::Format(format!("cannot convert '{text}' to bool")));
     }
@@ -85,18 +95,25 @@ fn convert_read_cell_without_registered_converter(
                     .as_ref()
                     .and_then(|value| value.$method())
                     .map(|value| Box::new(value) as Box<dyn Any>)
-                    .ok_or_else(|| ExcelError::Format(format!(
-                        "cannot convert '{text}' to {}",
-                        std::any::type_name::<$type>()
-                    )));
+                    .ok_or_else(|| {
+                        ExcelError::Format(format!(
+                            "cannot convert '{text}' to {}",
+                            std::any::type_name::<$type>()
+                        ))
+                    });
             }
         };
     }
-    decimal_target!(i8, to_i8); decimal_target!(i16, to_i16);
-    decimal_target!(i32, to_i32); decimal_target!(i64, to_i64);
-    decimal_target!(u8, to_u8); decimal_target!(u16, to_u16);
-    decimal_target!(u32, to_u32); decimal_target!(u64, to_u64);
-    decimal_target!(f32, to_f32); decimal_target!(f64, to_f64);
+    decimal_target!(i8, to_i8);
+    decimal_target!(i16, to_i16);
+    decimal_target!(i32, to_i32);
+    decimal_target!(i64, to_i64);
+    decimal_target!(u8, to_u8);
+    decimal_target!(u16, to_u16);
+    decimal_target!(u32, to_u32);
+    decimal_target!(u64, to_u64);
+    decimal_target!(f32, to_f32);
+    decimal_target!(f64, to_f64);
     Err(ExcelError::Unsupported(format!(
         "ConverterUtils.convertToJavaObject has no converter for target TypeId {target_type:?}"
     )))
@@ -139,7 +156,10 @@ pub fn convert_read_cells_to_string_map(
         let value = if cell.cell_type() == crate::CellDataType::Empty {
             None
         } else {
-            Some(convert_text_to_rust_value(cell.string_value(), TypeId::of::<String>())?)
+            Some(convert_text_to_rust_value(
+                cell.string_value(),
+                TypeId::of::<String>(),
+            )?)
         };
         result.insert(*column, value);
         index = column.saturating_add(1);

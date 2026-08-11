@@ -54,42 +54,86 @@ impl BasicParameter {
     }
 
     /// Java `getHead` 别名。
-    #[must_use] pub fn get_head(&self) -> Option<&[Vec<String>]> { self.head.as_deref() }
+    #[must_use]
+    pub fn get_head(&self) -> Option<&[Vec<String>]> {
+        self.head.as_deref()
+    }
     /// Java `setHead`。
-    pub fn set_head(&mut self, value: Option<Vec<Vec<String>>>) { self.head = value; }
+    pub fn set_head(&mut self, value: Option<Vec<Vec<String>>>) {
+        self.head = value;
+    }
     /// Java `getClazz` 的 Rust 类型名映射。
-    #[must_use] pub fn get_clazz(&self) -> Option<&str> { self.clazz.as_deref() }
+    #[must_use]
+    pub fn get_clazz(&self) -> Option<&str> {
+        self.clazz.as_deref()
+    }
     /// Java `setClazz` 的 Rust 类型名映射。
-    pub fn set_clazz(&mut self, value: Option<String>) { self.clazz = value; }
+    pub fn set_clazz(&mut self, value: Option<String>) {
+        self.clazz = value;
+    }
     /// Java `getCustomConverterList` 别名。
-    #[must_use] pub fn get_custom_converter_list(&self) -> &[String] { &self.custom_converter_list }
+    #[must_use]
+    pub fn get_custom_converter_list(&self) -> &[String] {
+        &self.custom_converter_list
+    }
     /// Java `setCustomConverterList`。
-    pub fn set_custom_converter_list(&mut self, value: Vec<String>) { self.custom_converter_list = value; }
+    pub fn set_custom_converter_list(&mut self, value: Vec<String>) {
+        self.custom_converter_list = value;
+    }
     /// Java `getAutoTrim`。
-    #[must_use] pub const fn get_auto_trim(&self) -> Option<bool> { self.auto_trim }
+    #[must_use]
+    pub const fn get_auto_trim(&self) -> Option<bool> {
+        self.auto_trim
+    }
     /// Java `setAutoTrim`。
-    pub const fn set_auto_trim(&mut self, value: Option<bool>) { self.auto_trim = value; }
+    pub const fn set_auto_trim(&mut self, value: Option<bool>) {
+        self.auto_trim = value;
+    }
     /// Java `getUse1904windowing`。
-    #[must_use] pub const fn get_use_1904windowing(&self) -> Option<bool> { self.use1904windowing }
+    #[must_use]
+    pub const fn get_use_1904windowing(&self) -> Option<bool> {
+        self.use1904windowing
+    }
     /// Java `getUse1904windowing` 的逐字符 snake_case 名称。
     #[must_use]
-    pub const fn get_use1904windowing(&self) -> Option<bool> { self.use1904windowing }
+    pub const fn get_use1904windowing(&self) -> Option<bool> {
+        self.use1904windowing
+    }
     /// Java `setUse1904windowing`。
-    pub const fn set_use_1904windowing(&mut self, value: Option<bool>) { self.use1904windowing = value; }
+    pub const fn set_use_1904windowing(&mut self, value: Option<bool>) {
+        self.use1904windowing = value;
+    }
     /// Java `setUse1904windowing` 的逐字符 snake_case 名称。
-    pub const fn set_use1904windowing(&mut self, value: Option<bool>) { self.use1904windowing = value; }
+    pub const fn set_use1904windowing(&mut self, value: Option<bool>) {
+        self.use1904windowing = value;
+    }
     /// Java `getLocale` 的语言标签映射。
-    #[must_use] pub fn get_locale(&self) -> Option<&str> { self.locale.as_deref() }
+    #[must_use]
+    pub fn get_locale(&self) -> Option<&str> {
+        self.locale.as_deref()
+    }
     /// Java `setLocale` 的语言标签映射。
-    pub fn set_locale(&mut self, value: Option<String>) { self.locale = value; }
+    pub fn set_locale(&mut self, value: Option<String>) {
+        self.locale = value;
+    }
     /// Java `getUseScientificFormat`。
-    #[must_use] pub const fn get_use_scientific_format(&self) -> Option<bool> { self.use_scientific_format }
+    #[must_use]
+    pub const fn get_use_scientific_format(&self) -> Option<bool> {
+        self.use_scientific_format
+    }
     /// Java `setUseScientificFormat`。
-    pub const fn set_use_scientific_format(&mut self, value: Option<bool>) { self.use_scientific_format = value; }
+    pub const fn set_use_scientific_format(&mut self, value: Option<bool>) {
+        self.use_scientific_format = value;
+    }
     /// Java `getFiledCacheLocation`（保留上游拼写）。
-    #[must_use] pub const fn get_filed_cache_location(&self) -> Option<CacheLocation> { self.filed_cache_location }
+    #[must_use]
+    pub const fn get_filed_cache_location(&self) -> Option<CacheLocation> {
+        self.filed_cache_location
+    }
     /// Java `setFiledCacheLocation`（保留上游拼写）。
-    pub const fn set_filed_cache_location(&mut self, value: Option<CacheLocation>) { self.filed_cache_location = value; }
+    pub const fn set_filed_cache_location(&mut self, value: Option<CacheLocation>) {
+        self.filed_cache_location = value;
+    }
 }
 
 #[cfg(test)]
@@ -191,7 +235,10 @@ mod tests {
         // 对应 Java：filedCacheLocation getter/setter
         let mut param = BasicParameter::new();
         param.set_filed_cache_location(Some(CacheLocation::ThreadLocal));
-        assert_eq!(param.get_filed_cache_location(), Some(CacheLocation::ThreadLocal));
+        assert_eq!(
+            param.get_filed_cache_location(),
+            Some(CacheLocation::ThreadLocal)
+        );
         param.set_filed_cache_location(None);
         assert!(param.get_filed_cache_location().is_none());
     }

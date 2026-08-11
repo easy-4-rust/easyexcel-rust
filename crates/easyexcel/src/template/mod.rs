@@ -18,9 +18,9 @@ pub(crate) use builder_fill_executor::{
 pub use fill_config::{FillConfig, FillConfigBuilder, FillDirection};
 pub use fill_wrapper::FillWrapper;
 pub use template_data::{IntoTemplateValue, TemplateData};
+pub(crate) use template_output::TemplateOutput;
 pub use template_sheet::TemplateSheet;
 pub use template_writer::{ExcelTemplateWriter, fill_xlsx_template, fill_xlsx_template_list};
-pub(crate) use template_output::TemplateOutput;
 
 #[cfg(test)]
 mod tests;

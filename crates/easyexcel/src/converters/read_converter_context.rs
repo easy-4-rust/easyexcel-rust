@@ -23,11 +23,17 @@ pub struct ReadConverterContext<'a> {
 
 impl<'a> ReadConverterContext<'a> {
     /// 替换读取单元格数据。对应 Java Lombok setter。
-    pub const fn set_read_cell_data(&mut self, value: Option<&'a CellValue>) { self.cell = value; }
+    pub const fn set_read_cell_data(&mut self, value: Option<&'a CellValue>) {
+        self.cell = value;
+    }
     /// 替换字段内容属性。对应 Java Lombok setter。
-    pub const fn set_content_property(&mut self, value: &'a ExcelColumn) { self.column = value; }
+    pub const fn set_content_property(&mut self, value: &'a ExcelColumn) {
+        self.column = value;
+    }
     /// 替换分析上下文。对应 Java Lombok setter。
-    pub const fn set_analysis_context(&mut self, value: &'a ConvertContext) { self.context = value; }
+    pub const fn set_analysis_context(&mut self, value: &'a ConvertContext) {
+        self.context = value;
+    }
     /// Creates a read conversion context. (Java `@AllArgsConstructor`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.converters.ReadConverterContext。

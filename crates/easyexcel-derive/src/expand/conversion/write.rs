@@ -144,21 +144,35 @@ mod tests {
 
     #[test]
     fn side_effect_free_primitives() {
-        assert!(is_side_effect_free_original_type(&syn::parse_quote!(String)));
+        assert!(is_side_effect_free_original_type(&syn::parse_quote!(
+            String
+        )));
         assert!(is_side_effect_free_original_type(&syn::parse_quote!(bool)));
         assert!(is_side_effect_free_original_type(&syn::parse_quote!(i32)));
         assert!(is_side_effect_free_original_type(&syn::parse_quote!(u64)));
         assert!(is_side_effect_free_original_type(&syn::parse_quote!(f64)));
-        assert!(is_side_effect_free_original_type(&syn::parse_quote!(BigDecimal)));
-        assert!(is_side_effect_free_original_type(&syn::parse_quote!(NaiveDate)));
-        assert!(is_side_effect_free_original_type(&syn::parse_quote!(NaiveDateTime)));
+        assert!(is_side_effect_free_original_type(&syn::parse_quote!(
+            BigDecimal
+        )));
+        assert!(is_side_effect_free_original_type(&syn::parse_quote!(
+            NaiveDate
+        )));
+        assert!(is_side_effect_free_original_type(&syn::parse_quote!(
+            NaiveDateTime
+        )));
     }
 
     #[test]
     fn not_side_effect_free_complex_types() {
-        assert!(!is_side_effect_free_original_type(&syn::parse_quote!(Vec<String>)));
-        assert!(!is_side_effect_free_original_type(&syn::parse_quote!(Option<i32>)));
-        assert!(!is_side_effect_free_original_type(&syn::parse_quote!(MyCustomType)));
+        assert!(!is_side_effect_free_original_type(&syn::parse_quote!(
+            Vec<String>
+        )));
+        assert!(!is_side_effect_free_original_type(&syn::parse_quote!(
+            Option<i32>
+        )));
+        assert!(!is_side_effect_free_original_type(&syn::parse_quote!(
+            MyCustomType
+        )));
     }
 
     #[test]

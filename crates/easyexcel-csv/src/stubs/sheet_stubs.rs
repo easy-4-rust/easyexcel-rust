@@ -26,17 +26,27 @@ impl<V: CsvCellValue> CsvSheet<V> {
         0
     }
     /// 对应 Java: CsvSheet#getNumMergedRegions no-op
-    pub const fn get_num_merged_regions(&self) -> usize { self.number_of_merged_regions() }
+    pub const fn get_num_merged_regions(&self) -> usize {
+        self.number_of_merged_regions()
+    }
 
     /// CSV 不保存合并区域；不安全版本。
     /// 对应 Java: CsvSheet#addMergedRegion no-op
-    pub const fn add_merged_region_unsafe(&mut self) -> usize { 0 }
+    pub const fn add_merged_region_unsafe(&mut self) -> usize {
+        0
+    }
     /// CSV 不保存合并区域。
     /// 对应 Java: CsvSheet#getMergedRegion no-op
-    #[must_use] pub const fn get_merged_region(&self, _index: usize) -> Option<&str> { None }
+    #[must_use]
+    pub const fn get_merged_region(&self, _index: usize) -> Option<&str> {
+        None
+    }
     /// CSV 不保存合并区域。
     /// 对应 Java: CsvSheet#getMergedRegions no-op
-    #[must_use] pub const fn get_merged_regions(&self) -> Vec<&str> { Vec::new() }
+    #[must_use]
+    pub const fn get_merged_regions(&self) -> Vec<&str> {
+        Vec::new()
+    }
     /// CSV 不保存合并区域。
     /// 对应 Java: CsvSheet#removeMergedRegion no-op
     pub const fn remove_merged_region(&mut self, _index: usize) {}
@@ -75,7 +85,14 @@ impl<V: CsvCellValue> CsvSheet<V> {
 
     /// CSV 不保存分割窗格；保留 Java no-op 调用体验。
     /// 对应 Java: CsvSheet#createSplitPane no-op
-    pub const fn create_split_pane(&mut self, _x_split: usize, _y_split: usize, _left: usize, _top: usize) {}
+    pub const fn create_split_pane(
+        &mut self,
+        _x_split: usize,
+        _y_split: usize,
+        _left: usize,
+        _top: usize,
+    ) {
+    }
 
     /// CSV 不保存窗格显示；保留 Java no-op 调用体验。
     /// 对应 Java: CsvSheet#showInPane no-op
@@ -90,7 +107,9 @@ impl<V: CsvCellValue> CsvSheet<V> {
     /// CSV 不保存缩放比例。
     /// 对应 Java: CsvSheet#getZoom no-op
     #[must_use]
-    pub const fn get_zoom(&self) -> usize { 0 }
+    pub const fn get_zoom(&self) -> usize {
+        0
+    }
 
     // ─── 公式重算 (Formula Recalc) ───
 
@@ -113,31 +132,57 @@ impl<V: CsvCellValue> CsvSheet<V> {
 
     /// Java CSV Sheet 的不持久化视图属性。
     /// 对应 Java: CsvSheet#getDefaultColumnWidth no-op
-    pub const fn get_default_column_width(&self) -> usize { 0 }
+    pub const fn get_default_column_width(&self) -> usize {
+        0
+    }
     /// 对应 Java: CsvSheet#getDefaultRowHeight no-op
-    pub const fn get_default_row_height(&self) -> u16 { 0 }
+    pub const fn get_default_row_height(&self) -> u16 {
+        0
+    }
     /// 对应 Java: CsvSheet#getDefaultRowHeightInPoints no-op
-    pub const fn get_default_row_height_in_points(&self) -> f32 { 0.0 }
+    pub const fn get_default_row_height_in_points(&self) -> f32 {
+        0.0
+    }
     /// 对应 Java: CsvSheet#getHorizontallyCenter no-op
-    pub const fn get_horizontally_center(&self) -> bool { false }
+    pub const fn get_horizontally_center(&self) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#getVerticallyCenter no-op
-    pub const fn get_vertically_center(&self) -> bool { false }
+    pub const fn get_vertically_center(&self) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#isDisplayZeros no-op
-    pub const fn is_display_zeros(&self) -> bool { false }
+    pub const fn is_display_zeros(&self) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#isDisplayFormulas no-op
-    pub const fn is_display_formulas(&self) -> bool { false }
+    pub const fn is_display_formulas(&self) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#isPrintGridlines no-op
-    pub const fn is_print_gridlines(&self) -> bool { false }
+    pub const fn is_print_gridlines(&self) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#isSelected no-op
-    pub const fn is_selected(&self) -> bool { false }
+    pub const fn is_selected(&self) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#isRightToLeft no-op
-    pub const fn is_right_to_left(&self) -> bool { false }
+    pub const fn is_right_to_left(&self) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#getTopRow no-op
-    pub const fn get_top_row(&self) -> usize { 0 }
+    pub const fn get_top_row(&self) -> usize {
+        0
+    }
     /// 对应 Java: CsvSheet#getLeftCol no-op
-    pub const fn get_left_col(&self) -> usize { 0 }
+    pub const fn get_left_col(&self) -> usize {
+        0
+    }
     /// 对应 Java: CsvSheet#getMargin no-op
-    pub const fn get_margin(&self, _margin: usize) -> f64 { 0.0 }
+    pub const fn get_margin(&self, _margin: usize) -> f64 {
+        0.0
+    }
 
     // ─── 视图 Setter (View Setter) ───
 
@@ -175,27 +220,53 @@ impl<V: CsvCellValue> CsvSheet<V> {
 
     /// CSV 行迭代器；STUB 委托给 rows()。
     /// 对应 Java: CsvSheet#rowIterator no-op
-    pub fn row_iterator(&self) -> impl Iterator<Item = &CsvRow<V>> { self.rows() }
+    pub fn row_iterator(&self) -> impl Iterator<Item = &CsvRow<V>> {
+        self.rows()
+    }
 
     // ─── 列样式/轮廓/分页符 (Column Style/Outline/Breaks) ───
 
     /// CSV 不保存列样式、轮廓、分页符或窗格。
     /// 对应 Java: CsvSheet#getColumnStyle no-op
-    #[must_use] pub const fn get_column_style(&self, _column: usize) -> Option<&str> { None }
+    #[must_use]
+    pub const fn get_column_style(&self, _column: usize) -> Option<&str> {
+        None
+    }
     /// 对应 Java: CsvSheet#getColumnWidthInPixels no-op
-    #[must_use] pub const fn get_column_width_in_pixels(&self, _column: usize) -> f32 { 0.0 }
+    #[must_use]
+    pub const fn get_column_width_in_pixels(&self, _column: usize) -> f32 {
+        0.0
+    }
     /// 对应 Java: CsvSheet#getColumnOutlineLevel no-op
-    #[must_use] pub const fn get_column_outline_level(&self, _column: usize) -> u8 { 0 }
+    #[must_use]
+    pub const fn get_column_outline_level(&self, _column: usize) -> u8 {
+        0
+    }
     /// 对应 Java: CsvSheet#getColumnBreaks no-op
-    #[must_use] pub const fn get_column_breaks(&self) -> Vec<usize> { Vec::new() }
+    #[must_use]
+    pub const fn get_column_breaks(&self) -> Vec<usize> {
+        Vec::new()
+    }
     /// 对应 Java: CsvSheet#getRowBreaks no-op
-    #[must_use] pub const fn get_row_breaks(&self) -> Vec<usize> { Vec::new() }
+    #[must_use]
+    pub const fn get_row_breaks(&self) -> Vec<usize> {
+        Vec::new()
+    }
     /// 对应 Java: CsvSheet#isColumnBroken no-op
-    #[must_use] pub const fn is_column_broken(&self, _column: usize) -> bool { false }
+    #[must_use]
+    pub const fn is_column_broken(&self, _column: usize) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#isRowBroken no-op
-    #[must_use] pub const fn is_row_broken(&self, _row: usize) -> bool { false }
+    #[must_use]
+    pub const fn is_row_broken(&self, _row: usize) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#getPaneInformation no-op
-    #[must_use] pub const fn get_pane_information(&self) -> Option<&str> { None }
+    #[must_use]
+    pub const fn get_pane_information(&self) -> Option<&str> {
+        None
+    }
     /// 对应 Java: CsvSheet#setColumnBreak no-op
     pub const fn set_column_break(&mut self, _column: usize) {}
     /// 对应 Java: CsvSheet#removeColumnBreak no-op
@@ -227,25 +298,55 @@ impl<V: CsvCellValue> CsvSheet<V> {
 
     /// Java CSV Sheet 的打印/显示 no-op 状态。
     /// 对应 Java: CsvSheet#isDisplayGridlines no-op
-    #[must_use] pub const fn is_display_gridlines(&self) -> bool { false }
+    #[must_use]
+    pub const fn is_display_gridlines(&self) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#isDisplayRowColHeadings no-op
-    #[must_use] pub const fn is_display_row_col_headings(&self) -> bool { false }
+    #[must_use]
+    pub const fn is_display_row_col_headings(&self) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#isPrintRowAndColumnHeadings no-op
-    #[must_use] pub const fn is_print_row_and_column_headings(&self) -> bool { false }
+    #[must_use]
+    pub const fn is_print_row_and_column_headings(&self) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#getAutobreaks no-op
-    #[must_use] pub const fn get_autobreaks(&self) -> bool { false }
+    #[must_use]
+    pub const fn get_autobreaks(&self) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#getDisplayGuts no-op
-    #[must_use] pub const fn get_display_guts(&self) -> bool { false }
+    #[must_use]
+    pub const fn get_display_guts(&self) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#getFitToPage no-op
-    #[must_use] pub const fn get_fit_to_page(&self) -> bool { false }
+    #[must_use]
+    pub const fn get_fit_to_page(&self) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#getRowSumsBelow no-op
-    #[must_use] pub const fn get_row_sums_below(&self) -> bool { false }
+    #[must_use]
+    pub const fn get_row_sums_below(&self) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#getRowSumsRight no-op
-    #[must_use] pub const fn get_row_sums_right(&self) -> bool { false }
+    #[must_use]
+    pub const fn get_row_sums_right(&self) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#getScenarioProtect no-op
-    #[must_use] pub const fn get_scenario_protect(&self) -> bool { false }
+    #[must_use]
+    pub const fn get_scenario_protect(&self) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#getProtect no-op
-    #[must_use] pub const fn get_protect(&self) -> bool { false }
+    #[must_use]
+    pub const fn get_protect(&self) -> bool {
+        false
+    }
     /// 对应 Java: CsvSheet#setDisplayGridlines no-op
     pub const fn set_display_gridlines(&mut self, _value: bool) {}
     /// 对应 Java: CsvSheet#setDisplayRowColHeadings no-op
@@ -271,11 +372,20 @@ impl<V: CsvCellValue> CsvSheet<V> {
     /// 对应 Java: CsvSheet#setRepeatingRows no-op
     pub const fn set_repeating_rows(&mut self, _range: Option<&str>) {}
     /// 对应 Java: CsvSheet#getRepeatingColumns no-op
-    #[must_use] pub const fn get_repeating_columns(&self) -> Option<&str> { None }
+    #[must_use]
+    pub const fn get_repeating_columns(&self) -> Option<&str> {
+        None
+    }
     /// 对应 Java: CsvSheet#getRepeatingRows no-op
-    #[must_use] pub const fn get_repeating_rows(&self) -> Option<&str> { None }
+    #[must_use]
+    pub const fn get_repeating_rows(&self) -> Option<&str> {
+        None
+    }
     /// 对应 Java: CsvSheet#getActiveCell no-op
-    #[must_use] pub const fn get_active_cell(&self) -> Option<&str> { None }
+    #[must_use]
+    pub const fn get_active_cell(&self) -> Option<&str> {
+        None
+    }
     /// 对应 Java: CsvSheet#setActiveCell no-op
     pub const fn set_active_cell(&mut self, _reference: &str) {}
 
@@ -283,42 +393,84 @@ impl<V: CsvCellValue> CsvSheet<V> {
 
     /// CSV 不保存批注。
     /// 对应 Java: CsvSheet#getCellComments no-op
-    #[must_use] pub const fn get_cell_comments(&self) -> Vec<&str> { Vec::new() }
+    #[must_use]
+    pub const fn get_cell_comments(&self) -> Vec<&str> {
+        Vec::new()
+    }
     /// CSV 不保存批注。
     /// 对应 Java: CsvSheet#getCellComment no-op
-    #[must_use] pub const fn get_cell_comment(&self, _reference: &str) -> Option<&str> { None }
+    #[must_use]
+    pub const fn get_cell_comment(&self, _reference: &str) -> Option<&str> {
+        None
+    }
     /// CSV 不保存超链接。
     /// 对应 Java: CsvSheet#getHyperlinkList no-op
-    #[must_use] pub const fn get_hyperlink_list(&self) -> Vec<&str> { Vec::new() }
+    #[must_use]
+    pub const fn get_hyperlink_list(&self) -> Vec<&str> {
+        Vec::new()
+    }
     /// CSV 不保存数据验证。
     /// 对应 Java: CsvSheet#getDataValidations no-op
-    #[must_use] pub const fn get_data_validations(&self) -> Vec<&str> { Vec::new() }
+    #[must_use]
+    pub const fn get_data_validations(&self) -> Vec<&str> {
+        Vec::new()
+    }
     /// 对应 Java: CsvSheet#addValidationData no-op
     pub const fn add_validation_data(&mut self, _validation: &str) {}
     /// 对应 Java: CsvSheet#getDrawingPatriarch no-op
-    #[must_use] pub const fn get_drawing_patriarch(&self) -> Option<&str> { None }
+    #[must_use]
+    pub const fn get_drawing_patriarch(&self) -> Option<&str> {
+        None
+    }
     /// Java CSV 返回 `null`。
     /// 对应 Java: CsvSheet#createDrawingPatriarch no-op
-    #[must_use] pub const fn create_drawing_patriarch(&mut self) -> Option<()> { None }
+    #[must_use]
+    pub const fn create_drawing_patriarch(&mut self) -> Option<()> {
+        None
+    }
     /// Java CSV 返回 `null`。
     /// 对应 Java: CsvSheet#setArrayFormula no-op
-    #[must_use] pub const fn set_array_formula(&mut self, _formula: &str, _range: &str) -> Option<()> { None }
+    #[must_use]
+    pub const fn set_array_formula(&mut self, _formula: &str, _range: &str) -> Option<()> {
+        None
+    }
     /// Java CSV 返回 `null`。
     /// 对应 Java: CsvSheet#removeArrayFormula no-op
-    #[must_use] pub const fn remove_array_formula(&mut self, _row: u32, _column: u16) -> Option<()> { None }
+    #[must_use]
+    pub const fn remove_array_formula(&mut self, _row: u32, _column: u16) -> Option<()> {
+        None
+    }
     /// Java CSV 返回 `null`。
     /// 对应 Java: CsvSheet#getHyperlink no-op
-    #[must_use] pub const fn get_hyperlink(&self, _row: u32, _column: u16) -> Option<()> { None }
+    #[must_use]
+    pub const fn get_hyperlink(&self, _row: u32, _column: u16) -> Option<()> {
+        None
+    }
     /// 对应 Java: CsvSheet#getSheetConditionalFormatting no-op
-    #[must_use] pub const fn get_sheet_conditional_formatting(&self) -> Option<&str> { None }
+    #[must_use]
+    pub const fn get_sheet_conditional_formatting(&self) -> Option<&str> {
+        None
+    }
     /// 对应 Java: CsvSheet#getDataValidationHelper no-op
-    #[must_use] pub const fn get_data_validation_helper(&self) -> Option<&str> { None }
+    #[must_use]
+    pub const fn get_data_validation_helper(&self) -> Option<&str> {
+        None
+    }
     /// 对应 Java: CsvSheet#getPrintSetup no-op
-    #[must_use] pub const fn get_print_setup(&self) -> Option<&str> { None }
+    #[must_use]
+    pub const fn get_print_setup(&self) -> Option<&str> {
+        None
+    }
     /// 对应 Java: CsvSheet#getHeader no-op
-    #[must_use] pub const fn get_header(&self) -> Option<&str> { None }
+    #[must_use]
+    pub const fn get_header(&self) -> Option<&str> {
+        None
+    }
     /// 对应 Java: CsvSheet#getFooter no-op
-    #[must_use] pub const fn get_footer(&self) -> Option<&str> { None }
+    #[must_use]
+    pub const fn get_footer(&self) -> Option<&str> {
+        None
+    }
 }
 
 #[cfg(test)]

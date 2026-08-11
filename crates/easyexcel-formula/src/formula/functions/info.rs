@@ -472,20 +472,26 @@ mod tests {
         assert_eq!(type_fn(&mut c, &[Value::Empty]), Value::Number(1.0));
         // Array → 64
         assert_eq!(
-            type_fn(&mut c, &[Value::Array(crate::formula::value::Array::scalar(
-                Value::Number(1.0)
-            ))]),
+            type_fn(
+                &mut c,
+                &[Value::Array(crate::formula::value::Array::scalar(
+                    Value::Number(1.0)
+                ))]
+            ),
             Value::Number(64.0)
         );
         // Lambda → 128
-        use std::rc::Rc;
-        use crate::formula::value::Lambda;
         use crate::formula::ast::Expr;
+        use crate::formula::value::Lambda;
+        use std::rc::Rc;
         assert_eq!(
-            type_fn(&mut c, &[Value::Lambda(Rc::new(Lambda {
-                params: vec![],
-                body: Expr::Number(1.0),
-            }))]),
+            type_fn(
+                &mut c,
+                &[Value::Lambda(Rc::new(Lambda {
+                    params: vec![],
+                    body: Expr::Number(1.0),
+                }))]
+            ),
             Value::Number(128.0)
         );
     }

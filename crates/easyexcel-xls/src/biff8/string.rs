@@ -190,9 +190,7 @@ impl<'a> SegmentCursor<'a> {
             .current_segment()
             .and_then(|segment| segment.get(self.offset))
             .copied()
-            .ok_or_else(|| {
-                ExcelError::Xls(format!("SST string {index} truncated {field}"))
-            })?;
+            .ok_or_else(|| ExcelError::Xls(format!("SST string {index} truncated {field}")))?;
         self.offset += 1;
         Ok(value)
     }
@@ -397,10 +395,7 @@ mod tests_extra {
 
     #[test]
     fn decode_unicode_string_record_single_segment() -> Result<()> {
-        assert_eq!(
-            decode_unicode_string_record(&[2, 0, 0, b'h', b'i'])?,
-            "hi"
-        );
+        assert_eq!(decode_unicode_string_record(&[2, 0, 0, b'h', b'i'])?, "hi");
         Ok(())
     }
 

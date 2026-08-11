@@ -21,16 +21,14 @@ use easyexcel_io::{Error as ExcelError, Result};
 use super::cached::Biff8Cached;
 use super::encode::{
     BIFF8_VERSION, BLANK, BOF, BOOLERR, BOUNDSHEET, CALCMODE, CODENAME, CODEPAGE, COLINFO,
-    CONTINUE, DATEMODE, DBCELL, DEFCOLWIDTH, DEFAULTROWHEIGHT, DIMENSION, DT_GLOBALS,
-    DT_WORKSHEET, EOF, EXTERNSHEET, EXTSST, FILEPASS,
-    FONT, FORMAT, FORMULA, HYPERLINK, INTERFACEEND, INTERFACEHDR, LABELSST, MAX_RECORD_DATA, MMS,
-    STRING,
-    INDEX, MSODRAWING, MSODRAWINGGROUP, MULBLANK, MULRK, NOTE, NUMBER, OBJ, PANE, RK, ROW, SST,
-    OBJECTPROTECT, PASSWORD, PROTECT, SCENPROTECT, STANDARDWIDTH, STYLE, SUPBOOK, TXO, WINDOW1,
-    WINDOW2, WRITEACCESS, XF,
-    XF_DATE, XF_DATETIME, XF_GENERAL, encode_rk, encode_short_unicode_string,
-    encode_unicode_string, pack_colinfo_metadata, pack_default_row, pack_merge_range,
-    pack_row_metadata, pack_window1, record, write_merge_cells, write_palette_record,
+    CONTINUE, DATEMODE, DBCELL, DEFAULTROWHEIGHT, DEFCOLWIDTH, DIMENSION, DT_GLOBALS, DT_WORKSHEET,
+    EOF, EXTERNSHEET, EXTSST, FILEPASS, FONT, FORMAT, FORMULA, HYPERLINK, INDEX, INTERFACEEND,
+    INTERFACEHDR, LABELSST, MAX_RECORD_DATA, MMS, MSODRAWING, MSODRAWINGGROUP, MULBLANK, MULRK,
+    NOTE, NUMBER, OBJ, OBJECTPROTECT, PANE, PASSWORD, PROTECT, RK, ROW, SCENPROTECT, SST,
+    STANDARDWIDTH, STRING, STYLE, SUPBOOK, TXO, WINDOW1, WINDOW2, WRITEACCESS, XF, XF_DATE,
+    XF_DATETIME, XF_GENERAL, encode_rk, encode_short_unicode_string, encode_unicode_string,
+    pack_colinfo_metadata, pack_default_row, pack_merge_range, pack_row_metadata, pack_window1,
+    record, write_merge_cells, write_palette_record,
 };
 use super::style::Biff8StyleTable;
 

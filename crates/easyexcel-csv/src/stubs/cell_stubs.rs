@@ -17,7 +17,10 @@ impl<V: CsvCellValue> CsvCell<V> {
     pub const fn remove_cell_comment(&mut self) {}
     /// Java CSV 返回 `null`。
     /// 对应 Java: CsvCell#getCellComment no-op
-    #[must_use] pub const fn get_cell_comment(&self) -> Option<()> { None }
+    #[must_use]
+    pub const fn get_cell_comment(&self) -> Option<()> {
+        None
+    }
     /// Java CSV 为空操作。
     /// 对应 Java: CsvCell#setCellComment no-op
     pub const fn set_cell_comment(&mut self, _comment: Option<()>) {}
@@ -29,7 +32,10 @@ impl<V: CsvCellValue> CsvCell<V> {
     pub const fn remove_hyperlink(&mut self) {}
     /// Java CSV 返回 `null`。
     /// 对应 Java: CsvCell#getHyperlink no-op
-    #[must_use] pub const fn get_hyperlink(&self) -> Option<()> { None }
+    #[must_use]
+    pub const fn get_hyperlink(&self) -> Option<()> {
+        None
+    }
     /// Java CSV 为空操作。
     /// 对应 Java: CsvCell#setHyperlink no-op
     pub const fn set_hyperlink(&mut self, _hyperlink: Option<()>) {}
@@ -39,11 +45,16 @@ impl<V: CsvCellValue> CsvCell<V> {
     /// CSV 不支持数组公式。
     /// 对应 Java: CsvCell#isPartOfArrayFormulaGroup no-op
     #[must_use]
-    pub const fn is_part_of_array_formula_group(&self) -> bool { false }
+    pub const fn is_part_of_array_formula_group(&self) -> bool {
+        false
+    }
 
     /// Java CSV 返回 `null`，因为 CSV 不支持数组公式。
     /// 对应 Java: CsvCell#getArrayFormulaRange no-op
-    #[must_use] pub const fn get_array_formula_range(&self) -> Option<()> { None }
+    #[must_use]
+    pub const fn get_array_formula_range(&self) -> Option<()> {
+        None
+    }
 
     // ─── 活动单元格 (Active Cell) ───
 

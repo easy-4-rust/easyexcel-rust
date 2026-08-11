@@ -7,8 +7,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::core::{
     ExcelCellStyle, ExcelColumn, ExcelWriteMetadata, Result, WriteCellContext, WriteFont,
-    WriteHandler, WriteHandlerCapability, WriteRowContext, WriteSheetContext,
-    WriteWorkbookContext,
+    WriteHandler, WriteHandlerCapability, WriteRowContext, WriteSheetContext, WriteWorkbookContext,
 };
 use crate::event::NotRepeatExecutor;
 

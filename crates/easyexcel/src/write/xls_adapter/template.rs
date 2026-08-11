@@ -10,8 +10,8 @@ use std::path::Path;
 use crate::core::{CellValue, CoordinateData, ExcelError, HyperlinkType, Result};
 
 use super::{
-    Biff8Cell, Biff8Comment, Biff8HyperlinkKind, Biff8Merge, Biff8StyleRequest,
-    Biff8StyleTable, GeneratedBiff8CellValue, apply_write_font,
+    Biff8Cell, Biff8Comment, Biff8HyperlinkKind, Biff8Merge, Biff8StyleRequest, Biff8StyleTable,
+    GeneratedBiff8CellValue, apply_write_font,
 };
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 保留原 `EasyExcel` 路径的 BIFF8 模板包门面。
@@ -109,7 +109,8 @@ impl Biff8TemplatePackage {
             mapped_rows.push(mapped);
         }
         self.flush_rich_text_fonts()?;
-        let next_row = self.inner
+        let next_row = self
+            .inner
             .append_rows(sheet_name, &mapped_rows)
             .map_err(ExcelError::from)?;
         let mut comments = Vec::new();
@@ -228,15 +229,9 @@ impl Biff8TemplatePackage {
                 crate::context::write_mutation::WriteMutation::AddChart(chart) => {
                     let sheet_names = self.sheet_names();
                     let mut book = super::Biff8Book::default();
-                    book.sheets.extend(
-                        sheet_names
-                            .into_iter()
-                            .map(super::Biff8Sheet::new),
-                    );
-                    crate::write::excel_writer_core::add_biff8_chart(
-                        &mut book,
-                        &chart,
-                    )?;
+                    book.sheets
+                        .extend(sheet_names.into_iter().map(super::Biff8Sheet::new));
+                    crate::write::excel_writer_core::add_biff8_chart(&mut book, &chart)?;
                     let target = book
                         .sheets
                         .iter_mut()
@@ -443,8 +438,8 @@ impl Biff8TemplatePackage {
     }
 
     fn template_cell(&mut self, value: &CellValue) -> Result<Biff8Cell> {
-        if let CellValue::Comment { value, .. }
-        | CellValue::CommentWithMetadata { value, .. } = value
+        if let CellValue::Comment { value, .. } | CellValue::CommentWithMetadata { value, .. } =
+            value
         {
             return self.template_cell(value);
         }
@@ -514,9 +509,7 @@ impl Biff8TemplatePackage {
             if previous_font != Some(font_index) {
                 runs.push((
                     u16::try_from(utf16_start).map_err(|_| {
-                        ExcelError::Format(
-                            "BIFF8 rich text exceeds 65535 UTF-16 units".to_owned(),
-                        )
+                        ExcelError::Format("BIFF8 rich text exceeds 65535 UTF-16 units".to_owned())
                     })?,
                     font_index,
                 ));
@@ -529,9 +522,9 @@ impl Biff8TemplatePackage {
 
     fn flush_rich_text_fonts(&mut self) -> Result<()> {
         let fonts = self.rich_text_styles.custom_fonts();
-        let new_fonts = fonts
-            .get(self.emitted_rich_text_fonts..)
-            .ok_or_else(|| ExcelError::Format("BIFF8 rich-text font allocator regressed".to_owned()))?;
+        let new_fonts = fonts.get(self.emitted_rich_text_fonts..).ok_or_else(|| {
+            ExcelError::Format("BIFF8 rich-text font allocator regressed".to_owned())
+        })?;
         self.inner
             .append_custom_fonts(new_fonts)
             .map_err(ExcelError::from)?;
@@ -587,7 +580,9 @@ fn cell_value_to_template_cell(value: &CellValue) -> Result<Biff8Cell> {
         CellValue::String(text)
         | CellValue::Error(text)
         | CellValue::Hyperlink { text, .. }
-        | CellValue::HyperlinkWithMetadata { text, .. } => GeneratedBiff8CellValue::Text(text.clone()),
+        | CellValue::HyperlinkWithMetadata { text, .. } => {
+            GeneratedBiff8CellValue::Text(text.clone())
+        }
         CellValue::Formula(text) => GeneratedBiff8CellValue::Formula(text.clone()),
         CellValue::RichText(rich) => GeneratedBiff8CellValue::Text(rich.text_string().to_owned()),
         CellValue::Bool(flag) => GeneratedBiff8CellValue::Bool(*flag),
@@ -606,10 +601,13 @@ fn cell_value_to_template_cell(value: &CellValue) -> Result<Biff8Cell> {
                 GeneratedBiff8CellValue::Number(numeric)
             }
         }
-        CellValue::Date(date) => GeneratedBiff8CellValue::DateSerial(super::date_to_excel_serial(*date)),
-        CellValue::DateTime(datetime) => GeneratedBiff8CellValue::DateTimeSerial(super::datetime_to_excel_serial(*datetime)),
-        CellValue::Comment { value, .. }
-        | CellValue::CommentWithMetadata { value, .. } => {
+        CellValue::Date(date) => {
+            GeneratedBiff8CellValue::DateSerial(super::date_to_excel_serial(*date))
+        }
+        CellValue::DateTime(datetime) => {
+            GeneratedBiff8CellValue::DateTimeSerial(super::datetime_to_excel_serial(*datetime))
+        }
+        CellValue::Comment { value, .. } | CellValue::CommentWithMetadata { value, .. } => {
             return cell_value_to_template_cell(value);
         }
         CellValue::Images { .. } | CellValue::Image(_) => {
@@ -679,7 +677,9 @@ fn collect_template_decorations(
             let column = u8::try_from(column)
                 .map_err(|_| ExcelError::Format("BIFF8 comment column exceeds 255".to_owned()))?;
             if text.contains('\0') || text.encode_utf16().count() > usize::from(u16::MAX) {
-                return Err(ExcelError::Format("BIFF8 comment text is invalid or too long".to_owned()));
+                return Err(ExcelError::Format(
+                    "BIFF8 comment text is invalid or too long".to_owned(),
+                ));
             }
             target.push(TemplateDecoration::Comment(Biff8Comment::new(
                 row,
@@ -687,13 +687,7 @@ fn collect_template_decorations(
                 text.clone(),
                 "easyexcel-rust",
             )));
-            collect_template_decorations(
-                target,
-                u32::from(row),
-                usize::from(column),
-                value,
-                None,
-            )?;
+            collect_template_decorations(target, u32::from(row), usize::from(column), value, None)?;
         }
         CellValue::CommentWithMetadata { value, comment } => {
             let cell_row = u16::try_from(row)
@@ -715,24 +709,25 @@ fn collect_template_decorations(
             let anchor = comment.get_anchor();
             let (first_row, last_row, first_col, last_col) =
                 resolve_template_hyperlink_range(row, column, anchor.get_coordinates())?;
-            let mut biff8_comment = Biff8Comment::new(cell_row, cell_column, text, author).with_anchor(
-                u16::try_from(first_row).map_err(|_| {
-                    ExcelError::Format("BIFF8 comment first row exceeds 65535".to_owned())
-                })?,
-                u8::try_from(first_col).map_err(|_| {
-                    ExcelError::Format("BIFF8 comment first column exceeds 255".to_owned())
-                })?,
-                u16::try_from(last_row.saturating_add(1)).map_err(|_| {
-                    ExcelError::Format("BIFF8 comment last row exceeds 65535".to_owned())
-                })?,
-                u8::try_from(last_col.saturating_add(1)).map_err(|_| {
-                    ExcelError::Format("BIFF8 comment last column exceeds 255".to_owned())
-                })?,
-                anchor.get_top().map(template_comment_offset),
-                anchor.get_right().map(template_comment_offset),
-                anchor.get_bottom().map(template_comment_offset),
-                anchor.get_left().map(template_comment_offset),
-            );
+            let mut biff8_comment = Biff8Comment::new(cell_row, cell_column, text, author)
+                .with_anchor(
+                    u16::try_from(first_row).map_err(|_| {
+                        ExcelError::Format("BIFF8 comment first row exceeds 65535".to_owned())
+                    })?,
+                    u8::try_from(first_col).map_err(|_| {
+                        ExcelError::Format("BIFF8 comment first column exceeds 255".to_owned())
+                    })?,
+                    u16::try_from(last_row.saturating_add(1)).map_err(|_| {
+                        ExcelError::Format("BIFF8 comment last row exceeds 65535".to_owned())
+                    })?,
+                    u8::try_from(last_col.saturating_add(1)).map_err(|_| {
+                        ExcelError::Format("BIFF8 comment last column exceeds 255".to_owned())
+                    })?,
+                    anchor.get_top().map(template_comment_offset),
+                    anchor.get_right().map(template_comment_offset),
+                    anchor.get_bottom().map(template_comment_offset),
+                    anchor.get_left().map(template_comment_offset),
+                );
             if let Some(formatting_runs) = formatting_runs {
                 biff8_comment = biff8_comment.with_formatting_runs(formatting_runs);
             }
@@ -761,7 +756,11 @@ fn collect_template_decorations(
 
 const fn template_comment_offset(pixels: u32) -> u16 {
     let emu = pixels.saturating_mul(9_525);
-    if emu > u16::MAX as u32 { u16::MAX } else { emu as u16 }
+    if emu > u16::MAX as u32 {
+        u16::MAX
+    } else {
+        emu as u16
+    }
 }
 
 const fn template_hyperlink_kind(value: HyperlinkType) -> Option<Biff8HyperlinkKind> {

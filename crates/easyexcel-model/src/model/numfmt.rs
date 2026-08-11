@@ -556,10 +556,7 @@ mod tests {
     fn format_value_zero_uses_third_section() {
         let sys = DateSystem::Date1900;
         // The third section is used for zero values; literal text + formatted "0"
-        assert_eq!(
-            format_value(0.0, "positive;negative;zero", sys),
-            "zero0"
-        );
+        assert_eq!(format_value(0.0, "positive;negative;zero", sys), "zero0");
     }
 
     #[test]

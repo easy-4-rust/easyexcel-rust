@@ -15,7 +15,11 @@ pub enum VerticalAlignmentEnum {
 impl VerticalAlignmentEnum {
     /// 按 Java `values()` 声明顺序列出全部枚举值。
     pub const ALL: [Self; 6] = [
-        Self::Default, Self::Top, Self::Center, Self::Bottom, Self::Justify,
+        Self::Default,
+        Self::Top,
+        Self::Center,
+        Self::Bottom,
+        Self::Justify,
         Self::Distributed,
     ];
 
@@ -23,8 +27,11 @@ impl VerticalAlignmentEnum {
     #[must_use]
     pub const fn java_name(self) -> &'static str {
         match self {
-            Self::Default => "DEFAULT", Self::Top => "TOP", Self::Center => "CENTER",
-            Self::Bottom => "BOTTOM", Self::Justify => "JUSTIFY",
+            Self::Default => "DEFAULT",
+            Self::Top => "TOP",
+            Self::Center => "CENTER",
+            Self::Bottom => "BOTTOM",
+            Self::Justify => "JUSTIFY",
             Self::Distributed => "DISTRIBUTED",
         }
     }
@@ -54,7 +61,9 @@ impl std::str::FromStr for VerticalAlignmentEnum {
 
     /// 解析 Java `valueOf(String)` 使用的精确枚举常量名。
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Self::ALL.into_iter().find(|item| item.java_name() == value)
+        Self::ALL
+            .into_iter()
+            .find(|item| item.java_name() == value)
             .ok_or_else(|| format!("unknown VerticalAlignmentEnum value: {value}"))
     }
 }
@@ -70,24 +79,45 @@ mod tests {
         assert_eq!(VerticalAlignmentEnum::Center.java_name(), "CENTER");
         assert_eq!(VerticalAlignmentEnum::Bottom.java_name(), "BOTTOM");
         assert_eq!(VerticalAlignmentEnum::Justify.java_name(), "JUSTIFY");
-        assert_eq!(VerticalAlignmentEnum::Distributed.java_name(), "DISTRIBUTED");
+        assert_eq!(
+            VerticalAlignmentEnum::Distributed.java_name(),
+            "DISTRIBUTED"
+        );
     }
 
     #[test]
     fn poi_vertical_alignment_default_is_none() {
-        assert!(VerticalAlignmentEnum::Default.poi_vertical_alignment_enum().is_none());
+        assert!(
+            VerticalAlignmentEnum::Default
+                .poi_vertical_alignment_enum()
+                .is_none()
+        );
     }
 
     #[test]
     fn poi_vertical_alignment_non_default() {
-        assert!(VerticalAlignmentEnum::Top.poi_vertical_alignment_enum().is_some());
-        assert!(VerticalAlignmentEnum::Bottom.poi_vertical_alignment_enum().is_some());
+        assert!(
+            VerticalAlignmentEnum::Top
+                .poi_vertical_alignment_enum()
+                .is_some()
+        );
+        assert!(
+            VerticalAlignmentEnum::Bottom
+                .poi_vertical_alignment_enum()
+                .is_some()
+        );
     }
 
     #[test]
     fn from_str_valid() {
-        assert_eq!("TOP".parse::<VerticalAlignmentEnum>(), Ok(VerticalAlignmentEnum::Top));
-        assert_eq!("BOTTOM".parse::<VerticalAlignmentEnum>(), Ok(VerticalAlignmentEnum::Bottom));
+        assert_eq!(
+            "TOP".parse::<VerticalAlignmentEnum>(),
+            Ok(VerticalAlignmentEnum::Top)
+        );
+        assert_eq!(
+            "BOTTOM".parse::<VerticalAlignmentEnum>(),
+            Ok(VerticalAlignmentEnum::Bottom)
+        );
     }
 
     #[test]

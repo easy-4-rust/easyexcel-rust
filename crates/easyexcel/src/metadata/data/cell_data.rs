@@ -114,37 +114,77 @@ impl<T> CellData<T> {
     }
 
     /// 返回单元格类型。对应 Java：`CellData#getType`。
-    #[must_use] pub const fn get_type(&self) -> Option<CellDataType> { self.cell_type }
+    #[must_use]
+    pub const fn get_type(&self) -> Option<CellDataType> {
+        self.cell_type
+    }
     /// 设置单元格类型。对应 Java：`CellData#setType`。
-    pub const fn set_type(&mut self, value: Option<CellDataType>) { self.cell_type = value; }
+    pub const fn set_type(&mut self, value: Option<CellDataType>) {
+        self.cell_type = value;
+    }
     /// 返回数值。对应 Java：`CellData#getNumberValue`。
-    #[must_use] pub const fn get_number_value(&self) -> Option<&BigDecimal> { self.number_value.as_ref() }
+    #[must_use]
+    pub const fn get_number_value(&self) -> Option<&BigDecimal> {
+        self.number_value.as_ref()
+    }
     /// 设置数值。对应 Java：`CellData#setNumberValue`。
-    pub fn set_number_value(&mut self, value: Option<BigDecimal>) { self.number_value = value; }
+    pub fn set_number_value(&mut self, value: Option<BigDecimal>) {
+        self.number_value = value;
+    }
     /// 返回字符串值。对应 Java：`CellData#getStringValue`。
-    #[must_use] pub fn get_string_value(&self) -> Option<&str> { self.string_value.as_deref() }
+    #[must_use]
+    pub fn get_string_value(&self) -> Option<&str> {
+        self.string_value.as_deref()
+    }
     /// 设置字符串值。对应 Java：`CellData#setStringValue`。
-    pub fn set_string_value(&mut self, value: Option<String>) { self.string_value = value; }
+    pub fn set_string_value(&mut self, value: Option<String>) {
+        self.string_value = value;
+    }
     /// 返回布尔值。对应 Java：`CellData#getBooleanValue`。
-    #[must_use] pub const fn get_boolean_value(&self) -> Option<bool> { self.boolean_value }
+    #[must_use]
+    pub const fn get_boolean_value(&self) -> Option<bool> {
+        self.boolean_value
+    }
     /// 设置布尔值。对应 Java：`CellData#setBooleanValue`。
-    pub const fn set_boolean_value(&mut self, value: Option<bool>) { self.boolean_value = value; }
+    pub const fn set_boolean_value(&mut self, value: Option<bool>) {
+        self.boolean_value = value;
+    }
     /// 返回转换后的业务数据。对应 Java：`CellData#getData`。
-    #[must_use] pub const fn get_data(&self) -> Option<&T> { self.data.as_ref() }
+    #[must_use]
+    pub const fn get_data(&self) -> Option<&T> {
+        self.data.as_ref()
+    }
     /// 设置转换后的业务数据。对应 Java：`CellData#setData`。
-    pub fn set_data(&mut self, value: Option<T>) { self.data = value; }
+    pub fn set_data(&mut self, value: Option<T>) {
+        self.data = value;
+    }
     /// 返回公式元数据。对应 Java：`CellData#getFormulaData`。
-    #[must_use] pub const fn get_formula_data(&self) -> Option<&FormulaData> { self.formula_data.as_ref() }
+    #[must_use]
+    pub const fn get_formula_data(&self) -> Option<&FormulaData> {
+        self.formula_data.as_ref()
+    }
     /// 设置公式元数据。对应 Java：`CellData#setFormulaData`。
-    pub fn set_formula_data(&mut self, value: Option<FormulaData>) { self.formula_data = value; }
+    pub fn set_formula_data(&mut self, value: Option<FormulaData>) {
+        self.formula_data = value;
+    }
     /// 返回行下标。对应 Java：`AbstractCell#getRowIndex`。
-    #[must_use] pub const fn get_row_index(&self) -> Option<usize> { self.row_index }
+    #[must_use]
+    pub const fn get_row_index(&self) -> Option<usize> {
+        self.row_index
+    }
     /// 设置行下标。对应 Java：`AbstractCell#setRowIndex`。
-    pub const fn set_row_index(&mut self, value: Option<usize>) { self.row_index = value; }
+    pub const fn set_row_index(&mut self, value: Option<usize>) {
+        self.row_index = value;
+    }
     /// 返回列下标。对应 Java：`AbstractCell#getColumnIndex`。
-    #[must_use] pub const fn get_column_index(&self) -> Option<usize> { self.column_index }
+    #[must_use]
+    pub const fn get_column_index(&self) -> Option<usize> {
+        self.column_index
+    }
     /// 设置列下标。对应 Java：`AbstractCell#setColumnIndex`。
-    pub const fn set_column_index(&mut self, value: Option<usize>) { self.column_index = value; }
+    pub const fn set_column_index(&mut self, value: Option<usize>) {
+        self.column_index = value;
+    }
 }
 
 #[cfg(test)]

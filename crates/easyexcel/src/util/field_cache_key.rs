@@ -180,7 +180,7 @@ mod tests {
 
     #[test]
     fn hash_equal_keys_produce_same_hash() {
-        use std::hash::{Hash, Hasher, DefaultHasher};
+        use std::hash::{DefaultHasher, Hash, Hasher};
         let tid = std::any::TypeId::of::<String>();
         let mut a = FieldCacheKey::new(Some(tid));
         let mut b = FieldCacheKey::new(Some(tid));

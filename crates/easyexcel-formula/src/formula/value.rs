@@ -177,12 +177,16 @@ mod tests {
 
     #[test]
     fn to_cell_value_array_uses_first() {
-        let arr = Array::new(2, 2, vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
-            Value::Number(4.0),
-        ]);
+        let arr = Array::new(
+            2,
+            2,
+            vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+                Value::Number(4.0),
+            ],
+        );
         assert_eq!(Value::Array(arr).to_cell_value(), CellValue::Number(1.0));
     }
 
@@ -201,7 +205,10 @@ mod tests {
             end_row: 0,
             end_col: 0,
         };
-        assert_eq!(Value::Ref(r).to_cell_value(), CellValue::Error(CellError::Value));
+        assert_eq!(
+            Value::Ref(r).to_cell_value(),
+            CellValue::Error(CellError::Value)
+        );
     }
 
     #[test]
@@ -240,10 +247,7 @@ mod tests {
 
     #[test]
     fn error_constructor() {
-        assert_eq!(
-            Value::error(CellError::Div0),
-            Value::Error(CellError::Div0)
-        );
+        assert_eq!(Value::error(CellError::Div0), Value::Error(CellError::Div0));
     }
 
     // ── From impls ──────────────────────────────────────────────────────
@@ -261,14 +265,18 @@ mod tests {
 
     #[test]
     fn array_new() {
-        let a = Array::new(2, 3, vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
-            Value::Number(4.0),
-            Value::Number(5.0),
-            Value::Number(6.0),
-        ]);
+        let a = Array::new(
+            2,
+            3,
+            vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+                Value::Number(4.0),
+                Value::Number(5.0),
+                Value::Number(6.0),
+            ],
+        );
         assert_eq!(a.rows, 2);
         assert_eq!(a.cols, 3);
         assert_eq!(a.data.len(), 6);

@@ -54,7 +54,14 @@ impl CellExtra {
         row_index: u32,
         column_index: usize,
     ) -> Self {
-        Self::new(extra_type, text, row_index, row_index, column_index, column_index)
+        Self::new(
+            extra_type,
+            text,
+            row_index,
+            row_index,
+            column_index,
+            column_index,
+        )
     }
 
     /// 从 `A1` 或 `A1:B2` 范围创建额外信息。对应 Java 字符串范围构造器。
@@ -64,14 +71,23 @@ impl CellExtra {
         range: &str,
     ) -> Result<Self, String> {
         let mut ranges = range.split(':');
-        let first = ranges.next().ok_or_else(|| "cell range is empty".to_owned())?;
+        let first = ranges
+            .next()
+            .ok_or_else(|| "cell range is empty".to_owned())?;
         let last = ranges.next().unwrap_or(first);
         if ranges.next().is_some() {
             return Err(format!("invalid cell range: {range}"));
         }
         let (first_row, first_column) = parse_cell_reference(first)?;
         let (last_row, last_column) = parse_cell_reference(last)?;
-        Ok(Self::new(extra_type, text, first_row, last_row, first_column, last_column))
+        Ok(Self::new(
+            extra_type,
+            text,
+            first_row,
+            last_row,
+            first_column,
+            last_column,
+        ))
     }
 
     /// Returns the extra-data kind. (Java `getType()`)
@@ -116,37 +132,77 @@ impl CellExtra {
     }
 
     /// Java `getType` 别名。
-    #[must_use] pub const fn get_type(&self) -> CellExtraType { self.extra_type }
+    #[must_use]
+    pub const fn get_type(&self) -> CellExtraType {
+        self.extra_type
+    }
     /// Java `setType`。
-    pub const fn set_type(&mut self, value: CellExtraType) { self.extra_type = value; }
+    pub const fn set_type(&mut self, value: CellExtraType) {
+        self.extra_type = value;
+    }
     /// Java `getText` 别名。
-    #[must_use] pub fn get_text(&self) -> Option<&str> { self.text.as_deref() }
+    #[must_use]
+    pub fn get_text(&self) -> Option<&str> {
+        self.text.as_deref()
+    }
     /// Java `setText`。
-    pub fn set_text(&mut self, value: Option<String>) { self.text = value; }
+    pub fn set_text(&mut self, value: Option<String>) {
+        self.text = value;
+    }
     /// Java `AbstractCell#getRowIndex`。
-    #[must_use] pub const fn get_row_index(&self) -> Option<u32> { self.row_index }
+    #[must_use]
+    pub const fn get_row_index(&self) -> Option<u32> {
+        self.row_index
+    }
     /// Java `AbstractCell#setRowIndex`。
-    pub const fn set_row_index(&mut self, value: Option<u32>) { self.row_index = value; }
+    pub const fn set_row_index(&mut self, value: Option<u32>) {
+        self.row_index = value;
+    }
     /// Java `AbstractCell#getColumnIndex`。
-    #[must_use] pub const fn get_column_index(&self) -> Option<usize> { self.column_index }
+    #[must_use]
+    pub const fn get_column_index(&self) -> Option<usize> {
+        self.column_index
+    }
     /// Java `AbstractCell#setColumnIndex`。
-    pub const fn set_column_index(&mut self, value: Option<usize>) { self.column_index = value; }
+    pub const fn set_column_index(&mut self, value: Option<usize>) {
+        self.column_index = value;
+    }
     /// Java `getFirstRowIndex` 别名。
-    #[must_use] pub const fn get_first_row_index(&self) -> u32 { self.first_row_index }
+    #[must_use]
+    pub const fn get_first_row_index(&self) -> u32 {
+        self.first_row_index
+    }
     /// Java `setFirstRowIndex`。
-    pub const fn set_first_row_index(&mut self, value: u32) { self.first_row_index = value; }
+    pub const fn set_first_row_index(&mut self, value: u32) {
+        self.first_row_index = value;
+    }
     /// Java `getLastRowIndex` 别名。
-    #[must_use] pub const fn get_last_row_index(&self) -> u32 { self.last_row_index }
+    #[must_use]
+    pub const fn get_last_row_index(&self) -> u32 {
+        self.last_row_index
+    }
     /// Java `setLastRowIndex`。
-    pub const fn set_last_row_index(&mut self, value: u32) { self.last_row_index = value; }
+    pub const fn set_last_row_index(&mut self, value: u32) {
+        self.last_row_index = value;
+    }
     /// Java `getFirstColumnIndex` 别名。
-    #[must_use] pub const fn get_first_column_index(&self) -> usize { self.first_column_index }
+    #[must_use]
+    pub const fn get_first_column_index(&self) -> usize {
+        self.first_column_index
+    }
     /// Java `setFirstColumnIndex`。
-    pub const fn set_first_column_index(&mut self, value: usize) { self.first_column_index = value; }
+    pub const fn set_first_column_index(&mut self, value: usize) {
+        self.first_column_index = value;
+    }
     /// Java `getLastColumnIndex` 别名。
-    #[must_use] pub const fn get_last_column_index(&self) -> usize { self.last_column_index }
+    #[must_use]
+    pub const fn get_last_column_index(&self) -> usize {
+        self.last_column_index
+    }
     /// Java `setLastColumnIndex`。
-    pub const fn set_last_column_index(&mut self, value: usize) { self.last_column_index = value; }
+    pub const fn set_last_column_index(&mut self, value: usize) {
+        self.last_column_index = value;
+    }
 }
 
 fn parse_cell_reference(reference: &str) -> Result<(u32, usize), String> {
@@ -157,10 +213,14 @@ fn parse_cell_reference(reference: &str) -> Result<(u32, usize), String> {
     while letters < bytes.len() && bytes[letters].is_ascii_alphabetic() {
         column = column
             .checked_mul(26)
-            .and_then(|value| value.checked_add(usize::from(bytes[letters].to_ascii_uppercase() - b'A' + 1)))
+            .and_then(|value| {
+                value.checked_add(usize::from(bytes[letters].to_ascii_uppercase() - b'A' + 1))
+            })
             .ok_or_else(|| format!("cell column overflows: {reference}"))?;
         letters += 1;
-        if letters < bytes.len() && bytes[letters] == b'$' { letters += 1; }
+        if letters < bytes.len() && bytes[letters] == b'$' {
+            letters += 1;
+        }
     }
     if column == 0 || letters == bytes.len() {
         return Err(format!("invalid cell reference: {reference}"));
@@ -168,7 +228,9 @@ fn parse_cell_reference(reference: &str) -> Result<(u32, usize), String> {
     let row = reference[letters..]
         .parse::<u32>()
         .map_err(|_| format!("invalid cell row: {reference}"))?;
-    if row == 0 { return Err(format!("cell row must start at 1: {reference}")); }
+    if row == 0 {
+        return Err(format!("cell row must start at 1: {reference}"));
+    }
     Ok((row - 1, column - 1))
 }
 
@@ -179,11 +241,7 @@ mod tests {
     #[test]
     fn new_creates_extra_with_bounds() {
         // 对应 Java：CellExtra 构造器
-        let extra = CellExtra::new(
-            CellExtraType::Comment,
-            Some("note".to_owned()),
-            0, 5, 1, 3,
-        );
+        let extra = CellExtra::new(CellExtraType::Comment, Some("note".to_owned()), 0, 5, 1, 3);
         assert_eq!(extra.extra_type(), CellExtraType::Comment);
         assert_eq!(extra.text(), Some("note"));
         assert_eq!(extra.first_row_index(), 0);
@@ -198,7 +256,8 @@ mod tests {
         let extra = CellExtra::for_cell(
             CellExtraType::Hyperlink,
             Some("https://example.com".to_owned()),
-            2, 4,
+            2,
+            4,
         );
         assert_eq!(extra.first_row_index(), 2);
         assert_eq!(extra.last_row_index(), 2);
@@ -209,12 +268,8 @@ mod tests {
     #[test]
     fn from_range_single_cell() {
         // 对应 Java：fromRange 单单元格 "A1"
-        let extra = CellExtra::from_range(
-            CellExtraType::Comment,
-            Some("text".to_owned()),
-            "A1",
-        )
-        .unwrap();
+        let extra =
+            CellExtra::from_range(CellExtraType::Comment, Some("text".to_owned()), "A1").unwrap();
         assert_eq!(extra.first_row_index(), 0);
         assert_eq!(extra.first_column_index(), 0);
     }
@@ -222,12 +277,7 @@ mod tests {
     #[test]
     fn from_range_cell_range() {
         // 对应 Java：fromRange 范围 "A1:B2"
-        let extra = CellExtra::from_range(
-            CellExtraType::Merge,
-            None,
-            "A1:B2",
-        )
-        .unwrap();
+        let extra = CellExtra::from_range(CellExtraType::Merge, None, "A1:B2").unwrap();
         assert_eq!(extra.first_row_index(), 0);
         assert_eq!(extra.last_row_index(), 1);
         assert_eq!(extra.first_column_index(), 0);

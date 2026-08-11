@@ -24,7 +24,11 @@ impl easyexcel_csv::CsvCellValue for CellValue {
     }
 
     fn from_csv_error(value: u8) -> Self {
-        Self::Error(easyexcel_model::CellError::from_biff_code(value).as_str().to_owned())
+        Self::Error(
+            easyexcel_model::CellError::from_biff_code(value)
+                .as_str()
+                .to_owned(),
+        )
     }
 
     fn csv_number(&self) -> Option<f64> {
@@ -37,7 +41,11 @@ impl easyexcel_csv::CsvCellValue for CellValue {
     }
 
     fn csv_bool(&self) -> Option<bool> {
-        if let Self::Bool(value) = self { Some(*value) } else { None }
+        if let Self::Bool(value) = self {
+            Some(*value)
+        } else {
+            None
+        }
     }
 
     fn csv_error(&self) -> Option<u8> {
@@ -177,7 +185,10 @@ mod tests {
     fn csv_display_text_returns_as_text() {
         // 对应 Java：csvDisplayText
         let cell = CellValue::String("hello".to_owned());
-        assert_eq!(<CellValue as CsvCellValue>::csv_display_text(&cell), "hello");
+        assert_eq!(
+            <CellValue as CsvCellValue>::csv_display_text(&cell),
+            "hello"
+        );
         let cell = CellValue::Int(42);
         let text = <CellValue as CsvCellValue>::csv_display_text(&cell);
         assert!(!text.is_empty());

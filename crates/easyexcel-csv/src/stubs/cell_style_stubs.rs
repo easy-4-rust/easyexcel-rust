@@ -21,10 +21,14 @@ impl CsvCellStyle {
 
     /// Java `getFontIndex()` 兼容别名。
     /// 对应 Java: CsvCellStyle#getFontIndex no-op
-    pub const fn get_font_index(&self) -> usize { self.font_index() }
+    pub const fn get_font_index(&self) -> usize {
+        self.font_index()
+    }
     /// Java `getFontIndexAsInt()` 兼容别名。
     /// 对应 Java: CsvCellStyle#getFontIndexAsInt no-op
-    pub const fn get_font_index_as_int(&self) -> usize { self.font_index() }
+    pub const fn get_font_index_as_int(&self) -> usize {
+        self.font_index()
+    }
     /// Java CSV 实现为空操作。
     /// 对应 Java: CsvCellStyle#setFont no-op
     pub const fn set_font(&mut self, _font: Option<()>) {}
@@ -38,7 +42,9 @@ impl CsvCellStyle {
         false
     }
     /// 对应 Java: CsvCellStyle#getHidden no-op
-    pub const fn get_hidden(&self) -> bool { self.hidden() }
+    pub const fn get_hidden(&self) -> bool {
+        self.hidden()
+    }
 
     /// CSV 不保存锁定标志。
     /// 对应 Java: CsvCellStyle#isLocked no-op
@@ -47,7 +53,9 @@ impl CsvCellStyle {
         false
     }
     /// 对应 Java: CsvCellStyle#getLocked no-op
-    pub const fn get_locked(&self) -> bool { self.locked() }
+    pub const fn get_locked(&self) -> bool {
+        self.locked()
+    }
 
     /// CSV 不保存 quote-prefix 标志。
     /// 对应 Java: CsvCellStyle#getQuotePrefixed no-op
@@ -56,7 +64,9 @@ impl CsvCellStyle {
         false
     }
     /// 对应 Java: CsvCellStyle#getQuotePrefixed no-op
-    pub const fn get_quote_prefixed(&self) -> bool { self.quote_prefixed() }
+    pub const fn get_quote_prefixed(&self) -> bool {
+        self.quote_prefixed()
+    }
 
     /// CSV 不保存换行标志。
     /// 对应 Java: CsvCellStyle#getWrapText no-op
@@ -65,7 +75,9 @@ impl CsvCellStyle {
         false
     }
     /// 对应 Java: CsvCellStyle#getWrapText no-op
-    pub const fn get_wrap_text(&self) -> bool { self.wrap_text() }
+    pub const fn get_wrap_text(&self) -> bool {
+        self.wrap_text()
+    }
 
     /// CSV 不保存旋转角度。
     /// 对应 Java: CsvCellStyle#getRotation no-op
@@ -74,7 +86,9 @@ impl CsvCellStyle {
         0
     }
     /// 对应 Java: CsvCellStyle#getRotation no-op
-    pub const fn get_rotation(&self) -> i16 { self.rotation() }
+    pub const fn get_rotation(&self) -> i16 {
+        self.rotation()
+    }
 
     /// CSV 不保存缩进。
     /// 对应 Java: CsvCellStyle#getIndention no-op
@@ -83,7 +97,9 @@ impl CsvCellStyle {
         0
     }
     /// 对应 Java: CsvCellStyle#getIndention no-op
-    pub const fn get_indention(&self) -> i16 { self.indention() }
+    pub const fn get_indention(&self) -> i16 {
+        self.indention()
+    }
 
     /// CSV 不保存 shrink-to-fit 标志。
     /// 对应 Java: CsvCellStyle#getShrinkToFit no-op
@@ -92,7 +108,9 @@ impl CsvCellStyle {
         false
     }
     /// 对应 Java: CsvCellStyle#getShrinkToFit no-op
-    pub const fn get_shrink_to_fit(&self) -> bool { self.shrink_to_fit() }
+    pub const fn get_shrink_to_fit(&self) -> bool {
+        self.shrink_to_fit()
+    }
 
     // ─── 对齐 (Alignment) ───
 
@@ -103,7 +121,9 @@ impl CsvCellStyle {
         None
     }
     /// 对应 Java: CsvCellStyle#getAlignment no-op
-    pub const fn get_alignment(&self) -> Option<u8> { self.alignment() }
+    pub const fn get_alignment(&self) -> Option<u8> {
+        self.alignment()
+    }
 
     /// CSV 不保存垂直对齐；`None` 对应 Java 的 `null`。
     /// 对应 Java: CsvCellStyle#getVerticalAlignment no-op
@@ -112,92 +132,142 @@ impl CsvCellStyle {
         None
     }
     /// 对应 Java: CsvCellStyle#getVerticalAlignment no-op
-    pub const fn get_vertical_alignment(&self) -> Option<u8> { self.vertical_alignment() }
+    pub const fn get_vertical_alignment(&self) -> Option<u8> {
+        self.vertical_alignment()
+    }
 
     // ─── 边框 (Border) ───
 
     /// CSV 不保存边框；`None` 对应 Java 的 `null`。
     /// 对应 Java: CsvCellStyle#getBorderLeft no-op
     #[must_use]
-    pub const fn border_left(&self) -> Option<u8> { None }
+    pub const fn border_left(&self) -> Option<u8> {
+        None
+    }
     /// 对应 Java: CsvCellStyle#getBorderLeft no-op
-    pub const fn get_border_left(&self) -> Option<u8> { self.border_left() }
+    pub const fn get_border_left(&self) -> Option<u8> {
+        self.border_left()
+    }
 
     /// CSV 不保存边框。
     /// 对应 Java: CsvCellStyle#getBorderRight no-op
     #[must_use]
-    pub const fn border_right(&self) -> Option<u8> { None }
+    pub const fn border_right(&self) -> Option<u8> {
+        None
+    }
     /// 对应 Java: CsvCellStyle#getBorderRight no-op
-    pub const fn get_border_right(&self) -> Option<u8> { self.border_right() }
+    pub const fn get_border_right(&self) -> Option<u8> {
+        self.border_right()
+    }
 
     /// CSV 不保存边框。
     /// 对应 Java: CsvCellStyle#getBorderTop no-op
     #[must_use]
-    pub const fn border_top(&self) -> Option<u8> { None }
+    pub const fn border_top(&self) -> Option<u8> {
+        None
+    }
     /// 对应 Java: CsvCellStyle#getBorderTop no-op
-    pub const fn get_border_top(&self) -> Option<u8> { self.border_top() }
+    pub const fn get_border_top(&self) -> Option<u8> {
+        self.border_top()
+    }
 
     /// CSV 不保存边框。
     /// 对应 Java: CsvCellStyle#getBorderBottom no-op
     #[must_use]
-    pub const fn border_bottom(&self) -> Option<u8> { None }
+    pub const fn border_bottom(&self) -> Option<u8> {
+        None
+    }
     /// 对应 Java: CsvCellStyle#getBorderBottom no-op
-    pub const fn get_border_bottom(&self) -> Option<u8> { self.border_bottom() }
+    pub const fn get_border_bottom(&self) -> Option<u8> {
+        self.border_bottom()
+    }
 
     /// CSV 不保存边框颜色。
     /// 对应 Java: CsvCellStyle#getLeftBorderColor no-op
     #[must_use]
-    pub const fn left_border_color(&self) -> u16 { 0 }
+    pub const fn left_border_color(&self) -> u16 {
+        0
+    }
     /// 对应 Java: CsvCellStyle#getLeftBorderColor no-op
-    pub const fn get_left_border_color(&self) -> u16 { self.left_border_color() }
+    pub const fn get_left_border_color(&self) -> u16 {
+        self.left_border_color()
+    }
 
     /// CSV 不保存边框颜色。
     /// 对应 Java: CsvCellStyle#getRightBorderColor no-op
     #[must_use]
-    pub const fn right_border_color(&self) -> u16 { 0 }
+    pub const fn right_border_color(&self) -> u16 {
+        0
+    }
     /// 对应 Java: CsvCellStyle#getRightBorderColor no-op
-    pub const fn get_right_border_color(&self) -> u16 { self.right_border_color() }
+    pub const fn get_right_border_color(&self) -> u16 {
+        self.right_border_color()
+    }
 
     /// CSV 不保存边框颜色。
     /// 对应 Java: CsvCellStyle#getTopBorderColor no-op
     #[must_use]
-    pub const fn top_border_color(&self) -> u16 { 0 }
+    pub const fn top_border_color(&self) -> u16 {
+        0
+    }
     /// 对应 Java: CsvCellStyle#getTopBorderColor no-op
-    pub const fn get_top_border_color(&self) -> u16 { self.top_border_color() }
+    pub const fn get_top_border_color(&self) -> u16 {
+        self.top_border_color()
+    }
 
     /// CSV 不保存边框颜色。
     /// 对应 Java: CsvCellStyle#getBottomBorderColor no-op
     #[must_use]
-    pub const fn bottom_border_color(&self) -> u16 { 0 }
+    pub const fn bottom_border_color(&self) -> u16 {
+        0
+    }
     /// 对应 Java: CsvCellStyle#getBottomBorderColor no-op
-    pub const fn get_bottom_border_color(&self) -> u16 { self.bottom_border_color() }
+    pub const fn get_bottom_border_color(&self) -> u16 {
+        self.bottom_border_color()
+    }
 
     // ─── 填充 (Fill) ───
 
     /// CSV 不保存填充图案。
     /// 对应 Java: CsvCellStyle#getFillPattern no-op
     #[must_use]
-    pub const fn fill_pattern(&self) -> Option<u8> { None }
+    pub const fn fill_pattern(&self) -> Option<u8> {
+        None
+    }
     /// 对应 Java: CsvCellStyle#getFillPattern no-op
-    pub const fn get_fill_pattern(&self) -> Option<u8> { self.fill_pattern() }
+    pub const fn get_fill_pattern(&self) -> Option<u8> {
+        self.fill_pattern()
+    }
 
     /// CSV 不保存填充背景色。
     /// 对应 Java: CsvCellStyle#getFillBackgroundColor no-op
     #[must_use]
-    pub const fn fill_background_color(&self) -> u16 { 0 }
+    pub const fn fill_background_color(&self) -> u16 {
+        0
+    }
     /// 对应 Java: CsvCellStyle#getFillBackgroundColor no-op
-    pub const fn get_fill_background_color(&self) -> u16 { self.fill_background_color() }
+    pub const fn get_fill_background_color(&self) -> u16 {
+        self.fill_background_color()
+    }
     /// 对应 Java: CsvCellStyle#getFillBackgroundColorColor no-op
-    pub const fn get_fill_background_color_color(&self) -> Option<u16> { None }
+    pub const fn get_fill_background_color_color(&self) -> Option<u16> {
+        None
+    }
 
     /// CSV 不保存填充前景色。
     /// 对应 Java: CsvCellStyle#getFillForegroundColor no-op
     #[must_use]
-    pub const fn fill_foreground_color(&self) -> u16 { 0 }
+    pub const fn fill_foreground_color(&self) -> u16 {
+        0
+    }
     /// 对应 Java: CsvCellStyle#getFillForegroundColor no-op
-    pub const fn get_fill_foreground_color(&self) -> u16 { self.fill_foreground_color() }
+    pub const fn get_fill_foreground_color(&self) -> u16 {
+        self.fill_foreground_color()
+    }
     /// 对应 Java: CsvCellStyle#getFillForegroundColorColor no-op
-    pub const fn get_fill_foreground_color_color(&self) -> Option<u16> { None }
+    pub const fn get_fill_foreground_color_color(&self) -> Option<u16> {
+        None
+    }
 
     // ─── Setter（no-op） ───
 

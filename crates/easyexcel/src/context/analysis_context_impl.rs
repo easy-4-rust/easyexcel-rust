@@ -2,8 +2,8 @@
 
 use std::collections::HashSet;
 
-use crate::core::{AnalysisContext, CellValue, CustomReadObject, ExcelError, Result};
 use crate::HolderEnum;
+use crate::core::{AnalysisContext, CellValue, CustomReadObject, ExcelError, Result};
 use crate::support::ExcelTypeEnum;
 
 use crate::ReadOptions;
@@ -156,7 +156,9 @@ impl AnalysisContextImpl {
     }
     /// Java `getCustom()` 兼容入口。
     #[must_use]
-    pub fn get_custom(&self) -> Option<&CustomReadObject> { self.custom() }
+    pub fn get_custom(&self) -> Option<&CustomReadObject> {
+        self.custom()
+    }
 
     /// 对应 Java：com.alibaba.excel.context.AnalysisContextImpl。 Returns the event processor. (Java `analysisEventProcessor()`)
     pub fn analysis_event_processor(&mut self) -> &mut dyn AnalysisEventProcessor {
@@ -195,7 +197,9 @@ impl AnalysisContextImpl {
 
     /// Java `getCurrentRowNum()` 兼容别名。
     #[must_use]
-    pub fn get_current_row_num(&self) -> Option<i32> { self.current_row_num() }
+    pub fn get_current_row_num(&self) -> Option<i32> {
+        self.current_row_num()
+    }
 
     /// 对应 Java `getTotalCount()`；该值与 Java 一样可能只是近似值。
     #[must_use]
@@ -207,7 +211,9 @@ impl AnalysisContextImpl {
 
     /// Java `getTotalCount()` 兼容别名。
     #[must_use]
-    pub fn get_total_count(&self) -> Option<i32> { self.total_count() }
+    pub fn get_total_count(&self) -> Option<i32> {
+        self.total_count()
+    }
 
     /// 对应 Java `getCurrentRowAnalysisResult()`。
     #[must_use]
@@ -234,9 +240,13 @@ impl AnalysisContextImpl {
 }
 
 impl super::analysis_context::AnalysisContextLifecycle for AnalysisContextImpl {
-    fn analysis_context_impl(&self) -> &Self { self }
+    fn analysis_context_impl(&self) -> &Self {
+        self
+    }
 
-    fn analysis_context_impl_mut(&mut self) -> &mut Self { self }
+    fn analysis_context_impl_mut(&mut self) -> &mut Self {
+        self
+    }
 }
 
 #[cfg(test)]

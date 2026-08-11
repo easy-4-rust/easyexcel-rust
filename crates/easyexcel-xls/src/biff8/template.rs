@@ -38,22 +38,20 @@ use cfb::CompoundFile;
 use easyexcel_io::{Error as ExcelError, Result};
 
 use super::encode::{
-    BLANK, BOF, BOOLERR, BOUNDSHEET, DBCELL, DIMENSION, DT_WORKSHEET, EOF, FILEPASS, FONT,
-    FORMULA, INDEX, LABEL, LABELSST, MAX_RECORD_DATA, MERGECELLS, MSODRAWINGGROUP, NUMBER, RK,
-    SST, SUPBOOK, XF,
-    WINDOW2, XF_GENERAL, EXTERNSHEET, encode_rk,
-    encode_unicode_string, pack_merge_range,
+    BLANK, BOF, BOOLERR, BOUNDSHEET, DBCELL, DIMENSION, DT_WORKSHEET, EOF, EXTERNSHEET, FILEPASS,
+    FONT, FORMULA, INDEX, LABEL, LABELSST, MAX_RECORD_DATA, MERGECELLS, MSODRAWINGGROUP, NUMBER,
+    RK, SST, SUPBOOK, WINDOW2, XF, XF_GENERAL, encode_rk, encode_unicode_string, pack_merge_range,
 };
 use super::record_sid::{
-    CHART_AI_SID, CONDITIONAL_FORMATTING_HEADER_SID, CONDITIONAL_FORMATTING_RULE_SID,
+    CHART_AI_SID, CONDITIONAL_FORMATTING_HEADER_SID, CONDITIONAL_FORMATTING_RULE_SID, CONTINUE_SID,
     DATA_VALIDATION_SID, EXTERNAL_SHEET_SID, HYPERLINK_SID, MSO_DRAWING_SID, NAME_SID, NOTE_SID,
-    OBJECT_PROTECT_SID, OBJ_SID, PASSWORD_SID, PROTECT_SID, RICH_STRING_SID, ROW_SID,
-    SCENARIO_PROTECT_SID, SUP_BOOK_SID, TEXT_OBJECT_SID, CONTINUE_SID,
+    OBJ_SID, OBJECT_PROTECT_SID, PASSWORD_SID, PROTECT_SID, RICH_STRING_SID, ROW_SID,
+    SCENARIO_PROTECT_SID, SUP_BOOK_SID, TEXT_OBJECT_SID,
 };
 use super::{
-    Biff8Cell, Biff8Chart, Biff8Comment, Biff8Hyperlink, Biff8HyperlinkKind, Biff8Merge, Biff8Value,
-    decrypt_crypto_api_workbook_stream, legacy_password_hash,
-    encrypt_crypto_api_workbook_stream, prepare_crypto_api_encryption,
+    Biff8Cell, Biff8Chart, Biff8Comment, Biff8Hyperlink, Biff8HyperlinkKind, Biff8Merge,
+    Biff8Value, decrypt_crypto_api_workbook_stream, encrypt_crypto_api_workbook_stream,
+    legacy_password_hash, prepare_crypto_api_encryption,
 };
 
 include!("template/biff8_macro_policy.rs");

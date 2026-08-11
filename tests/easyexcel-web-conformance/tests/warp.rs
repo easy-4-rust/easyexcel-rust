@@ -4,9 +4,8 @@ use easyexcel::io::Format;
 use easyexcel_warp::{ExcelRequest, ExcelResponse, excel_request};
 use easyexcel_web_conformance::{
     ConformanceRow, ResponseSnapshot, corrupted_xlsx_fixture, download_rows, oversized_fixture,
-    runtime, strict_runtime, upload_fixture, verify_download, verify_error_response,
-    verify_upload, verify_upload_multisheet, verify_upload_xls, xlsx_multisheet_fixture,
-    xls_upload_fixture,
+    runtime, strict_runtime, upload_fixture, verify_download, verify_error_response, verify_upload,
+    verify_upload_multisheet, verify_upload_xls, xls_upload_fixture, xlsx_multisheet_fixture,
 };
 use http_body_util::BodyExt;
 use warp::Reply;

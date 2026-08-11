@@ -8,7 +8,9 @@ use easyexcel_markdown::{
     MarkdownMergePolicy, MarkdownSheetSelection, MarkdownTableSelection, MarkdownTypeInference,
     MarkdownValuePolicy, MarkdownWarningCode, read_markdown, write_document, write_workbook,
 };
-use easyexcel_model::{Cell, CellRange, CellValue, TabularDocument, TabularTable, Visibility, Workbook};
+use easyexcel_model::{
+    Cell, CellRange, CellValue, TabularDocument, TabularTable, Visibility, Workbook,
+};
 
 #[test]
 fn parses_multiple_gfm_tables_and_nearest_headings() {
@@ -225,8 +227,7 @@ fn table_selection_by_name() {
 #[test]
 fn table_selection_by_index() {
     let source = "## First\n\n| a |\n| --- |\n| 1 |\n\n## Second\n\n| b |\n| --- |\n| 2 |\n";
-    let options = MarkdownImportOptions::default()
-        .with_tables(MarkdownTableSelection::Index(1));
+    let options = MarkdownImportOptions::default().with_tables(MarkdownTableSelection::Index(1));
     let result = read_markdown(Cursor::new(source.as_bytes()), &options).expect("parse");
     assert_eq!(result.document.tables().len(), 1);
     assert_eq!(result.document.tables()[0].name(), "Second");
@@ -244,8 +245,7 @@ fn table_selection_name_not_found_errors() {
 #[test]
 fn table_selection_index_out_of_range_errors() {
     let source = "| a |\n| --- |\n| 1 |\n";
-    let options = MarkdownImportOptions::default()
-        .with_tables(MarkdownTableSelection::Index(5));
+    let options = MarkdownImportOptions::default().with_tables(MarkdownTableSelection::Index(5));
     let error = read_markdown(Cursor::new(source.as_bytes()), &options).expect_err("out of range");
     assert!(matches!(error, Error::Markdown { .. }));
 }
@@ -255,8 +255,7 @@ fn table_selection_index_out_of_range_errors() {
 #[test]
 fn text_inference_preserves_numbers_as_text() {
     let source = "| val |\n| --- |\n| 42 |\n";
-    let options = MarkdownImportOptions::default()
-        .with_type_inference(MarkdownTypeInference::Text);
+    let options = MarkdownImportOptions::default().with_type_inference(MarkdownTypeInference::Text);
     let result = read_markdown(Cursor::new(source.as_bytes()), &options).expect("parse");
     // rows()[0] is the header row, rows()[1] is the first data row
     assert_eq!(
@@ -268,8 +267,8 @@ fn text_inference_preserves_numbers_as_text() {
 #[test]
 fn aggressive_inference_parses_percentages_and_dates() {
     let source = "| val |\n| --- |\n| 50% |\n";
-    let options = MarkdownImportOptions::default()
-        .with_type_inference(MarkdownTypeInference::Aggressive);
+    let options =
+        MarkdownImportOptions::default().with_type_inference(MarkdownTypeInference::Aggressive);
     let result = read_markdown(Cursor::new(source.as_bytes()), &options).expect("parse");
     // Aggressive mode uses parse_number_text which may handle %
     let value = result.document.tables()[0].rows()[1][0].value();
@@ -280,8 +279,8 @@ fn aggressive_inference_parses_percentages_and_dates() {
 #[test]
 fn canonical_number_rejects_leading_zeros() {
     let source = "| val |\n| --- |\n| 007 |\n";
-    let options = MarkdownImportOptions::default()
-        .with_type_inference(MarkdownTypeInference::Conservative);
+    let options =
+        MarkdownImportOptions::default().with_type_inference(MarkdownTypeInference::Conservative);
     let result = read_markdown(Cursor::new(source.as_bytes()), &options).expect("parse");
     assert_eq!(
         result.document.tables()[0].rows()[1][0].value(),
@@ -297,8 +296,14 @@ fn bool_values_are_recognized() {
         &MarkdownImportOptions::default(),
     )
     .expect("parse");
-    assert_eq!(result.document.tables()[0].rows()[1][0].value(), &CellValue::Bool(true));
-    assert_eq!(result.document.tables()[0].rows()[1][1].value(), &CellValue::Bool(false));
+    assert_eq!(
+        result.document.tables()[0].rows()[1][0].value(),
+        &CellValue::Bool(true)
+    );
+    assert_eq!(
+        result.document.tables()[0].rows()[1][1].value(),
+        &CellValue::Bool(false)
+    );
 }
 
 #[test]
@@ -309,7 +314,10 @@ fn error_cells_are_recognized() {
         &MarkdownImportOptions::default(),
     )
     .expect("parse");
-    assert!(matches!(result.document.tables()[0].rows()[1][0].value(), CellValue::Error(_)));
+    assert!(matches!(
+        result.document.tables()[0].rows()[1][0].value(),
+        CellValue::Error(_)
+    ));
 }
 
 #[test]
@@ -332,8 +340,7 @@ fn sheet_selection_first() {
     let second = workbook.add_sheet("Second");
     workbook.sheets[second].set(0, 0, Cell::Text("second".to_owned()));
 
-    let options = MarkdownExportOptions::default()
-        .with_sheets(MarkdownSheetSelection::First);
+    let options = MarkdownExportOptions::default().with_sheets(MarkdownSheetSelection::First);
     let (output, _) = write_workbook(&workbook, Cursor::new(Vec::new()), &options).expect("write");
     let text = String::from_utf8(output.into_inner()).expect("utf8");
     assert!(text.contains("first"));
@@ -362,8 +369,7 @@ fn sheet_selection_by_index() {
     let second = workbook.add_sheet("Second");
     workbook.sheets[second].set(0, 0, Cell::Text("second".to_owned()));
 
-    let options = MarkdownExportOptions::default()
-        .with_sheets(MarkdownSheetSelection::Index(0));
+    let options = MarkdownExportOptions::default().with_sheets(MarkdownSheetSelection::Index(0));
     let (output, _) = write_workbook(&workbook, Cursor::new(Vec::new()), &options).expect("write");
     let text = String::from_utf8(output.into_inner()).expect("utf8");
     assert!(text.contains("first"));
@@ -372,8 +378,7 @@ fn sheet_selection_by_index() {
 #[test]
 fn sheet_selection_first_on_empty_workbook_errors() {
     let workbook = Workbook::empty();
-    let options = MarkdownExportOptions::default()
-        .with_sheets(MarkdownSheetSelection::First);
+    let options = MarkdownExportOptions::default().with_sheets(MarkdownSheetSelection::First);
     let error = write_workbook(&workbook, Cursor::new(Vec::new()), &options).expect_err("empty");
     assert!(matches!(error, Error::SheetNotFound(_)));
 }
@@ -383,7 +388,8 @@ fn sheet_selection_name_not_found_errors() {
     let workbook = Workbook::new();
     let options = MarkdownExportOptions::default()
         .with_sheets(MarkdownSheetSelection::Name("Nope".to_owned()));
-    let error = write_workbook(&workbook, Cursor::new(Vec::new()), &options).expect_err("not found");
+    let error =
+        write_workbook(&workbook, Cursor::new(Vec::new()), &options).expect_err("not found");
     assert!(matches!(error, Error::SheetNotFound(_)));
 }
 
@@ -395,8 +401,7 @@ fn generated_header_policy() {
     workbook.sheets[0].set(0, 0, Cell::Text("data1".to_owned()));
     workbook.sheets[0].set(0, 1, Cell::Text("data2".to_owned()));
 
-    let options = MarkdownExportOptions::default()
-        .with_header(MarkdownHeaderPolicy::Generated);
+    let options = MarkdownExportOptions::default().with_header(MarkdownHeaderPolicy::Generated);
     let (output, _) = write_workbook(&workbook, Cursor::new(Vec::new()), &options).expect("write");
     let text = String::from_utf8(output.into_inner()).expect("utf8");
     // Generated header should use column letters (A, B, ...)
@@ -412,8 +417,7 @@ fn raw_value_policy() {
     let mut workbook = Workbook::new();
     workbook.sheets[0].set(0, 0, Cell::Text("hello".to_owned()));
 
-    let options = MarkdownExportOptions::default()
-        .with_values(MarkdownValuePolicy::Raw);
+    let options = MarkdownExportOptions::default().with_values(MarkdownValuePolicy::Raw);
     let (output, _) = write_workbook(&workbook, Cursor::new(Vec::new()), &options).expect("write");
     let text = String::from_utf8(output.into_inner()).expect("utf8");
     assert!(text.contains("hello"));
@@ -433,7 +437,12 @@ fn style_dropped_warning() {
         &MarkdownExportOptions::default(),
     )
     .expect("write");
-    assert!(report.warnings.iter().any(|w| w.code == MarkdownWarningCode::StyleDropped));
+    assert!(
+        report
+            .warnings
+            .iter()
+            .any(|w| w.code == MarkdownWarningCode::StyleDropped)
+    );
 }
 
 // --- Export: empty sheet ---
@@ -448,7 +457,12 @@ fn empty_sheet_warning() {
         &MarkdownExportOptions::default(),
     )
     .expect("write");
-    assert!(report.warnings.iter().any(|w| w.code == MarkdownWarningCode::EmptySheet));
+    assert!(
+        report
+            .warnings
+            .iter()
+            .any(|w| w.code == MarkdownWarningCode::EmptySheet)
+    );
 }
 
 // --- Export: opaque parts warning ---
@@ -468,7 +482,12 @@ fn opaque_parts_dropped_warning() {
         &MarkdownExportOptions::default(),
     )
     .expect("write");
-    assert!(report.warnings.iter().any(|w| w.code == MarkdownWarningCode::UnsupportedObjectDropped));
+    assert!(
+        report
+            .warnings
+            .iter()
+            .any(|w| w.code == MarkdownWarningCode::UnsupportedObjectDropped)
+    );
 }
 
 // --- Export: write_document ---
@@ -566,8 +585,15 @@ fn export_row_limit_enforced() {
 
     let limits = ResourceLimits::new(256 * 1024 * 1024, 256, 2, 500_000);
     let options = MarkdownExportOptions::default().with_limits(limits);
-    let error = write_workbook(&workbook, Cursor::new(Vec::new()), &options).expect_err("row limit");
-    assert!(matches!(error, Error::ResourceLimit { resource: "rows", .. }));
+    let error =
+        write_workbook(&workbook, Cursor::new(Vec::new()), &options).expect_err("row limit");
+    assert!(matches!(
+        error,
+        Error::ResourceLimit {
+            resource: "rows",
+            ..
+        }
+    ));
 }
 
 // --- Include hidden sheets ---
@@ -580,9 +606,15 @@ fn include_hidden_sheets_option() {
     workbook.sheets[hidden].set(0, 0, Cell::Text("secret".to_owned()));
 
     let options = MarkdownExportOptions::default().with_include_hidden(true);
-    let (output, report) = write_workbook(&workbook, Cursor::new(Vec::new()), &options).expect("write");
+    let (output, report) =
+        write_workbook(&workbook, Cursor::new(Vec::new()), &options).expect("write");
     let text = String::from_utf8(output.into_inner()).expect("utf8");
     assert!(text.contains("secret"), "{text}");
     // No hidden sheet warning when included
-    assert!(!report.warnings.iter().any(|w| w.code == MarkdownWarningCode::HiddenSheetSkipped));
+    assert!(
+        !report
+            .warnings
+            .iter()
+            .any(|w| w.code == MarkdownWarningCode::HiddenSheetSkipped)
+    );
 }

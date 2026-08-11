@@ -289,10 +289,7 @@ mod tests {
         use crate::formula::functions::testutil::TestCtx;
         let mut ctx = TestCtx::new();
         let args = vec![Value::Number(1.0), Value::Error(CellError::NA)];
-        assert_eq!(
-            collect_numbers(&mut ctx, &args, false),
-            Err(CellError::NA)
-        );
+        assert_eq!(collect_numbers(&mut ctx, &args, false), Err(CellError::NA));
     }
 
     #[test]
@@ -317,10 +314,10 @@ mod tests {
 
     #[test]
     fn collect_numbers_lambda_errors() {
-        use crate::formula::functions::testutil::TestCtx;
-        use std::rc::Rc;
-        use crate::formula::value::Lambda;
         use crate::formula::ast::Expr;
+        use crate::formula::functions::testutil::TestCtx;
+        use crate::formula::value::Lambda;
+        use std::rc::Rc;
         let mut ctx = TestCtx::new();
         let args = vec![Value::Lambda(Rc::new(Lambda {
             params: vec!["x".into()],

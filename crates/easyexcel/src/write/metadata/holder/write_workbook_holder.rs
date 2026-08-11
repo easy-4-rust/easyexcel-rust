@@ -5,13 +5,13 @@ use std::ops::{Deref, DerefMut};
 
 use crate::core::WriteHandler;
 use crate::metadata::data::DataFormatData;
+use crate::util::style_util::{build_cell_style, build_data_format, build_font};
 use crate::write::holder::abstract_write_holder::AbstractWriteHolder;
+use crate::write::holder::write_sheet_holder::WriteSheetHolder;
+use crate::write::metadata::WriteBasicParameter;
 use crate::write::metadata::holder::write_holder::delegate_write_holder_contract;
 use crate::write::metadata::style::write_cell_style::WriteCellStyle;
 use crate::write::metadata::style::write_font::WriteFont;
-use crate::write::holder::write_sheet_holder::WriteSheetHolder;
-use crate::write::metadata::WriteBasicParameter;
-use crate::util::style_util::{build_cell_style, build_data_format, build_font};
 
 /// 对应 Java：`WriteWorkbookHolder extends AbstractWriteHolder`.
 ///
@@ -52,37 +52,86 @@ pub struct WriteWorkbookHolder<'a> {
 
 impl<'a> WriteWorkbookHolder<'a> {
     /// Java `getFile` 的后端中立路径表示。
-    #[must_use] pub fn get_file(&self) -> &str { &self.path }
+    #[must_use]
+    pub fn get_file(&self) -> &str {
+        &self.path
+    }
     /// Java `setFile`。
-    pub fn set_file(&mut self, value: impl Into<String>) { self.path = value.into(); }
+    pub fn set_file(&mut self, value: impl Into<String>) {
+        self.path = value.into();
+    }
     /// Java `getWriteHandlerList`。
-    #[must_use] pub fn get_write_handler_list(&self) -> &[Box<dyn WriteHandler>] { &self.handlers }
+    #[must_use]
+    pub fn get_write_handler_list(&self) -> &[Box<dyn WriteHandler>] {
+        &self.handlers
+    }
     /// Java `setWriteHandlerList`。
-    pub fn set_write_handler_list(&mut self, value: Vec<Box<dyn WriteHandler>>) { self.handlers = value; }
+    pub fn set_write_handler_list(&mut self, value: Vec<Box<dyn WriteHandler>>) {
+        self.handlers = value;
+    }
     /// Java `getAutoCloseStream`。
-    #[must_use] pub const fn get_auto_close_stream(&self) -> bool { self.auto_close_stream }
+    #[must_use]
+    pub const fn get_auto_close_stream(&self) -> bool {
+        self.auto_close_stream
+    }
     /// Java `getInMemory`。
-    #[must_use] pub const fn get_in_memory(&self) -> Option<bool> { self.in_memory }
+    #[must_use]
+    pub const fn get_in_memory(&self) -> Option<bool> {
+        self.in_memory
+    }
     /// Java `getMandatoryUseInputStream`。
-    #[must_use] pub const fn get_mandatory_use_input_stream(&self) -> bool { self.mandatory_use_input_stream }
+    #[must_use]
+    pub const fn get_mandatory_use_input_stream(&self) -> bool {
+        self.mandatory_use_input_stream
+    }
     /// Java `getWriteExcelOnException`。
-    #[must_use] pub const fn get_write_excel_on_exception(&self) -> bool { self.write_excel_on_exception }
+    #[must_use]
+    pub const fn get_write_excel_on_exception(&self) -> bool {
+        self.write_excel_on_exception
+    }
     /// Java `getWithBom`。
-    #[must_use] pub const fn get_with_bom(&self) -> bool { self.with_bom }
+    #[must_use]
+    pub const fn get_with_bom(&self) -> bool {
+        self.with_bom
+    }
     /// Java `getCharset`。
-    #[must_use] pub fn get_charset(&self) -> &str { &self.charset }
+    #[must_use]
+    pub fn get_charset(&self) -> &str {
+        &self.charset
+    }
     /// Java `getPassword`。
-    #[must_use] pub fn get_password(&self) -> Option<&str> { self.password.as_deref() }
+    #[must_use]
+    pub fn get_password(&self) -> Option<&str> {
+        self.password.as_deref()
+    }
     /// Java `getTemplateFile`。
-    #[must_use] pub fn get_template_file(&self) -> Option<&str> { self.template_file.as_deref() }
+    #[must_use]
+    pub fn get_template_file(&self) -> Option<&str> {
+        self.template_file.as_deref()
+    }
     /// Java `getHasBeenInitializedSheetIndexMap`。
-    #[must_use] pub fn get_has_been_initialized_sheet_index_map(&self) -> &HashMap<usize, String> { &self.initialized_sheet_indexes }
+    #[must_use]
+    pub fn get_has_been_initialized_sheet_index_map(&self) -> &HashMap<usize, String> {
+        &self.initialized_sheet_indexes
+    }
     /// 替换已初始化 Sheet 索引映射。
-    pub fn set_has_been_initialized_sheet_index_map(&mut self, value: HashMap<usize, String>) { self.initialized_sheet_indexes = value; }
+    pub fn set_has_been_initialized_sheet_index_map(&mut self, value: HashMap<usize, String>) {
+        self.initialized_sheet_indexes = value;
+    }
     /// Java `getHasBeenInitializedSheetNameMap`。
-    #[must_use] pub fn get_has_been_initialized_sheet_name_map(&self) -> &HashMap<String, WriteSheetHolder<'a>> { &self.sheets }
+    #[must_use]
+    pub fn get_has_been_initialized_sheet_name_map(
+        &self,
+    ) -> &HashMap<String, WriteSheetHolder<'a>> {
+        &self.sheets
+    }
     /// 替换已初始化 Sheet 名称映射。
-    pub fn set_has_been_initialized_sheet_name_map(&mut self, value: HashMap<String, WriteSheetHolder<'a>>) { self.sheets = value; }
+    pub fn set_has_been_initialized_sheet_name_map(
+        &mut self,
+        value: HashMap<String, WriteSheetHolder<'a>>,
+    ) {
+        self.sheets = value;
+    }
     /// Java `getCellStyleIndexMap`。
     #[must_use]
     pub const fn get_cell_style_index_map(
@@ -98,13 +147,23 @@ impl<'a> WriteWorkbookHolder<'a> {
         self.cell_style_index_map = value;
     }
     /// Java `getDataFormatMap`。
-    #[must_use] pub fn get_data_format_map(&self) -> &[DataFormatData] { &self.data_format_map }
+    #[must_use]
+    pub fn get_data_format_map(&self) -> &[DataFormatData] {
+        &self.data_format_map
+    }
     /// Java `setDataFormatMap`。
-    pub fn set_data_format_map(&mut self, value: Vec<DataFormatData>) { self.data_format_map = value; }
+    pub fn set_data_format_map(&mut self, value: Vec<DataFormatData>) {
+        self.data_format_map = value;
+    }
     /// Java `getFontMap`。
-    #[must_use] pub fn get_font_map(&self) -> &[WriteFont] { &self.font_map }
+    #[must_use]
+    pub fn get_font_map(&self) -> &[WriteFont] {
+        &self.font_map
+    }
     /// Java `setFontMap`。
-    pub fn set_font_map(&mut self, value: Vec<WriteFont>) { self.font_map = value; }
+    pub fn set_font_map(&mut self, value: Vec<WriteFont>) {
+        self.font_map = value;
+    }
 
     /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteWorkbookHolder。 Creates a holder matching the Java `WriteWorkbookHolder(WriteWorkbook)`
     /// initialiser.
@@ -150,10 +209,8 @@ impl<'a> WriteWorkbookHolder<'a> {
             .as_deref()
             .or(value.options.template_file.as_deref())
             .unwrap_or_else(|| std::path::Path::new(""));
-        let excel_type = crate::write_type_helpers::effective_write_type(
-            detection_path,
-            &value.options,
-        );
+        let excel_type =
+            crate::write_type_helpers::effective_write_type(detection_path, &value.options);
         let parameter = WriteBasicParameter::from_options(&value.options);
         let template_input_stream = value.options.template_bytes.clone();
         let mut holder = Self::new(path);
@@ -181,27 +238,69 @@ impl<'a> WriteWorkbookHolder<'a> {
         holder.write_workbook = Some(value);
         holder
     }
-    #[must_use] pub const fn get_write_workbook(&self) -> Option<&crate::WriteWorkbook> { self.write_workbook.as_ref() }
-    pub fn set_write_workbook(&mut self, value: Option<crate::WriteWorkbook>) { self.write_workbook = value; }
-    #[must_use] pub const fn get_excel_type(&self) -> crate::support::ExcelTypeEnum { self.excel_type }
-    pub const fn set_excel_type(&mut self, value: crate::support::ExcelTypeEnum) { self.excel_type = value; }
-    #[must_use] pub fn get_workbook(&self) -> Option<&[u8]> { self.workbook.as_deref() }
-    pub fn set_workbook(&mut self, value: Option<Vec<u8>>) { self.workbook = value; }
-    #[must_use] pub fn get_cached_workbook(&self) -> Option<&[u8]> { self.cached_workbook.as_deref() }
-    pub fn set_cached_workbook(&mut self, value: Option<Vec<u8>>) { self.cached_workbook = value; }
-    #[must_use] pub fn get_output_stream(&self) -> Option<&[u8]> { self.output_stream.as_deref() }
-    pub fn set_output_stream(&mut self, value: Option<Vec<u8>>) { self.output_stream = value; }
-    #[must_use] pub fn get_template_input_stream(&self) -> Option<&[u8]> { self.template_input_stream.as_deref() }
-    pub fn set_template_input_stream(&mut self, value: Option<Vec<u8>>) { self.template_input_stream = value; }
-    #[must_use] pub fn get_temp_template_input_stream(&self) -> Option<&[u8]> { self.temp_template_input_stream.as_deref() }
-    pub fn set_temp_template_input_stream(&mut self, value: Option<Vec<u8>>) { self.temp_template_input_stream = value; }
-    #[must_use] pub const fn get_workbook_write_handler_context(&self) -> Option<&crate::WriteWorkbookContext> {
+    #[must_use]
+    pub const fn get_write_workbook(&self) -> Option<&crate::WriteWorkbook> {
+        self.write_workbook.as_ref()
+    }
+    pub fn set_write_workbook(&mut self, value: Option<crate::WriteWorkbook>) {
+        self.write_workbook = value;
+    }
+    #[must_use]
+    pub const fn get_excel_type(&self) -> crate::support::ExcelTypeEnum {
+        self.excel_type
+    }
+    pub const fn set_excel_type(&mut self, value: crate::support::ExcelTypeEnum) {
+        self.excel_type = value;
+    }
+    #[must_use]
+    pub fn get_workbook(&self) -> Option<&[u8]> {
+        self.workbook.as_deref()
+    }
+    pub fn set_workbook(&mut self, value: Option<Vec<u8>>) {
+        self.workbook = value;
+    }
+    #[must_use]
+    pub fn get_cached_workbook(&self) -> Option<&[u8]> {
+        self.cached_workbook.as_deref()
+    }
+    pub fn set_cached_workbook(&mut self, value: Option<Vec<u8>>) {
+        self.cached_workbook = value;
+    }
+    #[must_use]
+    pub fn get_output_stream(&self) -> Option<&[u8]> {
+        self.output_stream.as_deref()
+    }
+    pub fn set_output_stream(&mut self, value: Option<Vec<u8>>) {
+        self.output_stream = value;
+    }
+    #[must_use]
+    pub fn get_template_input_stream(&self) -> Option<&[u8]> {
+        self.template_input_stream.as_deref()
+    }
+    pub fn set_template_input_stream(&mut self, value: Option<Vec<u8>>) {
+        self.template_input_stream = value;
+    }
+    #[must_use]
+    pub fn get_temp_template_input_stream(&self) -> Option<&[u8]> {
+        self.temp_template_input_stream.as_deref()
+    }
+    pub fn set_temp_template_input_stream(&mut self, value: Option<Vec<u8>>) {
+        self.temp_template_input_stream = value;
+    }
+    #[must_use]
+    pub const fn get_workbook_write_handler_context(&self) -> Option<&crate::WriteWorkbookContext> {
         self.workbook_write_handler_context.as_ref()
     }
-    pub fn set_workbook_write_handler_context(&mut self, value: Option<crate::WriteWorkbookContext>) {
+    pub fn set_workbook_write_handler_context(
+        &mut self,
+        value: Option<crate::WriteWorkbookContext>,
+    ) {
         self.workbook_write_handler_context = value;
     }
-    #[must_use] pub const fn holder_type(&self) -> crate::HolderEnum { crate::HolderEnum::Workbook }
+    #[must_use]
+    pub const fn holder_type(&self) -> crate::HolderEnum {
+        crate::HolderEnum::Workbook
+    }
 
     /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteWorkbookHolder。 Creates a workbook holder from nullable write parameters.
     #[must_use]
@@ -254,50 +353,86 @@ impl<'a> WriteWorkbookHolder<'a> {
 
     /// 返回 Java `getAutoCloseStream` 对应状态。
     #[must_use]
-    pub const fn auto_close_stream(&self) -> bool { self.auto_close_stream }
+    pub const fn auto_close_stream(&self) -> bool {
+        self.auto_close_stream
+    }
     /// 设置 Java `setAutoCloseStream` 对应状态。
-    pub const fn set_auto_close_stream(&mut self, value: bool) { self.auto_close_stream = value; }
+    pub const fn set_auto_close_stream(&mut self, value: bool) {
+        self.auto_close_stream = value;
+    }
     /// 返回自动内存选择覆盖；`None` 表示 Auto。
     #[must_use]
-    pub const fn in_memory(&self) -> Option<bool> { self.in_memory }
+    pub const fn in_memory(&self) -> Option<bool> {
+        self.in_memory
+    }
     /// 设置自动内存选择覆盖。
-    pub const fn set_in_memory(&mut self, value: Option<bool>) { self.in_memory = value; }
+    pub const fn set_in_memory(&mut self, value: Option<bool>) {
+        self.in_memory = value;
+    }
     /// 返回是否强制输入流模板路径。
     #[must_use]
-    pub const fn mandatory_use_input_stream(&self) -> bool { self.mandatory_use_input_stream }
+    pub const fn mandatory_use_input_stream(&self) -> bool {
+        self.mandatory_use_input_stream
+    }
     /// 设置是否强制输入流模板路径。
-    pub const fn set_mandatory_use_input_stream(&mut self, value: bool) { self.mandatory_use_input_stream = value; }
+    pub const fn set_mandatory_use_input_stream(&mut self, value: bool) {
+        self.mandatory_use_input_stream = value;
+    }
     /// 返回异常时是否仍输出工作簿。
     #[must_use]
-    pub const fn write_excel_on_exception(&self) -> bool { self.write_excel_on_exception }
+    pub const fn write_excel_on_exception(&self) -> bool {
+        self.write_excel_on_exception
+    }
     /// 设置异常时是否仍输出工作簿。
-    pub const fn set_write_excel_on_exception(&mut self, value: bool) { self.write_excel_on_exception = value; }
+    pub const fn set_write_excel_on_exception(&mut self, value: bool) {
+        self.write_excel_on_exception = value;
+    }
     /// 返回 CSV BOM 开关。
     #[must_use]
-    pub const fn with_bom(&self) -> bool { self.with_bom }
+    pub const fn with_bom(&self) -> bool {
+        self.with_bom
+    }
     /// 设置 CSV BOM 开关。
-    pub const fn set_with_bom(&mut self, value: bool) { self.with_bom = value; }
+    pub const fn set_with_bom(&mut self, value: bool) {
+        self.with_bom = value;
+    }
     /// 返回字符集名称。
     #[must_use]
-    pub fn charset(&self) -> &str { &self.charset }
+    pub fn charset(&self) -> &str {
+        &self.charset
+    }
     /// 设置字符集名称。
-    pub fn set_charset(&mut self, value: impl Into<String>) { self.charset = value.into(); }
+    pub fn set_charset(&mut self, value: impl Into<String>) {
+        self.charset = value.into();
+    }
     /// 返回调用级工作簿密码。
     #[must_use]
-    pub fn password(&self) -> Option<&str> { self.password.as_deref() }
+    pub fn password(&self) -> Option<&str> {
+        self.password.as_deref()
+    }
     /// 设置调用级工作簿密码。
-    pub fn set_password(&mut self, value: Option<String>) { self.password = value; }
+    pub fn set_password(&mut self, value: Option<String>) {
+        self.password = value;
+    }
     /// 返回模板文件路径。
     #[must_use]
-    pub fn template_file(&self) -> Option<&str> { self.template_file.as_deref() }
+    pub fn template_file(&self) -> Option<&str> {
+        self.template_file.as_deref()
+    }
     /// 设置模板文件路径。
-    pub fn set_template_file(&mut self, value: Option<String>) { self.template_file = value; }
+    pub fn set_template_file(&mut self, value: Option<String>) {
+        self.template_file = value;
+    }
     /// 返回按索引初始化的 Sheet 映射。
     #[must_use]
-    pub fn initialized_sheet_indexes(&self) -> &HashMap<usize, String> { &self.initialized_sheet_indexes }
+    pub fn initialized_sheet_indexes(&self) -> &HashMap<usize, String> {
+        &self.initialized_sheet_indexes
+    }
     /// 返回按名称初始化的 Sheet 映射。
     #[must_use]
-    pub fn initialized_sheet_names(&self) -> &HashMap<String, WriteSheetHolder<'a>> { &self.sheets }
+    pub fn initialized_sheet_names(&self) -> &HashMap<String, WriteSheetHolder<'a>> {
+        &self.sheets
+    }
     /// 返回样式索引缓存。
     #[must_use]
     pub const fn cell_style_index_map(
@@ -307,10 +442,14 @@ impl<'a> WriteWorkbookHolder<'a> {
     }
     /// 返回数据格式缓存。
     #[must_use]
-    pub fn data_format_map(&self) -> &[DataFormatData] { &self.data_format_map }
+    pub fn data_format_map(&self) -> &[DataFormatData] {
+        &self.data_format_map
+    }
     /// 返回字体缓存。
     #[must_use]
-    pub fn font_map(&self) -> &[WriteFont] { &self.font_map }
+    pub fn font_map(&self) -> &[WriteFont] {
+        &self.font_map
+    }
 
     /// 合并并缓存后端中立样式，对应 Java `createCellStyle(writeCellStyle, originCellStyle)`。
     ///
@@ -327,16 +466,18 @@ impl<'a> WriteWorkbookHolder<'a> {
         };
         let use_cache = origin_cell_style.is_none();
         let style = build_cell_style(origin_cell_style, Some(write_cell_style));
-        let data_format = write_cell_style.get_data_format_data().map(|value| match value {
-            crate::ExcelDataFormat::Builtin(index) => DataFormatData {
-                index: Some(i16::from(index)),
-                format: None,
-            },
-            crate::ExcelDataFormat::Custom(format) => DataFormatData {
-                index: None,
-                format: Some(format.to_owned()),
-            },
-        });
+        let data_format = write_cell_style
+            .get_data_format_data()
+            .map(|value| match value {
+                crate::ExcelDataFormat::Builtin(index) => DataFormatData {
+                    index: Some(i16::from(index)),
+                    format: None,
+                },
+                crate::ExcelDataFormat::Custom(format) => DataFormatData {
+                    index: None,
+                    format: Some(format.to_owned()),
+                },
+            });
         let origin_font = origin_cell_style.and_then(WriteCellStyle::get_write_font);
         let _ = self.create_font(write_cell_style.get_write_font(), origin_font, use_cache);
         let _ = self.create_data_format(data_format.as_ref(), use_cache);
@@ -362,7 +503,11 @@ impl<'a> WriteWorkbookHolder<'a> {
         if !use_cache {
             return Some(resolved);
         }
-        if let Some(cached) = self.data_format_map.iter().find(|cached| **cached == resolved) {
+        if let Some(cached) = self
+            .data_format_map
+            .iter()
+            .find(|cached| **cached == resolved)
+        {
             return Some(cached.clone());
         }
         self.data_format_map.push(resolved.clone());
@@ -509,12 +654,18 @@ mod tests_extra {
         // 模板输入流
         assert!(holder.get_template_input_stream().is_none());
         holder.set_template_input_stream(Some(vec![8, 9]));
-        assert_eq!(holder.get_template_input_stream(), Some([8_u8, 9].as_slice()));
+        assert_eq!(
+            holder.get_template_input_stream(),
+            Some([8_u8, 9].as_slice())
+        );
 
         // 临时模板输入流
         assert!(holder.get_temp_template_input_stream().is_none());
         holder.set_temp_template_input_stream(Some(vec![10]));
-        assert_eq!(holder.get_temp_template_input_stream(), Some([10_u8].as_slice()));
+        assert_eq!(
+            holder.get_temp_template_input_stream(),
+            Some([10_u8].as_slice())
+        );
 
         // 写入上下文
         assert!(holder.get_workbook_write_handler_context().is_none());

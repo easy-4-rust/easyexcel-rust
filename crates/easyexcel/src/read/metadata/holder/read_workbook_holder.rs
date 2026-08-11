@@ -43,7 +43,8 @@ pub struct ReadWorkbookHolder {
     /// Mirrors `readCache`。
     pub read_cache: crate::read::read_cache::ReadCacheMode,
     /// Mirrors `readCacheSelector`。
-    pub read_cache_selector: Option<crate::read::stored_read_cache_selector::StoredReadCacheSelector>,
+    pub read_cache_selector:
+        Option<crate::read::stored_read_cache_selector::StoredReadCacheSelector>,
     /// Mirrors `extraReadSet`。
     pub extra_read_set: HashSet<crate::core::CellExtraType>,
     /// Sheets explicitly requested by the caller。
@@ -90,7 +91,10 @@ impl Default for ReadWorkbookHolder {
 
 impl ReadWorkbookHolder {
     /// Java 无参构造器。
-    #[must_use] pub fn new() -> Self { Self::default() }
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
     /// Java `ReadWorkbookHolder(ReadWorkbook)`。
     #[must_use]
     pub fn from_read_workbook(value: crate::ReadWorkbook) -> Self {
@@ -105,79 +109,157 @@ impl ReadWorkbookHolder {
         holder.excel_type = value.excel_type();
         holder.auto_close_stream = value.get_auto_close_stream().unwrap_or(true);
         holder.ignore_empty_row = value.get_ignore_empty_row().unwrap_or(true);
-        holder.mandatory_use_input_stream = value
-            .get_mandatory_use_input_stream()
-            .unwrap_or(false);
+        holder.mandatory_use_input_stream = value.get_mandatory_use_input_stream().unwrap_or(false);
         holder.read_workbook = Some(value);
         holder
     }
-    #[must_use] pub const fn get_read_workbook(&self) -> Option<&crate::ReadWorkbook> {
+    #[must_use]
+    pub const fn get_read_workbook(&self) -> Option<&crate::ReadWorkbook> {
         self.read_workbook.as_ref()
     }
     pub fn set_read_workbook(&mut self, value: Option<crate::ReadWorkbook>) {
         self.read_workbook = value;
     }
-    #[must_use] pub const fn get_excel_type(&self) -> Option<crate::support::ExcelTypeEnum> {
+    #[must_use]
+    pub const fn get_excel_type(&self) -> Option<crate::support::ExcelTypeEnum> {
         self.excel_type
     }
     pub const fn set_excel_type(&mut self, value: Option<crate::support::ExcelTypeEnum>) {
         self.excel_type = value;
     }
-    #[must_use] pub fn get_input_stream(&self) -> Option<&[u8]> { self.input_stream.as_deref() }
-    pub fn set_input_stream(&mut self, value: Option<Vec<u8>>) { self.input_stream = value; }
+    #[must_use]
+    pub fn get_input_stream(&self) -> Option<&[u8]> {
+        self.input_stream.as_deref()
+    }
+    pub fn set_input_stream(&mut self, value: Option<Vec<u8>>) {
+        self.input_stream = value;
+    }
     /// Java `getCharset`。
-    #[must_use] pub const fn get_charset(&self) -> &crate::core::CsvCharset { &self.charset }
+    #[must_use]
+    pub const fn get_charset(&self) -> &crate::core::CsvCharset {
+        &self.charset
+    }
     /// Java `setCharset`。
-    pub fn set_charset(&mut self, value: crate::core::CsvCharset) { self.charset = value; }
+    pub fn set_charset(&mut self, value: crate::core::CsvCharset) {
+        self.charset = value;
+    }
     /// Java `getAutoCloseStream`。
-    #[must_use] pub const fn get_auto_close_stream(&self) -> bool { self.auto_close_stream }
+    #[must_use]
+    pub const fn get_auto_close_stream(&self) -> bool {
+        self.auto_close_stream
+    }
     /// Java `getIgnoreEmptyRow`。
-    #[must_use] pub const fn get_ignore_empty_row(&self) -> bool { self.ignore_empty_row }
+    #[must_use]
+    pub const fn get_ignore_empty_row(&self) -> bool {
+        self.ignore_empty_row
+    }
     /// Java `getPassword`。
-    #[must_use] pub fn get_password(&self) -> Option<&str> { self.password.as_deref() }
+    #[must_use]
+    pub fn get_password(&self) -> Option<&str> {
+        self.password.as_deref()
+    }
     /// Java `getMandatoryUseInputStream`。
-    #[must_use] pub const fn get_mandatory_use_input_stream(&self) -> bool { self.mandatory_use_input_stream }
+    #[must_use]
+    pub const fn get_mandatory_use_input_stream(&self) -> bool {
+        self.mandatory_use_input_stream
+    }
     /// Java `getReadDefaultReturn`。
-    #[must_use] pub const fn get_read_default_return(&self) -> crate::core::ReadDefaultReturn { self.read_default_return }
+    #[must_use]
+    pub const fn get_read_default_return(&self) -> crate::core::ReadDefaultReturn {
+        self.read_default_return
+    }
     /// Java `setReadDefaultReturn`。
-    pub const fn set_read_default_return(&mut self, value: crate::core::ReadDefaultReturn) { self.read_default_return = value; }
+    pub const fn set_read_default_return(&mut self, value: crate::core::ReadDefaultReturn) {
+        self.read_default_return = value;
+    }
     /// Java `getCustomObject`。
-    #[must_use] pub const fn get_custom_object(&self) -> Option<&crate::core::CustomReadObject> { self.custom_object.as_ref() }
+    #[must_use]
+    pub const fn get_custom_object(&self) -> Option<&crate::core::CustomReadObject> {
+        self.custom_object.as_ref()
+    }
     /// Java `setCustomObject`。
-    pub fn set_custom_object(&mut self, value: Option<crate::core::CustomReadObject>) { self.custom_object = value; }
+    pub fn set_custom_object(&mut self, value: Option<crate::core::CustomReadObject>) {
+        self.custom_object = value;
+    }
     /// Java `getReadCache`。
-    #[must_use] pub const fn get_read_cache(&self) -> crate::read::read_cache::ReadCacheMode { self.read_cache }
+    #[must_use]
+    pub const fn get_read_cache(&self) -> crate::read::read_cache::ReadCacheMode {
+        self.read_cache
+    }
     /// Java `setReadCache`。
-    pub const fn set_read_cache(&mut self, value: crate::read::read_cache::ReadCacheMode) { self.read_cache = value; }
+    pub const fn set_read_cache(&mut self, value: crate::read::read_cache::ReadCacheMode) {
+        self.read_cache = value;
+    }
     /// Java `getReadCacheSelector`。
-    #[must_use] pub const fn get_read_cache_selector(&self) -> Option<&crate::read::stored_read_cache_selector::StoredReadCacheSelector> { self.read_cache_selector.as_ref() }
+    #[must_use]
+    pub const fn get_read_cache_selector(
+        &self,
+    ) -> Option<&crate::read::stored_read_cache_selector::StoredReadCacheSelector> {
+        self.read_cache_selector.as_ref()
+    }
     /// Java `setReadCacheSelector`。
-    pub fn set_read_cache_selector(&mut self, value: Option<crate::read::stored_read_cache_selector::StoredReadCacheSelector>) { self.read_cache_selector = value; }
+    pub fn set_read_cache_selector(
+        &mut self,
+        value: Option<crate::read::stored_read_cache_selector::StoredReadCacheSelector>,
+    ) {
+        self.read_cache_selector = value;
+    }
     /// Java `getExtraReadSet`。
-    #[must_use] pub const fn get_extra_read_set(&self) -> &HashSet<crate::core::CellExtraType> { &self.extra_read_set }
+    #[must_use]
+    pub const fn get_extra_read_set(&self) -> &HashSet<crate::core::CellExtraType> {
+        &self.extra_read_set
+    }
     /// Java `setExtraReadSet`。
-    pub fn set_extra_read_set(&mut self, value: HashSet<crate::core::CellExtraType>) { self.extra_read_set = value; }
+    pub fn set_extra_read_set(&mut self, value: HashSet<crate::core::CellExtraType>) {
+        self.extra_read_set = value;
+    }
     /// Java `getActualSheetDataList`。
-    #[must_use] pub fn get_actual_sheet_data_list(&self) -> Option<&[ReadSheet]> { self.actual_sheet_data_list.as_deref() }
+    #[must_use]
+    pub fn get_actual_sheet_data_list(&self) -> Option<&[ReadSheet]> {
+        self.actual_sheet_data_list.as_deref()
+    }
     /// Java `getParameterSheetDataList`。
-    #[must_use] pub fn get_parameter_sheet_data_list(&self) -> Option<&[ReadSheet]> { self.parameter_sheet_data_list.as_deref() }
+    #[must_use]
+    pub fn get_parameter_sheet_data_list(&self) -> Option<&[ReadSheet]> {
+        self.parameter_sheet_data_list.as_deref()
+    }
     /// Java `getHasReadSheet`。
-    #[must_use] pub const fn get_has_read_sheet(&self) -> &HashSet<u32> { &self.has_read_sheet }
+    #[must_use]
+    pub const fn get_has_read_sheet(&self) -> &HashSet<u32> {
+        &self.has_read_sheet
+    }
     /// Java `setHasReadSheet`。
-    pub fn set_has_read_sheet(&mut self, value: HashSet<u32>) { self.has_read_sheet = value; }
+    pub fn set_has_read_sheet(&mut self, value: HashSet<u32>) {
+        self.has_read_sheet = value;
+    }
     /// Java `getReadAll`。
-    #[must_use] pub const fn get_read_all(&self) -> bool { self.read_all }
+    #[must_use]
+    pub const fn get_read_all(&self) -> bool {
+        self.read_all
+    }
     /// Java `getFile`。
-    #[must_use] pub fn get_file(&self) -> Option<&Path> { self.file.as_deref() }
+    #[must_use]
+    pub fn get_file(&self) -> Option<&Path> {
+        self.file.as_deref()
+    }
     /// Java `getTempFile`。
-    #[must_use] pub fn get_temp_file(&self) -> Option<&Path> { self.temp_file.as_deref() }
-    #[must_use] pub const fn holder_type(&self) -> crate::HolderEnum {
+    #[must_use]
+    pub fn get_temp_file(&self) -> Option<&Path> {
+        self.temp_file.as_deref()
+    }
+    #[must_use]
+    pub const fn holder_type(&self) -> crate::HolderEnum {
         crate::HolderEnum::Workbook
     }
     /// 返回父类读取 Holder。
-    #[must_use] pub const fn abstract_holder(&self) -> &AbstractReadHolder { &self.abstract_holder }
+    #[must_use]
+    pub const fn abstract_holder(&self) -> &AbstractReadHolder {
+        &self.abstract_holder
+    }
     /// 返回可变父类读取 Holder。
-    pub const fn abstract_holder_mut(&mut self) -> &mut AbstractReadHolder { &mut self.abstract_holder }
+    pub const fn abstract_holder_mut(&mut self) -> &mut AbstractReadHolder {
+        &mut self.abstract_holder
+    }
 
     /// Resolves workbook-level holder state from the public read options.
     ///
@@ -220,10 +302,7 @@ impl ReadWorkbookHolder {
     }
 
     /// 对应 Java：com.alibaba.excel.read.metadata.holder.ReadWorkbookHolder。 Stores format-discovered sheets.
-    pub fn set_actual_sheet_data_list(
-        &mut self,
-        sheets: impl Into<Option<Vec<ReadSheet>>>,
-    ) {
+    pub fn set_actual_sheet_data_list(&mut self, sheets: impl Into<Option<Vec<ReadSheet>>>) {
         self.actual_sheet_data_list = sheets.into();
     }
 
@@ -234,10 +313,7 @@ impl ReadWorkbookHolder {
     }
 
     /// 设置调用参数 Sheet 列表。
-    pub fn set_parameter_sheet_data_list(
-        &mut self,
-        sheets: impl Into<Option<Vec<ReadSheet>>>,
-    ) {
+    pub fn set_parameter_sheet_data_list(&mut self, sheets: impl Into<Option<Vec<ReadSheet>>>) {
         self.parameter_sheet_data_list = sheets.into();
     }
 
@@ -248,51 +324,85 @@ impl ReadWorkbookHolder {
 
     /// 返回已经读取的 Sheet 编号集合。
     #[must_use]
-    pub fn has_read_sheet(&self) -> &HashSet<u32> { &self.has_read_sheet }
+    pub fn has_read_sheet(&self) -> &HashSet<u32> {
+        &self.has_read_sheet
+    }
     /// 返回读取全部 Sheet 开关。
     #[must_use]
-    pub const fn read_all(&self) -> bool { self.read_all }
+    pub const fn read_all(&self) -> bool {
+        self.read_all
+    }
     /// 设置读取全部 Sheet 开关。
-    pub const fn set_read_all(&mut self, value: bool) { self.read_all = value; }
+    pub const fn set_read_all(&mut self, value: bool) {
+        self.read_all = value;
+    }
     /// 返回强制输入流开关。
     #[must_use]
-    pub const fn mandatory_use_input_stream(&self) -> bool { self.mandatory_use_input_stream }
+    pub const fn mandatory_use_input_stream(&self) -> bool {
+        self.mandatory_use_input_stream
+    }
     /// 设置强制输入流开关。
-    pub const fn set_mandatory_use_input_stream(&mut self, value: bool) { self.mandatory_use_input_stream = value; }
+    pub const fn set_mandatory_use_input_stream(&mut self, value: bool) {
+        self.mandatory_use_input_stream = value;
+    }
     /// 返回自动关闭输入流开关。
     #[must_use]
-    pub const fn auto_close_stream(&self) -> bool { self.auto_close_stream }
+    pub const fn auto_close_stream(&self) -> bool {
+        self.auto_close_stream
+    }
     /// 设置自动关闭输入流开关。
-    pub const fn set_auto_close_stream(&mut self, value: bool) { self.auto_close_stream = value; }
+    pub const fn set_auto_close_stream(&mut self, value: bool) {
+        self.auto_close_stream = value;
+    }
     /// 返回忽略空行开关。
     #[must_use]
-    pub const fn ignore_empty_row(&self) -> bool { self.ignore_empty_row }
+    pub const fn ignore_empty_row(&self) -> bool {
+        self.ignore_empty_row
+    }
     /// 设置忽略空行开关。
-    pub const fn set_ignore_empty_row(&mut self, value: bool) { self.ignore_empty_row = value; }
+    pub const fn set_ignore_empty_row(&mut self, value: bool) {
+        self.ignore_empty_row = value;
+    }
     /// 返回调用级密码。
     #[must_use]
-    pub fn password(&self) -> Option<&str> { self.password.as_deref() }
+    pub fn password(&self) -> Option<&str> {
+        self.password.as_deref()
+    }
     /// 设置调用级密码。
-    pub fn set_password(&mut self, value: Option<String>) { self.password = value; }
+    pub fn set_password(&mut self, value: Option<String>) {
+        self.password = value;
+    }
     /// 返回源文件。
     #[must_use]
-    pub fn file(&self) -> Option<&Path> { self.file.as_deref() }
+    pub fn file(&self) -> Option<&Path> {
+        self.file.as_deref()
+    }
     /// 设置源文件。
-    pub fn set_file(&mut self, value: Option<PathBuf>) { self.file = value; }
+    pub fn set_file(&mut self, value: Option<PathBuf>) {
+        self.file = value;
+    }
     /// 返回临时文件。
     #[must_use]
-    pub fn temp_file(&self) -> Option<&Path> { self.temp_file.as_deref() }
+    pub fn temp_file(&self) -> Option<&Path> {
+        self.temp_file.as_deref()
+    }
     /// 设置临时文件。
-    pub fn set_temp_file(&mut self, value: Option<PathBuf>) { self.temp_file = value; }
+    pub fn set_temp_file(&mut self, value: Option<PathBuf>) {
+        self.temp_file = value;
+    }
 }
 
 impl Deref for ReadWorkbookHolder {
     type Target = AbstractReadHolder;
-    fn deref(&self) -> &Self::Target { &self.abstract_holder }
+    fn deref(&self) -> &Self::Target {
+        &self.abstract_holder
+    }
 }
 
 impl DerefMut for ReadWorkbookHolder {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.abstract_holder }
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.abstract_holder
+    }
 }
 
 delegate_read_holder_contract!(ReadWorkbookHolder, abstract_holder);
@@ -360,15 +470,19 @@ mod tests {
             crate::read::read_cache::ReadCacheMode::File
         );
 
-        holder.set_read_cache_selector(Some(
-            crate::StoredReadCacheSelector::Simple(crate::cache::SimpleReadCacheSelector::new()),
-        ));
+        holder.set_read_cache_selector(Some(crate::StoredReadCacheSelector::Simple(
+            crate::cache::SimpleReadCacheSelector::new(),
+        )));
         assert!(holder.get_read_cache_selector().is_some());
 
         let mut extra = std::collections::HashSet::new();
         extra.insert(crate::CellExtraType::Comment);
         holder.set_extra_read_set(extra);
-        assert!(holder.get_extra_read_set().contains(&crate::CellExtraType::Comment));
+        assert!(
+            holder
+                .get_extra_read_set()
+                .contains(&crate::CellExtraType::Comment)
+        );
 
         holder.set_read_all(true);
         assert!(holder.get_read_all());
@@ -422,13 +536,19 @@ mod tests {
         assert_eq!(holder.file().unwrap().to_str().unwrap(), "/tmp/test.xlsx");
 
         holder.set_temp_file(Some(std::path::PathBuf::from("/tmp/temp.xlsx")));
-        assert_eq!(holder.temp_file().unwrap().to_str().unwrap(), "/tmp/temp.xlsx");
+        assert_eq!(
+            holder.temp_file().unwrap().to_str().unwrap(),
+            "/tmp/temp.xlsx"
+        );
     }
 
     #[test]
     fn charset_setter_and_getter() {
         let mut holder = ReadWorkbookHolder::new();
-        assert_eq!(holder.get_charset().name(), crate::CsvCharset::default().name());
+        assert_eq!(
+            holder.get_charset().name(),
+            crate::CsvCharset::default().name()
+        );
         holder.set_charset(crate::CsvCharset::from("gbk"));
         assert_eq!(holder.get_charset().name(), "gbk");
     }

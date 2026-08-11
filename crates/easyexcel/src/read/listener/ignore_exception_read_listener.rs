@@ -132,7 +132,10 @@ mod tests {
         let extra = CellExtra::new(
             crate::core::CellExtraType::Comment,
             Some("note".to_owned()),
-            0, 0, 1, 1,
+            0,
+            0,
+            1,
+            1,
         );
         assert!(ReadListener::extra(&mut adapter, &extra, &context).is_ok());
     }

@@ -1,8 +1,8 @@
 //! 可复用的 BIFF8 底层 record、公式与加密原语。
 
-pub(crate) mod cached;
 mod biff8_font;
 mod biff8_rich_text_cell;
+pub(crate) mod cached;
 mod continuation_chain;
 mod continuation_decoder;
 pub mod encode;
@@ -13,11 +13,11 @@ mod format;
 pub mod lazy_sst;
 pub(crate) mod model;
 mod numeric;
-pub mod ptg;
 mod protection;
-mod rich_text;
+pub mod ptg;
 pub mod record_sid;
 pub mod record_stream;
+mod rich_text;
 #[cfg(feature = "xls-streaming-iter")]
 pub mod streaming_record_iter;
 pub mod string;
@@ -25,9 +25,9 @@ mod style;
 mod template;
 mod workbook;
 
-pub use continuation_chain::Biff8ContinuationChain;
 pub use biff8_font::Biff8Font;
 pub use biff8_rich_text_cell::Biff8RichTextCell;
+pub use continuation_chain::Biff8ContinuationChain;
 pub use continuation_decoder::{
     Biff8ContinuableRecordDecoder, Biff8ContinuableRecordKind, Biff8ContinuationStatus,
     Biff8DecodedContinuableRecord,
@@ -52,7 +52,6 @@ pub use template::{Biff8MacroPolicy, Biff8TemplatePackage, looks_like_xls};
 pub use workbook::{
     Biff8Book, Biff8Cell, Biff8Chart, Biff8ChartKind, Biff8ChartRange, Biff8ChartSeries,
     Biff8Comment, Biff8Hyperlink, Biff8HyperlinkKind, Biff8Merge, Biff8RichText, Biff8Sheet,
-    Biff8Value, GeneratedBiff8CellValue,
-    date_to_excel_serial, date_to_excel_serial_with_windowing, datetime_to_excel_serial,
-    datetime_to_excel_serial_with_windowing,
+    Biff8Value, GeneratedBiff8CellValue, date_to_excel_serial, date_to_excel_serial_with_windowing,
+    datetime_to_excel_serial, datetime_to_excel_serial_with_windowing,
 };

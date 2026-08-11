@@ -496,8 +496,7 @@ mod tests {
 
         // end 只覆盖有效 record 部分
         let record_len = data.len() - 16;
-        let mut iter =
-            StreamingRecordIter::new(Cursor::new(data), 0, record_len as u64).unwrap();
+        let mut iter = StreamingRecordIter::new(Cursor::new(data), 0, record_len as u64).unwrap();
 
         let (sid, payload) = iter.next().unwrap().unwrap();
         assert_eq!(sid, 0x0203);

@@ -59,10 +59,14 @@ impl RichTextStringData {
     }
 
     /// 设置富文本原始字符串。
-    pub fn set_text_string(&mut self, value: impl Into<String>) { self.text_string = value.into(); }
+    pub fn set_text_string(&mut self, value: impl Into<String>) {
+        self.text_string = value.into();
+    }
 
     /// 设置整串字体。
-    pub fn set_write_font(&mut self, value: Option<WriteFont>) { self.write_font = value; }
+    pub fn set_write_font(&mut self, value: Option<WriteFont>) {
+        self.write_font = value;
+    }
 
     /// 替换全部区间字体。
     pub fn set_interval_font_list(&mut self, value: impl IntoIterator<Item = IntervalFont>) {
@@ -77,7 +81,9 @@ impl RichTextStringData {
 
     /// Java `getTextString` 兼容别名。
     #[must_use]
-    pub fn get_text_string(&self) -> &str { self.text_string() }
+    pub fn get_text_string(&self) -> &str {
+        self.text_string()
+    }
 
     /// Returns the optional whole-string font. (Java `getWriteFont()`)
     #[must_use]
@@ -88,7 +94,9 @@ impl RichTextStringData {
 
     /// Java `getWriteFont` 兼容别名。
     #[must_use]
-    pub const fn get_write_font(&self) -> Option<&WriteFont> { self.write_font() }
+    pub const fn get_write_font(&self) -> Option<&WriteFont> {
+        self.write_font()
+    }
 
     /// 对应 Java：com.alibaba.excel.metadata.data.RichTextStringData。 Returns interval fonts in application order. (Java `getIntervalFontList()`)
     #[must_use]
@@ -98,7 +106,9 @@ impl RichTextStringData {
 
     /// Java `getIntervalFontList` 兼容别名。
     #[must_use]
-    pub fn get_interval_font_list(&self) -> &[IntervalFont] { self.interval_fonts() }
+    pub fn get_interval_font_list(&self) -> &[IntervalFont] {
+        self.interval_fonts()
+    }
 }
 
 impl IntoExcelCell for RichTextStringData {

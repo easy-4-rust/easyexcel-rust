@@ -7,57 +7,57 @@ use easyexcel_io::Result;
 
 use super::xmlutil::{general_ref, local_name, local_name_end, text};
 
-    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Parse shared strings. Each `<si>` becomes one entry; rich-text runs
-    /// (`<r><t>...`) are concatenated. `xml:space="preserve"` is respected because
-    /// we capture raw text events without trimming.
-    pub fn parse_shared_strings(xml: &[u8]) -> Result<Vec<String>> {
-        let mut reader = Reader::from_reader(xml);
-        reader.config_mut().trim_text(false);
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Parse shared strings. Each `<si>` becomes one entry; rich-text runs
+/// (`<r><t>...`) are concatenated. `xml:space="preserve"` is respected because
+/// we capture raw text events without trimming.
+pub fn parse_shared_strings(xml: &[u8]) -> Result<Vec<String>> {
+    let mut reader = Reader::from_reader(xml);
+    reader.config_mut().trim_text(false);
 
-        let mut strings = Vec::new();
-        let mut buf = Vec::new();
+    let mut strings = Vec::new();
+    let mut buf = Vec::new();
 
-        let mut in_si = false;
-        let mut in_t = false;
-        let mut current = String::new();
+    let mut in_si = false;
+    let mut in_t = false;
+    let mut current = String::new();
 
-        loop {
-            match reader.read_event_into(&mut buf)? {
-                Event::Eof => break,
-                Event::Start(e) => {
-                    let name = local_name(&e);
-                    match name.as_str() {
-                        "si" => {
-                            in_si = true;
-                            current.clear();
-                        }
-                        "t" if in_si => in_t = true,
-                        _ => {}
+    loop {
+        match reader.read_event_into(&mut buf)? {
+            Event::Eof => break,
+            Event::Start(e) => {
+                let name = local_name(&e);
+                match name.as_str() {
+                    "si" => {
+                        in_si = true;
+                        current.clear();
                     }
+                    "t" if in_si => in_t = true,
+                    _ => {}
                 }
-                Event::End(e) => {
-                    let name = local_name_end(&e);
-                    match name.as_str() {
-                        "si" => {
-                            in_si = false;
-                            strings.push(std::mem::take(&mut current));
-                        }
-                        "t" => in_t = false,
-                        _ => {}
-                    }
-                }
-                Event::Text(t) if in_t => {
-                    current.push_str(&text(&t));
-                }
-                Event::GeneralRef(reference) if in_t => {
-                    current.push_str(&general_ref(&reference));
-                }
-                _ => {}
             }
-            buf.clear();
+            Event::End(e) => {
+                let name = local_name_end(&e);
+                match name.as_str() {
+                    "si" => {
+                        in_si = false;
+                        strings.push(std::mem::take(&mut current));
+                    }
+                    "t" => in_t = false,
+                    _ => {}
+                }
+            }
+            Event::Text(t) if in_t => {
+                current.push_str(&text(&t));
+            }
+            Event::GeneralRef(reference) if in_t => {
+                current.push_str(&general_ref(&reference));
+            }
+            _ => {}
         }
-        Ok(strings)
+        buf.clear();
     }
+    Ok(strings)
+}
 
 #[cfg(test)]
 mod tests {

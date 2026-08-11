@@ -92,9 +92,18 @@ mod tests {
     #[test]
     fn memory_megabytes_to_bytes_converts() {
         assert_eq!(SharedStringCachePolicy::memory_megabytes_to_bytes(0), 0);
-        assert_eq!(SharedStringCachePolicy::memory_megabytes_to_bytes(1), 1_000_000);
-        assert_eq!(SharedStringCachePolicy::memory_megabytes_to_bytes(5), 5_000_000);
-        assert_eq!(SharedStringCachePolicy::memory_megabytes_to_bytes(u64::MAX), u64::MAX);
+        assert_eq!(
+            SharedStringCachePolicy::memory_megabytes_to_bytes(1),
+            1_000_000
+        );
+        assert_eq!(
+            SharedStringCachePolicy::memory_megabytes_to_bytes(5),
+            5_000_000
+        );
+        assert_eq!(
+            SharedStringCachePolicy::memory_megabytes_to_bytes(u64::MAX),
+            u64::MAX
+        );
     }
 
     #[test]

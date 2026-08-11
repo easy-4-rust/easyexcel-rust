@@ -104,7 +104,9 @@ impl WriteCellContext {
 
     /// Java `getCell` 别名。
     #[must_use]
-    pub const fn get_cell(&self) -> &WriteCellHandle { &self.cell }
+    pub const fn get_cell(&self) -> &WriteCellHandle {
+        &self.cell
+    }
 
     /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Creates a cell handler context before cell conversion callbacks run.
     #[must_use]
@@ -381,7 +383,9 @@ impl WriteCellContext {
     }
     /// Java `getWriteWorkbookHolder` 别名。
     #[must_use]
-    pub const fn get_write_workbook_holder(&self) -> Option<&WriteWorkbookHolderView> { self.holders.workbook() }
+    pub const fn get_write_workbook_holder(&self) -> Option<&WriteWorkbookHolderView> {
+        self.holders.workbook()
+    }
 
     /// 对应 Java：com.alibaba.excel.write.handler.context.CellWriteHandlerContext。 Returns the active sheet holder view.
     ///
@@ -397,7 +401,9 @@ impl WriteCellContext {
     }
     /// Java `getWriteSheetHolder` 别名。
     #[must_use]
-    pub fn get_write_sheet_holder(&self) -> &WriteSheetHolderView { self.write_sheet_holder() }
+    pub fn get_write_sheet_holder(&self) -> &WriteSheetHolderView {
+        self.write_sheet_holder()
+    }
 
     /// Returns the active table holder view for table callbacks.
     #[must_use]
@@ -407,7 +413,9 @@ impl WriteCellContext {
     }
     /// Java `getWriteTableHolder` 别名。
     #[must_use]
-    pub const fn get_write_table_holder(&self) -> Option<&WriteTableHolderView> { self.holders.table() }
+    pub const fn get_write_table_holder(&self) -> Option<&WriteTableHolderView> {
+        self.holders.table()
+    }
 
     /// Returns all holder views captured for this callback.
     #[must_use]
@@ -417,11 +425,15 @@ impl WriteCellContext {
     }
     /// Java `getWriteContext` 别名。
     #[must_use]
-    pub const fn get_write_context(&self) -> &WriteHolderContext { &self.holders }
+    pub const fn get_write_context(&self) -> &WriteHolderContext {
+        &self.holders
+    }
 
     /// 返回物理行号，语义对应 Java `getRowIndex`。
     #[must_use]
-    pub const fn get_row_index(&self) -> u32 { self.row_index }
+    pub const fn get_row_index(&self) -> u32 {
+        self.row_index
+    }
     /// 设置物理行号并重建后端中立单元格句柄。
     pub fn set_row_index(&mut self, value: u32) {
         self.row_index = value;
@@ -430,20 +442,20 @@ impl WriteCellContext {
     }
     /// 返回当前后端中立行句柄。对应 Java `getRow`。
     #[must_use]
-    pub const fn get_row(&self) -> &WriteRowHandle { &self.row }
+    pub const fn get_row(&self) -> &WriteRowHandle {
+        &self.row
+    }
     /// 替换行句柄并同步行号及单元格坐标。对应 Java `setRow`。
     pub fn set_row(&mut self, row: WriteRowHandle) {
         self.row_index = row.row_index();
-        self.cell = WriteCellHandle::new(
-            self.row_index,
-            self.column_index,
-            self.value.clone(),
-        );
+        self.cell = WriteCellHandle::new(self.row_index, self.column_index, self.value.clone());
         self.row = row;
     }
     /// 返回物理列号，语义对应 Java `getColumnIndex`。
     #[must_use]
-    pub const fn get_column_index(&self) -> u16 { self.column_index }
+    pub const fn get_column_index(&self) -> u16 {
+        self.column_index
+    }
     /// 设置物理列号并重建后端中立单元格句柄。
     pub fn set_column_index(&mut self, value: u16) {
         self.column_index = value;
@@ -458,33 +470,55 @@ impl WriteCellContext {
     }
     /// 返回已转换单元格列表。
     #[must_use]
-    pub fn cell_data_list(&self) -> &[CellValue] { &self.cell_data_list }
+    pub fn cell_data_list(&self) -> &[CellValue] {
+        &self.cell_data_list
+    }
     /// Java `getCellDataList` 别名。
     #[must_use]
-    pub fn get_cell_data_list(&self) -> &[CellValue] { &self.cell_data_list }
+    pub fn get_cell_data_list(&self) -> &[CellValue] {
+        &self.cell_data_list
+    }
     /// 替换已转换单元格列表。
-    pub fn set_cell_data_list(&mut self, value: Vec<CellValue>) { self.cell_data_list = value; }
+    pub fn set_cell_data_list(&mut self, value: Vec<CellValue>) {
+        self.cell_data_list = value;
+    }
     /// 替换首个转换单元格；空列表会自动创建第一项。
     pub fn set_first_cell_data(&mut self, value: CellValue) {
-        if let Some(first) = self.cell_data_list.first_mut() { *first = value; } else { self.cell_data_list.push(value); }
+        if let Some(first) = self.cell_data_list.first_mut() {
+            *first = value;
+        } else {
+            self.cell_data_list.push(value);
+        }
     }
     /// Java `getFirstCellData` 别名。
     #[must_use]
-    pub fn get_first_cell_data(&self) -> Option<&CellValue> { self.cell_data_list.first() }
+    pub fn get_first_cell_data(&self) -> Option<&CellValue> {
+        self.cell_data_list.first()
+    }
     /// 返回是否为表头单元格。
     #[must_use]
-    pub const fn head(&self) -> bool { self.is_head }
+    pub const fn head(&self) -> bool {
+        self.is_head
+    }
     /// Java `getHead` 别名。
     #[must_use]
-    pub const fn get_head(&self) -> bool { self.is_head }
+    pub const fn get_head(&self) -> bool {
+        self.is_head
+    }
     /// 设置是否为表头单元格。
-    pub const fn set_head(&mut self, value: bool) { self.is_head = value; }
+    pub const fn set_head(&mut self, value: bool) {
+        self.is_head = value;
+    }
     /// 返回表头文本。
     #[must_use]
-    pub fn head_data(&self) -> Option<&Head> { self.resolved_head_data.as_ref() }
+    pub fn head_data(&self) -> Option<&Head> {
+        self.resolved_head_data.as_ref()
+    }
     /// Java `getHeadData` 别名。
     #[must_use]
-    pub fn get_head_data(&self) -> Option<&Head> { self.resolved_head_data.as_ref() }
+    pub fn get_head_data(&self) -> Option<&Head> {
+        self.resolved_head_data.as_ref()
+    }
     /// 设置表头文本。
     pub fn set_head_data(&mut self, value: Option<Head>) {
         self.head_name = value
@@ -494,51 +528,87 @@ impl WriteCellContext {
     }
     /// 返回静态内容属性。
     #[must_use]
-    pub const fn excel_content_property(&self) -> Option<&ExcelContentProperty> { self.resolved_excel_content_property.as_ref() }
+    pub const fn excel_content_property(&self) -> Option<&ExcelContentProperty> {
+        self.resolved_excel_content_property.as_ref()
+    }
     /// Java `getExcelContentProperty` 别名。
     #[must_use]
-    pub const fn get_excel_content_property(&self) -> Option<&ExcelContentProperty> { self.resolved_excel_content_property.as_ref() }
+    pub const fn get_excel_content_property(&self) -> Option<&ExcelContentProperty> {
+        self.resolved_excel_content_property.as_ref()
+    }
     /// 设置静态内容属性。
-    pub fn set_excel_content_property(&mut self, value: Option<ExcelContentProperty>) { self.resolved_excel_content_property = value; }
+    pub fn set_excel_content_property(&mut self, value: Option<ExcelContentProperty>) {
+        self.resolved_excel_content_property = value;
+    }
     /// 返回原始值。
     #[must_use]
-    pub const fn get_original_value(&self) -> Option<&CellValue> { self.original_value.as_ref() }
+    pub const fn get_original_value(&self) -> Option<&CellValue> {
+        self.original_value.as_ref()
+    }
     /// 设置原始值。
-    pub fn set_original_value(&mut self, value: Option<CellValue>) { self.original_value = value; }
+    pub fn set_original_value(&mut self, value: Option<CellValue>) {
+        self.original_value = value;
+    }
     /// 返回原始字段类型名称。
     #[must_use]
-    pub const fn original_field_class(&self) -> Option<&'static str> { self.original_field_type }
+    pub const fn original_field_class(&self) -> Option<&'static str> {
+        self.original_field_type
+    }
     /// Java `getOriginalFieldClass` 别名。
     #[must_use]
-    pub const fn get_original_field_class(&self) -> Option<&'static str> { self.original_field_type }
+    pub const fn get_original_field_class(&self) -> Option<&'static str> {
+        self.original_field_type
+    }
     /// 设置原始字段类型名称。
-    pub const fn set_original_field_class(&mut self, value: Option<&'static str>) { self.original_field_type = value; }
+    pub const fn set_original_field_class(&mut self, value: Option<&'static str>) {
+        self.original_field_type = value;
+    }
     /// 返回相对行号。
     #[must_use]
-    pub const fn relative_row_index(&self) -> Option<usize> { self.relative_row_index }
+    pub const fn relative_row_index(&self) -> Option<usize> {
+        self.relative_row_index
+    }
     /// Java `getRelativeRowIndex` 别名。
     #[must_use]
-    pub const fn get_relative_row_index(&self) -> Option<usize> { self.relative_row_index }
+    pub const fn get_relative_row_index(&self) -> Option<usize> {
+        self.relative_row_index
+    }
     /// 设置相对行号。
-    pub const fn set_relative_row_index(&mut self, value: Option<usize>) { self.relative_row_index = value; }
+    pub const fn set_relative_row_index(&mut self, value: Option<usize>) {
+        self.relative_row_index = value;
+    }
     /// 返回目标单元格类型。
     #[must_use]
-    pub const fn target_cell_data_type(&self) -> Option<CellDataType> { self.target_cell_data_type }
+    pub const fn target_cell_data_type(&self) -> Option<CellDataType> {
+        self.target_cell_data_type
+    }
     /// Java `getTargetCellDataType` 别名。
     #[must_use]
-    pub const fn get_target_cell_data_type(&self) -> Option<CellDataType> { self.target_cell_data_type }
+    pub const fn get_target_cell_data_type(&self) -> Option<CellDataType> {
+        self.target_cell_data_type
+    }
     /// 设置目标单元格类型。
-    pub const fn set_target_cell_data_type(&mut self, value: Option<CellDataType>) { self.target_cell_data_type = value; }
+    pub const fn set_target_cell_data_type(&mut self, value: Option<CellDataType>) {
+        self.target_cell_data_type = value;
+    }
     /// 返回忽略样式填充开关。
     #[must_use]
-    pub const fn ignore_fill_style(&self) -> bool { self.ignore_fill_style }
+    pub const fn ignore_fill_style(&self) -> bool {
+        self.ignore_fill_style
+    }
     /// Java `getIgnoreFillStyle` 别名。
     #[must_use]
-    pub const fn get_ignore_fill_style(&self) -> bool { self.ignore_fill_style }
+    pub const fn get_ignore_fill_style(&self) -> bool {
+        self.ignore_fill_style
+    }
     /// 设置忽略样式填充开关。
-    pub const fn set_ignore_fill_style(&mut self, value: bool) { self.ignore_fill_style = value; }
+    pub const fn set_ignore_fill_style(&mut self, value: bool) {
+        self.ignore_fill_style = value;
+    }
     /// 替换全部 holder 视图。
-    pub fn set_write_context(&mut self, value: WriteHolderContext) { self.holders = value; }
+    pub fn set_write_context(&mut self, value: WriteHolderContext) {
+        self.holders = value;
+    }
     /// 替换 workbook holder 视图。
     pub fn set_write_workbook_holder(&mut self, value: WriteWorkbookHolderView) {
         self.holders = std::mem::take(&mut self.holders).with_workbook(value);

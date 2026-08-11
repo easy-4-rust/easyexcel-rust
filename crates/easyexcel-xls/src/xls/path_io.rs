@@ -13,7 +13,9 @@ pub const CFB_MAGIC: [u8; 8] = [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
 /// # Errors
 ///
 /// 文件无法打开，或 OLE2/BIFF8 内容无效时返回错误。
-pub fn read_path(path: &Path) -> Result<Workbook> { read_path_with_password(path, None) }
+pub fn read_path(path: &Path) -> Result<Workbook> {
+    read_path_with_password(path, None)
+}
 
 /// 从路径读取 XLS，并在存在 `FILEPASS` 时使用密码解密。
 ///
@@ -55,4 +57,6 @@ pub fn write_path_with_password(
 
 /// 判断文件头是否为 OLE2/CFB。
 #[must_use]
-pub fn looks_like_cfb(magic: &[u8]) -> bool { easyexcel_io::looks_like_cfb(magic) }
+pub fn looks_like_cfb(magic: &[u8]) -> bool {
+    easyexcel_io::looks_like_cfb(magic)
+}

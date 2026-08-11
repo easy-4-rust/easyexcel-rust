@@ -66,7 +66,11 @@ impl Hash for ExcelFontStyle {
 
 /// 对齐 Java `Double.doubleToLongBits`：所有 NaN 规范化，正负零保持不同。
 fn java_double_bits(value: f64) -> u64 {
-    if value.is_nan() { f64::NAN.to_bits() } else { value.to_bits() }
+    if value.is_nan() {
+        f64::NAN.to_bits()
+    } else {
+        value.to_bits()
+    }
 }
 
 impl ExcelFontStyle {

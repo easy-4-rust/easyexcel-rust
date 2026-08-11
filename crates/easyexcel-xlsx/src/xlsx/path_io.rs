@@ -10,7 +10,9 @@ use super::{read_with_password, write};
 /// # Errors
 ///
 /// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，或输入不符合格式约束时返回错误。
-pub fn read_path(path: &Path) -> Result<Workbook> { read_path_with_password(path, None) }
+pub fn read_path(path: &Path) -> Result<Workbook> {
+    read_path_with_password(path, None)
+}
 
 /// 从路径读取 XLSX，并按需解密 MS-OFFCRYPTO 文件。
 ///
@@ -34,4 +36,6 @@ pub fn write_path(workbook: &Workbook, path: &Path) -> Result<()> {
 
 /// 判断文件头是否为 ZIP/OOXML 容器。
 #[must_use]
-pub fn looks_like_zip(magic: &[u8]) -> bool { easyexcel_io::looks_like_zip(magic) }
+pub fn looks_like_zip(magic: &[u8]) -> bool {
+    easyexcel_io::looks_like_zip(magic)
+}

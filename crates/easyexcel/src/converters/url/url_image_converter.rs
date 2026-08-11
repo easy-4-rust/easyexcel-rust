@@ -1,8 +1,8 @@
 //! 对应 Java：`com.alibaba.excel.converters.url.UrlImageConverter` with
 //! Java's default timeout values (1s connect, 5s read).
 
-use std::time::Duration;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Duration;
 
 use url::Url;
 

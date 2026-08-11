@@ -35,7 +35,10 @@ pub struct WriteCellData {
 
 impl WriteCellData {
     /// Java 无参构造器，对应未指定类型的空数据对象。
-    #[must_use] pub const fn empty() -> Self { Self::new(CellValue::Empty) }
+    #[must_use]
+    pub const fn empty() -> Self {
+        Self::new(CellValue::Empty)
+    }
     /// Java `WriteCellData(CellDataTypeEnum)` 的后端中立构造。
     #[must_use]
     pub fn from_type(cell_type: crate::CellDataType) -> Self {
@@ -44,7 +47,10 @@ impl WriteCellData {
         data
     }
     /// Java `WriteCellData(CellDataTypeEnum, String)`，仅允许 STRING/ERROR。
-    pub fn from_typed_string(cell_type: crate::CellDataType, value: impl Into<String>) -> Result<Self, ExcelError> {
+    pub fn from_typed_string(
+        cell_type: crate::CellDataType,
+        value: impl Into<String>,
+    ) -> Result<Self, ExcelError> {
         let value = value.into();
         match cell_type {
             crate::CellDataType::String | crate::CellDataType::DirectString => {
@@ -57,17 +63,31 @@ impl WriteCellData {
                 data.declared_type = Some(cell_type);
                 Ok(data)
             }
-            _ => Err(ExcelError::Format("Only STRING, DIRECT_STRING and ERROR accept a string value".to_owned())),
+            _ => Err(ExcelError::Format(
+                "Only STRING, DIRECT_STRING and ERROR accept a string value".to_owned(),
+            )),
         }
     }
     /// Java `WriteCellData(BigDecimal)`。
-    #[must_use] pub const fn from_number(value: BigDecimal) -> Self { Self::new(CellValue::Decimal(value)) }
+    #[must_use]
+    pub const fn from_number(value: BigDecimal) -> Self {
+        Self::new(CellValue::Decimal(value))
+    }
     /// Java `WriteCellData(Boolean)`。
-    #[must_use] pub const fn from_boolean(value: bool) -> Self { Self::new(CellValue::Bool(value)) }
+    #[must_use]
+    pub const fn from_boolean(value: bool) -> Self {
+        Self::new(CellValue::Bool(value))
+    }
     /// Java `WriteCellData(LocalDateTime)`。
-    #[must_use] pub const fn from_date_time(value: NaiveDateTime) -> Self { Self::new(CellValue::DateTime(value)) }
+    #[must_use]
+    pub const fn from_date_time(value: NaiveDateTime) -> Self {
+        Self::new(CellValue::DateTime(value))
+    }
     /// Rust 日期无时分秒构造。
-    #[must_use] pub const fn from_date(value: NaiveDate) -> Self { Self::new(CellValue::Date(value)) }
+    #[must_use]
+    pub const fn from_date(value: NaiveDate) -> Self {
+        Self::new(CellValue::Date(value))
+    }
     /// 返回该单元格是否仅包含标量值、没有样式或附加对象。
     #[must_use]
     pub fn is_plain(&self) -> bool {
@@ -193,11 +213,19 @@ impl WriteCellData {
         &self.value
     }
     /// Java 父类数据值的后端中立 getter。
-    #[must_use] pub const fn get_value(&self) -> &CellValue { self.value() }
+    #[must_use]
+    pub const fn get_value(&self) -> &CellValue {
+        self.value()
+    }
     /// Java `getType`。
-    #[must_use] pub fn get_type(&self) -> crate::CellDataType { self.declared_type.unwrap_or_else(|| self.value.data_type()) }
+    #[must_use]
+    pub fn get_type(&self) -> crate::CellDataType {
+        self.declared_type.unwrap_or_else(|| self.value.data_type())
+    }
     /// Java `setType`。
-    pub const fn set_type(&mut self, value: crate::CellDataType) { self.declared_type = Some(value); }
+    pub const fn set_type(&mut self, value: crate::CellDataType) {
+        self.declared_type = Some(value);
+    }
 
     /// 对应 Java：com.alibaba.excel.metadata.data.WriteCellData。 Returns all image entries in insertion order. (Java `getImageDataList()`)
     #[must_use]
@@ -212,7 +240,9 @@ impl WriteCellData {
         self.comment_data.as_ref()
     }
     /// Java `setCommentData` 原位 setter。
-    pub fn set_comment_data(&mut self, value: Option<CommentData>) { self.comment_data = value; }
+    pub fn set_comment_data(&mut self, value: Option<CommentData>) {
+        self.comment_data = value;
+    }
 
     /// Returns hyperlink metadata. (Java `getHyperlinkData()`)
     #[must_use]
@@ -221,7 +251,9 @@ impl WriteCellData {
         self.hyperlink_data.as_ref()
     }
     /// Java `setHyperlinkData` 原位 setter。
-    pub fn set_hyperlink_data(&mut self, value: Option<HyperlinkData>) { self.hyperlink_data = value; }
+    pub fn set_hyperlink_data(&mut self, value: Option<HyperlinkData>) {
+        self.hyperlink_data = value;
+    }
 
     /// Returns formula metadata. (Java `getFormulaData()`)
     #[must_use]
@@ -230,13 +262,19 @@ impl WriteCellData {
         self.formula_data.as_ref()
     }
     /// Java `setFormulaData` 原位 setter。
-    pub fn set_formula_data(&mut self, value: Option<FormulaData>) { self.formula_data = value; }
+    pub fn set_formula_data(&mut self, value: Option<FormulaData>) {
+        self.formula_data = value;
+    }
 
     /// Java `getImageDataList` 别名。
     #[must_use]
-    pub fn get_image_data_list(&self) -> &[ImageData] { &self.image_data_list }
+    pub fn get_image_data_list(&self) -> &[ImageData] {
+        &self.image_data_list
+    }
     /// Java `setImageDataList` 原位 setter。
-    pub fn set_image_data_list(&mut self, value: Vec<ImageData>) { self.image_data_list = value; }
+    pub fn set_image_data_list(&mut self, value: Vec<ImageData>) {
+        self.image_data_list = value;
+    }
 
     /// Returns the logical cell style. (Java `getWriteCellStyle()`)
     #[must_use]
@@ -245,7 +283,10 @@ impl WriteCellData {
         self.write_cell_style.as_ref()
     }
     /// Java `getWriteCellStyle` 别名。
-    #[must_use] pub const fn get_write_cell_style(&self) -> Option<&WriteCellStyle> { self.write_cell_style() }
+    #[must_use]
+    pub const fn get_write_cell_style(&self) -> Option<&WriteCellStyle> {
+        self.write_cell_style()
+    }
 
     /// 对应 Java：com.alibaba.excel.metadata.data.WriteCellData。 Replaces the logical cell style. (Java `setWriteCellStyle(...)`)
     pub fn set_write_cell_style(&mut self, style: Option<WriteCellStyle>) {
@@ -321,9 +362,14 @@ impl WriteCellData {
         self.data_format_data.as_ref()
     }
     /// 返回数据格式元数据。
-    #[must_use] pub const fn get_data_format_data(&self) -> Option<&DataFormatData> { self.data_format_data() }
+    #[must_use]
+    pub const fn get_data_format_data(&self) -> Option<&DataFormatData> {
+        self.data_format_data()
+    }
     /// 替换数据格式元数据。
-    pub fn set_data_format_data(&mut self, value: Option<DataFormatData>) { self.data_format_data = value; }
+    pub fn set_data_format_data(&mut self, value: Option<DataFormatData>) {
+        self.data_format_data = value;
+    }
 
     /// 对应 Java：com.alibaba.excel.metadata.data.WriteCellData。 Returns mutable data-format metadata, creating it when absent.
     pub fn get_or_create_data_format(&mut self) -> &mut DataFormatData {
@@ -374,7 +420,9 @@ impl WriteCellData {
 }
 
 impl Default for WriteCellData {
-    fn default() -> Self { Self::empty() }
+    fn default() -> Self {
+        Self::empty()
+    }
 }
 
 impl IntoExcelCell for WriteCellData {
@@ -478,8 +526,7 @@ mod tests_extra {
 
     #[test]
     fn from_typed_string_error_type() {
-        let data =
-            WriteCellData::from_typed_string(crate::CellDataType::Error, "#N/A").unwrap();
+        let data = WriteCellData::from_typed_string(crate::CellDataType::Error, "#N/A").unwrap();
         assert_eq!(*data.value(), CellValue::Error("#N/A".to_owned()));
     }
 
@@ -505,10 +552,7 @@ mod tests_extra {
     #[test]
     fn from_formula_creates_formula_cell() {
         let data = WriteCellData::from_formula("=SUM(A1:A10)");
-        assert_eq!(
-            *data.value(),
-            CellValue::Formula("=SUM(A1:A10)".to_owned())
-        );
+        assert_eq!(*data.value(), CellValue::Formula("=SUM(A1:A10)".to_owned()));
     }
 
     #[test]
@@ -520,8 +564,7 @@ mod tests_extra {
 
     #[test]
     fn is_plain_returns_false_with_decorations() {
-        let data = WriteCellData::from_string("x")
-            .formula_data(FormulaData::new("=A1"));
+        let data = WriteCellData::from_string("x").formula_data(FormulaData::new("=A1"));
         assert!(!data.is_plain());
     }
 
@@ -535,8 +578,8 @@ mod tests_extra {
 
     #[test]
     fn image_data_list_setter_and_getter() {
-        let data = WriteCellData::from_string("x")
-            .image_data_list(vec![ImageData::new(vec![1, 2, 3])]);
+        let data =
+            WriteCellData::from_string("x").image_data_list(vec![ImageData::new(vec![1, 2, 3])]);
         assert_eq!(data.images().len(), 1);
         assert_eq!(data.get_image_data_list().len(), 1);
     }
@@ -634,8 +677,7 @@ mod tests_extra {
 
     #[test]
     fn effective_value_wraps_formula_and_hyperlink() {
-        let data = WriteCellData::from_string("text")
-            .formula_data(FormulaData::new("=A1"));
+        let data = WriteCellData::from_string("text").formula_data(FormulaData::new("=A1"));
         let val = data.effective_value();
         assert!(matches!(val, CellValue::Formula(_)));
 
@@ -652,8 +694,8 @@ mod tests_extra {
         let val = data.effective_value();
         assert!(matches!(val, CellValue::CommentWithMetadata { .. }));
 
-        let data = WriteCellData::from_string("text")
-            .image_data_list(vec![ImageData::new(vec![1, 2, 3])]);
+        let data =
+            WriteCellData::from_string("text").image_data_list(vec![ImageData::new(vec![1, 2, 3])]);
         let val = data.effective_value();
         assert!(matches!(val, CellValue::Images { .. }));
     }
@@ -707,8 +749,7 @@ mod tests_extra {
             number_format: None,
             use_1904_windowing: false,
         };
-        let data =
-            WriteCellData::from_excel_cell(Some(&CellValue::Int(42)), &context).unwrap();
+        let data = WriteCellData::from_excel_cell(Some(&CellValue::Int(42)), &context).unwrap();
         assert_eq!(*data.value(), CellValue::Int(42));
     }
 

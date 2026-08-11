@@ -25,18 +25,28 @@ impl LoopMergeProperty {
     pub const fn each_row(&self) -> u32 {
         self.each_row
     }
-    #[must_use] pub const fn get_each_row(&self) -> u32 { self.each_row() }
+    #[must_use]
+    pub const fn get_each_row(&self) -> u32 {
+        self.each_row()
+    }
     /// Java `setEachRow` 的非负运行期映射。
-    pub const fn set_each_row(&mut self, value: u32) { self.each_row = value; }
+    pub const fn set_each_row(&mut self, value: u32) {
+        self.each_row = value;
+    }
     /// Returns `columnExtend`. (Java `getColumnExtend()`)
     #[must_use]
     /// 对应 Java：com.alibaba.excel.metadata.property.LoopMergeProperty。
     pub const fn column_extend(&self) -> u16 {
         self.column_extend
     }
-    #[must_use] pub const fn get_column_extend(&self) -> u16 { self.column_extend() }
+    #[must_use]
+    pub const fn get_column_extend(&self) -> u16 {
+        self.column_extend()
+    }
     /// Java `setColumnExtend` 的已校验运行期映射。
-    pub const fn set_column_extend(&mut self, value: u16) { self.column_extend = value; }
+    pub const fn set_column_extend(&mut self, value: u16) {
+        self.column_extend = value;
+    }
 }
 
 #[cfg(test)]

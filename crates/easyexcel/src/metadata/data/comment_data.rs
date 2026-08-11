@@ -22,8 +22,7 @@ pub struct CommentData {
 // `visible` 是 Rust 后端扩展，也不能改变 Java 值对象的相等性。
 impl PartialEq for CommentData {
     fn eq(&self, other: &Self) -> bool {
-        self.author == other.author
-            && self.rich_text_string_data == other.rich_text_string_data
+        self.author == other.author && self.rich_text_string_data == other.rich_text_string_data
     }
 }
 
@@ -92,7 +91,9 @@ impl CommentData {
     }
 
     /// Java `setAuthor` 原位 setter。
-    pub fn set_author(&mut self, value: Option<String>) { self.author = value; }
+    pub fn set_author(&mut self, value: Option<String>) {
+        self.author = value;
+    }
 
     /// Returns the rich-text body. (Java `getRichTextStringData()`)
     #[must_use]
@@ -114,14 +115,20 @@ impl CommentData {
     }
 
     /// 设置继承的客户端锚点数据。
-    pub const fn set_anchor(&mut self, value: ClientAnchorData) { self.anchor = value; }
+    pub const fn set_anchor(&mut self, value: ClientAnchorData) {
+        self.anchor = value;
+    }
 
     /// 返回显式批注可见性；`None` 表示使用格式后端默认值。
     #[must_use]
-    pub const fn get_visible(&self) -> Option<bool> { self.visible }
+    pub const fn get_visible(&self) -> Option<bool> {
+        self.visible
+    }
 
     /// 设置批注初始可见性。
-    pub const fn set_visible(&mut self, value: Option<bool>) { self.visible = value; }
+    pub const fn set_visible(&mut self, value: Option<bool>) {
+        self.visible = value;
+    }
 
     /// 对应 Java：com.alibaba.excel.metadata.data.CommentData。 Returns plain note text for writer backends that only accept a string.
     #[must_use]

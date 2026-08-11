@@ -4,9 +4,8 @@ use easyexcel::io::Format;
 use easyexcel_salvo::{ExcelRequest, ExcelResponse};
 use easyexcel_web_conformance::{
     ConformanceRow, ResponseSnapshot, corrupted_xlsx_fixture, download_rows, oversized_fixture,
-    runtime, strict_runtime, upload_fixture, verify_download, verify_error_response,
-    verify_upload, verify_upload_multisheet, verify_upload_xls, xlsx_multisheet_fixture,
-    xls_upload_fixture,
+    runtime, strict_runtime, upload_fixture, verify_download, verify_error_response, verify_upload,
+    verify_upload_multisheet, verify_upload_xls, xls_upload_fixture, xlsx_multisheet_fixture,
 };
 use http_body_util::BodyExt;
 use salvo::test::TestClient;
@@ -118,9 +117,7 @@ async fn salvo_oversized_upload_returns_file_too_large() {
         .expect_err("oversized upload must fail");
     // Salvo ExcelSalvoError implements Writer; write it to a response
     let mut response = Response::new();
-    error
-        .write(&mut request, &mut depot, &mut response)
-        .await;
+    error.write(&mut request, &mut depot, &mut response).await;
     let status = response.status_code.unwrap_or_default().as_u16();
     let content_type = header(response.headers(), "content-type");
     let content_disposition = header(response.headers(), "content-disposition");

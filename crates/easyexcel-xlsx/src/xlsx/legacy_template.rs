@@ -119,7 +119,14 @@ mod tests {
                 (0, 0, Cell::Text("hello".into())),
                 (0, 1, Cell::Number(42.0)),
                 (0, 2, Cell::Bool(true)),
-                (1, 0, Cell::Formula { expr: "A1+1".into(), cached: easyexcel_model::CellValue::Number(43.0) }),
+                (
+                    1,
+                    0,
+                    Cell::Formula {
+                        expr: "A1+1".into(),
+                        cached: easyexcel_model::CellValue::Number(43.0),
+                    },
+                ),
                 (1, 1, Cell::Error(easyexcel_model::CellError::Value)),
             ],
             next_row: 2,

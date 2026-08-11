@@ -83,22 +83,20 @@ mod tests {
 
     #[test]
     fn with_tables() {
-        let opts = MarkdownImportOptions::default()
-            .with_tables(MarkdownTableSelection::Index(0));
+        let opts = MarkdownImportOptions::default().with_tables(MarkdownTableSelection::Index(0));
         assert_eq!(opts.tables(), &MarkdownTableSelection::Index(0));
     }
 
     #[test]
     fn with_type_inference() {
-        let opts = MarkdownImportOptions::default()
-            .with_type_inference(MarkdownTypeInference::Aggressive);
+        let opts =
+            MarkdownImportOptions::default().with_type_inference(MarkdownTypeInference::Aggressive);
         assert_eq!(opts.type_inference(), MarkdownTypeInference::Aggressive);
     }
 
     #[test]
     fn with_apply_header_style() {
-        let opts = MarkdownImportOptions::default()
-            .with_apply_header_style(false);
+        let opts = MarkdownImportOptions::default().with_apply_header_style(false);
         assert!(!opts.apply_header_style());
     }
 
@@ -108,7 +106,10 @@ mod tests {
             .with_tables(MarkdownTableSelection::Name("Sheet1".into()))
             .with_type_inference(MarkdownTypeInference::Text)
             .with_apply_header_style(false);
-        assert_eq!(opts.tables(), &MarkdownTableSelection::Name("Sheet1".into()));
+        assert_eq!(
+            opts.tables(),
+            &MarkdownTableSelection::Name("Sheet1".into())
+        );
         assert_eq!(opts.type_inference(), MarkdownTypeInference::Text);
         assert!(!opts.apply_header_style());
     }

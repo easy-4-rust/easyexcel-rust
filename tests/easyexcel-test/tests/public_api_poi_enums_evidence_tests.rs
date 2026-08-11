@@ -141,24 +141,48 @@ fn poi_enum_default_const_matches_java_default_value() {
     // BorderStyleEnum
     let bs_default = BorderStyleEnum::default();
     assert_eq!(bs_default, BorderStyleEnum::ALL[0]);
-    assert_eq!(bs_default.java_name(), contract.enums["BorderStyleEnum"].default_java_name);
-    assert!(bs_default.poi_border_style().is_none(), "DEFAULT maps to Java null");
+    assert_eq!(
+        bs_default.java_name(),
+        contract.enums["BorderStyleEnum"].default_java_name
+    );
+    assert!(
+        bs_default.poi_border_style().is_none(),
+        "DEFAULT maps to Java null"
+    );
 
     // FillPatternTypeEnum
     let fp_default = FillPatternTypeEnum::default();
     assert_eq!(fp_default, FillPatternTypeEnum::ALL[0]);
-    assert_eq!(fp_default.java_name(), contract.enums["FillPatternTypeEnum"].default_java_name);
-    assert!(fp_default.poi_fill_pattern_type().is_none(), "DEFAULT maps to Java null");
+    assert_eq!(
+        fp_default.java_name(),
+        contract.enums["FillPatternTypeEnum"].default_java_name
+    );
+    assert!(
+        fp_default.poi_fill_pattern_type().is_none(),
+        "DEFAULT maps to Java null"
+    );
 
     // HorizontalAlignmentEnum
     let ha_default = HorizontalAlignmentEnum::default();
     assert_eq!(ha_default, HorizontalAlignmentEnum::ALL[0]);
-    assert_eq!(ha_default.java_name(), contract.enums["HorizontalAlignmentEnum"].default_java_name);
-    assert!(ha_default.poi_horizontal_alignment().is_none(), "DEFAULT maps to Java null");
+    assert_eq!(
+        ha_default.java_name(),
+        contract.enums["HorizontalAlignmentEnum"].default_java_name
+    );
+    assert!(
+        ha_default.poi_horizontal_alignment().is_none(),
+        "DEFAULT maps to Java null"
+    );
 
     // VerticalAlignmentEnum
     let va_default = VerticalAlignmentEnum::default();
     assert_eq!(va_default, VerticalAlignmentEnum::ALL[0]);
-    assert_eq!(va_default.java_name(), contract.enums["VerticalAlignmentEnum"].default_java_name);
-    assert!(va_default.poi_vertical_alignment_enum().is_none(), "DEFAULT maps to Java null");
+    assert_eq!(
+        va_default.java_name(),
+        contract.enums["VerticalAlignmentEnum"].default_java_name
+    );
+    assert!(
+        va_default.poi_vertical_alignment_enum().is_none(),
+        "DEFAULT maps to Java null"
+    );
 }

@@ -91,25 +91,21 @@ mod tests {
 
     #[test]
     fn builder_chains_options() {
-        let builder = MarkdownImportBuilder::new(
-            PathBuf::from("/tmp/in.md"),
-            PathBuf::from("/tmp/out.xlsx"),
-        )
-        .table_name("Sheet1")
-        .conservative_types()
-        .apply_header_style(true)
-        .limits(ResourceLimits::default());
+        let builder =
+            MarkdownImportBuilder::new(PathBuf::from("/tmp/in.md"), PathBuf::from("/tmp/out.xlsx"))
+                .table_name("Sheet1")
+                .conservative_types()
+                .apply_header_style(true)
+                .limits(ResourceLimits::default());
         let _builder = builder;
     }
 
     #[test]
     fn builder_table_index() {
-        let builder = MarkdownImportBuilder::new(
-            PathBuf::from("/tmp/in.md"),
-            PathBuf::from("/tmp/out.xlsx"),
-        )
-        .table_index(1)
-        .type_inference(MarkdownTypeInference::Aggressive);
+        let builder =
+            MarkdownImportBuilder::new(PathBuf::from("/tmp/in.md"), PathBuf::from("/tmp/out.xlsx"))
+                .table_index(1)
+                .type_inference(MarkdownTypeInference::Aggressive);
         let _builder = builder;
     }
 

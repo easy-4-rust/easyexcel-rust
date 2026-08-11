@@ -9,8 +9,8 @@ use easyexcel::ExcelRow;
 use easyexcel::io::{Format, ResourceLimits};
 use easyexcel_web::{
     ExcelExport, ExcelImport, ExcelProblemDetails, ExcelWebError, ExcelWebErrorCode,
-    ExcelWebPolicy, ExcelWebRuntime, WebExecutionContext,
-    excel_attachment_content_disposition, excel_xlsx_attachment_headers,
+    ExcelWebPolicy, ExcelWebRuntime, WebExecutionContext, excel_attachment_content_disposition,
+    excel_xlsx_attachment_headers,
 };
 use tokio::io::AsyncReadExt;
 
@@ -296,7 +296,10 @@ fn problem_details_has_stable_code_status_and_no_internal_message() {
 fn error_code_and_status_for_all_variants() {
     let cases: Vec<(ExcelWebError, ExcelWebErrorCode, u16)> = vec![
         (
-            ExcelWebError::FileTooLarge { actual: 100, limit: 50 },
+            ExcelWebError::FileTooLarge {
+                actual: 100,
+                limit: 50,
+            },
             ExcelWebErrorCode::FileTooLarge,
             413,
         ),
@@ -306,20 +309,20 @@ fn error_code_and_status_for_all_variants() {
             422,
         ),
         (
-            ExcelWebError::UnsupportedMediaType { extension: "json".to_string() },
+            ExcelWebError::UnsupportedMediaType {
+                extension: "json".to_string(),
+            },
             ExcelWebErrorCode::UnsupportedMediaType,
             415,
         ),
         (
-            ExcelWebError::Transport { message: "reset".to_string() },
+            ExcelWebError::Transport {
+                message: "reset".to_string(),
+            },
             ExcelWebErrorCode::TransportFailed,
             400,
         ),
-        (
-            ExcelWebError::Cancelled,
-            ExcelWebErrorCode::Cancelled,
-            408,
-        ),
+        (ExcelWebError::Cancelled, ExcelWebErrorCode::Cancelled, 408),
         (
             ExcelWebError::ProcessingTimeout,
             ExcelWebErrorCode::ProcessingTimeout,
@@ -331,34 +334,64 @@ fn error_code_and_status_for_all_variants() {
             500,
         ),
         (
-            ExcelWebError::Worker { message: "panic".to_string() },
+            ExcelWebError::Worker {
+                message: "panic".to_string(),
+            },
             ExcelWebErrorCode::Internal,
             500,
         ),
     ];
     for (error, expected_code, expected_status) in cases {
         assert_eq!(error.code(), expected_code, "code mismatch for {:?}", error);
-        assert_eq!(error.status_code().as_u16(), expected_status, "status mismatch for {:?}", error);
+        assert_eq!(
+            error.status_code().as_u16(),
+            expected_status,
+            "status mismatch for {:?}",
+            error
+        );
     }
 }
 
 #[test]
 fn public_detail_for_each_error_variant() {
     let details: Vec<(ExcelWebError, &str)> = vec![
-        (ExcelWebError::FileTooLarge { actual: 200, limit: 100 }, "200"),
+        (
+            ExcelWebError::FileTooLarge {
+                actual: 200,
+                limit: 100,
+            },
+            "200",
+        ),
         (ExcelWebError::RowLimitExceeded { limit: 50 }, "50"),
-        (ExcelWebError::UnsupportedMediaType { extension: "json".to_string() }, "json"),
-        (ExcelWebError::Transport { message: "secret".to_string() }, "请求体传输失败"),
+        (
+            ExcelWebError::UnsupportedMediaType {
+                extension: "json".to_string(),
+            },
+            "json",
+        ),
+        (
+            ExcelWebError::Transport {
+                message: "secret".to_string(),
+            },
+            "请求体传输失败",
+        ),
         (ExcelWebError::Cancelled, "操作已取消"),
         (ExcelWebError::ProcessingTimeout, "超时"),
-        (ExcelWebError::Worker { message: "panic".to_string() }, "异常终止"),
+        (
+            ExcelWebError::Worker {
+                message: "panic".to_string(),
+            },
+            "异常终止",
+        ),
     ];
     for (error, expected_fragment) in details {
         let pd = error.problem_details("req-test");
         assert!(
             pd.detail().contains(expected_fragment),
             "detail '{}' should contain '{}' for {:?}",
-            pd.detail(), expected_fragment, error,
+            pd.detail(),
+            expected_fragment,
+            error,
         );
     }
 }
@@ -437,17 +470,29 @@ fn io_error_maps_to_storage_failed() {
 #[test]
 fn display_impl_for_all_error_variants() {
     let errors: Vec<ExcelWebError> = vec![
-        ExcelWebError::FileTooLarge { actual: 100, limit: 50 },
+        ExcelWebError::FileTooLarge {
+            actual: 100,
+            limit: 50,
+        },
         ExcelWebError::RowLimitExceeded { limit: 100 },
-        ExcelWebError::UnsupportedMediaType { extension: "x".to_string() },
-        ExcelWebError::Transport { message: "t".to_string() },
+        ExcelWebError::UnsupportedMediaType {
+            extension: "x".to_string(),
+        },
+        ExcelWebError::Transport {
+            message: "t".to_string(),
+        },
         ExcelWebError::Cancelled,
         ExcelWebError::ProcessingTimeout,
-        ExcelWebError::Worker { message: "w".to_string() },
+        ExcelWebError::Worker {
+            message: "w".to_string(),
+        },
     ];
     for error in &errors {
         let display = format!("{error}");
-        assert!(!display.is_empty(), "Display should not be empty for {error:?}");
+        assert!(
+            !display.is_empty(),
+            "Display should not be empty for {error:?}"
+        );
     }
 }
 
@@ -497,14 +542,10 @@ async fn import_with_unsupported_extension_returns_error() {
         "import-bad-ext",
         policy_with_limits(directory.path(), ResourceLimits::default()),
     );
-    let error = ExcelImport::<WebRow>::from_bytes(
-        Bytes::from_static(b"data"),
-        "json",
-        None,
-        context,
-    )
-    .await
-    .expect_err("unsupported extension must fail");
+    let error =
+        ExcelImport::<WebRow>::from_bytes(Bytes::from_static(b"data"), "json", None, context)
+            .await
+            .expect_err("unsupported extension must fail");
     assert_eq!(error.code(), ExcelWebErrorCode::UnsupportedMediaType);
 }
 
@@ -554,7 +595,10 @@ fn web_execution_context_checkpoint_err_when_cancelled() {
     ctx.cancel();
     assert!(ctx.is_cancelled());
     assert!(ctx.checkpoint().is_err());
-    assert_eq!(ctx.checkpoint().unwrap_err().code(), ExcelWebErrorCode::Cancelled);
+    assert_eq!(
+        ctx.checkpoint().unwrap_err().code(),
+        ExcelWebErrorCode::Cancelled
+    );
 }
 
 #[test]
@@ -587,8 +631,13 @@ fn excel_attachment_content_disposition_encodes_special_chars() {
 fn excel_xlsx_attachment_headers_has_correct_content_type() {
     let headers = excel_xlsx_attachment_headers("report");
     let ct = headers.get("content-type").expect("content-type header");
-    assert_eq!(ct, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    let cd = headers.get("content-disposition").expect("disposition header");
+    assert_eq!(
+        ct,
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    let cd = headers
+        .get("content-disposition")
+        .expect("disposition header");
     assert!(cd.to_str().unwrap().contains("report.xlsx"));
 }
 

@@ -746,11 +746,19 @@ mod tests {
     use crate::formula::value::Array;
 
     fn arr_1d(data: Vec<f64>) -> Value {
-        Value::Array(Array::new(1, data.len(), data.into_iter().map(Value::Number).collect()))
+        Value::Array(Array::new(
+            1,
+            data.len(),
+            data.into_iter().map(Value::Number).collect(),
+        ))
     }
 
     fn arr_2d(rows: usize, cols: usize, data: Vec<f64>) -> Value {
-        Value::Array(Array::new(rows, cols, data.into_iter().map(Value::Number).collect()))
+        Value::Array(Array::new(
+            rows,
+            cols,
+            data.into_iter().map(Value::Number).collect(),
+        ))
     }
 
     // ── SORT ────────────────────────────────────────────────────────────
@@ -759,7 +767,10 @@ mod tests {
     fn sort_basic() {
         let mut c = TestCtx::new();
         // 1×3 行向量，按第 1 列（默认）排序 — 已排好
-        let r = sort(&mut c, &[arr_1d(vec![1.0, 2.0, 3.0]), Value::Empty, Value::Empty]);
+        let r = sort(
+            &mut c,
+            &[arr_1d(vec![1.0, 2.0, 3.0]), Value::Empty, Value::Empty],
+        );
         assert_eq!(r, arr_1d(vec![1.0, 2.0, 3.0]));
     }
 
@@ -767,7 +778,11 @@ mod tests {
     fn sort_column_vector() {
         let mut c = TestCtx::new();
         // 3×1 列向量，按第 1 列排序
-        let col = Value::Array(Array::new(3, 1, vec![Value::Number(3.0), Value::Number(1.0), Value::Number(2.0)]));
+        let col = Value::Array(Array::new(
+            3,
+            1,
+            vec![Value::Number(3.0), Value::Number(1.0), Value::Number(2.0)],
+        ));
         let r = sort(&mut c, &[col, Value::Empty, Value::Empty]);
         if let Value::Array(a) = r {
             assert_eq!(a.data[0], Value::Number(1.0));
@@ -781,11 +796,12 @@ mod tests {
     #[test]
     fn sort_descending() {
         let mut c = TestCtx::new();
-        let col = Value::Array(Array::new(3, 1, vec![Value::Number(3.0), Value::Number(1.0), Value::Number(2.0)]));
-        let r = sort(
-            &mut c,
-            &[col, Value::Empty, Value::Number(-1.0)],
-        );
+        let col = Value::Array(Array::new(
+            3,
+            1,
+            vec![Value::Number(3.0), Value::Number(1.0), Value::Number(2.0)],
+        ));
+        let r = sort(&mut c, &[col, Value::Empty, Value::Number(-1.0)]);
         if let Value::Array(a) = r {
             assert_eq!(a.data[0], Value::Number(3.0));
             assert_eq!(a.data[1], Value::Number(2.0));
@@ -800,11 +816,7 @@ mod tests {
         let mut c = TestCtx::new();
         let r = sort(
             &mut c,
-            &[
-                arr_1d(vec![1.0, 2.0]),
-                Value::Number(-1.0),
-                Value::Empty,
-            ],
+            &[arr_1d(vec![1.0, 2.0]), Value::Number(-1.0), Value::Empty],
         );
         assert_eq!(r, Value::Error(CellError::Value));
     }
@@ -815,9 +827,17 @@ mod tests {
     fn unique_basic() {
         let mut c = TestCtx::new();
         // 列向量去重
-        let col = Value::Array(Array::new(5, 1, vec![
-            Value::Number(1.0), Value::Number(2.0), Value::Number(2.0), Value::Number(3.0), Value::Number(1.0),
-        ]));
+        let col = Value::Array(Array::new(
+            5,
+            1,
+            vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+                Value::Number(1.0),
+            ],
+        ));
         let r = unique(&mut c, &[col]);
         if let Value::Array(a) = r {
             assert_eq!(a.rows, 3);
@@ -832,17 +852,17 @@ mod tests {
     #[test]
     fn unique_exactly_once() {
         let mut c = TestCtx::new();
-        let col = Value::Array(Array::new(4, 1, vec![
-            Value::Number(1.0), Value::Number(2.0), Value::Number(2.0), Value::Number(3.0),
-        ]));
-        let r = unique(
-            &mut c,
-            &[
-                col,
-                Value::Empty,
-                Value::Bool(true),
+        let col = Value::Array(Array::new(
+            4,
+            1,
+            vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
             ],
-        );
+        ));
+        let r = unique(&mut c, &[col, Value::Empty, Value::Bool(true)]);
         if let Value::Array(a) = r {
             assert_eq!(a.rows, 2);
             assert_eq!(a.data[0], Value::Number(1.0));
@@ -855,9 +875,11 @@ mod tests {
     #[test]
     fn unique_all_same() {
         let mut c = TestCtx::new();
-        let col = Value::Array(Array::new(3, 1, vec![
-            Value::Number(5.0), Value::Number(5.0), Value::Number(5.0),
-        ]));
+        let col = Value::Array(Array::new(
+            3,
+            1,
+            vec![Value::Number(5.0), Value::Number(5.0), Value::Number(5.0)],
+        ));
         let r = unique(&mut c, &[col]);
         if let Value::Array(a) = r {
             assert_eq!(a.rows, 1);
@@ -873,12 +895,26 @@ mod tests {
     fn filter_basic() {
         let mut c = TestCtx::new();
         // 列向量 + 列向量过滤
-        let data = Value::Array(Array::new(4, 1, vec![
-            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
-        ]));
-        let mask = Value::Array(Array::new(4, 1, vec![
-            Value::Number(0.0), Value::Number(1.0), Value::Number(0.0), Value::Number(1.0),
-        ]));
+        let data = Value::Array(Array::new(
+            4,
+            1,
+            vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+                Value::Number(4.0),
+            ],
+        ));
+        let mask = Value::Array(Array::new(
+            4,
+            1,
+            vec![
+                Value::Number(0.0),
+                Value::Number(1.0),
+                Value::Number(0.0),
+                Value::Number(1.0),
+            ],
+        ));
         let r = filter(&mut c, &[data, mask]);
         if let Value::Array(a) = r {
             assert_eq!(a.rows, 2);
@@ -892,20 +928,33 @@ mod tests {
     #[test]
     fn filter_no_match_with_fallback() {
         let mut c = TestCtx::new();
-        let data = Value::Array(Array::new(2, 1, vec![Value::Number(1.0), Value::Number(2.0)]));
-        let mask = Value::Array(Array::new(2, 1, vec![Value::Number(0.0), Value::Number(0.0)]));
-        let r = filter(
-            &mut c,
-            &[data, mask, Value::Text("none".into())],
-        );
+        let data = Value::Array(Array::new(
+            2,
+            1,
+            vec![Value::Number(1.0), Value::Number(2.0)],
+        ));
+        let mask = Value::Array(Array::new(
+            2,
+            1,
+            vec![Value::Number(0.0), Value::Number(0.0)],
+        ));
+        let r = filter(&mut c, &[data, mask, Value::Text("none".into())]);
         assert_eq!(r, Value::Text("none".into()));
     }
 
     #[test]
     fn filter_no_match_no_fallback() {
         let mut c = TestCtx::new();
-        let data = Value::Array(Array::new(2, 1, vec![Value::Number(1.0), Value::Number(2.0)]));
-        let mask = Value::Array(Array::new(2, 1, vec![Value::Number(0.0), Value::Number(0.0)]));
+        let data = Value::Array(Array::new(
+            2,
+            1,
+            vec![Value::Number(1.0), Value::Number(2.0)],
+        ));
+        let mask = Value::Array(Array::new(
+            2,
+            1,
+            vec![Value::Number(0.0), Value::Number(0.0)],
+        ));
         let r = filter(&mut c, &[data, mask]);
         assert_eq!(r, Value::Error(CellError::Calc));
     }
@@ -961,13 +1010,29 @@ mod tests {
     #[test]
     fn vstack_basic() {
         let mut c = TestCtx::new();
-        let a1 = Value::Array(Array::new(1, 2, vec![Value::Number(1.0), Value::Number(2.0)]));
-        let a2 = Value::Array(Array::new(1, 2, vec![Value::Number(3.0), Value::Number(4.0)]));
+        let a1 = Value::Array(Array::new(
+            1,
+            2,
+            vec![Value::Number(1.0), Value::Number(2.0)],
+        ));
+        let a2 = Value::Array(Array::new(
+            1,
+            2,
+            vec![Value::Number(3.0), Value::Number(4.0)],
+        ));
         let r = vstack(&mut c, &[a1, a2]);
         if let Value::Array(a) = r {
             assert_eq!(a.rows, 2);
             assert_eq!(a.cols, 2);
-            assert_eq!(a.data, vec![Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0)]);
+            assert_eq!(
+                a.data,
+                vec![
+                    Value::Number(1.0),
+                    Value::Number(2.0),
+                    Value::Number(3.0),
+                    Value::Number(4.0)
+                ]
+            );
         } else {
             panic!("expected Array");
         }
@@ -983,8 +1048,16 @@ mod tests {
     #[test]
     fn hstack_basic() {
         let mut c = TestCtx::new();
-        let a1 = Value::Array(Array::new(2, 1, vec![Value::Number(1.0), Value::Number(2.0)]));
-        let a2 = Value::Array(Array::new(2, 1, vec![Value::Number(3.0), Value::Number(4.0)]));
+        let a1 = Value::Array(Array::new(
+            2,
+            1,
+            vec![Value::Number(1.0), Value::Number(2.0)],
+        ));
+        let a2 = Value::Array(Array::new(
+            2,
+            1,
+            vec![Value::Number(3.0), Value::Number(4.0)],
+        ));
         let r = hstack(&mut c, &[a1, a2]);
         if let Value::Array(a) = r {
             assert_eq!(a.rows, 2);
@@ -999,9 +1072,16 @@ mod tests {
     #[test]
     fn torow_basic() {
         let mut c = TestCtx::new();
-        let arr = Value::Array(Array::new(2, 2, vec![
-            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
-        ]));
+        let arr = Value::Array(Array::new(
+            2,
+            2,
+            vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+                Value::Number(4.0),
+            ],
+        ));
         let r = torow(&mut c, &[arr]);
         if let Value::Array(a) = r {
             assert_eq!(a.rows, 1);
@@ -1014,9 +1094,16 @@ mod tests {
     #[test]
     fn tocol_basic() {
         let mut c = TestCtx::new();
-        let arr = Value::Array(Array::new(2, 2, vec![
-            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
-        ]));
+        let arr = Value::Array(Array::new(
+            2,
+            2,
+            vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+                Value::Number(4.0),
+            ],
+        ));
         let r = tocol(&mut c, &[arr]);
         // 默认按行扫描 (by_col=false): 1,2,3,4
         if let Value::Array(a) = r {
@@ -1054,9 +1141,16 @@ mod tests {
     #[test]
     fn take_basic() {
         let mut c = TestCtx::new();
-        let arr = Value::Array(Array::new(4, 1, vec![
-            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
-        ]));
+        let arr = Value::Array(Array::new(
+            4,
+            1,
+            vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+                Value::Number(4.0),
+            ],
+        ));
         let r = take(&mut c, &[arr, Value::Number(2.0)]);
         if let Value::Array(a) = r {
             assert_eq!(a.rows, 2);
@@ -1070,9 +1164,16 @@ mod tests {
     #[test]
     fn take_negative() {
         let mut c = TestCtx::new();
-        let arr = Value::Array(Array::new(4, 1, vec![
-            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
-        ]));
+        let arr = Value::Array(Array::new(
+            4,
+            1,
+            vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+                Value::Number(4.0),
+            ],
+        ));
         let r = take(&mut c, &[arr, Value::Number(-2.0)]);
         if let Value::Array(a) = r {
             assert_eq!(a.rows, 2);
@@ -1086,9 +1187,16 @@ mod tests {
     #[test]
     fn drop_basic() {
         let mut c = TestCtx::new();
-        let arr = Value::Array(Array::new(4, 1, vec![
-            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
-        ]));
+        let arr = Value::Array(Array::new(
+            4,
+            1,
+            vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+                Value::Number(4.0),
+            ],
+        ));
         let r = drop_fn(&mut c, &[arr, Value::Number(1.0)]);
         if let Value::Array(a) = r {
             assert_eq!(a.rows, 3);
@@ -1102,9 +1210,16 @@ mod tests {
     #[test]
     fn drop_negative() {
         let mut c = TestCtx::new();
-        let arr = Value::Array(Array::new(4, 1, vec![
-            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
-        ]));
+        let arr = Value::Array(Array::new(
+            4,
+            1,
+            vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+                Value::Number(4.0),
+            ],
+        ));
         let r = drop_fn(&mut c, &[arr, Value::Number(-1.0)]);
         if let Value::Array(a) = r {
             assert_eq!(a.rows, 3);
@@ -1120,12 +1235,24 @@ mod tests {
     #[test]
     fn expand_basic() {
         let mut c = TestCtx::new();
-        let arr = Value::Array(Array::new(2, 2, vec![
-            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
-        ]));
+        let arr = Value::Array(Array::new(
+            2,
+            2,
+            vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+                Value::Number(4.0),
+            ],
+        ));
         let r = expand(
             &mut c,
-            &[arr, Value::Number(3.0), Value::Number(3.0), Value::Number(0.0)],
+            &[
+                arr,
+                Value::Number(3.0),
+                Value::Number(3.0),
+                Value::Number(0.0),
+            ],
         );
         if let Value::Array(a) = r {
             assert_eq!(a.rows, 3);
@@ -1138,9 +1265,16 @@ mod tests {
     #[test]
     fn expand_too_small() {
         let mut c = TestCtx::new();
-        let arr = Value::Array(Array::new(2, 2, vec![
-            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
-        ]));
+        let arr = Value::Array(Array::new(
+            2,
+            2,
+            vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+                Value::Number(4.0),
+            ],
+        ));
         let r = expand(&mut c, &[arr, Value::Number(1.0), Value::Number(1.0)]);
         assert_eq!(r, Value::Error(CellError::Value));
     }
@@ -1150,9 +1284,15 @@ mod tests {
     #[test]
     fn chooserows_basic() {
         let mut c = TestCtx::new();
-        let arr = Value::Array(Array::new(3, 1, vec![
-            Value::Number(10.0), Value::Number(20.0), Value::Number(30.0),
-        ]));
+        let arr = Value::Array(Array::new(
+            3,
+            1,
+            vec![
+                Value::Number(10.0),
+                Value::Number(20.0),
+                Value::Number(30.0),
+            ],
+        ));
         let r = chooserows(&mut c, &[arr, Value::Number(3.0), Value::Number(1.0)]);
         if let Value::Array(a) = r {
             assert_eq!(a.rows, 2);
@@ -1166,9 +1306,15 @@ mod tests {
     #[test]
     fn chooserows_negative() {
         let mut c = TestCtx::new();
-        let arr = Value::Array(Array::new(3, 1, vec![
-            Value::Number(10.0), Value::Number(20.0), Value::Number(30.0),
-        ]));
+        let arr = Value::Array(Array::new(
+            3,
+            1,
+            vec![
+                Value::Number(10.0),
+                Value::Number(20.0),
+                Value::Number(30.0),
+            ],
+        ));
         let r = chooserows(&mut c, &[arr, Value::Number(-1.0)]);
         if let Value::Array(a) = r {
             assert_eq!(a.rows, 1);
@@ -1181,7 +1327,11 @@ mod tests {
     #[test]
     fn chooserows_out_of_bounds() {
         let mut c = TestCtx::new();
-        let arr = Value::Array(Array::new(2, 1, vec![Value::Number(10.0), Value::Number(20.0)]));
+        let arr = Value::Array(Array::new(
+            2,
+            1,
+            vec![Value::Number(10.0), Value::Number(20.0)],
+        ));
         let r = chooserows(&mut c, &[arr, Value::Number(5.0)]);
         assert_eq!(r, Value::Error(CellError::Value));
     }
@@ -1189,9 +1339,15 @@ mod tests {
     #[test]
     fn choosecols_basic() {
         let mut c = TestCtx::new();
-        let arr = Value::Array(Array::new(1, 3, vec![
-            Value::Number(10.0), Value::Number(20.0), Value::Number(30.0),
-        ]));
+        let arr = Value::Array(Array::new(
+            1,
+            3,
+            vec![
+                Value::Number(10.0),
+                Value::Number(20.0),
+                Value::Number(30.0),
+            ],
+        ));
         let r = choosecols(&mut c, &[arr, Value::Number(2.0)]);
         if let Value::Array(a) = r {
             assert_eq!(a.cols, 1);
@@ -1206,9 +1362,16 @@ mod tests {
     #[test]
     fn wraprows_basic() {
         let mut c = TestCtx::new();
-        let arr = Value::Array(Array::new(4, 1, vec![
-            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
-        ]));
+        let arr = Value::Array(Array::new(
+            4,
+            1,
+            vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+                Value::Number(4.0),
+            ],
+        ));
         let r = wraprows(&mut c, &[arr, Value::Number(2.0)]);
         if let Value::Array(a) = r {
             assert_eq!(a.rows, 2);
@@ -1221,9 +1384,11 @@ mod tests {
     #[test]
     fn wraprows_with_padding() {
         let mut c = TestCtx::new();
-        let arr = Value::Array(Array::new(3, 1, vec![
-            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0),
-        ]));
+        let arr = Value::Array(Array::new(
+            3,
+            1,
+            vec![Value::Number(1.0), Value::Number(2.0), Value::Number(3.0)],
+        ));
         let r = wraprows(&mut c, &[arr, Value::Number(2.0), Value::Number(0.0)]);
         if let Value::Array(a) = r {
             assert_eq!(a.rows, 2);
@@ -1237,7 +1402,11 @@ mod tests {
     #[test]
     fn wraprows_invalid_count() {
         let mut c = TestCtx::new();
-        let arr = Value::Array(Array::new(2, 1, vec![Value::Number(1.0), Value::Number(2.0)]));
+        let arr = Value::Array(Array::new(
+            2,
+            1,
+            vec![Value::Number(1.0), Value::Number(2.0)],
+        ));
         let r = wraprows(&mut c, &[arr, Value::Number(0.0)]);
         assert_eq!(r, Value::Error(CellError::Value));
     }
@@ -1245,9 +1414,16 @@ mod tests {
     #[test]
     fn wrapcols_basic() {
         let mut c = TestCtx::new();
-        let arr = Value::Array(Array::new(4, 1, vec![
-            Value::Number(1.0), Value::Number(2.0), Value::Number(3.0), Value::Number(4.0),
-        ]));
+        let arr = Value::Array(Array::new(
+            4,
+            1,
+            vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+                Value::Number(4.0),
+            ],
+        ));
         let r = wrapcols(&mut c, &[arr, Value::Number(2.0)]);
         if let Value::Array(a) = r {
             assert_eq!(a.rows, 2);
@@ -1266,9 +1442,12 @@ mod tests {
             3,
             2,
             vec![
-                Value::Empty, Value::Empty,
-                Value::Number(1.0), Value::Number(2.0),
-                Value::Empty, Value::Empty,
+                Value::Empty,
+                Value::Empty,
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Empty,
+                Value::Empty,
             ],
         ));
         let r = trimrange(&mut c, &[arr]);
@@ -1342,12 +1521,20 @@ mod tests {
     #[test]
     fn sortby_basic() {
         let mut c = TestCtx::new();
-        let data = Value::Array(Array::new(3, 1, vec![
-            Value::Number(3.0), Value::Number(1.0), Value::Number(2.0),
-        ]));
-        let key = Value::Array(Array::new(3, 1, vec![
-            Value::Number(30.0), Value::Number(10.0), Value::Number(20.0),
-        ]));
+        let data = Value::Array(Array::new(
+            3,
+            1,
+            vec![Value::Number(3.0), Value::Number(1.0), Value::Number(2.0)],
+        ));
+        let key = Value::Array(Array::new(
+            3,
+            1,
+            vec![
+                Value::Number(30.0),
+                Value::Number(10.0),
+                Value::Number(20.0),
+            ],
+        ));
         let r = sortby(&mut c, &[data, key]);
         if let Value::Array(a) = r {
             assert_eq!(a.data[0], Value::Number(1.0));
@@ -1361,7 +1548,11 @@ mod tests {
     #[test]
     fn sortby_empty_keys() {
         let mut c = TestCtx::new();
-        let arr = Value::Array(Array::new(2, 1, vec![Value::Number(1.0), Value::Number(2.0)]));
+        let arr = Value::Array(Array::new(
+            2,
+            1,
+            vec![Value::Number(1.0), Value::Number(2.0)],
+        ));
         let r = sortby(&mut c, &[arr]);
         assert_eq!(r, Value::Error(CellError::Value));
     }

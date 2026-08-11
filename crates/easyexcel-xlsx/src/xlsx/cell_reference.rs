@@ -93,15 +93,15 @@ pub fn parse_a1_cell_range(reference: &str) -> Result<(u32, u32, usize, usize)> 
     Ok((first_row, last_row, first_column, last_column))
 }
 
-    /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回工作表 dimension 引用中的最后一行（零基）。
-    ///
-    /// # Errors
-    ///
-    /// dimension 尾部引用无效时返回格式错误。
-    pub fn dimension_last_row(reference: &str) -> Result<u32> {
-        let end = reference.rsplit_once(':').map_or(reference, |(_, end)| end);
-        parse_a1_cell_reference(end).map(|(row, _)| row)
-    }
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 返回工作表 dimension 引用中的最后一行（零基）。
+///
+/// # Errors
+///
+/// dimension 尾部引用无效时返回格式错误。
+pub fn dimension_last_row(reference: &str) -> Result<u32> {
+    let end = reference.rsplit_once(':').map_or(reference, |(_, end)| end);
+    parse_a1_cell_reference(end).map(|(row, _)| row)
+}
 
 #[cfg(test)]
 mod tests {

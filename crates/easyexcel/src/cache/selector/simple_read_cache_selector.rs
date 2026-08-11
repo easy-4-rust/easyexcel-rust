@@ -90,19 +90,31 @@ impl SimpleReadCacheSelector {
 
     /// Java `getMaxUseMapCacheSize`，保留首次选择缓存前的 nullable 状态。
     #[must_use]
-    pub const fn get_max_use_map_cache_size(&self) -> Option<i64> { self.max_use_map_cache_size_mb }
+    pub const fn get_max_use_map_cache_size(&self) -> Option<i64> {
+        self.max_use_map_cache_size_mb
+    }
     /// Java `setMaxUseMapCacheSize`，单位 MB。
-    pub const fn set_max_use_map_cache_size(&mut self, value: Option<i64>) { self.max_use_map_cache_size_mb = value; }
+    pub const fn set_max_use_map_cache_size(&mut self, value: Option<i64>) {
+        self.max_use_map_cache_size_mb = value;
+    }
     /// Java `getMaxCacheActivateSize`。
     #[must_use]
-    pub const fn get_max_cache_activate_size(&self) -> Option<i32> { self.max_cache_activate_size_mb }
+    pub const fn get_max_cache_activate_size(&self) -> Option<i32> {
+        self.max_cache_activate_size_mb
+    }
     /// Java `setMaxCacheActivateSize`。
-    pub const fn set_max_cache_activate_size(&mut self, value: Option<i32>) { self.max_cache_activate_size_mb = value; }
+    pub const fn set_max_cache_activate_size(&mut self, value: Option<i32>) {
+        self.max_cache_activate_size_mb = value;
+    }
     /// Java `getMaxCacheActivateBatchCount`。
     #[must_use]
-    pub const fn get_max_cache_activate_batch_count(&self) -> Option<i32> { self.max_cache_activate_batch_count }
+    pub const fn get_max_cache_activate_batch_count(&self) -> Option<i32> {
+        self.max_cache_activate_batch_count
+    }
     /// Java `setMaxCacheActivateBatchCount`。
-    pub const fn set_max_cache_activate_batch_count(&mut self, value: Option<i32>) { self.max_cache_activate_batch_count = value; }
+    pub const fn set_max_cache_activate_batch_count(&mut self, value: Option<i32>) {
+        self.max_cache_activate_batch_count = value;
+    }
 }
 
 impl ReadCacheSelector for SimpleReadCacheSelector {

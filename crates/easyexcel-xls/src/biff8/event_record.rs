@@ -348,9 +348,9 @@ mod tests {
         let mut data = Vec::new();
         data.extend_from_slice(&[0x02, 0x00]); // row=2
         data.extend_from_slice(&[0x03, 0x00]); // col=3
-        data.extend_from_slice(&[0u8; 2]);     // xf
+        data.extend_from_slice(&[0u8; 2]); // xf
         data.extend_from_slice(&[0x03, 0x00]); // character_count=3
-        data.push(0x00);                       // unicode_flag=0 (compressed)
+        data.push(0x00); // unicode_flag=0 (compressed)
         data.extend_from_slice(b"abc");
         let (row, col, value) = decode_label_record(&data).unwrap();
         assert_eq!(row, 2);
@@ -363,9 +363,9 @@ mod tests {
         let mut data = Vec::new();
         data.extend_from_slice(&[0x00, 0x00]); // row=0
         data.extend_from_slice(&[0x00, 0x00]); // col=0
-        data.extend_from_slice(&[0u8; 2]);     // xf
+        data.extend_from_slice(&[0u8; 2]); // xf
         data.extend_from_slice(&[0x01, 0x00]); // character_count=1
-        data.push(0x01);                       // unicode_flag=1 (wide)
+        data.push(0x01); // unicode_flag=1 (wide)
         data.extend_from_slice(&[0x60, 0x4F]); // U+4F60 = '你'
         let (_, _, value) = decode_label_record(&data).unwrap();
         assert_eq!(value, "你");
@@ -547,7 +547,10 @@ mod tests {
         let mut data = vec![0u8; 14];
         data[6..14].copy_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF]);
         let record = decode_formula_record(&data).unwrap();
-        assert!(matches!(record.cached_value, Biff8FormulaCachedValue::String));
+        assert!(matches!(
+            record.cached_value,
+            Biff8FormulaCachedValue::String
+        ));
     }
 
     #[test]
@@ -555,7 +558,10 @@ mod tests {
         let mut data = vec![0u8; 14];
         data[6..14].copy_from_slice(&[0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0xFF, 0xFF]);
         let record = decode_formula_record(&data).unwrap();
-        assert!(matches!(record.cached_value, Biff8FormulaCachedValue::Boolean(true)));
+        assert!(matches!(
+            record.cached_value,
+            Biff8FormulaCachedValue::Boolean(true)
+        ));
     }
 
     #[test]
@@ -563,7 +569,10 @@ mod tests {
         let mut data = vec![0u8; 14];
         data[6..14].copy_from_slice(&[0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF]);
         let record = decode_formula_record(&data).unwrap();
-        assert!(matches!(record.cached_value, Biff8FormulaCachedValue::Error));
+        assert!(matches!(
+            record.cached_value,
+            Biff8FormulaCachedValue::Error
+        ));
     }
 
     #[test]
@@ -571,7 +580,10 @@ mod tests {
         let mut data = vec![0u8; 14];
         data[6..14].copy_from_slice(&[0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF]);
         let record = decode_formula_record(&data).unwrap();
-        assert!(matches!(record.cached_value, Biff8FormulaCachedValue::Empty));
+        assert!(matches!(
+            record.cached_value,
+            Biff8FormulaCachedValue::Empty
+        ));
     }
 
     // ── decode_bof_type ───────────────────────────────────────────────
@@ -612,9 +624,9 @@ mod tests {
     fn bound_sheet_record_compressed() {
         let mut data = Vec::new();
         data.extend_from_slice(&100u32.to_le_bytes()); // bof_position=100
-        data.extend_from_slice(&[0u8; 2]);             // padding
-        data.push(5);                                   // character_count=5
-        data.push(0x00);                                // flags: compressed
+        data.extend_from_slice(&[0u8; 2]); // padding
+        data.push(5); // character_count=5
+        data.push(0x00); // flags: compressed
         data.extend_from_slice(b"Hello");
         let record = decode_bound_sheet_record(&data).unwrap();
         assert_eq!(record.name, "Hello");
@@ -626,8 +638,8 @@ mod tests {
         let mut data = Vec::new();
         data.extend_from_slice(&50u32.to_le_bytes());
         data.extend_from_slice(&[0u8; 2]);
-        data.push(2);                                    // character_count=2
-        data.push(0x01);                                 // flags: wide
+        data.push(2); // character_count=2
+        data.push(0x01); // flags: wide
         data.extend_from_slice(&[0x60, 0x4F, 0x7D, 0x59]); // "你好"
         let record = decode_bound_sheet_record(&data).unwrap();
         assert_eq!(record.name, "你好");
@@ -662,10 +674,10 @@ mod tests {
     #[test]
     fn cell_range_valid() {
         let mut data = vec![0u8; 8];
-        data[0..2].copy_from_slice(&0u16.to_le_bytes());  // first_row=0
-        data[2..4].copy_from_slice(&5u16.to_le_bytes());  // last_row=5
-        data[4..6].copy_from_slice(&1u16.to_le_bytes());  // first_col=1
-        data[6..8].copy_from_slice(&3u16.to_le_bytes());  // last_col=3
+        data[0..2].copy_from_slice(&0u16.to_le_bytes()); // first_row=0
+        data[2..4].copy_from_slice(&5u16.to_le_bytes()); // last_row=5
+        data[4..6].copy_from_slice(&1u16.to_le_bytes()); // first_col=1
+        data[6..8].copy_from_slice(&3u16.to_le_bytes()); // last_col=3
         let range = decode_cell_range(&data).unwrap();
         assert_eq!(range.first_row, 0);
         assert_eq!(range.last_row, 5);
@@ -703,8 +715,8 @@ mod tests {
     fn merge_ranges_count_limits_output() {
         let mut data = Vec::new();
         data.extend_from_slice(&1u16.to_le_bytes()); // count=1
-        data.extend_from_slice(&[0u8; 8]);           // range 1
-        data.extend_from_slice(&[0u8; 8]);           // range 2 (should be ignored)
+        data.extend_from_slice(&[0u8; 8]); // range 1
+        data.extend_from_slice(&[0u8; 8]); // range 2 (should be ignored)
         let ranges = decode_merge_ranges(&data);
         assert_eq!(ranges.len(), 1);
     }
@@ -716,7 +728,7 @@ mod tests {
         // TxO 布局：bytes 0-1 保留，bytes 2-3 = object_id，bytes 12+ = text
         let mut data = vec![0u8; 12];
         data[2..4].copy_from_slice(&42u16.to_le_bytes()); // object_id=42
-        data.extend_from_slice(b"hello\x00");              // text 从 offset 12 开始
+        data.extend_from_slice(b"hello\x00"); // text 从 offset 12 开始
         let result = decode_text_object_fragment(0x00B6, 0x00B6, 0x003C, &data).unwrap();
         match result {
             Biff8TextObjectFragment::Start { object_id, text } => {
@@ -740,7 +752,10 @@ mod tests {
     #[test]
     fn text_object_fragment_unrelated_sid() {
         let data = [0u8; 10];
-        assert_eq!(decode_text_object_fragment(0x0099, 0x00B6, 0x003C, &data), None);
+        assert_eq!(
+            decode_text_object_fragment(0x0099, 0x00B6, 0x003C, &data),
+            None
+        );
     }
 
     // ── decode_latin1_zero_terminated ─────────────────────────────────

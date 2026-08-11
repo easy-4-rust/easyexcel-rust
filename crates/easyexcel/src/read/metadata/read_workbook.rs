@@ -211,13 +211,17 @@ impl ReadWorkbook {
     }
 
     /// 返回可变 Java 父类参数。
-    pub const fn get_read_basic_parameter_mut(&mut self) -> &mut crate::read::metadata::ReadBasicParameter {
+    pub const fn get_read_basic_parameter_mut(
+        &mut self,
+    ) -> &mut crate::read::metadata::ReadBasicParameter {
         &mut self.parameter
     }
 
     /// Java `getFile` 别名。
     #[must_use]
-    pub fn get_file(&self) -> Option<&Path> { self.file() }
+    pub fn get_file(&self) -> Option<&Path> {
+        self.file()
+    }
     /// Java `getExcelType` 别名。
     #[must_use]
     pub const fn get_excel_type(&self) -> Option<crate::support::ExcelTypeEnum> {
@@ -225,7 +229,9 @@ impl ReadWorkbook {
     }
     /// Java `getInputStream` 的后端中立字节表示。
     #[must_use]
-    pub fn get_input_stream(&self) -> Option<&[u8]> { self.input_stream.as_deref() }
+    pub fn get_input_stream(&self) -> Option<&[u8]> {
+        self.input_stream.as_deref()
+    }
     /// Java `setInputStream`。
     pub fn set_input_stream(&mut self, value: Option<Vec<u8>>) -> &mut Self {
         self.input_stream = value;
@@ -253,7 +259,9 @@ impl ReadWorkbook {
     }
     /// Java `getCharset` 别名。
     #[must_use]
-    pub const fn get_charset(&self) -> &crate::CsvCharset { &self.options.charset }
+    pub const fn get_charset(&self) -> &crate::CsvCharset {
+        &self.options.charset
+    }
     /// Java `getCustomObject` 别名。
     #[must_use]
     pub fn get_custom_object(&self) -> Option<&crate::CustomReadObject> {
@@ -261,10 +269,14 @@ impl ReadWorkbook {
     }
     /// Java `getPassword` 别名。
     #[must_use]
-    pub fn get_password(&self) -> Option<&str> { self.options.password.as_deref() }
+    pub fn get_password(&self) -> Option<&str> {
+        self.options.password.as_deref()
+    }
     /// Java `getReadCache` 别名。
     #[must_use]
-    pub const fn get_read_cache(&self) -> crate::ReadCacheMode { self.options.read_cache }
+    pub const fn get_read_cache(&self) -> crate::ReadCacheMode {
+        self.options.read_cache
+    }
     /// Java `getReadCacheSelector` 别名。
     #[must_use]
     pub fn get_read_cache_selector(&self) -> Option<&crate::StoredReadCacheSelector> {
@@ -295,7 +307,9 @@ impl ReadWorkbook {
     }
     /// Java nullable `getUseDefaultListener`。
     #[must_use]
-    pub const fn get_use_default_listener(&self) -> Option<bool> { self.use_default_listener }
+    pub const fn get_use_default_listener(&self) -> Option<bool> {
+        self.use_default_listener
+    }
     /// Java `setUseDefaultListener`。
     pub const fn set_use_default_listener(&mut self, value: bool) -> &mut Self {
         self.use_default_listener = Some(value);
@@ -313,10 +327,7 @@ impl ReadWorkbook {
         self.get_xlsx_sax_parser_factory_name()
     }
     /// Java `setXlsxSAXParserFactoryName`。
-    pub fn set_xlsx_sax_parser_factory_name(
-        &mut self,
-        value: Option<String>,
-    ) -> &mut Self {
+    pub fn set_xlsx_sax_parser_factory_name(&mut self, value: Option<String>) -> &mut Self {
         self.xlsx_sax_parser_factory_name = value;
         self.options.xlsx_sax_parser_factory_name = self.xlsx_sax_parser_factory_name.clone();
         self
@@ -461,27 +472,12 @@ mod tests {
             SimpleReadCacheSelector::new(),
         ));
 
-        assert_eq!(
-            workbook.get_file(),
-            workbook.file()
-        );
-        assert_eq!(
-            workbook.get_excel_type(),
-            workbook.excel_type()
-        );
-        assert_eq!(
-            workbook.get_password(),
-            workbook.password()
-        );
-        assert_eq!(
-            workbook.get_charset().name(),
-            workbook.charset().name()
-        );
+        assert_eq!(workbook.get_file(), workbook.file());
+        assert_eq!(workbook.get_excel_type(), workbook.excel_type());
+        assert_eq!(workbook.get_password(), workbook.password());
+        assert_eq!(workbook.get_charset().name(), workbook.charset().name());
         assert!(workbook.get_custom_object().is_some());
-        assert_eq!(
-            workbook.get_read_cache(),
-            workbook.read_cache()
-        );
+        assert_eq!(workbook.get_read_cache(), workbook.read_cache());
         assert!(workbook.get_read_cache_selector().is_some());
     }
 
@@ -506,7 +502,11 @@ mod tests {
         let mut set = std::collections::HashSet::new();
         set.insert(crate::CellExtraType::Comment);
         workbook.set_extra_read_set(set);
-        assert!(workbook.get_extra_read_set().contains(&crate::CellExtraType::Comment));
+        assert!(
+            workbook
+                .get_extra_read_set()
+                .contains(&crate::CellExtraType::Comment)
+        );
     }
 
     #[test]

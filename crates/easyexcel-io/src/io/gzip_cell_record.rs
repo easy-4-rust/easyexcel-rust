@@ -137,7 +137,11 @@ fn encode_cell(out: &mut Vec<u8>, value: &GzipCellValue) -> Result<()> {
                 write_bytes(out, image)?;
             }
         }
-        GzipCellValue::ImagesMetadata { value, images, metadata } => {
+        GzipCellValue::ImagesMetadata {
+            value,
+            images,
+            metadata,
+        } => {
             out.push(19);
             encode_cell(out, value)?;
             write_u32(

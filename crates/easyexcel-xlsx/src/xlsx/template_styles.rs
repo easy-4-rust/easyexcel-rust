@@ -617,7 +617,8 @@ mod tests {
 
     #[test]
     fn collection_elements_finds_children() {
-        let xml = r#"<styleSheet><fonts count="1"><font><sz val="11"/></font></fonts></styleSheet>"#;
+        let xml =
+            r#"<styleSheet><fonts count="1"><font><sz val="11"/></font></fonts></styleSheet>"#;
         let elems = collection_elements(xml, "fonts", "font").unwrap();
         assert_eq!(elems.len(), 1);
     }
@@ -713,14 +714,16 @@ mod tests {
     fn append_optional_collection_creates_when_missing() {
         let xml = minimal_styles();
         let elems = vec![r#"<numFmt numFmtId="200" formatCode="0.00"/>"#.to_owned()];
-        let result = append_optional_collection(&xml, "numFmts", "numFmt", &elems, "<fonts").unwrap();
+        let result =
+            append_optional_collection(&xml, "numFmts", "numFmt", &elems, "<fonts").unwrap();
         assert!(result.contains("numFmtId=\"200\""));
     }
 
     #[test]
     fn append_optional_collection_error_for_missing_before() {
         let xml = "<styleSheet/>";
-        let result = append_optional_collection(xml, "numFmts", "numFmt", &["test".to_owned()], "<fonts");
+        let result =
+            append_optional_collection(xml, "numFmts", "numFmt", &["test".to_owned()], "<fonts");
         assert!(result.is_err());
     }
 }

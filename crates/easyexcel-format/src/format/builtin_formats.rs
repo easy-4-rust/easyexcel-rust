@@ -27,8 +27,7 @@ pub const GENERAL: u16 = 0;
 /// finally `default_format` / `"General"`.
 #[must_use]
 pub fn get_builtin_format(index: u16, default_format: &str) -> &str {
-    get_builtin_format_for_locale(Some(index), Some(default_format), None)
-        .unwrap_or("General")
+    get_builtin_format_for_locale(Some(index), Some(default_format), None).unwrap_or("General")
 }
 
 /// 按 Java 的查找顺序解析内建格式，并保留调用者提供的默认格式。
@@ -82,9 +81,7 @@ pub fn switch_builtin_formats_for_locale(
 ) -> &'static [Option<&'static str>] {
     if locale.is_some_and(|value| {
         let tag = value.language_tag();
-        tag.eq_ignore_ascii_case("US")
-            || tag.ends_with("_US")
-            || tag.ends_with("-US")
+        tag.eq_ignore_ascii_case("US") || tag.ends_with("_US") || tag.ends_with("-US")
     }) {
         &BUILTIN_FORMATS_US
     } else {
@@ -97,7 +94,10 @@ pub fn switch_builtin_formats_for_locale(
 pub fn switch_builtin_formats_map(
     locale: Option<&ExcelLocale>,
 ) -> &'static HashMap<&'static str, u16> {
-    if std::ptr::eq(switch_builtin_formats_for_locale(locale), &BUILTIN_FORMATS_US) {
+    if std::ptr::eq(
+        switch_builtin_formats_for_locale(locale),
+        &BUILTIN_FORMATS_US,
+    ) {
         &BUILTIN_FORMATS_MAP_US
     } else {
         &BUILTIN_FORMATS_MAP_CN
@@ -250,29 +250,88 @@ pub static BUILTIN_FORMATS_CN: [Option<&str>; 82] = [
 
 /// 美国区域内建格式表。除货币符号外与 Java 的 US 表逐索引一致。
 pub static BUILTIN_FORMATS_US: [Option<&str>; 82] = [
-    Some("General"), Some("0"), Some("0.00"), Some("#,##0"), Some("#,##0.00"),
-    Some("\"$\"#,##0_);(\"$\"#,##0)"), Some("\"$\"#,##0_);[Red](\"$\"#,##0)"),
-    Some("\"$\"#,##0.00_);(\"$\"#,##0.00)"), Some("\"$\"#,##0.00_);[Red](\"$\"#,##0.00)"),
-    Some("0%"), Some("0.00%"), Some("0.00E+00"), Some("# ?/?"), Some("# ??/??"),
-    Some("yyyy/m/d"), Some("d-mmm-yy"), Some("d-mmm"), Some("mmm-yy"), Some("h:mm AM/PM"),
-    Some("h:mm:ss AM/PM"), Some("h:mm"), Some("h:mm:ss"), Some("yyyy-m-d h:mm"),
-    None, None, None, None,
-    Some("yyyy\"年\"m\"月\""), Some("m\"月\"d\"日\""), Some("m\"月\"d\"日\""), Some("m-d-yy"),
-    Some("yyyy\"年\"m\"月\"d\"日\""), Some("h\"时\"mm\"分\""), Some("h\"时\"mm\"分\"ss\"秒\""),
-    Some("上午/下午h\"时\"mm\"分\""), Some("上午/下午h\"时\"mm\"分\"ss\"秒\""), Some("yyyy\"年\"m\"月\""),
-    Some("#,##0_);(#,##0)"), Some("#,##0_);[Red](#,##0)"), Some("#,##0.00_);(#,##0.00)"),
-    Some("#,##0.00_);[Red](#,##0.00)"), Some("_(* #,##0_);_(* (#,##0);_(* \"-\"_);_(@_)"),
+    Some("General"),
+    Some("0"),
+    Some("0.00"),
+    Some("#,##0"),
+    Some("#,##0.00"),
+    Some("\"$\"#,##0_);(\"$\"#,##0)"),
+    Some("\"$\"#,##0_);[Red](\"$\"#,##0)"),
+    Some("\"$\"#,##0.00_);(\"$\"#,##0.00)"),
+    Some("\"$\"#,##0.00_);[Red](\"$\"#,##0.00)"),
+    Some("0%"),
+    Some("0.00%"),
+    Some("0.00E+00"),
+    Some("# ?/?"),
+    Some("# ??/??"),
+    Some("yyyy/m/d"),
+    Some("d-mmm-yy"),
+    Some("d-mmm"),
+    Some("mmm-yy"),
+    Some("h:mm AM/PM"),
+    Some("h:mm:ss AM/PM"),
+    Some("h:mm"),
+    Some("h:mm:ss"),
+    Some("yyyy-m-d h:mm"),
+    None,
+    None,
+    None,
+    None,
+    Some("yyyy\"年\"m\"月\""),
+    Some("m\"月\"d\"日\""),
+    Some("m\"月\"d\"日\""),
+    Some("m-d-yy"),
+    Some("yyyy\"年\"m\"月\"d\"日\""),
+    Some("h\"时\"mm\"分\""),
+    Some("h\"时\"mm\"分\"ss\"秒\""),
+    Some("上午/下午h\"时\"mm\"分\""),
+    Some("上午/下午h\"时\"mm\"分\"ss\"秒\""),
+    Some("yyyy\"年\"m\"月\""),
+    Some("#,##0_);(#,##0)"),
+    Some("#,##0_);[Red](#,##0)"),
+    Some("#,##0.00_);(#,##0.00)"),
+    Some("#,##0.00_);[Red](#,##0.00)"),
+    Some("_(* #,##0_);_(* (#,##0);_(* \"-\"_);_(@_)"),
     Some("_(\"$\"* #,##0_);_(\"$\"* (#,##0);_(\"$\"* \"-\"_);_(@_)"),
     Some("_(* #,##0.00_);_(* (#,##0.00);_(* \"-\"??_);_(@_)"),
     Some("_(\"$\"* #,##0.00_);_(\"$\"* (#,##0.00);_(\"$\"* \"-\"??_);_(@_)"),
-    Some("mm:ss"), Some("[h]:mm:ss"), Some("mm:ss.0"), Some("##0.0E+0"), Some("@"),
-    Some("yyyy\"年\"m\"月\""), Some("m\"月\"d\"日\""), Some("yyyy\"年\"m\"月\""),
-    Some("m\"月\"d\"日\""), Some("m\"月\"d\"日\""), Some("上午/下午h\"时\"mm\"分\""),
-    Some("上午/下午h\"时\"mm\"分\"ss\"秒\""), Some("yyyy\"年\"m\"月\""), Some("m\"月\"d\"日\""),
-    Some("t0"), Some("t0.00"), Some("t#,##0"), Some("t#,##0.00"), None, None, None, None,
-    Some("t0%"), Some("t0.00%"), Some("t# ?/?"), Some("t# ??/??"), Some("ว/ด/ปปปป"),
-    Some("ว-ดดด-ปป"), Some("ว-ดดด"), Some("ดดด-ปป"), Some("ช:นน"), Some("ช:นน:ทท"),
-    Some("ว/ด/ปปปป ช:นน"), Some("นน:ทท"), Some("[ช]:นน:ทท"), Some("นน:ทท.0"), Some("d/m/bb"),
+    Some("mm:ss"),
+    Some("[h]:mm:ss"),
+    Some("mm:ss.0"),
+    Some("##0.0E+0"),
+    Some("@"),
+    Some("yyyy\"年\"m\"月\""),
+    Some("m\"月\"d\"日\""),
+    Some("yyyy\"年\"m\"月\""),
+    Some("m\"月\"d\"日\""),
+    Some("m\"月\"d\"日\""),
+    Some("上午/下午h\"时\"mm\"分\""),
+    Some("上午/下午h\"时\"mm\"分\"ss\"秒\""),
+    Some("yyyy\"年\"m\"月\""),
+    Some("m\"月\"d\"日\""),
+    Some("t0"),
+    Some("t0.00"),
+    Some("t#,##0"),
+    Some("t#,##0.00"),
+    None,
+    None,
+    None,
+    None,
+    Some("t0%"),
+    Some("t0.00%"),
+    Some("t# ?/?"),
+    Some("t# ??/??"),
+    Some("ว/ด/ปปปป"),
+    Some("ว-ดดด-ปป"),
+    Some("ว-ดดด"),
+    Some("ดดด-ปป"),
+    Some("ช:นน"),
+    Some("ช:นน:ทท"),
+    Some("ว/ด/ปปปป ช:นน"),
+    Some("นน:ทท"),
+    Some("[ช]:นน:ทท"),
+    Some("นน:ทท.0"),
+    Some("d/m/bb"),
 ];
 
 fn build_map(formats: &'static [Option<&'static str>]) -> HashMap<&'static str, u16> {

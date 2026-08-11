@@ -100,10 +100,7 @@ mod tests {
 
     #[test]
     fn get_by_index() {
-        let data = CollectionRowData::new(vec![
-            CellValue::Int(10),
-            CellValue::Int(20),
-        ]);
+        let data = CollectionRowData::new(vec![CellValue::Int(10), CellValue::Int(20)]);
         assert!(data.get(0).is_some());
         assert!(data.get(2).is_none());
     }

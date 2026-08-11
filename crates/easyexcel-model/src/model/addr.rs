@@ -362,13 +362,33 @@ mod tests {
 
     #[test]
     fn to_a1_all_combinations() {
-        let a = CellAddress { row: 0, col: 0, abs_row: false, abs_col: false };
+        let a = CellAddress {
+            row: 0,
+            col: 0,
+            abs_row: false,
+            abs_col: false,
+        };
         assert_eq!(a.to_a1(), "A1");
-        let b = CellAddress { row: 0, col: 0, abs_row: true, abs_col: true };
+        let b = CellAddress {
+            row: 0,
+            col: 0,
+            abs_row: true,
+            abs_col: true,
+        };
         assert_eq!(b.to_a1(), "$A$1");
-        let c = CellAddress { row: 0, col: 0, abs_row: false, abs_col: true };
+        let c = CellAddress {
+            row: 0,
+            col: 0,
+            abs_row: false,
+            abs_col: true,
+        };
         assert_eq!(c.to_a1(), "$A1");
-        let d = CellAddress { row: 0, col: 0, abs_row: true, abs_col: false };
+        let d = CellAddress {
+            row: 0,
+            col: 0,
+            abs_row: true,
+            abs_col: false,
+        };
         assert_eq!(d.to_a1(), "A$1");
     }
 
@@ -389,7 +409,12 @@ mod tests {
     #[test]
     fn to_r1c1_relative_with_absolute_components() {
         let base = CellAddress::new(5, 5);
-        let a = CellAddress { row: 3, col: 7, abs_row: true, abs_col: false };
+        let a = CellAddress {
+            row: 3,
+            col: 7,
+            abs_row: true,
+            abs_col: false,
+        };
         assert_eq!(a.to_r1c1_relative(base), "R4C[2]");
     }
 

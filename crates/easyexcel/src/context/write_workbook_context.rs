@@ -69,7 +69,10 @@ impl WriteWorkbookContext {
             .expect("workbook contexts always carry a workbook holder")
     }
     /// Java `getWriteWorkbookHolder`。
-    #[must_use] pub fn get_write_workbook_holder(&self) -> &WriteWorkbookHolderView { self.write_workbook_holder() }
+    #[must_use]
+    pub fn get_write_workbook_holder(&self) -> &WriteWorkbookHolderView {
+        self.write_workbook_holder()
+    }
 
     /// Returns all holder views captured for this callback.
     #[must_use]
@@ -78,10 +81,15 @@ impl WriteWorkbookContext {
         &self.holders
     }
     /// Java `getWriteContext`。
-    #[must_use] pub const fn get_write_context(&self) -> &WriteHolderContext { self.write_context() }
+    #[must_use]
+    pub const fn get_write_context(&self) -> &WriteHolderContext {
+        self.write_context()
+    }
 
     /// 替换全部 holder 视图。
-    pub fn set_write_context(&mut self, value: WriteHolderContext) { self.holders = value; }
+    pub fn set_write_context(&mut self, value: WriteHolderContext) {
+        self.holders = value;
+    }
     /// 替换 workbook holder 视图并同步输出路径。
     pub fn set_write_workbook_holder(&mut self, value: WriteWorkbookHolderView) {
         self.path = value.path().to_path_buf();

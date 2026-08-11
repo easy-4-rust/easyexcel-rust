@@ -83,20 +83,22 @@ fn to_spill_value(value: &CellValue) -> Result<GzipCellValue> {
             value: Box::new(to_spill_value(value)?),
             text: text.clone(),
         },
-        CellValue::CommentWithMetadata { value, comment } => {
-            GzipCellValue::CommentMetadata {
-                value: Box::new(to_spill_value(value)?),
-                metadata: serde_json::to_vec(comment).map_err(|error| {
-                    ExcelError::Format(format!("cannot serialize comment journal metadata: {error}"))
-                })?,
-            }
-        }
-        CellValue::Image(bytes) => GzipCellValue::Image(bytes.clone()),
-        CellValue::RichText(rich) => GzipCellValue::RichTextMetadata(
-            serde_json::to_vec(rich).map_err(|error| {
-                ExcelError::Format(format!("cannot serialize rich-text journal metadata: {error}"))
+        CellValue::CommentWithMetadata { value, comment } => GzipCellValue::CommentMetadata {
+            value: Box::new(to_spill_value(value)?),
+            metadata: serde_json::to_vec(comment).map_err(|error| {
+                ExcelError::Format(format!(
+                    "cannot serialize comment journal metadata: {error}"
+                ))
             })?,
-        ),
+        },
+        CellValue::Image(bytes) => GzipCellValue::Image(bytes.clone()),
+        CellValue::RichText(rich) => {
+            GzipCellValue::RichTextMetadata(serde_json::to_vec(rich).map_err(|error| {
+                ExcelError::Format(format!(
+                    "cannot serialize rich-text journal metadata: {error}"
+                ))
+            })?)
+        }
         CellValue::Images { value, images } => GzipCellValue::ImagesMetadata {
             value: Box::new(to_spill_value(value)?),
             images: images.iter().map(|image| image.image().to_vec()).collect(),
@@ -170,29 +172,32 @@ fn from_spill_value(value: GzipCellValue) -> Result<CellValue> {
             value: Box::new(from_spill_value(*value)?),
             text,
         },
-        GzipCellValue::CommentMetadata { value, metadata } => {
-            CellValue::CommentWithMetadata {
-                value: Box::new(from_spill_value(*value)?),
-                comment: serde_json::from_slice(&metadata).map_err(|error| {
-                    ExcelError::Format(format!("invalid comment journal metadata: {error}"))
-                })?,
-            }
-        }
+        GzipCellValue::CommentMetadata { value, metadata } => CellValue::CommentWithMetadata {
+            value: Box::new(from_spill_value(*value)?),
+            comment: serde_json::from_slice(&metadata).map_err(|error| {
+                ExcelError::Format(format!("invalid comment journal metadata: {error}"))
+            })?,
+        },
         GzipCellValue::Image(bytes) => CellValue::Image(bytes),
         GzipCellValue::RichText(text) => CellValue::RichText(RichTextStringData::new(text)),
-        GzipCellValue::RichTextMetadata(metadata) => CellValue::RichText(
-            serde_json::from_slice(&metadata).map_err(|error| {
+        GzipCellValue::RichTextMetadata(metadata) => {
+            CellValue::RichText(serde_json::from_slice(&metadata).map_err(|error| {
                 ExcelError::Format(format!("invalid rich-text journal metadata: {error}"))
-            })?,
-        ),
+            })?)
+        }
         GzipCellValue::Images { value, images } => CellValue::Images {
             value: Box::new(from_spill_value(*value)?),
             images: images.into_iter().map(ImageData::new).collect(),
         },
-        GzipCellValue::ImagesMetadata { value, images, metadata } => {
-            let decoded: Vec<SpillImageMetadata> = serde_json::from_slice(&metadata).map_err(|error| {
-                ExcelError::Format(format!("invalid image journal metadata: {error}"))
-            })?;
+        GzipCellValue::ImagesMetadata {
+            value,
+            images,
+            metadata,
+        } => {
+            let decoded: Vec<SpillImageMetadata> =
+                serde_json::from_slice(&metadata).map_err(|error| {
+                    ExcelError::Format(format!("invalid image journal metadata: {error}"))
+                })?;
             if decoded.len() != images.len() {
                 return Err(ExcelError::Format(
                     "image journal metadata count does not match image count".to_owned(),
@@ -435,7 +440,11 @@ mod tests {
         };
         writer.write_journal_row(&row).expect("write");
         let reader = writer.finish().expect("finish");
-        assert_eq!(reader.styles.len(), 1, "64 identical styles must deduplicate to 1");
+        assert_eq!(
+            reader.styles.len(),
+            1,
+            "64 identical styles must deduplicate to 1"
+        );
     }
 
     #[test]
@@ -476,7 +485,11 @@ mod tests {
         };
         writer.write_journal_row(&row).expect("write");
         let reader = writer.finish().expect("finish");
-        assert_eq!(reader.styles.len(), 2, "two distinct styles must produce 2 entries");
+        assert_eq!(
+            reader.styles.len(),
+            2,
+            "two distinct styles must produce 2 entries"
+        );
         // Verify style_a got index 0 and style_b got index 1.
         assert_eq!(reader.styles[0], style_a);
         assert_eq!(reader.styles[1], style_b);

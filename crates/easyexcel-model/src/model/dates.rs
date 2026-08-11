@@ -675,20 +675,40 @@ mod tests {
 
     #[test]
     fn parse_java_date_tries_multiple_patterns() {
-        let dt =
-            parse_java_date("2025-04-04", [DATE_FORMAT_19, DATE_FORMAT_10]).unwrap();
+        let dt = parse_java_date("2025-04-04", [DATE_FORMAT_19, DATE_FORMAT_10]).unwrap();
         assert_eq!(dt.date(), NaiveDate::from_ymd_opt(2025, 4, 4).unwrap());
     }
 
     #[test]
     fn infer_java_date_pattern_recognizes_lengths() {
-        assert_eq!(infer_java_date_pattern("2025-04-04 16:05:50").unwrap(), DATE_FORMAT_19);
-        assert_eq!(infer_java_date_pattern("2025/04/04 16:05:50").unwrap(), DATE_FORMAT_19_FORWARD_SLASH);
-        assert_eq!(infer_java_date_pattern("2025-04-04 16:05").unwrap(), DATE_FORMAT_16);
-        assert_eq!(infer_java_date_pattern("2025/04/04 16:05").unwrap(), DATE_FORMAT_16_FORWARD_SLASH);
-        assert_eq!(infer_java_date_pattern("20250404 16:05:50").unwrap(), DATE_FORMAT_17);
-        assert_eq!(infer_java_date_pattern("20250404160550").unwrap(), DATE_FORMAT_14);
-        assert_eq!(infer_java_date_pattern("2025-04-04").unwrap(), DATE_FORMAT_10);
+        assert_eq!(
+            infer_java_date_pattern("2025-04-04 16:05:50").unwrap(),
+            DATE_FORMAT_19
+        );
+        assert_eq!(
+            infer_java_date_pattern("2025/04/04 16:05:50").unwrap(),
+            DATE_FORMAT_19_FORWARD_SLASH
+        );
+        assert_eq!(
+            infer_java_date_pattern("2025-04-04 16:05").unwrap(),
+            DATE_FORMAT_16
+        );
+        assert_eq!(
+            infer_java_date_pattern("2025/04/04 16:05").unwrap(),
+            DATE_FORMAT_16_FORWARD_SLASH
+        );
+        assert_eq!(
+            infer_java_date_pattern("20250404 16:05:50").unwrap(),
+            DATE_FORMAT_17
+        );
+        assert_eq!(
+            infer_java_date_pattern("20250404160550").unwrap(),
+            DATE_FORMAT_14
+        );
+        assert_eq!(
+            infer_java_date_pattern("2025-04-04").unwrap(),
+            DATE_FORMAT_10
+        );
         assert!(infer_java_date_pattern("short").is_err());
     }
 
@@ -792,7 +812,11 @@ mod tests {
 
     #[test]
     fn serial_to_datetime_1900_returns_none_for_infinity() {
-        assert!(DateSystem::Date1900.serial_to_datetime(f64::INFINITY).is_none());
+        assert!(
+            DateSystem::Date1900
+                .serial_to_datetime(f64::INFINITY)
+                .is_none()
+        );
     }
 
     #[test]
@@ -827,8 +851,14 @@ mod tests {
 
     #[test]
     fn convert_serial_same_system() {
-        assert_eq!(DateSystem::Date1900.convert_serial_to(100.0, DateSystem::Date1900), 100.0);
-        assert_eq!(DateSystem::Date1904.convert_serial_to(100.0, DateSystem::Date1904), 100.0);
+        assert_eq!(
+            DateSystem::Date1900.convert_serial_to(100.0, DateSystem::Date1900),
+            100.0
+        );
+        assert_eq!(
+            DateSystem::Date1904.convert_serial_to(100.0, DateSystem::Date1904),
+            100.0
+        );
     }
 
     #[test]

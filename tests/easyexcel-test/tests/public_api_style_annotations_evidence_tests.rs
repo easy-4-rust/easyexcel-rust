@@ -133,13 +133,11 @@ struct HeadStyleFieldTestData {
 
 /// HeadStyle: struct-level head style
 #[derive(Debug, Clone, ExcelRow)]
-#[excel(
-    head_style(
-        fill_pattern = "solid",
-        fill_foreground_color = 10,
-        horizontal_alignment = "left"
-    )
-)]
+#[excel(head_style(
+    fill_pattern = "solid",
+    fill_foreground_color = 10,
+    horizontal_alignment = "left"
+))]
 struct HeadStyleStructTestData {
     #[excel(name = "Name", index = 0)]
     name: String,
@@ -180,12 +178,7 @@ struct ContentStyleFieldTestData {
 
 /// ContentStyle: struct-level content style
 #[derive(Debug, Clone, ExcelRow)]
-#[excel(
-    content_style(
-        fill_pattern = "solid",
-        fill_foreground_color = 17
-    )
-)]
+#[excel(content_style(fill_pattern = "solid", fill_foreground_color = 17))]
 struct ContentStyleStructTestData {
     #[excel(name = "Name", index = 0)]
     name: String,
@@ -214,13 +207,7 @@ struct HeadFontStyleFieldTestData {
 
 /// HeadFontStyle: struct-level head font style
 #[derive(Debug, Clone, ExcelRow)]
-#[excel(
-    head_font_style(
-        font_height_in_points = 12,
-        bold = true,
-        color = 10
-    )
-)]
+#[excel(head_font_style(font_height_in_points = 12, bold = true, color = 10))]
 struct HeadFontStyleStructTestData {
     #[excel(name = "Name", index = 0)]
     name: String,
@@ -249,13 +236,7 @@ struct ContentFontStyleFieldTestData {
 
 /// ContentFontStyle: struct-level content font style
 #[derive(Debug, Clone, ExcelRow)]
-#[excel(
-    content_font_style(
-        font_height_in_points = 10,
-        italic = true,
-        color = 58
-    )
-)]
+#[excel(content_font_style(font_height_in_points = 10, italic = true, color = 58))]
 struct ContentFontStyleStructTestData {
     #[excel(name = "Name", index = 0)]
     name: String,
@@ -263,14 +244,12 @@ struct ContentFontStyleStructTestData {
 
 /// OnceAbsoluteMerge: struct-level absolute merge
 #[derive(Debug, Clone, ExcelRow)]
-#[excel(
-    once_absolute_merge(
-        first_row_index = 0,
-        last_row_index = 2,
-        first_column_index = 0,
-        last_column_index = 1
-    )
-)]
+#[excel(once_absolute_merge(
+    first_row_index = 0,
+    last_row_index = 2,
+    first_column_index = 0,
+    last_column_index = 1
+))]
 struct OnceAbsoluteMergeTestData {
     #[excel(name = "Name", index = 0)]
     name: String,
@@ -281,7 +260,11 @@ struct OnceAbsoluteMergeTestData {
 /// ContentLoopMerge: field-level content loop merge
 #[derive(Debug, Clone, ExcelRow)]
 struct ContentLoopMergeTestData {
-    #[excel(name = "Name", index = 0, content_loop_merge(each_row = 3, column_extend = 2))]
+    #[excel(
+        name = "Name",
+        index = 0,
+        content_loop_merge(each_row = 3, column_extend = 2)
+    )]
     name: String,
     #[excel(name = "Value", index = 1)]
     value: String,
@@ -359,7 +342,10 @@ fn content_loop_merge_compile_probe() -> easyexcel::Result<()> {
 #[test]
 fn column_width_behavior() -> easyexcel::Result<()> {
     let contract = contract();
-    assert_eq!(contract.column_width.class, "com.alibaba.excel.annotation.write.style.ColumnWidth");
+    assert_eq!(
+        contract.column_width.class,
+        "com.alibaba.excel.annotation.write.style.ColumnWidth"
+    );
 
     // Field-level: column_width = 30 on field "name"
     let cols = ColumnWidthTestData::schema();
@@ -379,7 +365,10 @@ fn column_width_behavior() -> easyexcel::Result<()> {
 #[test]
 fn head_row_height_behavior() -> easyexcel::Result<()> {
     let contract = contract();
-    assert_eq!(contract.head_row_height.class, "com.alibaba.excel.annotation.write.style.HeadRowHeight");
+    assert_eq!(
+        contract.head_row_height.class,
+        "com.alibaba.excel.annotation.write.style.HeadRowHeight"
+    );
 
     let metadata = HeadRowHeightTestData::write_metadata();
     assert_eq!(metadata.head_row_height, Some(25));
@@ -391,7 +380,10 @@ fn head_row_height_behavior() -> easyexcel::Result<()> {
 #[test]
 fn content_row_height_behavior() -> easyexcel::Result<()> {
     let contract = contract();
-    assert_eq!(contract.content_row_height.class, "com.alibaba.excel.annotation.write.style.ContentRowHeight");
+    assert_eq!(
+        contract.content_row_height.class,
+        "com.alibaba.excel.annotation.write.style.ContentRowHeight"
+    );
 
     let metadata = ContentRowHeightTestData::write_metadata();
     assert_eq!(metadata.content_row_height, Some(15));
@@ -403,42 +395,84 @@ fn content_row_height_behavior() -> easyexcel::Result<()> {
 #[test]
 fn head_style_behavior() -> easyexcel::Result<()> {
     let contract = contract();
-    assert_eq!(contract.head_style.class, "com.alibaba.excel.annotation.write.style.HeadStyle");
+    assert_eq!(
+        contract.head_style.class,
+        "com.alibaba.excel.annotation.write.style.HeadStyle"
+    );
     assert_eq!(contract.head_style.member_count, 21);
     assert_eq!(contract.head_style.members.len(), 21);
 
     // Field-level test: verify all style properties are set
     let cols = HeadStyleFieldTestData::schema();
     assert_eq!(cols.len(), 1);
-    let head_style = cols[0].head_style.as_ref().expect("head_style should be set");
+    let head_style = cols[0]
+        .head_style
+        .as_ref()
+        .expect("head_style should be set");
     assert_eq!(head_style.hidden, Some(true));
     assert_eq!(head_style.locked, Some(true));
     assert_eq!(head_style.quote_prefix, Some(true));
     assert_eq!(head_style.wrapped, Some(true));
     assert_eq!(head_style.shrink_to_fit, Some(true));
-    assert_eq!(head_style.horizontal_alignment, Some(ExcelHorizontalAlignment::Center));
-    assert_eq!(head_style.vertical_alignment, Some(ExcelVerticalAlignment::Center));
+    assert_eq!(
+        head_style.horizontal_alignment,
+        Some(ExcelHorizontalAlignment::Center)
+    );
+    assert_eq!(
+        head_style.vertical_alignment,
+        Some(ExcelVerticalAlignment::Center)
+    );
     assert_eq!(head_style.rotation, Some(45));
     assert_eq!(head_style.indent, Some(2));
-    assert_eq!(head_style.data_format, Some(ExcelDataFormat::Custom("0.00")));
+    assert_eq!(
+        head_style.data_format,
+        Some(ExcelDataFormat::Custom("0.00"))
+    );
     assert_eq!(head_style.border_left, Some(ExcelBorderStyle::Thin));
     assert_eq!(head_style.border_right, Some(ExcelBorderStyle::Thin));
     assert_eq!(head_style.border_top, Some(ExcelBorderStyle::Thin));
     assert_eq!(head_style.border_bottom, Some(ExcelBorderStyle::Thin));
-    assert_eq!(head_style.left_border_color, Some(ExcelColor::java_or_rgb(10)));
-    assert_eq!(head_style.right_border_color, Some(ExcelColor::java_or_rgb(10)));
-    assert_eq!(head_style.top_border_color, Some(ExcelColor::java_or_rgb(10)));
-    assert_eq!(head_style.bottom_border_color, Some(ExcelColor::java_or_rgb(10)));
+    assert_eq!(
+        head_style.left_border_color,
+        Some(ExcelColor::java_or_rgb(10))
+    );
+    assert_eq!(
+        head_style.right_border_color,
+        Some(ExcelColor::java_or_rgb(10))
+    );
+    assert_eq!(
+        head_style.top_border_color,
+        Some(ExcelColor::java_or_rgb(10))
+    );
+    assert_eq!(
+        head_style.bottom_border_color,
+        Some(ExcelColor::java_or_rgb(10))
+    );
     assert_eq!(head_style.fill_pattern, Some(ExcelFillPattern::Solid));
-    assert_eq!(head_style.fill_background_color, Some(ExcelColor::java_or_rgb(22)));
-    assert_eq!(head_style.fill_foreground_color, Some(ExcelColor::java_or_rgb(13)));
+    assert_eq!(
+        head_style.fill_background_color,
+        Some(ExcelColor::java_or_rgb(22))
+    );
+    assert_eq!(
+        head_style.fill_foreground_color,
+        Some(ExcelColor::java_or_rgb(13))
+    );
 
     // Struct-level test
     let metadata = HeadStyleStructTestData::write_metadata();
-    let head_style = metadata.head_style.as_ref().expect("struct head_style should be set");
+    let head_style = metadata
+        .head_style
+        .as_ref()
+        .expect("struct head_style should be set");
     assert_eq!(head_style.fill_pattern, Some(ExcelFillPattern::Solid));
-    assert_eq!(head_style.fill_foreground_color, Some(ExcelColor::java_or_rgb(10)));
-    assert_eq!(head_style.horizontal_alignment, Some(ExcelHorizontalAlignment::Left));
+    assert_eq!(
+        head_style.fill_foreground_color,
+        Some(ExcelColor::java_or_rgb(10))
+    );
+    assert_eq!(
+        head_style.horizontal_alignment,
+        Some(ExcelHorizontalAlignment::Left)
+    );
 
     Ok(())
 }
@@ -447,41 +481,80 @@ fn head_style_behavior() -> easyexcel::Result<()> {
 #[test]
 fn content_style_behavior() -> easyexcel::Result<()> {
     let contract = contract();
-    assert_eq!(contract.content_style.class, "com.alibaba.excel.annotation.write.style.ContentStyle");
+    assert_eq!(
+        contract.content_style.class,
+        "com.alibaba.excel.annotation.write.style.ContentStyle"
+    );
     assert_eq!(contract.content_style.member_count, 21);
     assert_eq!(contract.content_style.members.len(), 21);
 
     // Field-level test: verify all style properties are set
     let cols = ContentStyleFieldTestData::schema();
     assert_eq!(cols.len(), 1);
-    let content_style = cols[0].content_style.as_ref().expect("content_style should be set");
+    let content_style = cols[0]
+        .content_style
+        .as_ref()
+        .expect("content_style should be set");
     assert_eq!(content_style.hidden, Some(true));
     assert_eq!(content_style.locked, Some(false));
     assert_eq!(content_style.quote_prefix, Some(false));
     assert_eq!(content_style.wrapped, Some(true));
     assert_eq!(content_style.shrink_to_fit, Some(false));
-    assert_eq!(content_style.horizontal_alignment, Some(ExcelHorizontalAlignment::Right));
-    assert_eq!(content_style.vertical_alignment, Some(ExcelVerticalAlignment::Bottom));
+    assert_eq!(
+        content_style.horizontal_alignment,
+        Some(ExcelHorizontalAlignment::Right)
+    );
+    assert_eq!(
+        content_style.vertical_alignment,
+        Some(ExcelVerticalAlignment::Bottom)
+    );
     assert_eq!(content_style.rotation, Some(-30));
     assert_eq!(content_style.indent, Some(1));
-    assert_eq!(content_style.data_format, Some(ExcelDataFormat::Builtin(44)));
+    assert_eq!(
+        content_style.data_format,
+        Some(ExcelDataFormat::Builtin(44))
+    );
     assert_eq!(content_style.border_left, Some(ExcelBorderStyle::Medium));
     assert_eq!(content_style.border_right, Some(ExcelBorderStyle::Medium));
     assert_eq!(content_style.border_top, Some(ExcelBorderStyle::Medium));
     assert_eq!(content_style.border_bottom, Some(ExcelBorderStyle::Medium));
-    assert_eq!(content_style.left_border_color, Some(ExcelColor::java_or_rgb(20)));
-    assert_eq!(content_style.right_border_color, Some(ExcelColor::java_or_rgb(20)));
-    assert_eq!(content_style.top_border_color, Some(ExcelColor::java_or_rgb(20)));
-    assert_eq!(content_style.bottom_border_color, Some(ExcelColor::java_or_rgb(20)));
+    assert_eq!(
+        content_style.left_border_color,
+        Some(ExcelColor::java_or_rgb(20))
+    );
+    assert_eq!(
+        content_style.right_border_color,
+        Some(ExcelColor::java_or_rgb(20))
+    );
+    assert_eq!(
+        content_style.top_border_color,
+        Some(ExcelColor::java_or_rgb(20))
+    );
+    assert_eq!(
+        content_style.bottom_border_color,
+        Some(ExcelColor::java_or_rgb(20))
+    );
     assert_eq!(content_style.fill_pattern, Some(ExcelFillPattern::Solid));
-    assert_eq!(content_style.fill_background_color, Some(ExcelColor::java_or_rgb(30)));
-    assert_eq!(content_style.fill_foreground_color, Some(ExcelColor::java_or_rgb(17)));
+    assert_eq!(
+        content_style.fill_background_color,
+        Some(ExcelColor::java_or_rgb(30))
+    );
+    assert_eq!(
+        content_style.fill_foreground_color,
+        Some(ExcelColor::java_or_rgb(17))
+    );
 
     // Struct-level test
     let metadata = ContentStyleStructTestData::write_metadata();
-    let content_style = metadata.content_style.as_ref().expect("struct content_style should be set");
+    let content_style = metadata
+        .content_style
+        .as_ref()
+        .expect("struct content_style should be set");
     assert_eq!(content_style.fill_pattern, Some(ExcelFillPattern::Solid));
-    assert_eq!(content_style.fill_foreground_color, Some(ExcelColor::java_or_rgb(17)));
+    assert_eq!(
+        content_style.fill_foreground_color,
+        Some(ExcelColor::java_or_rgb(17))
+    );
 
     Ok(())
 }
@@ -490,14 +563,20 @@ fn content_style_behavior() -> easyexcel::Result<()> {
 #[test]
 fn head_font_style_behavior() -> easyexcel::Result<()> {
     let contract = contract();
-    assert_eq!(contract.head_font_style.class, "com.alibaba.excel.annotation.write.style.HeadFontStyle");
+    assert_eq!(
+        contract.head_font_style.class,
+        "com.alibaba.excel.annotation.write.style.HeadFontStyle"
+    );
     assert_eq!(contract.head_font_style.member_count, 9);
     assert_eq!(contract.head_font_style.members.len(), 9);
 
     // Field-level test: verify all font properties are set
     let cols = HeadFontStyleFieldTestData::schema();
     assert_eq!(cols.len(), 1);
-    let head_font = cols[0].head_font_style.as_ref().expect("head_font_style should be set");
+    let head_font = cols[0]
+        .head_font_style
+        .as_ref()
+        .expect("head_font_style should be set");
     assert_eq!(head_font.font_name, Some("Arial"));
     assert_eq!(head_font.font_height_in_points, Some(14.0));
     assert_eq!(head_font.bold, Some(true));
@@ -510,7 +589,10 @@ fn head_font_style_behavior() -> easyexcel::Result<()> {
 
     // Struct-level test
     let metadata = HeadFontStyleStructTestData::write_metadata();
-    let head_font = metadata.head_font_style.as_ref().expect("struct head_font_style should be set");
+    let head_font = metadata
+        .head_font_style
+        .as_ref()
+        .expect("struct head_font_style should be set");
     assert_eq!(head_font.font_height_in_points, Some(12.0));
     assert_eq!(head_font.bold, Some(true));
     assert_eq!(head_font.color, Some(ExcelColor::java_or_rgb(10)));
@@ -522,14 +604,20 @@ fn head_font_style_behavior() -> easyexcel::Result<()> {
 #[test]
 fn content_font_style_behavior() -> easyexcel::Result<()> {
     let contract = contract();
-    assert_eq!(contract.content_font_style.class, "com.alibaba.excel.annotation.write.style.ContentFontStyle");
+    assert_eq!(
+        contract.content_font_style.class,
+        "com.alibaba.excel.annotation.write.style.ContentFontStyle"
+    );
     assert_eq!(contract.content_font_style.member_count, 9);
     assert_eq!(contract.content_font_style.members.len(), 9);
 
     // Field-level test: verify all font properties are set
     let cols = ContentFontStyleFieldTestData::schema();
     assert_eq!(cols.len(), 1);
-    let content_font = cols[0].content_font_style.as_ref().expect("content_font_style should be set");
+    let content_font = cols[0]
+        .content_font_style
+        .as_ref()
+        .expect("content_font_style should be set");
     assert_eq!(content_font.font_name, Some("Calibri"));
     assert_eq!(content_font.font_height_in_points, Some(11.0));
     assert_eq!(content_font.bold, Some(false));
@@ -542,7 +630,10 @@ fn content_font_style_behavior() -> easyexcel::Result<()> {
 
     // Struct-level test
     let metadata = ContentFontStyleStructTestData::write_metadata();
-    let content_font = metadata.content_font_style.as_ref().expect("struct content_font_style should be set");
+    let content_font = metadata
+        .content_font_style
+        .as_ref()
+        .expect("struct content_font_style should be set");
     assert_eq!(content_font.font_height_in_points, Some(10.0));
     assert_eq!(content_font.italic, Some(true));
     assert_eq!(content_font.color, Some(ExcelColor::java_or_rgb(58)));
@@ -554,13 +645,19 @@ fn content_font_style_behavior() -> easyexcel::Result<()> {
 #[test]
 fn once_absolute_merge_behavior() -> easyexcel::Result<()> {
     let contract = contract();
-    assert_eq!(contract.once_absolute_merge.class, "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge");
+    assert_eq!(
+        contract.once_absolute_merge.class,
+        "com.alibaba.excel.annotation.write.style.OnceAbsoluteMerge"
+    );
     assert_eq!(contract.once_absolute_merge.member_count, 4);
     assert_eq!(contract.once_absolute_merge.members.len(), 4);
 
     // Struct-level test
     let metadata = OnceAbsoluteMergeTestData::write_metadata();
-    let merge = metadata.once_absolute_merge.as_ref().expect("once_absolute_merge should be set");
+    let merge = metadata
+        .once_absolute_merge
+        .as_ref()
+        .expect("once_absolute_merge should be set");
     assert_eq!(merge.first_row_index, 0);
     assert_eq!(merge.last_row_index, 2);
     assert_eq!(merge.first_column_index, 0);
@@ -573,14 +670,20 @@ fn once_absolute_merge_behavior() -> easyexcel::Result<()> {
 #[test]
 fn content_loop_merge_behavior() -> easyexcel::Result<()> {
     let contract = contract();
-    assert_eq!(contract.content_loop_merge.class, "com.alibaba.excel.annotation.write.style.ContentLoopMerge");
+    assert_eq!(
+        contract.content_loop_merge.class,
+        "com.alibaba.excel.annotation.write.style.ContentLoopMerge"
+    );
     assert_eq!(contract.content_loop_merge.member_count, 2);
     assert_eq!(contract.content_loop_merge.members.len(), 2);
 
     // Field-level test
     let cols = ContentLoopMergeTestData::schema();
     assert_eq!(cols.len(), 2);
-    let loop_merge = cols[0].loop_merge.as_ref().expect("loop_merge should be set");
+    let loop_merge = cols[0]
+        .loop_merge
+        .as_ref()
+        .expect("loop_merge should be set");
     assert_eq!(loop_merge.each_row, 3);
     assert_eq!(loop_merge.column_extend, 2);
 
@@ -591,7 +694,10 @@ fn content_loop_merge_behavior() -> easyexcel::Result<()> {
 #[test]
 fn total_java_members_matches_contract() -> easyexcel::Result<()> {
     let contract = contract();
-    assert_eq!(contract.total_java_members, 72, "golden contract declares 72 Java members across 9 annotations");
+    assert_eq!(
+        contract.total_java_members, 72,
+        "golden contract declares 72 Java members across 9 annotations"
+    );
     assert_eq!(contract.authority, "com.alibaba:easyexcel:4.0.3");
     Ok(())
 }

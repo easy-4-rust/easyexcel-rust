@@ -3,8 +3,8 @@
 mod cell_conversion;
 mod locale;
 pub mod read_cache;
-mod read_dispatch_plan;
 mod read_csv;
+mod read_dispatch_plan;
 mod read_helpers;
 mod read_options;
 mod read_xls;
@@ -43,8 +43,8 @@ pub use excel_reader::ExcelReader;
 pub use global_configuration::{
     apply_global_configuration_to_read_options, global_configuration_from_read_options,
 };
-pub use locale::ExcelLocale;
 pub use listener::ParallelMapReadListener;
+pub use locale::ExcelLocale;
 pub use read_cache::ReadCacheMode;
 pub use read_csv::read_csv;
 pub use read_options::ReadOptions;

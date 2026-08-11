@@ -13,5 +13,7 @@ impl EasyExcelConstants {
 
     /// 返回 Java `EXCEL_MATH_CONTEXT` 的完整 precision + HALF_UP 载体。
     #[must_use]
-    pub fn excel_math_context() -> &'static bigdecimal::Context { &EXCEL_MATH_CONTEXT }
+    pub fn excel_math_context() -> &'static bigdecimal::Context {
+        &EXCEL_MATH_CONTEXT
+    }
 }

@@ -252,7 +252,10 @@ pub fn decode_rk(bytes: &[u8]) -> f64 {
 mod tests {
     use easyexcel_format::SpreadsheetLocale;
 
-    use super::{decode_rk, format_numeric_displays, load_numeric_displays, parse_format_record, scan_numeric_cells};
+    use super::{
+        decode_rk, format_numeric_displays, load_numeric_displays, parse_format_record,
+        scan_numeric_cells,
+    };
 
     fn record(sid: u16, payload: &[u8]) -> Vec<u8> {
         let mut output = Vec::new();

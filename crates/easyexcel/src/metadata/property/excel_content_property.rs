@@ -50,7 +50,9 @@ impl ExcelContentProperty {
 
     /// 创建 Java 默认对象。
     #[must_use]
-    pub const fn new() -> Self { Self::EMPTY }
+    pub const fn new() -> Self {
+        Self::EMPTY
+    }
 
     /// Java `getContentStyleProperty`。
     #[must_use]
@@ -90,14 +92,22 @@ impl ExcelContentProperty {
     }
     /// Java `getField` 的后端中立映射。
     #[must_use]
-    pub fn get_field(&self) -> Option<&str> { self.field_name.as_deref() }
+    pub fn get_field(&self) -> Option<&str> {
+        self.field_name.as_deref()
+    }
     /// Java `setField` 的后端中立映射。
-    pub fn set_field(&mut self, value: Option<String>) { self.field_name = value; }
+    pub fn set_field(&mut self, value: Option<String>) {
+        self.field_name = value;
+    }
     /// Java `getConverter` 的后端中立映射。
     #[must_use]
-    pub fn get_converter(&self) -> Option<&str> { self.converter_key.as_deref() }
+    pub fn get_converter(&self) -> Option<&str> {
+        self.converter_key.as_deref()
+    }
     /// Java `setConverter` 的后端中立映射。
-    pub fn set_converter(&mut self, value: Option<String>) { self.converter_key = value; }
+    pub fn set_converter(&mut self, value: Option<String>) {
+        self.converter_key = value;
+    }
 }
 
 #[cfg(test)]

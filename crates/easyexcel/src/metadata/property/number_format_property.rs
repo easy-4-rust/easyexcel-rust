@@ -47,12 +47,18 @@ impl NumberFormatProperty {
 
     /// Java `getFormat` 别名。
     #[must_use]
-    pub fn get_format(&self) -> &str { &self.format }
+    pub fn get_format(&self) -> &str {
+        &self.format
+    }
     /// Java `setFormat`。
-    pub fn set_format(&mut self, value: impl Into<String>) { self.format = value.into(); }
+    pub fn set_format(&mut self, value: impl Into<String>) {
+        self.format = value.into();
+    }
     /// Java `getRoundingMode` 别名。
     #[must_use]
-    pub const fn get_rounding_mode(&self) -> NumberRoundingMode { self.rounding_mode }
+    pub const fn get_rounding_mode(&self) -> NumberRoundingMode {
+        self.rounding_mode
+    }
     /// Java `setRoundingMode`。
     pub const fn set_rounding_mode(&mut self, value: NumberRoundingMode) {
         self.rounding_mode = value;

@@ -157,19 +157,35 @@ impl CoordinateData {
     }
 
     /// Java `setFirstRowIndex`。
-    pub const fn set_first_row_index(&mut self, value: Option<u32>) { self.first_row_index = value; }
+    pub const fn set_first_row_index(&mut self, value: Option<u32>) {
+        self.first_row_index = value;
+    }
     /// Java `setFirstColumnIndex`。
-    pub const fn set_first_column_index(&mut self, value: Option<u16>) { self.first_column_index = value; }
+    pub const fn set_first_column_index(&mut self, value: Option<u16>) {
+        self.first_column_index = value;
+    }
     /// Java `setLastRowIndex`。
-    pub const fn set_last_row_index(&mut self, value: Option<u32>) { self.last_row_index = value; }
+    pub const fn set_last_row_index(&mut self, value: Option<u32>) {
+        self.last_row_index = value;
+    }
     /// Java `setLastColumnIndex`。
-    pub const fn set_last_column_index(&mut self, value: Option<u16>) { self.last_column_index = value; }
+    pub const fn set_last_column_index(&mut self, value: Option<u16>) {
+        self.last_column_index = value;
+    }
     /// Java `setRelativeFirstRowIndex`。
-    pub const fn set_relative_first_row_index(&mut self, value: Option<i32>) { self.relative_first_row_index = value; }
+    pub const fn set_relative_first_row_index(&mut self, value: Option<i32>) {
+        self.relative_first_row_index = value;
+    }
     /// Java `setRelativeFirstColumnIndex`。
-    pub const fn set_relative_first_column_index(&mut self, value: Option<i32>) { self.relative_first_column_index = value; }
+    pub const fn set_relative_first_column_index(&mut self, value: Option<i32>) {
+        self.relative_first_column_index = value;
+    }
     /// Java `setRelativeLastRowIndex`。
-    pub const fn set_relative_last_row_index(&mut self, value: Option<i32>) { self.relative_last_row_index = value; }
+    pub const fn set_relative_last_row_index(&mut self, value: Option<i32>) {
+        self.relative_last_row_index = value;
+    }
     /// Java `setRelativeLastColumnIndex`。
-    pub const fn set_relative_last_column_index(&mut self, value: Option<i32>) { self.relative_last_column_index = value; }
+    pub const fn set_relative_last_column_index(&mut self, value: Option<i32>) {
+        self.relative_last_column_index = value;
+    }
 }

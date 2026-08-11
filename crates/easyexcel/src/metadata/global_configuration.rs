@@ -75,15 +75,23 @@ impl GlobalConfiguration {
 
     /// Java `getAutoTrim` 别名。
     #[must_use]
-    pub const fn get_auto_trim(&self) -> bool { self.auto_trim }
+    pub const fn get_auto_trim(&self) -> bool {
+        self.auto_trim
+    }
     /// Java `setAutoTrim`。
-    pub const fn set_auto_trim(&mut self, value: bool) { self.auto_trim = value; }
+    pub const fn set_auto_trim(&mut self, value: bool) {
+        self.auto_trim = value;
+    }
     /// Java `getUse1904windowing` 别名。
     #[must_use]
-    pub const fn get_use_1904windowing(&self) -> bool { self.use1904windowing }
+    pub const fn get_use_1904windowing(&self) -> bool {
+        self.use1904windowing
+    }
     /// Java `getUse1904windowing` 的机械 snake_case 入口。
     #[must_use]
-    pub const fn get_use1904windowing(&self) -> bool { self.use1904windowing }
+    pub const fn get_use1904windowing(&self) -> bool {
+        self.use1904windowing
+    }
     /// Java `setUse1904windowing`。
     pub const fn set_use_1904windowing(&mut self, value: bool) {
         self.use1904windowing = value;
@@ -94,12 +102,18 @@ impl GlobalConfiguration {
     }
     /// Java `getLocale` 别名。
     #[must_use]
-    pub fn get_locale(&self) -> &str { &self.locale }
+    pub fn get_locale(&self) -> &str {
+        &self.locale
+    }
     /// Java `setLocale`。
-    pub fn set_locale(&mut self, value: impl Into<String>) { self.locale = value.into(); }
+    pub fn set_locale(&mut self, value: impl Into<String>) {
+        self.locale = value.into();
+    }
     /// Java `getUseScientificFormat` 别名。
     #[must_use]
-    pub const fn get_use_scientific_format(&self) -> bool { self.use_scientific_format }
+    pub const fn get_use_scientific_format(&self) -> bool {
+        self.use_scientific_format
+    }
     /// Java `setUseScientificFormat`。
     pub const fn set_use_scientific_format(&mut self, value: bool) {
         self.use_scientific_format = value;
@@ -180,7 +194,10 @@ mod tests_extra {
     fn filed_cache_location_accessor() {
         let mut config = GlobalConfiguration::new();
         assert_eq!(config.filed_cache_location(), CacheLocation::ThreadLocal);
-        assert_eq!(config.get_filed_cache_location(), CacheLocation::ThreadLocal);
+        assert_eq!(
+            config.get_filed_cache_location(),
+            CacheLocation::ThreadLocal
+        );
         config.set_filed_cache_location(CacheLocation::Memory);
         assert_eq!(config.filed_cache_location(), CacheLocation::Memory);
     }

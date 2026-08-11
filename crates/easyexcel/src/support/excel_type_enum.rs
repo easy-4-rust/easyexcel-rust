@@ -20,8 +20,13 @@ impl ExcelTypeEnum {
     /// Java `values()` 的声明顺序。
     pub const ALL: [Self; 3] = [Self::Csv, Self::Xls, Self::Xlsx];
     /// Java 枚举常量名。
-    #[must_use] pub const fn java_name(self) -> &'static str {
-        match self { Self::Csv => "CSV", Self::Xls => "XLS", Self::Xlsx => "XLSX" }
+    #[must_use]
+    pub const fn java_name(self) -> &'static str {
+        match self {
+            Self::Csv => "CSV",
+            Self::Xls => "XLS",
+            Self::Xlsx => "XLSX",
+        }
     }
     /// 返回文件魔数。CSV 没有固定魔数。对应 Java：`getMagic()`。
     #[must_use]
@@ -90,10 +95,19 @@ impl ExcelTypeEnum {
         }
         if let Some(file) = read_workbook.get_file() {
             if read_workbook.get_password().is_none() {
-                let name = file.file_name().and_then(|value| value.to_str()).unwrap_or_default();
-                if name.ends_with(Self::Xlsx.value()) { return Ok(Self::Xlsx); }
-                if name.ends_with(Self::Xls.value()) { return Ok(Self::Xls); }
-                if name.ends_with(Self::Csv.value()) { return Ok(Self::Csv); }
+                let name = file
+                    .file_name()
+                    .and_then(|value| value.to_str())
+                    .unwrap_or_default();
+                if name.ends_with(Self::Xlsx.value()) {
+                    return Ok(Self::Xlsx);
+                }
+                if name.ends_with(Self::Xls.value()) {
+                    return Ok(Self::Xls);
+                }
+                if name.ends_with(Self::Csv.value()) {
+                    return Ok(Self::Csv);
+                }
             }
             return match easyexcel_io::Format::detect_path(file).map_err(crate::ExcelError::from)? {
                 easyexcel_io::Format::Xlsx => Ok(Self::Xlsx),
@@ -116,7 +130,9 @@ impl ExcelTypeEnum {
 impl std::str::FromStr for ExcelTypeEnum {
     type Err = String;
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Self::ALL.into_iter().find(|item| item.java_name() == value)
+        Self::ALL
+            .into_iter()
+            .find(|item| item.java_name() == value)
             .ok_or_else(|| format!("unknown ExcelTypeEnum value: {value}"))
     }
 }

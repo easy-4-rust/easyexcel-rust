@@ -66,11 +66,8 @@ mod tests {
 
     #[test]
     fn new_with_all_some_values() {
-        let key = UniqueDataFlagKey::new(
-            Some(1),
-            Some("Sheet1".to_owned()),
-            Some("list".to_owned()),
-        );
+        let key =
+            UniqueDataFlagKey::new(Some(1), Some("Sheet1".to_owned()), Some("list".to_owned()));
         assert_eq!(key.get_sheet_no(), Some(1));
         assert_eq!(key.get_sheet_name(), Some("Sheet1"));
         assert_eq!(key.get_wrapper_name(), Some("list"));

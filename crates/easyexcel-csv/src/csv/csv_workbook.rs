@@ -58,11 +58,17 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
     pub fn locale(&self) -> &str {
         &self.locale
     }
-    pub fn get_locale(&self) -> &str { self.locale() }
+    pub fn get_locale(&self) -> &str {
+        self.locale()
+    }
     /// 返回后端中立输出缓冲。对应 Java Lombok `getOut`。
-    pub fn get_out(&self) -> &str { &self.out }
+    pub fn get_out(&self) -> &str {
+        &self.out
+    }
     /// 替换后端中立输出缓冲。对应 Java Lombok `setOut`。
-    pub fn set_out(&mut self, value: impl Into<String>) { self.out = value.into(); }
+    pub fn set_out(&mut self, value: impl Into<String>) {
+        self.out = value.into();
+    }
 
     /// 设置 Java Lombok `setLocale` 对应的区域标记。
     pub fn set_locale(&mut self, locale: impl Into<String>) {
@@ -75,7 +81,9 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
     pub const fn charset(&self) -> &CsvCharset {
         &self.charset
     }
-    pub const fn get_charset(&self) -> &CsvCharset { self.charset() }
+    pub const fn get_charset(&self) -> &CsvCharset {
+        self.charset()
+    }
 
     /// 设置 Java Lombok `setCharset` 对应的字符集。
     pub fn set_charset(&mut self, charset: CsvCharset) {
@@ -88,7 +96,9 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
     pub const fn with_bom(&self) -> bool {
         self.with_bom
     }
-    pub const fn get_with_bom(&self) -> bool { self.with_bom() }
+    pub const fn get_with_bom(&self) -> bool {
+        self.with_bom()
+    }
 
     /// 设置 Java Lombok `setWithBom` 对应的 BOM 开关。
     pub const fn set_with_bom(&mut self, with_bom: bool) {
@@ -101,16 +111,22 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
     pub const fn use_1904_windowing(&self) -> bool {
         self.use_1904_windowing
     }
-    pub const fn get_use_1904_windowing(&self) -> bool { self.use_1904_windowing() }
+    pub const fn get_use_1904_windowing(&self) -> bool {
+        self.use_1904_windowing()
+    }
     /// Java Lombok 原始字段拼写兼容入口。
-    pub const fn get_use1904windowing(&self) -> bool { self.use_1904_windowing() }
+    pub const fn get_use1904windowing(&self) -> bool {
+        self.use_1904_windowing()
+    }
 
     /// 设置 Java Lombok `setUse1904windowing` 对应的日期系统。
     pub const fn set_use_1904_windowing(&mut self, use_1904_windowing: bool) {
         self.use_1904_windowing = use_1904_windowing;
     }
     /// Java Lombok 原始字段拼写兼容入口。
-    pub const fn set_use1904windowing(&mut self, value: bool) { self.use_1904_windowing = value; }
+    pub const fn set_use1904windowing(&mut self, value: bool) {
+        self.use_1904_windowing = value;
+    }
 
     /// 返回是否使用科学计数法。
     #[must_use]
@@ -118,7 +134,9 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
     pub const fn use_scientific_format(&self) -> bool {
         self.use_scientific_format
     }
-    pub const fn get_use_scientific_format(&self) -> bool { self.use_scientific_format() }
+    pub const fn get_use_scientific_format(&self) -> bool {
+        self.use_scientific_format()
+    }
 
     /// 设置 Java Lombok `setUseScientificFormat` 对应的数字输出策略。
     pub const fn set_use_scientific_format(&mut self, use_scientific_format: bool) {
@@ -131,7 +149,9 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
     pub const fn sheet(&self) -> Option<&CsvSheet<V>> {
         self.sheet.as_ref()
     }
-    pub const fn get_csv_sheet(&self) -> Option<&CsvSheet<V>> { self.sheet() }
+    pub const fn get_csv_sheet(&self) -> Option<&CsvSheet<V>> {
+        self.sheet()
+    }
 
     /// 返回唯一工作表的可变引用。
     pub const fn sheet_mut(&mut self) -> Option<&mut CsvSheet<V>> {
@@ -143,7 +163,9 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
     pub const fn number_of_sheets(&self) -> usize {
         if self.sheet.is_some() { 1 } else { 0 }
     }
-    pub const fn get_number_of_sheets(&self) -> usize { self.number_of_sheets() }
+    pub const fn get_number_of_sheets(&self) -> usize {
+        self.number_of_sheets()
+    }
 
     /// 按唯一索引查询工作表，对齐 Java `getSheetAt` 的单 Sheet 约束。
     pub fn sheet_at(&self, index: usize) -> Result<&CsvSheet<V>> {
@@ -156,16 +178,18 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
             .as_ref()
             .ok_or_else(|| Error::Csv("CSV sheet has not been created".to_owned()))
     }
-    pub fn get_sheet_at(&self, index: usize) -> Result<&CsvSheet<V>> { self.sheet_at(index) }
+    pub fn get_sheet_at(&self, index: usize) -> Result<&CsvSheet<V>> {
+        self.sheet_at(index)
+    }
 
     /// 按名称查询唯一工作表。
     #[must_use]
     pub fn sheet_by_name(&self, name: &str) -> Option<&CsvSheet<V>> {
-        self.sheet
-            .as_ref()
-            .filter(|sheet| sheet.name() == name)
+        self.sheet.as_ref().filter(|sheet| sheet.name() == name)
     }
-    pub fn get_sheet(&self, name: &str) -> Option<&CsvSheet<V>> { self.sheet_by_name(name) }
+    pub fn get_sheet(&self, name: &str) -> Option<&CsvSheet<V>> {
+        self.sheet_by_name(name)
+    }
 
     /// 返回单工作表迭代器，对齐 Java `sheetIterator` / `iterator`。
     pub fn sheets(&self) -> impl Iterator<Item = &CsvSheet<V>> {
@@ -177,7 +201,9 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
     pub const fn data_format_mut(&mut self) -> &mut CsvDataFormat {
         &mut self.data_format
     }
-    pub const fn get_csv_data_format(&self) -> &CsvDataFormat { self.data_format() }
+    pub const fn get_csv_data_format(&self) -> &CsvDataFormat {
+        self.data_format()
+    }
 
     /// 返回工作簿局部数据格式注册表。
     #[must_use]
@@ -209,7 +235,9 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
     pub fn number_of_cell_styles(&self) -> usize {
         self.cell_styles.len()
     }
-    pub fn get_num_cell_styles(&self) -> usize { self.number_of_cell_styles() }
+    pub fn get_num_cell_styles(&self) -> usize {
+        self.number_of_cell_styles()
+    }
 
     /// 返回样式集合，语义对应 Java Lombok `getCsvCellStyleList`。
     #[must_use]
@@ -251,9 +279,16 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
     pub fn get_cell_style_at(&self, index: usize) -> Option<&CsvCellStyle> {
         self.cell_style(index)
     }
-    #[must_use] pub fn get_csv_cell_style_list(&self) -> &[CsvCellStyle] { self.cell_styles() }
-    pub fn set_csv_cell_style_list(&mut self, value: Vec<CsvCellStyle>) { self.cell_styles = value; }
-    pub fn set_csv_data_format(&mut self, value: CsvDataFormat) { self.data_format = value; }
+    #[must_use]
+    pub fn get_csv_cell_style_list(&self) -> &[CsvCellStyle] {
+        self.cell_styles()
+    }
+    pub fn set_csv_cell_style_list(&mut self, value: Vec<CsvCellStyle>) {
+        self.cell_styles = value;
+    }
+    pub fn set_csv_data_format(&mut self, value: CsvDataFormat) {
+        self.data_format = value;
+    }
     pub fn set_csv_sheet(&mut self, mut value: Option<CsvSheet<V>>) {
         if let Some(sheet) = value.as_mut() {
             sheet.set_csv_workbook(Some(self.identity));
@@ -264,7 +299,9 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
     /// 删除唯一工作表；越界与 Java 一样产生可见错误。
     pub fn remove_sheet_at(&mut self, index: usize) -> Result<()> {
         if index != 0 || self.sheet.is_none() {
-            return Err(Error::Unsupported("CSV exists only in one sheet".to_owned()));
+            return Err(Error::Unsupported(
+                "CSV exists only in one sheet".to_owned(),
+            ));
         }
         self.sheet = None;
         Ok(())
@@ -280,10 +317,14 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
         Err(Error::Unsupported("CSV cannot add OLE package".to_owned()))
     }
     pub fn create_name(&mut self, _name: &str) -> Result<()> {
-        Err(Error::Unsupported("CSV cannot create workbook names".to_owned()))
+        Err(Error::Unsupported(
+            "CSV cannot create workbook names".to_owned(),
+        ))
     }
     pub fn link_external_workbook(&mut self, _name: &str) -> Result<usize> {
-        Err(Error::Unsupported("CSV cannot link external workbook".to_owned()))
+        Err(Error::Unsupported(
+            "CSV cannot link external workbook".to_owned(),
+        ))
     }
 }
 

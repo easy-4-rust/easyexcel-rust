@@ -34,24 +34,40 @@ impl OnceAbsoluteMergeProperty {
 
     /// Java `getFirstRowIndex`。
     #[must_use]
-    pub const fn get_first_row_index(&self) -> i32 { self.first_row_index }
+    pub const fn get_first_row_index(&self) -> i32 {
+        self.first_row_index
+    }
     /// Java `setFirstRowIndex`。
-    pub const fn set_first_row_index(&mut self, value: i32) { self.first_row_index = value; }
+    pub const fn set_first_row_index(&mut self, value: i32) {
+        self.first_row_index = value;
+    }
     /// Java `getLastRowIndex`。
     #[must_use]
-    pub const fn get_last_row_index(&self) -> i32 { self.last_row_index }
+    pub const fn get_last_row_index(&self) -> i32 {
+        self.last_row_index
+    }
     /// Java `setLastRowIndex`。
-    pub const fn set_last_row_index(&mut self, value: i32) { self.last_row_index = value; }
+    pub const fn set_last_row_index(&mut self, value: i32) {
+        self.last_row_index = value;
+    }
     /// Java `getFirstColumnIndex`。
     #[must_use]
-    pub const fn get_first_column_index(&self) -> i32 { self.first_column_index }
+    pub const fn get_first_column_index(&self) -> i32 {
+        self.first_column_index
+    }
     /// Java `setFirstColumnIndex`。
-    pub const fn set_first_column_index(&mut self, value: i32) { self.first_column_index = value; }
+    pub const fn set_first_column_index(&mut self, value: i32) {
+        self.first_column_index = value;
+    }
     /// Java `getLastColumnIndex`。
     #[must_use]
-    pub const fn get_last_column_index(&self) -> i32 { self.last_column_index }
+    pub const fn get_last_column_index(&self) -> i32 {
+        self.last_column_index
+    }
     /// Java `setLastColumnIndex`。
-    pub const fn set_last_column_index(&mut self, value: i32) { self.last_column_index = value; }
+    pub const fn set_last_column_index(&mut self, value: i32) {
+        self.last_column_index = value;
+    }
 }
 
 #[cfg(test)]

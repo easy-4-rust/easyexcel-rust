@@ -1,9 +1,9 @@
 //! 对应 Java：`com.alibaba.excel.read.metadata.holder.xls.XlsReadSheetHolder`.
 
+use crate::RowTypeEnum;
 use crate::read::holder::read_sheet_holder::ReadSheetHolder;
 use crate::read::metadata::holder::read_holder::delegate_read_holder_contract;
 use std::collections::HashMap;
-use crate::RowTypeEnum;
 use std::ops::{Deref, DerefMut};
 
 /// 对应 Java：`XlsReadSheetHolder extends ReadSheetHolder`.
@@ -17,10 +17,14 @@ pub struct XlsReadSheetHolder {
 
 impl Deref for XlsReadSheetHolder {
     type Target = ReadSheetHolder;
-    fn deref(&self) -> &Self::Target { &self.inner }
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
 }
 impl DerefMut for XlsReadSheetHolder {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.inner }
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
 }
 
 delegate_read_holder_contract!(XlsReadSheetHolder, inner);
@@ -60,10 +64,25 @@ impl XlsReadSheetHolder {
     pub const fn inner(&self) -> &ReadSheetHolder {
         &self.inner
     }
-    #[must_use] pub const fn get_object_cache_map(&self) -> &HashMap<i32, String> { &self.object_cache_map }
-    pub fn set_object_cache_map(&mut self, value: HashMap<i32, String>) { self.object_cache_map = value; }
-    #[must_use] pub const fn get_temp_object_index(&self) -> Option<i32> { self.temp_object_index }
-    pub const fn set_temp_object_index(&mut self, value: Option<i32>) { self.temp_object_index = value; }
-    #[must_use] pub const fn get_temp_row_type(&self) -> Option<RowTypeEnum> { self.temp_row_type }
-    pub const fn set_temp_row_type(&mut self, value: Option<RowTypeEnum>) { self.temp_row_type = value; }
+    #[must_use]
+    pub const fn get_object_cache_map(&self) -> &HashMap<i32, String> {
+        &self.object_cache_map
+    }
+    pub fn set_object_cache_map(&mut self, value: HashMap<i32, String>) {
+        self.object_cache_map = value;
+    }
+    #[must_use]
+    pub const fn get_temp_object_index(&self) -> Option<i32> {
+        self.temp_object_index
+    }
+    pub const fn set_temp_object_index(&mut self, value: Option<i32>) {
+        self.temp_object_index = value;
+    }
+    #[must_use]
+    pub const fn get_temp_row_type(&self) -> Option<RowTypeEnum> {
+        self.temp_row_type
+    }
+    pub const fn set_temp_row_type(&mut self, value: Option<RowTypeEnum>) {
+        self.temp_row_type = value;
+    }
 }

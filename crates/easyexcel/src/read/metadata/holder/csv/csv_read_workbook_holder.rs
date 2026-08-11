@@ -31,7 +31,9 @@ impl CsvReadWorkbookHolder {
             csv_format: "DEFAULT".to_owned(),
             csv_parser_initialized: false,
         };
-        value.inner.set_excel_type(Some(crate::support::ExcelTypeEnum::Csv));
+        value
+            .inner
+            .set_excel_type(Some(crate::support::ExcelTypeEnum::Csv));
         value
     }
 
@@ -40,18 +42,30 @@ impl CsvReadWorkbookHolder {
     pub fn from_read_workbook(read_workbook: crate::ReadWorkbook) -> Self {
         let mut value = Self::new();
         value.inner = ReadWorkbookHolder::from_read_workbook(read_workbook);
-        value.inner.set_excel_type(Some(crate::support::ExcelTypeEnum::Csv));
+        value
+            .inner
+            .set_excel_type(Some(crate::support::ExcelTypeEnum::Csv));
         value
     }
 
     /// 返回后端中立 CSV 格式描述。
-    #[must_use] pub fn get_csv_format(&self) -> &str { &self.csv_format }
+    #[must_use]
+    pub fn get_csv_format(&self) -> &str {
+        &self.csv_format
+    }
     /// 设置后端中立 CSV 格式描述。
-    pub fn set_csv_format(&mut self, value: impl Into<String>) { self.csv_format = value.into(); }
+    pub fn set_csv_format(&mut self, value: impl Into<String>) {
+        self.csv_format = value.into();
+    }
     /// 返回 CSV parser 是否已建立。
-    #[must_use] pub const fn get_csv_parser(&self) -> bool { self.csv_parser_initialized }
+    #[must_use]
+    pub const fn get_csv_parser(&self) -> bool {
+        self.csv_parser_initialized
+    }
     /// 设置 CSV parser 生命周期状态。
-    pub const fn set_csv_parser(&mut self, value: bool) { self.csv_parser_initialized = value; }
+    pub const fn set_csv_parser(&mut self, value: bool) {
+        self.csv_parser_initialized = value;
+    }
 
     /// Returns the inner holder.
     #[must_use]
@@ -63,10 +77,14 @@ impl CsvReadWorkbookHolder {
 
 impl Deref for CsvReadWorkbookHolder {
     type Target = ReadWorkbookHolder;
-    fn deref(&self) -> &Self::Target { &self.inner }
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
 }
 impl DerefMut for CsvReadWorkbookHolder {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.inner }
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
 }
 
 delegate_read_holder_contract!(CsvReadWorkbookHolder, inner);

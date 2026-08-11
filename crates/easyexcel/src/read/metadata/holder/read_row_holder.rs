@@ -20,10 +20,7 @@ pub struct ReadRowHolder {
 impl ReadRowHolder {
     /// 对应 Java： constructor.
     #[must_use]
-    pub fn new(
-        row_index: i32,
-        cell_map: impl IntoIterator<Item = (usize, CellValue)>,
-    ) -> Self {
+    pub fn new(row_index: i32, cell_map: impl IntoIterator<Item = (usize, CellValue)>) -> Self {
         Self {
             row_index,
             cell_map: cell_map.into_iter().collect(),
@@ -50,30 +47,45 @@ impl ReadRowHolder {
         }
     }
 
-    #[must_use] pub const fn get_row_index(&self) -> i32 { self.row_index }
-    pub const fn set_row_index(&mut self, value: i32) { self.row_index = value; }
-    #[must_use] pub const fn get_row_type(&self) -> RowTypeEnum { self.row_type }
-    pub const fn set_row_type(&mut self, value: RowTypeEnum) { self.row_type = value; }
-    #[must_use] pub const fn get_cell_map(&self) -> &IndexMap<usize, CellValue> { &self.cell_map }
-    pub fn set_cell_map(
-        &mut self,
-        value: impl IntoIterator<Item = (usize, CellValue)>,
-    ) {
+    #[must_use]
+    pub const fn get_row_index(&self) -> i32 {
+        self.row_index
+    }
+    pub const fn set_row_index(&mut self, value: i32) {
+        self.row_index = value;
+    }
+    #[must_use]
+    pub const fn get_row_type(&self) -> RowTypeEnum {
+        self.row_type
+    }
+    pub const fn set_row_type(&mut self, value: RowTypeEnum) {
+        self.row_type = value;
+    }
+    #[must_use]
+    pub const fn get_cell_map(&self) -> &IndexMap<usize, CellValue> {
+        &self.cell_map
+    }
+    pub fn set_cell_map(&mut self, value: impl IntoIterator<Item = (usize, CellValue)>) {
         self.cell_map = value.into_iter().collect();
     }
-    #[must_use] pub const fn get_global_configuration(&self) -> &GlobalConfiguration {
+    #[must_use]
+    pub const fn get_global_configuration(&self) -> &GlobalConfiguration {
         &self.global_configuration
     }
     pub fn set_global_configuration(&mut self, value: GlobalConfiguration) {
         self.global_configuration = value;
     }
-    #[must_use] pub const fn get_current_row_analysis_result(&self) -> Option<&CustomReadObject> {
+    #[must_use]
+    pub const fn get_current_row_analysis_result(&self) -> Option<&CustomReadObject> {
         self.current_row_analysis_result.as_ref()
     }
     pub fn set_current_row_analysis_result(&mut self, value: Option<CustomReadObject>) {
         self.current_row_analysis_result = value;
     }
-    #[must_use] pub const fn holder_type(&self) -> HolderEnum { HolderEnum::Row }
+    #[must_use]
+    pub const fn holder_type(&self) -> HolderEnum {
+        HolderEnum::Row
+    }
 }
 
 #[cfg(test)]

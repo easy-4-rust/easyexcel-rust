@@ -4,9 +4,9 @@ use easyexcel_io::{Error, Result};
 
 use super::{
     Format, Worksheet, write_blank, write_boolean, write_boolean_with_format,
-    write_date_with_format, write_datetime_with_format, write_formula,
-    write_formula_with_format, write_integer, write_number, write_number_with_format,
-    write_string, write_string_with_format, write_url_with_options,
+    write_date_with_format, write_datetime_with_format, write_formula, write_formula_with_format,
+    write_integer, write_number, write_number_with_format, write_string, write_string_with_format,
+    write_url_with_options,
 };
 
 /// 生成式 XLSX 后端可直接写入的中立单元格值。
@@ -110,9 +110,7 @@ impl GeneratedCellValue {
     ) -> Result<()> {
         match (self, format) {
             (Self::Blank, Some(format)) => write_blank(worksheet, row, column, format),
-            (Self::Text(value), format) => {
-                Self::write_text(worksheet, row, column, value, format)
-            }
+            (Self::Text(value), format) => Self::write_text(worksheet, row, column, value, format),
             (Self::Bool(value), Some(format)) => {
                 write_boolean_with_format(worksheet, row, column, *value, format)
             }
@@ -134,15 +132,11 @@ impl GeneratedCellValue {
             (Self::Hyperlink { target, text }, Some(format)) => {
                 Self::write_hyperlink(worksheet, row, column, target, text, format)
             }
-            (
-                Self::Blank
-                | Self::Date(_)
-                | Self::DateTime(_)
-                | Self::Hyperlink { .. },
-                None,
-            ) => Err(Error::Xlsx(
-                "generated blank/date/hyperlink cell requires an explicit format".to_owned(),
-            )),
+            (Self::Blank | Self::Date(_) | Self::DateTime(_) | Self::Hyperlink { .. }, None) => {
+                Err(Error::Xlsx(
+                    "generated blank/date/hyperlink cell requires an explicit format".to_owned(),
+                ))
+            }
         }
     }
 }

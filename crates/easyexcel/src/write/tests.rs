@@ -676,7 +676,8 @@ fn assert_same_checksum(paths: &[&Path]) {
     for path in &paths[1..] {
         let current = sha256_of_file(path);
         assert_eq!(
-            first, current,
+            first,
+            current,
             "checksum mismatch: {} vs {}",
             paths[0].display(),
             path.display()

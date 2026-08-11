@@ -126,7 +126,9 @@ impl WriteWorkbook {
     }
     /// Java `getOutputStream` 的后端中立字节表示。
     #[must_use]
-    pub fn get_output_stream(&self) -> Option<&[u8]> { self.output_stream.as_deref() }
+    pub fn get_output_stream(&self) -> Option<&[u8]> {
+        self.output_stream.as_deref()
+    }
     /// Java `setOutputStream`。
     pub fn set_output_stream(&mut self, value: Option<Vec<u8>>) -> &mut Self {
         self.output_stream = value;
@@ -221,16 +223,24 @@ impl WriteWorkbook {
     }
     /// Java `getFile` 别名。
     #[must_use]
-    pub fn get_file(&self) -> Option<&std::path::Path> { self.file() }
+    pub fn get_file(&self) -> Option<&std::path::Path> {
+        self.file()
+    }
     /// Java `getTemplateFile` 别名。
     #[must_use]
-    pub fn get_template_file(&self) -> Option<&std::path::Path> { self.template_file() }
+    pub fn get_template_file(&self) -> Option<&std::path::Path> {
+        self.template_file()
+    }
     /// Java `getCharset` 别名。
     #[must_use]
-    pub fn get_charset(&self) -> Option<&CsvCharset> { self.charset_override.as_ref() }
+    pub fn get_charset(&self) -> Option<&CsvCharset> {
+        self.charset_override.as_ref()
+    }
     /// Java `getPassword` 别名。
     #[must_use]
-    pub fn get_password(&self) -> Option<&str> { self.password() }
+    pub fn get_password(&self) -> Option<&str> {
+        self.password()
+    }
     /// Java nullable `getAutoCloseStream`。
     #[must_use]
     pub const fn get_auto_close_stream(&self) -> Option<bool> {
@@ -238,7 +248,9 @@ impl WriteWorkbook {
     }
     /// Java nullable `getInMemory`。
     #[must_use]
-    pub const fn get_in_memory(&self) -> Option<bool> { self.in_memory_override }
+    pub const fn get_in_memory(&self) -> Option<bool> {
+        self.in_memory_override
+    }
     /// Java nullable `getMandatoryUseInputStream`。
     #[must_use]
     pub const fn get_mandatory_use_input_stream(&self) -> Option<bool> {
@@ -251,7 +263,9 @@ impl WriteWorkbook {
     }
     /// Java nullable `getWithBom`。
     #[must_use]
-    pub const fn get_with_bom(&self) -> Option<bool> { self.with_bom_override }
+    pub const fn get_with_bom(&self) -> Option<bool> {
+        self.with_bom_override
+    }
     /// Java nullable `getWriteExcelOnException`。
     #[must_use]
     pub const fn get_write_excel_on_exception(&self) -> Option<bool> {
@@ -288,15 +302,14 @@ impl Eq for WriteWorkbook {}
 impl std::hash::Hash for WriteWorkbook {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         std::hash::Hash::hash(
-            &self.excel_type_override.map(crate::support::ExcelTypeEnum::java_name),
+            &self
+                .excel_type_override
+                .map(crate::support::ExcelTypeEnum::java_name),
             state,
         );
         std::hash::Hash::hash(&self.output_file, state);
         std::hash::Hash::hash(&self.output_stream, state);
-        std::hash::Hash::hash(
-            &self.charset_override.as_ref().map(CsvCharset::name),
-            state,
-        );
+        std::hash::Hash::hash(&self.charset_override.as_ref().map(CsvCharset::name), state);
         std::hash::Hash::hash(&self.with_bom_override, state);
         std::hash::Hash::hash(&self.options.template_bytes, state);
         std::hash::Hash::hash(&self.options.template_file, state);

@@ -29,10 +29,9 @@ impl<T> PageReadListener<T> {
     /// 使用当前全局 `BATCH_COUNT` 和 Java `Consumer<List<T>>` 形状创建 listener。
     #[must_use]
     pub fn from_consumer(mut consumer: impl FnMut(Vec<T>) + 'static) -> Self {
-        Self::from_consumer_with_batch_count(
-            BATCH_COUNT.load(Ordering::Relaxed),
-            move |rows| consumer(rows),
-        )
+        Self::from_consumer_with_batch_count(BATCH_COUNT.load(Ordering::Relaxed), move |rows| {
+            consumer(rows)
+        })
     }
 
     /// 使用显式批量大小和 Java `Consumer<List<T>>` 形状创建 listener。

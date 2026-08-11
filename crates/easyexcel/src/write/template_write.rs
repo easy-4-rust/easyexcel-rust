@@ -151,8 +151,8 @@ impl TemplatePackage {
         let mut mapped_rows = Vec::with_capacity(rows.len());
         let mut decorations = Vec::new();
         for (row_offset, row) in rows.iter().enumerate() {
-            let physical_row = first_row
-                .saturating_add(u32::try_from(row_offset).unwrap_or(u32::MAX));
+            let physical_row =
+                first_row.saturating_add(u32::try_from(row_offset).unwrap_or(u32::MAX));
             let mut mapped = Vec::with_capacity(row.len());
             for (column, value) in row {
                 let column_index = u16::try_from(*column).map_err(|_| {
@@ -168,7 +168,8 @@ impl TemplatePackage {
             }
             mapped_rows.push(mapped);
         }
-        let next_row = self.entries
+        let next_row = self
+            .entries
             .append_rows(
                 sheet_name,
                 &mapped_rows,
@@ -273,30 +274,15 @@ impl TemplatePackage {
             match placement.decoration {
                 TemplateDecoration::Comment(comment) => self
                     .entries
-                    .set_template_comment(
-                        sheet_name,
-                        placement.row,
-                        placement.column,
-                        &comment,
-                    )
+                    .set_template_comment(sheet_name, placement.row, placement.column, &comment)
                     .map_err(ExcelError::from)?,
                 TemplateDecoration::Hyperlink(hyperlink) => self
                     .entries
-                    .set_template_hyperlink(
-                        sheet_name,
-                        placement.row,
-                        placement.column,
-                        &hyperlink,
-                    )
+                    .set_template_hyperlink(sheet_name, placement.row, placement.column, &hyperlink)
                     .map_err(ExcelError::from)?,
                 TemplateDecoration::Image(image) => self
                     .entries
-                    .set_template_image(
-                        sheet_name,
-                        placement.row,
-                        placement.column,
-                        &image,
-                    )
+                    .set_template_image(sheet_name, placement.row, placement.column, &image)
                     .map_err(ExcelError::from)?,
             }
         }
@@ -584,8 +570,9 @@ pub(crate) fn template_comment_data(
     comment: &crate::CommentData,
 ) -> easyexcel_xlsx::TemplateComment {
     let movement = match comment.get_anchor().get_anchor_type() {
-        Some(crate::AnchorType::MoveAndResize)
-        | Some(crate::AnchorType::DontMoveDoResize) => Some(0),
+        Some(crate::AnchorType::MoveAndResize) | Some(crate::AnchorType::DontMoveDoResize) => {
+            Some(0)
+        }
         Some(crate::AnchorType::MoveDontResize) => Some(1),
         Some(crate::AnchorType::DontMoveAndResize) => Some(2),
         None => None,

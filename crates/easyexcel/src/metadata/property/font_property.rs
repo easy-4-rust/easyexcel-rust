@@ -63,7 +63,11 @@ impl Hash for FontProperty {
 }
 
 fn java_double_bits(value: f64) -> u64 {
-    if value.is_nan() { f64::NAN.to_bits() } else { value.to_bits() }
+    if value.is_nan() {
+        f64::NAN.to_bits()
+    } else {
+        value.to_bits()
+    }
 }
 
 impl FontProperty {
@@ -137,76 +141,130 @@ impl FontProperty {
 
     /// 返回字体名称。
     #[must_use]
-    pub fn font_name(&self) -> Option<&str> { self.font_name.as_deref() }
+    pub fn font_name(&self) -> Option<&str> {
+        self.font_name.as_deref()
+    }
     /// Java `getFontName` 别名。
     #[must_use]
-    pub fn get_font_name(&self) -> Option<&str> { self.font_name() }
+    pub fn get_font_name(&self) -> Option<&str> {
+        self.font_name()
+    }
     /// 设置或清空运行期字体名称。
-    pub fn set_font_name(&mut self, value: Option<String>) { self.font_name = value; }
+    pub fn set_font_name(&mut self, value: Option<String>) {
+        self.font_name = value;
+    }
     /// 返回字号（point）。
     #[must_use]
-    pub const fn font_height_in_points(&self) -> Option<f64> { self.font_height_in_points }
+    pub const fn font_height_in_points(&self) -> Option<f64> {
+        self.font_height_in_points
+    }
     /// Java `getFontHeightInPoints` 别名。
     #[must_use]
-    pub const fn get_font_height_in_points(&self) -> Option<f64> { self.font_height_in_points }
+    pub const fn get_font_height_in_points(&self) -> Option<f64> {
+        self.font_height_in_points
+    }
     /// 设置字号（point）。
-    pub const fn set_font_height_in_points(&mut self, value: Option<f64>) { self.font_height_in_points = value; }
+    pub const fn set_font_height_in_points(&mut self, value: Option<f64>) {
+        self.font_height_in_points = value;
+    }
     /// 返回斜体标志。
     #[must_use]
-    pub const fn italic(&self) -> Option<bool> { self.italic }
+    pub const fn italic(&self) -> Option<bool> {
+        self.italic
+    }
     /// Java `getItalic` 别名。
     #[must_use]
-    pub const fn get_italic(&self) -> Option<bool> { self.italic() }
+    pub const fn get_italic(&self) -> Option<bool> {
+        self.italic()
+    }
     /// 设置斜体标志。
-    pub const fn set_italic(&mut self, value: Option<bool>) { self.italic = value; }
+    pub const fn set_italic(&mut self, value: Option<bool>) {
+        self.italic = value;
+    }
     /// 返回删除线标志。
     #[must_use]
-    pub const fn strikeout(&self) -> Option<bool> { self.strikeout }
+    pub const fn strikeout(&self) -> Option<bool> {
+        self.strikeout
+    }
     /// Java `getStrikeout` 别名。
     #[must_use]
-    pub const fn get_strikeout(&self) -> Option<bool> { self.strikeout() }
+    pub const fn get_strikeout(&self) -> Option<bool> {
+        self.strikeout()
+    }
     /// 设置删除线标志。
-    pub const fn set_strikeout(&mut self, value: Option<bool>) { self.strikeout = value; }
+    pub const fn set_strikeout(&mut self, value: Option<bool>) {
+        self.strikeout = value;
+    }
     /// 返回字体颜色。
     #[must_use]
-    pub const fn color(&self) -> Option<ExcelColor> { self.color }
+    pub const fn color(&self) -> Option<ExcelColor> {
+        self.color
+    }
     /// Java `getColor` 别名。
     #[must_use]
-    pub const fn get_color(&self) -> Option<ExcelColor> { self.color() }
+    pub const fn get_color(&self) -> Option<ExcelColor> {
+        self.color()
+    }
     /// 设置字体颜色。
-    pub const fn set_color(&mut self, value: Option<ExcelColor>) { self.color = value; }
+    pub const fn set_color(&mut self, value: Option<ExcelColor>) {
+        self.color = value;
+    }
     /// 返回上下标类型。
     #[must_use]
-    pub const fn type_offset(&self) -> Option<ExcelFontScript> { self.type_offset }
+    pub const fn type_offset(&self) -> Option<ExcelFontScript> {
+        self.type_offset
+    }
     /// Java `getTypeOffset` 别名。
     #[must_use]
-    pub const fn get_type_offset(&self) -> Option<ExcelFontScript> { self.type_offset() }
+    pub const fn get_type_offset(&self) -> Option<ExcelFontScript> {
+        self.type_offset()
+    }
     /// 设置上下标类型。
-    pub const fn set_type_offset(&mut self, value: Option<ExcelFontScript>) { self.type_offset = value; }
+    pub const fn set_type_offset(&mut self, value: Option<ExcelFontScript>) {
+        self.type_offset = value;
+    }
     /// 返回下划线类型。
     #[must_use]
-    pub const fn underline(&self) -> Option<ExcelUnderline> { self.underline }
+    pub const fn underline(&self) -> Option<ExcelUnderline> {
+        self.underline
+    }
     /// Java `getUnderline` 别名。
     #[must_use]
-    pub const fn get_underline(&self) -> Option<ExcelUnderline> { self.underline() }
+    pub const fn get_underline(&self) -> Option<ExcelUnderline> {
+        self.underline()
+    }
     /// 设置下划线类型。
-    pub const fn set_underline(&mut self, value: Option<ExcelUnderline>) { self.underline = value; }
+    pub const fn set_underline(&mut self, value: Option<ExcelUnderline>) {
+        self.underline = value;
+    }
     /// 返回字符集。
     #[must_use]
-    pub const fn charset(&self) -> Option<u8> { self.charset }
+    pub const fn charset(&self) -> Option<u8> {
+        self.charset
+    }
     /// Java `getCharset` 别名。
     #[must_use]
-    pub const fn get_charset(&self) -> Option<u8> { self.charset() }
+    pub const fn get_charset(&self) -> Option<u8> {
+        self.charset()
+    }
     /// 设置字符集。
-    pub const fn set_charset(&mut self, value: Option<u8>) { self.charset = value; }
+    pub const fn set_charset(&mut self, value: Option<u8>) {
+        self.charset = value;
+    }
     /// 返回粗体标志。
     #[must_use]
-    pub const fn bold(&self) -> Option<bool> { self.bold }
+    pub const fn bold(&self) -> Option<bool> {
+        self.bold
+    }
     /// Java `getBold` 别名。
     #[must_use]
-    pub const fn get_bold(&self) -> Option<bool> { self.bold() }
+    pub const fn get_bold(&self) -> Option<bool> {
+        self.bold()
+    }
     /// 设置粗体标志。
-    pub const fn set_bold(&mut self, value: Option<bool>) { self.bold = value; }
+    pub const fn set_bold(&mut self, value: Option<bool>) {
+        self.bold = value;
+    }
 }
 
 #[cfg(test)]

@@ -49,12 +49,19 @@ impl FillConfig {
         auto_style: Option<bool>,
         has_init: bool,
     ) -> Self {
-        Self { direction, force_new_row, auto_style, has_init }
+        Self {
+            direction,
+            force_new_row,
+            auto_style,
+            has_init,
+        }
     }
 
     /// 对应 Java `FillConfig.builder()`。
     #[must_use]
-    pub const fn builder() -> FillConfigBuilder { FillConfigBuilder::new() }
+    pub const fn builder() -> FillConfigBuilder {
+        FillConfigBuilder::new()
+    }
 
     /// Sets vertical or horizontal collection expansion.
     #[must_use]
@@ -102,11 +109,17 @@ impl FillConfig {
     }
 
     /// Java `setDirection`。
-    pub const fn set_direction(&mut self, value: Option<FillDirection>) { self.direction = value; }
+    pub const fn set_direction(&mut self, value: Option<FillDirection>) {
+        self.direction = value;
+    }
     /// Java `setForceNewRow`。
-    pub const fn set_force_new_row(&mut self, value: Option<bool>) { self.force_new_row = value; }
+    pub const fn set_force_new_row(&mut self, value: Option<bool>) {
+        self.force_new_row = value;
+    }
     /// Java `setAutoStyle`。
-    pub const fn set_auto_style(&mut self, value: Option<bool>) { self.auto_style = value; }
+    pub const fn set_auto_style(&mut self, value: Option<bool>) {
+        self.auto_style = value;
+    }
     /// Java `init`，仅执行一次并物化三个 nullable 字段的默认值。
     pub fn init(&mut self) {
         if self.has_init {
@@ -119,9 +132,13 @@ impl FillConfig {
     }
     /// Java `isHasInit`。
     #[must_use]
-    pub const fn is_has_init(self) -> bool { self.has_init }
+    pub const fn is_has_init(self) -> bool {
+        self.has_init
+    }
     /// Java `setHasInit`。
-    pub const fn set_has_init(&mut self, value: bool) { self.has_init = value; }
+    pub const fn set_has_init(&mut self, value: bool) {
+        self.has_init = value;
+    }
     /// 返回执行 `init` 后的有效方向，不改变当前对象。
     #[must_use]
     pub fn effective_direction(self) -> FillDirection {
@@ -129,8 +146,12 @@ impl FillConfig {
     }
     /// 返回执行 `init` 后的有效强制新行配置，不改变当前对象。
     #[must_use]
-    pub fn effective_force_new_row(self) -> bool { self.force_new_row.unwrap_or(false) }
+    pub fn effective_force_new_row(self) -> bool {
+        self.force_new_row.unwrap_or(false)
+    }
     /// 返回执行 `init` 后的有效自动样式配置，不改变当前对象。
     #[must_use]
-    pub fn effective_auto_style(self) -> bool { self.auto_style.unwrap_or(true) }
+    pub fn effective_auto_style(self) -> bool {
+        self.auto_style.unwrap_or(true)
+    }
 }

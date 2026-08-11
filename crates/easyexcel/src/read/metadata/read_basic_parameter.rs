@@ -26,7 +26,11 @@ impl ReadBasicParameter {
     /// 对应 Java：com.alibaba.excel.read.metadata.ReadBasicParameter。 创建默认参数。
     #[must_use]
     pub fn new() -> Self {
-        Self { basic_parameter: BasicParameter::default(), head_row_number: 1, custom_read_listener_list: Vec::new() }
+        Self {
+            basic_parameter: BasicParameter::default(),
+            head_row_number: 1,
+            custom_read_listener_list: Vec::new(),
+        }
     }
 
     /// 对应 Java：com.alibaba.excel.read.metadata.ReadBasicParameter。 从 `ReadOptions` 构造。
@@ -45,15 +49,30 @@ impl ReadBasicParameter {
     }
 
     /// Java `getHeadRowNumber`。
-    #[must_use] pub const fn get_head_row_number(&self) -> u32 { self.head_row_number }
+    #[must_use]
+    pub const fn get_head_row_number(&self) -> u32 {
+        self.head_row_number
+    }
     /// Java `setHeadRowNumber`。
-    pub const fn set_head_row_number(&mut self, value: u32) { self.head_row_number = value; }
+    pub const fn set_head_row_number(&mut self, value: u32) {
+        self.head_row_number = value;
+    }
     /// Java `getCustomReadListenerList` 的后端中立视图。
-    #[must_use] pub fn get_custom_read_listener_list(&self) -> &[String] { &self.custom_read_listener_list }
+    #[must_use]
+    pub fn get_custom_read_listener_list(&self) -> &[String] {
+        &self.custom_read_listener_list
+    }
     /// Java `setCustomReadListenerList` 的后端中立映射。
-    pub fn set_custom_read_listener_list(&mut self, value: Vec<String>) { self.custom_read_listener_list = value; }
+    pub fn set_custom_read_listener_list(&mut self, value: Vec<String>) {
+        self.custom_read_listener_list = value;
+    }
     /// 返回父级基础参数。
-    #[must_use] pub const fn get_basic_parameter(&self) -> &BasicParameter { &self.basic_parameter }
+    #[must_use]
+    pub const fn get_basic_parameter(&self) -> &BasicParameter {
+        &self.basic_parameter
+    }
     /// 返回可变父级基础参数。
-    pub const fn get_basic_parameter_mut(&mut self) -> &mut BasicParameter { &mut self.basic_parameter }
+    pub const fn get_basic_parameter_mut(&mut self) -> &mut BasicParameter {
+        &mut self.basic_parameter
+    }
 }

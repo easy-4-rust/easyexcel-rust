@@ -46,12 +46,8 @@ pub(crate) fn replace_collection_fills_in_sheet_with_comments(
         .iter()
         .map(template_collection_fill)
         .collect::<Result<Vec<_>>>()?;
-    easyexcel_xlsx::replace_collection_fills_in_sheet_with_comments(
-        entries,
-        worksheet,
-        &fills,
-    )
-    .map_err(ExcelError::from)
+    easyexcel_xlsx::replace_collection_fills_in_sheet_with_comments(entries, worksheet, &fills)
+        .map_err(ExcelError::from)
 }
 
 pub(crate) fn replace_collection_fills_in_sheet_with_decorations(
@@ -63,12 +59,8 @@ pub(crate) fn replace_collection_fills_in_sheet_with_decorations(
         .iter()
         .map(template_collection_fill)
         .collect::<Result<Vec<_>>>()?;
-    easyexcel_xlsx::replace_collection_fills_in_sheet_with_decorations(
-        entries,
-        worksheet,
-        &fills,
-    )
-    .map_err(ExcelError::from)
+    easyexcel_xlsx::replace_collection_fills_in_sheet_with_decorations(entries, worksheet, &fills)
+        .map_err(ExcelError::from)
 }
 
 /// 执行指定工作表的标量模板填充。
@@ -112,7 +104,11 @@ pub(crate) fn append_rows_to_sheet(
 ) -> Result<()> {
     let rows = rows
         .iter()
-        .map(|row| row.iter().map(template_cell_value).collect::<Result<Vec<_>>>())
+        .map(|row| {
+            row.iter()
+                .map(template_cell_value)
+                .collect::<Result<Vec<_>>>()
+        })
         .collect::<Result<Vec<_>>>()?;
     easyexcel_xlsx::append_rows_to_sheet(entries, worksheet, &rows).map_err(ExcelError::from)
 }
@@ -124,7 +120,11 @@ pub(crate) fn append_rows_to_sheet_with_comments(
 ) -> Result<Vec<easyexcel_xlsx::TemplateCommentPlacement>> {
     let rows = rows
         .iter()
-        .map(|row| row.iter().map(template_cell_value).collect::<Result<Vec<_>>>())
+        .map(|row| {
+            row.iter()
+                .map(template_cell_value)
+                .collect::<Result<Vec<_>>>()
+        })
         .collect::<Result<Vec<_>>>()?;
     easyexcel_xlsx::append_rows_to_sheet_with_comments(entries, worksheet, &rows)
         .map_err(ExcelError::from)
@@ -137,7 +137,11 @@ pub(crate) fn append_rows_to_sheet_with_decorations(
 ) -> Result<Vec<easyexcel_xlsx::TemplateDecorationPlacement>> {
     let rows = rows
         .iter()
-        .map(|row| row.iter().map(template_cell_value).collect::<Result<Vec<_>>>())
+        .map(|row| {
+            row.iter()
+                .map(template_cell_value)
+                .collect::<Result<Vec<_>>>()
+        })
         .collect::<Result<Vec<_>>>()?;
     easyexcel_xlsx::append_rows_to_sheet_with_decorations(entries, worksheet, &rows)
         .map_err(ExcelError::from)
@@ -179,12 +183,14 @@ fn template_cell_value(value: &CellValue) -> Result<TemplateCellValue> {
             images: vec![easyexcel_xlsx::TemplateImage::new(bytes.clone())],
         },
         CellValue::String(text) => TemplateCellValue::Text(text.clone()),
-        CellValue::Hyperlink { url, text } => crate::write::template_write::template_hyperlink_value(
-            url,
-            text,
-            crate::HyperlinkType::Url,
-            crate::CoordinateData::new(),
-        ),
+        CellValue::Hyperlink { url, text } => {
+            crate::write::template_write::template_hyperlink_value(
+                url,
+                text,
+                crate::HyperlinkType::Url,
+                crate::CoordinateData::new(),
+            )
+        }
         CellValue::HyperlinkWithMetadata {
             address,
             text,

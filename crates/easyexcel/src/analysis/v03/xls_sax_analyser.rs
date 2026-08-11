@@ -2,8 +2,8 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::core::{AnalysisContext, ExcelError, ExcelRow, ReadListener, Result};
 use crate::context::analysis_context::AnalysisContextLifecycle;
+use crate::core::{AnalysisContext, ExcelError, ExcelRow, ReadListener, Result};
 
 use crate::analysis::excel_read_executor::{ExcelReadExecutor, NoopDynamicReadListener};
 use crate::analysis::v03::xls_list_sheet_listener::XlsListSheetListener;
@@ -182,12 +182,11 @@ impl XlsSaxAnalyser {
         let has_filepass = {
             let mut found = false;
             let stream_len = stream.len();
-            let mut probe =
-                easyexcel_xls::biff8::streaming_record_iter::StreamingRecordIter::new(
-                    &mut stream,
-                    0,
-                    stream_len,
-                )?;
+            let mut probe = easyexcel_xls::biff8::streaming_record_iter::StreamingRecordIter::new(
+                &mut stream,
+                0,
+                stream_len,
+            )?;
             while let Some(result) = probe.next_raw() {
                 let (sid, _) = result?;
                 if sid == easyexcel_xls::biff8::record_sid::FILE_PASS_SID {
@@ -210,12 +209,11 @@ impl XlsSaxAnalyser {
 
         if has_filepass {
             // 加密文件：回退到旧路径（RC4 解密需要完整流）
-            let workbook =
-                easyexcel_xls::biff8::record_stream::read_workbook_stream_with_password(
-                    &self.path,
-                    self.options.password.as_deref(),
-                )
-                .map_err(ExcelError::from)?;
+            let workbook = easyexcel_xls::biff8::record_stream::read_workbook_stream_with_password(
+                &self.path,
+                self.options.password.as_deref(),
+            )
+            .map_err(ExcelError::from)?;
             easyexcel_xls::biff8::record_stream::walk_biff_records(
                 &workbook,
                 |record_sid, data| {

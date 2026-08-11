@@ -30,7 +30,9 @@ impl DataFormatData {
 
     /// Java `getIndex` 兼容别名。
     #[must_use]
-    pub const fn get_index(&self) -> Option<i16> { self.index() }
+    pub const fn get_index(&self) -> Option<i16> {
+        self.index()
+    }
 
     /// 对应 Java：com.alibaba.excel.metadata.data.DataFormatData。 设置格式索引。
     pub fn set_index(&mut self, index: Option<i16>) {
@@ -45,7 +47,9 @@ impl DataFormatData {
 
     /// Java `getFormat` 兼容别名。
     #[must_use]
-    pub fn get_format(&self) -> Option<&str> { self.format() }
+    pub fn get_format(&self) -> Option<&str> {
+        self.format()
+    }
 
     /// 对应 Java：com.alibaba.excel.metadata.data.DataFormatData。 设置自定义格式文本。
     pub fn set_format(&mut self, format: impl Into<Option<String>>) {

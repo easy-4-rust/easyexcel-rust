@@ -54,7 +54,9 @@ impl DefaultStyle {
 
     /// 返回 Java 默认表头字体。
     #[must_use]
-    pub const fn header_font(&self) -> &WriteFont { &self.header_font }
+    pub const fn header_font(&self) -> &WriteFont {
+        &self.header_font
+    }
 }
 
 impl Default for DefaultStyle {

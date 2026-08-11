@@ -115,10 +115,16 @@ impl XlsxRowHandler {
         attrs: &str,
     ) {
         let local = easyexcel_xlsx::local_tag_name(name);
-        let Some(handler) = self.handlers.get_mut(local) else { return; };
-        if !handler.as_mut().support_with_context(context) { return; }
+        let Some(handler) = self.handlers.get_mut(local) else {
+            return;
+        };
+        if !handler.as_mut().support_with_context(context) {
+            return;
+        }
         self.tag_stack.push(local.to_owned());
-        handler.as_mut().start_element_with_context(context, name, attrs);
+        handler
+            .as_mut()
+            .start_element_with_context(context, name, attrs);
     }
 
     /// Java 上下文感知字符切片调度入口。
@@ -129,17 +135,29 @@ impl XlsxRowHandler {
         start: usize,
         length: usize,
     ) {
-        let Some(current) = self.tag_stack.last() else { return; };
-        let Some(handler) = self.handlers.get_mut(current.as_str()) else { return; };
-        if !handler.as_mut().support_with_context(context) { return; }
-        handler.as_mut().characters_with_context(context, ch, start, length);
+        let Some(current) = self.tag_stack.last() else {
+            return;
+        };
+        let Some(handler) = self.handlers.get_mut(current.as_str()) else {
+            return;
+        };
+        if !handler.as_mut().support_with_context(context) {
+            return;
+        }
+        handler
+            .as_mut()
+            .characters_with_context(context, ch, start, length);
     }
 
     /// Java 上下文感知 `endElement` 调度入口。
     pub fn end_element_with_context(&mut self, context: &dyn crate::XlsxReadContext, name: &str) {
         let local = easyexcel_xlsx::local_tag_name(name);
-        let Some(handler) = self.handlers.get_mut(local) else { return; };
-        if !handler.as_mut().support_with_context(context) { return; }
+        let Some(handler) = self.handlers.get_mut(local) else {
+            return;
+        };
+        if !handler.as_mut().support_with_context(context) {
+            return;
+        }
         handler.as_mut().end_element_with_context(context, name);
         let _ = self.tag_stack.pop();
     }

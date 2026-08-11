@@ -63,7 +63,10 @@ impl WriteSheetContext {
         &self.sheet_name
     }
     /// 返回工作表名称。
-    #[must_use] pub fn get_sheet_name(&self) -> &str { self.sheet_name() }
+    #[must_use]
+    pub fn get_sheet_name(&self) -> &str {
+        self.sheet_name()
+    }
 
     /// 对应 Java：com.alibaba.excel.write.handler.context.SheetWriteHandlerContext。 Attaches the workbook, resolved sheet number, and optional table.
     #[must_use]
@@ -133,7 +136,8 @@ impl WriteSheetContext {
     pub const fn write_workbook_holder(&self) -> Option<&WriteWorkbookHolderView> {
         self.holders.workbook()
     }
-    #[must_use] pub const fn get_write_workbook_holder(&self) -> Option<&WriteWorkbookHolderView> {
+    #[must_use]
+    pub const fn get_write_workbook_holder(&self) -> Option<&WriteWorkbookHolderView> {
         self.write_workbook_holder()
     }
 
@@ -149,7 +153,8 @@ impl WriteSheetContext {
             .sheet()
             .expect("sheet contexts always carry a sheet holder")
     }
-    #[must_use] pub fn get_write_sheet_holder(&self) -> &WriteSheetHolderView {
+    #[must_use]
+    pub fn get_write_sheet_holder(&self) -> &WriteSheetHolderView {
         self.write_sheet_holder()
     }
 
@@ -159,7 +164,8 @@ impl WriteSheetContext {
     pub const fn write_table_holder(&self) -> Option<&WriteTableHolderView> {
         self.holders.table()
     }
-    #[must_use] pub const fn get_write_table_holder(&self) -> Option<&WriteTableHolderView> {
+    #[must_use]
+    pub const fn get_write_table_holder(&self) -> Option<&WriteTableHolderView> {
         self.write_table_holder()
     }
 
@@ -169,12 +175,15 @@ impl WriteSheetContext {
     pub const fn write_context(&self) -> &WriteHolderContext {
         &self.holders
     }
-    #[must_use] pub const fn get_write_context(&self) -> &WriteHolderContext {
+    #[must_use]
+    pub const fn get_write_context(&self) -> &WriteHolderContext {
         self.write_context()
     }
 
     /// 替换全部 holder 视图。
-    pub fn set_write_context(&mut self, value: WriteHolderContext) { self.holders = value; }
+    pub fn set_write_context(&mut self, value: WriteHolderContext) {
+        self.holders = value;
+    }
     /// 替换 workbook holder 视图。
     pub fn set_write_workbook_holder(&mut self, value: WriteWorkbookHolderView) {
         self.holders = std::mem::take(&mut self.holders).with_workbook(value);

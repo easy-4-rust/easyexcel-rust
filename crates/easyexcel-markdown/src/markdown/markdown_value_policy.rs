@@ -15,7 +15,10 @@ mod tests {
 
     #[test]
     fn default_is_formatted() {
-        assert_eq!(MarkdownValuePolicy::default(), MarkdownValuePolicy::Formatted);
+        assert_eq!(
+            MarkdownValuePolicy::default(),
+            MarkdownValuePolicy::Formatted
+        );
     }
 
     #[test]

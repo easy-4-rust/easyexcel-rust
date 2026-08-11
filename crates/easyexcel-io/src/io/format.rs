@@ -153,9 +153,18 @@ mod tests {
 
     #[test]
     fn from_path_extracts_extension() {
-        assert_eq!(Format::from_path(std::path::Path::new("test.xlsx")), Some(Format::Xlsx));
-        assert_eq!(Format::from_path(std::path::Path::new("test.xls")), Some(Format::Xls));
-        assert_eq!(Format::from_path(std::path::Path::new("test.csv")), Some(Format::Csv));
+        assert_eq!(
+            Format::from_path(std::path::Path::new("test.xlsx")),
+            Some(Format::Xlsx)
+        );
+        assert_eq!(
+            Format::from_path(std::path::Path::new("test.xls")),
+            Some(Format::Xls)
+        );
+        assert_eq!(
+            Format::from_path(std::path::Path::new("test.csv")),
+            Some(Format::Csv)
+        );
         assert_eq!(Format::from_path(std::path::Path::new("test")), None);
         assert_eq!(Format::from_path(std::path::Path::new("test.pdf")), None);
     }
@@ -183,15 +192,26 @@ mod tests {
 
     #[test]
     fn path_has_extension_checks_case_insensitively() {
-        assert!(path_has_extension(std::path::Path::new("test.xlsx"), "xlsx"));
-        assert!(path_has_extension(std::path::Path::new("test.XLSX"), "xlsx"));
-        assert!(!path_has_extension(std::path::Path::new("test.xls"), "xlsx"));
+        assert!(path_has_extension(
+            std::path::Path::new("test.xlsx"),
+            "xlsx"
+        ));
+        assert!(path_has_extension(
+            std::path::Path::new("test.XLSX"),
+            "xlsx"
+        ));
+        assert!(!path_has_extension(
+            std::path::Path::new("test.xls"),
+            "xlsx"
+        ));
         assert!(!path_has_extension(std::path::Path::new("test"), "xlsx"));
     }
 
     #[test]
     fn looks_like_cfb_identifies_ole2() {
-        assert!(looks_like_cfb(&[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]));
+        assert!(looks_like_cfb(&[
+            0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1
+        ]));
         assert!(!looks_like_cfb(b"PK\x03\x04"));
         assert!(!looks_like_cfb(&[]));
     }

@@ -22,7 +22,10 @@ mod tests {
 
     #[test]
     fn default_is_anchor_with_warning() {
-        assert_eq!(MarkdownMergePolicy::default(), MarkdownMergePolicy::AnchorWithWarning);
+        assert_eq!(
+            MarkdownMergePolicy::default(),
+            MarkdownMergePolicy::AnchorWithWarning
+        );
     }
 
     #[test]

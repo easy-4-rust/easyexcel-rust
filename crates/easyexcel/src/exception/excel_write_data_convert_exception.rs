@@ -37,32 +37,78 @@ impl ExcelWriteDataConvertException {
     #[must_use]
     pub fn new(context: crate::WriteCellContext, message: impl Into<String>) -> Self {
         let inner = data_convert_exception(&context, message, None::<String>);
-        Self { inner, cell_write_handler_context: context }
+        Self {
+            inner,
+            cell_write_handler_context: context,
+        }
     }
     /// Java 带 cause 构造器。
     #[must_use]
-    pub fn with_cause(context: crate::WriteCellContext, message: impl Into<String>, cause: impl ToString) -> Self {
+    pub fn with_cause(
+        context: crate::WriteCellContext,
+        message: impl Into<String>,
+        cause: impl ToString,
+    ) -> Self {
         let inner = data_convert_exception(&context, message, Some(cause.to_string()));
-        Self { inner, cell_write_handler_context: context }
+        Self {
+            inner,
+            cell_write_handler_context: context,
+        }
     }
-    #[must_use] pub const fn get_cell_write_handler_context(&self) -> &crate::WriteCellContext { &self.cell_write_handler_context }
-    pub fn set_cell_write_handler_context(&mut self, value: crate::WriteCellContext) { self.cell_write_handler_context = value; }
-    #[must_use] pub const fn data_convert_exception(&self) -> &ExcelDataConvertException { &self.inner }
+    #[must_use]
+    pub const fn get_cell_write_handler_context(&self) -> &crate::WriteCellContext {
+        &self.cell_write_handler_context
+    }
+    pub fn set_cell_write_handler_context(&mut self, value: crate::WriteCellContext) {
+        self.cell_write_handler_context = value;
+    }
+    #[must_use]
+    pub const fn data_convert_exception(&self) -> &ExcelDataConvertException {
+        &self.inner
+    }
 }
 
-fn data_convert_exception(context: &crate::WriteCellContext, message: impl Into<String>, cause: Option<String>) -> ExcelDataConvertException {
-    let first = context.get_first_cell_data().cloned().unwrap_or(crate::CellValue::Empty);
+fn data_convert_exception(
+    context: &crate::WriteCellContext,
+    message: impl Into<String>,
+    cause: Option<String>,
+) -> ExcelDataConvertException {
+    let first = context
+        .get_first_cell_data()
+        .cloned()
+        .unwrap_or(crate::CellValue::Empty);
     let mut cell_data = crate::CellData::new();
     cell_data.set_type(Some(first.data_type()));
     cell_data.set_data(Some(first));
     match cause {
-        Some(cause) => ExcelDataConvertException::with_cause(usize::try_from(context.get_row_index()).unwrap_or(usize::MAX), usize::from(context.get_column_index()), cell_data, context.get_excel_content_property().cloned(), message, cause),
-        None => ExcelDataConvertException::new(usize::try_from(context.get_row_index()).unwrap_or(usize::MAX), usize::from(context.get_column_index()), cell_data, context.get_excel_content_property().cloned(), message),
+        Some(cause) => ExcelDataConvertException::with_cause(
+            usize::try_from(context.get_row_index()).unwrap_or(usize::MAX),
+            usize::from(context.get_column_index()),
+            cell_data,
+            context.get_excel_content_property().cloned(),
+            message,
+            cause,
+        ),
+        None => ExcelDataConvertException::new(
+            usize::try_from(context.get_row_index()).unwrap_or(usize::MAX),
+            usize::from(context.get_column_index()),
+            cell_data,
+            context.get_excel_content_property().cloned(),
+            message,
+        ),
     }
 }
-impl std::fmt::Display for ExcelWriteDataConvertException { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { std::fmt::Display::fmt(&self.inner, f) } }
+impl std::fmt::Display for ExcelWriteDataConvertException {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(&self.inner, f)
+    }
+}
 impl std::error::Error for ExcelWriteDataConvertException {}
-impl From<ExcelWriteDataConvertException> for crate::ExcelError { fn from(value: ExcelWriteDataConvertException) -> Self { value.inner.into() } }
+impl From<ExcelWriteDataConvertException> for crate::ExcelError {
+    fn from(value: ExcelWriteDataConvertException) -> Self {
+        value.inner.into()
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -83,7 +129,8 @@ mod tests {
     #[test]
     fn with_cause_creates_exception() {
         let ctx = test_context();
-        let exc = ExcelWriteDataConvertException::with_cause(ctx, "conversion failed", "type mismatch");
+        let exc =
+            ExcelWriteDataConvertException::with_cause(ctx, "conversion failed", "type mismatch");
         let msg = exc.to_string();
         assert!(msg.contains("conversion failed"), "msg: {msg}");
     }
@@ -161,7 +208,7 @@ mod tests {
 
     #[test]
     fn hash_equal_contexts_produce_same_hash() {
-        use std::hash::{Hash, Hasher, DefaultHasher};
+        use std::hash::{DefaultHasher, Hash, Hasher};
         let a = ExcelWriteDataConvertException::new(test_context(), "a");
         let b = ExcelWriteDataConvertException::new(test_context(), "b");
         let mut ha = DefaultHasher::new();

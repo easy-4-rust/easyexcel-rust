@@ -40,7 +40,10 @@ impl<V: CsvCellValue> CsvRow<V> {
         self.row_index
     }
     /// 返回父工作簿稳定身份。对应 Java Lombok `getCsvWorkbook`。
-    #[must_use] pub const fn get_csv_workbook(&self) -> Option<usize> { self.csv_workbook_id }
+    #[must_use]
+    pub const fn get_csv_workbook(&self) -> Option<usize> {
+        self.csv_workbook_id
+    }
     /// 设置父工作簿稳定身份。
     pub fn set_csv_workbook(&mut self, value: Option<usize>) {
         self.csv_workbook_id = value;
@@ -50,7 +53,9 @@ impl<V: CsvCellValue> CsvRow<V> {
     }
     /// 返回父工作表稳定身份。对应 Java Lombok `getCsvSheet`。
     #[must_use]
-    pub const fn get_csv_sheet(&self) -> Option<usize> { self.csv_sheet_id }
+    pub const fn get_csv_sheet(&self) -> Option<usize> {
+        self.csv_sheet_id
+    }
     /// 设置父工作表稳定身份并传播给已有单元格。
     pub fn set_csv_sheet(&mut self, value: Option<usize>) {
         self.csv_sheet_id = value;
@@ -74,7 +79,9 @@ impl<V: CsvCellValue> CsvRow<V> {
     pub const fn row_num(&self) -> u32 {
         self.row_index
     }
-    pub const fn get_row_num(&self) -> u32 { self.row_num() }
+    pub const fn get_row_num(&self) -> u32 {
+        self.row_num()
+    }
 
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回按创建顺序保存的单元格。
     #[must_use]
@@ -95,7 +102,9 @@ impl<V: CsvCellValue> CsvRow<V> {
             .iter()
             .find(|cell| cell.column_index() == column_index)
     }
-    pub fn get_cell(&self, column_index: u16) -> Option<&CsvCell<V>> { self.cell(column_index) }
+    pub fn get_cell(&self, column_index: u16) -> Option<&CsvCell<V>> {
+        self.cell(column_index)
+    }
 
     /// 返回指定列的可变单元格。
     pub fn cell_mut(&mut self, column_index: u16) -> Option<&mut CsvCell<V>> {
@@ -109,14 +118,18 @@ impl<V: CsvCellValue> CsvRow<V> {
     pub fn physical_number_of_cells(&self) -> usize {
         self.cells.len()
     }
-    pub fn get_physical_number_of_cells(&self) -> usize { self.physical_number_of_cells() }
+    pub fn get_physical_number_of_cells(&self) -> usize {
+        self.physical_number_of_cells()
+    }
 
     /// 返回首个已创建列号；空行返回 `None`。
     #[must_use]
     pub fn first_cell_num(&self) -> Option<u16> {
         self.cells.iter().map(CsvCell::column_index).min()
     }
-    pub fn get_first_cell_num(&self) -> Option<u16> { self.first_cell_num() }
+    pub fn get_first_cell_num(&self) -> Option<u16> {
+        self.first_cell_num()
+    }
 
     /// 返回最后单元格后一列；空行返回 `None`。
     #[must_use]
@@ -127,7 +140,9 @@ impl<V: CsvCellValue> CsvRow<V> {
             .max()
             .map(|column| column.saturating_add(1))
     }
-    pub fn get_last_cell_num(&self) -> Option<u16> { self.last_cell_num() }
+    pub fn get_last_cell_num(&self) -> Option<u16> {
+        self.last_cell_num()
+    }
 
     /// 删除指定列单元格。
     pub fn remove_cell(&mut self, column_index: u16) -> Option<CsvCell<V>> {
@@ -153,14 +168,18 @@ impl<V: CsvCellValue> CsvRow<V> {
     pub const fn cell_style(&self) -> Option<&CsvCellStyle> {
         self.cell_style.as_ref()
     }
-    pub const fn get_row_style(&self) -> Option<&CsvCellStyle> { self.cell_style() }
+    pub const fn get_row_style(&self) -> Option<&CsvCellStyle> {
+        self.cell_style()
+    }
 
     /// 返回行是否具有格式。
     #[must_use]
     pub const fn is_formatted(&self) -> bool {
         self.cell_style.is_some()
     }
-    pub const fn get_zero_height(&self) -> bool { self.zero_height() }
+    pub const fn get_zero_height(&self) -> bool {
+        self.zero_height()
+    }
 
     /// 设置行高，单位为 twip（1/20 point）。
     pub const fn set_height(&mut self, height_twips: u16) {
@@ -172,11 +191,15 @@ impl<V: CsvCellValue> CsvRow<V> {
     pub const fn height(&self) -> u16 {
         self.height_twips
     }
-    pub const fn get_height(&self) -> u16 { self.height() }
+    pub const fn get_height(&self) -> u16 {
+        self.height()
+    }
 
     /// 设置点数行高。
     pub fn set_height_in_points(&mut self, height_points: f32) {
-        self.height_twips = (height_points.max(0.0) * 20.0).round().min(f32::from(u16::MAX)) as u16;
+        self.height_twips = (height_points.max(0.0) * 20.0)
+            .round()
+            .min(f32::from(u16::MAX)) as u16;
     }
 
     /// 返回点数行高。
@@ -184,7 +207,9 @@ impl<V: CsvCellValue> CsvRow<V> {
     pub fn height_in_points(&self) -> f32 {
         f32::from(self.height_twips) / 20.0
     }
-    pub fn get_height_in_points(&self) -> f32 { self.height_in_points() }
+    pub fn get_height_in_points(&self) -> f32 {
+        self.height_in_points()
+    }
 
     /// 设置零高度隐藏标志。
     pub const fn set_zero_height(&mut self, zero_height: bool) {
@@ -198,11 +223,15 @@ impl<V: CsvCellValue> CsvRow<V> {
     }
 
     /// Java `cellIterator()` 兼容入口。
-    pub fn cell_iterator(&self) -> impl Iterator<Item = &CsvCell<V>> { self.iter() }
+    pub fn cell_iterator(&self) -> impl Iterator<Item = &CsvCell<V>> {
+        self.iter()
+    }
 
     /// CSV 不维护分组层级。对应 Java：`CsvRow#getOutlineLevel`。
     #[must_use]
-    pub const fn get_outline_level(&self) -> i32 { 0 }
+    pub const fn get_outline_level(&self) -> i32 {
+        0
+    }
 
     /// Java CSV 实现为空操作，不移动单元格。
     pub const fn shift_cells_right(

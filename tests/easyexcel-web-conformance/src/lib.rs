@@ -120,9 +120,7 @@ pub fn strict_runtime() -> ExcelWebRuntime {
 /// # Panics
 ///
 /// 解析结果为空（无行且无错误）时 panic。
-pub async fn verify_upload_xls(
-    mut rows: ExcelRows<ConformanceRow>,
-) -> Result<(), ExcelWebError> {
+pub async fn verify_upload_xls(mut rows: ExcelRows<ConformanceRow>) -> Result<(), ExcelWebError> {
     let mut count = 0_usize;
     while let Some(result) = rows.next_row().await {
         match result {

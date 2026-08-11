@@ -18,9 +18,13 @@ impl Biff8RichTextCell {
 
     /// 返回原始文本。
     #[must_use]
-    pub fn text(&self) -> &str { &self.text }
+    pub fn text(&self) -> &str {
+        &self.text
+    }
 
     /// 返回 `(起点, 终点, 字体)`；位置按 Excel/Java 的 UTF-16 索引解释。
     #[must_use]
-    pub fn runs(&self) -> &[(usize, usize, Biff8Font)] { &self.runs }
+    pub fn runs(&self) -> &[(usize, usize, Biff8Font)] {
+        &self.runs
+    }
 }

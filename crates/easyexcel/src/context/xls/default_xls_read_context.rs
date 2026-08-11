@@ -103,6 +103,10 @@ impl XlsReadContext for DefaultXlsReadContext {
     }
 }
 impl AnalysisContextLifecycle for DefaultXlsReadContext {
-    fn analysis_context_impl(&self) -> &AnalysisContextImpl { &self.inner }
-    fn analysis_context_impl_mut(&mut self) -> &mut AnalysisContextImpl { &mut self.inner }
+    fn analysis_context_impl(&self) -> &AnalysisContextImpl {
+        &self.inner
+    }
+    fn analysis_context_impl_mut(&mut self) -> &mut AnalysisContextImpl {
+        &mut self.inner
+    }
 }

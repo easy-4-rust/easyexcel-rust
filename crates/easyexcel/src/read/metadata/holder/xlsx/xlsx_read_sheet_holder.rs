@@ -18,10 +18,14 @@ pub struct XlsxReadSheetHolder {
 
 impl Deref for XlsxReadSheetHolder {
     type Target = ReadSheetHolder;
-    fn deref(&self) -> &Self::Target { &self.inner }
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
 }
 impl DerefMut for XlsxReadSheetHolder {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.inner }
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
 }
 
 delegate_read_holder_contract!(XlsxReadSheetHolder, inner);
@@ -59,16 +63,39 @@ impl XlsxReadSheetHolder {
     pub const fn inner(&self) -> &ReadSheetHolder {
         &self.inner
     }
-    pub const fn inner_mut(&mut self) -> &mut ReadSheetHolder { &mut self.inner }
-    #[must_use] pub const fn get_column_index(&self) -> Option<i32> { self.column_index }
-    pub const fn set_column_index(&mut self, value: Option<i32>) { self.column_index = value; }
-    #[must_use] pub const fn get_tag_deque(&self) -> &VecDeque<String> { &self.tag_deque }
-    pub fn set_tag_deque(&mut self, value: VecDeque<String>) { self.tag_deque = value; }
-    #[must_use] pub fn get_temp_data(&self) -> &str { &self.temp_data }
-    pub fn set_temp_data(&mut self, value: impl Into<String>) { self.temp_data = value.into(); }
-    #[must_use] pub fn get_temp_formula(&self) -> &str { &self.temp_formula }
-    pub fn set_temp_formula(&mut self, value: impl Into<String>) { self.temp_formula = value.into(); }
-    #[must_use] pub fn get_package_relationship_collection(&self) -> &[String] {
+    pub const fn inner_mut(&mut self) -> &mut ReadSheetHolder {
+        &mut self.inner
+    }
+    #[must_use]
+    pub const fn get_column_index(&self) -> Option<i32> {
+        self.column_index
+    }
+    pub const fn set_column_index(&mut self, value: Option<i32>) {
+        self.column_index = value;
+    }
+    #[must_use]
+    pub const fn get_tag_deque(&self) -> &VecDeque<String> {
+        &self.tag_deque
+    }
+    pub fn set_tag_deque(&mut self, value: VecDeque<String>) {
+        self.tag_deque = value;
+    }
+    #[must_use]
+    pub fn get_temp_data(&self) -> &str {
+        &self.temp_data
+    }
+    pub fn set_temp_data(&mut self, value: impl Into<String>) {
+        self.temp_data = value.into();
+    }
+    #[must_use]
+    pub fn get_temp_formula(&self) -> &str {
+        &self.temp_formula
+    }
+    pub fn set_temp_formula(&mut self, value: impl Into<String>) {
+        self.temp_formula = value.into();
+    }
+    #[must_use]
+    pub fn get_package_relationship_collection(&self) -> &[String] {
         &self.package_relationship_collection
     }
     pub fn set_package_relationship_collection(&mut self, value: Vec<String>) {

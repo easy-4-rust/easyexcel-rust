@@ -378,8 +378,7 @@ impl ExcelBuilderImpl {
             crate::excel_builder::wire_template_fill(self)?;
             let delegate = self.fill_executor.as_mut().ok_or_else(|| {
                 ExcelError::Unsupported(
-                    "template executor could not be initialized for ordinary row writes"
-                        .to_owned(),
+                    "template executor could not be initialized for ordinary row writes".to_owned(),
                 )
             })?;
             let effective_options =
@@ -537,9 +536,7 @@ impl ExcelBuilder for ExcelBuilderImpl {
         self.update_current_holder::<DynamicRow>(&holder_options, None)?;
         crate::excel_builder::wire_template_fill(self)?;
         let delegate = self.fill_executor.as_mut().ok_or_else(|| {
-            ExcelError::Unsupported(
-                "template fill executor could not be initialized".to_owned(),
-            )
+            ExcelError::Unsupported("template fill executor could not be initialized".to_owned())
         })?;
         let sheet = WriteFillSheet {
             sheet_name: write_sheet.options().sheet_name.clone(),

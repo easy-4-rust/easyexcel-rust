@@ -401,9 +401,7 @@ impl XlsRecordDispatcher {
                 #[cfg(feature = "xls-lazy-sst")]
                 let strings: Vec<easyexcel_xls::Biff8SstString> =
                     strings.to_vec().map_err(|e| {
-                        crate::core::ExcelError::Format(format!(
-                            "SST lazy decode failed: {e}"
-                        ))
+                        crate::core::ExcelError::Format(format!("SST lazy decode failed: {e}"))
                     })?;
                 let unique = u32::try_from(strings.len()).map_err(|_| {
                     crate::core::ExcelError::Format(

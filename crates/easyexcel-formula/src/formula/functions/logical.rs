@@ -107,10 +107,7 @@ mod tests {
     fn xor_fn_text_ignored() {
         let mut c = TestCtx::new();
         // 文本在范围中被忽略
-        let result = xor(
-            &mut c,
-            &[Value::Text("x".into()), Value::Bool(true)],
-        );
+        let result = xor(&mut c, &[Value::Text("x".into()), Value::Bool(true)]);
         assert_eq!(result, Value::Bool(true));
     }
 

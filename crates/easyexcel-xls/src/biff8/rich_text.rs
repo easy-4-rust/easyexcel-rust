@@ -167,9 +167,6 @@ fn get_sst_string(
 
 /// 从 SST 容器中按索引获取字符串，兼容 lazy/eager 两种模式。
 #[cfg(not(feature = "xls-lazy-sst"))]
-fn get_sst_string(
-    sst: &[crate::Biff8SstString],
-    idx: usize,
-) -> Option<crate::Biff8SstString> {
+fn get_sst_string(sst: &[crate::Biff8SstString], idx: usize) -> Option<crate::Biff8SstString> {
     sst.get(idx).cloned()
 }

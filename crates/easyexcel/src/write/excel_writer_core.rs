@@ -40,11 +40,10 @@ use crate::write::image_layout::ImageLayout;
 use crate::write::shared_write_handler::StatefulSheetState;
 use crate::write::sheet_style_context::{CellFormatContext, SheetStyleContext};
 use crate::write::xls_adapter::{
-    Biff8Book, Biff8Cell, Biff8Comment,
-    Biff8Color, Biff8FillPattern, Biff8HyperlinkKind, Biff8Merge, Biff8Sheet,
-    Biff8StyleRequest, Biff8StyleTable, GeneratedBiff8CellValue, apply_excel_cell_style,
-    apply_excel_font_style,
-    apply_write_font, date_to_excel_serial_with_windowing, datetime_to_excel_serial_with_windowing,
+    Biff8Book, Biff8Cell, Biff8Color, Biff8Comment, Biff8FillPattern, Biff8HyperlinkKind,
+    Biff8Merge, Biff8Sheet, Biff8StyleRequest, Biff8StyleTable, GeneratedBiff8CellValue,
+    apply_excel_cell_style, apply_excel_font_style, apply_write_font,
+    date_to_excel_serial_with_windowing, datetime_to_excel_serial_with_windowing,
     writer_horizontal_alignment, writer_vertical_alignment,
 };
 
@@ -54,6 +53,7 @@ use crate::write::xls_adapter::Biff8Value;
 pub use crate::write::append_rows::{append_rows_to_worksheet, append_rows_to_worksheet_with_gzip};
 pub use crate::write::excel_writer::ExcelWriter;
 
+use crate::metadata::excel_cell_style::merge_excel_cell_style;
 pub use crate::write::builder::abstract_excel_writer_parameter_builder::AbstractExcelWriterParameterBuilder;
 pub use crate::write::builder::excel_writer_sheet_builder::ExcelWriterSheetBuilder as CompatibleExcelWriterSheetBuilder;
 pub use crate::write::builder::excel_writer_table_builder::ExcelWriterTableBuilder;
@@ -107,7 +107,6 @@ pub use crate::write::merge_range::MergeRange;
 pub use crate::write::metadata::collection_row_data::CollectionRowData;
 pub use crate::write::metadata::map_row_data::MapRowData;
 pub use crate::write::metadata::row_data::RowData as MirroredRowData;
-use crate::metadata::excel_cell_style::merge_excel_cell_style;
 use crate::write::metadata::style::write_cell_style::merge_write_cell_style;
 use crate::write::metadata::style::write_font::merge_excel_font_style as merge_handler_font_style;
 pub use crate::write::metadata::style::write_font::{

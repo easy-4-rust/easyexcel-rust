@@ -364,11 +364,15 @@ fn parse_boundsheet(rec: &RawRecord, g: &mut Globals) {
 }
 
 fn parse_externsheet(rec: &RawRecord, globals: &mut Globals) {
-    if rec.data.len() < 2 { return; }
+    if rec.data.len() < 2 {
+        return;
+    }
     let count = usize::from(biff::u16le(&rec.data, 0));
     let mut cursor = 2usize;
     for _ in 0..count {
-        if cursor + 6 > rec.data.len() { break; }
+        if cursor + 6 > rec.data.len() {
+            break;
+        }
         // iSupBook 位于前两字节；内部 SUPBOOK 的 Sheet 范围由后四字节给出。
         globals.extern_sheets.push((
             biff::u16le(&rec.data, cursor + 2),
@@ -613,16 +617,21 @@ fn parse_formula(d: &[u8], globals: &Globals) -> Option<(u32, u32, u16, Cell, bo
     let expression = if d.len() >= 22 {
         let token_length = usize::from(biff::u16le(d, 20));
         d.get(22..22usize.checked_add(token_length)?)
-            .and_then(|tokens| crate::biff8::ptg::decode_formula_rpn(
-                tokens,
-                &globals.sheet_names,
-                &globals.extern_sheets,
-            ))
+            .and_then(|tokens| {
+                crate::biff8::ptg::decode_formula_rpn(
+                    tokens,
+                    &globals.sheet_names,
+                    &globals.extern_sheets,
+                )
+            })
             .unwrap_or_default()
     } else {
         String::new()
     };
-    let cell = Cell::Formula { expr: expression, cached };
+    let cell = Cell::Formula {
+        expr: expression,
+        cached,
+    };
     Some((row, col, xf, cell, is_string))
 }
 
@@ -1013,16 +1022,22 @@ mod tests {
         sheet.set(0, 0, Cell::Number(1.0));
         sheet.default_col_width = 12.0;
         sheet.default_row_height = 18.0;
-        sheet.columns.insert(0, easyexcel_model::model::ColInfo {
-            width: Some(20.0),
-            style: None,
-            hidden: false,
-        });
-        sheet.rows.insert(0, easyexcel_model::model::RowInfo {
-            height: Some(30.0),
-            style: None,
-            hidden: false,
-        });
+        sheet.columns.insert(
+            0,
+            easyexcel_model::model::ColInfo {
+                width: Some(20.0),
+                style: None,
+                hidden: false,
+            },
+        );
+        sheet.rows.insert(
+            0,
+            easyexcel_model::model::RowInfo {
+                height: Some(30.0),
+                style: None,
+                hidden: false,
+            },
+        );
         wb.sheets.push(sheet);
 
         let mut buf = Vec::new();
@@ -1039,16 +1054,22 @@ mod tests {
         let mut wb = Workbook::empty();
         let mut sheet = Sheet::new("H");
         sheet.set(0, 0, Cell::Number(1.0));
-        sheet.columns.insert(0, easyexcel_model::model::ColInfo {
-            width: Some(10.0),
-            style: None,
-            hidden: true,
-        });
-        sheet.rows.insert(0, easyexcel_model::model::RowInfo {
-            height: Some(20.0),
-            style: None,
-            hidden: true,
-        });
+        sheet.columns.insert(
+            0,
+            easyexcel_model::model::ColInfo {
+                width: Some(10.0),
+                style: None,
+                hidden: true,
+            },
+        );
+        sheet.rows.insert(
+            0,
+            easyexcel_model::model::RowInfo {
+                height: Some(20.0),
+                style: None,
+                hidden: true,
+            },
+        );
         wb.sheets.push(sheet);
 
         let mut buf = Vec::new();

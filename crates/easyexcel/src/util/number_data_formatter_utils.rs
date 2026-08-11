@@ -16,16 +16,14 @@ pub fn format(
     data_format_string: Option<&str>,
     global_configuration: Option<&GlobalConfiguration>,
 ) -> String {
-    let (use_1904_windowing, locale, use_scientific_format) = global_configuration.map_or(
-        (None, None, None),
-        |configuration| {
+    let (use_1904_windowing, locale, use_scientific_format) =
+        global_configuration.map_or((None, None, None), |configuration| {
             (
                 Some(configuration.use1904windowing()),
                 resolve_locale(configuration.locale()),
                 Some(configuration.use_scientific_format()),
             )
-        },
-    );
+        });
     format_with_options(
         data,
         data_format,

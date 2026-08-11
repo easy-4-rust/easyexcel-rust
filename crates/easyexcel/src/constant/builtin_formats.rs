@@ -43,9 +43,7 @@ impl BuiltinFormats {
 
     /// 按区域选择格式表。
     #[must_use]
-    pub fn switch_builtin_formats(
-        locale: Option<&ExcelLocale>,
-    ) -> &'static [Option<&'static str>] {
+    pub fn switch_builtin_formats(locale: Option<&ExcelLocale>) -> &'static [Option<&'static str>] {
         switch_builtin_formats_for_locale(locale)
     }
 

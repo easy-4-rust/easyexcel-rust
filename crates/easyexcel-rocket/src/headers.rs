@@ -20,9 +20,8 @@ pub use easyexcel_web::XLSX_CONTENT_TYPE;
 /// 因此无需 Java `setHeader` 之外的兜底逻辑。
 #[must_use]
 pub fn excel_xlsx_attachment_headers(file_name: &str) -> Vec<Header<'static>> {
-    let disposition = easyexcel_web::excel_attachment_content_disposition(&format!(
-        "{file_name}.xlsx"
-    ));
+    let disposition =
+        easyexcel_web::excel_attachment_content_disposition(&format!("{file_name}.xlsx"));
 
     vec![
         Header::new(http::header::CONTENT_TYPE.as_str(), XLSX_CONTENT_TYPE),

@@ -1,9 +1,9 @@
 //! 对应 Java：`com.alibaba.excel.read.metadata.holder.xlsx.XlsxReadWorkbookHolder`.
 
+use crate::DataFormatData;
 use crate::read::holder::read_workbook_holder::ReadWorkbookHolder;
 use crate::read::metadata::holder::read_holder::delegate_read_holder_contract;
 use std::collections::HashMap;
-use crate::DataFormatData;
 use std::ops::{Deref, DerefMut};
 
 /// 对应 Java：`XlsxReadWorkbookHolder extends ReadWorkbookHolder`.
@@ -60,8 +60,11 @@ impl XlsxReadWorkbookHolder {
     pub const fn inner(&self) -> &ReadWorkbookHolder {
         &self.inner
     }
-    pub const fn inner_mut(&mut self) -> &mut ReadWorkbookHolder { &mut self.inner }
-    #[must_use] pub const fn get_data_format_data_cache(&self) -> &HashMap<i32, DataFormatData> {
+    pub const fn inner_mut(&mut self) -> &mut ReadWorkbookHolder {
+        &mut self.inner
+    }
+    #[must_use]
+    pub const fn get_data_format_data_cache(&self) -> &HashMap<i32, DataFormatData> {
         &self.data_format_data_cache
     }
     pub fn set_data_format_data_cache(&mut self, value: HashMap<i32, DataFormatData>) {
@@ -74,30 +77,46 @@ impl XlsxReadWorkbookHolder {
             value
         })
     }
-    #[must_use] pub const fn get_package_relationship_collection_map(&self) -> &HashMap<String, Vec<String>> {
+    #[must_use]
+    pub const fn get_package_relationship_collection_map(&self) -> &HashMap<String, Vec<String>> {
         &self.package_relationship_collection_map
     }
     pub fn set_package_relationship_collection_map(&mut self, value: HashMap<String, Vec<String>>) {
         self.package_relationship_collection_map = value;
     }
-    #[must_use] pub fn get_sax_parser_factory_name(&self) -> Option<&str> {
+    #[must_use]
+    pub fn get_sax_parser_factory_name(&self) -> Option<&str> {
         self.sax_parser_factory_name.as_deref()
     }
     pub fn set_sax_parser_factory_name(&mut self, value: Option<String>) {
         self.sax_parser_factory_name = value;
     }
-    #[must_use] pub fn get_opc_package(&self) -> Option<&[u8]> { self.opc_package.as_deref() }
-    pub fn set_opc_package(&mut self, value: Option<Vec<u8>>) { self.opc_package = value; }
-    #[must_use] pub fn get_styles_table(&self) -> &[DataFormatData] { &self.styles_table }
-    pub fn set_styles_table(&mut self, value: Vec<DataFormatData>) { self.styles_table = value; }
+    #[must_use]
+    pub fn get_opc_package(&self) -> Option<&[u8]> {
+        self.opc_package.as_deref()
+    }
+    pub fn set_opc_package(&mut self, value: Option<Vec<u8>>) {
+        self.opc_package = value;
+    }
+    #[must_use]
+    pub fn get_styles_table(&self) -> &[DataFormatData] {
+        &self.styles_table
+    }
+    pub fn set_styles_table(&mut self, value: Vec<DataFormatData>) {
+        self.styles_table = value;
+    }
 }
 
 impl Deref for XlsxReadWorkbookHolder {
     type Target = ReadWorkbookHolder;
-    fn deref(&self) -> &Self::Target { &self.inner }
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
 }
 impl DerefMut for XlsxReadWorkbookHolder {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.inner }
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
 }
 
 delegate_read_holder_contract!(XlsxReadWorkbookHolder, inner);

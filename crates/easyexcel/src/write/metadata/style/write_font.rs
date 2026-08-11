@@ -202,7 +202,11 @@ impl Hash for WriteFont {
 
 /// 对齐 Java `Double.doubleToLongBits`：所有 NaN 规范化，正负零保持不同。
 fn java_double_bits(value: f64) -> u64 {
-    if value.is_nan() { f64::NAN.to_bits() } else { value.to_bits() }
+    if value.is_nan() {
+        f64::NAN.to_bits()
+    } else {
+        value.to_bits()
+    }
 }
 
 impl WriteFont {
@@ -311,7 +315,9 @@ impl WriteFont {
         self.font_name.as_deref()
     }
     /// Java `setFontName`，`None` 保留 Lombok setter 可清空语义。
-    pub fn set_font_name(&mut self, value: Option<String>) { self.font_name = value; }
+    pub fn set_font_name(&mut self, value: Option<String>) {
+        self.font_name = value;
+    }
 
     /// Returns the optional font size. (Java `getFontHeightInPoints()`)
     #[must_use]
@@ -331,7 +337,9 @@ impl WriteFont {
         self.italic
     }
     /// Java `setItalic`。
-    pub const fn set_italic(&mut self, value: Option<bool>) { self.italic = value; }
+    pub const fn set_italic(&mut self, value: Option<bool>) {
+        self.italic = value;
+    }
 
     /// Returns the optional strike-through flag. (Java `getStrikeout()`)
     #[must_use]
@@ -340,7 +348,9 @@ impl WriteFont {
         self.strikeout
     }
     /// Java `setStrikeout`。
-    pub const fn set_strikeout(&mut self, value: Option<bool>) { self.strikeout = value; }
+    pub const fn set_strikeout(&mut self, value: Option<bool>) {
+        self.strikeout = value;
+    }
 
     /// Returns the optional font color. (Java `getColor()`)
     #[must_use]
@@ -349,7 +359,9 @@ impl WriteFont {
         self.color
     }
     /// Java `setColor`。
-    pub const fn set_color(&mut self, value: Option<ExcelColor>) { self.color = value; }
+    pub const fn set_color(&mut self, value: Option<ExcelColor>) {
+        self.color = value;
+    }
 
     /// Returns the optional superscript/subscript mode. (Java `getTypeOffset()`)
     #[must_use]
@@ -380,7 +392,9 @@ impl WriteFont {
         self.charset
     }
     /// Java `setCharset`。
-    pub const fn set_charset(&mut self, value: Option<u8>) { self.charset = value; }
+    pub const fn set_charset(&mut self, value: Option<u8>) {
+        self.charset = value;
+    }
 
     /// Returns the optional bold flag. (Java `getBold()`)
     #[must_use]
@@ -389,7 +403,9 @@ impl WriteFont {
         self.bold
     }
     /// Java `setBold`。
-    pub const fn set_bold(&mut self, value: Option<bool>) { self.bold = value; }
+    pub const fn set_bold(&mut self, value: Option<bool>) {
+        self.bold = value;
+    }
 }
 
 #[cfg(test)]

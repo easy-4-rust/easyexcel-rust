@@ -21,7 +21,9 @@ pub fn get_all_interfaces(interfaces: Option<&[TypeId]>) -> Option<Vec<TypeId>> 
     let interfaces = interfaces?;
     let mut result = Vec::with_capacity(interfaces.len());
     for interface in interfaces {
-        if !result.contains(interface) { result.push(*interface); }
+        if !result.contains(interface) {
+            result.push(*interface);
+        }
     }
     Some(result)
 }

@@ -1,8 +1,8 @@
 //! 对应 Java：`com.alibaba.excel.read.metadata.holder.xls.XlsReadWorkbookHolder`.
 
+use crate::ReadSheet;
 use crate::read::holder::read_workbook_holder::ReadWorkbookHolder;
 use crate::read::metadata::holder::read_holder::delegate_read_holder_contract;
-use crate::ReadSheet;
 use std::ops::{Deref, DerefMut};
 
 /// 对应 Java：`XlsReadWorkbookHolder extends ReadWorkbookHolder`.
@@ -87,33 +87,80 @@ impl XlsReadWorkbookHolder {
     pub const fn set_need_read_sheet(&mut self, need_read_sheet: bool) {
         self.need_read_sheet = need_read_sheet;
     }
-    #[must_use] pub const fn get_need_read_sheet(&self) -> bool { self.need_read_sheet() }
-    #[must_use] pub fn get_bound_sheet_record_list(&self) -> &[ReadSheet] { &self.bound_sheet_record_list }
-    pub fn set_bound_sheet_record_list(&mut self, value: Vec<ReadSheet>) { self.bound_sheet_record_list = value; }
-    #[must_use] pub const fn get_current_sheet_stopped(&self) -> bool { self.current_sheet_stopped }
-    pub const fn set_current_sheet_stopped(&mut self, value: bool) { self.current_sheet_stopped = value; }
-    #[must_use] pub const fn get_ignore_record(&self) -> bool { self.ignore_record }
-    pub const fn set_ignore_record(&mut self, value: bool) { self.ignore_record = value; }
-    #[must_use] pub const fn get_read_sheet_index(&self) -> i32 { self.read_sheet_index }
-    pub const fn set_read_sheet_index(&mut self, value: i32) { self.read_sheet_index = value; }
-    #[must_use] pub fn get_hssf_workbook(&self) -> Option<&[u8]> { self.hssf_workbook.as_deref() }
-    pub fn set_hssf_workbook(&mut self, value: Option<Vec<u8>>) { self.hssf_workbook = value; }
-    #[must_use] pub fn get_poifs_file_system(&self) -> Option<&[u8]> { self.poifs_file_system.as_deref() }
-    pub fn set_poifs_file_system(&mut self, value: Option<Vec<u8>>) { self.poifs_file_system = value; }
-    #[must_use] pub const fn get_format_tracking_hssf_listener(&self) -> bool { self.format_tracking_listener }
-    pub const fn set_format_tracking_hssf_listener(&mut self, value: bool) { self.format_tracking_listener = value; }
+    #[must_use]
+    pub const fn get_need_read_sheet(&self) -> bool {
+        self.need_read_sheet()
+    }
+    #[must_use]
+    pub fn get_bound_sheet_record_list(&self) -> &[ReadSheet] {
+        &self.bound_sheet_record_list
+    }
+    pub fn set_bound_sheet_record_list(&mut self, value: Vec<ReadSheet>) {
+        self.bound_sheet_record_list = value;
+    }
+    #[must_use]
+    pub const fn get_current_sheet_stopped(&self) -> bool {
+        self.current_sheet_stopped
+    }
+    pub const fn set_current_sheet_stopped(&mut self, value: bool) {
+        self.current_sheet_stopped = value;
+    }
+    #[must_use]
+    pub const fn get_ignore_record(&self) -> bool {
+        self.ignore_record
+    }
+    pub const fn set_ignore_record(&mut self, value: bool) {
+        self.ignore_record = value;
+    }
+    #[must_use]
+    pub const fn get_read_sheet_index(&self) -> i32 {
+        self.read_sheet_index
+    }
+    pub const fn set_read_sheet_index(&mut self, value: i32) {
+        self.read_sheet_index = value;
+    }
+    #[must_use]
+    pub fn get_hssf_workbook(&self) -> Option<&[u8]> {
+        self.hssf_workbook.as_deref()
+    }
+    pub fn set_hssf_workbook(&mut self, value: Option<Vec<u8>>) {
+        self.hssf_workbook = value;
+    }
+    #[must_use]
+    pub fn get_poifs_file_system(&self) -> Option<&[u8]> {
+        self.poifs_file_system.as_deref()
+    }
+    pub fn set_poifs_file_system(&mut self, value: Option<Vec<u8>>) {
+        self.poifs_file_system = value;
+    }
+    #[must_use]
+    pub const fn get_format_tracking_hssf_listener(&self) -> bool {
+        self.format_tracking_listener
+    }
+    pub const fn set_format_tracking_hssf_listener(&mut self, value: bool) {
+        self.format_tracking_listener = value;
+    }
     /// Java `getFormatTrackingHSSFListener()` 原始缩写兼容入口。
-    #[must_use] pub const fn get_format_tracking_hssflistener(&self) -> bool { self.format_tracking_listener }
+    #[must_use]
+    pub const fn get_format_tracking_hssflistener(&self) -> bool {
+        self.format_tracking_listener
+    }
     /// Java `setFormatTrackingHSSFListener()` 原始缩写兼容入口。
-    pub const fn set_format_tracking_hssflistener(&mut self, value: bool) { self.format_tracking_listener = value; }
+    pub const fn set_format_tracking_hssflistener(&mut self, value: bool) {
+        self.format_tracking_listener = value;
+    }
 }
 
 impl Deref for XlsReadWorkbookHolder {
     type Target = ReadWorkbookHolder;
-    fn deref(&self) -> &Self::Target { &self.inner }
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
 }
 impl DerefMut for XlsReadWorkbookHolder {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.inner }
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
 }
 
 delegate_read_holder_contract!(XlsReadWorkbookHolder, inner);

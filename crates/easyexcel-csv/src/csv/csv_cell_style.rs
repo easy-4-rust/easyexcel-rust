@@ -30,7 +30,9 @@ impl CsvCellStyle {
     }
 
     /// Java `getIndex()` 兼容别名。
-    pub const fn get_index(&self) -> i16 { self.index() }
+    pub const fn get_index(&self) -> i16 {
+        self.index()
+    }
 
     /// 设置工作簿局部样式索引，语义对应 Java Lombok `setIndex`。
     pub const fn set_index(&mut self, index: i16) {
@@ -73,7 +75,9 @@ impl CsvCellStyle {
     }
 
     /// Java `getDataFormat()` 兼容别名。
-    pub fn get_data_format(&self) -> i16 { self.data_format() }
+    pub fn get_data_format(&self) -> i16 {
+        self.data_format()
+    }
 
     /// 返回数字格式文本。
     #[must_use]
@@ -84,10 +88,14 @@ impl CsvCellStyle {
     }
 
     /// Java `getDataFormatString()` 兼容别名。
-    pub fn get_data_format_string(&self) -> Option<&str> { self.data_format_string() }
+    pub fn get_data_format_string(&self) -> Option<&str> {
+        self.data_format_string()
+    }
 
     /// Java `getDataFormatData()` 兼容别名。
-    pub const fn get_data_format_data(&self) -> Option<&DataFormatData> { self.data_format_data() }
+    pub const fn get_data_format_data(&self) -> Option<&DataFormatData> {
+        self.data_format_data()
+    }
 }
 
 #[cfg(test)]

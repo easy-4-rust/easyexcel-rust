@@ -4,9 +4,9 @@ use indexmap::IndexMap;
 
 use crate::{CellExtra, CellValue, HolderEnum, ReadCellData, ReadSheet};
 
-use super::read_workbook_holder::ReadWorkbookHolder;
 use super::abstract_read_holder::AbstractReadHolder;
 use super::read_holder::delegate_read_holder_contract;
+use super::read_workbook_holder::ReadWorkbookHolder;
 use std::ops::{Deref, DerefMut};
 
 /// 对应 Java：`ReadSheetHolder extends AbstractReadHolder`.
@@ -89,65 +89,120 @@ impl ReadSheetHolder {
 
     /// Java 无参构造器。
     #[must_use]
-    pub fn default_construction() -> Self { Self::new(-1, "") }
+    pub fn default_construction() -> Self {
+        Self::new(-1, "")
+    }
 
-    #[must_use] pub const fn get_sheet_no(&self) -> i32 { self.sheet_no }
-    pub fn set_sheet_no(&mut self, value: i32) { self.sheet_no = value; }
-    #[must_use] pub fn get_sheet_name(&self) -> &str { &self.sheet_name }
-    pub fn set_sheet_name(&mut self, value: impl Into<String>) { self.sheet_name = value.into(); }
-    #[must_use] pub const fn get_row_index(&self) -> i32 { self.row_index }
-    pub const fn set_row_index(&mut self, value: i32) { self.row_index = value; }
-    #[must_use] pub const fn get_ended(&self) -> bool { self.ended }
-    pub const fn set_ended(&mut self, value: bool) { self.ended = value; }
-    #[must_use] pub const fn get_approximate_total_row_number(&self) -> Option<i32> {
+    #[must_use]
+    pub const fn get_sheet_no(&self) -> i32 {
+        self.sheet_no
+    }
+    pub fn set_sheet_no(&mut self, value: i32) {
+        self.sheet_no = value;
+    }
+    #[must_use]
+    pub fn get_sheet_name(&self) -> &str {
+        &self.sheet_name
+    }
+    pub fn set_sheet_name(&mut self, value: impl Into<String>) {
+        self.sheet_name = value.into();
+    }
+    #[must_use]
+    pub const fn get_row_index(&self) -> i32 {
+        self.row_index
+    }
+    pub const fn set_row_index(&mut self, value: i32) {
+        self.row_index = value;
+    }
+    #[must_use]
+    pub const fn get_ended(&self) -> bool {
+        self.ended
+    }
+    pub const fn set_ended(&mut self, value: bool) {
+        self.ended = value;
+    }
+    #[must_use]
+    pub const fn get_approximate_total_row_number(&self) -> Option<i32> {
         self.approximate_total_row_number
     }
     pub const fn set_approximate_total_row_number(&mut self, value: Option<i32>) {
         self.approximate_total_row_number = value;
     }
-    #[must_use] pub const fn get_total(&self) -> Option<i32> { self.approximate_total_row_number }
-    pub const fn set_total(&mut self, value: Option<i32>) { self.approximate_total_row_number = value; }
-    #[must_use] pub const fn get_max_not_empty_data_head_size(&self) -> Option<i32> {
+    #[must_use]
+    pub const fn get_total(&self) -> Option<i32> {
+        self.approximate_total_row_number
+    }
+    pub const fn set_total(&mut self, value: Option<i32>) {
+        self.approximate_total_row_number = value;
+    }
+    #[must_use]
+    pub const fn get_max_not_empty_data_head_size(&self) -> Option<i32> {
         self.max_not_empty_data_head_size
     }
     pub const fn set_max_not_empty_data_head_size(&mut self, value: Option<i32>) {
         self.max_not_empty_data_head_size = value;
     }
-    #[must_use] pub const fn get_cell_map(&self) -> &IndexMap<usize, CellValue> { &self.cell_map }
-    pub fn set_cell_map(
-        &mut self,
-        value: impl IntoIterator<Item = (usize, CellValue)>,
-    ) {
+    #[must_use]
+    pub const fn get_cell_map(&self) -> &IndexMap<usize, CellValue> {
+        &self.cell_map
+    }
+    pub fn set_cell_map(&mut self, value: impl IntoIterator<Item = (usize, CellValue)>) {
         self.cell_map = value.into_iter().collect();
     }
-    #[must_use] pub const fn get_cell_extra(&self) -> Option<&CellExtra> { self.cell_extra.as_ref() }
-    pub fn set_cell_extra(&mut self, value: Option<CellExtra>) { self.cell_extra = value; }
-    #[must_use] pub const fn get_temp_cell_data(&self) -> Option<&ReadCellData> {
+    #[must_use]
+    pub const fn get_cell_extra(&self) -> Option<&CellExtra> {
+        self.cell_extra.as_ref()
+    }
+    pub fn set_cell_extra(&mut self, value: Option<CellExtra>) {
+        self.cell_extra = value;
+    }
+    #[must_use]
+    pub const fn get_temp_cell_data(&self) -> Option<&ReadCellData> {
         self.temp_cell_data.as_ref()
     }
-    pub fn set_temp_cell_data(&mut self, value: Option<ReadCellData>) { self.temp_cell_data = value; }
-    #[must_use] pub const fn get_read_sheet(&self) -> &ReadSheet { &self.read_sheet }
-    pub fn set_read_sheet(&mut self, value: ReadSheet) { self.read_sheet = value; }
-    #[must_use] pub fn get_parent_read_workbook_holder(&self) -> Option<&ReadWorkbookHolder> {
+    pub fn set_temp_cell_data(&mut self, value: Option<ReadCellData>) {
+        self.temp_cell_data = value;
+    }
+    #[must_use]
+    pub const fn get_read_sheet(&self) -> &ReadSheet {
+        &self.read_sheet
+    }
+    pub fn set_read_sheet(&mut self, value: ReadSheet) {
+        self.read_sheet = value;
+    }
+    #[must_use]
+    pub fn get_parent_read_workbook_holder(&self) -> Option<&ReadWorkbookHolder> {
         self.parent_read_workbook_holder.as_deref()
     }
     pub fn set_parent_read_workbook_holder(&mut self, value: Option<ReadWorkbookHolder>) {
         self.parent_read_workbook_holder = value.map(Box::new);
     }
-    #[must_use] pub const fn holder_type(&self) -> HolderEnum { HolderEnum::Sheet }
+    #[must_use]
+    pub const fn holder_type(&self) -> HolderEnum {
+        HolderEnum::Sheet
+    }
     /// 返回父类读取 Holder。
-    #[must_use] pub const fn abstract_holder(&self) -> &AbstractReadHolder { &self.abstract_holder }
+    #[must_use]
+    pub const fn abstract_holder(&self) -> &AbstractReadHolder {
+        &self.abstract_holder
+    }
     /// 返回可变父类读取 Holder。
-    pub const fn abstract_holder_mut(&mut self) -> &mut AbstractReadHolder { &mut self.abstract_holder }
+    pub const fn abstract_holder_mut(&mut self) -> &mut AbstractReadHolder {
+        &mut self.abstract_holder
+    }
 }
 
 impl Deref for ReadSheetHolder {
     type Target = AbstractReadHolder;
-    fn deref(&self) -> &Self::Target { &self.abstract_holder }
+    fn deref(&self) -> &Self::Target {
+        &self.abstract_holder
+    }
 }
 
 impl DerefMut for ReadSheetHolder {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.abstract_holder }
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.abstract_holder
+    }
 }
 
 delegate_read_holder_contract!(ReadSheetHolder, abstract_holder);

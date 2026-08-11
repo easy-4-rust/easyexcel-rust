@@ -446,10 +446,7 @@ mod integration_tests {
 
     #[test]
     fn ifs_basic() {
-        assert_eq!(
-            eval_str("=IFS(FALSE,1,TRUE,2,FALSE,3)"),
-            Value::Number(2.0)
-        );
+        assert_eq!(eval_str("=IFS(FALSE,1,TRUE,2,FALSE,3)"), Value::Number(2.0));
     }
 
     #[test]
@@ -750,26 +747,17 @@ mod integration_tests {
 
     #[test]
     fn chooserows_basic() {
-        assert_eq!(
-            nums("=CHOOSEROWS({1;2;3;4},3,1)"),
-            vec![3.0, 1.0]
-        );
+        assert_eq!(nums("=CHOOSEROWS({1;2;3;4},3,1)"), vec![3.0, 1.0]);
     }
 
     #[test]
     fn chooserows_negative_index() {
-        assert_eq!(
-            nums("=CHOOSEROWS({1;2;3;4},-1)"),
-            vec![4.0]
-        );
+        assert_eq!(nums("=CHOOSEROWS({1;2;3;4},-1)"), vec![4.0]);
     }
 
     #[test]
     fn choosecols_basic() {
-        assert_eq!(
-            nums("=CHOOSECOLS({1,2,3;4,5,6},2)"),
-            vec![2.0, 5.0]
-        );
+        assert_eq!(nums("=CHOOSECOLS({1,2,3;4,5,6},2)"), vec![2.0, 5.0]);
     }
 
     #[test]
@@ -899,30 +887,15 @@ mod integration_tests {
 
     #[test]
     fn upper_lower_integration() {
-        assert_eq!(
-            eval_str(r#"=UPPER("hello")"#),
-            Value::Text("HELLO".into())
-        );
-        assert_eq!(
-            eval_str(r#"=LOWER("HELLO")"#),
-            Value::Text("hello".into())
-        );
+        assert_eq!(eval_str(r#"=UPPER("hello")"#), Value::Text("HELLO".into()));
+        assert_eq!(eval_str(r#"=LOWER("HELLO")"#), Value::Text("hello".into()));
     }
 
     #[test]
     fn left_right_mid_integration() {
-        assert_eq!(
-            eval_str(r#"=LEFT("hello",2)"#),
-            Value::Text("he".into())
-        );
-        assert_eq!(
-            eval_str(r#"=RIGHT("hello",2)"#),
-            Value::Text("lo".into())
-        );
-        assert_eq!(
-            eval_str(r#"=MID("hello",2,3)"#),
-            Value::Text("ell".into())
-        );
+        assert_eq!(eval_str(r#"=LEFT("hello",2)"#), Value::Text("he".into()));
+        assert_eq!(eval_str(r#"=RIGHT("hello",2)"#), Value::Text("lo".into()));
+        assert_eq!(eval_str(r#"=MID("hello",2,3)"#), Value::Text("ell".into()));
     }
 
     #[test]
@@ -953,10 +926,7 @@ mod integration_tests {
 
     #[test]
     fn if_nested() {
-        assert_eq!(
-            eval_str("=IF(TRUE,IF(FALSE,1,2),3)"),
-            Value::Number(2.0)
-        );
+        assert_eq!(eval_str("=IF(TRUE,IF(FALSE,1,2),3)"), Value::Number(2.0));
     }
 
     #[test]

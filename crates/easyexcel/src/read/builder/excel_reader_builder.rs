@@ -17,8 +17,7 @@ use crate::cache::SimpleReadCacheSelector;
 use crate::read::builder::abstract_excel_reader_parameter_builder::AbstractExcelReaderParameterBuilder;
 use crate::read::excel_reader::ExcelReader;
 use crate::{
-    ExcelLocale, ExcelTypeEnum, ReadCacheMode, ReadOptions, SheetSelector,
-    StoredReadCacheSelector,
+    ExcelLocale, ExcelTypeEnum, ReadCacheMode, ReadOptions, SheetSelector, StoredReadCacheSelector,
 };
 
 /// 对应 Java：`ExcelReaderBuilder extends AbstractExcelReaderParameterBuilder`.

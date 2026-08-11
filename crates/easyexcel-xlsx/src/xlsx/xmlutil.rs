@@ -138,11 +138,11 @@ pub fn xml_escape(s: &str) -> String {
     out
 }
 
-    /// 对应 Java：无直接对应对象；Rust 架构扩展。 Does the string have leading or trailing whitespace requiring
-    /// `xml:space="preserve"`?
-    pub fn needs_preserve(s: &str) -> bool {
-        s.starts_with([' ', '\t', '\n', '\r']) || s.ends_with([' ', '\t', '\n', '\r'])
-    }
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Does the string have leading or trailing whitespace requiring
+/// `xml:space="preserve"`?
+pub fn needs_preserve(s: &str) -> bool {
+    s.starts_with([' ', '\t', '\n', '\r']) || s.ends_with([' ', '\t', '\n', '\r'])
+}
 
 #[cfg(test)]
 mod tests {
@@ -223,7 +223,10 @@ mod tests {
 
     #[test]
     fn xml_escape_escapes_all_special_chars() {
-        assert_eq!(xml_escape("a&b<c>d\"e'f"), "a&amp;b&lt;c&gt;d&quot;e&apos;f");
+        assert_eq!(
+            xml_escape("a&b<c>d\"e'f"),
+            "a&amp;b&lt;c&gt;d&quot;e&apos;f"
+        );
     }
 
     #[test]

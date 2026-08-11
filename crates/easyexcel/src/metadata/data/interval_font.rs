@@ -35,9 +35,13 @@ impl IntervalFont {
 
     /// Java `getStartIndex` 兼容别名。
     #[must_use]
-    pub const fn get_start_index(&self) -> usize { self.start_index() }
+    pub const fn get_start_index(&self) -> usize {
+        self.start_index()
+    }
     /// 设置 UTF-16 起始下标。
-    pub const fn set_start_index(&mut self, value: usize) { self.start_index = value; }
+    pub const fn set_start_index(&mut self, value: usize) {
+        self.start_index = value;
+    }
 
     /// Returns the exclusive UTF-16 end index. (Java `getEndIndex()`)
     #[must_use]
@@ -48,9 +52,13 @@ impl IntervalFont {
 
     /// Java `getEndIndex` 兼容别名。
     #[must_use]
-    pub const fn get_end_index(&self) -> usize { self.end_index() }
+    pub const fn get_end_index(&self) -> usize {
+        self.end_index()
+    }
     /// 设置 UTF-16 结束下标。
-    pub const fn set_end_index(&mut self, value: usize) { self.end_index = value; }
+    pub const fn set_end_index(&mut self, value: usize) {
+        self.end_index = value;
+    }
 
     /// Returns the interval font. (Java `getWriteFont()`)
     #[must_use]
@@ -61,7 +69,11 @@ impl IntervalFont {
 
     /// Java `getWriteFont` 兼容别名。
     #[must_use]
-    pub const fn get_write_font(&self) -> &WriteFont { self.write_font() }
+    pub const fn get_write_font(&self) -> &WriteFont {
+        self.write_font()
+    }
     /// 设置区间字体。
-    pub fn set_write_font(&mut self, value: WriteFont) { self.write_font = value; }
+    pub fn set_write_font(&mut self, value: WriteFont) {
+        self.write_font = value;
+    }
 }

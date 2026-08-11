@@ -4,10 +4,10 @@ use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 
 use crate::write::holder::abstract_write_holder::AbstractWriteHolder;
-use crate::write::metadata::holder::write_holder::delegate_write_holder_contract;
 use crate::write::holder::write_table_holder::WriteTableHolder;
 use crate::write::metadata::WriteBasicParameter;
 use crate::write::metadata::WriteSheet;
+use crate::write::metadata::holder::write_holder::delegate_write_holder_contract;
 use crate::{HolderEnum, WriteLastRowTypeEnum};
 
 /// 对应 Java：`WriteSheetHolder extends AbstractWriteHolder`.
@@ -35,25 +35,50 @@ pub struct WriteSheetHolder<'a> {
 
 impl<'a> WriteSheetHolder<'a> {
     /// Java `getSheetName`。
-    #[must_use] pub fn get_sheet_name(&self) -> &str { &self.sheet_name }
+    #[must_use]
+    pub fn get_sheet_name(&self) -> &str {
+        &self.sheet_name
+    }
     /// Java `setSheetName`。
-    pub fn set_sheet_name(&mut self, value: impl Into<String>) { self.sheet_name = value.into(); }
+    pub fn set_sheet_name(&mut self, value: impl Into<String>) {
+        self.sheet_name = value.into();
+    }
     /// Java `getSheetNo`。
-    #[must_use] pub const fn get_sheet_no(&self) -> i32 { self.sheet_no }
+    #[must_use]
+    pub const fn get_sheet_no(&self) -> i32 {
+        self.sheet_no
+    }
     /// Java `setSheetNo`。
-    pub const fn set_sheet_no(&mut self, value: i32) { self.sheet_no = value; }
+    pub const fn set_sheet_no(&mut self, value: i32) {
+        self.sheet_no = value;
+    }
     /// Java `getHasBeenInitializedTable`。
-    #[must_use] pub fn get_has_been_initialized_table(&self) -> &HashMap<i32, WriteTableHolder<'a>> { &self.tables }
+    #[must_use]
+    pub fn get_has_been_initialized_table(&self) -> &HashMap<i32, WriteTableHolder<'a>> {
+        &self.tables
+    }
     /// Java `setHasBeenInitializedTable`。
-    pub fn set_has_been_initialized_table(&mut self, value: HashMap<i32, WriteTableHolder<'a>>) { self.tables = value; }
+    pub fn set_has_been_initialized_table(&mut self, value: HashMap<i32, WriteTableHolder<'a>>) {
+        self.tables = value;
+    }
     /// Java `getLastRowIndex`。
-    #[must_use] pub const fn get_last_row_index(&self) -> i32 { self.last_row_index }
+    #[must_use]
+    pub const fn get_last_row_index(&self) -> i32 {
+        self.last_row_index
+    }
     /// Java `setLastRowIndex`。
-    pub const fn set_last_row_index(&mut self, value: i32) { self.last_row_index = value; }
+    pub const fn set_last_row_index(&mut self, value: i32) {
+        self.last_row_index = value;
+    }
     /// Java `getHasData`。
-    #[must_use] pub const fn get_has_data(&self) -> bool { self.has_data }
+    #[must_use]
+    pub const fn get_has_data(&self) -> bool {
+        self.has_data
+    }
     /// Java `setHasData`。
-    pub const fn set_has_data(&mut self, value: bool) { self.has_data = value; }
+    pub const fn set_has_data(&mut self, value: bool) {
+        self.has_data = value;
+    }
 
     /// 对应 Java：com.alibaba.excel.write.metadata.holder.WriteSheetHolder。 Creates a sheet holder matching the Java `WriteSheetHolder(WriteSheet, WriteWorkbookHolder)` initialiser.
     #[must_use]
@@ -73,7 +98,8 @@ impl<'a> WriteSheetHolder<'a> {
             write_last_row_type_enum: WriteLastRowTypeEnum::CommonEmpty,
             last_row_index: 0,
             has_data: false,
-        }.synchronize_sheet_name()
+        }
+        .synchronize_sheet_name()
     }
 
     /// Java 无参构造器；真实 `WriteSheet` 可在 Holder 初始化阶段再设置。
@@ -203,7 +229,10 @@ impl<'a> WriteSheetHolder<'a> {
     }
 
     /// Java `getWriteSheet`。
-    #[must_use] pub const fn get_write_sheet(&self) -> &WriteSheet { &self.write_sheet }
+    #[must_use]
+    pub const fn get_write_sheet(&self) -> &WriteSheet {
+        &self.write_sheet
+    }
     /// Java `setWriteSheet`。
     pub fn set_write_sheet(&mut self, value: WriteSheet) {
         self.sheet_no = value.sheet_no;
@@ -211,30 +240,59 @@ impl<'a> WriteSheetHolder<'a> {
         self.write_sheet = value;
     }
     /// Java `getParentWriteWorkbookHolder` 的构造时身份映射。
-    #[must_use] pub const fn get_parent_write_workbook_holder_id(&self) -> Option<usize> { self.parent_write_workbook_holder_id }
+    #[must_use]
+    pub const fn get_parent_write_workbook_holder_id(&self) -> Option<usize> {
+        self.parent_write_workbook_holder_id
+    }
     /// Java 命名兼容入口；Rust 使用构造时身份令牌而不是自引用。
-    #[must_use] pub const fn get_parent_write_workbook_holder(&self) -> Option<usize> { self.parent_write_workbook_holder_id }
+    #[must_use]
+    pub const fn get_parent_write_workbook_holder(&self) -> Option<usize> {
+        self.parent_write_workbook_holder_id
+    }
     /// Java `setParentWriteWorkbookHolder` 的构造时身份映射。
-    pub const fn set_parent_write_workbook_holder_id(&mut self, value: Option<usize>) { self.parent_write_workbook_holder_id = value; }
+    pub const fn set_parent_write_workbook_holder_id(&mut self, value: Option<usize>) {
+        self.parent_write_workbook_holder_id = value;
+    }
     /// Java 命名兼容入口；Rust 使用构造时身份令牌而不是自引用。
-    pub const fn set_parent_write_workbook_holder(&mut self, value: Option<usize>) { self.parent_write_workbook_holder_id = value; }
+    pub const fn set_parent_write_workbook_holder(&mut self, value: Option<usize>) {
+        self.parent_write_workbook_holder_id = value;
+    }
     /// Java `getWriteLastRowTypeEnum`。
-    #[must_use] pub const fn get_write_last_row_type_enum(&self) -> WriteLastRowTypeEnum { self.write_last_row_type_enum }
+    #[must_use]
+    pub const fn get_write_last_row_type_enum(&self) -> WriteLastRowTypeEnum {
+        self.write_last_row_type_enum
+    }
     /// Java `setWriteLastRowTypeEnum`。
-    pub const fn set_write_last_row_type_enum(&mut self, value: WriteLastRowTypeEnum) { self.write_last_row_type_enum = value; }
+    pub const fn set_write_last_row_type_enum(&mut self, value: WriteLastRowTypeEnum) {
+        self.write_last_row_type_enum = value;
+    }
     /// 更新实际 Sheet 与缓存 Sheet 的末行状态，供模板追加算法使用。
-    pub const fn set_backend_row_state(&mut self, sheet_last_row_index: i32, cached_sheet_last_row_index: i32, cached_sheet_has_row_zero: bool) {
+    pub const fn set_backend_row_state(
+        &mut self,
+        sheet_last_row_index: i32,
+        cached_sheet_last_row_index: i32,
+        cached_sheet_has_row_zero: bool,
+    ) {
         self.sheet_last_row_index = sheet_last_row_index;
         self.cached_sheet_last_row_index = cached_sheet_last_row_index;
         self.cached_sheet_has_row_zero = cached_sheet_has_row_zero;
     }
     /// 返回当前 Sheet 元数据。对应 Java Lombok `getSheet()`。
-    #[must_use] pub const fn get_sheet(&self) -> &WriteSheet { &self.write_sheet }
+    #[must_use]
+    pub const fn get_sheet(&self) -> &WriteSheet {
+        &self.write_sheet
+    }
     /// 替换当前 Sheet 元数据。对应 Java Lombok `setSheet()`。
-    pub fn set_sheet(&mut self, value: WriteSheet) { self.set_write_sheet(value); }
+    pub fn set_sheet(&mut self, value: WriteSheet) {
+        self.set_write_sheet(value);
+    }
     /// 返回缓存 Sheet 的最后行状态。对应 Java `getCachedSheet()` 的后端中立映射。
-    #[must_use] pub const fn get_cached_sheet(&self) -> (i32, bool) {
-        (self.cached_sheet_last_row_index, self.cached_sheet_has_row_zero)
+    #[must_use]
+    pub const fn get_cached_sheet(&self) -> (i32, bool) {
+        (
+            self.cached_sheet_last_row_index,
+            self.cached_sheet_has_row_zero,
+        )
     }
     /// 替换缓存 Sheet 的最后行状态。对应 Java `setCachedSheet()`。
     pub const fn set_cached_sheet(&mut self, last_row_index: i32, has_row_zero: bool) {
@@ -245,10 +303,20 @@ impl<'a> WriteSheetHolder<'a> {
     pub fn get_new_row_index_and_start_do_write(&mut self) -> i32 {
         let new_row_index = match self.write_last_row_type_enum {
             WriteLastRowTypeEnum::TemplateEmpty => {
-                let last = self.sheet_last_row_index.max(self.cached_sheet_last_row_index);
-                if last != 0 || self.cached_sheet_has_row_zero { last + 1 } else { 0 }
+                let last = self
+                    .sheet_last_row_index
+                    .max(self.cached_sheet_last_row_index);
+                if last != 0 || self.cached_sheet_has_row_zero {
+                    last + 1
+                } else {
+                    0
+                }
             }
-            WriteLastRowTypeEnum::HasData => self.sheet_last_row_index.max(self.cached_sheet_last_row_index) + 1,
+            WriteLastRowTypeEnum::HasData => {
+                self.sheet_last_row_index
+                    .max(self.cached_sheet_last_row_index)
+                    + 1
+            }
             WriteLastRowTypeEnum::CommonEmpty => 0,
         };
         self.write_last_row_type_enum = WriteLastRowTypeEnum::HasData;
@@ -258,7 +326,10 @@ impl<'a> WriteSheetHolder<'a> {
         new_row_index
     }
     /// Java `holderType`。
-    #[must_use] pub const fn holder_type(&self) -> HolderEnum { HolderEnum::Sheet }
+    #[must_use]
+    pub const fn holder_type(&self) -> HolderEnum {
+        HolderEnum::Sheet
+    }
 }
 
 impl Deref for WriteSheetHolder<'_> {

@@ -6,13 +6,7 @@ use easyexcel::ExcelRow;
 
 #[derive(ExcelRow)]
 struct ConditionalRow {
-    #[excel(
-        conditional(
-            condition = ">100",
-            font_color = "FF0000",
-            background_color = "FFFF00"
-        )
-    )]
+    #[excel(conditional(condition = ">100", font_color = "FF0000", background_color = "FFFF00"))]
     amount: f64,
 }
 
@@ -21,7 +15,10 @@ fn conditional_attribute_parses() {
     let schema = ConditionalRow::schema();
     assert_eq!(schema.len(), 1);
     let col = &schema[0];
-    let cond = col.conditional_format.as_ref().expect("conditional should be set");
+    let cond = col
+        .conditional_format
+        .as_ref()
+        .expect("conditional should be set");
     assert_eq!(cond.0, ">100");
     assert_eq!(cond.1, "FF0000");
     assert_eq!(cond.2, "FFFF00");
@@ -31,14 +28,12 @@ fn conditional_attribute_parses() {
 
 #[derive(ExcelRow)]
 struct DataValidationRow {
-    #[excel(
-        data_validation(
-            type = "list",
-            operator = "between",
-            formula1 = "\"A,B,C\"",
-            formula2 = ""
-        )
-    )]
+    #[excel(data_validation(
+        type = "list",
+        operator = "between",
+        formula1 = "\"A,B,C\"",
+        formula2 = ""
+    ))]
     category: String,
 }
 
@@ -47,7 +42,10 @@ fn data_validation_attribute_parses() {
     let schema = DataValidationRow::schema();
     assert_eq!(schema.len(), 1);
     let col = &schema[0];
-    let dv = col.data_validation.as_ref().expect("data_validation should be set");
+    let dv = col
+        .data_validation
+        .as_ref()
+        .expect("data_validation should be set");
     assert_eq!(dv.data_type, "list");
     assert_eq!(dv.operator, "between");
     assert_eq!(dv.formula1, "\"A,B,C\"");

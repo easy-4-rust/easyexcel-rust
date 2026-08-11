@@ -8,8 +8,8 @@ use easyexcel_xlsx::xlsx::generation::{self, Worksheet};
 use crate::write::excel_writer_core::{
     HandlerHolderScope, WriteGlobalFlags, apply_loop_merges, collect_handler_content_row_height,
     collect_handler_head_row_height, dynamic_columns_for_row, effective_loop_merges, format_error,
-    head_rows_for_schema,
-    write_data_row_fast, write_data_row_with_handlers, write_dynamic_headers_with_handlers,
+    head_rows_for_schema, write_data_row_fast, write_data_row_with_handlers,
+    write_dynamic_headers_with_handlers,
 };
 use crate::write::image_layout::ImageLayout;
 use crate::write::row_scratch::RowScratch;
@@ -142,7 +142,8 @@ where
         }
         row_index += head_rows;
     }
-    let content_height = collect_handler_content_row_height(handlers).or(metadata.content_row_height);
+    let content_height =
+        collect_handler_content_row_height(handlers).or(metadata.content_row_height);
     let capture_journal = gzip_spill.is_some();
     let mut row_scratch = RowScratch::with_capacity(T::schema().len());
     for row in rows {

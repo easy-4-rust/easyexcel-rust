@@ -149,15 +149,27 @@ impl ClientAnchorData {
     }
 
     /// Java `setTop`。
-    pub const fn set_top(&mut self, value: Option<u32>) { self.top = value; }
+    pub const fn set_top(&mut self, value: Option<u32>) {
+        self.top = value;
+    }
     /// Java `setRight`。
-    pub const fn set_right(&mut self, value: Option<u32>) { self.right = value; }
+    pub const fn set_right(&mut self, value: Option<u32>) {
+        self.right = value;
+    }
     /// Java `setBottom`。
-    pub const fn set_bottom(&mut self, value: Option<u32>) { self.bottom = value; }
+    pub const fn set_bottom(&mut self, value: Option<u32>) {
+        self.bottom = value;
+    }
     /// Java `setLeft`。
-    pub const fn set_left(&mut self, value: Option<u32>) { self.left = value; }
+    pub const fn set_left(&mut self, value: Option<u32>) {
+        self.left = value;
+    }
     /// Java `setAnchorType`。
-    pub const fn set_anchor_type(&mut self, value: Option<AnchorType>) { self.anchor_type = value; }
+    pub const fn set_anchor_type(&mut self, value: Option<AnchorType>) {
+        self.anchor_type = value;
+    }
     /// 替换继承坐标。
-    pub const fn set_coordinates(&mut self, value: CoordinateData) { self.coordinates = value; }
+    pub const fn set_coordinates(&mut self, value: CoordinateData) {
+        self.coordinates = value;
+    }
 }

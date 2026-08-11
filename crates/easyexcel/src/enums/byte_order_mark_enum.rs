@@ -26,12 +26,22 @@ pub enum ByteOrderMarkEnum {
 
 impl ByteOrderMarkEnum {
     /// Java `values()` 的声明顺序。
-    pub const ALL: [Self; 5] = [Self::Utf8, Self::Utf16Be, Self::Utf16Le, Self::Utf32Be, Self::Utf32Le];
+    pub const ALL: [Self; 5] = [
+        Self::Utf8,
+        Self::Utf16Be,
+        Self::Utf16Le,
+        Self::Utf32Be,
+        Self::Utf32Le,
+    ];
     /// Java 枚举常量名。
-    #[must_use] pub const fn java_name(self) -> &'static str {
+    #[must_use]
+    pub const fn java_name(self) -> &'static str {
         match self {
-            Self::Utf8 => "UTF_8", Self::Utf16Be => "UTF_16BE", Self::Utf16Le => "UTF_16LE",
-            Self::Utf32Be => "UTF_32BE", Self::Utf32Le => "UTF_32LE",
+            Self::Utf8 => "UTF_8",
+            Self::Utf16Be => "UTF_16BE",
+            Self::Utf16Le => "UTF_16LE",
+            Self::Utf32Be => "UTF_32BE",
+            Self::Utf32Le => "UTF_32LE",
         }
     }
     /// Returns the BOM bytes as a slice.
@@ -50,7 +60,9 @@ impl ByteOrderMarkEnum {
     /// 返回按对应字符集解码后的 BOM 前缀。所有 Unicode BOM 均为 U+FEFF。
     /// 对应 Java：`getStringPrefix()`。
     #[must_use]
-    pub const fn get_string_prefix(self) -> &'static str { "\u{feff}" }
+    pub const fn get_string_prefix(self) -> &'static str {
+        "\u{feff}"
+    }
 
     /// Canonical charset name matched against the BOM.
     #[must_use]
@@ -95,7 +107,9 @@ impl ByteOrderMarkEnum {
 impl std::str::FromStr for ByteOrderMarkEnum {
     type Err = String;
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Self::ALL.into_iter().find(|item| item.java_name() == value)
+        Self::ALL
+            .into_iter()
+            .find(|item| item.java_name() == value)
             .ok_or_else(|| format!("unknown ByteOrderMarkEnum value: {value}"))
     }
 }

@@ -4,7 +4,9 @@
 ///
 /// Variant names are normalised to `PascalCase` while preserving the four POI
 /// anchor modes.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+)]
 /// 对应 Java：com.alibaba.excel.metadata.data.ClientAnchorData.AnchorType。
 pub enum AnchorType {
     /// Move and resize with the anchor cells.
@@ -21,11 +23,14 @@ pub enum AnchorType {
 impl AnchorType {
     /// Java `values()` 的声明顺序。
     pub const ALL: [Self; 4] = [
-        Self::MoveAndResize, Self::DontMoveDoResize,
-        Self::MoveDontResize, Self::DontMoveAndResize,
+        Self::MoveAndResize,
+        Self::DontMoveDoResize,
+        Self::MoveDontResize,
+        Self::DontMoveAndResize,
     ];
     /// Java 枚举常量名。
-    #[must_use] pub const fn java_name(self) -> &'static str {
+    #[must_use]
+    pub const fn java_name(self) -> &'static str {
         match self {
             Self::MoveAndResize => "MOVE_AND_RESIZE",
             Self::DontMoveDoResize => "DONT_MOVE_DO_RESIZE",
@@ -34,7 +39,10 @@ impl AnchorType {
         }
     }
     /// Java `getValue()` 的后端中立值；格式引擎在边界转换为具体锚点类型。
-    #[must_use] pub const fn get_value(self) -> Self { self }
+    #[must_use]
+    pub const fn get_value(self) -> Self {
+        self
+    }
     /// 返回 POI 锚点编号。对应 Java：`getId()`。
     #[must_use]
     pub const fn id(self) -> i32 {
@@ -68,7 +76,9 @@ impl AnchorType {
 impl std::str::FromStr for AnchorType {
     type Err = String;
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Self::ALL.into_iter().find(|item| item.java_name() == value)
+        Self::ALL
+            .into_iter()
+            .find(|item| item.java_name() == value)
             .ok_or_else(|| format!("unknown ClientAnchorData.AnchorType value: {value}"))
     }
 }
@@ -89,9 +99,15 @@ mod tests {
     #[test]
     fn java_name_returns_correct_strings() {
         assert_eq!(AnchorType::MoveAndResize.java_name(), "MOVE_AND_RESIZE");
-        assert_eq!(AnchorType::DontMoveDoResize.java_name(), "DONT_MOVE_DO_RESIZE");
+        assert_eq!(
+            AnchorType::DontMoveDoResize.java_name(),
+            "DONT_MOVE_DO_RESIZE"
+        );
         assert_eq!(AnchorType::MoveDontResize.java_name(), "MOVE_DONT_RESIZE");
-        assert_eq!(AnchorType::DontMoveAndResize.java_name(), "DONT_MOVE_AND_RESIZE");
+        assert_eq!(
+            AnchorType::DontMoveAndResize.java_name(),
+            "DONT_MOVE_AND_RESIZE"
+        );
     }
 
     #[test]
@@ -146,10 +162,22 @@ mod tests {
 
     #[test]
     fn from_str_parses_valid_names() {
-        assert_eq!("MOVE_AND_RESIZE".parse::<AnchorType>().unwrap(), AnchorType::MoveAndResize);
-        assert_eq!("DONT_MOVE_DO_RESIZE".parse::<AnchorType>().unwrap(), AnchorType::DontMoveDoResize);
-        assert_eq!("MOVE_DONT_RESIZE".parse::<AnchorType>().unwrap(), AnchorType::MoveDontResize);
-        assert_eq!("DONT_MOVE_AND_RESIZE".parse::<AnchorType>().unwrap(), AnchorType::DontMoveAndResize);
+        assert_eq!(
+            "MOVE_AND_RESIZE".parse::<AnchorType>().unwrap(),
+            AnchorType::MoveAndResize
+        );
+        assert_eq!(
+            "DONT_MOVE_DO_RESIZE".parse::<AnchorType>().unwrap(),
+            AnchorType::DontMoveDoResize
+        );
+        assert_eq!(
+            "MOVE_DONT_RESIZE".parse::<AnchorType>().unwrap(),
+            AnchorType::MoveDontResize
+        );
+        assert_eq!(
+            "DONT_MOVE_AND_RESIZE".parse::<AnchorType>().unwrap(),
+            AnchorType::DontMoveAndResize
+        );
     }
 
     #[test]

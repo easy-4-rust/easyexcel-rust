@@ -113,7 +113,10 @@ impl HorizontalCellStyleStrategy {
     pub const fn head_style(&self) -> &WriteCellStyle {
         &self.head_style
     }
-    #[must_use] pub const fn get_head_write_cell_style(&self) -> &WriteCellStyle { self.head_style() }
+    #[must_use]
+    pub const fn get_head_write_cell_style(&self) -> &WriteCellStyle {
+        self.head_style()
+    }
     pub fn set_head_write_cell_style(&mut self, value: WriteCellStyle) {
         self.head_style = value;
     }
@@ -123,7 +126,10 @@ impl HorizontalCellStyleStrategy {
     pub fn content_styles(&self) -> &[WriteCellStyle] {
         &self.content_styles
     }
-    #[must_use] pub fn get_content_write_cell_style_list(&self) -> &[WriteCellStyle] { self.content_styles() }
+    #[must_use]
+    pub fn get_content_write_cell_style_list(&self) -> &[WriteCellStyle] {
+        self.content_styles()
+    }
     pub fn set_content_write_cell_style_list(&mut self, value: Vec<WriteCellStyle>) {
         self.content_styles = value;
     }
@@ -131,7 +137,9 @@ impl HorizontalCellStyleStrategy {
 
 impl Default for HorizontalCellStyleStrategy {
     /// Java 无参构造器：head/content 均保持未设置。
-    fn default() -> Self { Self::new(Vec::new()) }
+    fn default() -> Self {
+        Self::new(Vec::new())
+    }
 }
 
 impl AbstractCellStyleStrategy for HorizontalCellStyleStrategy {

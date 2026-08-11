@@ -83,7 +83,11 @@ impl ReadSheet {
     /// Java `getSheetNo`，保留 `null` 与 0 的区别。
     #[must_use]
     pub const fn get_sheet_no(&self) -> Option<i32> {
-        if self.sheet_no_explicit { Some(self.sheet_no as i32) } else { None }
+        if self.sheet_no_explicit {
+            Some(self.sheet_no as i32)
+        } else {
+            None
+        }
     }
 
     /// Returns whether a sheet number was explicitly configured.
@@ -117,7 +121,10 @@ impl ReadSheet {
     }
 
     /// Java `getSheetName` 别名。
-    #[must_use] pub fn get_sheet_name(&self) -> &str { &self.sheet_name }
+    #[must_use]
+    pub fn get_sheet_name(&self) -> &str {
+        &self.sheet_name
+    }
 
     /// 对应 Java：com.alibaba.excel.read.metadata.ReadSheet。 Sets the worksheet name. (Java `setSheetName(String)`)
     pub fn set_sheet_name(&mut self, sheet_name: impl Into<String>) -> &mut Self {
@@ -171,9 +178,14 @@ impl ReadSheet {
     }
 
     /// 返回 Java 父类读取参数。
-    #[must_use] pub const fn get_read_basic_parameter(&self) -> &ReadBasicParameter { &self.parameter }
+    #[must_use]
+    pub const fn get_read_basic_parameter(&self) -> &ReadBasicParameter {
+        &self.parameter
+    }
     /// 返回可变 Java 父类读取参数。
-    pub const fn get_read_basic_parameter_mut(&mut self) -> &mut ReadBasicParameter { &mut self.parameter }
+    pub const fn get_read_basic_parameter_mut(&mut self) -> &mut ReadBasicParameter {
+        &mut self.parameter
+    }
 }
 
 impl fmt::Display for ReadSheet {
