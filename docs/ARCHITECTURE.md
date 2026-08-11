@@ -1,5 +1,10 @@
 # easyexcel-rust Architecture
 
+> **文档说明**：easyexcel-rust 工作区架构总览，涵盖 crate 分层、依赖方向、数据流、格式支持边界和代码放置规则。
+>
+> **版本**：V1.0.0
+> **最后更新**：2026-08-11
+
 > Java EasyExcel 风格门面 + 可复用的 Rust 表格基础能力平台。
 >
 > `easyexcel` 保持工程 API；格式、模型、公式、转换和命令用例位于单向依赖的基础 crates。
@@ -159,51 +164,141 @@ Java 中仅用于 JVM 反射可访问性修复的包级 `MemberUtils` 没有 Rus
 
 ## Data Flow
 
+```mermaid
+flowchart TB
+    User["User Code"] --> Facade["EasyExcel<br/>(easyexcel)<br/>static factory: read / write / fill"]
+
+    %% Read path
+    Facade --> ReadBuilder["ExcelReaderBuilder"]
+    ReadBuilder --> Reader["ExcelReader"]
+    ReadBuilder --> ReadOpts["ReadOptions"]
+    Reader --> Analyser["ExcelAnalyserImpl"]
+    Analyser --> XlsxSax["XlsxSaxAnalyser<br/>(XLSX)"]
+    Analyser --> XlsSax["XlsSax<br/>(XLS)"]
+    Analyser --> CsvRead["Csv<br/>(CSV)"]
+    XlsxSax --> Listener["ReadListener<br/>(invoke / extra / on_exception)"]
+    XlsSax --> Listener
+    CsvRead --> Listener
+    Listener --> RowType["User Row Type<br/>(T: ExcelRow)"]
+
+    %% Write path
+    Facade --> WriteBuilder["ExcelWriterBuilder"]
+    WriteBuilder --> Writer["ExcelWriter"]
+    WriteBuilder --> WriteOpts["WriteOptions"]
+    Writer --> XlsxWrite["rust_xlsxwriter<br/>(XLSX)"]
+    Writer --> XlsWrite["biff8<br/>(XLS)"]
+    Writer --> CsvWrite["csv<br/>(CSV)"]
+    XlsxWrite --> Handler["WriteHandler<br/>(before/after x workbook/sheet/row/cell)"]
+    XlsWrite --> Handler
+    CsvWrite --> Handler
+    Handler --> Strategies["Style / Merge / Width strategies"]
+
+    %% Fill path
+    Facade --> FillXlsx["fill_xlsx_template"]
+    Facade --> FillXls["fill_xls_template_scalar"]
+    FillXlsx --> TemplateWriter["ExcelTemplateWriter (XLSX)"]
+    FillXls --> Biff8Template["Biff8TemplatePackage (XLS)"]
+    TemplateWriter --> Output["Output XLSX / XLS / CSV"]
+    Biff8Template --> Output
 ```
-User Code
-    │
-    ▼
-┌──────────────────┐
-│   EasyExcel      │  ← facade (static factory: read / write / fill)
-│   (easyexcel)    │
-└──────┬───────────┘
-       │
-       ├──── read ────► ExcelReaderBuilder ──► ExcelReader
-       │                     │                       │
-       │                     ▼                       ▼
-       │              ReadOptions            ExcelAnalyserImpl
-       │                                            │
-       │                     ┌──────────────────────┤
-       │                     │ XLSX     │ XLS  │ CSV│
-       │                     ▼          ▼       ▼   │
-       │              XlsxSaxAnalyser  XlsSax  Csv  │
-       │                                            │
-       │    ┌─────── ReadListener ◄─────────────────┘
-       │    │       (invoke / extra / on_exception)
-       │    ▼
-       │  User Row Type (T: ExcelRow)
-       │
-       ├──── write ───► ExcelWriterBuilder ──► ExcelWriter
-       │                     │                      │
-       │                     ▼                      │
-       │              WriteOptions          ┌───────┤
-       │                                    │XLSX│XLS│CSV
-       │                                    ▼    ▼   ▼
-       │                            rust_xlsxwriter biff8 csv
-       │                                    │
-       │    ┌─────── WriteHandler ◄─────────┘
-       │    │      (before/after × workbook/sheet/row/cell)
-       │    ▼
-       │  Style / Merge / Width strategies
-       │
-       └──── fill ───► fill_xlsx_template / fill_xls_template_scalar
-                           │
-                           ▼
-                    ExcelTemplateWriter (XLSX)
-                    Biff8TemplatePackage (XLS)
-                           │
-                           ▼
-                    Output XLSX / XLS / CSV
+
+## Performance Architecture
+
+### Design Goals
+
+easyexcel-rust 的性能目标是**恒定内存**与**高吞吐**的并行实现：
+
+- **读路径**：内存复杂度 `O(batch)` 而非 `O(workbook)`——SAX 流式解析不物化整个工作簿
+- **写路径**：内存复杂度 `O(window)`——行级写出到临时 gzip 文件，finish 时流式读回
+- **目标吞吐**：在 Apple Silicon 实测环境下，XLSX 事件读取达到 618K rows/s（Java 历史基线 307K-343K rows/s）
+
+### Performance Techniques
+
+以下 10 项核心技术按优化轨迹排列，每项均有对应代码位置和实测收益：
+
+| 技术 | 位置 | 解决的问题 | 实测收益 |
+|------|------|-----------|---------|
+| SAX 流式解析 | `easyexcel-xlsx::XlsxCellEventReader`（quick-xml pull-based） | 不物化整个 workbook，内存 O(batch) | 基础架构，支撑全部读取性能 |
+| constant_memory + gzip spill | `easyexcel-io::GzipSheetDataWriter` | 行级写出到临时文件，finish 时流式读回 | 写路径 O(window) 内存保证 |
+| parse_float 快路径 | `from_into_impls.rs` | f64->String->f64 往返消除 | 减少数值单元格转换开销 |
+| Option<HashMap> 惰性容器 | `row_data.rs` | 空容器 = None，零堆分配 | 每行减少一次 HashMap 分配 |
+| typed scalar dispatch 快路径 | `ReadDispatchPlan.typed_scalar_fast_path` | 跳过 SourceRowMetadata 装配 | 简单类型行跳过通用元数据路径 |
+| derive 原语直读 | `classify_primitive` / `primitive_cell_read` | 绕过 ReadConverterContext | 基本类型直接转换，无上下文开销 |
+| LazySst 延迟解码 | `easyexcel-xls::lazy_sst.rs` | SST 只扫 header 建偏移索引，按需 decode | 构造加速 61.8x，XLS 读取 12K->70K rows/s |
+| StreamingRecordIter | `easyexcel-xls::streaming_record_iter.rs` | BIFF record 流式迭代，无 Vec<u8> 全量 | XLS 读取无全量缓冲 |
+| Moka/File 缓存分层 | `shared_string_cache.rs` | 5MB 阈值 Auto 切换 | 小文件内存缓存，大文件临时文件缓存 |
+| WriteBackendSelection 7 态状态机 | `write_backend_selection.rs` | AutoStreaming/Promoting/Explicit 切换 | 自动选择最优写入后端 |
+
+### Read Path Performance Chain
+
+```mermaid
+flowchart LR
+    File["File<br/>(.xlsx)"] --> SAX["SAX parse<br/>(quick-xml pull)"]
+    SAX --> Cache["Shared String Cache<br/>(Moka / File)"]
+    Cache --> Dispatch["typed scalar dispatch<br/>(ReadDispatchPlan)"]
+    Dispatch --> Direct["primitive_cell_read<br/>(derive 原语直读)"]
+    Dispatch --> Convert["ReadConverterContext<br/>(通用转换)"]
+    Direct --> Listener["ReadListener<br/>(invoke / batch)"]
+    Convert --> Listener
+```
+
+读路径关键优化点：
+1. SAX 解析器按事件驱动，不物化整个 XML DOM
+2. 共享字符串通过缓存层避免重复查找
+3. typed scalar dispatch 对基本类型（int/float/string/bool）走快路径，跳过 `SourceRowMetadata` 装配
+4. derive 原语直读绕过 `ReadConverterContext`，直接从 cell 值转换到 Rust 类型
+
+### Write Path Performance Chain
+
+```mermaid
+flowchart LR
+    Rows["Rows"] --> Backend["WriteBackendSelection<br/>(7 态状态机)"]
+    Backend --> Spill["constant_memory spill<br/>(GzipSheetDataWriter)"]
+    Spill --> Gzip["gzip 压缩"]
+    Gzip --> Temp["临时文件"]
+    Temp --> Finish["finish 流式读回"]
+    Finish --> ZIP["ZIP 打包"]
+    ZIP --> Output["Output .xlsx"]
+```
+
+写路径关键优化点：
+1. `WriteBackendSelection` 状态机自动选择 `AutoStreaming`/`Promoting`/`Explicit` 模式
+2. Handler 链使用 `Rc<RefCell<_>>` 单线程共享，避免 `Arc<Mutex<_>>` 串行加锁
+3. 内置 Handler 声明能力标记，无 row/cell 需求时进入直接 cell emission 快路径
+4. 行级写出到 gzip 临时文件，finish 时流式读回打包为 ZIP
+
+### Memory Model
+
+| 场景 | 内存复杂度 | 临时空间 | 适用场景 |
+|------|-----------|---------|---------|
+| 全量读取（`read_sync`） | `O(document)` | 低 | 随机访问、小文件 |
+| 流式读取（`read` + listener） | `O(batch)` | 低 | 大文件批量导入 |
+| 常量内存写入（SXSSF） | `O(window)` | 中 | 大规模导出（>100 万行） |
+| 临时文件编辑 | `O(template)` | 中 | 模板填充、编辑操作 |
+
+### Optimization Timeline
+
+Rust 版本从初始基线到超越 Java 历史基线的优化轨迹（数据来源：`benchmarks/profiles/HOTSPOTS.md` + `docs/ci/NIGHTLY_DRYRUN_REPORT.md`）：
+
+```
+Event read 优化轨迹：
+  130K rows/s  初始 Rust 实现
+    ↓ 格式预编译 CompiledExcelFormat
+  181K rows/s  (+39%)
+    ↓ excel_display_number 整数快路径
+  205K rows/s  (+13%)
+    ↓ scratch 复用 Option<HashMap> + typed scalar dispatch + derive 原语直读
+  618K rows/s  (+201%)
+
+Streaming write 优化轨迹：
+  105K rows/s  初始 Rust 实现
+    ↓ Handler Arc 共享 + Rc<RefCell> 单线程链 + 能力快路径
+  257K rows/s  (+145%)
+
+xls-event-read 优化轨迹：
+  12K rows/s   初始实现（含全量 SST 解码）
+    ↓ LazySst SST 延迟解码（61.8x 构造加速）
+  70K rows/s   (+483%)
 ```
 
 ## Core Traits
@@ -299,15 +394,26 @@ struct Demo {
 
 Write handlers follow Java's event order:
 
-```
-before_workbook → after_workbook
-    ├── before_sheet → after_sheet
-    │       ├── before_row → after_row
-    │       │       ├── before_cell → after_cell
-    │       │       │       └── (style_cell_style / style_column_width / ...)
-    │       │       └── ...
-    │       └── ...
-    └── finish / finish_on_exception
+```mermaid
+flowchart LR
+    BW["before_workbook"] --> AW["after_workbook"]
+    AW --> BS["before_sheet"]
+    BS --> AS["after_sheet"]
+    AS --> BR["before_row"]
+    BR --> AR["after_row"]
+    AR --> BC["before_cell"]
+    BC --> AC["after_cell"]
+    AC --> Style["style_cell_style /<br/>style_column_width / ..."]
+    AW --> Finish["finish /<br/>finish_on_exception"]
+
+    style BW fill:#e1f5fe
+    style AW fill:#e1f5fe
+    style BS fill:#fff3e0
+    style AS fill:#fff3e0
+    style BR fill:#e8f5e9
+    style AR fill:#e8f5e9
+    style BC fill:#fce4ec
+    style AC fill:#fce4ec
 ```
 
 ## Test Statistics
@@ -319,3 +425,10 @@ before_workbook → after_workbook
 | Parity tests (behavioral equivalence) | 152 | All pass |
 | 1:1 method tests | 78 | All pass |
 | `#[ignore]` annotations | 0 | Eliminated |
+
+---
+
+**文档版本**：V1.0.0
+**创建日期**：2026-08-11
+**最后更新**：2026-08-11
+**文档状态**：✅ 已评审
