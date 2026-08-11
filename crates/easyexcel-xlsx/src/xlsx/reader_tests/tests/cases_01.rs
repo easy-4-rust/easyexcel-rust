@@ -187,3 +187,57 @@
         let err = read(Cursor::new(buf)).unwrap_err();
         assert!(matches!(err, Error::PasswordProtected(_)));
     }
+
+    #[test]
+    fn zip_bomb_single_entry_rejected() {
+        // 单个高压缩比 entry 超过 max_file_bytes 时应被拒绝。
+        // 构造 1MB 全零数据（压缩后约 1KB），设置 100KB 限制。
+        let bomb = make_zip_bomb(1024 * 1024);
+        let limits = ResourceLimits::new(100 * 1024, 256, 2_000_000, 500_000);
+        let err = read_with_limits(Cursor::new(bomb), limits).unwrap_err();
+        assert!(
+            matches!(err, Error::ResourceLimit { resource, .. } if resource == "zip_entry_uncompressed_bytes"),
+            "应拒绝单个超大 ZIP entry，实际错误: {err:?}"
+        );
+    }
+
+    #[test]
+    fn zip_bomb_multi_entry_rejected() {
+        // 多个小 entry 累积超过 max_file_bytes 时应被拒绝。
+        // 构造 10 个 100KB 全零 entry（总计 1MB），设置 500KB 限制。
+        let bomb = make_zip_bomb_multi_entry(10, 100 * 1024);
+        let limits = ResourceLimits::new(500 * 1024, 256, 2_000_000, 500_000);
+        let err = read_with_limits(Cursor::new(bomb), limits).unwrap_err();
+        assert!(
+            matches!(err, Error::ResourceLimit { resource, .. } if resource == "zip_total_uncompressed_bytes"),
+            "应拒绝累积超限的 ZIP entries，实际错误: {err:?}"
+        );
+    }
+
+    #[test]
+    fn zip_bomb_default_limits_allow_normal_file() {
+        // 默认 256MB 限制不应拒绝正常的 round-trip 文件。
+        let mut wb = Workbook::empty();
+        let mut sheet = Sheet::new("Sheet1");
+        sheet.set(0, 0, Cell::Number(42.0));
+        wb.sheets.push(sheet);
+
+        let mut buf = Vec::new();
+        write(&wb, Cursor::new(&mut buf)).expect("write");
+        let out = read_with_limits(Cursor::new(buf), ResourceLimits::default()).expect("read");
+        assert_eq!(out.sheets.len(), 1);
+        assert_eq!(out.sheets[0].value(0, 0), CellValue::Number(42.0));
+    }
+
+    #[test]
+    fn zip_bomb_with_password_and_limits_rejected() {
+        // 加密路径也应受资源限制保护。
+        let bomb = make_zip_bomb(1024 * 1024);
+        let limits = ResourceLimits::new(100 * 1024, 256, 2_000_000, 500_000);
+        // 非 CFB 格式（纯 ZIP），password 会被忽略，走 read_zip_with_limits 路径
+        let err = read_with_password_and_limits(Cursor::new(bomb), None, limits).unwrap_err();
+        assert!(
+            matches!(err, Error::ResourceLimit { resource, .. } if resource == "zip_entry_uncompressed_bytes"),
+            "加密路径也应拒绝 ZIP bomb，实际错误: {err:?}"
+        );
+    }

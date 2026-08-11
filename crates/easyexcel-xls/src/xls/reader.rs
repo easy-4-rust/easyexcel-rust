@@ -6,7 +6,7 @@
 
 use std::io::{Read, Seek};
 
-use easyexcel_io::{Error, Result};
+use easyexcel_io::{Error, ResourceLimits, Result};
 use easyexcel_model::CellError;
 use easyexcel_model::addr::{CellAddress, CellRange};
 use easyexcel_model::dates::DateSystem;
@@ -27,12 +27,38 @@ pub fn read<R: Read + Seek>(reader: R) -> Result<Workbook> {
     read_with_password(reader, None)
 }
 
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Read an XLS workbook from any seekable reader，使用指定的资源限制。
+///
+/// # Errors
+///
+/// 输入不是有效 OLE2 容器、缺少 Workbook 流、BIFF8 记录损坏，或流大小超过资源限制时返回错误。
+pub fn read_with_limits<R: Read + Seek>(reader: R, limits: ResourceLimits) -> Result<Workbook> {
+    read_with_password_and_limits(reader, None, limits)
+}
+
 /// 从 seekable reader 读取 XLS，并使用调用方密码解密 BIFF8 `CryptoAPI` 工作簿。
 ///
 /// # Errors
 ///
 /// 输入无效、加密类型不支持、未提供密码或密码错误时返回错误。
 pub fn read_with_password<R: Read + Seek>(reader: R, password: Option<&str>) -> Result<Workbook> {
+    read_with_password_and_limits(reader, password, ResourceLimits::default())
+}
+
+/// 从 seekable reader 读取 XLS，并使用调用方密码解密 BIFF8 `CryptoAPI` 工作簿，使用指定的资源限制。
+///
+/// CFB 格式本身不压缩数据（不像 ZIP），因此不存在 ZIP bomb 风险。此函数在读取流后
+/// 检查大小，防御超大文件导致内存耗尽。
+///
+/// # Errors
+///
+/// 输入无效、加密类型不支持、未提供密码、密码错误，或流大小超过资源限制时返回错误。
+pub fn read_with_password_and_limits<R: Read + Seek>(
+    reader: R,
+    password: Option<&str>,
+    limits: ResourceLimits,
+) -> Result<Workbook> {
+    let max_bytes = limits.max_file_bytes();
     let mut cf = cfb::CompoundFile::open(reader)
         .map_err(|e| Error::Cfb(format!("not a valid OLE2 file: {e}")))?;
 
@@ -58,8 +84,18 @@ pub fn read_with_password<R: Read + Seek>(reader: R, password: Option<&str>) -> 
         s.read_to_end(&mut wb_bytes)?;
     }
 
+    // CFB 流大小检查（防御超大 XLS 文件）
+    if wb_bytes.len() as u64 > max_bytes {
+        return Err(Error::ResourceLimit {
+            resource: "xls_workbook_stream_bytes",
+            limit: max_bytes,
+            actual: wb_bytes.len() as u64,
+        });
+    }
+
     // Preserve other streams verbatim as workbook-level opaque parts.
     let mut opaque = Vec::new();
+    let mut total_opaque: u64 = 0;
     for name in &stream_names {
         if name == &wb_name {
             continue;
@@ -67,6 +103,14 @@ pub fn read_with_password<R: Read + Seek>(reader: R, password: Option<&str>) -> 
         if let Ok(mut s) = cf.open_stream(name) {
             let mut buf = Vec::new();
             if s.read_to_end(&mut buf).is_ok() {
+                total_opaque += buf.len() as u64;
+                if total_opaque > max_bytes {
+                    return Err(Error::ResourceLimit {
+                        resource: "xls_opaque_stream_bytes",
+                        limit: max_bytes,
+                        actual: total_opaque,
+                    });
+                }
                 opaque.push(OpaquePart {
                     name: name.clone(),
                     data: buf,

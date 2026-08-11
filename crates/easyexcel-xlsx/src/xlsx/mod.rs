@@ -49,7 +49,7 @@ pub use legacy_template::{
 pub use ooxml_package::{OoxmlPackage, OoxmlZipEntry};
 pub use package_reader::XlsxPackageReader;
 pub use path_io::{looks_like_zip, read_path, read_path_with_password, write_path};
-pub use reader::{read, read_with_password};
+pub use reader::{read, read_with_limits, read_with_password, read_with_password_and_limits};
 pub use rich_text_segment::{RichTextSegment, segment_utf16_text};
 pub use source::{
     XlsxInput, XlsxSource, excel_input_suffix, is_compound_document, materialize_excel_input,
