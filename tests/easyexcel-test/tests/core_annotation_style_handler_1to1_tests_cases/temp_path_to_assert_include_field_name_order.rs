@@ -345,7 +345,7 @@ fn assert_style_read_and_write(path: &Path) {
         .register_write_handler(SimpleColumnWidthStyleStrategy::uniform(50))
         .register_write_handler(SimpleRowHeightStyleStrategy::new(Some(40), Some(50)))
         .register_write_handler(HorizontalCellStyleStrategy::with_head_and_content(
-            head, content,
+            head.into(), content.into(),
         ))
         .sheet("Sheet1")
         .do_write(style_data())

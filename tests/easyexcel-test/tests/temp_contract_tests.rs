@@ -267,7 +267,7 @@ fn temp_style_horizontal_strategy_write() {
         double_data: f64,
     }
     let path = temp_path("temp_style_handler.xlsx");
-    let strategy = HorizontalCellStyleStrategy::new(vec![ExcelCellStyle::new()]);
+    let strategy = HorizontalCellStyleStrategy::new(vec![ExcelCellStyle::new().into()]);
     EasyExcel::write::<DemoData>(&path)
         .register_write_handler(strategy)
         .sheet("模板")

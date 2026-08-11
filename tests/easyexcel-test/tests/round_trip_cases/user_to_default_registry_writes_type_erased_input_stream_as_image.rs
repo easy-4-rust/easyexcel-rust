@@ -114,7 +114,7 @@ impl Converter<f64> for RuntimeStyleConverter {
             fill_pattern: Some(ExcelFillPattern::Solid),
             fill_foreground_color: Some(ExcelColor::Rgb(0x00_ff_00)),
             ..ExcelCellStyle::new()
-        }));
+        }.into()));
         cell.get_or_create_data_format()
             .set_format(Some("0.0000".to_owned()));
         Ok(cell)

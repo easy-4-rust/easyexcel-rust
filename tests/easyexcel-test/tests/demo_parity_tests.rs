@@ -462,7 +462,7 @@ fn demo_write_merge_write() {
 #[test]
 fn demo_write_handler_style_write() {
     let path = temp_path("handlerStyle.xlsx");
-    let strategy = HorizontalCellStyleStrategy::new(vec![ExcelCellStyle::new()]);
+    let strategy = HorizontalCellStyleStrategy::new(vec![ExcelCellStyle::new().into()]);
     EasyExcel::write::<WriteDemoData>(&path)
         .register_write_handler(strategy)
         .sheet("模板")
