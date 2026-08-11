@@ -58,3 +58,45 @@ impl std::str::FromStr for VerticalAlignmentEnum {
             .ok_or_else(|| format!("unknown VerticalAlignmentEnum value: {value}"))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn java_name_all_variants() {
+        assert_eq!(VerticalAlignmentEnum::Default.java_name(), "DEFAULT");
+        assert_eq!(VerticalAlignmentEnum::Top.java_name(), "TOP");
+        assert_eq!(VerticalAlignmentEnum::Center.java_name(), "CENTER");
+        assert_eq!(VerticalAlignmentEnum::Bottom.java_name(), "BOTTOM");
+        assert_eq!(VerticalAlignmentEnum::Justify.java_name(), "JUSTIFY");
+        assert_eq!(VerticalAlignmentEnum::Distributed.java_name(), "DISTRIBUTED");
+    }
+
+    #[test]
+    fn poi_vertical_alignment_default_is_none() {
+        assert!(VerticalAlignmentEnum::Default.poi_vertical_alignment_enum().is_none());
+    }
+
+    #[test]
+    fn poi_vertical_alignment_non_default() {
+        assert!(VerticalAlignmentEnum::Top.poi_vertical_alignment_enum().is_some());
+        assert!(VerticalAlignmentEnum::Bottom.poi_vertical_alignment_enum().is_some());
+    }
+
+    #[test]
+    fn from_str_valid() {
+        assert_eq!("TOP".parse::<VerticalAlignmentEnum>(), Ok(VerticalAlignmentEnum::Top));
+        assert_eq!("BOTTOM".parse::<VerticalAlignmentEnum>(), Ok(VerticalAlignmentEnum::Bottom));
+    }
+
+    #[test]
+    fn from_str_invalid() {
+        assert!("INVALID".parse::<VerticalAlignmentEnum>().is_err());
+    }
+
+    #[test]
+    fn all_has_6_variants() {
+        assert_eq!(VerticalAlignmentEnum::ALL.len(), 6);
+    }
+}

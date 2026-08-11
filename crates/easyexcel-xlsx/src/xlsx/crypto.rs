@@ -500,6 +500,57 @@ mod tests {
         assert_eq!(attr_in(xml, "encryptedKey", "spinCount"), Some("100000"));
     }
 
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 attr_in 未找到属性。
+    #[test]
+    fn attr_in_missing_returns_none() {
+        let xml = r#"<keyData keyBits="128"/>"#;
+        assert_eq!(attr_in(xml, "<keyData", "missing"), None);
+        assert_eq!(attr_in(xml, "<other", "keyBits"), None);
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 req 未找到属性报错。
+    #[test]
+    fn req_missing_returns_error() {
+        let xml = r#"<keyData keyBits="128"/>"#;
+        let result = req(xml, "<keyData", "missing");
+        assert!(result.is_err());
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 HashAlgo 解析。
+    #[test]
+    fn hash_algo_parse_known() {
+        assert!(matches!(HashAlgo::parse("SHA-1"), Ok(HashAlgo::Sha1)));
+        assert!(matches!(HashAlgo::parse("SHA256"), Ok(HashAlgo::Sha256)));
+        assert!(matches!(HashAlgo::parse("SHA-384"), Ok(HashAlgo::Sha384)));
+        assert!(matches!(HashAlgo::parse("SHA512"), Ok(HashAlgo::Sha512)));
+        assert!(HashAlgo::parse("UNKNOWN").is_err());
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 is_encrypted_ooxml 非 CFB 数据。
+    #[test]
+    fn is_encrypted_ooxml_non_cfb() {
+        assert!(!is_encrypted_ooxml(b"not a cfb file"));
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 AesKey 各密钥长度。
+    #[test]
+    fn aes_key_all_lengths() {
+        assert!(AesKey::new(&[0u8; 16]).is_ok());
+        assert!(AesKey::new(&[0u8; 24]).is_ok());
+        assert!(AesKey::new(&[0u8; 32]).is_ok());
+        assert!(AesKey::new(&[0u8; 10]).is_err());
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 AES-ECB 解密。
+    #[test]
+    fn aes_ecb_decrypt_basic() {
+        let key = [0u8; 16];
+        let data = [0u8; 16];
+        let result = aes_ecb_decrypt(&key, &data);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), 16);
+    }
+
     fn hexs(s: &str) -> Vec<u8> {
         (0..s.len())
             .step_by(2)

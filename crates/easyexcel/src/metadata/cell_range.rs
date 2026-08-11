@@ -74,3 +74,46 @@ impl CellRange {
     /// Java `setLastCol`。
     pub const fn set_last_col(&mut self, value: i32) { self.last_col = value; }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_and_getters() {
+        let range = CellRange::new(1, 5, 2, 8);
+        assert_eq!(range.first_row(), 1);
+        assert_eq!(range.last_row(), 5);
+        assert_eq!(range.first_col(), 2);
+        assert_eq!(range.last_col(), 8);
+    }
+
+    #[test]
+    fn java_getter_aliases() {
+        let range = CellRange::new(1, 5, 2, 8);
+        assert_eq!(range.get_first_row(), 1);
+        assert_eq!(range.get_last_row(), 5);
+        assert_eq!(range.get_first_col(), 2);
+        assert_eq!(range.get_last_col(), 8);
+    }
+
+    #[test]
+    fn setters() {
+        let mut range = CellRange::new(0, 0, 0, 0);
+        range.set_first_row(1);
+        range.set_last_row(5);
+        range.set_first_col(2);
+        range.set_last_col(8);
+        assert_eq!(range.first_row(), 1);
+        assert_eq!(range.last_row(), 5);
+        assert_eq!(range.first_col(), 2);
+        assert_eq!(range.last_col(), 8);
+    }
+
+    #[test]
+    fn clone_eq() {
+        let r1 = CellRange::new(1, 2, 3, 4);
+        let r2 = r1;
+        assert_eq!(r1, r2);
+    }
+}

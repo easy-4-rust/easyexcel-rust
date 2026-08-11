@@ -728,3 +728,194 @@ fn build_app_props(wb: &Workbook) -> String {
     s.push_str("</Properties>");
     s
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use easyexcel_model::model::{Sheet, Workbook};
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 is_generated 对已知路径返回 true。
+    #[test]
+    fn is_generated_known_paths() {
+        assert!(is_generated("[Content_Types].xml"));
+        assert!(is_generated("_rels/.rels"));
+        assert!(is_generated("xl/workbook.xml"));
+        assert!(is_generated("xl/_rels/workbook.xml.rels"));
+        assert!(is_generated("xl/sharedStrings.xml"));
+        assert!(is_generated("xl/styles.xml"));
+        assert!(is_generated("xl/calcChain.xml"));
+        assert!(is_generated("docProps/core.xml"));
+        assert!(is_generated("docProps/app.xml"));
+        assert!(is_generated("xl/worksheets/sheet1.xml"));
+        assert!(is_generated("xl/worksheets/sheet99.xml"));
+        // 非已知路径
+        assert!(!is_generated("xl/charts/chart1.xml"));
+        assert!(!is_generated("xl/drawings/drawing1.xml"));
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 fmt_num 格式化。
+    #[test]
+    fn fmt_num_formats_values() {
+        assert_eq!(fmt_num(0.0), "0");
+        assert_eq!(fmt_num(42.0), "42");
+        assert_eq!(fmt_num(-100.0), "-100");
+        assert_eq!(fmt_num(3.14), "3.14");
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 build_shared_strings_xml 输出。
+    #[test]
+    fn build_shared_strings_xml_format() {
+        let sst = vec!["hello".to_owned(), "world".to_owned()];
+        let xml = build_shared_strings_xml(&sst);
+        assert!(xml.contains(r#"count="2""#));
+        assert!(xml.contains(r#"uniqueCount="2""#));
+        assert!(xml.contains("<si><t>hello</t></si>"));
+        assert!(xml.contains("<si><t>world</t></si>"));
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 build_shared_strings_xml 含空格文本。
+    #[test]
+    fn build_shared_strings_xml_preserves_space() {
+        let sst = vec![" hello ".to_owned()];
+        let xml = build_shared_strings_xml(&sst);
+        assert!(xml.contains(r#"xml:space="preserve""#));
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 build_content_types 输出。
+    #[test]
+    fn build_content_types_includes_sheets() {
+        let mut wb = Workbook::default();
+        wb.sheets.push(Sheet::new("Sheet1"));
+        wb.sheets.push(Sheet::new("Sheet2"));
+        let ct = build_content_types(&wb, &[]);
+        assert!(ct.contains("sheet1.xml"));
+        assert!(ct.contains("sheet2.xml"));
+        assert!(ct.contains("docProps/core.xml"));
+        assert!(ct.contains("docProps/app.xml"));
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 build_content_types 含表格。
+    #[test]
+    fn build_content_types_with_tables() {
+        let wb = Workbook::default();
+        let names = vec!["/xl/tables/table1.xml".to_owned()];
+        let ct = build_content_types(&wb, &names);
+        assert!(ct.contains("table1.xml"));
+        assert!(ct.contains("spreadsheetml.table+xml"));
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 build_workbook_xml 基本结构。
+    #[test]
+    fn build_workbook_xml_basic() {
+        let mut wb = Workbook::default();
+        wb.sheets.push(Sheet::new("Sheet1"));
+        let xml = build_workbook_xml(&wb);
+        assert!(xml.contains(r#"name="Sheet1""#));
+        assert!(xml.contains("<sheets>"));
+        assert!(xml.contains("</sheets>"));
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 build_workbook_xml 隐藏表。
+    #[test]
+    fn build_workbook_xml_hidden_sheet() {
+        let mut wb = Workbook::default();
+        let mut sheet = Sheet::new("Hidden");
+        sheet.visibility = Visibility::Hidden;
+        wb.sheets.push(sheet);
+        let xml = build_workbook_xml(&wb);
+        assert!(xml.contains(r#"state="hidden""#));
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 build_workbook_xml 1904 日期系统。
+    #[test]
+    fn build_workbook_xml_date1904() {
+        let mut wb = Workbook::default();
+        wb.date_system = DateSystem::Date1904;
+        wb.sheets.push(Sheet::new("S"));
+        let xml = build_workbook_xml(&wb);
+        assert!(xml.contains("date1904"));
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 build_workbook_rels 输出。
+    #[test]
+    fn build_workbook_rels_basic() {
+        let mut wb = Workbook::default();
+        wb.sheets.push(Sheet::new("S1"));
+        let rels = build_workbook_rels(&wb);
+        assert!(rels.contains("worksheet"));
+        assert!(rels.contains("styles"));
+        assert!(rels.contains("sharedStrings"));
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 build_core_props 含元数据。
+    #[test]
+    fn build_core_props_with_metadata() {
+        let mut wb = Workbook::default();
+        wb.metadata.title = Some("Test".to_owned());
+        wb.metadata.author = Some("Author".to_owned());
+        wb.metadata.created = Some("2024-01-01".to_owned());
+        wb.metadata.modified = Some("2024-01-02".to_owned());
+        let xml = build_core_props(&wb);
+        assert!(xml.contains("<dc:title>Test</dc:title>"));
+        assert!(xml.contains("<dc:creator>Author</dc:creator>"));
+        assert!(xml.contains("dcterms:created"));
+        assert!(xml.contains("dcterms:modified"));
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 build_core_props 无元数据。
+    #[test]
+    fn build_core_props_empty() {
+        let wb = Workbook::default();
+        let xml = build_core_props(&wb);
+        assert!(xml.contains("coreProperties"));
+        assert!(!xml.contains("<dc:title>"));
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 build_app_props 默认。
+    #[test]
+    fn build_app_props_default() {
+        let wb = Workbook::default();
+        let xml = build_app_props(&wb);
+        assert!(xml.contains("<Application>xls-rs</Application>"));
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 build_app_props 自定义。
+    #[test]
+    fn build_app_props_custom() {
+        let mut wb = Workbook::default();
+        wb.metadata.application = Some("MyApp".to_owned());
+        wb.metadata.company = Some("MyCo".to_owned());
+        let xml = build_app_props(&wb);
+        assert!(xml.contains("<Application>MyApp</Application>"));
+        assert!(xml.contains("<Company>MyCo</Company>"));
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 parse_rels_triples 解析。
+    #[test]
+    fn parse_rels_triples_basic() {
+        let xml = br#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+            <Relationship Id="rId1" Type="worksheet" Target="worksheets/sheet1.xml"/>
+        </Relationships>"#;
+        let triples = parse_rels_triples(xml);
+        assert_eq!(triples.len(), 1);
+        assert_eq!(triples[0].0, "rId1");
+        assert_eq!(triples[0].1, "worksheet");
+        assert_eq!(triples[0].2, "worksheets/sheet1.xml");
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 build_shared_strings 去重。
+    #[test]
+    fn build_shared_strings_dedup() {
+        let mut wb = Workbook::default();
+        let mut sheet = Sheet::new("S");
+        sheet.cells.insert((0, 0), Cell::Text("hello".to_owned()));
+        sheet.cells.insert((0, 1), Cell::Text("hello".to_owned()));
+        sheet.cells.insert((1, 0), Cell::Text("world".to_owned()));
+        sheet.cells.insert((1, 1), Cell::Number(42.0));
+        wb.sheets.push(sheet);
+        let (list, index) = build_shared_strings(&wb);
+        assert_eq!(list.len(), 2);
+        assert_eq!(index["hello"], 0);
+        assert_eq!(index["world"], 1);
+    }
+}

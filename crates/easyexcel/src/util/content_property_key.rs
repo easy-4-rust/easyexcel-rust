@@ -64,3 +64,34 @@ impl ContentPropertyKey {
         self.field_name = value.into();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_and_getters() {
+        let key = ContentPropertyKey::new(None, None, "field");
+        assert!(key.get_clazz().is_none());
+        assert!(key.get_head_class().is_none());
+        assert_eq!(key.get_field_name(), "field");
+    }
+
+    #[test]
+    fn setters() {
+        let mut key = ContentPropertyKey::new(None, None, "old");
+        key.set_field_name("new");
+        assert_eq!(key.get_field_name(), "new");
+        key.set_clazz(Some(TypeId::of::<String>()));
+        assert!(key.get_clazz().is_some());
+        key.set_head_class(Some(TypeId::of::<i32>()));
+        assert!(key.get_head_class().is_some());
+    }
+
+    #[test]
+    fn clone_and_eq() {
+        let key1 = ContentPropertyKey::new(None, None, "f");
+        let key2 = key1.clone();
+        assert_eq!(key1, key2);
+    }
+}

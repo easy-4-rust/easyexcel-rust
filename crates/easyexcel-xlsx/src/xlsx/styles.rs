@@ -809,4 +809,148 @@ mod tests {
         assert_eq!(valign_str(VAlign::Justify), "justify");
         assert_eq!(valign_str(VAlign::Distributed), "distributed");
     }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 parse_styles 带有 italic/underline 字体。
+    #[test]
+    fn parse_styles_with_italic_underline_font() {
+        let xml = br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+                <fonts count="2">
+                    <font><sz val="11"/><name val="Calibri"/></font>
+                    <font><b/><i/><u/><sz val="12"/><name val="Arial"/><color rgb="FFFF0000"/></font>
+                </fonts>
+                <fills count="2">
+                    <fill><patternFill patternType="none"/></fill>
+                    <fill><patternFill patternType="gray125"/></fill>
+                </fills>
+                <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+                <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+                <cellXfs count="1"><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0"/></cellXfs>
+            </styleSheet>"#;
+        let styles = parse_styles(xml).unwrap();
+        assert_eq!(styles.len(), 1);
+        assert!(styles[0].font.bold);
+        assert!(styles[0].font.italic);
+        assert!(styles[0].font.underline);
+        assert_eq!(styles[0].font.name, "Arial");
+        assert_eq!(styles[0].font.size, 12.0);
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 parse_styles 带有 solid 填充和颜色。
+    #[test]
+    fn parse_styles_with_solid_fill_color() {
+        let xml = br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+                <fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>
+                <fills count="2">
+                    <fill><patternFill patternType="none"/></fill>
+                    <fill><patternFill patternType="solid"><fgColor rgb="FF00FF00"/></patternFill></fill>
+                </fills>
+                <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+                <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+                <cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="1" borderId="0" xfId="0"/></cellXfs>
+            </styleSheet>"#;
+        let styles = parse_styles(xml).unwrap();
+        assert_eq!(styles.len(), 1);
+        assert!(styles[0].fill.fg.0.is_some());
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 parse_styles 带有边框。
+    #[test]
+    fn parse_styles_with_borders() {
+        let xml = br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+                <fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>
+                <fills count="2">
+                    <fill><patternFill patternType="none"/></fill>
+                    <fill><patternFill patternType="gray125"/></fill>
+                </fills>
+                <borders count="2">
+                    <border><left/><right/><top/><bottom/><diagonal/></border>
+                    <border>
+                        <left style="thin"><color rgb="FF000000"/></left>
+                        <right style="medium"><color rgb="FFFF0000"/></right>
+                        <top style="thick"/>
+                        <bottom style="dashed"/>
+                        <diagonal/>
+                    </border>
+                </borders>
+                <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+                <cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"/></cellXfs>
+            </styleSheet>"#;
+        let styles = parse_styles(xml).unwrap();
+        assert_eq!(styles.len(), 1);
+        assert_eq!(styles[0].borders.left.style, BorderStyle::Thin);
+        assert_eq!(styles[0].borders.right.style, BorderStyle::Medium);
+        assert_eq!(styles[0].borders.top.style, BorderStyle::Thick);
+        assert_eq!(styles[0].borders.bottom.style, BorderStyle::Dashed);
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 parse_styles 带有对齐。
+    #[test]
+    fn parse_styles_with_alignment() {
+        let xml = br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+                <fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>
+                <fills count="2">
+                    <fill><patternFill patternType="none"/></fill>
+                    <fill><patternFill patternType="gray125"/></fill>
+                </fills>
+                <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+                <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+                <cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1">
+                    <alignment horizontal="center" vertical="bottom" wrapText="1"/>
+                </xf></cellXfs>
+            </styleSheet>"#;
+        let styles = parse_styles(xml).unwrap();
+        assert_eq!(styles.len(), 1);
+        assert_eq!(styles[0].halign, HAlign::Center);
+        assert_eq!(styles[0].valign, VAlign::Bottom);
+        assert!(styles[0].wrap_text);
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 write_styles 含边框。
+    #[test]
+    fn write_styles_with_border() {
+        let mut table = StyleTable::default();
+        let mut st = CellStyle::default();
+        st.borders.left.style = BorderStyle::Thin;
+        st.borders.right.style = BorderStyle::Medium;
+        st.borders.top.style = BorderStyle::Thick;
+        st.borders.bottom.style = BorderStyle::Dashed;
+        let _ = table.intern(st);
+        let xml = String::from_utf8(write_styles(&table)).unwrap();
+        assert!(xml.contains("thin"));
+        assert!(xml.contains("medium"));
+        assert!(xml.contains("thick"));
+        assert!(xml.contains("dashed"));
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 write_styles 含 solid 填充。
+    #[test]
+    fn write_styles_with_solid_fill() {
+        let mut table = StyleTable::default();
+        let mut st = CellStyle::default();
+        st.fill.pattern = FillPattern::Solid;
+        st.fill.fg = Color(Some(0xFF00FF00));
+        let _ = table.intern(st);
+        let xml = String::from_utf8(write_styles(&table)).unwrap();
+        assert!(xml.contains("solid"));
+        assert!(xml.contains("FF00FF00"));
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 测试 write_styles 含对齐。
+    #[test]
+    fn write_styles_with_alignment() {
+        let mut table = StyleTable::default();
+        let mut st = CellStyle::default();
+        st.halign = HAlign::Right;
+        st.valign = VAlign::Top;
+        st.wrap_text = true;
+        let _ = table.intern(st);
+        let xml = String::from_utf8(write_styles(&table)).unwrap();
+        assert!(xml.contains("right"));
+        assert!(xml.contains("top"));
+        assert!(xml.contains("wrapText"));
+    }
 }
