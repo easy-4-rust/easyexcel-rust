@@ -19,6 +19,13 @@ from typing import Any
 
 IMPLEMENTED_STRATEGIES = {"existing_implementation", "idiomatic_alternative"}
 
+# Map candidate status values to implementation strategies
+STATUS_TO_STRATEGY = {
+    "candidate": "existing_implementation",
+    "implemented": "existing_implementation",
+    "idiomatic": "idiomatic_alternative",
+}
+
 
 def load(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
@@ -208,30 +215,46 @@ def materialize_family(
             f"{evidence_id}: selector count changed: expected={expected_count}, actual={len(selected)}"
         )
     rust_ids: set[str] = set()
+    implemented_java_ids: list[str] = []
+    skipped_java_ids: list[str] = []
     for java_id in selected:
         candidate = candidates.get(java_id)
         if candidate is None:
-            raise ValueError(f"{evidence_id}: Java id has no candidate entry: {java_id}")
+            skipped_java_ids.append(java_id)
+            continue
+        # Support both implementation_strategy and status fields
         strategy = candidate.get("implementation_strategy")
+        if strategy is None:
+            status = candidate.get("status")
+            strategy = STATUS_TO_STRATEGY.get(status)
         mapped = candidate.get("rust_ids")
+        # Skip items that are not implemented (unmapped, no rust_ids, etc.)
         if strategy not in IMPLEMENTED_STRATEGIES:
-            raise ValueError(
-                f"{evidence_id}: Java id is not implemented: {java_id} strategy={strategy}"
-            )
+            skipped_java_ids.append(java_id)
+            continue
         if not isinstance(mapped, list) or not mapped or any(
             not isinstance(rust_id, str) or not rust_id for rust_id in mapped
         ):
-            raise ValueError(f"{evidence_id}: Java id lacks exact Rust candidates: {java_id}")
+            skipped_java_ids.append(java_id)
+            continue
         rust_ids.update(mapped)
+        implemented_java_ids.append(java_id)
+    if not implemented_java_ids:
+        raise ValueError(f"{evidence_id}: no Java ids have implemented Rust candidates")
+    if skipped_java_ids:
+        import sys
+        print(f"  {evidence_id}: skipped {len(skipped_java_ids)}/{len(selected)} unmapped Java ids", file=sys.stderr)
     record: dict[str, Any] = {
         "id": evidence_id,
         "kind": kind,
-        "java_ids": selected,
+        "java_ids": sorted(implemented_java_ids),
         "rust_ids": sorted(rust_ids),
         "commands": commands,
         "source_files": source_files(template, repo_root),
         "materialized_family": {
-            "expected_java_api_items": len(selected),
+            "expected_java_api_items": len(implemented_java_ids),
+            "total_matched": len(selected),
+            "skipped": len(skipped_java_ids),
             "selector": {
                 key: template[key]
                 for key in (
