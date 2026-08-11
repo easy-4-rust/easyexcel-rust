@@ -936,16 +936,62 @@ def canonical_json(value: Any) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--java-api", type=Path, required=True)
-    parser.add_argument("--rust-api", type=Path, required=True)
-    parser.add_argument("--mapping", type=Path, required=True)
+    parser = argparse.ArgumentParser(
+        description=(
+            "Verify fail-closed Java-to-Rust public API evidence mappings. "
+            "Reads three JSON files: Java API manifest (types + members from javap), "
+            "Rust API manifest (packages + snapshots from cargo-public-api), "
+            "and a mapping file (schema v2 entries linking Java IDs to Rust IDs)."
+        ),
+    )
+    parser.add_argument(
+        "--java-api",
+        type=Path,
+        default=Path("docs/java-public-api-v4.0.3.json"),
+        help=(
+            "Path to the Java public API manifest JSON (default: docs/java-public-api-v4.0.3.json). "
+            "Expected fields: schema_version, artifact, easyexcel_version, java_repo, jars, "
+            "types[], members[], summary.public_api_items."
+        ),
+    )
+    parser.add_argument(
+        "--rust-api",
+        type=Path,
+        default=Path("docs/rust-public-api.json"),
+        help=(
+            "Path to the Rust public API manifest JSON (default: docs/rust-public-api.json). "
+            "Expected fields: schema_version, artifact, rust_repo, extractor, scope, "
+            "packages[].snapshots[].items[].id/kind/signature, summary."
+        ),
+    )
+    parser.add_argument(
+        "--mapping",
+        type=Path,
+        default=Path("parity/java-rust-public-api.json"),
+        help=(
+            "Path to the Java-Rust public API mapping JSON (default: parity/java-rust-public-api.json). "
+            "Expected fields: schema_version=2, authority, java_manifest_sha256, rust_manifest_sha256, "
+            "entries[].java_id/status/implementation_strategy/rust_ids/implementation_carriers, "
+            "rust_extensions[]."
+        ),
+    )
     parser.add_argument("--evidence-catalog", type=Path)
     parser.add_argument("--evidence-results", type=Path)
     parser.add_argument("--repo-root", type=Path, default=Path.cwd())
     parser.add_argument("--report", type=Path)
     parser.add_argument("--initialize", action="store_true")
     parser.add_argument("--allow-incomplete", action="store_true")
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Only output the total error count to stdout (suppress per-error listing).",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="Output the full validation report as JSON to stdout (includes errors list).",
+    )
     args = parser.parse_args()
     java = load(args.java_api)
     rust = load(args.rust_api)
@@ -1011,12 +1057,18 @@ def main() -> int:
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(canonical_json(report), encoding="utf-8")
-    print(json.dumps({key: value for key, value in report.items() if key != "errors"}, ensure_ascii=False))
-    if report["errors"]:
+    if args.json_output:
+        print(canonical_json(report), end="")
+    elif args.quiet:
+        print(report["error_count"])
+    else:
+        print(json.dumps({key: value for key, value in report.items() if key != "errors"}, ensure_ascii=False))
+    if report["errors"] and not args.quiet and not args.json_output:
         for error in report["errors"][:25]:
             print(f"- {error}", file=sys.stderr)
         if len(report["errors"]) > 25:
             print(f"- ... {len(report['errors']) - 25} more", file=sys.stderr)
+    if report["errors"]:
         return 0 if args.allow_incomplete else 1
     return 0
 
