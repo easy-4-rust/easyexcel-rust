@@ -78,3 +78,120 @@ impl BeanMap {
         self.values.is_empty()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::any::TypeId;
+
+    fn sample_map() -> BeanMap {
+        let mut values = BTreeMap::new();
+        values.insert("name", CellValue::String("Alice".to_owned()));
+        values.insert("age", CellValue::Int(30));
+        let mut field_types = BTreeMap::new();
+        field_types.insert("name", Some("String"));
+        field_types.insert("age", Some("i32"));
+        BeanMap::from_parts(values, field_types)
+    }
+
+    #[test]
+    fn get_existing_and_missing() {
+        let map = sample_map();
+        assert!(map.get("name").is_some());
+        assert!(map.get("missing").is_none());
+    }
+
+    #[test]
+    fn property_type_known_and_unknown() {
+        let map = sample_map();
+        assert_eq!(map.property_type("name"), Some("String"));
+        assert_eq!(map.property_type("missing"), None);
+    }
+
+    #[test]
+    fn property_type_id_known_types() {
+        let map = sample_map();
+        assert_eq!(map.property_type_id("name"), Some(TypeId::of::<String>()));
+        assert_eq!(map.property_type_id("age"), Some(TypeId::of::<i32>()));
+        assert_eq!(map.property_type_id("missing"), None);
+    }
+
+    #[test]
+    fn property_type_id_all_known_variants() {
+        let mut values = BTreeMap::new();
+        let mut field_types = BTreeMap::new();
+        let types: &[(&str, &str)] = &[
+            ("f_string", "String"),
+            ("f_std_string", "std::string::String"),
+            ("f_alloc_string", "alloc::string::String"),
+            ("f_bool", "bool"),
+            ("f_i8", "i8"),
+            ("f_i16", "i16"),
+            ("f_i32", "i32"),
+            ("f_i64", "i64"),
+            ("f_u8", "u8"),
+            ("f_u16", "u16"),
+            ("f_u32", "u32"),
+            ("f_u64", "u64"),
+            ("f_f32", "f32"),
+            ("f_f64", "f64"),
+            ("f_unknown", "CustomType"),
+        ];
+        for &(name, ty) in types {
+            values.insert(name, CellValue::Empty);
+            field_types.insert(name, Some(ty));
+        }
+        let map = BeanMap::from_parts(values, field_types);
+        assert_eq!(map.property_type_id("f_string"), Some(TypeId::of::<String>()));
+        assert_eq!(map.property_type_id("f_std_string"), Some(TypeId::of::<String>()));
+        assert_eq!(map.property_type_id("f_alloc_string"), Some(TypeId::of::<String>()));
+        assert_eq!(map.property_type_id("f_bool"), Some(TypeId::of::<bool>()));
+        assert_eq!(map.property_type_id("f_i8"), Some(TypeId::of::<i8>()));
+        assert_eq!(map.property_type_id("f_i16"), Some(TypeId::of::<i16>()));
+        assert_eq!(map.property_type_id("f_i32"), Some(TypeId::of::<i32>()));
+        assert_eq!(map.property_type_id("f_i64"), Some(TypeId::of::<i64>()));
+        assert_eq!(map.property_type_id("f_u8"), Some(TypeId::of::<u8>()));
+        assert_eq!(map.property_type_id("f_u16"), Some(TypeId::of::<u16>()));
+        assert_eq!(map.property_type_id("f_u32"), Some(TypeId::of::<u32>()));
+        assert_eq!(map.property_type_id("f_u64"), Some(TypeId::of::<u64>()));
+        assert_eq!(map.property_type_id("f_f32"), Some(TypeId::of::<f32>()));
+        assert_eq!(map.property_type_id("f_f64"), Some(TypeId::of::<f64>()));
+        // 未知类型返回 None
+        assert_eq!(map.property_type_id("f_unknown"), None);
+    }
+
+    #[test]
+    fn property_type_with_none_field_type() {
+        let mut values = BTreeMap::new();
+        values.insert("x", CellValue::Empty);
+        let mut field_types = BTreeMap::new();
+        field_types.insert("x", None);
+        let map = BeanMap::from_parts(values, field_types);
+        assert_eq!(map.property_type("x"), None);
+        assert_eq!(map.property_type_id("x"), None);
+    }
+
+    #[test]
+    fn iter_returns_all_entries() {
+        let map = sample_map();
+        let entries: Vec<_> = map.iter().collect();
+        assert_eq!(entries.len(), 2);
+    }
+
+    #[test]
+    fn len_and_is_empty() {
+        let map = sample_map();
+        assert_eq!(map.len(), 2);
+        assert!(!map.is_empty());
+        let empty = BeanMap::from_parts(BTreeMap::new(), BTreeMap::new());
+        assert_eq!(empty.len(), 0);
+        assert!(empty.is_empty());
+    }
+
+    #[test]
+    fn clone_and_eq() {
+        let a = sample_map();
+        let b = a.clone();
+        assert_eq!(a, b);
+    }
+}

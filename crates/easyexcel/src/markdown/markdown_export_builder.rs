@@ -116,3 +116,56 @@ impl MarkdownExportBuilder {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn builder_chains_options() {
+        let builder = MarkdownExportBuilder::new(
+            PathBuf::from("/tmp/in.xlsx"),
+            PathBuf::from("/tmp/out.md"),
+        )
+        .profile(MarkdownProfile::HumanReadable)
+        .mode(MarkdownConversionMode::Workbook)
+        .all_sheets()
+        .formula_policy(MarkdownFormulaPolicy::Expression)
+        .merge_policy(MarkdownMergePolicy::RepeatAnchor)
+        .include_hidden(true)
+        .password("secret");
+
+        // 链式调用后 builder 仍可用 → 所有 setter 正常执行
+        let _builder = builder.sheet_name("Sheet1");
+    }
+
+    #[test]
+    fn builder_sheet_index() {
+        let builder = MarkdownExportBuilder::new(
+            PathBuf::from("/tmp/in.xlsx"),
+            PathBuf::from("/tmp/out.md"),
+        )
+        .sheet_index(2);
+        let _builder = builder.sheet_name("fallback");
+    }
+
+    #[test]
+    fn builder_limits() {
+        let builder = MarkdownExportBuilder::new(
+            PathBuf::from("/tmp/in.xlsx"),
+            PathBuf::from("/tmp/out.md"),
+        )
+        .limits(ResourceLimits::default());
+        let _builder = builder;
+    }
+
+    #[test]
+    fn builder_do_export_returns_error_for_missing_file() {
+        let builder = MarkdownExportBuilder::new(
+            PathBuf::from("/nonexistent/input.xlsx"),
+            PathBuf::from("/tmp/out.md"),
+        );
+        assert!(builder.do_export().is_err());
+    }
+}

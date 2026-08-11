@@ -59,3 +59,64 @@ impl UniqueDataFlagKey {
         self.wrapper_name = value;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_with_all_some_values() {
+        let key = UniqueDataFlagKey::new(
+            Some(1),
+            Some("Sheet1".to_owned()),
+            Some("list".to_owned()),
+        );
+        assert_eq!(key.get_sheet_no(), Some(1));
+        assert_eq!(key.get_sheet_name(), Some("Sheet1"));
+        assert_eq!(key.get_wrapper_name(), Some("list"));
+    }
+
+    #[test]
+    fn new_with_all_none_values() {
+        let key = UniqueDataFlagKey::new(None, None, None);
+        assert!(key.get_sheet_no().is_none());
+        assert!(key.get_sheet_name().is_none());
+        assert!(key.get_wrapper_name().is_none());
+    }
+
+    #[test]
+    fn setters_mutable() {
+        let mut key = UniqueDataFlagKey::default();
+        key.set_sheet_no(Some(42));
+        assert_eq!(key.get_sheet_no(), Some(42));
+        key.set_sheet_name(Some("Data".to_owned()));
+        assert_eq!(key.get_sheet_name(), Some("Data"));
+        key.set_wrapper_name(Some("scalar".to_owned()));
+        assert_eq!(key.get_wrapper_name(), Some("scalar"));
+        // 重置为 None
+        key.set_sheet_no(None);
+        assert!(key.get_sheet_no().is_none());
+    }
+
+    #[test]
+    fn equality_and_hash() {
+        let a = UniqueDataFlagKey::new(Some(1), Some("S".to_owned()), None);
+        let b = UniqueDataFlagKey::new(Some(1), Some("S".to_owned()), None);
+        assert_eq!(a, b);
+        let c = UniqueDataFlagKey::new(Some(2), Some("S".to_owned()), None);
+        assert_ne!(a, c);
+    }
+
+    #[test]
+    fn default_is_all_none() {
+        let key = UniqueDataFlagKey::default();
+        assert_eq!(key, UniqueDataFlagKey::new(None, None, None));
+    }
+
+    #[test]
+    fn debug_fmt() {
+        let key = UniqueDataFlagKey::new(Some(0), Some("S".to_owned()), Some("w".to_owned()));
+        let text = format!("{:?}", key);
+        assert!(text.contains("UniqueDataFlagKey"));
+    }
+}

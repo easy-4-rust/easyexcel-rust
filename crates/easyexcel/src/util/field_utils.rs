@@ -84,4 +84,33 @@ mod tests_extra {
         );
         assert!(get_field::<MetadataRow>("missing").is_none());
     }
+
+    #[test]
+    fn null_object_class_returns_consistent_type_id() {
+        let a = null_object_class();
+        let b = null_object_class();
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn get_field_class_with_some_and_none() {
+        let string_val = "hello".to_owned();
+        let with_some = get_field_class(Some(&string_val));
+        assert_eq!(with_some, TypeId::of::<String>());
+        let with_none = get_field_class(None);
+        assert_eq!(with_none, null_object_class());
+    }
+
+    #[test]
+    fn get_field_class_from_map_with_none_map() {
+        let val = 42_i32;
+        let result = get_field_class_from_map(None, "field", Some(&val));
+        assert_eq!(result, TypeId::of::<i32>());
+    }
+
+    #[test]
+    fn get_field_class_from_map_with_none_value() {
+        let result = get_field_class_from_map(None, "field", None);
+        assert_eq!(result, null_object_class());
+    }
 }

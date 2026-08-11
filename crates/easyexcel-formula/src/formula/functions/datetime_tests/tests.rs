@@ -9,3 +9,4 @@
     // DATE(2023,1,1) in 1900 system → serial 44927
     include!("tests/cases_01.rs");
     include!("tests/cases_02.rs");
+    include!("tests/cases_03.rs");

@@ -81,3 +81,68 @@ impl std::str::FromStr for CellDataTypeEnum {
             .ok_or_else(|| format!("unknown CellDataTypeEnum value: {value}"))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn java_values_has_eight_variants() {
+        assert_eq!(CellDataTypeEnum::JAVA_VALUES.len(), 8);
+        assert_eq!(CellDataTypeEnum::ALL.len(), 8);
+    }
+
+    #[test]
+    fn java_name_round_trips() {
+        for variant in CellDataTypeEnum::JAVA_VALUES {
+            let name = variant.java_name();
+            let parsed: CellDataTypeEnum = name.parse().expect("round trip");
+            assert_eq!(parsed, variant);
+        }
+    }
+
+    #[test]
+    fn from_str_rejects_unknown() {
+        assert!("UNKNOWN".parse::<CellDataTypeEnum>().is_err());
+    }
+
+    #[test]
+    fn build_from_cell_type_none_and_empty() {
+        assert_eq!(CellDataTypeEnum::build_from_cell_type(None), Some(CellDataTypeEnum::Empty));
+        assert_eq!(CellDataTypeEnum::build_from_cell_type(Some("")), Some(CellDataTypeEnum::Empty));
+    }
+
+    #[test]
+    fn build_from_cell_type_known_codes() {
+        assert_eq!(CellDataTypeEnum::build_from_cell_type(Some("s")), Some(CellDataTypeEnum::String));
+        assert_eq!(CellDataTypeEnum::build_from_cell_type(Some("str")), Some(CellDataTypeEnum::DirectString));
+        assert_eq!(CellDataTypeEnum::build_from_cell_type(Some("inlineStr")), Some(CellDataTypeEnum::DirectString));
+        assert_eq!(CellDataTypeEnum::build_from_cell_type(Some("d")), Some(CellDataTypeEnum::DirectString));
+        assert_eq!(CellDataTypeEnum::build_from_cell_type(Some("e")), Some(CellDataTypeEnum::Error));
+        assert_eq!(CellDataTypeEnum::build_from_cell_type(Some("b")), Some(CellDataTypeEnum::Boolean));
+        assert_eq!(CellDataTypeEnum::build_from_cell_type(Some("n")), Some(CellDataTypeEnum::Number));
+    }
+
+    #[test]
+    fn build_from_cell_type_unknown_returns_none() {
+        assert_eq!(CellDataTypeEnum::build_from_cell_type(Some("z")), None);
+    }
+
+    #[test]
+    fn java_name_for_rust_extensions() {
+        assert_eq!(CellDataTypeEnum::Formula.java_name(), "FORMULA");
+        assert_eq!(CellDataTypeEnum::Image.java_name(), "IMAGE");
+    }
+
+    #[test]
+    fn default_is_empty() {
+        assert_eq!(CellDataTypeEnum::default(), CellDataTypeEnum::Empty);
+    }
+
+    #[test]
+    fn debug_and_clone() {
+        let v = CellDataTypeEnum::Number;
+        let cloned = v;
+        assert_eq!(format!("{:?}", cloned), "Number");
+    }
+}

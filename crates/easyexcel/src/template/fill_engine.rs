@@ -231,3 +231,101 @@ fn template_cell_value(value: &CellValue) -> Result<TemplateCellValue> {
         }
     })
 }
+
+#[cfg(test)]
+mod template_cell_value_tests {
+    use super::*;
+
+    #[test]
+    fn empty_produces_empty() {
+        let result = template_cell_value(&CellValue::Empty).expect("ok");
+        assert!(matches!(result, TemplateCellValue::Empty));
+    }
+
+    #[test]
+    fn string_produces_text() {
+        let result = template_cell_value(&CellValue::String("hello".to_owned())).expect("ok");
+        assert!(matches!(result, TemplateCellValue::Text(ref t) if t == "hello"));
+    }
+
+    #[test]
+    fn bool_produces_bool() {
+        let result = template_cell_value(&CellValue::Bool(true)).expect("ok");
+        assert!(matches!(result, TemplateCellValue::Bool(true)));
+    }
+
+    #[test]
+    fn int_produces_number_string() {
+        let result = template_cell_value(&CellValue::Int(42)).expect("ok");
+        assert!(matches!(result, TemplateCellValue::Number(ref n) if n == "42"));
+    }
+
+    #[test]
+    fn float_produces_number_string() {
+        let result = template_cell_value(&CellValue::Float(3.14)).expect("ok");
+        assert!(matches!(result, TemplateCellValue::Number(ref n) if n == "3.14"));
+    }
+
+    #[test]
+    fn decimal_produces_number_string() {
+        let val: bigdecimal::BigDecimal = "1.23".parse().unwrap();
+        let result = template_cell_value(&CellValue::Decimal(val)).expect("ok");
+        assert!(matches!(result, TemplateCellValue::Number(ref n) if n == "1.23"));
+    }
+
+    #[test]
+    fn error_produces_error() {
+        let result = template_cell_value(&CellValue::Error("#REF!".to_owned())).expect("ok");
+        assert!(matches!(result, TemplateCellValue::Error(ref e) if e == "#REF!"));
+    }
+
+    #[test]
+    fn formula_produces_formula() {
+        let result = template_cell_value(&CellValue::Formula("=A1+B1".to_owned())).expect("ok");
+        assert!(matches!(result, TemplateCellValue::Formula(ref f) if f == "=A1+B1"));
+    }
+
+    #[test]
+    fn hyperlink_produces_hyperlink() {
+        let result = template_cell_value(&CellValue::Hyperlink {
+            url: "https://example.com".to_owned(),
+            text: "Click".to_owned(),
+        })
+        .expect("ok");
+        assert!(matches!(result, TemplateCellValue::Hyperlink { .. }));
+    }
+
+    #[test]
+    fn hyperlink_with_metadata_none_type_produces_text() {
+        let result = template_cell_value(&CellValue::HyperlinkWithMetadata {
+            address: "https://example.com".to_owned(),
+            text: "Click".to_owned(),
+            hyperlink_type: crate::HyperlinkType::None,
+            coordinates: crate::CoordinateData::new(),
+        })
+        .expect("ok");
+        assert!(matches!(result, TemplateCellValue::Text(ref t) if t == "Click"));
+    }
+
+    #[test]
+    fn hyperlink_with_metadata_url_type_produces_hyperlink() {
+        let result = template_cell_value(&CellValue::HyperlinkWithMetadata {
+            address: "https://example.com".to_owned(),
+            text: "Click".to_owned(),
+            hyperlink_type: crate::HyperlinkType::Url,
+            coordinates: crate::CoordinateData::new(),
+        })
+        .expect("ok");
+        assert!(matches!(result, TemplateCellValue::Hyperlink { .. }));
+    }
+
+    #[test]
+    fn comment_wraps_inner_value() {
+        let result = template_cell_value(&CellValue::Comment {
+            value: Box::new(CellValue::String("inner".to_owned())),
+            text: "note".to_owned(),
+        })
+        .expect("ok");
+        assert!(matches!(result, TemplateCellValue::Comment { .. }));
+    }
+}

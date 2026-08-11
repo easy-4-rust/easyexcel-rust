@@ -54,3 +54,60 @@ impl ExcelProperty {
     /// 设置已弃用的格式字符串。
     pub fn set_format(&mut self, format: impl Into<String>) { self.format = format.into(); }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_values_match_java() {
+        let prop = ExcelProperty::new();
+        assert_eq!(prop.value(), &[""]);
+        assert_eq!(prop.index(), -1);
+        assert_eq!(prop.order(), i32::MAX);
+        assert_eq!(prop.converter(), "com.alibaba.excel.converters.AutoConverter");
+        assert!(prop.format().is_empty());
+    }
+
+    #[test]
+    fn set_value_accepts_multiple_headers() {
+        let mut prop = ExcelProperty::new();
+        prop.set_value(["一级", "二级", "三级"]);
+        assert_eq!(prop.value().len(), 3);
+        assert_eq!(prop.value()[0], "一级");
+    }
+
+    #[test]
+    fn set_index_and_order() {
+        let mut prop = ExcelProperty::new();
+        prop.set_index(5);
+        assert_eq!(prop.index(), 5);
+        prop.set_order(10);
+        assert_eq!(prop.order(), 10);
+    }
+
+    #[test]
+    fn set_converter_and_format() {
+        let mut prop = ExcelProperty::new();
+        prop.set_converter("my.Converter");
+        assert_eq!(prop.converter(), "my.Converter");
+        prop.set_format("yyyy-MM-dd");
+        assert_eq!(prop.format(), "yyyy-MM-dd");
+    }
+
+    #[test]
+    fn clone_and_eq() {
+        let mut a = ExcelProperty::new();
+        a.set_index(3);
+        a.set_value(["Name"]);
+        let b = a.clone();
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn debug_fmt() {
+        let prop = ExcelProperty::new();
+        let text = format!("{:?}", prop);
+        assert!(text.contains("ExcelProperty"));
+    }
+}

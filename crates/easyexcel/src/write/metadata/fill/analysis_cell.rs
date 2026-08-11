@@ -122,3 +122,82 @@ impl std::hash::Hash for AnalysisCell {
         std::hash::Hash::hash(&self.row_index, state);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_sets_indices() {
+        let cell = AnalysisCell::new(3, 7);
+        assert_eq!(cell.row_index(), 3);
+        assert_eq!(cell.column_index(), 7);
+        assert_eq!(cell.get_row_index(), 3);
+        assert_eq!(cell.get_column_index(), 7);
+    }
+
+    #[test]
+    fn default_values() {
+        let cell = AnalysisCell::default();
+        assert_eq!(cell.column_index(), 0);
+        assert_eq!(cell.row_index(), 0);
+        assert!(cell.get_variable_list().is_empty());
+        assert!(cell.get_prepare_data_list().is_empty());
+        assert!(cell.get_only_one_variable().is_none());
+        assert_eq!(cell.cell_type(), WriteTemplateAnalysisCellType::Common);
+        assert!(cell.get_prefix().is_none());
+        assert!(cell.get_first_row().is_none());
+    }
+
+    #[test]
+    fn setters() {
+        let mut cell = AnalysisCell::new(0, 0);
+        cell.set_column_index(5);
+        assert_eq!(cell.get_column_index(), 5);
+        cell.set_row_index(10);
+        assert_eq!(cell.get_row_index(), 10);
+        cell.set_variable_list(vec!["a".to_owned(), "b".to_owned()]);
+        assert_eq!(cell.get_variable_list().len(), 2);
+        cell.set_prepare_data_list(vec!["x".to_owned()]);
+        assert_eq!(cell.get_prepare_data_list().len(), 1);
+        cell.set_only_one_variable(Some(true));
+        assert_eq!(cell.get_only_one_variable(), Some(true));
+        cell.set_cell_type(WriteTemplateAnalysisCellType::Common);
+        assert_eq!(cell.get_cell_type(), WriteTemplateAnalysisCellType::Common);
+        cell.set_prefix(Some("pfx".to_owned()));
+        assert_eq!(cell.get_prefix(), Some("pfx"));
+        cell.set_first_row(Some(true));
+        assert_eq!(cell.get_first_row(), Some(true));
+    }
+
+    #[test]
+    fn partial_eq_by_indices() {
+        let a = AnalysisCell::new(1, 2);
+        let b = AnalysisCell::new(1, 2);
+        assert_eq!(a, b);
+        let c = AnalysisCell::new(1, 3);
+        assert_ne!(a, c);
+    }
+
+    #[test]
+    fn hash_consistent_with_eq() {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        let a = AnalysisCell::new(4, 5);
+        let b = AnalysisCell::new(4, 5);
+        let mut ha = DefaultHasher::new();
+        let mut hb = DefaultHasher::new();
+        a.hash(&mut ha);
+        b.hash(&mut hb);
+        assert_eq!(ha.finish(), hb.finish());
+    }
+
+    #[test]
+    fn clone_preserves_values() {
+        let mut cell = AnalysisCell::new(1, 2);
+        cell.set_variable_list(vec!["x".to_owned()]);
+        let cloned = cell.clone();
+        assert_eq!(cloned.row_index(), 1);
+        assert_eq!(cloned.get_variable_list(), &["x"]);
+    }
+}

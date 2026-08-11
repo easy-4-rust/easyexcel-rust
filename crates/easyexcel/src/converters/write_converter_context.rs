@@ -75,3 +75,58 @@ impl<'a, T> WriteConverterContext<'a, T> {
     #[must_use]
     pub const fn get_write_context(&self) -> &'a ConvertContext { self.convert_context() }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ConvertContext;
+    use crate::ExcelColumn;
+
+    fn sample_column() -> ExcelColumn {
+        ExcelColumn::new("test", "Test", None, 0, None)
+    }
+
+    fn sample_context() -> ConvertContext {
+        ConvertContext {
+            sheet_name: "S".to_owned(),
+            row_index: 0,
+            column_index: None,
+            field: "",
+            format: None,
+            date_time_format: None,
+            number_format: None,
+            use_1904_windowing: false,
+        }
+    }
+
+    #[test]
+    fn new_and_getters() {
+        let value = 42_i32;
+        let column = sample_column();
+        let context = sample_context();
+        let ctx = WriteConverterContext::new(&value, &column, &context);
+        assert_eq!(*ctx.value(), 42);
+        assert_eq!(*ctx.get_value(), 42);
+        assert!(std::ptr::eq(ctx.column(), &column));
+        assert!(std::ptr::eq(ctx.get_content_property(), &column));
+        assert!(std::ptr::eq(ctx.convert_context(), &context));
+        assert!(std::ptr::eq(ctx.get_write_context(), &context));
+    }
+
+    #[test]
+    fn setters() {
+        let value_a = 1_i32;
+        let value_b = 2_i32;
+        let column_a = sample_column();
+        let column_b = sample_column();
+        let context_a = sample_context();
+        let context_b = sample_context();
+        let mut ctx = WriteConverterContext::new(&value_a, &column_a, &context_a);
+        ctx.set_value(&value_b);
+        assert_eq!(*ctx.value(), 2);
+        ctx.set_content_property(&column_b);
+        assert!(std::ptr::eq(ctx.column(), &column_b));
+        ctx.set_write_context(&context_b);
+        assert!(std::ptr::eq(ctx.convert_context(), &context_b));
+    }
+}
