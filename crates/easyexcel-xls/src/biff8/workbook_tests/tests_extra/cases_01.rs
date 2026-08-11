@@ -8,6 +8,7 @@
             styles: Biff8StyleTable::default(),
             use_1904_windowing: false,
             active_sheet: 0,
+            formula_caches: Vec::new(),
         };
         let request = crate::biff8::style::Biff8StyleRequest {
             number_format: Some(crate::biff8::style::Biff8NumberFormat::Custom(

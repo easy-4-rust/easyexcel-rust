@@ -1,6 +1,6 @@
 //! 可复用的 BIFF8 底层 record、公式与加密原语。
 
-mod cached;
+pub(crate) mod cached;
 mod biff8_font;
 mod biff8_rich_text_cell;
 mod continuation_chain;

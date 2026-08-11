@@ -9,6 +9,13 @@ pub struct Biff8Book {
     pub use_1904_windowing: bool,
     /// 活动工作表索引；写入 WINDOW1，并与各工作表 WINDOW2 选择状态同步。
     pub active_sheet: usize,
+    /// 公式单元格预置缓存值（来自模型层 `Cell::Formula { cached, .. }`）。
+    ///
+    /// 按工作表索引组织，每个条目 `(row, col) → Biff8Cached` 在序列化时
+    /// 与公式引擎求值结果合并（模型层缓存优先）。
+    /// 用于空表达式公式 roundtrip：写入时保留用户指定的缓存结果，
+    /// 读回时不依赖公式引擎重算。
+    pub(crate) formula_caches: Vec<std::collections::HashMap<(u16, u8), super::cached::Biff8Cached>>,
 }
 
 impl Biff8Book {
@@ -137,7 +144,15 @@ impl Biff8Book {
     pub fn to_cfb_bytes_with_password(&self, password: Option<&str>) -> Result<Vec<u8>> {
         self.validate_generated_charts()?;
         // 写入前对全部工作表公式求值，得到缓存值表（借用 xls 求值引擎）
-        let caches = super::cached::recalc_cached_values(&self.sheets);
+        let mut caches = super::cached::recalc_cached_values(&self.sheets);
+        // 将模型层预置缓存合并到求值结果中（模型层缓存优先，用于空表达式 roundtrip）
+        for (sheet_idx, pre_cache) in self.formula_caches.iter().enumerate() {
+            if let Some(sheet_cache) = caches.get_mut(sheet_idx) {
+                for (&key, value) in pre_cache {
+                    sheet_cache.insert(key, value.clone());
+                }
+            }
+        }
         let stream = if let Some(password) = password {
             let encryption = super::encrypt::prepare_crypto_api_encryption(password)
                 .map_err(ExcelError::Xls)?;

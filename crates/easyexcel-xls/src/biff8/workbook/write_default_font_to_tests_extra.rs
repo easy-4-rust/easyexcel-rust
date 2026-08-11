@@ -526,6 +526,9 @@ fn write_formula(
     };
     let mut data = Vec::with_capacity(22 + rgce.len());
     cell_header(&mut data, row, col, xf);
+    // 字符串缓存值需要在 FORMULA 记录之后写入 STRING 记录，
+    // 先暂存待写文本（BIFF8 规范要求 STRING 紧跟 FORMULA）。
+    let mut pending_string: Option<&str> = None;
     match cached {
         Some(Biff8Cached::Number(number)) => {
             data.extend_from_slice(&number.to_le_bytes());
@@ -551,11 +554,7 @@ fn write_formula(
             result[6] = 0xFF; // 字符串标记：结果在后续 STRING 记录
             result[7] = 0xFF;
             data.extend_from_slice(&result);
-            // 字符串缓存值：FORMULA 记录后跟随 STRING 记录（0x0207）
-            let encoded = encode_unicode_string(text);
-            if encoded.len() <= MAX_RECORD_DATA {
-                record(out, STRING, &encoded);
-            }
+            pending_string = Some(text);
         }
         None => {
             // 数字 0.0（全零）→ Excel/LibreOffice 打开时自动重算
@@ -569,6 +568,14 @@ fn write_formula(
     data.extend_from_slice(&(rgce.len() as u16).to_le_bytes()); // cce
     data.extend_from_slice(&rgce);
     record(out, FORMULA, &data);
+    // 字符串缓存值：FORMULA 记录后紧跟 STRING 记录（0x0207），
+    // 符合 BIFF8 规范——读取端在 FORMULA 之后立即查找 STRING。
+    if let Some(text) = pending_string {
+        let encoded = encode_unicode_string(text);
+        if encoded.len() <= MAX_RECORD_DATA {
+            record(out, STRING, &encoded);
+        }
+    }
     Ok(())
 }
 

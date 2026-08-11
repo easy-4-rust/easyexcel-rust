@@ -8,12 +8,13 @@ use std::collections::{BTreeSet, HashMap};
 use std::io::{Seek, Write};
 
 use easyexcel_io::{Error, Result};
-use easyexcel_model::model::{Cell, Workbook};
+use easyexcel_model::model::{Cell, CellValue, Workbook};
 use easyexcel_model::styles::{
     BorderStyle, CellStyle, Color, FillPattern, HAlign, VAlign,
 };
 use easyexcel_model::DateSystem;
 
+use crate::biff8::cached::Biff8Cached;
 use crate::biff8::encode::XF_GENERAL;
 use crate::biff8::{
     Biff8Book, Biff8BorderStyle, Biff8Cell, Biff8Color, Biff8FillPattern,
@@ -174,6 +175,7 @@ pub fn to_biff8_book(workbook: &Workbook) -> Result<Biff8Book> {
             .chain(source.styles.keys())
             .copied()
             .collect::<BTreeSet<_>>();
+        let mut sheet_formula_caches = HashMap::new();
         for (row, column) in coordinates {
             let xf = match source.style_at(row, column) {
                 Some(style) => *style_map.get(&style).ok_or_else(|| {
@@ -186,9 +188,17 @@ pub fn to_biff8_book(workbook: &Workbook) -> Result<Biff8Book> {
                 })?,
                 None => XF_GENERAL,
             };
-            let value = source
-                .get(row, column)
-                .map_or(Biff8Value::Blank, model_cell_to_biff8);
+            let cell = source.get(row, column);
+            // 公式单元格预置缓存：将模型层 CellValue 转换为 Biff8Cached，
+            // 用于空表达式 roundtrip（写入时保留用户指定的缓存结果）。
+            if let Some(Cell::Formula { cached, .. }) = cell {
+                if let Some(biff_cached) = cell_value_to_biff8_cached(cached) {
+                    let row16 = u16::try_from(row).unwrap_or(u16::MAX);
+                    let col8 = u8::try_from(column).unwrap_or(u8::MAX);
+                    sheet_formula_caches.insert((row16, col8), biff_cached);
+                }
+            }
+            let value = cell.map_or(Biff8Value::Blank, model_cell_to_biff8);
             target.set(
                 row,
                 usize::try_from(column).map_err(|_| {
@@ -197,8 +207,21 @@ pub fn to_biff8_book(workbook: &Workbook) -> Result<Biff8Book> {
                 Biff8Cell::general(value).with_xf(xf),
             )?;
         }
+        book.formula_caches.push(sheet_formula_caches);
     }
     Ok(book)
+}
+
+/// 将模型层 `CellValue` 转换为 BIFF8 公式缓存值。
+/// 空值（`CellValue::Empty`）返回 `None`，由公式引擎兜底。
+fn cell_value_to_biff8_cached(value: &CellValue) -> Option<Biff8Cached> {
+    Some(match value {
+        CellValue::Number(n) => Biff8Cached::Number(*n),
+        CellValue::Text(t) => Biff8Cached::Text(t.clone()),
+        CellValue::Bool(b) => Biff8Cached::Bool(*b),
+        CellValue::Error(e) => Biff8Cached::Error(e.biff_code()),
+        CellValue::Empty => return None,
+    })
 }
 
 fn validate_workbook_level_state(workbook: &Workbook) -> Result<()> {
