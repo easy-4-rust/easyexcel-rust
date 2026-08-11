@@ -11,7 +11,7 @@
   "candidate_report_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
   "evidence": [
     {
-      "name": "stub-placeholder",
+      "name": "stub-placeholder-must-be-replaced-by-release-benchmark-workflow-on-linux-benchmark-runner",
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
     }
   ],
@@ -24,6 +24,8 @@
     "xls-batched-write",
     "xls-event-read",
     "csv-stream-write",
-    "csv-event-read"
+    "csv-event-read",
+    "OPS: this-stub-requires-linux-benchmark-runner-see-docs-operations-LINUX_RUNNER_SETUP.md",
+    "OPS: trigger-via-Actions-Linux-Release-Baseline-Benchmark-workflow_dispatch-or-release-published"
   ]
 }

@@ -1,0 +1,376 @@
+# ---------------------------------------------------------------
+# Linux Release Baseline Benchmark -- one-click workflow
+# ---------------------------------------------------------------
+# Triggers:
+#   1. workflow_dispatch  -- ops manually clicks "Run workflow"
+#   2. release published  -- automatic on GitHub Release publish
+#
+# Runner: self-hosted label "linux-benchmark" (bare-metal x86_64)
+# See docs/operations/LINUX_RUNNER_SETUP.md for provisioning.
+#
+# Profile: release (1M rows, 3 warmups, 7 measurements, 30 min cap)
+# Outputs: baseline candidate artifact for human review + approval.
+# ---------------------------------------------------------------
+
+name: Linux Release Baseline Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      generate_baseline:
+        description: "Generate a reviewable baseline candidate (approve separately)"
+        type: boolean
+        default: true
+      java_repo_ref:
+        description: "Java easyexcel git ref (tag/branch/sha)"
+        type: string
+        default: "v4.0.3"
+      reviewer:
+        description: "Reviewer name for baseline approval attribution"
+        type: string
+        default: ""
+
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-benchmark-linux-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  RUST_TOOLCHAIN: "1.97.1"
+  JAVA_VERSION: "17"
+  JAVA_DISTRIBUTION: "temurin"
+  PROFILE: "release"
+  LANG: "en_US.UTF-8"
+  LC_ALL: "en_US.UTF-8"
+  TZ: "UTC"
+
+jobs:
+  release-benchmark:
+    # Self-hosted runner with label "linux-benchmark".
+    # For PR testing or when the self-hosted runner is unavailable,
+    # temporarily switch to ubuntu-latest (NOT suitable for real baselines).
+    runs-on: linux-benchmark
+    timeout-minutes: 120
+
+    steps:
+      # -------------------------------------------------------
+      # 1. Checkout
+      # -------------------------------------------------------
+      - name: Checkout Rust repository
+        uses: actions/checkout@v4
+        with:
+          path: rust
+          fetch-depth: 0
+
+      - name: Checkout Java easyexcel at pinned ref
+        uses: actions/checkout@v4
+        with:
+          repository: easy-4-java/easyexcel
+          ref: ${{ inputs.java_repo_ref || 'v4.0.3' }}
+          path: java
+          fetch-depth: 0
+
+      # -------------------------------------------------------
+      # 2. Toolchain setup
+      # -------------------------------------------------------
+      - name: Setup Java ${{ env.JAVA_VERSION }} (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Verify Java version is Temurin 17
+        shell: bash
+        run: |
+          java_version="$(java -version 2>&1 | head -1)"
+          echo "Java: $java_version"
+          if ! echo "$java_version" | grep -q '17\.'; then
+            echo "::error::Expected Java 17, got: $java_version"
+            exit 1
+          fi
+
+      - name: Setup Rust ${{ env.RUST_TOOLCHAIN }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+
+      - name: Verify Rust toolchain
+        shell: bash
+        run: |
+          echo "rustc: $(rustc --version)"
+          echo "cargo: $(cargo --version)"
+          rustc_version="$(rustc --version)"
+          if ! echo "$rustc_version" | grep -q '1.97.1'; then
+            echo "::error::Expected Rust 1.97.1, got: $rustc_version"
+            exit 1
+          fi
+
+      # -------------------------------------------------------
+      # 3. Environment validation (self-hosted runner contract)
+      # -------------------------------------------------------
+      - name: Validate runner environment
+        shell: bash
+        run: |
+          echo "--- Locale ---"
+          locale 2>/dev/null | head -5 || echo "(locale command unavailable)"
+          echo "--- Timezone ---"
+          date +%Z
+          echo "--- CPU governor ---"
+          cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo "(not available)"
+          echo "--- CPU cores ---"
+          nproc
+          echo "--- Memory ---"
+          free -h | head -2
+          echo "--- Disk ---"
+          df -h /tmp | tail -1
+
+          # Enforce locale
+          if [[ "$(locale charmap 2>/dev/null)" != "UTF-8" ]]; then
+            echo "::warning::Locale charmap is not UTF-8; benchmarks may fail locale check"
+          fi
+
+      # -------------------------------------------------------
+      # 4. Build benchmark runners
+      # -------------------------------------------------------
+      - name: Build Rust benchmark runner
+        shell: bash
+        run: |
+          cargo build --locked --release \
+            --manifest-path rust/Cargo.toml \
+            -p easyexcel-benchmark-runner
+
+      - name: Build Java benchmark runner
+        shell: bash
+        run: |
+          # Step 1: compile all modules + test sources
+          cd java
+          ./mvnw -q -pl easyexcel-test -am -DskipTests test-compile
+
+          # Step 2: produce classpath file
+          ./mvnw -q -pl easyexcel-test dependency:build-classpath \
+            -DincludeScope=test \
+            -Dmdep.outputFile=target/benchmark-classpath.txt
+          cd ..
+
+          # Step 3: assemble classpath
+          module_classes="$(find java -type d -path '*/target/classes' -print | paste -sd: -)"
+          dependencies="$(cat java/easyexcel-test/target/benchmark-classpath.txt)"
+          java_test_classes="$PWD/java/easyexcel-test/target/test-classes"
+          classpath="$java_test_classes:$module_classes:$dependencies"
+
+          # Step 4: compile the Java benchmark runner
+          javac -encoding UTF-8 -cp "$classpath" -d "$java_test_classes" \
+            $(find rust/benchmarks/java-runner/src -name '*.java' -print | sort)
+
+          # Export for subsequent steps
+          echo "JAVA_BENCHMARK_CLASSPATH=$classpath" >> "$GITHUB_ENV"
+          echo "JAVA_GIT_SHA=$(git -C java rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "RUST_GIT_SHA=$(git -C rust rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Validate benchmark harness (Python tests)
+        working-directory: rust
+        shell: bash
+        run: |
+          python3 -m py_compile benchmarks/scripts/*.py benchmarks/scripts/tests/*.py
+          python3 -m unittest discover -s benchmarks/scripts/tests -v
+
+      # -------------------------------------------------------
+      # 5. Attest release artifacts
+      # -------------------------------------------------------
+      - name: Generate artifact manifest
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          python3 rust/benchmarks/scripts/prepare_release_artifacts.py \
+            --rust-repo rust \
+            --java-repo java \
+            --rust-bin rust/target/release/easyexcel-benchmark-runner \
+            --java-bin "$JAVA_HOME/bin/java" \
+            --java-classpath "$JAVA_BENCHMARK_CLASSPATH" \
+            --output artifacts/release-runner-artifact.json
+
+          echo "--- Artifact manifest ---"
+          python3 -m json.tool artifacts/release-runner-artifact.json | head -30
+
+      # -------------------------------------------------------
+      # 6. Run release benchmark matrix (1M rows, ~30-50 min)
+      # -------------------------------------------------------
+      - name: Run release benchmark matrix
+        shell: bash
+        run: |
+          python3 rust/benchmarks/scripts/run_matrix.py \
+            --profile release \
+            --rust-bin rust/target/release/easyexcel-benchmark-runner \
+            --java-bin "$JAVA_HOME/bin/java" \
+            --java-classpath "$JAVA_BENCHMARK_CLASSPATH" \
+            --java-repo java \
+            --rust-repo rust \
+            --artifact-manifest artifacts/release-runner-artifact.json \
+            --output-dir artifacts/release/matrix
+
+      # -------------------------------------------------------
+      # 7. Run four-phase soak (release only)
+      # -------------------------------------------------------
+      - name: Run four-phase soak
+        shell: bash
+        run: |
+          python3 rust/benchmarks/scripts/run_soak.py \
+            --rust-bin rust/target/release/easyexcel-benchmark-runner \
+            --java-bin "$JAVA_HOME/bin/java" \
+            --java-classpath "$JAVA_BENCHMARK_CLASSPATH" \
+            --java-repo java \
+            --rust-repo rust \
+            --artifact-manifest artifacts/release-runner-artifact.json \
+            --output-dir artifacts/release/soak
+
+      # -------------------------------------------------------
+      # 8. Compare with baseline + cross_runtime gate
+      # -------------------------------------------------------
+      - name: Compare and enforce all gates
+        shell: bash
+        run: |
+          baseline="rust/benchmarks/baselines/release-ubuntu-x64.json"
+          baseline_args=()
+          candidate_args=()
+
+          # If this is a baseline generation run, use --baseline-candidate mode
+          if [[ "${{ inputs.generate_baseline }}" == "true" || "${{ github.event_name }}" == "release" ]]; then
+            candidate_args=(--baseline-candidate)
+          elif [[ -f "$baseline" ]]; then
+            # Check if it's a real baseline (not a stub)
+            is_stub="$(python3 -c "
+          import json, sys
+          d = json.load(open('$baseline'))
+          sys.exit(0 if d.get('pending_generation') is True else 1)
+          " 2>/dev/null && echo true || echo false)"
+            if [[ "$is_stub" == "true" ]]; then
+              echo "::warning::Baseline file exists but is a pending stub; using --require-baseline"
+              baseline_args=(--require-baseline)
+            else
+              baseline_args=(--baseline "$baseline")
+            fi
+          else
+            baseline_args=(--require-baseline)
+          fi
+
+          python3 rust/benchmarks/scripts/compare_results.py \
+            --profile release \
+            --spec rust/benchmarks/spec/benchmark-suite-v1.json \
+            --expected-java-git-sha "$JAVA_GIT_SHA" \
+            --expected-rust-git-sha "$RUST_GIT_SHA" \
+            --soak-manifest artifacts/release/soak/soak-manifest.json \
+            --output artifacts/release/report.json \
+            "${candidate_args[@]}" \
+            "${baseline_args[@]}" \
+            artifacts/release/matrix/raw-results.jsonl \
+            artifacts/release/soak/raw-results.jsonl
+
+      - name: Print report summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f artifacts/release/report.json ]]; then
+            echo "=== Release Benchmark Report ==="
+            python3 -c "
+          import json, sys
+          r = json.load(open('artifacts/release/report.json'))
+          print(f'Passed:    {r.get(\"passed\")}')
+          print(f'Samples:   {r.get(\"valid_sample_count\")}/{r.get(\"sample_count\")}')
+          failures = r.get('failures', [])
+          if failures:
+              print(f'Failures ({len(failures)}):')
+              for f in failures:
+                  print(f'  - {f}')
+          else:
+              print('Failures:  none')
+          crt = r.get('cross_runtime_ratios', {})
+          if crt:
+              print(f'Cross-runtime ratios: {len(crt)} dimension groups')
+              for label, info in list(crt.items())[:5]:
+                  ratio = info.get('median_ratio', '?')
+                  lb = info.get('confidence_lower_bound', '?')
+                  print(f'  {label}: median={ratio:.3f}, ci_lb={lb:.3f}')
+          "
+          else
+            echo "::error::Report file not found"
+          fi
+
+      # -------------------------------------------------------
+      # 9. Generate baseline candidate (if requested)
+      # -------------------------------------------------------
+      - name: Generate baseline candidate
+        if: inputs.generate_baseline == true || github.event_name == 'release'
+        shell: bash
+        run: |
+          # Determine reviewer
+          reviewer="${{ inputs.reviewer }}"
+          if [[ -z "$reviewer" ]]; then
+            reviewer="github-actions-${{ github.actor }}"
+          fi
+          notes="Automated release baseline candidate from workflow run ${{ github.run_id }} on $(date -u +%Y-%m-%dT%H:%M:%SZ). Commit: ${{ github.sha }}"
+
+          # The approve script requires the output path does NOT already exist.
+          # Remove the stub if present so approve can write a fresh file.
+          stub="rust/benchmarks/baselines/release-ubuntu-x64.json"
+          if [[ -f "$stub" ]]; then
+            python3 -c "
+          import json, sys
+          d = json.load(open('$stub'))
+          if d.get('pending_generation') is True:
+              import os; os.remove('$stub')
+              print('Removed pending stub for baseline generation')
+          else:
+              print('ERROR: baseline already exists and is not a stub; aborting')
+              sys.exit(1)
+          "
+          fi
+
+          python3 rust/benchmarks/scripts/approve_benchmark_baseline.py \
+            --candidate-report artifacts/release/report.json \
+            --spec rust/benchmarks/spec/benchmark-suite-v1.json \
+            --result artifacts/release/matrix/raw-results.jsonl \
+            --result artifacts/release/soak/raw-results.jsonl \
+            --soak-manifest artifacts/release/soak/soak-manifest.json \
+            --reviewer "$reviewer" \
+            --review-notes "$notes" \
+            --output rust/benchmarks/baselines/release-ubuntu-x64.json
+
+          echo "=== Baseline candidate generated ==="
+          python3 -c "
+          import json
+          b = json.load(open('rust/benchmarks/baselines/release-ubuntu-x64.json'))
+          print(f'Profile:       {b[\"profile\"]}')
+          print(f'Spec SHA:      {b[\"spec_sha256\"][:16]}...')
+          print(f'Reviewer:      {b[\"approval\"][\"reviewer\"]}')
+          print(f'Reviewed at:   {b[\"approval\"][\"reviewed_at\"]}')
+          print(f'Scenarios:     {len(b.get(\"summaries\", {}))}')
+          "
+
+      # -------------------------------------------------------
+      # 10. Upload artifacts
+      # -------------------------------------------------------
+      - name: Upload benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-benchmark-linux-${{ github.run_id }}
+          path: |
+            artifacts/
+            rust/benchmarks/baselines/release-ubuntu-x64.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Upload baseline candidate separately
+        if: inputs.generate_baseline == true || github.event_name == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-baseline-candidate-${{ github.run_id }}
+          path: rust/benchmarks/baselines/release-ubuntu-x64.json
+          if-no-files-found: warn
+          retention-days: 90
