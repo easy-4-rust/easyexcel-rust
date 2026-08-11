@@ -43,3 +43,44 @@ impl From<String> for CsvCharset {
         Self::new(value)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_stores_name() {
+        let cs = CsvCharset::new("GBK");
+        assert_eq!(cs.name(), "GBK");
+    }
+
+    #[test]
+    fn utf8_default() {
+        let cs = CsvCharset::utf8();
+        assert_eq!(cs.name(), "UTF-8");
+    }
+
+    #[test]
+    fn default_is_utf8() {
+        let cs = CsvCharset::default();
+        assert_eq!(cs.name(), "UTF-8");
+    }
+
+    #[test]
+    fn from_str_ref() {
+        let cs: CsvCharset = "ISO-8859-1".into();
+        assert_eq!(cs.name(), "ISO-8859-1");
+    }
+
+    #[test]
+    fn from_string() {
+        let cs: CsvCharset = String::from("Windows-1252").into();
+        assert_eq!(cs.name(), "Windows-1252");
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(CsvCharset::utf8(), CsvCharset::utf8());
+        assert_ne!(CsvCharset::utf8(), CsvCharset::new("GBK"));
+    }
+}

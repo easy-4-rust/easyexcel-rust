@@ -103,3 +103,70 @@ fn expression_value(expression: &Expr) -> syn::Result<i32> {
     };
     i32::try_from(signed).map_err(|error| syn::Error::new_spanned(expression, error))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn signed_integer_new_positive() {
+        let span = proc_macro2::Span::call_site();
+        let si = SignedInteger::new(42, span);
+        assert_eq!(si.value(), 42);
+        let ts = si.tokens().to_string();
+        assert!(ts.contains("42"), "tokens should contain 42: {ts}");
+    }
+
+    #[test]
+    fn signed_integer_new_negative() {
+        let span = proc_macro2::Span::call_site();
+        let si = SignedInteger::new(-100, span);
+        assert_eq!(si.value(), -100);
+        let ts = si.tokens().to_string();
+        assert!(ts.contains('-'), "tokens should contain negation: {ts}");
+    }
+
+    #[test]
+    fn signed_integer_new_zero() {
+        let span = proc_macro2::Span::call_site();
+        let si = SignedInteger::new(0, span);
+        assert_eq!(si.value(), 0);
+    }
+
+    #[test]
+    fn expression_value_positive_literal() {
+        let expr: Expr = syn::parse_quote!(42);
+        assert_eq!(expression_value(&expr).unwrap(), 42);
+    }
+
+    #[test]
+    fn expression_value_negative_unary() {
+        let expr: Expr = syn::parse_quote!(-5);
+        assert_eq!(expression_value(&expr).unwrap(), -5);
+    }
+
+    #[test]
+    fn expression_value_zero() {
+        let expr: Expr = syn::parse_quote!(0);
+        assert_eq!(expression_value(&expr).unwrap(), 0);
+    }
+
+    #[test]
+    fn expression_value_non_integer_expr_errors() {
+        let expr: Expr = syn::parse_quote!("hello");
+        assert!(expression_value(&expr).is_err());
+    }
+
+    #[test]
+    fn expression_value_i32_overflow_errors() {
+        let expr: Expr = syn::parse_quote!(99999999999);
+        assert!(expression_value(&expr).is_err());
+    }
+
+    #[test]
+    fn expression_value_neg_non_int_errors() {
+        // -"hello" should error because the inner expr is not an int
+        let expr: Expr = syn::parse_quote!(-"hello");
+        assert!(expression_value(&expr).is_err());
+    }
+}

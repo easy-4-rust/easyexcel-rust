@@ -63,4 +63,47 @@ mod tests_extra {
         let error = is_true(false, "expression failed").expect_err("fails");
         assert!(error.to_string().contains("expression failed"));
     }
+
+    #[test]
+    fn is_true_default_ok_and_error() {
+        is_true_default(true).expect("ok");
+        let error = is_true_default(false).expect_err("fails");
+        assert!(error.to_string().contains("false"));
+    }
+
+    #[test]
+    fn not_null_some_returns_value() {
+        let result = not_null(Some(42)).expect("ok");
+        assert_eq!(result, 42);
+    }
+
+    #[test]
+    fn not_null_none_returns_error() {
+        let error = not_null::<i32>(None).expect_err("fails");
+        assert!(error.to_string().contains("null"));
+    }
+
+    #[test]
+    fn not_null_with_message_some_returns_value() {
+        let result = not_null_with_message(Some("hello"), "custom msg").expect("ok");
+        assert_eq!(result, "hello");
+    }
+
+    #[test]
+    fn not_null_with_message_none_returns_error() {
+        let error = not_null_with_message::<i32>(None, "custom null msg").expect_err("fails");
+        assert!(error.to_string().contains("custom null msg"));
+    }
+
+    #[test]
+    fn check_not_null_some_returns_value() {
+        let result = check_not_null(Some(99)).expect("ok");
+        assert_eq!(result, 99);
+    }
+
+    #[test]
+    fn check_not_null_none_returns_error() {
+        let error = check_not_null::<String>(None).expect_err("fails");
+        assert!(error.to_string().contains("null"));
+    }
 }

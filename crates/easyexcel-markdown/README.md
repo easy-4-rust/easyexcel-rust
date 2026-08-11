@@ -2,6 +2,11 @@
 
 [简体中文](README.zh-CN.md)
 
+> **文档说明**：easyexcel-markdown 引擎层 crate 文档，面向贡献者与引擎实现者说明模块边界。
+>
+> **版本**：0.1.3
+> **最后更新**：2026-08-11
+
 Policy-driven GFM table import/export for workbooks and row streams with structured loss reporting.
 
 > Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
@@ -29,13 +34,73 @@ flowchart LR
 
 Dependency direction remains from the facade or format engines toward foundations; this crate never depends back on an application.
 
-## Capability matrix
+## Format support matrix
 
-| Capability | Status | Details |
+This crate handles GFM (GitHub Flavored Markdown) table projection, not a standalone spreadsheet format.
+
+| Dimension | GFM Table (this crate) | Status |
 |:---|:---|:---|
-| GFM import | Available | Multiple tables, nearest headings and conservative type inference. |
-| Workbook export | Available | Formula, merge, hidden-sheet and display-value policies. |
-| Lossless Excel round trip | Not claimed | Markdown is a semantic projection. |
+| Read (GFM tables) | Multiple tables, nearest headings, conservative type inference | stable |
+| Read (dynamic / no-model) | `TabularDocument` output | stable |
+| Read (event listener) | `MarkdownWriter` as `RowSink` | stable |
+| Write (workbook to GFM) | Formula/merge/hidden-sheet/display-value policies | stable |
+| Write (event mode) | `MarkdownWriter` `RowSink` implementation | stable |
+| Loss report | `MarkdownConversionReport` with machine-readable `MarkdownWarning` | stable |
+| Merge cells | Policy: `AnchorWithWarning` / `AnchorOnly` / `Error` | policy-driven |
+| Formulas | Policy: `ExpressionAndCached` / `CachedOnly` / `Error` | policy-driven |
+| Styles | Not representable in GFM | not supported |
+| Images | Not representable in GFM tables | not supported |
+| Comments / Notes | Not representable in GFM tables | not supported |
+| Hyperlinks | Cell text only; no native hyperlink in GFM tables | not supported |
+| Password protection | Not applicable | N/A |
+
+## Capabilities and boundaries
+
+### What this crate can do
+
+- Import GFM tables into `TabularDocument` with structured `MarkdownConversionReport`.
+- Export workbooks to GFM with configurable policies for formulas, merge cells, hidden sheets and display values.
+- Stream rows via `MarkdownWriter` as a `RowSink` implementation for Event Mode.
+- Emit machine-readable `MarkdownWarning` codes for every loss or downgrade.
+
+### What this crate cannot do
+
+- Lossless Excel round trip: Markdown is a semantic projection, not a full spreadsheet format.
+- Create executable formulas from Markdown text: formula-looking text remains text on import.
+- Preserve styles, images, comments, hyperlinks or auto-filters: these are not GFM table constructs.
+
+## Round-trip fidelity
+
+Markdown is a semantic projection. A round-trip (Excel to GFM to Excel) preserves:
+
+- Table structure (rows and columns)
+- Text and numeric cell values
+- Table names derived from nearest headings
+
+The following are explicitly reported as losses via `MarkdownConversionReport`:
+
+- Merge cells (configurable policy: anchor-only, anchor-with-warning or error)
+- Formulas (configurable policy: expression+cached, cached-only or error)
+- Hidden sheets (excluded by default)
+- Styles, images, comments, hyperlinks, row/column dimensions
+
+All losses surface through `MarkdownWarning` codes; no silent downgrade occurs.
+
+## Large file / streaming / memory
+
+| Mode | Memory complexity | Applicability |
+|:---|:---|:---|
+| Workbook export (`write_workbook`) | `O(workbook)` | Small to medium workbooks |
+| Event mode (`MarkdownWriter` RowSink) | `O(batch)` | Large file streaming export |
+| Import (`read_markdown`) | `O(document)` | GFM document parsing |
+
+The `MarkdownWriter` implements `RowSink` for incremental row-by-row emission without buffering the entire workbook.
+
+## Format safety
+
+- GFM parsing uses `pulldown-cmark` event-based streaming; no full DOM materialization.
+- Markdown is plain text with no container, encryption or embedded binary; ZIP bomb and entity expansion are not applicable.
+- Resource limits from `easyexcel-io::ResourceLimits` apply when invoked through the facade.
 
 ## Public API
 
@@ -121,6 +186,7 @@ The diagram shows the public dependency direction, not that this crate depends o
 | Package version, MSRV and dependencies | [`Cargo.toml`](Cargo.toml) |
 | Public exports | [`src/lib.rs`](src/lib.rs) |
 | Implementation behavior | `src/markdown/` |
+| Format support matrix | [ARCHITECTURE.md](../../docs/ARCHITECTURE.md) |
 | Cross-format boundaries | [Workspace compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md) |
 
 ## Related links
@@ -130,3 +196,9 @@ The diagram shows the public dependency direction, not that this crate depends o
 - [Compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
 - [Changelog](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [Chinese README](README.zh-CN.md)
+
+---
+
+**文档版本**：V1.0.0
+**最后更新**：2026-08-11
+**文档状态**：已评审

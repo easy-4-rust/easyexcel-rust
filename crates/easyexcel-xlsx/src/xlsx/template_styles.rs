@@ -378,3 +378,349 @@ fn replace_attribute(xml: &mut String, name: &str, replacement: &str) -> Result<
     xml.replace_range(start..end, replacement);
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 最小 styles.xml 模板
+    fn minimal_styles() -> String {
+        r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="1"><font><sz val="11"/></font></fonts>
+<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>
+<borders count="1"><border/></borders>
+<cellStyleXfs count="1"><xf/></cellStyleXfs>
+<cellXfs count="2"><xf fontId="0" fillId="0" borderId="0"/><xf fontId="0" fillId="0" borderId="0" applyFont="1"/></cellXfs>
+</styleSheet>"#.to_owned()
+    }
+
+    /// 编译源 styles.xml
+    fn source_styles() -> String {
+        r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="1"><font><sz val="12"/></font></fonts>
+<fills count="1"><fill><patternFill patternType="solid"><fgColor rgb="FFFF0000"/></patternFill></fill></fills>
+<borders count="1"><border/></borders>
+<cellStyleXfs count="1"><xf/></cellStyleXfs>
+<cellXfs count="2"><xf fontId="0" fillId="0" borderId="0"/><xf fontId="0" fillId="0" borderId="0" applyFont="1"/></cellXfs>
+</styleSheet>"#.to_owned()
+    }
+
+    // ── merge_compiled_styles 覆盖 ────────────────────────────────────
+
+    #[test]
+    fn merge_compiled_styles_empty_source_indexes() {
+        let dest = minimal_styles();
+        let source = source_styles();
+        let (updated, mapped) = merge_compiled_styles(&dest, &source, &[]).unwrap();
+        assert!(mapped.is_empty());
+        assert!(!updated.is_empty());
+    }
+
+    #[test]
+    fn merge_compiled_styles_maps_first_index() {
+        let dest = minimal_styles();
+        let source = source_styles();
+        let (updated, mapped) = merge_compiled_styles(&dest, &source, &[1]).unwrap();
+        assert_eq!(mapped.len(), 1);
+        assert!(!updated.is_empty());
+    }
+
+    #[test]
+    fn merge_compiled_styles_deduplicates_same_source_index() {
+        let dest = minimal_styles();
+        let source = source_styles();
+        let (updated, mapped) = merge_compiled_styles(&dest, &source, &[0, 0]).unwrap();
+        assert_eq!(mapped.len(), 2);
+        assert_eq!(mapped[0], mapped[1]); // 相同源索引应映射到相同目标
+        assert!(!updated.is_empty());
+    }
+
+    #[test]
+    fn merge_compiled_styles_error_for_out_of_range_index() {
+        let dest = minimal_styles();
+        let source = source_styles();
+        let result = merge_compiled_styles(&dest, &source, &[999]);
+        assert!(result.is_err());
+    }
+
+    // ── merge_compiled_styles_onto 覆盖 ───────────────────────────────
+
+    #[test]
+    fn merge_compiled_styles_onto_empty_returns_empty() {
+        let dest = minimal_styles();
+        let source = source_styles();
+        let (_updated, mapped) = merge_compiled_styles_onto(&dest, &source, &[], &[]).unwrap();
+        assert!(mapped.is_empty());
+    }
+
+    #[test]
+    fn merge_compiled_styles_onto_error_for_count_mismatch() {
+        let dest = minimal_styles();
+        let source = source_styles();
+        let result = merge_compiled_styles_onto(&dest, &source, &[0], &[0, 1]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn merge_compiled_styles_onto_maps_with_base() {
+        let dest = minimal_styles();
+        let source = source_styles();
+        let (updated, mapped) = merge_compiled_styles_onto(&dest, &source, &[0], &[0]).unwrap();
+        assert_eq!(mapped.len(), 1);
+        assert!(!updated.is_empty());
+    }
+
+    #[test]
+    fn merge_compiled_styles_onto_error_for_out_of_range_source() {
+        let dest = minimal_styles();
+        let source = source_styles();
+        let result = merge_compiled_styles_onto(&dest, &source, &[999], &[0]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn merge_compiled_styles_onto_error_for_out_of_range_base() {
+        let dest = minimal_styles();
+        let source = source_styles();
+        let result = merge_compiled_styles_onto(&dest, &source, &[0], &[999]);
+        assert!(result.is_err());
+    }
+
+    // ── copy_alignment 覆盖 ──────────────────────────────────────────
+
+    #[test]
+    fn copy_alignment_replaces_existing() {
+        let base = r#"<xf><alignment horizontal="center"/></xf>"#;
+        let target = r#"<xf><alignment horizontal="left"/></xf>"#;
+        let result = copy_alignment(base, target);
+        assert!(result.contains("center"));
+    }
+
+    #[test]
+    fn copy_alignment_inserts_into_self_closing() {
+        let base = r#"<xf><alignment horizontal="right"/></xf>"#;
+        let target = r#"<xf/>"#;
+        let result = copy_alignment(base, target);
+        assert!(result.contains("right"));
+    }
+
+    #[test]
+    fn copy_alignment_appends_before_close() {
+        let base = r#"<xf><alignment horizontal="center"/></xf>"#;
+        let target = r#"<xf fontId="0"></xf>"#;
+        let result = copy_alignment(base, target);
+        assert!(result.contains("center"));
+    }
+
+    #[test]
+    fn copy_alignment_no_alignment_in_base() {
+        let base = r#"<xf/>"#;
+        let target = r#"<xf fontId="0"/>"#;
+        let result = copy_alignment(base, target);
+        assert_eq!(result, target);
+    }
+
+    // ── extract_elements 覆盖 ─────────────────────────────────────────
+
+    #[test]
+    fn extract_elements_finds_multiple() {
+        let xml = "<fonts><font>A</font><font>B</font></fonts>";
+        let elems = extract_elements(xml, "font");
+        assert_eq!(elems.len(), 2);
+    }
+
+    #[test]
+    fn extract_elements_handles_self_closing_and_closed() {
+        // 混合自闭合和闭合元素
+        let xml = "<collection><entry attr=\"1\"/><entry>text</entry></collection>";
+        let elems = extract_elements(xml, "entry");
+        assert_eq!(elems.len(), 2);
+    }
+
+    #[test]
+    fn extract_elements_empty_for_missing() {
+        let elems = extract_elements("<root/>", "child");
+        assert!(elems.is_empty());
+    }
+
+    // ── set_count_attribute 覆盖 ──────────────────────────────────────
+
+    #[test]
+    fn set_count_attribute_updates_existing() {
+        let mut xml = r#"<fonts count="1">"#.to_owned();
+        set_count_attribute(&mut xml, 5).unwrap();
+        assert!(xml.contains("count=\"5\""));
+    }
+
+    #[test]
+    fn set_count_attribute_inserts_when_missing() {
+        let mut xml = "<fonts>".to_owned();
+        set_count_attribute(&mut xml, 3).unwrap();
+        assert!(xml.contains("count=\"3\""));
+    }
+
+    // ── replace_attribute 覆盖 ────────────────────────────────────────
+
+    #[test]
+    fn replace_attribute_updates_value() {
+        let mut xml = r#"<xf fontId="0" fillId="1"/>"#.to_owned();
+        replace_attribute(&mut xml, "fontId", "2").unwrap();
+        assert!(xml.contains("fontId=\"2\""));
+    }
+
+    #[test]
+    fn replace_attribute_error_for_missing() {
+        let mut xml = "<xf/>".to_owned();
+        let result = replace_attribute(&mut xml, "fontId", "2");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn replace_attribute_error_for_unterminated() {
+        let mut xml = r#"<xf fontId="0"#.to_owned();
+        let result = replace_attribute(&mut xml, "fontId", "2");
+        assert!(result.is_err());
+    }
+
+    // ── remap_number_format 覆盖 ──────────────────────────────────────
+
+    #[test]
+    fn remap_number_format_skips_builtin_ids() {
+        let mut dest = minimal_styles();
+        let source = source_styles();
+        let mut xf = r#"<xf numFmtId="0"/>"#.to_owned();
+        remap_number_format(&mut dest, &source, &mut xf).unwrap();
+        assert!(xf.contains("numFmtId=\"0\""));
+    }
+
+    #[test]
+    fn remap_number_format_imports_custom_format() {
+        let dest = minimal_styles();
+        let source = r##"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.00"/></numFmts>
+<fonts count="1"><font/></fonts>
+<fills count="1"><fill/></fills>
+<borders count="1"><border/></borders>
+<cellStyleXfs count="1"><xf/></cellStyleXfs>
+<cellXfs count="1"><xf numFmtId="164"/></cellXfs>
+</styleSheet>"##;
+        let mut xf = r#"<xf numFmtId="164"/>"#.to_owned();
+        remap_number_format(&mut String::from(dest), source, &mut xf).unwrap();
+        // numFmtId 应被重映射
+        assert!(xf.contains("numFmtId="));
+    }
+
+    // ── collection_elements 覆盖 ──────────────────────────────────────
+
+    #[test]
+    fn collection_elements_finds_children() {
+        let xml = r#"<styleSheet><fonts count="1"><font><sz val="11"/></font></fonts></styleSheet>"#;
+        let elems = collection_elements(xml, "fonts", "font").unwrap();
+        assert_eq!(elems.len(), 1);
+    }
+
+    #[test]
+    fn collection_elements_error_for_missing_collection() {
+        let result = collection_elements("<styleSheet/>", "fonts", "font");
+        assert!(result.is_err());
+    }
+
+    // ── optional_collection_elements 覆盖 ─────────────────────────────
+
+    #[test]
+    fn optional_collection_elements_returns_empty_for_missing() {
+        let xml = "<styleSheet/>";
+        let elems = optional_collection_elements(xml, "numFmts", "numFmt").unwrap();
+        assert!(elems.is_empty());
+    }
+
+    #[test]
+    fn optional_collection_elements_returns_elements_when_present() {
+        let xml = r##"<styleSheet><numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0"/></numFmts></styleSheet>"##;
+        let elems = optional_collection_elements(xml, "numFmts", "numFmt").unwrap();
+        assert_eq!(elems.len(), 1);
+    }
+
+    // ── collection_inner 覆盖 ─────────────────────────────────────────
+
+    #[test]
+    fn collection_inner_returns_none_for_missing() {
+        let result = collection_inner("<styleSheet/>", "fonts").unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn collection_inner_error_for_unclosed() {
+        let result = collection_inner(r#"<styleSheet><fonts count="1">"#, "fonts");
+        assert!(result.is_err());
+    }
+
+    // ── remap_index_attribute 覆盖 ────────────────────────────────────
+
+    #[test]
+    fn remap_index_attribute_maps_value() {
+        let mut xml = r#"<xf fontId="0"/>"#.to_owned();
+        let indexes = vec![5, 6, 7];
+        remap_index_attribute(&mut xml, "fontId", &indexes).unwrap();
+        assert!(xml.contains("fontId=\"5\""));
+    }
+
+    #[test]
+    fn remap_index_attribute_skips_missing() {
+        let mut xml = r#"<xf fillId="0"/>"#.to_owned();
+        remap_index_attribute(&mut xml, "fontId", &[0]).unwrap();
+        // fontId 不在元素中，应保持不变
+        assert!(xml.contains("fillId=\"0\""));
+    }
+
+    #[test]
+    fn remap_index_attribute_error_for_invalid_number() {
+        let mut xml = r#"<xf fontId="abc"/>"#.to_owned();
+        let result = remap_index_attribute(&mut xml, "fontId", &[0]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn remap_index_attribute_error_for_out_of_range() {
+        let mut xml = r#"<xf fontId="5"/>"#.to_owned();
+        let result = remap_index_attribute(&mut xml, "fontId", &[0, 1]);
+        assert!(result.is_err());
+    }
+
+    // ── append_collection 覆盖 ────────────────────────────────────────
+
+    #[test]
+    fn append_collection_noop_when_empty() {
+        let xml = minimal_styles();
+        let result = append_collection(&xml, "fonts", "font", &[]).unwrap();
+        assert_eq!(result, xml);
+    }
+
+    #[test]
+    fn append_collection_appends_elements() {
+        let xml = minimal_styles();
+        let elems = vec!["<font><sz val=\"14\"/></font>".to_owned()];
+        let result = append_collection(&xml, "fonts", "font", &elems).unwrap();
+        assert!(result.contains("val=\"14\""));
+    }
+
+    // ── append_optional_collection 覆盖 ───────────────────────────────
+
+    #[test]
+    fn append_optional_collection_creates_when_missing() {
+        let xml = minimal_styles();
+        let elems = vec![r#"<numFmt numFmtId="200" formatCode="0.00"/>"#.to_owned()];
+        let result = append_optional_collection(&xml, "numFmts", "numFmt", &elems, "<fonts").unwrap();
+        assert!(result.contains("numFmtId=\"200\""));
+    }
+
+    #[test]
+    fn append_optional_collection_error_for_missing_before() {
+        let xml = "<styleSheet/>";
+        let result = append_optional_collection(xml, "numFmts", "numFmt", &["test".to_owned()], "<fonts");
+        assert!(result.is_err());
+    }
+}

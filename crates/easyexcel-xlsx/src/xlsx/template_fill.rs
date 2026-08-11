@@ -21,6 +21,8 @@ use super::template_xml::{
 include!("template_fill/template_fill_direction.rs");
 include!("template_fill/template_comment.rs");
 include!("template_fill/template_comment_placement.rs");
+include!("template_fill/template_hyperlink_type.rs");
+include!("template_fill/template_hyperlink_coordinate.rs");
 include!("template_fill/template_hyperlink.rs");
 include!("template_fill/template_image.rs");
 include!("template_fill/template_decoration.rs");

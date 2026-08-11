@@ -79,4 +79,41 @@ mod tests {
         assert_eq!(policy.select_mode(999_999), ReadCacheMode::Memory);
         assert_eq!(policy.select_mode(1_000_000), ReadCacheMode::File);
     }
+
+    #[test]
+    fn default_has_default_memory_threshold() {
+        let policy = SharedStringCachePolicy::default();
+        assert_eq!(
+            policy.max_memory_bytes(),
+            super::super::DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES
+        );
+    }
+
+    #[test]
+    fn memory_megabytes_to_bytes_converts() {
+        assert_eq!(SharedStringCachePolicy::memory_megabytes_to_bytes(0), 0);
+        assert_eq!(SharedStringCachePolicy::memory_megabytes_to_bytes(1), 1_000_000);
+        assert_eq!(SharedStringCachePolicy::memory_megabytes_to_bytes(5), 5_000_000);
+        assert_eq!(SharedStringCachePolicy::memory_megabytes_to_bytes(u64::MAX), u64::MAX);
+    }
+
+    #[test]
+    fn max_memory_bytes_returns_configured_value() {
+        let policy = SharedStringCachePolicy::new(42);
+        assert_eq!(policy.max_memory_bytes(), 42);
+    }
+
+    #[test]
+    fn create_cache_returns_memory_cache_for_small_xml() {
+        let policy = SharedStringCachePolicy::new(1_000_000);
+        let cache = policy.create_cache(500_000).expect("create cache");
+        assert_eq!(cache.len(), 0);
+    }
+
+    #[test]
+    fn create_cache_returns_file_cache_for_large_xml() {
+        let policy = SharedStringCachePolicy::new(1_000_000);
+        let cache = policy.create_cache(2_000_000).expect("create cache");
+        assert_eq!(cache.len(), 0);
+    }
 }

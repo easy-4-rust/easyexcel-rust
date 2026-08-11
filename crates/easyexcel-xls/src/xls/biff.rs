@@ -218,4 +218,167 @@ mod tests {
             encode_rk(0.1).is_none() || (decode_rk(encode_rk(0.1).unwrap()) - 0.1).abs() < 1e-12
         );
     }
+
+    #[test]
+    fn encode_rk_integer_range() {
+        // Small integers should encode as integer form (bit 1 set)
+        assert!(encode_rk(0.0).is_some());
+        assert!(encode_rk(1.0).is_some());
+        assert!(encode_rk(-1.0).is_some());
+        assert!(encode_rk(100.0).is_some());
+        assert!(encode_rk(-100.0).is_some());
+    }
+
+    #[test]
+    fn encode_rk_div100_form() {
+        // Values like 12.34 where value*100 is an integer
+        let enc = encode_rk(12.34).unwrap();
+        assert_eq!(enc & 0x01, 0x01, "div100 flag should be set");
+        assert!((decode_rk(enc) - 12.34).abs() < 1e-10);
+    }
+
+    #[test]
+    fn encode_rk_double_form() {
+        // Double whose low 32 mantissa bits are zero
+        let v = f64::from_bits(0x3FF0_0000_0000_0000); // 1.0
+        assert!(encode_rk(v).is_some());
+    }
+
+    #[test]
+    fn encode_rk_returns_none_for_unrepresentable() {
+        // Some values may or may not be representable; test that roundtrip works for ones that are
+        for v in [0.1, 0.3, 1.0 / 7.0] {
+            if let Some(enc) = encode_rk(v) {
+                assert!((decode_rk(enc) - v).abs() < 1e-12, "rk roundtrip {v}");
+            }
+        }
+    }
+
+    // --- read helpers ---
+
+    #[test]
+    fn u16le_reads_little_endian() {
+        assert_eq!(u16le(&[0x34, 0x12], 0), 0x1234);
+    }
+
+    #[test]
+    fn u32le_reads_little_endian() {
+        assert_eq!(u32le(&[0x78, 0x56, 0x34, 0x12], 0), 0x12345678);
+    }
+
+    #[test]
+    fn f64le_reads_little_endian() {
+        let bytes = 42.0f64.to_le_bytes();
+        assert_eq!(f64le(&bytes, 0), 42.0);
+    }
+
+    // --- encode_unicode_string ---
+
+    #[test]
+    fn encode_unicode_string_compressed_latin1() {
+        let encoded = encode_unicode_string("hello");
+        // 2 bytes char count (5) + 1 byte grbit (0x00 compressed) + 5 bytes = 8
+        assert_eq!(encoded.len(), 8);
+        assert_eq!(u16::from_le_bytes([encoded[0], encoded[1]]), 5);
+        assert_eq!(encoded[2], 0x00); // compressed
+    }
+
+    #[test]
+    fn encode_unicode_string_wide() {
+        let encoded = encode_unicode_string("你好");
+        // 2 bytes char count (2) + 1 byte grbit (0x01 wide) + 4 bytes = 7
+        assert_eq!(encoded.len(), 7);
+        assert_eq!(u16::from_le_bytes([encoded[0], encoded[1]]), 2);
+        assert_eq!(encoded[2], 0x01); // wide
+    }
+
+    #[test]
+    fn encode_unicode_string_empty() {
+        let encoded = encode_unicode_string("");
+        assert_eq!(u16::from_le_bytes([encoded[0], encoded[1]]), 0);
+    }
+
+    // --- encode_short_unicode_string ---
+
+    #[test]
+    fn encode_short_unicode_string_compressed() {
+        let encoded = encode_short_unicode_string("test");
+        // 1 byte char count (4) + 1 byte grbit (0x00) + 4 bytes = 6
+        assert_eq!(encoded.len(), 6);
+        assert_eq!(encoded[0], 4);
+        assert_eq!(encoded[1], 0x00);
+    }
+
+    #[test]
+    fn encode_short_unicode_string_wide() {
+        let encoded = encode_short_unicode_string("你好");
+        // 1 byte char count (2) + 1 byte grbit (0x01) + 4 bytes = 6
+        assert_eq!(encoded.len(), 6);
+        assert_eq!(encoded[0], 2);
+        assert_eq!(encoded[1], 0x01);
+    }
+
+    // --- parse_short_unicode_string ---
+
+    #[test]
+    fn parse_short_unicode_string_compressed() {
+        let data = [3, 0x00, b'a', b'b', b'c', 0xFF];
+        let (s, end) = parse_short_unicode_string(&data, 0);
+        assert_eq!(s, "abc");
+        assert_eq!(end, 5);
+    }
+
+    #[test]
+    fn parse_short_unicode_string_wide() {
+        let mut data = vec![1, 0x01]; // 1 char, wide
+        data.extend_from_slice(&0x4F60u16.to_le_bytes()); // 你
+        let (s, end) = parse_short_unicode_string(&data, 0);
+        assert_eq!(s, "你");
+        assert_eq!(end, 4);
+    }
+
+    #[test]
+    fn parse_short_unicode_string_empty_input() {
+        let (s, end) = parse_short_unicode_string(&[], 0);
+        assert_eq!(s, "");
+        assert_eq!(end, 0);
+    }
+
+    #[test]
+    fn parse_short_unicode_string_truncated() {
+        // Declares 5 chars but only 2 bytes available
+        let data = [5, 0x00, b'a', b'b'];
+        let (s, _) = parse_short_unicode_string(&data, 0);
+        assert_eq!(s, "ab");
+    }
+
+    #[test]
+    fn parse_short_unicode_string_truncated_wide() {
+        // Declares 2 wide chars but only 1 byte available after grbit
+        let data = [2, 0x01, 0x41];
+        let (s, _) = parse_short_unicode_string(&data, 0);
+        // Can't read a full 2-byte code unit, so 0 chars are decoded
+        assert!(s.len() <= 1);
+    }
+
+    #[test]
+    fn parse_short_unicode_string_no_grbit() {
+        // Only 1 byte (count) available, no grbit or char data
+        let data = [3];
+        let (s, end) = parse_short_unicode_string(&data, 0);
+        // grbit defaults to 0 (compressed) via get().copied().unwrap_or(0), but no char data
+        assert!(s.is_empty());
+        // end = off + 2 = 2 (count + grbit bytes), even though grbit was auto-filled
+        assert_eq!(end, 2);
+    }
+
+    // --- BIFF8 constants ---
+
+    #[test]
+    fn constants_are_correct() {
+        assert_eq!(DT_GLOBALS, 0x0005);
+        assert_eq!(DT_WORKSHEET, 0x0010);
+        assert_eq!(BIFF8_VERSION, 0x0600);
+        assert_eq!(MAX_RECORD_DATA, 8224);
+    }
 }

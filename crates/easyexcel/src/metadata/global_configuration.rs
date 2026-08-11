@@ -128,4 +128,67 @@ mod tests_extra {
         config.use_scientific_format = true;
         assert!(config.use_scientific_format());
     }
+
+    #[test]
+    fn default_values() {
+        let config = GlobalConfiguration::default();
+        assert!(config.auto_trim);
+        assert!(!config.use1904windowing);
+        assert_eq!(config.locale, "default");
+        assert!(!config.use_scientific_format);
+    }
+
+    #[test]
+    fn auto_trim_accessor() {
+        let mut config = GlobalConfiguration::new();
+        assert!(config.auto_trim());
+        assert!(config.get_auto_trim());
+        config.set_auto_trim(false);
+        assert!(!config.auto_trim());
+    }
+
+    #[test]
+    fn use1904windowing_accessor() {
+        let mut config = GlobalConfiguration::new();
+        assert!(!config.use1904windowing());
+        assert!(!config.get_use_1904windowing());
+        assert!(!config.get_use1904windowing());
+        config.set_use_1904windowing(true);
+        assert!(config.use1904windowing());
+        config.set_use1904windowing(false);
+        assert!(!config.use1904windowing());
+    }
+
+    #[test]
+    fn locale_accessor() {
+        let mut config = GlobalConfiguration::new();
+        assert_eq!(config.locale(), "default");
+        assert_eq!(config.get_locale(), "default");
+        config.set_locale("zh_CN");
+        assert_eq!(config.locale(), "zh_CN");
+    }
+
+    #[test]
+    fn scientific_format_setter() {
+        let mut config = GlobalConfiguration::new();
+        assert!(!config.get_use_scientific_format());
+        config.set_use_scientific_format(true);
+        assert!(config.get_use_scientific_format());
+    }
+
+    #[test]
+    fn filed_cache_location_accessor() {
+        let mut config = GlobalConfiguration::new();
+        assert_eq!(config.filed_cache_location(), CacheLocation::ThreadLocal);
+        assert_eq!(config.get_filed_cache_location(), CacheLocation::ThreadLocal);
+        config.set_filed_cache_location(CacheLocation::Memory);
+        assert_eq!(config.filed_cache_location(), CacheLocation::Memory);
+    }
+
+    #[test]
+    fn clone_eq_hash() {
+        let config1 = GlobalConfiguration::new();
+        let config2 = config1.clone();
+        assert_eq!(config1, config2);
+    }
 }

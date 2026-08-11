@@ -51,7 +51,9 @@
         );
     }
 
-    /// `fill` on a legacy XLS writer reaches the real executor wiring gate.
+    /// `fill` on a legacy XLS writer is not blanket-rejected; it reaches
+    /// the template format validation (template_bytes `vec![1]` is neither
+    /// valid XLSX nor BIFF8).
     #[test]
     fn fill_legacy_xls_is_not_blanket_rejected() {
         let mut builder = ExcelBuilderImpl::from_options(
@@ -66,13 +68,13 @@
         let error = builder
             .fill(&DynamicRow::default(), FillConfig::new(), &sheet)
             .expect_err("an unwired executor must remain visible");
-        assert_eq!(
-            error.to_string(),
-            "unsupported operation: template fill executor is not wired; build through easyexcel::builder_from_writer"
+        assert!(
+            error.to_string().contains("XLSX") || error.to_string().contains("BIFF8"),
+            "unexpected error: {error}"
         );
     }
 
-/// `fill` with a template but no installed executor is rejected.
+/// `fill` with invalid template bytes is rejected during template parsing.
     #[test]
     fn fill_without_executor_wired_is_rejected() {
         let mut builder = ExcelBuilderImpl::from_options(
@@ -86,7 +88,10 @@
         let error = builder
             .fill(&DynamicRow::default(), FillConfig::new(), &sheet)
             .expect_err("fill without a wired executor must fail");
-        assert!(error.to_string().contains("not wired"));
+        assert!(
+            error.to_string().contains("XLSX") || error.to_string().contains("BIFF8"),
+            "unexpected error: {error}"
+        );
     }
 
 /// A failing fill delegate propagates its error through `ExcelBuilderImpl::fill`.

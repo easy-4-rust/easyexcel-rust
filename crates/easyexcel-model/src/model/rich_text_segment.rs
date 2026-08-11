@@ -85,3 +85,129 @@ fn utf16_byte_index(text: &str, target: usize) -> Option<usize> {
     }
     (utf16_index == target).then_some(text.len())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn segment_utf16_text_no_intervals() {
+        let result = segment_utf16_text("hello", &[]).unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].text, "hello");
+        assert_eq!(result[0].interval_index, None);
+    }
+
+    #[test]
+    fn segment_utf16_text_single_interval() {
+        let result = segment_utf16_text("hello world", &[(0, 5)]).unwrap();
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].text, "hello");
+        assert_eq!(result[0].interval_index, Some(0));
+        assert_eq!(result[1].text, " world");
+        assert_eq!(result[1].interval_index, None);
+    }
+
+    #[test]
+    fn segment_utf16_text_multiple_intervals() {
+        let result = segment_utf16_text("abcdefghij", &[(0, 3), (5, 8)]).unwrap();
+        assert_eq!(result.len(), 4);
+        assert_eq!(result[0].text, "abc");
+        assert_eq!(result[0].interval_index, Some(0));
+        assert_eq!(result[1].text, "de");
+        assert_eq!(result[1].interval_index, None);
+        assert_eq!(result[2].text, "fgh");
+        assert_eq!(result[2].interval_index, Some(1));
+        assert_eq!(result[3].text, "ij");
+        assert_eq!(result[3].interval_index, None);
+    }
+
+    #[test]
+    fn segment_utf16_text_overlapping_intervals() {
+        let result = segment_utf16_text("abcdef", &[(0, 4), (2, 6)]).unwrap();
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0].text, "ab");
+        assert_eq!(result[0].interval_index, Some(0));
+        assert_eq!(result[1].text, "cd");
+        // Later interval (1) covers this segment
+        assert_eq!(result[1].interval_index, Some(1));
+        assert_eq!(result[2].text, "ef");
+        assert_eq!(result[2].interval_index, Some(1));
+    }
+
+    #[test]
+    fn segment_utf16_text_with_multibyte() {
+        let result = segment_utf16_text("hello中文world", &[(5, 7)]).unwrap();
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0].text, "hello");
+        assert_eq!(result[0].interval_index, None);
+        assert_eq!(result[1].text, "中文");
+        assert_eq!(result[1].interval_index, Some(0));
+        assert_eq!(result[2].text, "world");
+        assert_eq!(result[2].interval_index, None);
+    }
+
+    #[test]
+    fn segment_utf16_text_empty_interval_rejected() {
+        let result = segment_utf16_text("hello", &[(2, 2)]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn segment_utf16_text_out_of_bounds_rejected() {
+        let result = segment_utf16_text("hello", &[(0, 10)]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn segment_utf16_text_surrogate_pair_boundary() {
+        // U+1F600 is a surrogate pair in UTF-16 (2 code units)
+        let text = "a😀b";
+        // Valid: split at surrogate pair boundary (after the emoji)
+        let result = segment_utf16_text(text, &[(1, 3)]).unwrap();
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0].text, "a");
+        assert_eq!(result[1].text, "😀");
+        assert_eq!(result[2].text, "b");
+    }
+
+    #[test]
+    fn segment_utf16_text_split_surrogate_pair_rejected() {
+        // U+1F600 is a surrogate pair; splitting in the middle is invalid
+        let text = "a😀b";
+        let result = segment_utf16_text(text, &[(1, 2)]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn utf16_byte_index_basic() {
+        assert_eq!(utf16_byte_index("hello", 0), Some(0));
+        assert_eq!(utf16_byte_index("hello", 5), Some(5));
+        assert_eq!(utf16_byte_index("hello", 3), Some(3));
+    }
+
+    #[test]
+    fn utf16_byte_index_out_of_bounds() {
+        assert_eq!(utf16_byte_index("hello", 6), None);
+    }
+
+    #[test]
+    fn utf16_byte_index_with_multibyte() {
+        // "中" is 1 UTF-16 code unit, 3 UTF-8 bytes
+        assert_eq!(utf16_byte_index("中", 0), Some(0));
+        assert_eq!(utf16_byte_index("中", 1), Some(3));
+    }
+
+    #[test]
+    fn rich_text_segment_equality() {
+        let a = RichTextSegment {
+            text: "hello".to_owned(),
+            interval_index: Some(0),
+        };
+        let b = RichTextSegment {
+            text: "hello".to_owned(),
+            interval_index: Some(0),
+        };
+        assert_eq!(a, b);
+    }
+}

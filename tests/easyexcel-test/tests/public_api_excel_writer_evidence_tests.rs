@@ -235,3 +235,80 @@ fn excel_writer_fill_then_write_share_one_template_lifecycle() -> easyexcel::Res
     assert!(contains_text(&rows, "mixed-write"));
     Ok(())
 }
+
+#[test]
+fn excel_writer_supplier_fill_invokes_supplier_lazily() -> easyexcel::Result<()> {
+    let contract = contract();
+    let directory = tempdir()?;
+    let output = directory.path().join("supplier-fill.xlsx");
+    let mut workbook = WriteWorkbook::new();
+    workbook.set_file(&output);
+    workbook.set_template_file(xlsx_template());
+
+    let mut writer = ExcelBuilderImpl::from_write_workbook(workbook)?;
+    let sheet = EasyExcel::writer_sheet::<DynamicRow>("Sheet1").need_head(false);
+
+    let supplier_calls = Cell::new(0_usize);
+    writer.fill_with_supplier(
+        || {
+            supplier_calls.set(supplier_calls.get() + 1);
+            Box::new(TemplateData::new().with("name", "supplier-fill-lazy")) as Box<dyn Any>
+        },
+        &sheet,
+    )?;
+    writer.fill_with_config_supplier(
+        || {
+            supplier_calls.set(supplier_calls.get() + 1);
+            Box::new(TemplateData::new().with("name", "supplier-config-fill-lazy")) as Box<dyn Any>
+        },
+        BuilderFillConfig::default(),
+        &sheet,
+    )?;
+    assert_eq!(
+        supplier_calls.get(),
+        contract.fill_supplier_calls,
+        "supplier fill calls must match Java contract"
+    );
+    writer.close()?;
+    Ok(())
+}
+
+#[test]
+fn excel_writer_supplier_write_invokes_supplier_lazily() -> easyexcel::Result<()> {
+    let contract = contract();
+    let directory = tempdir()?;
+    let output = directory.path().join("supplier-write.xlsx");
+    let mut workbook = WriteWorkbook::new();
+    workbook.set_file(&output);
+    workbook.options.need_head = false;
+
+    let mut writer = ExcelBuilderImpl::from_write_workbook(workbook)?;
+    let sheet = EasyExcel::writer_sheet::<DynamicRow>("Data").need_head(false);
+    let mut table = WriteTable::new();
+    table.options.need_head = false;
+
+    let supplier_calls = Cell::new(0_usize);
+    writer.write_with_supplier(
+        || {
+            supplier_calls.set(supplier_calls.get() + 1);
+            [dynamic_row("supplier-write")]
+        },
+        &sheet,
+    )?;
+    writer.write_with_table_supplier(
+        || {
+            supplier_calls.set(supplier_calls.get() + 1);
+            [dynamic_row("supplier-table-write")]
+        },
+        &sheet,
+        &table,
+    )?;
+    assert_eq!(
+        supplier_calls.get(),
+        contract.write_supplier_calls,
+        "supplier write calls must match Java contract"
+    );
+    writer.finish()?;
+    writer.close()?;
+    Ok(())
+}

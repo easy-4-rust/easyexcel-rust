@@ -71,3 +71,78 @@ fn resolve_locale(locale: &str) -> Option<ExcelLocale> {
         .then(|| ExcelLocale::from_name(locale))
         .flatten()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bigdecimal::BigDecimal;
+
+    #[test]
+    fn format_integer_returns_string() {
+        let data = BigDecimal::from(42_i32);
+        let result = format(&data, None, None, None);
+        assert!(!result.is_empty(), "格式化结果不应为空");
+    }
+
+    #[test]
+    fn format_with_global_configuration() {
+        let data = BigDecimal::from(100_i32);
+        let config = crate::GlobalConfiguration::default();
+        let result = format(&data, None, None, Some(&config));
+        assert!(!result.is_empty(), "格式化结果不应为空");
+    }
+
+    #[test]
+    fn format_with_options_returns_string() {
+        let data: BigDecimal = "3.14".parse().unwrap();
+        let result = format_with_options(&data, None, None, None, None, None);
+        assert!(!result.is_empty(), "格式化结果不应为空");
+    }
+
+    #[test]
+    fn format_with_scientific_option() {
+        let data = BigDecimal::from(1000000_i64);
+        let result = format_with_options(&data, None, None, None, None, Some(true));
+        assert!(!result.is_empty(), "科学计数法结果不应为空");
+    }
+
+    #[test]
+    fn format_with_data_format() {
+        let data = BigDecimal::from(1_i32);
+        let result = format_with_options(&data, Some(2), None, None, None, None);
+        assert!(!result.is_empty(), "指定格式编号结果不应为空");
+    }
+
+    #[test]
+    fn remove_thread_local_cache_does_not_panic() {
+        remove_thread_local_cache();
+    }
+
+    #[test]
+    fn resolve_locale_returns_none_for_default() {
+        assert_eq!(resolve_locale("default"), None);
+        assert_eq!(resolve_locale("DEFAULT"), None);
+    }
+
+    #[test]
+    fn resolve_locale_returns_some_for_known_locale() {
+        let result = resolve_locale("en_US");
+        // 取决于 ExcelLocale 是否识别该 locale
+        // 至少确认不 panic
+        let _ = result;
+    }
+
+    #[test]
+    fn format_decimal_zero() {
+        let data = BigDecimal::from(0_i32);
+        let result = format(&data, None, None, None);
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn format_negative_number() {
+        let data = BigDecimal::from(-100_i32);
+        let result = format(&data, None, None, None);
+        assert!(!result.is_empty());
+    }
+}

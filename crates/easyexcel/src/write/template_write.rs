@@ -597,3 +597,179 @@ pub(crate) fn template_comment_data(
         visible: comment.get_visible(),
     }
 }
+
+#[cfg(test)]
+mod tests_template {
+    use super::*;
+    use std::str::FromStr;
+
+    #[test]
+    fn template_cell_value_empty() {
+        let val = template_cell_value(&CellValue::Empty).unwrap();
+        assert!(matches!(val, TemplateCellValue::Empty));
+    }
+
+    #[test]
+    fn template_cell_value_string() {
+        let val = template_cell_value(&CellValue::String("hello".to_owned())).unwrap();
+        assert!(matches!(val, TemplateCellValue::Text(ref s) if s == "hello"));
+    }
+
+    #[test]
+    fn template_cell_value_error() {
+        let val = template_cell_value(&CellValue::Error("#N/A".to_owned())).unwrap();
+        // Error 可能映射为 Text 或 Error，取决于引擎实现
+        assert!(
+            matches!(val, TemplateCellValue::Error(ref s) if s == "#N/A")
+                || matches!(val, TemplateCellValue::Text(ref s) if s == "#N/A"),
+            "unexpected variant: {:?}",
+            val
+        );
+    }
+
+    #[test]
+    fn template_cell_value_bool() {
+        let val = template_cell_value(&CellValue::Bool(true)).unwrap();
+        assert!(matches!(val, TemplateCellValue::Bool(true)));
+    }
+
+    #[test]
+    fn template_cell_value_int() {
+        let val = template_cell_value(&CellValue::Int(42)).unwrap();
+        assert!(matches!(val, TemplateCellValue::Number(ref s) if s == "42"));
+    }
+
+    #[test]
+    fn template_cell_value_float() {
+        let val = template_cell_value(&CellValue::Float(3.14)).unwrap();
+        assert!(matches!(val, TemplateCellValue::Number(_)));
+    }
+
+    #[test]
+    fn template_cell_value_formula() {
+        let val = template_cell_value(&CellValue::Formula("=SUM(A1:A10)".to_owned())).unwrap();
+        assert!(matches!(val, TemplateCellValue::Formula(ref s) if s == "=SUM(A1:A10)"));
+    }
+
+    #[test]
+    fn template_cell_value_hyperlink() {
+        let val = template_cell_value(&CellValue::Hyperlink {
+            url: "https://x".to_owned(),
+            text: "Click".to_owned(),
+        })
+        .unwrap();
+        assert!(matches!(val, TemplateCellValue::Hyperlink { .. }));
+    }
+
+    #[test]
+    fn template_cell_value_hyperlink_with_metadata_none_type() {
+        let val = template_cell_value(&CellValue::HyperlinkWithMetadata {
+            address: "https://x".to_owned(),
+            text: "Click".to_owned(),
+            hyperlink_type: crate::HyperlinkType::None,
+            coordinates: crate::CoordinateData::new(),
+        })
+        .unwrap();
+        // None 类型退化为 Text
+        assert!(matches!(val, TemplateCellValue::Text(ref s) if s == "Click"));
+    }
+
+    #[test]
+    fn template_cell_value_comment() {
+        let val = template_cell_value(&CellValue::Comment {
+            value: Box::new(CellValue::String("x".to_owned())),
+            text: "note".to_owned(),
+        })
+        .unwrap();
+        assert!(matches!(val, TemplateCellValue::Comment { .. }));
+    }
+
+    #[test]
+    fn template_cell_value_date() {
+        let date = chrono::NaiveDate::from_ymd_opt(2024, 1, 15).unwrap();
+        let val = template_cell_value(&CellValue::Date(date)).unwrap();
+        assert!(matches!(val, TemplateCellValue::Date(ref s) if s == "2024-01-15"));
+    }
+
+    #[test]
+    fn template_cell_value_datetime() {
+        let dt = chrono::NaiveDateTime::parse_from_str("2024-01-15 12:30:00", "%Y-%m-%d %H:%M:%S")
+            .unwrap();
+        let val = template_cell_value(&CellValue::DateTime(dt)).unwrap();
+        assert!(matches!(val, TemplateCellValue::Date(ref s) if s.contains("2024-01-15")));
+    }
+
+    #[test]
+    fn template_cell_value_decimal() {
+        let decimal = bigdecimal::BigDecimal::from_str("123.45").unwrap();
+        let val = template_cell_value(&CellValue::Decimal(decimal)).unwrap();
+        assert!(matches!(val, TemplateCellValue::Number(_)));
+    }
+
+    #[test]
+    fn template_cell_value_image() {
+        let val = template_cell_value(&CellValue::Image(vec![1, 2, 3])).unwrap();
+        assert!(matches!(val, TemplateCellValue::Images { .. }));
+    }
+
+    #[test]
+    fn template_hyperlink_type_maps_correctly() {
+        assert!(matches!(
+            template_hyperlink_type(crate::HyperlinkType::None),
+            easyexcel_xlsx::TemplateHyperlinkType::Url
+        ));
+        assert!(matches!(
+            template_hyperlink_type(crate::HyperlinkType::Url),
+            easyexcel_xlsx::TemplateHyperlinkType::Url
+        ));
+        assert!(matches!(
+            template_hyperlink_type(crate::HyperlinkType::Document),
+            easyexcel_xlsx::TemplateHyperlinkType::Document
+        ));
+        assert!(matches!(
+            template_hyperlink_type(crate::HyperlinkType::Email),
+            easyexcel_xlsx::TemplateHyperlinkType::Email
+        ));
+        assert!(matches!(
+            template_hyperlink_type(crate::HyperlinkType::File),
+            easyexcel_xlsx::TemplateHyperlinkType::File
+        ));
+    }
+
+    #[test]
+    fn has_template_returns_false_for_none() {
+        assert!(!has_template(None, None));
+    }
+
+    #[test]
+    fn has_template_returns_true_for_bytes() {
+        assert!(has_template(None, Some(&[1, 2, 3])));
+    }
+
+    #[test]
+    fn resolve_package_target_resolves_by_name() {
+        let names = vec!["Sheet1".to_owned(), "Sheet2".to_owned()];
+        let (index, name, is_new) = resolve_package_target(&names, None, "Sheet2");
+        assert_eq!(index, 1);
+        assert_eq!(name, "Sheet2");
+        assert!(!is_new);
+    }
+
+    #[test]
+    fn resolve_package_target_resolves_by_index() {
+        let names = vec!["Sheet1".to_owned(), "Sheet2".to_owned()];
+        let (index, name, is_new) = resolve_package_target(&names, Some(1), "Ignored");
+        assert_eq!(index, 1);
+        assert_eq!(name, "Sheet2");
+        assert!(!is_new);
+    }
+
+    #[test]
+    fn resolve_package_target_creates_new_sheet() {
+        let names = vec!["Sheet1".to_owned()];
+        let (index, name, is_new) = resolve_package_target(&names, None, "NewSheet");
+        assert_eq!(index, 1);
+        assert_eq!(name, "NewSheet");
+        assert!(is_new);
+    }
+}

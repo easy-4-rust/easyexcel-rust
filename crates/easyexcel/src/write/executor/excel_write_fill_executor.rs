@@ -171,4 +171,170 @@ mod tests {
             .expect_err("missing engine");
         assert!(error.to_string().contains("not wired"));
     }
+
+    // ---- T2.1 ----
+    #[test]
+    fn executor_multiple_fills_accumulate_in_delegate() {
+        let context = WriteContextImpl::new("output.xlsx");
+        let mut probe = ProbeFillExecutor::default();
+        {
+            let mut executor = ExcelWriteFillExecutor::with_delegate(&context, &mut probe);
+
+            executor
+                .fill(
+                    &"first",
+                    WriteFillConfig {
+                        force_new_row: false,
+                        direction: Some(WriteDirection::Horizontal),
+                        auto_style: true,
+                    },
+                    WriteFillSheet {
+                        sheet_name: "Sheet1".to_owned(),
+                        sheet_index: Some(0),
+                    },
+                )
+                .expect("first fill");
+
+            executor
+                .fill(
+                    &"second",
+                    WriteFillConfig {
+                        force_new_row: true,
+                        direction: None,
+                        auto_style: false,
+                    },
+                    WriteFillSheet {
+                        sheet_name: "Sheet2".to_owned(),
+                        sheet_index: Some(1),
+                    },
+                )
+                .expect("second fill");
+
+            executor
+                .fill(
+                    &"third",
+                    WriteFillConfig {
+                        force_new_row: false,
+                        direction: Some(WriteDirection::Vertical),
+                        auto_style: true,
+                    },
+                    WriteFillSheet {
+                        sheet_name: "Sheet3".to_owned(),
+                        sheet_index: Some(2),
+                    },
+                )
+                .expect("third fill");
+        }
+        assert_eq!(probe.fills.len(), 3);
+
+        // first
+        assert_eq!(probe.fills[0].0.direction, Some(WriteDirection::Horizontal));
+        assert!(!probe.fills[0].0.force_new_row);
+        assert!(probe.fills[0].0.auto_style);
+        assert_eq!(probe.fills[0].1.sheet_name, "Sheet1");
+        assert_eq!(probe.fills[0].1.sheet_index, Some(0));
+
+        // second
+        assert_eq!(probe.fills[1].0.direction, None);
+        assert!(probe.fills[1].0.force_new_row);
+        assert!(!probe.fills[1].0.auto_style);
+        assert_eq!(probe.fills[1].1.sheet_name, "Sheet2");
+        assert_eq!(probe.fills[1].1.sheet_index, Some(1));
+
+        // third
+        assert_eq!(probe.fills[2].0.direction, Some(WriteDirection::Vertical));
+        assert!(!probe.fills[2].0.force_new_row);
+        assert!(probe.fills[2].0.auto_style);
+        assert_eq!(probe.fills[2].1.sheet_name, "Sheet3");
+        assert_eq!(probe.fills[2].1.sheet_index, Some(2));
+    }
+
+    // ---- T2.2 ----
+    #[test]
+    fn executor_finish_false_propagates_to_delegate() {
+        let context = WriteContextImpl::new("output.xlsx");
+        let mut probe = ProbeFillExecutor::default();
+        {
+            let mut executor = ExcelWriteFillExecutor::with_delegate(&context, &mut probe);
+            executor.finish(false).expect("delegate finish(false)");
+        }
+        assert_eq!(probe.finished, vec![false]);
+    }
+
+    // ---- T2.3 ----
+    struct FailingFillExecutor;
+
+    impl WriteFillExecutor for FailingFillExecutor {
+        fn fill(
+            &mut self,
+            _data: &dyn Any,
+            _fill_config: WriteFillConfig,
+            _sheet: WriteFillSheet,
+        ) -> Result<()> {
+            Err(ExcelError::Unsupported("fill engine failure".to_owned()))
+        }
+
+        fn finish(&mut self, _on_exception: bool) -> Result<()> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn executor_fill_propagates_delegate_error() {
+        let context = WriteContextImpl::new("output.xlsx");
+        let mut failing = FailingFillExecutor;
+        {
+            let mut executor = ExcelWriteFillExecutor::with_delegate(&context, &mut failing);
+            let err = executor
+                .fill(
+                    &"payload",
+                    WriteFillConfig::default(),
+                    WriteFillSheet::default(),
+                )
+                .expect_err("delegate should fail");
+            assert!(err.to_string().contains("fill engine failure"));
+        }
+    }
+
+    // ---- T2.4 ----
+    struct FailingFinishExecutor;
+
+    impl WriteFillExecutor for FailingFinishExecutor {
+        fn fill(
+            &mut self,
+            _data: &dyn Any,
+            _fill_config: WriteFillConfig,
+            _sheet: WriteFillSheet,
+        ) -> Result<()> {
+            Ok(())
+        }
+
+        fn finish(&mut self, _on_exception: bool) -> Result<()> {
+            Err(ExcelError::Unsupported("finish engine failure".to_owned()))
+        }
+    }
+
+    #[test]
+    fn executor_finish_propagates_delegate_error() {
+        let context = WriteContextImpl::new("output.xlsx");
+        let mut failing = FailingFinishExecutor;
+        {
+            let mut executor = ExcelWriteFillExecutor::with_delegate(&context, &mut failing);
+            let err = executor
+                .finish(false)
+                .expect_err("delegate finish should fail");
+            assert!(err.to_string().contains("finish engine failure"));
+        }
+    }
+
+    // ---- T2.5 ----
+    #[test]
+    fn executor_finish_without_engine_returns_visible_error() {
+        let context = WriteContextImpl::new("output.xlsx");
+        let mut executor = ExcelWriteFillExecutor::new(&context);
+        let error = executor
+            .finish(false)
+            .expect_err("missing engine for finish");
+        assert!(error.to_string().contains("not wired"));
+    }
 }

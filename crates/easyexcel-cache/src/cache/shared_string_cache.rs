@@ -233,4 +233,130 @@ mod tests {
         assert_eq!(reader.get(1).expect("read after finish"), "中文");
         assert!(reader.get(2).is_err());
     }
+
+    #[test]
+    fn memory_cache_is_empty_on_creation() {
+        let reader = memory_cache();
+        assert_eq!(reader.len(), 0);
+        assert!(reader.get(0).is_err());
+    }
+
+    #[test]
+    fn create_memory_cache_writes_and_reads() {
+        let mut cache = create_memory_cache();
+        assert_eq!(cache.len(), 0);
+        cache.put("hello".to_owned()).expect("put");
+        cache.put("world".to_owned()).expect("put");
+        assert_eq!(cache.len(), 2);
+        assert_eq!(cache.get(0).expect("get"), "hello");
+        assert_eq!(cache.get(1).expect("get"), "world");
+        assert!(cache.get(2).is_err());
+    }
+
+    #[test]
+    fn prebuilt_cache_contains_all_values() {
+        let values = vec!["a".to_owned(), "b".to_owned(), "c".to_owned()];
+        let cache = prebuilt_cache(values);
+        // Prebuilt cache: put is a no-op, values are already there
+        assert_eq!(cache.len(), 3);
+        assert_eq!(cache.get(0).expect("get"), "a");
+        assert_eq!(cache.get(1).expect("get"), "b");
+        assert_eq!(cache.get(2).expect("get"), "c");
+        assert!(cache.get(3).is_err());
+    }
+
+    #[test]
+    fn create_cache_auto_mode_selects_memory_for_small() {
+        let cache = create_cache(ReadCacheMode::Auto, 100).expect("create");
+        assert_eq!(cache.len(), 0);
+    }
+
+    #[test]
+    fn create_cache_auto_mode_selects_file_for_large() {
+        let cache = create_cache(ReadCacheMode::Auto, DEFAULT_MAX_MEMORY_SHARED_STRINGS_BYTES + 1)
+            .expect("create");
+        assert_eq!(cache.len(), 0);
+    }
+
+    #[test]
+    fn create_cache_memory_mode() {
+        let cache = create_cache(ReadCacheMode::Memory, 0).expect("create");
+        assert_eq!(cache.len(), 0);
+    }
+
+    #[test]
+    fn create_cache_file_mode() {
+        let cache = create_cache(ReadCacheMode::File, 0).expect("create");
+        assert_eq!(cache.len(), 0);
+    }
+
+    #[test]
+    fn create_cache_moka_mode() {
+        let cache = create_cache(ReadCacheMode::Moka, 0).expect("create");
+        assert_eq!(cache.len(), 0);
+    }
+
+    #[test]
+    fn remove_thread_local_cache_is_noop() {
+        remove_thread_local_cache();
+        // Just verify it doesn't panic
+    }
+
+    #[test]
+    fn memory_cache_put_and_finish_roundtrip() {
+        let mut cache = create_memory_cache();
+        cache.put("first".to_owned()).expect("put");
+        cache.put("second".to_owned()).expect("put");
+        let reader = cache.finish().expect("finish");
+        assert_eq!(reader.len(), 2);
+        assert_eq!(reader.get(0).expect("get"), "first");
+        assert_eq!(reader.get(1).expect("get"), "second");
+    }
+
+    #[test]
+    fn prebuilt_cache_finish_preserves_values() {
+        let values = vec!["x".to_owned(), "y".to_owned()];
+        let cache = prebuilt_cache(values);
+        let reader = cache.finish().expect("finish");
+        assert_eq!(reader.len(), 2);
+        assert_eq!(reader.get(0).expect("get"), "x");
+        assert_eq!(reader.get(1).expect("get"), "y");
+    }
+
+    #[test]
+    fn shared_string_cache_handle_put_and_finish() {
+        let cache = create_memory_cache();
+        let mut handle = SharedStringCacheHandle::new(cache);
+        handle.put("test".to_owned()).expect("put");
+        assert_eq!(handle.len(), 1);
+        assert_eq!(handle.get(0).expect("get"), "test");
+        handle.finish().expect("finish");
+        assert_eq!(handle.len(), 1);
+        assert_eq!(handle.get(0).expect("get"), "test");
+        assert!(handle.get(1).is_err());
+    }
+
+    #[test]
+    fn shared_string_cache_handle_is_empty() {
+        let cache = create_memory_cache();
+        let handle = SharedStringCacheHandle::new(cache);
+        assert!(handle.is_empty());
+    }
+
+    #[test]
+    fn shared_string_cache_handle_finish_is_idempotent() {
+        let cache = create_memory_cache();
+        let mut handle = SharedStringCacheHandle::new(cache);
+        handle.finish().expect("first finish");
+        handle.finish().expect("second finish");
+    }
+
+    #[test]
+    fn shared_string_cache_handle_into_reader() {
+        let cache = create_memory_cache();
+        let mut handle = SharedStringCacheHandle::new(cache);
+        handle.finish().expect("finish");
+        let reader = handle.into_reader();
+        assert!(reader.is_some());
+    }
 }

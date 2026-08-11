@@ -64,3 +64,48 @@ impl ConverterKey {
         self.cell_data_type = value;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_with_none_cell_type() {
+        let key = ConverterKey::new(TypeId::of::<String>(), None);
+        assert_eq!(key.rust_type(), TypeId::of::<String>());
+        assert_eq!(key.cell_data_type(), None);
+        assert_eq!(key.get_clazz(), TypeId::of::<String>());
+        assert_eq!(key.get_cell_data_type_enum(), None);
+    }
+
+    #[test]
+    fn of_generic_constructor() {
+        let key = ConverterKey::of::<i32>(None);
+        assert_eq!(key.rust_type(), TypeId::of::<i32>());
+    }
+
+    #[test]
+    fn setters() {
+        let mut key = ConverterKey::of::<String>(None);
+        key.set_clazz(TypeId::of::<bool>());
+        assert_eq!(key.get_clazz(), TypeId::of::<bool>());
+        key.set_cell_data_type_enum(Some(CellDataType::String));
+        assert_eq!(key.get_cell_data_type_enum(), Some(CellDataType::String));
+    }
+
+    #[test]
+    fn equality_and_hash() {
+        let a = ConverterKey::of::<i64>(Some(CellDataType::Number));
+        let b = ConverterKey::of::<i64>(Some(CellDataType::Number));
+        assert_eq!(a, b);
+        let c = ConverterKey::of::<i64>(None);
+        assert_ne!(a, c);
+    }
+
+    #[test]
+    fn debug_fmt() {
+        let key = ConverterKey::of::<f64>(None);
+        let text = format!("{:?}", key);
+        assert!(text.contains("ConverterKey"));
+    }
+}

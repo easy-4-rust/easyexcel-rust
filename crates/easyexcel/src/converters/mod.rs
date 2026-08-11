@@ -4,6 +4,7 @@ pub mod converter;
 pub use converter::Converter;
 
 pub mod auto_converter;
+pub use auto_converter::AutoConverter;
 pub mod converter_key;
 pub use converter_key::ConverterKey;
 pub mod converter_key_build;

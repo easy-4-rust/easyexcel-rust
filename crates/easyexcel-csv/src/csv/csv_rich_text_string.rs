@@ -88,4 +88,69 @@ mod tests {
         assert_eq!(empty.len(), 0);
         assert!(empty.is_empty());
     }
+
+    #[test]
+    fn get_string_alias() {
+        let value = CsvRichTextString::new("test");
+        assert_eq!(value.get_string(), "test");
+    }
+
+    #[test]
+    fn utf16_length() {
+        // ASCII: 每字符 1 个 UTF-16 单元
+        let ascii = CsvRichTextString::new("AB");
+        assert_eq!(ascii.length(), 2);
+        // 中文: 每字符 1 个 UTF-16 单元
+        let cjk = CsvRichTextString::new("你好");
+        assert_eq!(cjk.length(), 2);
+        // emoji（U+1F600）: 2 个 UTF-16 单元（代理对）
+        let emoji = CsvRichTextString::new("\u{1F600}");
+        assert_eq!(emoji.length(), 2);
+    }
+
+    #[test]
+    fn num_formatting_runs_always_zero() {
+        let value = CsvRichTextString::new("test");
+        assert_eq!(value.num_formatting_runs(), 0);
+    }
+
+    #[test]
+    fn index_of_formatting_run_always_none() {
+        let value = CsvRichTextString::new("test");
+        assert_eq!(value.index_of_formatting_run(0), None);
+        assert_eq!(value.index_of_formatting_run(99), None);
+    }
+
+    #[test]
+    fn get_index_of_formatting_run_always_zero() {
+        let value = CsvRichTextString::new("test");
+        assert_eq!(value.get_index_of_formatting_run(0), 0);
+    }
+
+    #[test]
+    fn get_font_of_formatting_run_always_none() {
+        let value = CsvRichTextString::new("test");
+        assert_eq!(value.get_font_of_formatting_run(0), None);
+    }
+
+    #[test]
+    fn apply_font_is_noop() {
+        let mut value = CsvRichTextString::new("test");
+        value.apply_font(0, 4, 0);
+        assert_eq!(value.as_str(), "test");
+    }
+
+    #[test]
+    fn clear_formatting_is_noop() {
+        let mut value = CsvRichTextString::new("test");
+        value.clear_formatting();
+        assert_eq!(value.as_str(), "test");
+    }
+
+    #[test]
+    fn clone_and_eq() {
+        let a = CsvRichTextString::new("hello");
+        let b = a.clone();
+        assert_eq!(a, b);
+    }
 }

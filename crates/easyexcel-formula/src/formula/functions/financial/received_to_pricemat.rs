@@ -212,8 +212,10 @@ fn days_30_360_eu(start: NaiveDate, end: NaiveDate) -> f64 {
 
 fn last_day_of_month(y: i32, m: i32) -> i32 {
     let (ny, nm) = if m == 12 { (y + 1, 1) } else { (y, m + 1) };
-    let first_next = NaiveDate::from_ymd_opt(ny, nm as u32, 1).unwrap();
-    (first_next - chrono::Duration::days(1)).day() as i32
+    // 修复: 年份超出 NaiveDate 范围时 unwrap 会 panic；保守回退 28 天
+    NaiveDate::from_ymd_opt(ny, nm as u32, 1)
+        .map(|first_next| (first_next - chrono::Duration::days(1)).day() as i32)
+        .unwrap_or(28)
 }
 
 /// Add `months` (may be negative) to a date, clamping the day to the month end.
@@ -225,7 +227,8 @@ fn add_months(d: NaiveDate, months: i32) -> NaiveDate {
     let target_month = (m + 1) as u32;
     let last = last_day_of_month(y, target_month as i32) as u32;
     let day = d.day().min(last);
-    NaiveDate::from_ymd_opt(y, target_month, day).unwrap()
+    // 修复: 年份超出 NaiveDate 范围时 unwrap 会 panic；回退原日期
+    NaiveDate::from_ymd_opt(y, target_month, day).unwrap_or(d)
 }
 
 /// Previous coupon date on or before settlement (stepping back from maturity).

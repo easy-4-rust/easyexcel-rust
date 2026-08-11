@@ -166,3 +166,149 @@ pub fn csv_bom(encoding: CsvEncoding) -> &'static [u8] {
         CsvEncoding::Standard(_) => b"",
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    use std::sync::{Arc, Mutex};
+
+    /// 共享缓冲区，实现 `Write + Send + 'static`，用于测试 `CsvEncodingWriter`。
+    #[derive(Clone)]
+    struct SharedBuf(Arc<Mutex<Vec<u8>>>);
+
+    impl SharedBuf {
+        fn new() -> Self {
+            Self(Arc::new(Mutex::new(Vec::new())))
+        }
+        fn into_bytes(self) -> Vec<u8> {
+            Arc::try_unwrap(self.0)
+                .expect("shared buf still borrowed")
+                .into_inner()
+                .unwrap()
+        }
+    }
+
+    impl Write for SharedBuf {
+        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+            self.0.lock().unwrap().write(buf)
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn csv_encoding_utf8() {
+        let enc = csv_encoding(&CsvCharset::utf8()).unwrap();
+        assert!(matches!(enc, CsvEncoding::Standard(e) if e == UTF_8));
+    }
+
+    #[test]
+    fn csv_encoding_utf16_le() {
+        let enc = csv_encoding(&CsvCharset::new("UTF-16LE")).unwrap();
+        assert!(matches!(enc, CsvEncoding::Utf16Le));
+    }
+
+    #[test]
+    fn csv_encoding_utf16_be() {
+        let enc = csv_encoding(&CsvCharset::new("UTF-16BE")).unwrap();
+        assert!(matches!(enc, CsvEncoding::Utf16Be));
+    }
+
+    #[test]
+    fn csv_encoding_unsupported() {
+        assert!(csv_encoding(&CsvCharset::new("INVALID")).is_err());
+    }
+
+    #[test]
+    fn csv_bom_utf8() {
+        assert_eq!(csv_bom(CsvEncoding::Standard(UTF_8)), b"\xEF\xBB\xBF");
+    }
+
+    #[test]
+    fn csv_bom_utf16_le() {
+        assert_eq!(csv_bom(CsvEncoding::Utf16Le), b"\xFF\xFE");
+    }
+
+    #[test]
+    fn csv_bom_utf16_be() {
+        assert_eq!(csv_bom(CsvEncoding::Utf16Be), b"\xFE\xFF");
+    }
+
+    #[test]
+    fn csv_bom_other_standard_is_empty() {
+        assert_eq!(csv_bom(CsvEncoding::Standard(encoding_rs::GBK)), b"");
+    }
+
+    fn run_writer_test<F: FnOnce(&mut CsvEncodingWriter)>(charset: &CsvCharset, f: F) -> Vec<u8> {
+        let buf = SharedBuf::new();
+        let mut writer = CsvEncodingWriter::with_charset(buf.clone(), charset).unwrap();
+        f(&mut writer);
+        writer.finish().unwrap();
+        drop(writer);
+        buf.into_bytes()
+    }
+
+    #[test]
+    fn writer_utf8_roundtrip() {
+        let bytes = run_writer_test(&CsvCharset::utf8(), |w| {
+            write!(w, "hello,world").unwrap();
+        });
+        assert_eq!(bytes, b"hello,world");
+    }
+
+    #[test]
+    fn writer_utf16_le() {
+        let bytes = run_writer_test(&CsvCharset::new("UTF-16LE"), |w| {
+            write!(w, "AB").unwrap();
+        });
+        assert_eq!(bytes, vec![0x41, 0x00, 0x42, 0x00]);
+    }
+
+    #[test]
+    fn writer_utf16_be() {
+        let bytes = run_writer_test(&CsvCharset::new("UTF-16BE"), |w| {
+            write!(w, "AB").unwrap();
+        });
+        assert_eq!(bytes, vec![0x00, 0x41, 0x00, 0x42]);
+    }
+
+    #[test]
+    fn writer_flush() {
+        let buf = SharedBuf::new();
+        let mut writer = CsvEncodingWriter::with_charset(buf.clone(), &CsvCharset::utf8()).unwrap();
+        write!(writer, "test").unwrap();
+        writer.flush().unwrap();
+        drop(writer);
+        assert_eq!(buf.into_bytes(), b"test");
+    }
+
+    #[test]
+    fn writer_chinese_text() {
+        let bytes = run_writer_test(&CsvCharset::utf8(), |w| {
+            write!(w, "你好").unwrap();
+        });
+        assert_eq!(String::from_utf8(bytes).unwrap(), "你好");
+    }
+
+    #[test]
+    fn writer_unsupported_charset() {
+        let buf = SharedBuf::new();
+        assert!(CsvEncodingWriter::with_charset(buf, &CsvCharset::new("INVALID")).is_err());
+    }
+
+    #[test]
+    fn encode_utf16_empty() {
+        let mut buf = Vec::new();
+        CsvEncodingWriter::encode_utf16(&mut buf, "", u16::to_le_bytes).unwrap();
+        assert!(buf.is_empty());
+    }
+
+    #[test]
+    fn encode_utf16_bmp_chars() {
+        let mut buf = Vec::new();
+        CsvEncodingWriter::encode_utf16(&mut buf, "A", u16::to_le_bytes).unwrap();
+        assert_eq!(buf, vec![0x41, 0x00]);
+    }
+}

@@ -119,10 +119,11 @@ fn build_workbook_stream_with_filepass(
         record(&mut out, FONT, &font);
     }
     // FORMAT：自定义数字格式（BIFF8 规范位于 FONT 之后、XF 之前）
+    // 注意：FORMAT 记录使用 cch:u16 的 XLUnicodeString，不是 cch:u8 的短版本。
     for (ifmt, code) in book.styles.custom_formats() {
         let mut data = Vec::new();
         data.extend_from_slice(&ifmt.to_le_bytes());
-        data.extend_from_slice(&encode_short_unicode_string(code));
+        data.extend_from_slice(&encode_unicode_string(code));
         record(&mut out, FORMAT, &data);
     }
     if book.styles.needs_palette() {
@@ -217,11 +218,13 @@ fn build_workbook_stream_with_filepass(
         }
         sheet_drawing_plans.push((comment_drawing_id, first_chart_drawing_id));
     }
-    if !drawing_clusters.is_empty() {
+    // 每个 drawing（批注或图表）独立发射一条 MSODRAWINGGROUP 记录，
+    // 与 Excel / POI 的 BIFF8 流序一致。
+    for cluster in &drawing_clusters {
         record(
             &mut out,
             MSODRAWINGGROUP,
-            &drawing_group_for_clusters(&drawing_clusters),
+            &drawing_group_for_clusters(std::slice::from_ref(cluster)),
         );
     }
 

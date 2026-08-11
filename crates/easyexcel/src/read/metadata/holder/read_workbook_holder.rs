@@ -296,3 +296,175 @@ impl DerefMut for ReadWorkbookHolder {
 }
 
 delegate_read_holder_contract!(ReadWorkbookHolder, abstract_holder);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_creates_default_holder() {
+        let holder = ReadWorkbookHolder::new();
+        assert!(holder.get_read_workbook().is_none());
+        assert!(holder.get_excel_type().is_none());
+        assert!(holder.get_input_stream().is_none());
+        assert!(holder.get_auto_close_stream());
+        assert!(!holder.get_ignore_empty_row());
+        assert!(holder.get_password().is_none());
+        assert!(!holder.get_mandatory_use_input_stream());
+        assert!(holder.get_file().is_none());
+        assert!(holder.get_temp_file().is_none());
+        assert!(!holder.get_read_all());
+        assert!(holder.get_actual_sheet_data_list().is_none());
+        assert!(holder.get_parameter_sheet_data_list().is_none());
+        assert!(holder.get_has_read_sheet().is_empty());
+        assert!(holder.holder_type() == crate::HolderEnum::Workbook);
+    }
+
+    #[test]
+    fn setters_update_values() {
+        let mut holder = ReadWorkbookHolder::new();
+
+        holder.set_excel_type(Some(crate::support::ExcelTypeEnum::Xls));
+        assert_eq!(
+            holder.get_excel_type(),
+            Some(crate::support::ExcelTypeEnum::Xls)
+        );
+
+        holder.set_input_stream(Some(vec![1, 2, 3]));
+        assert_eq!(holder.get_input_stream(), Some([1_u8, 2, 3].as_slice()));
+
+        holder.set_auto_close_stream(false);
+        assert!(!holder.get_auto_close_stream());
+
+        holder.set_ignore_empty_row(true);
+        assert!(holder.get_ignore_empty_row());
+
+        holder.set_password(Some("secret".to_owned()));
+        assert_eq!(holder.get_password(), Some("secret"));
+
+        holder.set_mandatory_use_input_stream(true);
+        assert!(holder.get_mandatory_use_input_stream());
+
+        holder.set_read_default_return(crate::core::ReadDefaultReturn::ActualData);
+        assert_eq!(
+            holder.get_read_default_return(),
+            crate::core::ReadDefaultReturn::ActualData
+        );
+
+        holder.set_custom_object(Some(crate::CustomReadObject::new(42_u32)));
+        assert!(holder.get_custom_object().is_some());
+
+        holder.set_read_cache(crate::read::read_cache::ReadCacheMode::File);
+        assert_eq!(
+            holder.get_read_cache(),
+            crate::read::read_cache::ReadCacheMode::File
+        );
+
+        holder.set_read_cache_selector(Some(
+            crate::StoredReadCacheSelector::Simple(crate::cache::SimpleReadCacheSelector::new()),
+        ));
+        assert!(holder.get_read_cache_selector().is_some());
+
+        let mut extra = std::collections::HashSet::new();
+        extra.insert(crate::CellExtraType::Comment);
+        holder.set_extra_read_set(extra);
+        assert!(holder.get_extra_read_set().contains(&crate::CellExtraType::Comment));
+
+        holder.set_read_all(true);
+        assert!(holder.get_read_all());
+
+        holder.set_read_workbook(Some(crate::ReadWorkbook::new()));
+        assert!(holder.get_read_workbook().is_some());
+
+        holder.set_actual_sheet_data_list(Some(vec![]));
+        assert!(holder.get_actual_sheet_data_list().is_some());
+
+        holder.set_parameter_sheet_data_list(Some(vec![]));
+        assert!(holder.get_parameter_sheet_data_list().is_some());
+
+        holder.set_has_read_sheet({
+            let mut s = std::collections::HashSet::new();
+            s.insert(1);
+            s
+        });
+        assert!(holder.get_has_read_sheet().contains(&1));
+    }
+
+    #[test]
+    fn mark_sheet_read_returns_insert_status() {
+        let mut holder = ReadWorkbookHolder::new();
+        assert!(holder.mark_sheet_read(1)); // 首次插入
+        assert!(!holder.mark_sheet_read(1)); // 已存在
+        assert!(holder.mark_sheet_read(2)); // 新 sheet
+    }
+
+    #[test]
+    fn abstract_holder_accessors() {
+        let mut holder = ReadWorkbookHolder::new();
+        let _ = holder.abstract_holder();
+        let _ = holder.abstract_holder_mut();
+    }
+
+    #[test]
+    fn deref_reaches_abstract_holder() {
+        let mut holder = ReadWorkbookHolder::new();
+        holder.set_auto_close_stream(true);
+        let _ = holder.abstract_holder();
+    }
+
+    #[test]
+    fn file_and_temp_file_setters() {
+        let mut holder = ReadWorkbookHolder::new();
+        assert!(holder.file().is_none());
+        assert!(holder.temp_file().is_none());
+
+        holder.set_file(Some(std::path::PathBuf::from("/tmp/test.xlsx")));
+        assert_eq!(holder.file().unwrap().to_str().unwrap(), "/tmp/test.xlsx");
+
+        holder.set_temp_file(Some(std::path::PathBuf::from("/tmp/temp.xlsx")));
+        assert_eq!(holder.temp_file().unwrap().to_str().unwrap(), "/tmp/temp.xlsx");
+    }
+
+    #[test]
+    fn charset_setter_and_getter() {
+        let mut holder = ReadWorkbookHolder::new();
+        assert_eq!(holder.get_charset().name(), crate::CsvCharset::default().name());
+        holder.set_charset(crate::CsvCharset::from("gbk"));
+        assert_eq!(holder.get_charset().name(), "gbk");
+    }
+
+    #[test]
+    fn from_options_populates_fields() {
+        let options = crate::ReadOptions {
+            ignore_empty_row: true,
+            password: Some("secret".to_owned()),
+            head_row_number: 2,
+            ..crate::ReadOptions::default()
+        };
+        let holder = ReadWorkbookHolder::from_options(&options);
+        assert!(holder.get_ignore_empty_row());
+        assert_eq!(holder.get_password(), Some("secret"));
+    }
+
+    #[test]
+    fn from_read_workbook_populates_fields() {
+        let mut wb = crate::ReadWorkbook::new();
+        wb.set_file("/tmp/test.xlsx");
+        wb.set_excel_type(crate::support::ExcelTypeEnum::Xls);
+        wb.set_password("secret");
+        wb.set_auto_close_stream(false);
+        wb.set_ignore_empty_row(true);
+        wb.set_mandatory_use_input_stream(true);
+        wb.set_input_stream(Some(vec![1, 2, 3]));
+
+        let holder = ReadWorkbookHolder::from_read_workbook(wb);
+        assert_eq!(
+            holder.get_excel_type(),
+            Some(crate::support::ExcelTypeEnum::Xls)
+        );
+        assert!(!holder.get_auto_close_stream());
+        assert!(holder.get_ignore_empty_row());
+        assert!(holder.get_mandatory_use_input_stream());
+        assert_eq!(holder.get_input_stream(), Some([1_u8, 2, 3].as_slice()));
+    }
+}

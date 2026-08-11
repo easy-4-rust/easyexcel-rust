@@ -2,6 +2,11 @@
 
 [English](README.md)
 
+> **文档说明**：easyexcel-csv 引擎层 crate 文档，面向贡献者与引擎实现者说明模块边界。
+>
+> **版本**：0.1.3
+> **最后更新**：2026-08-11
+
 支持字符集、分隔符检测、类型推断与增量行流的 CSV/TSV 编解码器。
 
 > 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
@@ -30,13 +35,72 @@ flowchart LR
 
 依赖方向必须保持从门面或格式引擎指向基础模块；本 crate 不反向依赖业务应用。
 
-## 能力矩阵
+## 格式支持矩阵
 
-| 能力 | 状态 | 说明 |
+数据来源：[`docs/ARCHITECTURE.md` File Format Support](../../docs/ARCHITECTURE.md)。
+
+| 维度 | CSV（本 crate） | 状态 |
 |:---|:---|:---|
-| 工作簿编解码 | 可用 | 读写一个分隔文本工作表。 |
-| 流式行源 | 可用 | 增量 `CsvRowSource`，不全文件 `read_to_end`。 |
-| 电子表格专有能力 | 无法表示 | CSV 原生没有样式、公式、合并和多工作表语义。 |
+| 读取（类型化行） | `csv` crate + `encoding_rs` 字符集解码 | 稳定 |
+| 读取（动态/无模型） | 支持 | 稳定 |
+| 读取（事件监听） | `CsvRowSource` 增量流式 | 稳定 |
+| 读取（密码保护） | CSV 格式不适用 | 不适用 |
+| 写入（类型化行） | `csv` crate 编码器 | 稳定 |
+| 写入（带密码） | CSV 格式不适用 | 不适用 |
+| 写入（常量内存） | 通过 `CsvRecordWriter` 行级流式 | 稳定 |
+| 模板填充 | CSV 格式不适用 | 不适用 |
+| 合并单元格 | 非 CSV 原生语义 | 不支持 |
+| 列宽 | 非 CSV 原生语义 | 不支持 |
+| 行高 | 非 CSV 原生语义 | 不支持 |
+| 样式（字体/填充/对齐） | 非 CSV 原生语义 | 不支持 |
+| 批注/备注 | 非 CSV 原生语义 | 不支持 |
+| 超链接 | 非 CSV 原生语义 | 不支持 |
+| 图片 | 非 CSV 原生语义 | 不支持 |
+| 公式 | 非 CSV 原生语义 | 不支持 |
+| 自动筛选 | 非 CSV 原生语义 | 不支持 |
+
+## 能力与边界
+
+### 本 crate 能做什么
+
+- 通过 `read_csv`/`write_csv` 读写每个 CSV/TSV 文件的一个分隔文本工作表。
+- 通过 `CsvRowSource` 增量流式读取行，无需读取整个文件。
+- 检测分隔符、处理 BOM 标记、通过 `CsvCharset`（Java 风格名称）解码多种字符集。
+- 推断单元格类型（数值、日期、文本），可通过 `CsvReadOptions.infer_types` 关闭。
+- 通过 `CsvWriteOptions` 配置分隔符、换行策略和编码。
+
+### 本 crate 不能做什么
+
+- 多工作表工作簿：CSV 每次映射一个工作表；导出时调用方必须选择工作表。
+- 样式、公式、合并单元格、图片、批注、超链接和自动筛选：这些不是 CSV 原生语义。
+- 密码保护：CSV 格式不适用。
+- 全文件 `read_to_end`：流式 `CsvRowSource` 不缓冲整个文件。
+
+## 往返保真
+
+CSV 是电子表格数据的有损投影。往返（读取后写入）保留：
+
+- 单元格值（文本、数值、日期），保持字符集保真
+- 分隔符和换行策略（配置一致时）
+
+以下内容在 CSV 导出时丢失：样式、公式、合并单元格、多工作表、图片、批注、超链接、行列尺寸和自动筛选。这些损失是 CSV 格式的固有特性，不是实现缺陷。
+
+## 大文件 / 流式 / 内存
+
+| 模式 | 内存复杂度 | 适用场景 |
+|:---|:---|:---|
+| 工作簿模式（`read_csv`） | `O(sheet)` | 小到中等文件 |
+| 流式模式（`CsvRowSource`） | `O(batch)` | 大文件批量导入 |
+| 写入（`write_csv`/`CsvRecordWriter`） | `O(row)` | 所有写入均为行级流式 |
+
+CSV 天然支持行级流式，无临时文件开销。`CsvRowSource` 增量源避免全文件物化。
+
+## 格式安全
+
+- CSV 是纯文本格式，无容器、加密或内嵌二进制；ZIP bomb 和实体展开不适用。
+- 字符集解码使用 `encoding_rs`，有界缓冲分配。
+- 分隔符检测读取输入的有界前缀。
+- 通过门面调用时，`easyexcel-io::ResourceLimits` 的资源限制生效。
 
 ## 公共 API
 
@@ -125,6 +189,7 @@ flowchart LR
 | 包版本、MSRV 与依赖 | [`Cargo.toml`](Cargo.toml) |
 | 公共重导出 | [`src/lib.rs`](src/lib.rs) |
 | 实现行为 | `src/csv/` |
+| 格式支持矩阵 | [ARCHITECTURE.md](../../docs/ARCHITECTURE.md) |
 | 跨格式边界 | [Workspace 兼容性矩阵](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md) |
 
 ## 相关链接
@@ -134,3 +199,9 @@ flowchart LR
 - [兼容性矩阵](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
 - [变更日志](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [英文 README](README.md)
+
+---
+
+**文档版本**：V1.0.0
+**最后更新**：2026-08-11
+**文档状态**：已评审

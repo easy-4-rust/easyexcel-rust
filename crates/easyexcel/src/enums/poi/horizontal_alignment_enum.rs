@@ -65,3 +65,62 @@ impl std::str::FromStr for HorizontalAlignmentEnum {
             .ok_or_else(|| format!("unknown HorizontalAlignmentEnum value: {value}"))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn java_name_all_variants() {
+        assert_eq!(HorizontalAlignmentEnum::Default.java_name(), "DEFAULT");
+        assert_eq!(HorizontalAlignmentEnum::General.java_name(), "GENERAL");
+        assert_eq!(HorizontalAlignmentEnum::Left.java_name(), "LEFT");
+        assert_eq!(HorizontalAlignmentEnum::Center.java_name(), "CENTER");
+        assert_eq!(HorizontalAlignmentEnum::Right.java_name(), "RIGHT");
+        assert_eq!(HorizontalAlignmentEnum::Fill.java_name(), "FILL");
+        assert_eq!(HorizontalAlignmentEnum::Justify.java_name(), "JUSTIFY");
+        assert_eq!(HorizontalAlignmentEnum::CenterSelection.java_name(), "CENTER_SELECTION");
+        assert_eq!(HorizontalAlignmentEnum::Distributed.java_name(), "DISTRIBUTED");
+    }
+
+    #[test]
+    fn poi_horizontal_alignment_default_is_none() {
+        assert!(HorizontalAlignmentEnum::Default.poi_horizontal_alignment().is_none());
+    }
+
+    #[test]
+    fn poi_horizontal_alignment_non_default() {
+        assert!(HorizontalAlignmentEnum::Left.poi_horizontal_alignment().is_some());
+        assert!(HorizontalAlignmentEnum::Center.poi_horizontal_alignment().is_some());
+        assert!(HorizontalAlignmentEnum::Right.poi_horizontal_alignment().is_some());
+    }
+
+    #[test]
+    fn get_poi_horizontal_alignment_alias() {
+        assert_eq!(
+            HorizontalAlignmentEnum::Left.get_poi_horizontal_alignment(),
+            HorizontalAlignmentEnum::Left.poi_horizontal_alignment()
+        );
+    }
+
+    #[test]
+    fn from_str_valid() {
+        assert_eq!("LEFT".parse::<HorizontalAlignmentEnum>(), Ok(HorizontalAlignmentEnum::Left));
+        assert_eq!("CENTER".parse::<HorizontalAlignmentEnum>(), Ok(HorizontalAlignmentEnum::Center));
+    }
+
+    #[test]
+    fn from_str_invalid() {
+        assert!("INVALID".parse::<HorizontalAlignmentEnum>().is_err());
+    }
+
+    #[test]
+    fn all_has_9_variants() {
+        assert_eq!(HorizontalAlignmentEnum::ALL.len(), 9);
+    }
+
+    #[test]
+    fn default_is_default() {
+        assert_eq!(HorizontalAlignmentEnum::default(), HorizontalAlignmentEnum::Default);
+    }
+}

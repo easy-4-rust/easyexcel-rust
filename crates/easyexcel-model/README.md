@@ -2,6 +2,11 @@
 
 [简体中文](README.zh-CN.md)
 
+> **Document purpose**: Documents the format-neutral workbook and table model crate for contributors and engine implementors. Application code should depend on `easyexcel` facade.
+>
+> **Version**: 0.1.3
+> **Last updated**: 2026-08-11
+
 Format-neutral workbook and table model shared by the XLS, XLSX, CSV, formula and projection engines.
 
 > Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
@@ -29,6 +34,16 @@ flowchart LR
 
 Dependency direction remains from the facade or format engines toward foundations; this crate never depends back on an application.
 
+## Capabilities and boundaries
+
+| Area | Can do | Cannot do |
+|:---|:---|:---|
+| Workbook graph | Create, query and edit `Workbook`, `Sheet`, `Cell`, styles, names, tables, merges and opaque parts. | Parse or write XLSX/XLS/CSV binary/XML containers. |
+| Cell types | Represent `Text`, `Number`, `Bool`, `Error`, `Formula`, `Empty`, `Date` and `RichText` cells. | Execute formula evaluation (delegates to `easyexcel-formula`). |
+| Tabular projection | Project workbook data into `TabularDocument` with named tables, headers and merged ranges. | Guarantee lossless style or formula-expression round trips. |
+| Coordinates | Parse A1 references, zero-based `CellAddress` and `CellRange`. | Handle R1C1 notation. |
+| Date system | Convert between Excel serial dates and `chrono` types. | Parse date strings from raw cell text. |
+
 ## Capability matrix
 
 | Capability | Status | Details |
@@ -45,6 +60,9 @@ Dependency direction remains from the facade or format engines toward foundation
 | `Cell`, `CellValue` | Typed cell and cached formula values. |
 | `CellAddress`, `CellRange` | Zero-based and A1-compatible coordinates. |
 | `TabularDocument`, `TabularTable`, `TabularCell` | Loss-aware neutral table representation. |
+| `DefinedName` | Named range and formula name definitions. |
+| `ChartType`, `ChartSeries`, `ChartRange` | Chart metadata for workbook graph. |
+| `date_to_excel_serial`, `excel_parts_to_datetime` | Excel serial date conversion utilities. |
 
 The current `src/lib.rs` re-exports and their implementations are authoritative. This README does not present private implementation objects as stable API.
 
@@ -56,6 +74,13 @@ easyexcel = "0.1.3"
 ```
 
 `easyexcel-model` is independently published so workspace crates can express precise dependency boundaries. Application code should depend on `easyexcel` and use its zero-cost re-exports.
+
+| Item | Value |
+|:---|:---|
+| MSRV | Rust 1.88 |
+| Edition | 2024 |
+| Resolver | 3 |
+| License | Apache-2.0 |
 
 ## Basic usage
 
@@ -86,6 +111,21 @@ fn project(workbook: &Workbook) -> Workbook {
     // Formula expressions and full styles are intentionally not represented.
     document.to_workbook_with_header_style(true)
 }
+Ok(())
+}
+```
+
+## Date conversion example
+
+```rust
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+use easyexcel::model::{date_to_excel_serial, excel_parts_to_datetime};
+
+let serial = date_to_excel_serial(2024, 1, 15);
+assert!(serial > 0);
+
+let dt = excel_parts_to_datetime(2024, 1, 15, 10, 30, 0, 0);
+assert!(dt.is_some());
 Ok(())
 }
 ```
@@ -124,3 +164,10 @@ The diagram shows the public dependency direction, not that this crate depends o
 - [Compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
 - [Changelog](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [Chinese README](README.zh-CN.md)
+
+---
+
+**Document version**: V1.0.0
+**Created**: 2026-08-11
+**Last updated**: 2026-08-11
+**Document status**: Pending review

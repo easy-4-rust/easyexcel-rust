@@ -77,3 +77,56 @@ impl std::fmt::Display for ExcelWebErrorCode {
         formatter.write_str(self.as_str())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn as_str_all_variants() {
+        assert_eq!(ExcelWebErrorCode::FileTooLarge.as_str(), "FILE_TOO_LARGE");
+        assert_eq!(ExcelWebErrorCode::RowLimitExceeded.as_str(), "ROW_LIMIT_EXCEEDED");
+        assert_eq!(ExcelWebErrorCode::UnsupportedMediaType.as_str(), "UNSUPPORTED_MEDIA_TYPE");
+        assert_eq!(ExcelWebErrorCode::InvalidFormat.as_str(), "INVALID_FORMAT");
+        assert_eq!(ExcelWebErrorCode::RowConversionFailed.as_str(), "ROW_CONVERSION_FAILED");
+        assert_eq!(ExcelWebErrorCode::ProcessingTimeout.as_str(), "PROCESSING_TIMEOUT");
+        assert_eq!(ExcelWebErrorCode::Cancelled.as_str(), "CANCELLED");
+        assert_eq!(ExcelWebErrorCode::TransportFailed.as_str(), "TRANSPORT_FAILED");
+        assert_eq!(ExcelWebErrorCode::StorageFailed.as_str(), "STORAGE_FAILED");
+        assert_eq!(ExcelWebErrorCode::Internal.as_str(), "INTERNAL");
+    }
+
+    #[test]
+    fn status_code_mapping() {
+        assert_eq!(ExcelWebErrorCode::FileTooLarge.status_code(), StatusCode::PAYLOAD_TOO_LARGE);
+        assert_eq!(ExcelWebErrorCode::RowLimitExceeded.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(ExcelWebErrorCode::InvalidFormat.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(ExcelWebErrorCode::RowConversionFailed.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(ExcelWebErrorCode::UnsupportedMediaType.status_code(), StatusCode::UNSUPPORTED_MEDIA_TYPE);
+        assert_eq!(ExcelWebErrorCode::ProcessingTimeout.status_code(), StatusCode::GATEWAY_TIMEOUT);
+        assert_eq!(ExcelWebErrorCode::Cancelled.status_code(), StatusCode::REQUEST_TIMEOUT);
+        assert_eq!(ExcelWebErrorCode::TransportFailed.status_code(), StatusCode::BAD_REQUEST);
+        assert_eq!(ExcelWebErrorCode::StorageFailed.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(ExcelWebErrorCode::Internal.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[test]
+    fn retryable_flags() {
+        assert!(ExcelWebErrorCode::ProcessingTimeout.retryable());
+        assert!(ExcelWebErrorCode::Cancelled.retryable());
+        assert!(ExcelWebErrorCode::TransportFailed.retryable());
+        assert!(ExcelWebErrorCode::StorageFailed.retryable());
+        assert!(!ExcelWebErrorCode::FileTooLarge.retryable());
+        assert!(!ExcelWebErrorCode::RowLimitExceeded.retryable());
+        assert!(!ExcelWebErrorCode::UnsupportedMediaType.retryable());
+        assert!(!ExcelWebErrorCode::InvalidFormat.retryable());
+        assert!(!ExcelWebErrorCode::RowConversionFailed.retryable());
+        assert!(!ExcelWebErrorCode::Internal.retryable());
+    }
+
+    #[test]
+    fn display_impl() {
+        assert_eq!(format!("{}", ExcelWebErrorCode::Internal), "INTERNAL");
+        assert_eq!(format!("{}", ExcelWebErrorCode::FileTooLarge), "FILE_TOO_LARGE");
+    }
+}

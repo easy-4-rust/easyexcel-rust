@@ -2,6 +2,11 @@
 
 [简体中文](README.zh-CN.md)
 
+> **文档说明**：easyexcel-derive 引擎层 crate 文档，面向贡献者与引擎实现者说明模块边界。
+>
+> **版本**：0.1.3
+> **最后更新**：2026-08-11
+
 Procedural macro implementing typed EasyExcel row schemas, conversion and Java annotation metadata.
 
 > Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
@@ -29,13 +34,54 @@ flowchart LR
 
 Dependency direction remains from the facade or format engines toward foundations; this crate never depends back on an application.
 
-## Capability matrix
+## Capabilities and boundaries
 
-| Capability | Status | Details |
+### What this crate can do
+
+- Generate static Excel column metadata and bidirectional row conversion from `#[derive(ExcelRow)]`.
+- Map fourteen Java annotation families to `#[excel(...)]` attributes.
+- Provide Rust extensions beyond Java: formula, image, comment, hyperlink, validation, conditional and filter metadata.
+- Reject conflicting forced column indices at compile time.
+- Support `ignore_unannotated` for strict mapping (only `ExcelProperty`-equivalent fields are included).
+- Generate `schema()` method returning field metadata for runtime introspection.
+
+### What this crate cannot do
+
+- Render file-format output: metadata support and file-format rendering are separate concerns.
+- Replace runtime reflection: `#[derive(ExcelRow)]` generates static schema, not dynamic field access.
+
+## Format support matrix
+
+This crate is a proc-macro, not a file format engine. Its output is consumed by all format engines.
+
+| Dimension | Derive output | Consumed by |
 |:---|:---|:---|
-| Typed row derive | Available | Schema plus bidirectional row conversion. |
-| Java annotation semantics | Available with backend limits | Fourteen annotation families mapped to `#[excel(...)]`. |
-| Rust extensions | Available | Formula, image, comment, hyperlink, validation, conditional and filter metadata. |
+| Column mapping (`value`, `name`, `index`, `order`) | Static metadata | All format engines |
+| Style metadata (`column_width`, `head_row_height`, etc.) | Static metadata | XLS, XLSX |
+| Format metadata (`date_time_format`, `number_format`) | Static metadata | XLS, XLSX, CSV |
+| Converter (`converter = MyConverter`) | Trait implementation | All format engines |
+| Merge metadata (`content_loop_merge`, `once_absolute_merge`) | Static metadata | XLS, XLSX |
+| Strict mapping (`ignore_unannotated`) | Schema filtering | All format engines |
+| Default values (`default = expression`) | Rust extension | All format engines |
+| Formula / image / comment / hyperlink | Rust extension metadata | XLSX (primary) |
+
+## Annotation mapping
+
+| Java annotation | Rust attribute |
+|:---|:---|
+| `ExcelIgnore` | `ignore` |
+| `ExcelIgnoreUnannotated` | `ignore_unannotated` |
+| `ExcelProperty` | `property`, `value/head`, `name`, `index`, `order`, `converter` |
+| `DateTimeFormat` | `date_time_format`, `use_1904_windowing` |
+| `NumberFormat` | `number_format`, `rounding_mode` |
+| `ColumnWidth` | `column_width` |
+| `ContentFontStyle` / `HeadFontStyle` | `content_font_style(...)` / `head_font_style(...)` |
+| `ContentStyle` / `HeadStyle` | `content_style(...)` / `head_style(...)` |
+| `ContentLoopMerge` | `content_loop_merge(...)` |
+| `ContentRowHeight` / `HeadRowHeight` | `content_row_height` / `head_row_height` |
+| `OnceAbsoluteMerge` | `once_absolute_merge(...)` |
+
+Multi-level `ExcelProperty.value()` maps to `value = ["Level 1", "Level 2"]`. The `default = expression` attribute is an explicitly documented Rust extension.
 
 ## Public API
 
@@ -99,24 +145,6 @@ Ok(())
 }
 ```
 
-## Annotation mapping
-
-| Java annotation | Rust attribute |
-|:---|:---|
-| `ExcelIgnore` | `ignore` |
-| `ExcelIgnoreUnannotated` | `ignore_unannotated` |
-| `ExcelProperty` | `property`, `value/head`, `name`, `index`, `order`, `converter` |
-| `DateTimeFormat` | `date_time_format`, `use_1904_windowing` |
-| `NumberFormat` | `number_format`, `rounding_mode` |
-| `ColumnWidth` | `column_width` |
-| `ContentFontStyle` / `HeadFontStyle` | `content_font_style(...)` / `head_font_style(...)` |
-| `ContentStyle` / `HeadStyle` | `content_style(...)` / `head_style(...)` |
-| `ContentLoopMerge` | `content_loop_merge(...)` |
-| `ContentRowHeight` / `HeadRowHeight` | `content_row_height` / `head_row_height` |
-| `OnceAbsoluteMerge` | `once_absolute_merge(...)` |
-
-Multi-level `ExcelProperty.value()` maps to `value = ["Level 1", "Level 2"]`. The `default = expression` attribute is an explicitly documented Rust extension.
-
 ## Errors and capability boundaries
 
 - Users should consume the macro through `easyexcel::ExcelRow`, not add a direct runtime dependency on this proc-macro crate.
@@ -151,3 +179,9 @@ The diagram shows the public dependency direction, not that this crate depends o
 - [Compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
 - [Changelog](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [Chinese README](README.zh-CN.md)
+
+---
+
+**文档版本**：V1.0.0
+**最后更新**：2026-08-11
+**文档状态**：已评审

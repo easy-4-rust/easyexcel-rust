@@ -68,3 +68,73 @@ impl Biff8FillPattern {
     }
 }
 
+#[cfg(test)]
+mod biff8fill_pattern_tests {
+    use super::*;
+
+    /// 验证每个 variant 的 code() 返回正确的 BIFF8 填充图案编号。
+    #[test]
+    fn fill_pattern_codes_match_spec() {
+        assert_eq!(Biff8FillPattern::None.code(), 0);
+        assert_eq!(Biff8FillPattern::Solid.code(), 1);
+        assert_eq!(Biff8FillPattern::MediumGray.code(), 2);
+        assert_eq!(Biff8FillPattern::DarkGray.code(), 3);
+        assert_eq!(Biff8FillPattern::LightGray.code(), 4);
+        assert_eq!(Biff8FillPattern::DarkHorizontal.code(), 5);
+        assert_eq!(Biff8FillPattern::DarkVertical.code(), 6);
+        assert_eq!(Biff8FillPattern::DarkDown.code(), 7);
+        assert_eq!(Biff8FillPattern::DarkUp.code(), 8);
+        assert_eq!(Biff8FillPattern::DarkGrid.code(), 9);
+        assert_eq!(Biff8FillPattern::DarkTrellis.code(), 10);
+        assert_eq!(Biff8FillPattern::LightHorizontal.code(), 11);
+        assert_eq!(Biff8FillPattern::LightVertical.code(), 12);
+        assert_eq!(Biff8FillPattern::LightDown.code(), 13);
+        assert_eq!(Biff8FillPattern::LightUp.code(), 14);
+        assert_eq!(Biff8FillPattern::LightGrid.code(), 15);
+        assert_eq!(Biff8FillPattern::LightTrellis.code(), 16);
+        assert_eq!(Biff8FillPattern::Gray125.code(), 17);
+        assert_eq!(Biff8FillPattern::Gray0625.code(), 18);
+    }
+
+    /// 验证所有 code 值在 0..=18 范围内且连续。
+    #[test]
+    fn fill_pattern_codes_are_contiguous() {
+        let codes: Vec<u8> = [
+            Biff8FillPattern::None,
+            Biff8FillPattern::Solid,
+            Biff8FillPattern::MediumGray,
+            Biff8FillPattern::DarkGray,
+            Biff8FillPattern::LightGray,
+            Biff8FillPattern::DarkHorizontal,
+            Biff8FillPattern::DarkVertical,
+            Biff8FillPattern::DarkDown,
+            Biff8FillPattern::DarkUp,
+            Biff8FillPattern::DarkGrid,
+            Biff8FillPattern::DarkTrellis,
+            Biff8FillPattern::LightHorizontal,
+            Biff8FillPattern::LightVertical,
+            Biff8FillPattern::LightDown,
+            Biff8FillPattern::LightUp,
+            Biff8FillPattern::LightGrid,
+            Biff8FillPattern::LightTrellis,
+            Biff8FillPattern::Gray125,
+            Biff8FillPattern::Gray0625,
+        ]
+        .iter()
+        .map(|p| p.code())
+        .collect();
+        assert_eq!(codes, (0..=18).collect::<Vec<u8>>());
+    }
+
+    /// Clone, Copy, PartialEq, Eq, Debug 派生。
+    #[test]
+    fn traits_work() {
+        let a = Biff8FillPattern::Solid;
+        let b = a;
+        assert_eq!(a, b);
+        let _ = format!("{a:?}");
+        let c = a.clone();
+        assert_eq!(a, c);
+    }
+}
+

@@ -36,6 +36,7 @@ members = [
     "examples/fill",
     "benchmarks/rust-runner",
 ]
+exclude = ["fuzz"]
 resolver = "3"
 
 [workspace.package]

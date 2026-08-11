@@ -934,6 +934,7 @@ dependencies = [
  "rust_xlsxwriter",
  "serde",
  "serde_json",
+ "sha2",
  "ssfmt",
  "tempfile",
  "thiserror",
@@ -1188,6 +1189,7 @@ dependencies = [
  "easyexcel-model",
  "pulldown-cmark",
  "serde",
+ "serde_json",
  "thiserror",
 ]
 
@@ -1265,6 +1267,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+ "url",
  "zip",
 ]
 

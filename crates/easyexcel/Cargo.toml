@@ -37,6 +37,17 @@ easyexcel-xlsx.workspace = true
 easyexcel-tabular.workspace = true
 indexmap.workspace = true
 tempfile.workspace = true
+# OLE2 复合文档读取（仅 xls-streaming-iter feature 需要）
+cfb = { workspace = true, optional = true }
+
+[features]
+default = ["xls-lazy-sst"]
+## 启用 XLS SST 延迟解码（传递给 easyexcel-xls）。
+xls-lazy-sst = ["easyexcel-xls/xls-lazy-sst"]
+## 启用 XLS 流式 record 迭代器（传递给 easyexcel-xls）。
+## 在 `xls_sax_analyser` 中使用 `StreamingRecordIter` 替代旧的 `&[u8]` 切片遍历路径，
+## 使得非加密 XLS 文件可以从 CFB Stream 直接流式读取 record，无需将整个 Workbook 流加载到内存。
+xls-streaming-iter = ["easyexcel-xls/xls-streaming-iter", "dep:cfb"]
 
 [dev-dependencies]
 base64.workspace = true
@@ -50,6 +61,7 @@ ssfmt.workspace = true
 zip.workspace = true
 # 读取/写入管线的回调契约测试（MockReadListener 断言调用次数/顺序/参数）
 mockall = "0.15"
+sha2.workspace = true
 trybuild = "1"
 
 [lints]

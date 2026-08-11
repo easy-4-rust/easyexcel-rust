@@ -160,3 +160,168 @@ pub fn get_cache_path() -> PathBuf {
 pub fn set_cache_path(path: impl Into<PathBuf>) {
     easyexcel_io::io::file_utils::set_cache_path(path);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn constants_match_java_values() {
+        assert_eq!(POI_FILES, "poifiles");
+        assert_eq!(EX_CACHE, "excache");
+    }
+
+    #[test]
+    fn write_to_file_and_read_back() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("test_write.bin");
+        let data = b"hello rust";
+        write_to_file(&path, data).unwrap();
+        let read_back = read_file_to_byte_array(&path).unwrap();
+        assert_eq!(read_back, data);
+    }
+
+    #[test]
+    fn write_to_file_nonexistent_dir_returns_error() {
+        let path = Path::new("/nonexistent_dir_xyz/test.txt");
+        let result = write_to_file(path, b"data");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn write_reader_to_file_writes_content() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("reader_out.txt");
+        let content = b"from reader";
+        let mut cursor = std::io::Cursor::new(content);
+        write_reader_to_file(&path, &mut cursor).unwrap();
+        let read_back = read_file_to_byte_array(&path).unwrap();
+        assert_eq!(read_back, content);
+    }
+
+    #[test]
+    fn write_reader_to_file_with_append_false_overwrites() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("overwrite.txt");
+        std::fs::write(&path, b"old").unwrap();
+        let mut cursor = std::io::Cursor::new(b"new");
+        write_reader_to_file_with_append(&path, &mut cursor, false).unwrap();
+        let read_back = read_file_to_byte_array(&path).unwrap();
+        assert_eq!(read_back, b"new");
+    }
+
+    #[test]
+    fn write_reader_to_file_with_append_true_appends() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("append.txt");
+        std::fs::write(&path, b"hello").unwrap();
+        let mut cursor = std::io::Cursor::new(b" world");
+        write_reader_to_file_with_append(&path, &mut cursor, true).unwrap();
+        let read_back = read_file_to_byte_array(&path).unwrap();
+        assert_eq!(read_back, b"hello world");
+    }
+
+    #[test]
+    fn read_file_to_byte_array_nonexistent_returns_error() {
+        let result = read_file_to_byte_array(Path::new("/no_such_file_xyz.txt"));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn create_tmp_file_creates_valid_file() {
+        let tmp = create_tmp_file("test_prefix").unwrap();
+        let path = tmp.path().to_owned();
+        assert!(path.exists());
+        assert!(
+            path.file_name()
+                .unwrap()
+                .to_string_lossy()
+                .starts_with("test_prefix")
+        );
+    }
+
+    #[test]
+    fn create_cache_tmp_file_creates_valid_file() {
+        let tmp = create_cache_tmp_file().unwrap();
+        assert!(tmp.path().exists());
+    }
+
+    #[test]
+    fn create_directory_creates_path() {
+        let dir = tempfile::tempdir().unwrap();
+        let nested = dir.path().join("a").join("b").join("c");
+        create_directory(&nested).unwrap();
+        assert!(nested.exists());
+    }
+
+    #[test]
+    fn delete_removes_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("to_delete.txt");
+        std::fs::write(&path, b"delete me").unwrap();
+        assert!(path.exists());
+        delete(&path).unwrap();
+        assert!(!path.exists());
+    }
+
+    #[test]
+    fn delete_nonexistent_is_ok() {
+        let path = Path::new("/no_such_file_to_delete_xyz.txt");
+        // 不存在视为成功
+        assert!(delete(path).is_ok());
+    }
+
+    #[test]
+    fn get_and_set_temp_file_prefix() {
+        let original = get_temp_file_prefix();
+        let dir = tempfile::tempdir().unwrap();
+        set_temp_file_prefix(dir.path());
+        let updated = get_temp_file_prefix();
+        assert_eq!(updated, dir.path());
+        // 恢复原始值
+        set_temp_file_prefix(original);
+    }
+
+    #[test]
+    fn get_and_set_poi_files_path() {
+        let original = get_poi_files_path();
+        let dir = tempfile::tempdir().unwrap();
+        set_poi_files_path(dir.path());
+        let updated = get_poi_files_path();
+        assert_eq!(updated, dir.path());
+        set_poi_files_path(original);
+    }
+
+    #[test]
+    fn get_and_set_cache_path() {
+        let original = get_cache_path();
+        let dir = tempfile::tempdir().unwrap();
+        set_cache_path(dir.path());
+        let updated = get_cache_path();
+        assert_eq!(updated, dir.path());
+        set_cache_path(original);
+    }
+
+    #[test]
+    fn open_input_stream_opens_existing_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("open_test.txt");
+        std::fs::write(&path, b"data").unwrap();
+        let mut file = open_input_stream(&path).unwrap();
+        let mut contents = String::new();
+        std::io::Read::read_to_string(&mut file, &mut contents).unwrap();
+        assert_eq!(contents, "data");
+    }
+
+    #[test]
+    fn open_input_stream_nonexistent_returns_error() {
+        let result = open_input_stream(Path::new("/no_such_file_open_xyz.txt"));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn create_poi_files_directory_returns_path() {
+        let path = create_poi_files_directory().unwrap();
+        assert!(path.exists());
+    }
+}

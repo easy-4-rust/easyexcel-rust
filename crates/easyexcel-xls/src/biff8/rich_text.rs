@@ -29,7 +29,10 @@ pub fn load_rich_text_cells(
     workbook: &[u8],
 ) -> Result<HashMap<(usize, u32, usize), Biff8RichTextCell>> {
     let mut decoder = Biff8ContinuableRecordDecoder::default();
-    let mut shared_strings = Vec::new();
+    #[cfg(feature = "xls-lazy-sst")]
+    let mut shared_strings: Option<super::lazy_sst::LazySst> = None;
+    #[cfg(not(feature = "xls-lazy-sst"))]
+    let mut shared_strings: Vec<crate::Biff8SstString> = Vec::new();
     let mut fonts = HashMap::new();
     let mut font_record_index = 0u16;
     let mut current_sheet = None;
@@ -94,7 +97,8 @@ pub fn load_rich_text_cells(
 
     let mut cells = HashMap::new();
     for (sheet, row, column, sst_index) in references {
-        let Some(value) = shared_strings.get(sst_index) else {
+        let value = get_sst_string(&shared_strings, sst_index);
+        let Some(value) = value else {
             continue;
         };
         let utf16_len = value.text.encode_utf16().count();
@@ -122,6 +126,22 @@ pub fn load_rich_text_cells(
     Ok(cells)
 }
 
+#[cfg(feature = "xls-lazy-sst")]
+fn finish_rich_sst(
+    decoder: &mut Biff8ContinuableRecordDecoder,
+    require_complete: bool,
+    shared_strings: &mut Option<super::lazy_sst::LazySst>,
+) -> Result<()> {
+    if let Biff8ContinuationStatus::Complete(Biff8DecodedContinuableRecord::SharedStrings(
+        strings,
+    )) = decoder.try_finish(require_complete)?
+    {
+        *shared_strings = Some(strings);
+    }
+    Ok(())
+}
+
+#[cfg(not(feature = "xls-lazy-sst"))]
 fn finish_rich_sst(
     decoder: &mut Biff8ContinuableRecordDecoder,
     require_complete: bool,
@@ -134,4 +154,22 @@ fn finish_rich_sst(
         *shared_strings = strings;
     }
     Ok(())
+}
+
+/// 从 SST 容器中按索引获取字符串，兼容 lazy/eager 两种模式。
+#[cfg(feature = "xls-lazy-sst")]
+fn get_sst_string(
+    sst: &Option<super::lazy_sst::LazySst>,
+    idx: usize,
+) -> Option<crate::Biff8SstString> {
+    sst.as_ref().and_then(|s| s.get(idx).ok())
+}
+
+/// 从 SST 容器中按索引获取字符串，兼容 lazy/eager 两种模式。
+#[cfg(not(feature = "xls-lazy-sst"))]
+fn get_sst_string(
+    sst: &[crate::Biff8SstString],
+    idx: usize,
+) -> Option<crate::Biff8SstString> {
+    sst.get(idx).cloned()
 }

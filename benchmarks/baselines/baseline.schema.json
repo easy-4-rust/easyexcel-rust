@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://easyexcel.rs/schemas/reviewed-performance-baseline-v2.json",
   "title": "EasyExcel reviewed performance baseline",
+  "description": "Schema v2 supports two modes: approved baselines (approval+summaries required) and pending stubs (pending_generation=true, approval+summaries optional).",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -11,14 +12,16 @@
     "spec_sha256",
     "source_git_shas",
     "candidate_report_sha256",
-    "evidence",
-    "approval",
-    "summaries"
+    "evidence"
   ],
   "properties": {
     "schema_version": {"const": 2},
     "artifact": {"const": "easyexcel-reviewed-performance-baseline"},
     "profile": {"enum": ["nightly", "release"]},
+    "pending_generation": {
+      "type": "boolean",
+      "description": "When true, this file is a stub placeholder awaiting a real benchmark run. The approval and summaries fields are omitted."
+    },
     "spec_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "source_git_shas": {
       "type": "object",
@@ -57,6 +60,20 @@
         "notes": {"type": "string", "minLength": 1}
       }
     },
-    "summaries": {"type": "object", "minProperties": 1}
+    "summaries": {"type": "object", "minProperties": 1},
+    "scenario_slots": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "List of scenario IDs that this baseline covers. Present in stubs to indicate expected coverage."
+    }
+  },
+  "if": {
+    "properties": {"pending_generation": {"const": true}}
+  },
+  "then": {
+    "required": ["pending_generation"]
+  },
+  "else": {
+    "required": ["approval", "summaries"]
   }
 }

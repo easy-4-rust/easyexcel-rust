@@ -53,3 +53,104 @@ impl ContentFontStyle {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_values_match_java() {
+        let style = ContentFontStyle::new();
+        assert!(style.font_name().is_empty());
+        assert_eq!(style.font_height_in_points(), -1);
+        assert_eq!(style.italic(), BooleanEnum::Default);
+        assert_eq!(style.strikeout(), BooleanEnum::Default);
+        assert_eq!(style.color(), -1);
+        assert_eq!(style.type_offset(), -1);
+        assert_eq!(style.underline(), -1);
+        assert_eq!(style.charset(), -1);
+        assert_eq!(style.bold(), BooleanEnum::Default);
+    }
+
+    #[test]
+    fn setters_and_getters() {
+        let mut style = ContentFontStyle::new();
+        style.set_font_name("Arial");
+        assert_eq!(style.font_name(), "Arial");
+        style.set_font_height_in_points(12);
+        assert_eq!(style.font_height_in_points(), 12);
+        style.set_italic(BooleanEnum::True);
+        assert_eq!(style.italic(), BooleanEnum::True);
+        style.set_strikeout(BooleanEnum::True);
+        assert_eq!(style.strikeout(), BooleanEnum::True);
+        style.set_color(255);
+        assert_eq!(style.color(), 255);
+        style.set_type_offset(1);
+        assert_eq!(style.type_offset(), 1);
+        style.set_underline(2);
+        assert_eq!(style.underline(), 2);
+        style.set_charset(134);
+        assert_eq!(style.charset(), 134);
+        style.set_bold(BooleanEnum::True);
+        assert_eq!(style.bold(), BooleanEnum::True);
+    }
+
+    #[test]
+    fn to_property_with_all_defaults() {
+        let style = ContentFontStyle::new();
+        let prop = style.to_property();
+        // 默认 -1 值产生 None
+        assert!(prop.font_name.is_none());
+        assert!(prop.font_height_in_points.is_none());
+    }
+
+    #[test]
+    fn to_property_with_configured_values() {
+        let mut style = ContentFontStyle::new();
+        style.set_font_name("Calibri");
+        style.set_font_height_in_points(11);
+        style.set_bold(BooleanEnum::True);
+        style.set_italic(BooleanEnum::True);
+        style.set_color(0);
+        style.set_type_offset(0); // None
+        style.set_underline(0); // None
+        style.set_charset(1);
+        let prop = style.to_property();
+        assert_eq!(prop.font_name.as_deref(), Some("Calibri"));
+        assert_eq!(prop.font_height_in_points, Some(11.0));
+    }
+
+    #[test]
+    fn to_property_type_offset_variants() {
+        let mut style = ContentFontStyle::new();
+        style.set_type_offset(0);
+        let prop = style.to_property();
+        assert!(prop.type_offset.is_some());
+        style.set_type_offset(1);
+        let prop = style.to_property();
+        assert!(prop.type_offset.is_some());
+        style.set_type_offset(2);
+        let prop = style.to_property();
+        assert!(prop.type_offset.is_some());
+        style.set_type_offset(99);
+        let prop = style.to_property();
+        assert!(prop.type_offset.is_none());
+    }
+
+    #[test]
+    fn to_property_underline_variants() {
+        let mut style = ContentFontStyle::new();
+        for val in [0, 1, 2, 33, 34, 99] {
+            style.set_underline(val);
+            let _prop = style.to_property();
+        }
+    }
+
+    #[test]
+    fn clone_and_eq() {
+        let mut a = ContentFontStyle::new();
+        a.set_font_name("Arial");
+        let b = a;
+        assert_eq!(a, b);
+    }
+}

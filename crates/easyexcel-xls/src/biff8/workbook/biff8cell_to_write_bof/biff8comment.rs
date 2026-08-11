@@ -84,3 +84,111 @@ impl Biff8Comment {
         self
     }
 }
+
+#[cfg(test)]
+mod biff8comment_tests {
+    use super::*;
+
+    /// 验证 `new` 的默认值：无锚点、无格式区间、不可见。
+    #[test]
+    fn new_sets_defaults() {
+        let c = Biff8Comment::new(1, 2, "text", "author");
+        assert_eq!(c.row, 1);
+        assert_eq!(c.col, 2);
+        assert_eq!(c.text, "text");
+        assert_eq!(c.author, "author");
+        assert!(c.first_row.is_none());
+        assert!(c.first_col.is_none());
+        assert!(c.last_row.is_none());
+        assert!(c.last_col.is_none());
+        assert!(c.top.is_none());
+        assert!(c.right.is_none());
+        assert!(c.bottom.is_none());
+        assert!(c.left.is_none());
+        assert!(c.formatting_runs.is_empty());
+        assert!(!c.visible);
+    }
+
+    /// 验证 `new` 接受 &str 和 String。
+    #[test]
+    fn new_accepts_string_and_str() {
+        let c1 = Biff8Comment::new(0, 0, "a", "b");
+        let c2 = Biff8Comment::new(0, 0, String::from("a"), String::from("b"));
+        assert_eq!(c1, c2);
+    }
+
+    /// 验证 `with_anchor` 设置所有锚点字段。
+    #[test]
+    fn with_anchor_sets_all_fields() {
+        let c = Biff8Comment::new(0, 0, "t", "a").with_anchor(1, 2, 3, 4, Some(10), Some(20), Some(30), Some(40));
+        assert_eq!(c.first_row, Some(1));
+        assert_eq!(c.first_col, Some(2));
+        assert_eq!(c.last_row, Some(3));
+        assert_eq!(c.last_col, Some(4));
+        assert_eq!(c.top, Some(10));
+        assert_eq!(c.right, Some(20));
+        assert_eq!(c.bottom, Some(30));
+        assert_eq!(c.left, Some(40));
+    }
+
+    /// 验证 `with_anchor` 偏移量可以为 None。
+    #[test]
+    fn with_anchor_none_offsets() {
+        let c = Biff8Comment::new(0, 0, "t", "a").with_anchor(1, 2, 3, 4, None, None, None, None);
+        assert!(c.top.is_none());
+        assert!(c.right.is_none());
+        assert!(c.bottom.is_none());
+        assert!(c.left.is_none());
+    }
+
+    /// 验证 `with_formatting_runs` 设置格式区间。
+    #[test]
+    fn with_formatting_runs_sets_runs() {
+        let runs = vec![(0u16, 1u16), (5, 2)];
+        let c = Biff8Comment::new(0, 0, "t", "a").with_formatting_runs(runs.clone());
+        assert_eq!(c.formatting_runs, runs);
+    }
+
+    /// 验证 `with_visible` 设为 true。
+    #[test]
+    fn with_visible_true() {
+        let c = Biff8Comment::new(0, 0, "t", "a").with_visible(true);
+        assert!(c.visible);
+    }
+
+    /// 验证 `with_visible` 设为 false。
+    #[test]
+    fn with_visible_false() {
+        let c = Biff8Comment::new(0, 0, "t", "a").with_visible(true).with_visible(false);
+        assert!(!c.visible);
+    }
+
+    /// 验证链式调用：anchor → formatting_runs → visible。
+    #[test]
+    fn builder_chain() {
+        let c = Biff8Comment::new(5, 10, "comment", "me")
+            .with_anchor(0, 0, 2, 2, Some(1), Some(2), Some(3), Some(4))
+            .with_formatting_runs(vec![(0, 1)])
+            .with_visible(true);
+        assert_eq!(c.row, 5);
+        assert_eq!(c.col, 10);
+        assert_eq!(c.first_row, Some(0));
+        assert_eq!(c.formatting_runs.len(), 1);
+        assert!(c.visible);
+    }
+
+    /// 验证 Clone 和 PartialEq。
+    #[test]
+    fn clone_and_eq() {
+        let c1 = Biff8Comment::new(1, 2, "t", "a").with_visible(true);
+        let c2 = c1.clone();
+        assert_eq!(c1, c2);
+    }
+
+    /// 验证 Debug 输出不 panic。
+    #[test]
+    fn debug_does_not_panic() {
+        let c = Biff8Comment::new(0, 0, "t", "a");
+        let _ = format!("{c:?}");
+    }
+}

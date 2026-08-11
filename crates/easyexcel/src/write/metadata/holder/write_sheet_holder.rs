@@ -317,10 +317,11 @@ mod tests {
     #[test]
     fn write_sheet_holder_advance_row() {
         let mut holder = WriteSheetHolder::new("S", 0);
-        assert_eq!(holder.advance_row(), 1);
+        // CommonEmpty 初始状态返回 0（第一个可写行），第二次返回 1
+        assert_eq!(holder.advance_row(), 0);
         assert!(holder.has_data());
-        assert_eq!(holder.last_row_index(), 1);
-        assert_eq!(holder.advance_row(), 2);
+        assert_eq!(holder.last_row_index(), 0);
+        assert_eq!(holder.advance_row(), 1);
     }
 
     #[test]
@@ -342,5 +343,147 @@ mod tests_extra {
         holder.set_excel_write_head_property(ExcelWriteHeadProperty::new());
         holder.advance_row();
         assert!(holder.has_data());
+    }
+
+    #[test]
+    fn java_getter_aliases_match_primary_getters() {
+        let mut holder = WriteSheetHolder::new("Sheet1", 0);
+
+        assert_eq!(holder.get_sheet_name(), holder.sheet_name());
+        assert_eq!(holder.get_sheet_no(), holder.sheet_no());
+        assert_eq!(holder.get_last_row_index(), holder.last_row_index());
+        assert_eq!(holder.get_has_data(), holder.has_data());
+        assert_eq!(holder.holder_type(), HolderEnum::Sheet);
+    }
+
+    #[test]
+    fn sheet_name_setter() {
+        let mut holder = WriteSheetHolder::new("Sheet1", 0);
+        holder.set_sheet_name("Renamed");
+        assert_eq!(holder.get_sheet_name(), "Renamed");
+        assert_eq!(holder.sheet_name(), "Renamed");
+    }
+
+    #[test]
+    fn sheet_no_setter() {
+        let mut holder = WriteSheetHolder::new("Sheet1", 0);
+        holder.set_sheet_no(5);
+        assert_eq!(holder.get_sheet_no(), 5);
+    }
+
+    #[test]
+    fn last_row_index_and_has_data_setters() {
+        let mut holder = WriteSheetHolder::new("Sheet1", 0);
+        holder.set_last_row_index(10);
+        assert_eq!(holder.get_last_row_index(), 10);
+        holder.set_has_data(true);
+        assert!(holder.get_has_data());
+    }
+
+    #[test]
+    fn tables_setter_and_getter() {
+        let mut holder = WriteSheetHolder::new("Sheet1", 0);
+        assert!(holder.get_has_been_initialized_table().is_empty());
+        assert!(holder.tables().is_empty());
+        assert!(holder.tables_mut().is_empty());
+    }
+
+    #[test]
+    fn write_last_row_type_enum_setter_and_getter() {
+        let mut holder = WriteSheetHolder::new("Sheet1", 0);
+        assert_eq!(
+            holder.get_write_last_row_type_enum(),
+            WriteLastRowTypeEnum::CommonEmpty
+        );
+        holder.set_write_last_row_type_enum(WriteLastRowTypeEnum::TemplateEmpty);
+        assert_eq!(
+            holder.get_write_last_row_type_enum(),
+            WriteLastRowTypeEnum::TemplateEmpty
+        );
+    }
+
+    #[test]
+    fn parent_write_workbook_holder_setter_and_getter() {
+        let mut holder = WriteSheetHolder::new("Sheet1", 0);
+        assert!(holder.get_parent_write_workbook_holder_id().is_none());
+        assert!(holder.get_parent_write_workbook_holder().is_none());
+        holder.set_parent_write_workbook_holder_id(Some(42));
+        assert_eq!(holder.get_parent_write_workbook_holder_id(), Some(42));
+        assert_eq!(holder.get_parent_write_workbook_holder(), Some(42));
+        holder.set_parent_write_workbook_holder(None);
+        assert!(holder.get_parent_write_workbook_holder().is_none());
+    }
+
+    #[test]
+    fn default_construction_creates_empty_holder() {
+        let holder = WriteSheetHolder::default_construction();
+        assert_eq!(holder.sheet_no(), 0);
+        assert!(!holder.has_data());
+    }
+
+    #[test]
+    fn write_sheet_setter_and_getter() {
+        let mut holder = WriteSheetHolder::new("Sheet1", 0);
+        let sheet = WriteSheet::with_sheet(1, "NewSheet");
+        holder.set_write_sheet(sheet);
+        assert_eq!(holder.sheet_name(), "NewSheet");
+        assert_eq!(holder.sheet_no(), 1);
+    }
+
+    #[test]
+    fn sheet_alias() {
+        let mut holder = WriteSheetHolder::new("Sheet1", 0);
+        assert_eq!(holder.get_sheet().sheet_name, "Sheet1");
+        let sheet = WriteSheet::with_sheet(2, "Alias");
+        holder.set_sheet(sheet);
+        assert_eq!(holder.sheet_name(), "Alias");
+    }
+
+    #[test]
+    fn cached_sheet_setter_and_getter() {
+        let mut holder = WriteSheetHolder::new("Sheet1", 0);
+        let (last_row, has_row_zero) = holder.get_cached_sheet();
+        assert_eq!(last_row, 0);
+        assert!(!has_row_zero);
+        holder.set_cached_sheet(5, true);
+        let (last_row, has_row_zero) = holder.get_cached_sheet();
+        assert_eq!(last_row, 5);
+        assert!(has_row_zero);
+    }
+
+    #[test]
+    fn backend_row_state_setter() {
+        let mut holder = WriteSheetHolder::new("Sheet1", 0);
+        holder.set_backend_row_state(10, 8, true);
+        // 没有直接 getter，但通过 advance_row 验证行为
+    }
+
+    #[test]
+    fn get_new_row_index_template_empty_with_row_zero() {
+        let mut holder = WriteSheetHolder::new("Sheet1", 0);
+        holder.set_write_last_row_type_enum(WriteLastRowTypeEnum::TemplateEmpty);
+        holder.set_backend_row_state(5, 3, true);
+        let row = holder.get_new_row_index_and_start_do_write();
+        assert_eq!(row, 6); // max(5,3) + 1
+        assert!(holder.has_data());
+        assert_eq!(holder.last_row_index(), 6);
+    }
+
+    #[test]
+    fn get_new_row_index_template_empty_without_row_zero() {
+        let mut holder = WriteSheetHolder::new("Sheet1", 0);
+        holder.set_write_last_row_type_enum(WriteLastRowTypeEnum::TemplateEmpty);
+        holder.set_backend_row_state(0, 0, false);
+        let row = holder.get_new_row_index_and_start_do_write();
+        assert_eq!(row, 0); // 从 0 开始
+    }
+
+    #[test]
+    fn get_new_row_index_has_data() {
+        let mut holder = WriteSheetHolder::new("Sheet1", 0);
+        holder.set_write_last_row_type_enum(WriteLastRowTypeEnum::HasData);
+        holder.set_backend_row_state(5, 3, false);
+        let row = holder.get_new_row_index_and_start_do_write();
+        assert_eq!(row, 6); // max(5,3) + 1
     }
 }

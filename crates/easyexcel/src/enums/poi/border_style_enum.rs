@@ -82,3 +82,113 @@ impl std::str::FromStr for BorderStyleEnum {
             .ok_or_else(|| format!("unknown BorderStyleEnum value: {value}"))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn all_contains_fifteen_variants() {
+        assert_eq!(BorderStyleEnum::ALL.len(), 15);
+    }
+
+    #[test]
+    fn default_is_default_variant() {
+        assert_eq!(BorderStyleEnum::default(), BorderStyleEnum::Default);
+    }
+
+    #[test]
+    fn java_name_covers_all_variants() {
+        let expected = [
+            "DEFAULT", "NONE", "THIN", "MEDIUM", "DASHED", "DOTTED",
+            "THICK", "DOUBLE", "HAIR", "MEDIUM_DASHED", "DASH_DOT",
+            "MEDIUM_DASH_DOT", "DASH_DOT_DOT", "MEDIUM_DASH_DOT_DOT",
+            "SLANTED_DASH_DOT",
+        ];
+        for (variant, name) in BorderStyleEnum::ALL.iter().zip(expected.iter()) {
+            assert_eq!(variant.java_name(), *name);
+        }
+    }
+
+    #[test]
+    fn default_returns_none_for_poi_border_style() {
+        assert_eq!(BorderStyleEnum::Default.poi_border_style(), None);
+    }
+
+    #[test]
+    fn non_default_returns_some() {
+        assert!(BorderStyleEnum::Thin.poi_border_style().is_some());
+        assert!(BorderStyleEnum::Double.poi_border_style().is_some());
+        assert!(BorderStyleEnum::SlantedDashDot.poi_border_style().is_some());
+    }
+
+    #[test]
+    fn get_poi_border_style_matches_poi_border_style() {
+        for variant in BorderStyleEnum::ALL {
+            assert_eq!(variant.get_poi_border_style(), variant.poi_border_style());
+        }
+    }
+
+    #[test]
+    fn thin_maps_to_thin() {
+        assert_eq!(BorderStyleEnum::Thin.poi_border_style(), Some(crate::ExcelBorderStyle::Thin));
+    }
+
+    #[test]
+    fn medium_maps_to_medium() {
+        assert_eq!(BorderStyleEnum::Medium.poi_border_style(), Some(crate::ExcelBorderStyle::Medium));
+    }
+
+    #[test]
+    fn double_maps_to_double() {
+        assert_eq!(BorderStyleEnum::Double.poi_border_style(), Some(crate::ExcelBorderStyle::Double));
+    }
+
+    #[test]
+    fn none_maps_to_none() {
+        assert_eq!(BorderStyleEnum::None.poi_border_style(), Some(crate::ExcelBorderStyle::None));
+    }
+
+    #[test]
+    fn slanted_dash_dot_maps_to_slant_dash_dot() {
+        assert_eq!(
+            BorderStyleEnum::SlantedDashDot.poi_border_style(),
+            Some(crate::ExcelBorderStyle::SlantDashDot)
+        );
+    }
+
+    #[test]
+    fn from_str_parses_all_variants() {
+        for variant in BorderStyleEnum::ALL {
+            let name = variant.java_name();
+            let parsed: BorderStyleEnum = name.parse().unwrap();
+            assert_eq!(parsed, variant);
+        }
+    }
+
+    #[test]
+    fn from_str_rejects_unknown() {
+        assert!("UNKNOWN".parse::<BorderStyleEnum>().is_err());
+    }
+
+    #[test]
+    fn from_str_error_contains_input() {
+        let err = "BOGUS".parse::<BorderStyleEnum>().unwrap_err();
+        assert!(err.contains("BOGUS"), "error should contain input: {err}");
+    }
+
+    #[test]
+    fn clone_copy_eq() {
+        let a = BorderStyleEnum::DashDot;
+        let b = a;
+        let c = a.clone();
+        assert_eq!(a, b);
+        assert_eq!(a, c);
+    }
+
+    #[test]
+    fn debug_contains_variant_name() {
+        let text = format!("{:?}", BorderStyleEnum::MediumDashDotDot);
+        assert!(text.contains("MediumDashDotDot"));
+    }
+}

@@ -114,7 +114,8 @@ fn add_months(date: NaiveDate, months: i32) -> NaiveDate {
 
 fn end_of_month(date: NaiveDate) -> NaiveDate {
     let dim = days_in_month(date.year(), date.month());
-    NaiveDate::from_ymd_opt(date.year(), date.month(), dim).unwrap()
+    // 修复: 日期超出范围时 unwrap 会 panic；回退原日期
+    NaiveDate::from_ymd_opt(date.year(), date.month(), dim).unwrap_or(date)
 }
 
 /// Parse an INTL weekend string or integer. Returns an array of 7 bools (Mon..Sun) true = holiday.
@@ -463,7 +464,8 @@ fn weeknum_fn(ctx: &mut dyn Context, args: &[Value]) -> Value {
         _ => return Value::Error(CellError::Num),
     };
 
-    let jan1 = NaiveDate::from_ymd_opt(date.year(), 1, 1).unwrap();
+    // 修复: 日期超出范围时 unwrap 会 panic；回退原日期
+    let jan1 = NaiveDate::from_ymd_opt(date.year(), 1, 1).unwrap_or(date);
     let jan1_dow = jan1.weekday().num_days_from_sunday(); // Sun=0
     let day_of_year = date.ordinal() as i32 - 1; // 0-based
     // days from start of first week
@@ -614,7 +616,8 @@ fn datedif_fn(ctx: &mut dyn Context, args: &[Value]) -> Value {
                         start.month(),
                         days_in_month(end.year(), start.month()),
                     )
-                    .unwrap(),
+                    // 修复: 日期超出范围时内层 unwrap 会 panic；回退原日期
+                    .unwrap_or(start),
                 )
             } else {
                 NaiveDate::from_ymd_opt(end.year() - 1, start.month(), start.day()).unwrap_or(
@@ -623,7 +626,8 @@ fn datedif_fn(ctx: &mut dyn Context, args: &[Value]) -> Value {
                         start.month(),
                         days_in_month(end.year() - 1, start.month()),
                     )
-                    .unwrap(),
+                    // 修复: 日期超出范围时内层 unwrap 会 panic；回退原日期
+                    .unwrap_or(start),
                 )
             };
             (end - start_same_year).num_days() as f64

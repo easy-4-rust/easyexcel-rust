@@ -1,0 +1,1778 @@
+{
+	"authority": "com.alibaba:easyexcel:4.0.3",
+	"converter_interface": "com.alibaba.excel.converters.Converter",
+	"nullable_object_converter_interface": "com.alibaba.excel.converters.NullableObjectConverter",
+	"total_converter_classes": 47,
+	"total_interfaces": 1,
+	"excel_type_distribution": {
+		"UNKNOWN": 10,
+		"BOOLEAN": 10,
+		"NUMBER": 13,
+		"STRING": 13,
+		"ERROR": 1
+	},
+	"converters": [
+		{
+			"class_name": "AutoConverter",
+			"package": "com.alibaba.excel.converters",
+			"implements": "Converter",
+			"type_parameter": "Object",
+			"support_java_type_key": "",
+			"support_excel_type_key": ""
+		},
+		{
+			"class_name": "BigDecimalBooleanConverter",
+			"package": "com.alibaba.excel.converters.bigdecimal",
+			"implements": "Converter",
+			"type_parameter": "BigDecimal",
+			"support_java_type_key": "java.math.BigDecimal",
+			"support_excel_type_key": "BOOLEAN",
+			"convert_to_java_data": {
+				"return_type": "BigDecimal",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "BigDecimal",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "BigDecimalNumberConverter",
+			"package": "com.alibaba.excel.converters.bigdecimal",
+			"implements": "Converter",
+			"type_parameter": "BigDecimal",
+			"support_java_type_key": "java.math.BigDecimal",
+			"support_excel_type_key": "NUMBER",
+			"convert_to_java_data": {
+				"return_type": "BigDecimal",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "BigDecimal",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "BigDecimalStringConverter",
+			"package": "com.alibaba.excel.converters.bigdecimal",
+			"implements": "Converter",
+			"type_parameter": "BigDecimal",
+			"support_java_type_key": "java.math.BigDecimal",
+			"support_excel_type_key": "STRING",
+			"convert_to_java_data": {
+				"return_type": "BigDecimal",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "BigDecimal",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "BigIntegerBooleanConverter",
+			"package": "com.alibaba.excel.converters.biginteger",
+			"implements": "Converter",
+			"type_parameter": "BigInteger",
+			"support_java_type_key": "java.math.BigInteger",
+			"support_excel_type_key": "BOOLEAN",
+			"convert_to_java_data": {
+				"return_type": "BigInteger",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "BigInteger",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "BigIntegerNumberConverter",
+			"package": "com.alibaba.excel.converters.biginteger",
+			"implements": "Converter",
+			"type_parameter": "BigInteger",
+			"support_java_type_key": "java.math.BigInteger",
+			"support_excel_type_key": "NUMBER",
+			"convert_to_java_data": {
+				"return_type": "BigInteger",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "BigInteger",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "BigIntegerStringConverter",
+			"package": "com.alibaba.excel.converters.biginteger",
+			"implements": "Converter",
+			"type_parameter": "BigInteger",
+			"support_java_type_key": "java.math.BigInteger",
+			"support_excel_type_key": "STRING",
+			"convert_to_java_data": {
+				"return_type": "BigInteger",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "BigInteger",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "BooleanBooleanConverter",
+			"package": "com.alibaba.excel.converters.booleanconverter",
+			"implements": "Converter",
+			"type_parameter": "Boolean",
+			"support_java_type_key": "Boolean",
+			"support_excel_type_key": "BOOLEAN",
+			"convert_to_java_data": {
+				"return_type": "Boolean",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Boolean",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "BooleanNumberConverter",
+			"package": "com.alibaba.excel.converters.booleanconverter",
+			"implements": "Converter",
+			"type_parameter": "Boolean",
+			"support_java_type_key": "Boolean",
+			"support_excel_type_key": "NUMBER",
+			"convert_to_java_data": {
+				"return_type": "Boolean",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Boolean",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "BooleanStringConverter",
+			"package": "com.alibaba.excel.converters.booleanconverter",
+			"implements": "Converter",
+			"type_parameter": "Boolean",
+			"support_java_type_key": "Boolean",
+			"support_excel_type_key": "STRING",
+			"convert_to_java_data": {
+				"return_type": "Boolean",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Boolean",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "BoxingByteArrayImageConverter",
+			"package": "com.alibaba.excel.converters.bytearray",
+			"implements": "Converter",
+			"type_parameter": "Byte[]",
+			"support_java_type_key": "Byte[]",
+			"support_excel_type_key": "",
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Byte[]",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "ByteArrayImageConverter",
+			"package": "com.alibaba.excel.converters.bytearray",
+			"implements": "Converter",
+			"type_parameter": "byte[]",
+			"support_java_type_key": "byte[]",
+			"support_excel_type_key": "",
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "byte[]",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "ByteBooleanConverter",
+			"package": "com.alibaba.excel.converters.byteconverter",
+			"implements": "Converter",
+			"type_parameter": "Byte",
+			"support_java_type_key": "Byte",
+			"support_excel_type_key": "BOOLEAN",
+			"convert_to_java_data": {
+				"return_type": "Byte",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Byte",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "ByteNumberConverter",
+			"package": "com.alibaba.excel.converters.byteconverter",
+			"implements": "Converter",
+			"type_parameter": "Byte",
+			"support_java_type_key": "Byte",
+			"support_excel_type_key": "NUMBER",
+			"convert_to_java_data": {
+				"return_type": "Byte",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Byte",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "ByteStringConverter",
+			"package": "com.alibaba.excel.converters.byteconverter",
+			"implements": "Converter",
+			"type_parameter": "Byte",
+			"support_java_type_key": "Byte",
+			"support_excel_type_key": "STRING",
+			"convert_to_java_data": {
+				"return_type": "Byte",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Byte",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "DateDateConverter",
+			"package": "com.alibaba.excel.converters.date",
+			"implements": "Converter",
+			"type_parameter": "Date",
+			"support_java_type_key": "java.util.Date",
+			"support_excel_type_key": "",
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Date",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "DateNumberConverter",
+			"package": "com.alibaba.excel.converters.date",
+			"implements": "Converter",
+			"type_parameter": "Date",
+			"support_java_type_key": "java.util.Date",
+			"support_excel_type_key": "NUMBER",
+			"convert_to_java_data": {
+				"return_type": "Date",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Date",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "DateStringConverter",
+			"package": "com.alibaba.excel.converters.date",
+			"implements": "Converter",
+			"type_parameter": "Date",
+			"support_java_type_key": "java.util.Date",
+			"support_excel_type_key": "STRING",
+			"convert_to_java_data": {
+				"return_type": "Date",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Date",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "DoubleBooleanConverter",
+			"package": "com.alibaba.excel.converters.doubleconverter",
+			"implements": "Converter",
+			"type_parameter": "Double",
+			"support_java_type_key": "Double",
+			"support_excel_type_key": "BOOLEAN",
+			"convert_to_java_data": {
+				"return_type": "Double",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Double",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "DoubleNumberConverter",
+			"package": "com.alibaba.excel.converters.doubleconverter",
+			"implements": "Converter",
+			"type_parameter": "Double",
+			"support_java_type_key": "Double",
+			"support_excel_type_key": "NUMBER",
+			"convert_to_java_data": {
+				"return_type": "Double",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Double",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "DoubleStringConverter",
+			"package": "com.alibaba.excel.converters.doubleconverter",
+			"implements": "Converter",
+			"type_parameter": "Double",
+			"support_java_type_key": "Double",
+			"support_excel_type_key": "STRING",
+			"convert_to_java_data": {
+				"return_type": "Double",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Double",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "FileImageConverter",
+			"package": "com.alibaba.excel.converters.file",
+			"implements": "Converter",
+			"type_parameter": "File",
+			"support_java_type_key": "java.io.File",
+			"support_excel_type_key": "",
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "File",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "FloatBooleanConverter",
+			"package": "com.alibaba.excel.converters.floatconverter",
+			"implements": "Converter",
+			"type_parameter": "Float",
+			"support_java_type_key": "Float",
+			"support_excel_type_key": "BOOLEAN",
+			"convert_to_java_data": {
+				"return_type": "Float",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Float",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "FloatNumberConverter",
+			"package": "com.alibaba.excel.converters.floatconverter",
+			"implements": "Converter",
+			"type_parameter": "Float",
+			"support_java_type_key": "Float",
+			"support_excel_type_key": "NUMBER",
+			"convert_to_java_data": {
+				"return_type": "Float",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "WriteConverterContext<Float>",
+						"name": "context"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "FloatStringConverter",
+			"package": "com.alibaba.excel.converters.floatconverter",
+			"implements": "Converter",
+			"type_parameter": "Float",
+			"support_java_type_key": "Float",
+			"support_excel_type_key": "STRING",
+			"convert_to_java_data": {
+				"return_type": "Float",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Float",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "InputStreamImageConverter",
+			"package": "com.alibaba.excel.converters.inputstream",
+			"implements": "Converter",
+			"type_parameter": "InputStream",
+			"support_java_type_key": "java.io.InputStream",
+			"support_excel_type_key": "",
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "InputStream",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "IntegerBooleanConverter",
+			"package": "com.alibaba.excel.converters.integer",
+			"implements": "Converter",
+			"type_parameter": "Integer",
+			"support_java_type_key": "Integer",
+			"support_excel_type_key": "BOOLEAN",
+			"convert_to_java_data": {
+				"return_type": "Integer",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Integer",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "IntegerNumberConverter",
+			"package": "com.alibaba.excel.converters.integer",
+			"implements": "Converter",
+			"type_parameter": "Integer",
+			"support_java_type_key": "Integer",
+			"support_excel_type_key": "NUMBER",
+			"convert_to_java_data": {
+				"return_type": "Integer",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "WriteConverterContext<Integer>",
+						"name": "context"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "IntegerStringConverter",
+			"package": "com.alibaba.excel.converters.integer",
+			"implements": "Converter",
+			"type_parameter": "Integer",
+			"support_java_type_key": "Integer",
+			"support_excel_type_key": "STRING",
+			"convert_to_java_data": {
+				"return_type": "Integer",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Integer",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "LocalDateDateConverter",
+			"package": "com.alibaba.excel.converters.localdate",
+			"implements": "Converter",
+			"type_parameter": "LocalDate",
+			"support_java_type_key": "java.time.LocalDate",
+			"support_excel_type_key": "",
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "LocalDate",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "LocalDateNumberConverter",
+			"package": "com.alibaba.excel.converters.localdate",
+			"implements": "Converter",
+			"type_parameter": "LocalDate",
+			"support_java_type_key": "java.time.LocalDate",
+			"support_excel_type_key": "NUMBER",
+			"convert_to_java_data": {
+				"return_type": "LocalDate",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "LocalDate",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "LocalDateStringConverter",
+			"package": "com.alibaba.excel.converters.localdate",
+			"implements": "Converter",
+			"type_parameter": "LocalDate",
+			"support_java_type_key": "java.time.LocalDate",
+			"support_excel_type_key": "STRING",
+			"convert_to_java_data": {
+				"return_type": "LocalDate",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "LocalDate",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "LocalDateTimeDateConverter",
+			"package": "com.alibaba.excel.converters.localdatetime",
+			"implements": "Converter",
+			"type_parameter": "LocalDateTime",
+			"support_java_type_key": "java.time.LocalDateTime",
+			"support_excel_type_key": "",
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "LocalDateTime",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "LocalDateTimeNumberConverter",
+			"package": "com.alibaba.excel.converters.localdatetime",
+			"implements": "Converter",
+			"type_parameter": "LocalDateTime",
+			"support_java_type_key": "java.time.LocalDateTime",
+			"support_excel_type_key": "NUMBER",
+			"convert_to_java_data": {
+				"return_type": "LocalDateTime",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "LocalDateTime",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "LocalDateTimeStringConverter",
+			"package": "com.alibaba.excel.converters.localdatetime",
+			"implements": "Converter",
+			"type_parameter": "LocalDateTime",
+			"support_java_type_key": "java.time.LocalDateTime",
+			"support_excel_type_key": "STRING",
+			"convert_to_java_data": {
+				"return_type": "LocalDateTime",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "LocalDateTime",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "LongBooleanConverter",
+			"package": "com.alibaba.excel.converters.longconverter",
+			"implements": "Converter",
+			"type_parameter": "Long",
+			"support_java_type_key": "Long",
+			"support_excel_type_key": "BOOLEAN",
+			"convert_to_java_data": {
+				"return_type": "Long",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Long",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "LongNumberConverter",
+			"package": "com.alibaba.excel.converters.longconverter",
+			"implements": "Converter",
+			"type_parameter": "Long",
+			"support_java_type_key": "Long",
+			"support_excel_type_key": "NUMBER",
+			"convert_to_java_data": {
+				"return_type": "Long",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "WriteConverterContext<Long>",
+						"name": "context"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "LongStringConverter",
+			"package": "com.alibaba.excel.converters.longconverter",
+			"implements": "Converter",
+			"type_parameter": "Long",
+			"support_java_type_key": "Long",
+			"support_excel_type_key": "STRING",
+			"convert_to_java_data": {
+				"return_type": "Long",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Long",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "ShortBooleanConverter",
+			"package": "com.alibaba.excel.converters.shortconverter",
+			"implements": "Converter",
+			"type_parameter": "Short",
+			"support_java_type_key": "Short",
+			"support_excel_type_key": "BOOLEAN",
+			"convert_to_java_data": {
+				"return_type": "Short",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Short",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "ShortNumberConverter",
+			"package": "com.alibaba.excel.converters.shortconverter",
+			"implements": "Converter",
+			"type_parameter": "Short",
+			"support_java_type_key": "Short",
+			"support_excel_type_key": "NUMBER",
+			"convert_to_java_data": {
+				"return_type": "Short",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "WriteConverterContext<Short>",
+						"name": "context"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "ShortStringConverter",
+			"package": "com.alibaba.excel.converters.shortconverter",
+			"implements": "Converter",
+			"type_parameter": "Short",
+			"support_java_type_key": "Short",
+			"support_excel_type_key": "STRING",
+			"convert_to_java_data": {
+				"return_type": "Short",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "Short",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "StringBooleanConverter",
+			"package": "com.alibaba.excel.converters.string",
+			"implements": "Converter",
+			"type_parameter": "String",
+			"support_java_type_key": "String",
+			"support_excel_type_key": "BOOLEAN",
+			"convert_to_java_data": {
+				"return_type": "String",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "String",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "StringErrorConverter",
+			"package": "com.alibaba.excel.converters.string",
+			"implements": "Converter",
+			"type_parameter": "String",
+			"support_java_type_key": "String",
+			"support_excel_type_key": "ERROR",
+			"convert_to_java_data": {
+				"return_type": "String",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "String",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "StringImageConverter",
+			"package": "com.alibaba.excel.converters.string",
+			"implements": "Converter",
+			"type_parameter": "String",
+			"support_java_type_key": "String",
+			"support_excel_type_key": "",
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "String",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "StringNumberConverter",
+			"package": "com.alibaba.excel.converters.string",
+			"implements": "Converter",
+			"type_parameter": "String",
+			"support_java_type_key": "String",
+			"support_excel_type_key": "NUMBER",
+			"convert_to_java_data": {
+				"return_type": "String",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "String",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "StringStringConverter",
+			"package": "com.alibaba.excel.converters.string",
+			"implements": "Converter",
+			"type_parameter": "String",
+			"support_java_type_key": "String",
+			"support_excel_type_key": "STRING",
+			"convert_to_java_data": {
+				"return_type": "String",
+				"parameters": [
+					{
+						"type": "ReadCellData<?>",
+						"name": "cellData"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			},
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "String",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "UrlImageConverter",
+			"package": "com.alibaba.excel.converters.url",
+			"implements": "Converter",
+			"type_parameter": "URL",
+			"support_java_type_key": "java.net.URL",
+			"support_excel_type_key": "",
+			"convert_to_excel_data": {
+				"return_type": "WriteCellData<?>",
+				"parameters": [
+					{
+						"type": "URL",
+						"name": "value"
+					},
+					{
+						"type": "ExcelContentProperty",
+						"name": "contentProperty"
+					},
+					{
+						"type": "GlobalConfiguration",
+						"name": "globalConfiguration"
+					}
+				]
+			}
+		},
+		{
+			"class_name": "NullableObjectConverter",
+			"package": "com.alibaba.excel.converters",
+			"kind": "interface",
+			"extends": "Converter",
+			"type_parameter": "T"
+		}
+	]
+}

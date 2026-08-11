@@ -284,6 +284,52 @@ mod tests_extra {
     use super::*;
 
     #[test]
+    fn temporary_input_from_reader_creates_temp_file() {
+        let data = b"hello world content";
+        let input = TemporaryInput::from_reader(&data[..], ".xlsx").expect("create temp input");
+        assert!(input.path().exists());
+        let content = std::fs::read(input.path()).expect("read temp");
+        assert_eq!(content, data);
+    }
+
+    #[test]
+    fn temporary_input_from_bytes_creates_temp_file() {
+        let data = b"test bytes";
+        let input = TemporaryInput::from_bytes(data, ".xls").expect("create temp input");
+        assert!(input.path().exists());
+        let content = std::fs::read(input.path()).expect("read temp");
+        assert_eq!(content, data);
+    }
+
+    #[test]
+    fn read_file_returns_contents() {
+        let directory = tempfile::tempdir().expect("temp root");
+        let path = directory.path().join("data.bin");
+        std::fs::write(&path, b"binary data").expect("write");
+        let contents = read_file(&path).expect("read");
+        assert_eq!(contents, b"binary data");
+    }
+
+    #[test]
+    fn read_file_errors_on_missing_path() {
+        let directory = tempfile::tempdir().expect("temp root");
+        let path = directory.path().join("missing.bin");
+        assert!(read_file(&path).is_err());
+    }
+
+    #[test]
+    fn create_temp_file_returns_named_temp_file() {
+        let file = create_temp_file().expect("create temp file");
+        assert!(file.path().exists());
+    }
+
+    #[test]
+    fn create_temp_directory_returns_path() {
+        let (_dir, path) = create_temp_directory().expect("create temp dir");
+        assert!(path.is_dir());
+    }
+
+    #[test]
     fn open_input_stream_opens_existing_file() {
         // 对应 Java：FileUtils.openInputStream
         let directory = tempfile::tempdir().expect("temp root");

@@ -177,4 +177,273 @@ mod tests {
         assert_eq!(compare(&Value::Number(9.0), &Value::Text("a".into())), Less);
         assert_eq!(compare(&Value::Text("z".into()), &Value::Bool(false)), Less);
     }
+
+    // ── to_number 扩展测试 ──────────────────────────────────────────────
+
+    #[test]
+    fn to_number_error_propagates() {
+        assert_eq!(
+            to_number(&Value::Error(CellError::NA)),
+            Err(CellError::NA)
+        );
+        assert_eq!(
+            to_number(&Value::Error(CellError::Ref)),
+            Err(CellError::Ref)
+        );
+    }
+
+    #[test]
+    fn to_number_ref_and_lambda_errors() {
+        // Ref 和 Lambda 应返回 Value 错误
+        use crate::formula::value::RefRange;
+        assert_eq!(
+            to_number(&Value::Ref(RefRange {
+                sheet: 0,
+                start_row: 0,
+                start_col: 0,
+                end_row: 1,
+                end_col: 1
+            })),
+            Err(CellError::Value)
+        );
+    }
+
+    #[test]
+    fn to_number_array_first_element() {
+        use crate::formula::value::Array;
+        // 空数组 → Value 错误
+        assert_eq!(
+            to_number(&Value::Array(Array::new(0, 0, vec![]))),
+            Err(CellError::Value)
+        );
+        // 非空数组取第一个元素
+        assert_eq!(
+            to_number(&Value::Array(Array::new(
+                1,
+                2,
+                vec![Value::Number(7.0), Value::Number(8.0)]
+            ))),
+            Ok(7.0)
+        );
+    }
+
+    // ── to_text 测试 ────────────────────────────────────────────────────
+
+    #[test]
+    fn to_text_numbers_and_bools() {
+        assert_eq!(to_text(&Value::Text("hi".into())), Ok("hi".into()));
+        assert_eq!(to_text(&Value::Bool(true)), Ok("TRUE".into()));
+        assert_eq!(to_text(&Value::Bool(false)), Ok("FALSE".into()));
+        assert_eq!(to_text(&Value::Empty), Ok(String::new()));
+    }
+
+    #[test]
+    fn to_text_error_propagates() {
+        assert_eq!(to_text(&Value::Error(CellError::NA)), Err(CellError::NA));
+    }
+
+    #[test]
+    fn to_text_array_first_element() {
+        use crate::formula::value::Array;
+        assert_eq!(
+            to_text(&Value::Array(Array::new(
+                1,
+                1,
+                vec![Value::Text("hello".into())]
+            ))),
+            Ok("hello".into())
+        );
+        assert_eq!(
+            to_text(&Value::Array(Array::new(0, 0, vec![]))),
+            Ok(String::new())
+        );
+    }
+
+    #[test]
+    fn to_text_ref_errors() {
+        use crate::formula::value::RefRange;
+        assert_eq!(
+            to_text(&Value::Ref(RefRange {
+                sheet: 0,
+                start_row: 0,
+                start_col: 0,
+                end_row: 0,
+                end_col: 0
+            })),
+            Err(CellError::Value)
+        );
+    }
+
+    // ── to_bool 测试 ────────────────────────────────────────────────────
+
+    #[test]
+    fn to_bool_numbers() {
+        assert_eq!(to_bool(&Value::Number(0.0)), Ok(false));
+        assert_eq!(to_bool(&Value::Number(1.0)), Ok(true));
+        assert_eq!(to_bool(&Value::Number(-1.0)), Ok(true));
+        assert_eq!(to_bool(&Value::Number(0.001)), Ok(true));
+    }
+
+    #[test]
+    fn to_bool_text_true_false() {
+        assert_eq!(to_bool(&Value::Text("TRUE".into())), Ok(true));
+        assert_eq!(to_bool(&Value::Text("true".into())), Ok(true));
+        assert_eq!(to_bool(&Value::Text("FALSE".into())), Ok(false));
+        assert_eq!(to_bool(&Value::Text("false".into())), Ok(false));
+    }
+
+    #[test]
+    fn to_bool_text_numeric() {
+        assert_eq!(to_bool(&Value::Text("1".into())), Ok(true));
+        assert_eq!(to_bool(&Value::Text("0".into())), Ok(false));
+        assert_eq!(to_bool(&Value::Text("42".into())), Ok(true));
+    }
+
+    #[test]
+    fn to_bool_text_non_boolean() {
+        assert_eq!(to_bool(&Value::Text("hello".into())), Err(CellError::Value));
+    }
+
+    #[test]
+    fn to_bool_empty() {
+        assert_eq!(to_bool(&Value::Empty), Ok(false));
+    }
+
+    #[test]
+    fn to_bool_error_propagates() {
+        assert_eq!(to_bool(&Value::Error(CellError::Num)), Err(CellError::Num));
+    }
+
+    #[test]
+    fn to_bool_array_first_element() {
+        use crate::formula::value::Array;
+        assert_eq!(
+            to_bool(&Value::Array(Array::new(1, 1, vec![Value::Bool(true)]))),
+            Ok(true)
+        );
+        assert_eq!(
+            to_bool(&Value::Array(Array::new(0, 0, vec![]))),
+            Err(CellError::Value)
+        );
+    }
+
+    #[test]
+    fn to_bool_ref_and_lambda_errors() {
+        use crate::formula::value::RefRange;
+        assert_eq!(
+            to_bool(&Value::Ref(RefRange {
+                sheet: 0,
+                start_row: 0,
+                start_col: 0,
+                end_row: 0,
+                end_col: 0
+            })),
+            Err(CellError::Value)
+        );
+    }
+
+    // ── parse_number_text 扩展测试 ──────────────────────────────────────
+
+    #[test]
+    fn parse_number_text_percentages() {
+        assert_eq!(parse_number_text("50%"), Some(0.5));
+        assert_eq!(parse_number_text("100%"), Some(1.0));
+        assert_eq!(parse_number_text("0.5%"), Some(0.005));
+        assert_eq!(parse_number_text("  50%  "), Some(0.5));
+    }
+
+    #[test]
+    fn parse_number_text_scientific() {
+        assert_eq!(parse_number_text("1e6"), Some(1_000_000.0));
+        assert_eq!(parse_number_text("1.5E3"), Some(1500.0));
+        assert_eq!(parse_number_text("-2.5e2"), Some(-250.0));
+    }
+
+    #[test]
+    fn parse_number_text_comma_separated() {
+        assert_eq!(parse_number_text("1,234"), Some(1234.0));
+        assert_eq!(parse_number_text("1,000,000"), Some(1_000_000.0));
+    }
+
+    #[test]
+    fn parse_number_text_whitespace() {
+        assert_eq!(parse_number_text("  42  "), Some(42.0));
+        assert_eq!(parse_number_text("  +3.5  "), Some(3.5));
+    }
+
+    #[test]
+    fn parse_number_text_non_numeric() {
+        assert_eq!(parse_number_text("hello"), None);
+        assert_eq!(parse_number_text(""), None);
+        assert_eq!(parse_number_text("   "), None);
+    }
+
+    // ── compare 扩展测试 ────────────────────────────────────────────────
+
+    #[test]
+    fn compare_equal_numbers() {
+        assert_eq!(
+            compare(&Value::Number(5.0), &Value::Number(5.0)),
+            std::cmp::Ordering::Equal
+        );
+    }
+
+    #[test]
+    fn compare_booleans() {
+        use std::cmp::Ordering::*;
+        assert_eq!(compare(&Value::Bool(false), &Value::Bool(true)), Less);
+        assert_eq!(compare(&Value::Bool(true), &Value::Bool(true)), Equal);
+        assert_eq!(compare(&Value::Bool(true), &Value::Bool(false)), Greater);
+    }
+
+    #[test]
+    fn compare_empty_as_number() {
+        assert_eq!(
+            compare(&Value::Empty, &Value::Number(0.0)),
+            std::cmp::Ordering::Equal
+        );
+    }
+
+    #[test]
+    fn compare_empty_as_text() {
+        assert_eq!(
+            compare(&Value::Empty, &Value::Text("".into())),
+            std::cmp::Ordering::Equal
+        );
+    }
+
+    #[test]
+    fn compare_empty_as_bool() {
+        assert_eq!(
+            compare(&Value::Empty, &Value::Bool(false)),
+            std::cmp::Ordering::Equal
+        );
+    }
+
+    #[test]
+    fn compare_error_vs_anything() {
+        // Error 类型 rank=3，高于 Bool(rank=2)
+        use std::cmp::Ordering::*;
+        assert_eq!(
+            compare(&Value::Bool(true), &Value::Error(CellError::NA)),
+            Less
+        );
+    }
+
+    #[test]
+    fn compare_nan_no_panic() {
+        // Agent 68 回归：NaN 比较不应 panic
+        let ord = compare(&Value::Number(f64::NAN), &Value::Number(1.0));
+        assert_eq!(ord, std::cmp::Ordering::Equal); // partial_cmp(NaN, _) → None → Equal
+    }
+
+    // ── equal 测试 ──────────────────────────────────────────────────────
+
+    #[test]
+    fn equal_basic() {
+        assert!(equal(&Value::Number(5.0), &Value::Number(5.0)));
+        assert!(!equal(&Value::Number(5.0), &Value::Number(6.0)));
+        assert!(equal(&Value::Text("abc".into()), &Value::Text("ABC".into())));
+        assert!(!equal(&Value::Number(1.0), &Value::Text("1".into())));
+    }
 }

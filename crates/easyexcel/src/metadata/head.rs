@@ -218,4 +218,136 @@ mod tests_extra {
         assert!(!plain.force_name());
         assert_eq!(plain.column_index(), Some(0));
     }
+
+    #[test]
+    fn from_java_fields_all_none() {
+        // 对应 Java：Head 全 None 构造
+        let head = Head::from_java_fields(None, None, None, None, None, None).expect("head");
+        assert!(head.column_index().is_none());
+        assert!(head.get_field().is_none());
+        assert!(head.field_name().is_none());
+        assert!(head.head_name_list().is_empty());
+        assert!(!head.force_index());
+        assert!(!head.force_name());
+    }
+
+    #[test]
+    fn from_java_fields_with_values() {
+        // 对应 Java：Head 全参数构造
+        let head = Head::from_java_fields(
+            Some(5),
+            Some("key".to_owned()),
+            Some("name".to_owned()),
+            Some(vec!["A".to_owned(), "B".to_owned()]),
+            Some(true),
+            Some(false),
+        )
+        .expect("head");
+        assert_eq!(head.column_index(), Some(5));
+        assert_eq!(head.get_field(), Some("key"));
+        assert_eq!(head.field_name(), Some("name"));
+        assert_eq!(head.head_name_list().len(), 2);
+        assert!(head.force_index());
+        assert!(!head.force_name());
+    }
+
+    #[test]
+    fn set_column_index_and_get() {
+        // 对应 Java：setColumnIndex / getColumnIndex
+        let mut head = Head::new(0, None, Vec::new(), false, false).expect("head");
+        head.set_column_index(Some(10));
+        assert_eq!(head.get_column_index(), Some(10));
+    }
+
+    #[test]
+    fn set_field_and_get() {
+        // 对应 Java：setField / getField
+        let mut head = Head::new(0, None, Vec::new(), false, false).expect("head");
+        head.set_field(Some("myKey".to_owned()));
+        assert_eq!(head.get_field(), Some("myKey"));
+    }
+
+    #[test]
+    fn set_field_name_and_get() {
+        // 对应 Java：setFieldName / getFieldName
+        let mut head = Head::new(0, None, Vec::new(), false, false).expect("head");
+        head.set_field_name(Some("myName".to_owned()));
+        assert_eq!(head.get_field_name(), Some("myName"));
+    }
+
+    #[test]
+    fn set_head_name_list_and_get() {
+        // 对应 Java：setHeadNameList / getHeadNameList
+        let mut head = Head::new(0, None, Vec::new(), false, false).expect("head");
+        head.set_head_name_list(vec!["Col1".to_owned(), "Col2".to_owned()]);
+        assert_eq!(head.get_head_name_list().len(), 2);
+    }
+
+    #[test]
+    fn set_force_index_and_get() {
+        // 对应 Java：setForceIndex / getForceIndex
+        let mut head = Head::new(0, None, Vec::new(), false, false).expect("head");
+        head.set_force_index(Some(true));
+        assert_eq!(head.get_force_index(), Some(true));
+    }
+
+    #[test]
+    fn set_force_name_and_get() {
+        // 对应 Java：setForceName / getForceName
+        let mut head = Head::new(0, None, Vec::new(), false, false).expect("head");
+        head.set_force_name(Some(true));
+        assert_eq!(head.get_force_name(), Some(true));
+    }
+
+    #[test]
+    fn column_width_property_getter_setter() {
+        // 对应 Java：columnWidthProperty getter/setter
+        let mut head = Head::new(0, None, Vec::new(), false, false).expect("head");
+        assert!(head.get_column_width_property().is_none());
+        head.set_column_width_property(None);
+        assert!(head.get_column_width_property().is_none());
+    }
+
+    #[test]
+    fn loop_merge_property_getter_setter() {
+        // 对应 Java：loopMergeProperty getter/setter
+        let mut head = Head::new(0, None, Vec::new(), false, false).expect("head");
+        assert!(head.get_loop_merge_property().is_none());
+        head.set_loop_merge_property(None);
+        assert!(head.get_loop_merge_property().is_none());
+    }
+
+    #[test]
+    fn head_style_property_getter_setter() {
+        // 对应 Java：headStyleProperty getter/setter
+        let mut head = Head::new(0, None, Vec::new(), false, false).expect("head");
+        assert!(head.get_head_style_property().is_none());
+        head.set_head_style_property(None);
+        assert!(head.get_head_style_property().is_none());
+    }
+
+    #[test]
+    fn head_font_property_getter_setter() {
+        // 对应 Java：headFontProperty getter/setter
+        let mut head = Head::new(0, None, Vec::new(), false, false).expect("head");
+        assert!(head.get_head_font_property().is_none());
+        head.set_head_font_property(None);
+        assert!(head.get_head_font_property().is_none());
+    }
+
+    #[test]
+    fn clone_produces_equal() {
+        // 对应 Java：clone
+        let head = Head::new(1, Some("f".to_owned()), vec!["N".to_owned()], true, false)
+            .expect("head");
+        let cloned = head.clone();
+        assert_eq!(head, cloned);
+    }
+
+    #[test]
+    fn debug_format_does_not_panic() {
+        // 对应 Java：toString
+        let head = Head::new(0, None, Vec::new(), false, false).expect("head");
+        let _debug = format!("{head:?}");
+    }
 }

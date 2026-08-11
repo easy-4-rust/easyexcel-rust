@@ -8,3 +8,21 @@ pub enum MarkdownProfile {
     /// 面向人类阅读，允许用 HTML 保留合并语义。
     HumanReadable,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_is_agent_stable() {
+        assert_eq!(MarkdownProfile::default(), MarkdownProfile::AgentStable);
+    }
+
+    #[test]
+    fn serialize_roundtrip() {
+        let json = serde_json::to_string(&MarkdownProfile::HumanReadable).unwrap();
+        assert_eq!(json, "\"human-readable\"");
+        let restored: MarkdownProfile = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored, MarkdownProfile::HumanReadable);
+    }
+}

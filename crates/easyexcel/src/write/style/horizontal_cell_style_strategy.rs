@@ -235,7 +235,8 @@ mod tests {
     #[test]
     fn horizontal_strategy_order_is_50_000() {
         let s = HorizontalCellStyleStrategy::new(vec![]);
-        assert_eq!(s.order(), 50_000);
+        // Java `OrderConstant.DEFINE_STYLE` = -50_000
+        assert_eq!(s.order(), -50_000);
     }
 
     #[test]

@@ -25,10 +25,10 @@ pub struct RowData {
     row_index: u32,
     cells: Vec<CellValue>,
     headers: Arc<HashMap<String, usize>>,
-    formulas: HashMap<usize, FormulaData>,
-    display_values: HashMap<usize, String>,
-    decimal_values: HashMap<usize, BigDecimal>,
-    present_columns: HashSet<usize>,
+    formulas: Option<HashMap<usize, FormulaData>>,
+    display_values: Option<HashMap<usize, String>>,
+    decimal_values: Option<HashMap<usize, BigDecimal>>,
+    present_columns: Option<HashSet<usize>>,
     read_default_return: ReadDefaultReturn,
     use_1904_windowing: bool,
 }
@@ -42,15 +42,15 @@ impl RowData {
         cells: Vec<CellValue>,
         headers: Arc<HashMap<String, usize>>,
     ) -> Self {
-        let present_columns = (0..cells.len()).collect();
+        let present_columns = Some((0..cells.len()).collect());
         Self {
             sheet_name: sheet_name.into(),
             row_index,
             cells,
             headers,
-            formulas: HashMap::new(),
-            display_values: HashMap::new(),
-            decimal_values: HashMap::new(),
+            formulas: None,
+            display_values: None,
+            decimal_values: None,
             present_columns,
             read_default_return: ReadDefaultReturn::default(),
             use_1904_windowing: false,
@@ -69,10 +69,10 @@ impl RowData {
         row_index: u32,
         cells: Vec<CellValue>,
         headers: Arc<HashMap<String, usize>>,
-        formulas: HashMap<usize, FormulaData>,
-        display_values: HashMap<usize, String>,
-        decimal_values: HashMap<usize, BigDecimal>,
-        present_columns: HashSet<usize>,
+        formulas: Option<HashMap<usize, FormulaData>>,
+        display_values: Option<HashMap<usize, String>>,
+        decimal_values: Option<HashMap<usize, BigDecimal>>,
+        present_columns: Option<HashSet<usize>>,
         read_default_return: ReadDefaultReturn,
         use_1904_windowing: bool,
     ) -> Self {
@@ -93,28 +93,28 @@ impl RowData {
     /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Attaches formula metadata indexed by zero-based physical column. (Java `CellData.formulaData`)
     #[must_use]
     pub fn with_formulas(mut self, formulas: HashMap<usize, FormulaData>) -> Self {
-        self.formulas = formulas;
+        self.formulas = Some(formulas);
         self
     }
 
     /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Attaches Java-compatible formatted display text by physical column index. (Java `CellData.stringValue`)
     #[must_use]
     pub fn with_display_values(mut self, display_values: HashMap<usize, String>) -> Self {
-        self.display_values = display_values;
+        self.display_values = Some(display_values);
         self
     }
 
     /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Attaches exact OOXML decimal values by physical column index. (Java `CellData.numberValue`)
     #[must_use]
     pub fn with_decimal_values(mut self, decimal_values: HashMap<usize, BigDecimal>) -> Self {
-        self.decimal_values = decimal_values;
+        self.decimal_values = Some(decimal_values);
         self
     }
 
     /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Attaches the physical columns that were explicitly present in the source.
     #[must_use]
     pub fn with_present_columns(mut self, present_columns: HashSet<usize>) -> Self {
-        self.present_columns = present_columns;
+        self.present_columns = Some(present_columns);
         self
     }
 
@@ -165,7 +165,7 @@ impl RowData {
         let index = column
             .index
             .or_else(|| self.headers.get(column.leaf_name()).copied())?;
-        self.formulas.get(&index)
+        self.formulas.as_ref().and_then(|m| m.get(&index))
     }
 
     /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Returns POI-compatible display text retained for a numeric source cell.
@@ -174,7 +174,9 @@ impl RowData {
         let index = column
             .index
             .or_else(|| self.headers.get(column.leaf_name()).copied())?;
-        self.display_values.get(&index).map(String::as_str)
+        self.display_values
+            .as_ref()
+            .and_then(|m| m.get(&index).map(String::as_str))
     }
 
     /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Returns the exact decimal token retained from OOXML for a numeric cell.
@@ -183,7 +185,7 @@ impl RowData {
         let index = column
             .index
             .or_else(|| self.headers.get(column.leaf_name()).copied())?;
-        self.decimal_values.get(&index)
+        self.decimal_values.as_ref().and_then(|m| m.get(&index))
     }
 
     /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Dynamic-row support: maximum physical column touched by either headers or cells.
@@ -199,7 +201,11 @@ impl RowData {
 
     /// 对应 Java：`AnalysisContext.readRowHolder().getCell(column)`。 Dynamic-row support: produce a `DynamicValue` for a column.
     pub(crate) fn dynamic_cell(&self, column_index: usize) -> DynamicValue {
-        if !self.present_columns.contains(&column_index) {
+        if !self
+            .present_columns
+            .as_ref()
+            .is_some_and(|s| s.contains(&column_index))
+        {
             return DynamicValue::Null;
         }
         let raw_value = self
@@ -209,8 +215,8 @@ impl RowData {
             .unwrap_or(CellValue::Empty);
         let raw_value = if matches!(raw_value, CellValue::Int(_) | CellValue::Float(_)) {
             self.decimal_values
-                .get(&column_index)
-                .cloned()
+                .as_ref()
+                .and_then(|m| m.get(&column_index).cloned())
                 .map_or(raw_value, CellValue::Decimal)
         } else {
             raw_value
@@ -218,20 +224,24 @@ impl RowData {
         let data = actual_cell_value(&raw_value);
         let display_value = self
             .display_values
-            .get(&column_index)
-            .cloned()
+            .as_ref()
+            .and_then(|m| m.get(&column_index).cloned())
             .unwrap_or_else(|| raw_value.as_text());
         match self.read_default_return {
             ReadDefaultReturn::String => DynamicValue::String(display_value),
             ReadDefaultReturn::ActualData => DynamicValue::ActualData(data),
             ReadDefaultReturn::ReadCellData => {
+                let formula = self
+                    .formulas
+                    .as_ref()
+                    .and_then(|m| m.get(&column_index).cloned());
                 DynamicValue::ReadCellData(crate::core::read_cell_data::ReadCellData::new(
                     self.row_index,
                     column_index,
                     raw_value,
                     data,
                     display_value,
-                    self.formulas.get(&column_index).cloned(),
+                    formula,
                 ))
             }
         }

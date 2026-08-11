@@ -126,6 +126,20 @@ impl XlsSaxAnalyser {
     }
 
     fn dispatch_workbook_records(&mut self) -> Result<()> {
+        #[cfg(feature = "xls-streaming-iter")]
+        {
+            self.dispatch_workbook_records_streaming()
+        }
+        #[cfg(not(feature = "xls-streaming-iter"))]
+        {
+            self.dispatch_workbook_records_legacy()
+        }
+    }
+
+    /// 旧路径：读取整个 Workbook 流到 `Vec<u8>`，用 `walk_biff_records` 遍历。
+    ///
+    /// 对应 Java：`HSSFEventFactory.processWorkbookEvents`。
+    fn dispatch_workbook_records_legacy(&mut self) -> Result<()> {
         let workbook = easyexcel_xls::biff8::record_stream::read_workbook_stream_with_password(
             &self.path,
             self.options.password.as_deref(),
@@ -137,6 +151,95 @@ impl XlsSaxAnalyser {
                 .map_err(|error| easyexcel_io::Error::Other(error.to_string()))
         })
         .map_err(ExcelError::from)?;
+        self.record_dispatcher.finish_records()
+    }
+
+    /// 流式路径：从 CFB Stream 直接遍历 BIFF record，不将整个 Workbook 流加载到内存。
+    ///
+    /// 非加密文件使用 `StreamingRecordIter::next_raw` 流式读取；
+    /// 加密文件回退到旧路径（RC4 解密需要完整流）。
+    ///
+    /// 对应 Java：`HSSFEventFactory.processWorkbookEvents`（流式变体）。
+    #[cfg(feature = "xls-streaming-iter")]
+    fn dispatch_workbook_records_streaming(&mut self) -> Result<()> {
+        use std::io::Seek;
+
+        // 打开 OLE2 复合文档，获取 Workbook 流
+        let file = std::fs::File::open(&self.path)?;
+        let mut compound = cfb::CompoundFile::open(file).map_err(|error| {
+            ExcelError::Format(format!("invalid XLS compound document: {error}"))
+        })?;
+        let mut stream = compound
+            .open_stream("/Workbook")
+            .or_else(|_| compound.open_stream("/Book"))
+            .map_err(|error| {
+                ExcelError::Format(format!("XLS Workbook/Book stream is missing: {error}"))
+            })?;
+
+        // 检测 FILEPASS（加密标记）：
+        // FILEPASS 总是出现在 BOF 之后、SST/BOUNDSHEET 之前，
+        // 只需扫描前几条 record 即可判断。
+        let has_filepass = {
+            let mut found = false;
+            let stream_len = stream.len();
+            let mut probe =
+                easyexcel_xls::biff8::streaming_record_iter::StreamingRecordIter::new(
+                    &mut stream,
+                    0,
+                    stream_len,
+                )?;
+            while let Some(result) = probe.next_raw() {
+                let (sid, _) = result?;
+                if sid == easyexcel_xls::biff8::record_sid::FILE_PASS_SID {
+                    found = true;
+                    break;
+                }
+                // FILEPASS 在 BOF 之后立即出现；看到 SST/BOUNDSHEET/EOF 则确认无加密
+                if sid == easyexcel_xls::biff8::record_sid::SST_SID
+                    || sid == easyexcel_xls::biff8::record_sid::BOUND_SHEET_SID
+                    || sid == easyexcel_xls::biff8::record_sid::EOF_SID
+                {
+                    break;
+                }
+            }
+            // probe 被 drop，释放对 stream 的可变借用
+            found
+        };
+
+        self.record_dispatcher.reset();
+
+        if has_filepass {
+            // 加密文件：回退到旧路径（RC4 解密需要完整流）
+            let workbook =
+                easyexcel_xls::biff8::record_stream::read_workbook_stream_with_password(
+                    &self.path,
+                    self.options.password.as_deref(),
+                )
+                .map_err(ExcelError::from)?;
+            easyexcel_xls::biff8::record_stream::walk_biff_records(
+                &workbook,
+                |record_sid, data| {
+                    self.process_record(record_sid, data)
+                        .map_err(|error| easyexcel_io::Error::Other(error.to_string()))
+                },
+            )
+            .map_err(ExcelError::from)?;
+        } else {
+            // 非加密文件：流式遍历 record（不将整个 Workbook 流加载到内存）
+            stream.seek(std::io::SeekFrom::Start(0))?;
+            let stream_len = stream.len();
+            easyexcel_xls::biff8::record_stream::walk_biff_records_streaming(
+                &mut stream,
+                0,
+                stream_len,
+                |record_sid, data| {
+                    self.process_record(record_sid, data)
+                        .map_err(|error| easyexcel_io::Error::Other(error.to_string()))
+                },
+            )
+            .map_err(ExcelError::from)?;
+        }
+
         self.record_dispatcher.finish_records()
     }
 

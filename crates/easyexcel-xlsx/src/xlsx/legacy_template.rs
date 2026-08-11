@@ -103,3 +103,56 @@ fn write_legacy_template_cell(
     };
     result.map_err(|error| Error::Xlsx(error.to_string()))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── seed_legacy_template_workbook 覆盖 ────────────────────────────
+
+    #[test]
+    fn seed_legacy_template_workbook_writes_all_cell_types() {
+        let mut workbook = Workbook::new();
+        let sheets = vec![LegacyTemplateSheet {
+            name: "Test".into(),
+            cells: vec![
+                (0, 0, Cell::Text("hello".into())),
+                (0, 1, Cell::Number(42.0)),
+                (0, 2, Cell::Bool(true)),
+                (1, 0, Cell::Formula { expr: "A1+1".into(), cached: easyexcel_model::CellValue::Number(43.0) }),
+                (1, 1, Cell::Error(easyexcel_model::CellError::Value)),
+            ],
+            next_row: 2,
+        }];
+        seed_legacy_template_workbook(&mut workbook, &sheets).unwrap();
+    }
+
+    #[test]
+    fn seed_legacy_template_workbook_multiple_sheets() {
+        let mut workbook = Workbook::new();
+        let sheets = vec![
+            LegacyTemplateSheet {
+                name: "Sheet1".into(),
+                cells: vec![(0, 0, Cell::Text("a".into()))],
+                next_row: 1,
+            },
+            LegacyTemplateSheet {
+                name: "Sheet2".into(),
+                cells: vec![(0, 0, Cell::Number(1.0))],
+                next_row: 1,
+            },
+        ];
+        seed_legacy_template_workbook(&mut workbook, &sheets).unwrap();
+    }
+
+    #[test]
+    fn seed_legacy_template_workbook_empty_sheet() {
+        let mut workbook = Workbook::new();
+        let sheets = vec![LegacyTemplateSheet {
+            name: "Empty".into(),
+            cells: vec![],
+            next_row: 0,
+        }];
+        seed_legacy_template_workbook(&mut workbook, &sheets).unwrap();
+    }
+}

@@ -230,155 +230,215 @@ impl<V: CsvCellValue> CsvSheet<V> {
         self.try_create_row(row_index)
     }
 
-    /// CSV 的合并单元格在 Java 实现中是 no-op，并返回固定索引 `0`。
-    #[must_use]
-    pub const fn add_merged_region(&mut self) -> usize {
-        0
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use easyexcel_model::CellValue as ModelCellValue;
+
+    type TestSheet = CsvSheet<ModelCellValue>;
+
+    #[test]
+    fn new_sheet_has_name_and_defaults() {
+        let sheet = TestSheet::new("MySheet");
+        assert_eq!(sheet.name(), "MySheet");
+        assert_eq!(sheet.get_sheet_name(), "MySheet");
+        assert_eq!(sheet.row_cache_count(), 100);
+        assert!(sheet.last_row_index().is_none());
+        assert!(sheet.last_row_num().is_none());
+        assert!(sheet.first_row_num().is_none());
+        assert_eq!(sheet.physical_number_of_rows(), 0);
     }
 
-    /// CSV 不保存合并区域。
-    #[must_use]
-    pub const fn number_of_merged_regions(&self) -> usize {
-        0
-    }
-    pub const fn get_num_merged_regions(&self) -> usize { self.number_of_merged_regions() }
-
-    /// CSV 不保存列宽，Java getter 返回 `0`。
-    #[must_use]
-    pub const fn column_width(&self, _column_index: usize) -> usize {
-        0
-    }
-    pub const fn get_column_width(&self, column_index: usize) -> usize {
-        self.column_width(column_index)
+    #[test]
+    fn identity_is_unique() {
+        let s1 = TestSheet::new("A");
+        let s2 = TestSheet::new("B");
+        assert_ne!(s1.identity(), s2.identity());
     }
 
-    /// CSV 列隐藏状态不持久化。
-    #[must_use]
-    pub const fn is_column_hidden(&self, _column_index: usize) -> bool {
-        false
+    #[test]
+    fn try_create_row_in_order() {
+        let mut sheet = TestSheet::new("S");
+        sheet.try_create_row(0).unwrap();
+        sheet.try_create_row(1).unwrap();
+        sheet.try_create_row(2).unwrap();
+        assert_eq!(sheet.last_row_index(), Some(2));
+        assert_eq!(sheet.last_row_num(), Some(2));
+        assert_eq!(sheet.first_row_num(), Some(0));
+        assert_eq!(sheet.physical_number_of_rows(), 3);
     }
 
-    /// CSV 不保存冻结窗格；保留 Java no-op 调用体验。
-    pub const fn create_freeze_pane(&mut self, _column_split: usize, _row_split: usize) {}
-
-    /// CSV 不保存缩放；保留 Java no-op 调用体验。
-    pub const fn set_zoom(&mut self, _scale: usize) {}
-
-    /// CSV 本身不存储公式重算标志。
-    #[must_use]
-    pub const fn force_formula_recalculation(&self) -> bool {
-        false
-    }
-    pub const fn get_force_formula_recalculation(&self) -> bool {
-        self.force_formula_recalculation()
+    #[test]
+    fn try_create_row_out_of_order_errors() {
+        let mut sheet = TestSheet::new("S");
+        sheet.try_create_row(0).unwrap();
+        assert!(sheet.try_create_row(5).is_err());
     }
 
-    /// Java CSV Sheet 的不持久化视图属性。
-    pub const fn get_default_column_width(&self) -> usize { 0 }
-    pub const fn get_default_row_height(&self) -> u16 { 0 }
-    pub const fn get_default_row_height_in_points(&self) -> f32 { 0.0 }
-    pub const fn get_horizontally_center(&self) -> bool { false }
-    pub const fn get_vertically_center(&self) -> bool { false }
-    pub const fn is_display_zeros(&self) -> bool { false }
-    pub const fn is_display_formulas(&self) -> bool { false }
-    pub const fn is_print_gridlines(&self) -> bool { false }
-    pub const fn is_selected(&self) -> bool { false }
-    pub const fn is_right_to_left(&self) -> bool { false }
-    pub const fn get_zoom(&self) -> usize { 0 }
-    pub const fn get_top_row(&self) -> usize { 0 }
-    pub const fn get_left_col(&self) -> usize { 0 }
-    pub const fn get_margin(&self, _margin: usize) -> f64 { 0.0 }
-    pub const fn set_default_column_width(&mut self, _width: usize) {}
-    pub const fn set_default_row_height(&mut self, _height: u16) {}
-    pub const fn set_default_row_height_in_points(&mut self, _height: f32) {}
-    pub const fn set_horizontally_center(&mut self, _value: bool) {}
-    pub const fn set_vertically_center(&mut self, _value: bool) {}
-    pub const fn set_display_zeros(&mut self, _value: bool) {}
-    pub const fn set_display_formulas(&mut self, _value: bool) {}
-    pub const fn set_print_gridlines(&mut self, _value: bool) {}
-    pub const fn set_selected(&mut self, _value: bool) {}
-    pub const fn set_right_to_left(&mut self, _value: bool) {}
-    pub const fn set_force_formula_recalculation(&mut self, _value: bool) {}
-    pub const fn shift_rows(&mut self, _start: u32, _end: u32, _count: i32) {}
-    pub const fn shift_columns(&mut self, _start: u16, _end: u16, _count: i32) {}
-    pub fn row_iterator(&self) -> impl Iterator<Item = &CsvRow<V>> { self.rows() }
-    pub const fn add_merged_region_unsafe(&mut self) -> usize { 0 }
-    #[must_use] pub const fn get_merged_region(&self, _index: usize) -> Option<&str> { None }
-    #[must_use] pub const fn get_merged_regions(&self) -> Vec<&str> { Vec::new() }
-    pub const fn remove_merged_region(&mut self, _index: usize) {}
-    pub const fn remove_merged_regions(&mut self, _indexes: &[usize]) {}
-    pub const fn validate_merged_regions(&self) {}
+    #[test]
+    fn create_row_delegates() {
+        let mut sheet = TestSheet::new("S");
+        sheet.create_row(0).unwrap();
+        assert_eq!(sheet.physical_number_of_rows(), 1);
+    }
 
-    /// CSV 不保存列样式、轮廓、分页符或窗格。
-    #[must_use] pub const fn get_column_style(&self, _column: usize) -> Option<&str> { None }
-    #[must_use] pub const fn get_column_width_in_pixels(&self, _column: usize) -> f32 { 0.0 }
-    #[must_use] pub const fn get_column_outline_level(&self, _column: usize) -> u8 { 0 }
-    #[must_use] pub const fn get_column_breaks(&self) -> Vec<usize> { Vec::new() }
-    #[must_use] pub const fn get_row_breaks(&self) -> Vec<usize> { Vec::new() }
-    #[must_use] pub const fn is_column_broken(&self, _column: usize) -> bool { false }
-    #[must_use] pub const fn is_row_broken(&self, _row: usize) -> bool { false }
-    #[must_use] pub const fn get_pane_information(&self) -> Option<&str> { None }
-    pub const fn set_column_break(&mut self, _column: usize) {}
-    pub const fn remove_column_break(&mut self, _column: usize) {}
-    pub const fn set_row_break(&mut self, _row: usize) {}
-    pub const fn remove_row_break(&mut self, _row: usize) {}
-    pub const fn group_column(&mut self, _from: usize, _to: usize) {}
-    pub const fn ungroup_column(&mut self, _from: usize, _to: usize) {}
-    pub const fn group_row(&mut self, _from: usize, _to: usize) {}
-    pub const fn ungroup_row(&mut self, _from: usize, _to: usize) {}
-    pub const fn set_column_group_collapsed(&mut self, _column: usize, _collapsed: bool) {}
-    pub const fn set_row_group_collapsed(&mut self, _row: usize, _collapsed: bool) {}
-    pub const fn set_column_hidden(&mut self, _column: usize, _hidden: bool) {}
-    pub const fn set_default_column_style(&mut self, _column: usize, _style: Option<&str>) {}
-    pub const fn auto_size_column(&mut self, _column: usize, _use_merged_cells: bool) {}
-    pub const fn create_split_pane(&mut self, _x_split: usize, _y_split: usize, _left: usize, _top: usize) {}
-    pub const fn show_in_pane(&mut self, _top_row: usize, _left_column: usize) {}
+    #[test]
+    fn row_lookup() {
+        let mut sheet = TestSheet::new("S");
+        sheet.try_create_row(0).unwrap();
+        let row = sheet.row(0).unwrap();
+        assert_eq!(row.row_index(), 0);
+    }
 
-    /// Java CSV Sheet 的打印/显示 no-op 状态。
-    #[must_use] pub const fn is_display_gridlines(&self) -> bool { false }
-    #[must_use] pub const fn is_display_row_col_headings(&self) -> bool { false }
-    #[must_use] pub const fn is_print_row_and_column_headings(&self) -> bool { false }
-    #[must_use] pub const fn get_autobreaks(&self) -> bool { false }
-    #[must_use] pub const fn get_display_guts(&self) -> bool { false }
-    #[must_use] pub const fn get_fit_to_page(&self) -> bool { false }
-    #[must_use] pub const fn get_row_sums_below(&self) -> bool { false }
-    #[must_use] pub const fn get_row_sums_right(&self) -> bool { false }
-    #[must_use] pub const fn get_scenario_protect(&self) -> bool { false }
-    #[must_use] pub const fn get_protect(&self) -> bool { false }
-    pub const fn set_display_gridlines(&mut self, _value: bool) {}
-    pub const fn set_display_row_col_headings(&mut self, _value: bool) {}
-    pub const fn set_print_row_and_column_headings(&mut self, _value: bool) {}
-    pub const fn set_autobreaks(&mut self, _value: bool) {}
-    pub const fn set_display_guts(&mut self, _value: bool) {}
-    pub const fn set_fit_to_page(&mut self, _value: bool) {}
-    pub const fn set_row_sums_below(&mut self, _value: bool) {}
-    pub const fn set_row_sums_right(&mut self, _value: bool) {}
-    pub const fn set_margin(&mut self, _margin: usize, _size: f64) {}
-    pub const fn set_auto_filter(&mut self, _range: &str) {}
-    pub const fn set_repeating_columns(&mut self, _range: Option<&str>) {}
-    pub const fn set_repeating_rows(&mut self, _range: Option<&str>) {}
-    #[must_use] pub const fn get_repeating_columns(&self) -> Option<&str> { None }
-    #[must_use] pub const fn get_repeating_rows(&self) -> Option<&str> { None }
-    #[must_use] pub const fn get_active_cell(&self) -> Option<&str> { None }
-    pub const fn set_active_cell(&mut self, _reference: &str) {}
+    #[test]
+    fn row_not_found_errors() {
+        let sheet = TestSheet::new("S");
+        assert!(sheet.row(0).is_err());
+    }
 
-    #[must_use] pub const fn get_cell_comments(&self) -> Vec<&str> { Vec::new() }
-    #[must_use] pub const fn get_cell_comment(&self, _reference: &str) -> Option<&str> { None }
-    #[must_use] pub const fn get_hyperlink_list(&self) -> Vec<&str> { Vec::new() }
-    #[must_use] pub const fn get_data_validations(&self) -> Vec<&str> { Vec::new() }
-    pub const fn add_validation_data(&mut self, _validation: &str) {}
-    #[must_use] pub const fn get_drawing_patriarch(&self) -> Option<&str> { None }
-    /// Java CSV 返回 `null`。
-    #[must_use] pub const fn create_drawing_patriarch(&mut self) -> Option<()> { None }
-    /// Java CSV 返回 `null`。
-    #[must_use] pub const fn set_array_formula(&mut self, _formula: &str, _range: &str) -> Option<()> { None }
-    /// Java CSV 返回 `null`。
-    #[must_use] pub const fn remove_array_formula(&mut self, _row: u32, _column: u16) -> Option<()> { None }
-    /// Java CSV 返回 `null`。
-    #[must_use] pub const fn get_hyperlink(&self, _row: u32, _column: u16) -> Option<()> { None }
-    #[must_use] pub const fn get_sheet_conditional_formatting(&self) -> Option<&str> { None }
-    #[must_use] pub const fn get_data_validation_helper(&self) -> Option<&str> { None }
-    #[must_use] pub const fn get_print_setup(&self) -> Option<&str> { None }
-    #[must_use] pub const fn get_header(&self) -> Option<&str> { None }
-    #[must_use] pub const fn get_footer(&self) -> Option<&str> { None }
+    #[test]
+    fn get_row_alias() {
+        let mut sheet = TestSheet::new("S");
+        sheet.try_create_row(0).unwrap();
+        assert!(sheet.get_row(0).is_ok());
+    }
+
+    #[test]
+    fn take_last_row() {
+        let mut sheet = TestSheet::new("S");
+        sheet.try_create_row(0).unwrap();
+        sheet.try_create_row(1).unwrap();
+        let row = sheet.take_last_row().unwrap();
+        assert_eq!(row.row_index(), 1);
+        assert_eq!(sheet.physical_number_of_rows(), 1);
+    }
+
+    #[test]
+    fn take_last_row_empty_returns_none() {
+        let mut sheet = TestSheet::new("S");
+        assert!(sheet.take_last_row().is_none());
+    }
+
+    #[test]
+    fn rows_iterator() {
+        let mut sheet = TestSheet::new("S");
+        sheet.try_create_row(0).unwrap();
+        sheet.try_create_row(1).unwrap();
+        assert_eq!(sheet.rows().count(), 2);
+    }
+
+    #[test]
+    fn remove_row_unsupported() {
+        let mut sheet = TestSheet::new("S");
+        assert!(sheet.remove_row(0).is_err());
+    }
+
+    #[test]
+    fn set_row_cache_count_clamps_to_one() {
+        let mut sheet = TestSheet::new("S");
+        sheet.set_row_cache_count(0);
+        assert_eq!(sheet.row_cache_count(), 1);
+    }
+
+    #[test]
+    fn set_row_cache_count_drains_excess() {
+        let mut sheet = TestSheet::new("S");
+        for i in 0..5 {
+            sheet.try_create_row(i).unwrap();
+        }
+        assert_eq!(sheet.physical_number_of_rows(), 5);
+        sheet.set_row_cache_count(3);
+        assert_eq!(sheet.row_cache_count(), 3);
+        assert_eq!(sheet.physical_number_of_rows(), 3);
+    }
+
+    #[test]
+    fn print_data_returns_excess() {
+        let mut sheet = TestSheet::new("S");
+        sheet.set_row_cache_count(2);
+        sheet.try_create_row(0).unwrap();
+        sheet.try_create_row(1).unwrap();
+        // 第三行触发 print_data
+        sheet.try_create_row(2).unwrap();
+        let flushed = sheet.print_data();
+        assert_eq!(flushed.len(), 1);
+    }
+
+    #[test]
+    fn print_data_returns_empty_when_under_limit() {
+        let mut sheet = TestSheet::new("S");
+        sheet.try_create_row(0).unwrap();
+        assert!(sheet.print_data().is_empty());
+    }
+
+    #[test]
+    fn drain_flushable_rows() {
+        let mut sheet = TestSheet::new("S");
+        sheet.set_row_cache_count(2);
+        for i in 0..5 {
+            sheet.try_create_row(i).unwrap();
+        }
+        let drained = sheet.drain_flushable_rows();
+        assert_eq!(drained.len(), 3); // 5 - 2 = 3
+        assert_eq!(sheet.physical_number_of_rows(), 2);
+    }
+
+    #[test]
+    fn set_next_row_index() {
+        let mut sheet = TestSheet::new("S");
+        sheet.set_next_row_index(5);
+        assert_eq!(sheet.last_row_index(), Some(4));
+    }
+
+    #[test]
+    fn csv_workbook_id_propagation() {
+        let mut sheet = TestSheet::new("S");
+        sheet.set_csv_workbook(Some(42));
+        assert_eq!(sheet.get_csv_workbook(), Some(42));
+        sheet.try_create_row(0).unwrap();
+        assert_eq!(sheet.row_cache().front().unwrap().get_csv_workbook(), Some(42));
+        assert_eq!(sheet.row_cache().front().unwrap().get_csv_sheet(), Some(sheet.identity()));
+    }
+
+    #[test]
+    fn out_buffer() {
+        let mut sheet = TestSheet::new("S");
+        assert_eq!(sheet.get_out(), "");
+        sheet.set_out("buffer content");
+        assert_eq!(sheet.get_out(), "buffer content");
+    }
+
+    #[test]
+    fn csv_printer_flag() {
+        let mut sheet = TestSheet::new("S");
+        assert!(!sheet.get_csv_printer());
+        sheet.set_csv_printer(true);
+        assert!(sheet.get_csv_printer());
+    }
+
+    #[test]
+    fn row_cache_mut_returns_mutable() {
+        let mut sheet = TestSheet::new("S");
+        sheet.try_create_row(0).unwrap();
+        let cache = sheet.row_cache_mut();
+        assert_eq!(cache.len(), 1);
+    }
+
+    #[test]
+    fn set_row_cache_replaces_and_propagates() {
+        let mut sheet = TestSheet::new("S");
+        let mut deque = VecDeque::new();
+        deque.push_back(CsvRow::new(0));
+        deque.push_back(CsvRow::new(1));
+        sheet.set_csv_workbook(Some(99));
+        sheet.set_row_cache(deque);
+        assert_eq!(sheet.physical_number_of_rows(), 2);
+        assert_eq!(sheet.last_row_index(), Some(1));
+        for row in sheet.row_cache() {
+            assert_eq!(row.get_csv_workbook(), Some(99));
+            assert_eq!(row.get_csv_sheet(), Some(sheet.identity()));
+        }
+    }
 }

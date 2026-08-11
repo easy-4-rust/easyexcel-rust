@@ -64,3 +64,75 @@ impl Cell {
     }
 }
 
+#[cfg(test)]
+mod cell_tests {
+    use super::*;
+
+    #[test]
+    fn cell_value_returns_scalar() {
+        assert_eq!(Cell::Empty.value(), CellValue::Empty);
+        assert_eq!(Cell::Number(42.0).value(), CellValue::Number(42.0));
+        assert_eq!(
+            Cell::Text("hello".into()).value(),
+            CellValue::Text("hello".into())
+        );
+        assert_eq!(Cell::Bool(true).value(), CellValue::Bool(true));
+        assert_eq!(
+            Cell::Error(CellError::Value).value(),
+            CellValue::Error(CellError::Value)
+        );
+    }
+
+    #[test]
+    fn cell_formula_value_returns_cached() {
+        let cell = Cell::Formula {
+            expr: "=A1+B1".into(),
+            cached: CellValue::Number(42.0),
+        };
+        assert_eq!(cell.value(), CellValue::Number(42.0));
+    }
+
+    #[test]
+    fn from_value_roundtrips() {
+        assert_eq!(Cell::from_value(CellValue::Empty), Cell::Empty);
+        assert_eq!(Cell::from_value(CellValue::Number(1.0)), Cell::Number(1.0));
+        assert_eq!(
+            Cell::from_value(CellValue::Text("x".into())),
+            Cell::Text("x".into())
+        );
+        assert_eq!(Cell::from_value(CellValue::Bool(false)), Cell::Bool(false));
+        assert_eq!(
+            Cell::from_value(CellValue::Error(CellError::Value)),
+            Cell::Error(CellError::Value)
+        );
+    }
+
+    #[test]
+    fn is_empty_checks_variant() {
+        assert!(Cell::Empty.is_empty());
+        assert!(!Cell::Number(0.0).is_empty());
+        assert!(!Cell::Text("".into()).is_empty());
+    }
+
+    #[test]
+    fn is_formula_checks_variant() {
+        assert!(!Cell::Empty.is_formula());
+        let formula = Cell::Formula {
+            expr: "=1".into(),
+            cached: CellValue::Number(1.0),
+        };
+        assert!(formula.is_formula());
+    }
+
+    #[test]
+    fn formula_text_returns_expr() {
+        let formula = Cell::Formula {
+            expr: "=SUM(A1:A10)".into(),
+            cached: CellValue::Number(55.0),
+        };
+        assert_eq!(formula.formula_text(), Some("=SUM(A1:A10)"));
+        assert_eq!(Cell::Empty.formula_text(), None);
+        assert_eq!(Cell::Number(1.0).formula_text(), None);
+    }
+}
+

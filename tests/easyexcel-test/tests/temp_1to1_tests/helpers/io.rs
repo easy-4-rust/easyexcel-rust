@@ -71,7 +71,7 @@ pub fn assert_style_handler() {
         double_data: f64,
     }
     let path = temp_path("1to1_style_handler.xlsx");
-    let strategy = HorizontalCellStyleStrategy::new(vec![ExcelCellStyle::new()]);
+    let strategy = HorizontalCellStyleStrategy::new(vec![ExcelCellStyle::new().into()]);
     EasyExcel::write::<DemoData>(&path)
         .register_write_handler(strategy)
         .sheet("模板")
@@ -539,10 +539,10 @@ pub fn assert_vec_clear_vs_realloc() {
 pub fn assert_cell_reference_b3() {
     use easyexcel::util::position_utils::{get_col, get_row};
     // B3 → col 1 (0-based), row 2 (0-based)
-    assert_eq!(get_col("B3"), 1);
-    assert_eq!(get_row("B3"), 2);
-    assert_eq!(get_col("A1"), 0);
-    assert_eq!(get_row("A1"), 0);
+    assert_eq!(get_col(Some("B3"), None), 1);
+    assert_eq!(get_row(Some("B3")), 2);
+    assert_eq!(get_col(Some("A1"), None), 0);
+    assert_eq!(get_row(Some("A1")), 0);
 }
 
 /// Excel serial ↔ datetime probes (Lock2Test#numberforamt) without Apache POI `DateUtil`.

@@ -372,7 +372,7 @@ fn excel_analyser_direct_constructor_executor_context_and_finish_match_java()
         DefaultXlsReadContext::from_read_workbook(&xls_workbook, ExcelTypeEnum::Xls);
     assert_eq!(contract.xls_context_workbook_type, "XLS");
     assert_eq!(
-        XlsReadContext::analysis_context_impl(&xls_context).excel_type(),
+        easyexcel::context::AnalysisContextLifecycle::analysis_context_impl(&xls_context).excel_type(),
         ExcelTypeEnum::Xls
     );
     let _xls_workbook_holder = XlsReadContext::xls_read_workbook_holder(&xls_context);
@@ -885,7 +885,7 @@ fn excel_analyser_direct_constructor_executor_context_and_finish_match_java()
         DefaultXlsxReadContext::from_read_workbook(&xlsx_workbook, ExcelTypeEnum::Xlsx);
     assert_eq!(contract.xlsx_context_workbook_type, "XLSX");
     assert_eq!(
-        XlsxReadContext::analysis_context_impl(&xlsx_context).excel_type(),
+        easyexcel::context::AnalysisContextLifecycle::analysis_context_impl(&xlsx_context).excel_type(),
         ExcelTypeEnum::Xlsx
     );
     let _xlsx_workbook_holder = XlsxReadContext::xlsx_read_workbook_holder(&xlsx_context);
@@ -962,4 +962,36 @@ fn excel_analyser_read_workbook_requires_input_and_honours_explicit_type() -> ea
     );
     assert!(empty.is_finished());
     Ok(())
+}
+
+#[test]
+fn excel_analyser_record_handler_sids_match_java_constants() {
+    // Java POI BIFF8 record SIDs must match the Rust constants.
+    // These values come from org.apache.poi.hssf.record.* and are immutable
+    // across POI versions.
+    assert_eq!(BOF_SID, 0x0809, "BOF");
+    assert_eq!(BOUND_SHEET_SID, 0x0085, "BOUND_SHEET");
+    assert_eq!(LABEL_SST_SID, 0x00FD, "LABEL_SST");
+    assert_eq!(FORMULA_SID, 0x0006, "FORMULA");
+    assert_eq!(LABEL_SID, 0x0204, "LABEL");
+    assert_eq!(OBJ_SID, 0x005D, "OBJ");
+    assert_eq!(RK_SID, 0x027E, "RK");
+    assert_eq!(SST_SID, 0x00FC, "SST");
+    assert_eq!(STRING_SID, 0x0207, "STRING");
+    assert_eq!(TEXT_OBJECT_SID, 0x01B6, "TEXT_OBJECT");
+}
+
+#[test]
+fn excel_analyser_xlsx_tag_handler_trait_hierarchy_matches_java() {
+    // Verify the handler trait hierarchy is accessible and the abstract
+    // default implementations are no-ops (matching Java's empty methods).
+    let mut abstract_handler = AbstractXlsxTagHandler::new();
+    assert!(abstract_handler.support());
+    abstract_handler.start_element("c", "r=A1");
+    abstract_handler.characters("x");
+    abstract_handler.end_element("c");
+
+    let mut cell_value_handler = AbstractCellValueTagHandler::new();
+    cell_value_handler.characters("hello");
+    assert_eq!(cell_value_handler.temp_data, "hello");
 }

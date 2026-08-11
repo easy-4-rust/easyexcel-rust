@@ -5,6 +5,8 @@
 Native EasyExcel request extraction and response adapter for Salvo.
 
 > Release: 0.1.3 · Rust 1.89+ · Edition 2024 · Apache-2.0
+>
+> Last updated: 2026-08-11 · Status: active
 
 ## Overview
 
@@ -32,6 +34,15 @@ flowchart LR
 
 The adapter does not reimplement spreadsheet parsing, writing or resource policy. Business rows are consumed through a bounded channel and downloads are exposed to Salvo as an asynchronous file stream.
 
+## Capabilities and Boundaries
+
+| What easyexcel-salvo does | What easyexcel-salvo does NOT do |
+|:---|:---|
+| `Extractible` request type for typed backpressured row stream | Upload spooling / resource limits / timeouts (in `easyexcel-web`) |
+| Salvo `Writer` response for streaming XLSX/XLS/CSV download | Business validation, authorization or persistence |
+| `ExcelSalvoError` mapping to Salvo error protocol | Reimplementing spreadsheet parsing or writing |
+| Hoop-based `ExcelWebRuntime` injection into request extensions | TUI / HTML form handling |
+
 ## Capability matrix
 
 | Capability | Status | Implementation |
@@ -51,6 +62,17 @@ easyexcel-salvo = "0.1.3"
 ```
 
 All workbook APIs remain under `easyexcel::...`; only Salvo-native extractor, writer and error types come from this adapter. The adapter depends on `easyexcel`, so facade-side re-export would create a cycle. Keep both crates on the same release line.
+
+## Usage from examples
+
+The runnable example is in [`examples/salvo`](https://github.com/easy-4-rust/easyexcel-rust/tree/main/examples/salvo). Default port: **8084**.
+
+```bash
+cargo run -p example-salvo
+# Listening on http://127.0.0.1:8084
+# POST /upload   - upload an Excel file
+# GET  /download - download a sample XLSX
+```
 
 ## Define the row model
 
@@ -192,7 +214,8 @@ Reverse dependencies such as `easyexcel-web -> easyexcel-salvo` or `easyexcel ->
 
 - [Repository](https://github.com/easy-4-rust/easyexcel-rust)
 - [API documentation](https://docs.rs/easyexcel-salvo)
-- [easyexcel-web](https://crates.io/crates/easyexcel-web)
+- [easyexcel-web](https://crates.io/crates/easyexcel-web) -- shared Web execution kernel
+- [Web conformance suite](https://github.com/easy-4-rust/easyexcel-rust/tree/main/tests/easyexcel-web-conformance)
 - [Runnable example](https://github.com/easy-4-rust/easyexcel-rust/tree/main/examples/salvo)
 - [Compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
 - [Chinese README](README.zh-CN.md)

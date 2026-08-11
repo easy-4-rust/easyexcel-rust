@@ -1,0 +1,31 @@
+{
+  "schema_version": 2,
+  "artifact": "easyexcel-reviewed-performance-baseline",
+  "profile": "release",
+  "pending_generation": true,
+  "spec_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "source_git_shas": {
+    "java": "0000000000000000000000000000000000000000000000000000000000000000",
+    "rust": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "candidate_report_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "evidence": [
+    {
+      "name": "stub-placeholder-must-be-replaced-by-release-benchmark-workflow-on-linux-benchmark-runner",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "scenario_slots": [
+    "xlsx-stream-write",
+    "xlsx-full-write",
+    "xlsx-event-read",
+    "xlsx-workbook-read",
+    "xlsx-roundtrip",
+    "xls-batched-write",
+    "xls-event-read",
+    "csv-stream-write",
+    "csv-event-read",
+    "OPS: this-stub-requires-linux-benchmark-runner-see-docs-operations-LINUX_RUNNER_SETUP.md",
+    "OPS: trigger-via-Actions-Linux-Release-Baseline-Benchmark-workflow_dispatch-or-release-published"
+  ]
+}

@@ -305,3 +305,194 @@ impl Sheet {
         }
     }
 }
+
+#[cfg(test)]
+mod sheet_tests {
+    use super::*;
+
+    #[test]
+    fn sheet_new_creates_empty_sheet() {
+        let sheet = Sheet::new("TestSheet");
+        assert_eq!(sheet.name, "TestSheet");
+        assert!(sheet.cells.is_empty());
+        assert_eq!(sheet.default_col_width, 8.43);
+        assert_eq!(sheet.default_row_height, 15.0);
+    }
+
+    #[test]
+    fn sheet_set_and_get() {
+        let mut sheet = Sheet::new("Test");
+        sheet.set(0, 0, Cell::Number(42.0));
+        assert_eq!(sheet.get(0, 0), Some(&Cell::Number(42.0)));
+        assert_eq!(sheet.get(1, 1), None);
+    }
+
+    #[test]
+    fn sheet_set_style_and_style_at() {
+        let mut sheet = Sheet::new("Test");
+        sheet.set_style(0, 0, 5);
+        assert_eq!(sheet.style_at(0, 0), Some(5));
+        assert_eq!(sheet.style_at(1, 1), None);
+    }
+
+    #[test]
+    fn sheet_value_returns_cell_value() {
+        let mut sheet = Sheet::new("Test");
+        sheet.set(0, 0, Cell::Number(42.0));
+        assert_eq!(sheet.value(0, 0), CellValue::Number(42.0));
+        assert_eq!(sheet.value(1, 1), CellValue::Empty);
+    }
+
+    #[test]
+    fn sheet_stored_range_returns_none_for_empty() {
+        let sheet = Sheet::new("Test");
+        assert!(sheet.stored_range().is_none());
+    }
+
+    #[test]
+    fn sheet_stored_range_returns_range_with_cells() {
+        let mut sheet = Sheet::new("Test");
+        sheet.set(0, 0, Cell::Number(1.0));
+        sheet.set(2, 3, Cell::Number(2.0));
+        let range = sheet.stored_range().unwrap();
+        assert_eq!(range.start.row, 0);
+        assert_eq!(range.start.col, 0);
+        assert_eq!(range.end.row, 2);
+        assert_eq!(range.end.col, 3);
+    }
+
+    #[test]
+    fn sheet_stored_range_includes_styles() {
+        let mut sheet = Sheet::new("Test");
+        sheet.set_style(5, 5, 1);
+        let range = sheet.stored_range().unwrap();
+        assert_eq!(range.end.row, 5);
+        assert_eq!(range.end.col, 5);
+    }
+
+    #[test]
+    fn sheet_dimensions_returns_zero_for_empty() {
+        let sheet = Sheet::new("Test");
+        assert_eq!(sheet.dimensions(), (0, 0));
+    }
+
+    #[test]
+    fn sheet_dimensions_returns_bounds() {
+        let mut sheet = Sheet::new("Test");
+        sheet.set(2, 3, Cell::Number(1.0));
+        let (max_row, max_col) = sheet.dimensions();
+        assert_eq!(max_row, 3);
+        assert_eq!(max_col, 4);
+    }
+
+    #[test]
+    fn sheet_insert_rows_shifts_cells() {
+        let mut sheet = Sheet::new("Test");
+        sheet.set(0, 0, Cell::Number(1.0));
+        sheet.set(1, 0, Cell::Number(2.0));
+        sheet.insert_rows(1, 1);
+        // Row 0 stays, row 1 moves to row 2
+        assert_eq!(sheet.get(0, 0), Some(&Cell::Number(1.0)));
+        assert_eq!(sheet.get(1, 0), None);
+        assert_eq!(sheet.get(2, 0), Some(&Cell::Number(2.0)));
+    }
+
+    #[test]
+    fn sheet_insert_rows_zero_count_is_noop() {
+        let mut sheet = Sheet::new("Test");
+        sheet.set(0, 0, Cell::Number(1.0));
+        sheet.insert_rows(0, 0);
+        assert_eq!(sheet.get(0, 0), Some(&Cell::Number(1.0)));
+    }
+
+    #[test]
+    fn sheet_delete_rows_removes_and_shifts() {
+        let mut sheet = Sheet::new("Test");
+        sheet.set(0, 0, Cell::Number(1.0));
+        sheet.set(1, 0, Cell::Number(2.0));
+        sheet.set(2, 0, Cell::Number(3.0));
+        sheet.delete_rows(1, 1);
+        assert_eq!(sheet.get(0, 0), Some(&Cell::Number(1.0)));
+        assert_eq!(sheet.get(1, 0), Some(&Cell::Number(3.0)));
+        assert_eq!(sheet.get(2, 0), None);
+    }
+
+    #[test]
+    fn sheet_delete_rows_zero_count_is_noop() {
+        let mut sheet = Sheet::new("Test");
+        sheet.set(0, 0, Cell::Number(1.0));
+        sheet.delete_rows(0, 0);
+        assert_eq!(sheet.get(0, 0), Some(&Cell::Number(1.0)));
+    }
+
+    #[test]
+    fn sheet_insert_cols_shifts_cells() {
+        let mut sheet = Sheet::new("Test");
+        sheet.set(0, 0, Cell::Number(1.0));
+        sheet.set(0, 1, Cell::Number(2.0));
+        sheet.insert_cols(1, 1);
+        assert_eq!(sheet.get(0, 0), Some(&Cell::Number(1.0)));
+        assert_eq!(sheet.get(0, 1), None);
+        assert_eq!(sheet.get(0, 2), Some(&Cell::Number(2.0)));
+    }
+
+    #[test]
+    fn sheet_insert_cols_zero_count_is_noop() {
+        let mut sheet = Sheet::new("Test");
+        sheet.set(0, 0, Cell::Number(1.0));
+        sheet.insert_cols(0, 0);
+        assert_eq!(sheet.get(0, 0), Some(&Cell::Number(1.0)));
+    }
+
+    #[test]
+    fn sheet_delete_cols_removes_and_shifts() {
+        let mut sheet = Sheet::new("Test");
+        sheet.set(0, 0, Cell::Number(1.0));
+        sheet.set(0, 1, Cell::Number(2.0));
+        sheet.set(0, 2, Cell::Number(3.0));
+        sheet.delete_cols(1, 1);
+        assert_eq!(sheet.get(0, 0), Some(&Cell::Number(1.0)));
+        assert_eq!(sheet.get(0, 1), Some(&Cell::Number(3.0)));
+        assert_eq!(sheet.get(0, 2), None);
+    }
+
+    #[test]
+    fn sheet_delete_cols_zero_count_is_noop() {
+        let mut sheet = Sheet::new("Test");
+        sheet.set(0, 0, Cell::Number(1.0));
+        sheet.delete_cols(0, 0);
+        assert_eq!(sheet.get(0, 0), Some(&Cell::Number(1.0)));
+    }
+
+    #[test]
+    fn sheet_is_merged_continuation() {
+        let mut sheet = Sheet::new("Test");
+        sheet.merged.push(CellRange::new(
+            CellAddress::new(0, 0),
+            CellAddress::new(1, 1),
+        ));
+        assert!(!sheet.is_merged_continuation(0, 0)); // anchor
+        assert!(sheet.is_merged_continuation(0, 1)); // continuation
+        assert!(sheet.is_merged_continuation(1, 0)); // continuation
+        assert!(sheet.is_merged_continuation(1, 1)); // continuation
+        assert!(!sheet.is_merged_continuation(2, 2)); // outside
+    }
+
+    #[test]
+    fn sheet_stored_rows_returns_rows() {
+        let mut sheet = Sheet::new("Test");
+        sheet.set(0, 0, Cell::Number(1.0));
+        sheet.set(1, 0, Cell::Number(2.0));
+        let rows: Vec<_> = sheet.stored_rows().collect();
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].index(), 0);
+        assert_eq!(rows[1].index(), 1);
+    }
+
+    #[test]
+    fn sheet_stored_rows_empty_sheet() {
+        let sheet = Sheet::new("Test");
+        let rows: Vec<_> = sheet.stored_rows().collect();
+        assert_eq!(rows.len(), 0);
+    }
+}

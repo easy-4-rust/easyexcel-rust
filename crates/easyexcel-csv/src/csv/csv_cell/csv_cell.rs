@@ -1,35 +1,8 @@
-//! CSV 单元格中立模型。
-
-use std::fmt::Debug;
-
 use chrono::NaiveDateTime;
 use easyexcel_model::CellValue as ModelCellValue;
 
-use super::{CsvCellStyle, CsvRichTextString};
-
-include!("csv_cell/csv_numeric_cell_type.rs");
-
-include!("csv_cell/csv_cell_value.rs");
-
-/// Java/POI `CellType` 的 CSV 后端中立映射。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum CsvCellType {
-    /// 尚未设置类型。
-    #[default]
-    None,
-    /// 数字或日期序列。
-    Numeric,
-    /// 文本或富文本。
-    String,
-    /// 公式文本。
-    Formula,
-    /// 空单元格。
-    Blank,
-    /// 布尔值。
-    Boolean,
-    /// Excel 错误。
-    Error,
-}
+use super::{CsvCellType, CsvCellValue};
+use crate::csv::{CsvCellStyle, CsvRichTextString};
 
 /// 对应 Java：com.alibaba.excel.metadata.csv.CsvCell。 CSV 工作簿中的一个有类型单元格。
 #[derive(Debug, Clone, PartialEq)]
@@ -249,10 +222,6 @@ impl<V: CsvCellValue> CsvCell<V> {
         self.cached_formula_result_type()
     }
 
-    /// CSV 不支持数组公式。
-    #[must_use]
-    pub const fn is_part_of_array_formula_group(&self) -> bool { false }
-
     /// 返回数字负载分类。
     #[must_use]
     /// 对应 Java：无直接对应对象；Rust 架构扩展。
@@ -280,27 +249,268 @@ impl<V: CsvCellValue> CsvCell<V> {
     }
     pub const fn get_cell_style(&self) -> Option<&CsvCellStyle> { self.cell_style() }
 
-    /// CSV 不承载批注和超链接；与 Java CSV 适配器的 no-op 语义一致。
-    pub const fn remove_cell_comment(&mut self) {}
-    /// Java CSV 返回 `null`。
-    #[must_use] pub const fn get_cell_comment(&self) -> Option<()> { None }
-    /// Java CSV 为空操作。
-    pub const fn set_cell_comment(&mut self, _comment: Option<()>) {}
-    pub const fn remove_hyperlink(&mut self) {}
-    /// Java CSV 返回 `null`。
-    #[must_use] pub const fn get_hyperlink(&self) -> Option<()> { None }
-    /// Java CSV 为空操作。
-    pub const fn set_hyperlink(&mut self, _hyperlink: Option<()>) {}
-    /// Java CSV 返回 `null`，因为 CSV 不支持数组公式。
-    #[must_use] pub const fn get_array_formula_range(&self) -> Option<()> { None }
-    pub const fn set_as_active_cell(&mut self) {}
-    pub const fn is_part_of_array_formula_group_java(&self) -> bool {
-        self.is_part_of_array_formula_group()
-    }
-
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 返回写入 CSV 记录的显示文本。
     #[must_use]
     pub fn display_text(&self) -> String {
         self.date_value.map_or_else(|| self.value.csv_display_text(), |value| value.format("%Y-%m-%d %H:%M:%S").to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::csv::CsvRichTextString;
+    use crate::csv::CsvNumericCellType;
+    use easyexcel_model::CellValue as ModelCellValue;
+    use chrono::NaiveDate;
+
+    type TestCell = CsvCell<ModelCellValue>;
+
+    #[test]
+    fn new_creates_empty_cell_at_column() {
+        let cell = TestCell::new(5);
+        assert_eq!(cell.column_index(), 5);
+        assert_eq!(cell.row_index(), 0);
+        assert_eq!(cell.cell_type(), CsvCellType::None);
+        assert_eq!(*cell.value(), ModelCellValue::Empty);
+    }
+
+    #[test]
+    fn new_at_sets_row_and_column() {
+        let cell = TestCell::new_at(10, 3);
+        assert_eq!(cell.row_index(), 10);
+        assert_eq!(cell.column_index(), 3);
+    }
+
+    #[test]
+    fn set_value_text() {
+        let mut cell = TestCell::new(0);
+        cell.set_value(ModelCellValue::Text("hello".to_string()));
+        assert_eq!(*cell.value(), ModelCellValue::Text("hello".into()));
+        assert_eq!(cell.cell_type(), CsvCellType::String);
+    }
+
+    #[test]
+    fn set_value_number() {
+        let mut cell = TestCell::new(0);
+        cell.set_value(ModelCellValue::Number(42.0));
+        assert_eq!(*cell.value(), ModelCellValue::Number(42.0));
+        assert_eq!(cell.cell_type(), CsvCellType::Numeric);
+        assert!(cell.numeric_cell_type().is_some());
+    }
+
+    #[test]
+    fn set_cell_value_delegates_to_set_value() {
+        let mut cell = TestCell::new(0);
+        cell.set_string_value("test");
+        assert_eq!(cell.string_cell_value(), "test");
+    }
+
+    #[test]
+    fn set_blank_resets_cell() {
+        let mut cell = TestCell::new(0);
+        cell.set_string_value("data");
+        cell.set_blank();
+        assert_eq!(*cell.value(), ModelCellValue::Empty);
+        assert_eq!(cell.cell_type(), CsvCellType::Blank);
+        assert!(cell.numeric_cell_type().is_none());
+        assert!(cell.cell_formula().is_none());
+    }
+
+    #[test]
+    fn set_formula() {
+        let mut cell = TestCell::new(0);
+        cell.set_formula("SUM(A1:A10)");
+        assert_eq!(cell.cell_type(), CsvCellType::Formula);
+        assert_eq!(cell.cell_formula(), Some("SUM(A1:A10)"));
+    }
+
+    #[test]
+    fn set_rich_text() {
+        let mut cell = TestCell::new(0);
+        let rich = CsvRichTextString::new("rich content");
+        cell.set_rich_text(&rich);
+        assert_eq!(cell.cell_type(), CsvCellType::String);
+        assert_eq!(cell.string_cell_value(), "rich content");
+        assert_eq!(cell.rich_string_cell_value(), rich);
+    }
+
+    #[test]
+    fn set_boolean_value() {
+        let mut cell = TestCell::new(0);
+        cell.set_boolean_value(true);
+        assert_eq!(cell.cell_type(), CsvCellType::Boolean);
+        assert!(cell.boolean_cell_value());
+    }
+
+    #[test]
+    fn set_boolean_value_false() {
+        let mut cell = TestCell::new(0);
+        cell.set_boolean_value(false);
+        assert!(!cell.boolean_cell_value());
+    }
+
+    #[test]
+    fn set_number_value() {
+        let mut cell = TestCell::new(0);
+        cell.set_number_value(3.14);
+        assert_eq!(cell.cell_type(), CsvCellType::Numeric);
+        assert!((cell.numeric_cell_value() - 3.14).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn set_date_value() {
+        let mut cell = TestCell::new(0);
+        let dt = NaiveDate::from_ymd_opt(2024, 1, 15).unwrap().and_hms_opt(10, 30, 0).unwrap();
+        cell.set_date_value(dt);
+        assert_eq!(cell.cell_type(), CsvCellType::Numeric);
+        assert_eq!(cell.local_date_time_cell_value(), Some(dt));
+    }
+
+    #[test]
+    fn set_cell_error_value() {
+        let mut cell = TestCell::new(0);
+        cell.set_cell_error_value(0); // #NULL!
+        assert_eq!(cell.cell_type(), CsvCellType::Error);
+    }
+
+    #[test]
+    fn set_string_value() {
+        let mut cell = TestCell::new(0);
+        cell.set_string_value("text data");
+        assert_eq!(cell.string_cell_value(), "text data");
+    }
+
+    #[test]
+    fn getters_alias_correctly() {
+        let mut cell = TestCell::new_at(7, 3);
+        cell.set_number_value(99.0);
+        assert_eq!(cell.get_row_index(), 7);
+        assert_eq!(cell.get_column_index(), 3);
+        assert_eq!(cell.get_cell_type(), CsvCellType::Numeric);
+        assert!((cell.get_numeric_cell_value() - 99.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn csv_workbook_and_sheet_ids() {
+        let mut cell = TestCell::new(0);
+        assert!(cell.get_csv_workbook().is_none());
+        cell.set_csv_workbook(Some(42));
+        assert_eq!(cell.get_csv_workbook(), Some(42));
+        assert!(cell.get_csv_sheet().is_none());
+        cell.set_csv_sheet(Some(7));
+        assert_eq!(cell.get_csv_sheet(), Some(7));
+    }
+
+    #[test]
+    fn get_csv_row_returns_row_index() {
+        let cell = TestCell::new_at(5, 0);
+        assert_eq!(cell.get_csv_row(), 5);
+    }
+
+    #[test]
+    fn boolean_cell_value_default_false() {
+        let cell = TestCell::new(0);
+        assert!(!cell.boolean_cell_value());
+        assert_eq!(cell.get_boolean_value(), None);
+    }
+
+    #[test]
+    fn numeric_cell_value_default_zero() {
+        let cell = TestCell::new(0);
+        assert!((cell.numeric_cell_value() - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn error_cell_value_default_zero() {
+        let cell = TestCell::new(0);
+        assert_eq!(cell.error_cell_value(), 0);
+    }
+
+    #[test]
+    fn rich_string_cell_value_fallback() {
+        let mut cell = TestCell::new(0);
+        cell.set_string_value("plain");
+        // 没有显式 rich_text，应回退到 value 的 display text
+        let rich = cell.rich_string_cell_value();
+        assert_eq!(rich.as_str(), "plain");
+    }
+
+    #[test]
+    fn cached_formula_result_type_matches_cell_type() {
+        let mut cell = TestCell::new(0);
+        cell.set_number_value(1.0);
+        assert_eq!(cell.cached_formula_result_type(), CsvCellType::Numeric);
+    }
+
+    #[test]
+    fn set_formula_data_none_clears_formula() {
+        let mut cell = TestCell::new(0);
+        cell.set_formula("A1");
+        assert_eq!(cell.cell_type(), CsvCellType::Formula);
+        cell.set_formula_data(None);
+        assert!(cell.cell_formula().is_none());
+        assert_eq!(cell.cell_type(), CsvCellType::Blank);
+    }
+
+    #[test]
+    fn set_formula_data_some_sets_formula() {
+        let mut cell = TestCell::new(0);
+        cell.set_formula_data(Some("B1+C1".to_string()));
+        assert_eq!(cell.cell_type(), CsvCellType::Formula);
+        assert!(cell.cell_formula().is_some());
+    }
+
+    #[test]
+    fn set_cell_style() {
+        let mut cell = TestCell::new(0);
+        assert!(cell.cell_style().is_none());
+        let style = CsvCellStyle::new(5);
+        cell.set_cell_style(style);
+        assert!(cell.cell_style().is_some());
+        assert_eq!(cell.cell_style().unwrap().index(), 5);
+    }
+
+    #[test]
+    fn set_numeric_cell_type_some_switches_to_numeric() {
+        let mut cell = TestCell::new(0);
+        cell.set_string_value("text");
+        assert_eq!(cell.cell_type(), CsvCellType::String);
+        cell.set_numeric_cell_type(Some(CsvNumericCellType::Number));
+        assert_eq!(cell.cell_type(), CsvCellType::Numeric);
+    }
+
+    #[test]
+    fn display_text_with_date() {
+        let mut cell = TestCell::new(0);
+        let dt = NaiveDate::from_ymd_opt(2024, 6, 15).unwrap().and_hms_opt(12, 0, 0).unwrap();
+        cell.set_date_value(dt);
+        assert_eq!(cell.display_text(), "2024-06-15 12:00:00");
+    }
+
+    #[test]
+    fn display_text_without_date() {
+        let mut cell = TestCell::new(0);
+        cell.set_string_value("hello");
+        assert_eq!(cell.display_text(), "hello");
+    }
+
+    #[test]
+    fn rich_text_string_setter_and_getter() {
+        let mut cell = TestCell::new(0);
+        let rich = CsvRichTextString::new("rich text");
+        cell.set_rich_text_string(&rich);
+        assert_eq!(cell.get_rich_text_string(), rich);
+        assert_eq!(cell.get_rich_string_cell_value(), rich);
+    }
+
+    #[test]
+    fn local_date_time_aliases() {
+        let mut cell = TestCell::new(0);
+        let dt = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap().and_hms_opt(0, 0, 0).unwrap();
+        cell.set_date_value(dt);
+        assert_eq!(cell.get_local_date_time_cell_value(), Some(dt));
+        assert_eq!(cell.get_date_cell_value(), Some(dt));
+        assert_eq!(cell.get_date_value(), Some(dt));
     }
 }

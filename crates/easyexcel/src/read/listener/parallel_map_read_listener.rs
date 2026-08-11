@@ -300,3 +300,383 @@ impl<T, U, L> Drop for ParallelMapReadListener<T, U, L> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::RefCell;
+    use std::collections::HashMap;
+    use std::rc::Rc;
+
+    /// 简单的下游 ReadListener，记录所有收到的 invoke 值。
+    #[derive(Default)]
+    struct CollectListener {
+        values: Rc<RefCell<Vec<i32>>>,
+        heads: usize,
+        afters: usize,
+        extras: usize,
+        exception_action: ErrorAction,
+    }
+
+    impl CollectListener {
+        fn new(values: Rc<RefCell<Vec<i32>>>) -> Self {
+            Self {
+                values,
+                ..Self::default()
+            }
+        }
+        fn with_error_action(values: Rc<RefCell<Vec<i32>>>, action: ErrorAction) -> Self {
+            Self {
+                values,
+                exception_action: action,
+                ..Self::default()
+            }
+        }
+    }
+
+    impl ReadListener<i32> for CollectListener {
+        fn on_exception(&mut self, _error: &ExcelError, _context: &AnalysisContext) -> ErrorAction {
+            self.exception_action
+        }
+
+        fn invoke_head(
+            &mut self,
+            _head: &HashMap<String, usize>,
+            _context: &AnalysisContext,
+        ) -> Result<()> {
+            self.heads += 1;
+            Ok(())
+        }
+
+        fn invoke(&mut self, data: i32, _context: &AnalysisContext) -> Result<()> {
+            self.values.borrow_mut().push(data);
+            Ok(())
+        }
+
+        fn extra(&mut self, _extra: &CellExtra, _context: &AnalysisContext) -> Result<()> {
+            self.extras += 1;
+            Ok(())
+        }
+
+        fn do_after_all_analysed(&mut self, _context: &AnalysisContext) -> Result<()> {
+            self.afters += 1;
+            Ok(())
+        }
+    }
+
+    fn ctx() -> AnalysisContext {
+        AnalysisContext::new("Sheet1", 0, 0)
+    }
+
+    // ── 构造与参数校验 ──
+
+    #[test]
+    fn zero_worker_count_returns_error() {
+        // 对应 Java：worker_count 必须大于零
+        let values = Rc::new(RefCell::new(Vec::new()));
+        let downstream = CollectListener::new(values);
+        let result = ParallelMapReadListener::<i32, i32, _>::new(
+            0,
+            4,
+            |data, _ctx| Ok(data),
+            downstream,
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn zero_queue_capacity_returns_error() {
+        // 对应 Java：queue_capacity 必须大于零
+        let values = Rc::new(RefCell::new(Vec::new()));
+        let downstream = CollectListener::new(values);
+        let result = ParallelMapReadListener::<i32, i32, _>::new(
+            2,
+            0,
+            |data, _ctx| Ok(data),
+            downstream,
+        );
+        assert!(result.is_err());
+    }
+
+    // ── 基本并发映射 ──
+
+    #[test]
+    fn identity_mapper_preserves_order() {
+        // 对应 Java：mapper 并发执行但结果按输入顺序提交
+        let values = Rc::new(RefCell::new(Vec::new()));
+        let downstream = CollectListener::new(Rc::clone(&values));
+        let mut listener = ParallelMapReadListener::<i32, i32, _>::new(
+            2,
+            4,
+            |data, _ctx| Ok(data),
+            downstream,
+        )
+        .expect("new");
+
+        let context = ctx();
+        for i in 0..10 {
+            ReadListener::invoke(&mut listener, i, &context).expect("invoke");
+        }
+        ReadListener::do_after_all_analysed(&mut listener, &context).expect("finalized");
+
+        let result = values.borrow();
+        assert_eq!(*result, (0..10).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn double_mapper_transforms_values() {
+        // 对应 Java：mapper 转换数据
+        let values = Rc::new(RefCell::new(Vec::new()));
+        let downstream = CollectListener::new(Rc::clone(&values));
+        let mut listener = ParallelMapReadListener::<i32, i32, _>::new(
+            2,
+            8,
+            |data, _ctx| Ok(data * 2),
+            downstream,
+        )
+        .expect("new");
+
+        let context = ctx();
+        for i in 1..=5 {
+            ReadListener::invoke(&mut listener, i, &context).expect("invoke");
+        }
+        ReadListener::do_after_all_analysed(&mut listener, &context).expect("finalized");
+
+        let result = values.borrow();
+        assert_eq!(*result, vec![2, 4, 6, 8, 10]);
+    }
+
+    // ── 错误传播与取消 ──
+
+    #[test]
+    fn mapper_error_propagates_and_cancels() {
+        // 对应 Java：mapper 返回 Err 时取消 pipeline 并传播错误
+        let values = Rc::new(RefCell::new(Vec::new()));
+        let downstream = CollectListener::new(Rc::clone(&values));
+        let mut listener = ParallelMapReadListener::<i32, i32, _>::new(
+            1,
+            4,
+            |data, _ctx| {
+                if data == 3 {
+                    Err(ExcelError::Format("bad value".to_owned()))
+                } else {
+                    Ok(data)
+                }
+            },
+            downstream,
+        )
+        .expect("new");
+
+        let context = ctx();
+        for i in 0..5 {
+            let result = ReadListener::invoke(&mut listener, i, &context);
+            if result.is_err() {
+                break;
+            }
+        }
+        // 后续调用应该返回 pipeline cancelled
+        let result = ReadListener::invoke(&mut listener, 99, &context);
+        assert!(result.is_err());
+    }
+
+    // ── mapper panic 转为错误 ──
+
+    #[test]
+    fn mapper_panic_is_converted_to_error() {
+        // 对应 Java：用户 mapper panic 不应崩溃整个进程
+        let values = Rc::new(RefCell::new(Vec::new()));
+        let downstream = CollectListener::new(Rc::clone(&values));
+        let mut listener = ParallelMapReadListener::<i32, i32, _>::new(
+            1,
+            4,
+            |_data, _ctx| -> Result<i32> {
+                panic!("intentional panic");
+            },
+            downstream,
+        )
+        .expect("new");
+
+        let context = ctx();
+        // 第一次 invoke 发送任务到 worker
+        let result = ReadListener::invoke(&mut listener, 1, &context);
+        // 可能在 invoke 阶段（背压）或 do_after_all_analysed 阶段获得错误
+        let finalize = ReadListener::do_after_all_analysed(&mut listener, &context);
+        assert!(result.is_err() || finalize.is_err());
+    }
+
+    // ── on_exception 取消 ──
+
+    #[test]
+    fn on_exception_sets_cancel_flag() {
+        // 对应 Java：外部异常触发取消
+        let values = Rc::new(RefCell::new(Vec::new()));
+        let downstream =
+            CollectListener::with_error_action(Rc::clone(&values), ErrorAction::Stop);
+        let mut listener = ParallelMapReadListener::<i32, i32, _>::new(
+            1,
+            4,
+            |data, _ctx| Ok(data),
+            downstream,
+        )
+        .expect("new");
+
+        let context = ctx();
+        let error = ExcelError::Format("external error".to_owned());
+        ReadListener::on_exception(&mut listener, &error, &context);
+        // has_next 应返回 false（cancel 已设置）
+        assert!(!ReadListener::has_next(&mut listener, &context));
+    }
+
+    // ── has_next ──
+
+    #[test]
+    fn has_next_delegates_to_downstream() {
+        // 对应 Java：has_next 转发到下游并检查取消状态
+        let values = Rc::new(RefCell::new(Vec::new()));
+        let downstream = CollectListener::new(Rc::clone(&values));
+        let mut listener = ParallelMapReadListener::<i32, i32, _>::new(
+            1,
+            4,
+            |data, _ctx| Ok(data),
+            downstream,
+        )
+        .expect("new");
+
+        let context = ctx();
+        // 未取消时 has_next 取决于下游（默认 true）
+        assert!(ReadListener::has_next(&mut listener, &context));
+    }
+
+    // ── invoke_head 和 extra 先排空 ──
+
+    #[test]
+    fn invoke_head_drains_pending() {
+        // 对应 Java：invoke_head 先排空所有待处理结果
+        let values = Rc::new(RefCell::new(Vec::new()));
+        let downstream = CollectListener::new(Rc::clone(&values));
+        let mut listener = ParallelMapReadListener::<i32, i32, _>::new(
+            1,
+            4,
+            |data, _ctx| Ok(data),
+            downstream,
+        )
+        .expect("new");
+
+        let context = ctx();
+        for i in 0..3 {
+            ReadListener::invoke(&mut listener, i, &context).expect("invoke");
+        }
+        let head = HashMap::from([("col".to_owned(), 0)]);
+        ReadListener::invoke_head(&mut listener, &head, &context).expect("head");
+        // 所有值应在 invoke_head 之前排空
+        assert_eq!(values.borrow().len(), 3);
+    }
+
+    #[test]
+    fn extra_drains_pending() {
+        // 对应 Java：extra 先排空所有待处理结果
+        let values = Rc::new(RefCell::new(Vec::new()));
+        let downstream = CollectListener::new(Rc::clone(&values));
+        let mut listener = ParallelMapReadListener::<i32, i32, _>::new(
+            1,
+            4,
+            |data, _ctx| Ok(data),
+            downstream,
+        )
+        .expect("new");
+
+        let context = ctx();
+        ReadListener::invoke(&mut listener, 42, &context).expect("invoke");
+        let extra = CellExtra::new(
+            crate::core::CellExtraType::Comment,
+            Some("note".to_owned()),
+            0, 0, 1, 1,
+        );
+        ReadListener::extra(&mut listener, &extra, &context).expect("extra");
+        assert_eq!(values.borrow().len(), 1);
+    }
+
+    // ── downstream 和 downstream_mut 访问器 ──
+
+    #[test]
+    fn downstream_accessor() {
+        // 对应 Java：downstream() 返回下游引用
+        let values = Rc::new(RefCell::new(Vec::new()));
+        let downstream = CollectListener::new(Rc::clone(&values));
+        let listener = ParallelMapReadListener::<i32, i32, _>::new(
+            1,
+            4,
+            |data, _ctx| Ok(data),
+            downstream,
+        )
+        .expect("new");
+        let _downstream_ref: &CollectListener = listener.downstream();
+    }
+
+    #[test]
+    fn downstream_mut_accessor() {
+        // 对应 Java：downstream_mut() 返回下游可变引用
+        let values = Rc::new(RefCell::new(Vec::new()));
+        let downstream = CollectListener::new(Rc::clone(&values));
+        let mut listener = ParallelMapReadListener::<i32, i32, _>::new(
+            1,
+            4,
+            |data, _ctx| Ok(data),
+            downstream,
+        )
+        .expect("new");
+        let _downstream_mut: &mut CollectListener = listener.downstream_mut();
+    }
+
+    // ── 多行高并发 ──
+
+    #[test]
+    fn many_rows_with_multiple_workers() {
+        // 对应 Java：多 worker 高并发场景保持有序
+        let values = Rc::new(RefCell::new(Vec::new()));
+        let downstream = CollectListener::new(Rc::clone(&values));
+        let mut listener = ParallelMapReadListener::<i32, i32, _>::new(
+            4,
+            16,
+            |data, _ctx| Ok(data + 1),
+            downstream,
+        )
+        .expect("new");
+
+        let context = ctx();
+        for i in 0..100 {
+            ReadListener::invoke(&mut listener, i, &context).expect("invoke");
+        }
+        ReadListener::do_after_all_analysed(&mut listener, &context).expect("finalized");
+
+        let result = values.borrow();
+        let expected: Vec<i32> = (1..=100).collect();
+        assert_eq!(*result, expected);
+    }
+
+    // ── panic_message ──
+
+    #[test]
+    fn panic_message_handles_string_payload() {
+        // 对应 Java：panic_message 提取字符串消息
+        let payload: Box<dyn std::any::Any + Send> = Box::new("test panic msg".to_owned());
+        let msg = panic_message(payload.as_ref());
+        assert_eq!(msg, "test panic msg");
+    }
+
+    #[test]
+    fn panic_message_handles_str_ref_payload() {
+        // 对应 Java：panic_message 处理 &str 类型 payload
+        let payload: Box<dyn std::any::Any + Send> = Box::new("static str panic");
+        let msg = panic_message(payload.as_ref());
+        assert_eq!(msg, "static str panic");
+    }
+
+    #[test]
+    fn panic_message_handles_non_string_payload() {
+        // 对应 Java：非字符串 panic payload 回退到默认消息
+        let payload: Box<dyn std::any::Any + Send> = Box::new(42i32);
+        let msg = panic_message(payload.as_ref());
+        assert_eq!(msg, "non-string panic payload");
+    }
+}

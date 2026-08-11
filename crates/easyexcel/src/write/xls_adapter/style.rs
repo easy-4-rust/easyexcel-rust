@@ -237,3 +237,236 @@ pub(crate) const fn writer_vertical_alignment(align: VerticalAlignment) -> Biff8
         VerticalAlignment::Distributed => Biff8VerticalAlignment::Distributed,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn apply_excel_cell_style_sets_horizontal_alignment() {
+        let mut request = Biff8StyleRequest::default();
+        let style = ExcelCellStyle {
+            horizontal_alignment: Some(ExcelHorizontalAlignment::Center),
+            ..ExcelCellStyle::default()
+        };
+        apply_excel_cell_style(&mut request, style);
+        assert_eq!(
+            request.horizontal_alignment,
+            Some(Biff8HorizontalAlignment::Center)
+        );
+    }
+
+    #[test]
+    fn apply_excel_cell_style_sets_vertical_alignment() {
+        let mut request = Biff8StyleRequest::default();
+        let style = ExcelCellStyle {
+            vertical_alignment: Some(ExcelVerticalAlignment::Top),
+            ..ExcelCellStyle::default()
+        };
+        apply_excel_cell_style(&mut request, style);
+        assert_eq!(
+            request.vertical_alignment,
+            Some(Biff8VerticalAlignment::Top)
+        );
+    }
+
+    #[test]
+    fn apply_excel_cell_style_sets_wrap() {
+        let mut request = Biff8StyleRequest::default();
+        let style = ExcelCellStyle {
+            wrapped: Some(true),
+            ..ExcelCellStyle::default()
+        };
+        apply_excel_cell_style(&mut request, style);
+        assert!(request.wrap);
+    }
+
+    #[test]
+    fn apply_excel_cell_style_sets_fill_pattern() {
+        let mut request = Biff8StyleRequest::default();
+        let style = ExcelCellStyle {
+            fill_pattern: Some(ExcelFillPattern::Solid),
+            ..ExcelCellStyle::default()
+        };
+        apply_excel_cell_style(&mut request, style);
+        assert_eq!(request.fill_pattern, Some(Biff8FillPattern::Solid));
+    }
+
+    #[test]
+    fn apply_excel_cell_style_sets_fill_foreground_and_auto_pattern() {
+        let mut request = Biff8StyleRequest::default();
+        let style = ExcelCellStyle {
+            fill_foreground_color: Some(ExcelColor::Rgb(0xFF0000)),
+            ..ExcelCellStyle::default()
+        };
+        apply_excel_cell_style(&mut request, style);
+        assert_eq!(request.fill_foreground_color, Some(Biff8Color::Rgb(0xFF0000)));
+        // 自动设置 Solid 填充模式
+        assert_eq!(request.fill_pattern, Some(Biff8FillPattern::Solid));
+    }
+
+    #[test]
+    fn apply_excel_cell_style_sets_fill_background() {
+        let mut request = Biff8StyleRequest::default();
+        let style = ExcelCellStyle {
+            fill_background_color: Some(ExcelColor::Indexed(1)),
+            ..ExcelCellStyle::default()
+        };
+        apply_excel_cell_style(&mut request, style);
+        assert_eq!(request.fill_background_color, Some(Biff8Color::Indexed(1)));
+    }
+
+    #[test]
+    fn apply_excel_cell_style_sets_borders() {
+        let mut request = Biff8StyleRequest::default();
+        let style = ExcelCellStyle {
+            border_left: Some(ExcelBorderStyle::Thin),
+            border_right: Some(ExcelBorderStyle::Medium),
+            border_top: Some(ExcelBorderStyle::Thick),
+            border_bottom: Some(ExcelBorderStyle::Dashed),
+            ..ExcelCellStyle::default()
+        };
+        apply_excel_cell_style(&mut request, style);
+        assert_eq!(request.border_left, Some(Biff8BorderStyle::Thin));
+        assert_eq!(request.border_right, Some(Biff8BorderStyle::Medium));
+        assert_eq!(request.border_top, Some(Biff8BorderStyle::Thick));
+        assert_eq!(request.border_bottom, Some(Biff8BorderStyle::Dashed));
+    }
+
+    #[test]
+    fn apply_excel_cell_style_sets_border_colors() {
+        let mut request = Biff8StyleRequest::default();
+        let style = ExcelCellStyle {
+            left_border_color: Some(ExcelColor::Rgb(0xFF0000)),
+            right_border_color: Some(ExcelColor::Rgb(0x00FF00)),
+            top_border_color: Some(ExcelColor::Rgb(0x0000FF)),
+            bottom_border_color: Some(ExcelColor::Indexed(1)),
+            ..ExcelCellStyle::default()
+        };
+        apply_excel_cell_style(&mut request, style);
+        assert_eq!(request.border_left_color, Some(Biff8Color::Rgb(0xFF0000)));
+        assert_eq!(request.border_right_color, Some(Biff8Color::Rgb(0x00FF00)));
+        assert_eq!(request.border_top_color, Some(Biff8Color::Rgb(0x0000FF)));
+        assert_eq!(request.border_bottom_color, Some(Biff8Color::Indexed(1)));
+    }
+
+    #[test]
+    fn apply_excel_cell_style_sets_data_format() {
+        let mut request = Biff8StyleRequest::default();
+        let style = ExcelCellStyle {
+            data_format: Some(ExcelDataFormat::Builtin(14)),
+            ..ExcelCellStyle::default()
+        };
+        apply_excel_cell_style(&mut request, style);
+        assert_eq!(
+            request.number_format,
+            Some(Biff8NumberFormat::Builtin(14))
+        );
+    }
+
+    #[test]
+    fn apply_excel_cell_style_sets_custom_data_format() {
+        let mut request = Biff8StyleRequest::default();
+        let style = ExcelCellStyle {
+            data_format: Some(ExcelDataFormat::Custom("yyyy-mm-dd")),
+            ..ExcelCellStyle::default()
+        };
+        apply_excel_cell_style(&mut request, style);
+        assert_eq!(
+            request.number_format,
+            Some(Biff8NumberFormat::Custom("yyyy-mm-dd".to_owned()))
+        );
+    }
+
+    #[test]
+    fn apply_excel_font_style_sets_all_properties() {
+        let mut request = Biff8StyleRequest::default();
+        let font = ExcelFontStyle {
+            font_name: Some("Arial"),
+            font_height_in_points: Some(12.0),
+            italic: Some(true),
+            strikeout: Some(true),
+            bold: Some(true),
+            color: Some(ExcelColor::Rgb(0xFF0000)),
+            underline: Some(ExcelUnderline::Single),
+            ..ExcelFontStyle::new()
+        };
+        apply_excel_font_style(&mut request, font);
+        assert_eq!(request.font_name, Some("Arial".to_owned()));
+        assert!(request.italic);
+        assert!(request.strikeout);
+        assert!(request.bold);
+        assert_eq!(request.font_color, Some(Biff8Color::Rgb(0xFF0000)));
+        assert_eq!(request.underline, Biff8Underline::Single);
+    }
+
+    #[test]
+    fn apply_write_font_sets_properties() {
+        let mut request = Biff8StyleRequest::default();
+        let font = WriteFont::new()
+            .font_name("Times New Roman")
+            .font_height_in_points(14.0)
+            .italic(true)
+            .bold(true);
+        apply_write_font(&mut request, &font);
+        assert_eq!(request.font_name, Some("Times New Roman".to_owned()));
+        assert!(request.italic);
+        assert!(request.bold);
+    }
+
+    #[test]
+    fn writer_horizontal_alignment_maps_all_variants() {
+        assert_eq!(
+            writer_horizontal_alignment(HorizontalAlignment::General),
+            Biff8HorizontalAlignment::General
+        );
+        assert_eq!(
+            writer_horizontal_alignment(HorizontalAlignment::Left),
+            Biff8HorizontalAlignment::Left
+        );
+        assert_eq!(
+            writer_horizontal_alignment(HorizontalAlignment::Center),
+            Biff8HorizontalAlignment::Center
+        );
+        assert_eq!(
+            writer_horizontal_alignment(HorizontalAlignment::Right),
+            Biff8HorizontalAlignment::Right
+        );
+        assert_eq!(
+            writer_horizontal_alignment(HorizontalAlignment::Fill),
+            Biff8HorizontalAlignment::Fill
+        );
+        assert_eq!(
+            writer_horizontal_alignment(HorizontalAlignment::Justify),
+            Biff8HorizontalAlignment::Justify
+        );
+        assert_eq!(
+            writer_horizontal_alignment(HorizontalAlignment::CenterAcross),
+            Biff8HorizontalAlignment::CenterAcross
+        );
+    }
+
+    #[test]
+    fn writer_vertical_alignment_maps_all_variants() {
+        assert_eq!(
+            writer_vertical_alignment(VerticalAlignment::Top),
+            Biff8VerticalAlignment::Top
+        );
+        assert_eq!(
+            writer_vertical_alignment(VerticalAlignment::Center),
+            Biff8VerticalAlignment::Center
+        );
+        assert_eq!(
+            writer_vertical_alignment(VerticalAlignment::Bottom),
+            Biff8VerticalAlignment::Bottom
+        );
+        assert_eq!(
+            writer_vertical_alignment(VerticalAlignment::Justify),
+            Biff8VerticalAlignment::Justify
+        );
+        assert_eq!(
+            writer_vertical_alignment(VerticalAlignment::Distributed),
+            Biff8VerticalAlignment::Distributed
+        );
+    }
+}

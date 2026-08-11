@@ -91,3 +91,150 @@ impl BasicParameter {
     /// Java `setFiledCacheLocation`（保留上游拼写）。
     pub const fn set_filed_cache_location(&mut self, value: Option<CacheLocation>) { self.filed_cache_location = value; }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_returns_default() {
+        // 对应 Java：BasicParameter 无参构造器
+        let param = BasicParameter::new();
+        assert_eq!(param, BasicParameter::default());
+    }
+
+    #[test]
+    fn default_all_fields_none_or_empty() {
+        // 对应 Java：Default 所有字段为 null/空
+        let param = BasicParameter::default();
+        assert!(param.head().is_none());
+        assert!(param.clazz().is_none());
+        assert!(param.custom_converter_list().is_empty());
+        assert!(param.get_auto_trim().is_none());
+        assert!(param.get_use_1904windowing().is_none());
+        assert!(param.get_locale().is_none());
+        assert!(param.get_use_scientific_format().is_none());
+        assert!(param.get_filed_cache_location().is_none());
+    }
+
+    #[test]
+    fn head_setter_and_getter() {
+        // 对应 Java：head getter/setter
+        let mut param = BasicParameter::new();
+        assert!(param.get_head().is_none());
+        let head = vec![vec!["Name".to_owned(), "Age".to_owned()]];
+        param.set_head(Some(head));
+        assert_eq!(param.get_head().unwrap().len(), 1);
+        param.set_head(None);
+        assert!(param.get_head().is_none());
+    }
+
+    #[test]
+    fn clazz_setter_and_getter() {
+        // 对应 Java：clazz getter/setter
+        let mut param = BasicParameter::new();
+        assert!(param.get_clazz().is_none());
+        param.set_clazz(Some("MyModel".to_owned()));
+        assert_eq!(param.get_clazz(), Some("MyModel"));
+        param.set_clazz(None);
+        assert!(param.get_clazz().is_none());
+    }
+
+    #[test]
+    fn custom_converter_list_setter_and_getter() {
+        // 对应 Java：customConverterList getter/setter
+        let mut param = BasicParameter::new();
+        assert!(param.get_custom_converter_list().is_empty());
+        param.set_custom_converter_list(vec!["C1".to_owned(), "C2".to_owned()]);
+        assert_eq!(param.get_custom_converter_list().len(), 2);
+    }
+
+    #[test]
+    fn auto_trim_setter_and_getter() {
+        // 对应 Java：autoTrim getter/setter
+        let mut param = BasicParameter::new();
+        param.set_auto_trim(Some(true));
+        assert_eq!(param.get_auto_trim(), Some(true));
+    }
+
+    #[test]
+    fn use_1904windowing_setter_and_getter() {
+        // 对应 Java：use1904windowing getter/setter（两种命名风格）
+        let mut param = BasicParameter::new();
+        param.set_use_1904windowing(Some(true));
+        assert_eq!(param.get_use_1904windowing(), Some(true));
+        assert_eq!(param.get_use1904windowing(), Some(true));
+        param.set_use1904windowing(Some(false));
+        assert_eq!(param.get_use_1904windowing(), Some(false));
+    }
+
+    #[test]
+    fn locale_setter_and_getter() {
+        // 对应 Java：locale getter/setter
+        let mut param = BasicParameter::new();
+        param.set_locale(Some("zh_CN".to_owned()));
+        assert_eq!(param.get_locale(), Some("zh_CN"));
+        param.set_locale(None);
+        assert!(param.get_locale().is_none());
+    }
+
+    #[test]
+    fn use_scientific_format_setter_and_getter() {
+        // 对应 Java：useScientificFormat getter/setter
+        let mut param = BasicParameter::new();
+        param.set_use_scientific_format(Some(true));
+        assert_eq!(param.get_use_scientific_format(), Some(true));
+    }
+
+    #[test]
+    fn filed_cache_location_setter_and_getter() {
+        // 对应 Java：filedCacheLocation getter/setter
+        let mut param = BasicParameter::new();
+        param.set_filed_cache_location(Some(CacheLocation::ThreadLocal));
+        assert_eq!(param.get_filed_cache_location(), Some(CacheLocation::ThreadLocal));
+        param.set_filed_cache_location(None);
+        assert!(param.get_filed_cache_location().is_none());
+    }
+
+    #[test]
+    fn clone_produces_equal_instance() {
+        // 对应 Java：clone
+        let mut param = BasicParameter::new();
+        param.set_clazz(Some("C".to_owned()));
+        param.set_auto_trim(Some(true));
+        let cloned = param.clone();
+        assert_eq!(param, cloned);
+    }
+
+    #[test]
+    fn debug_format_does_not_panic() {
+        // 对应 Java：toString
+        let param = BasicParameter::new();
+        let _debug = format!("{param:?}");
+    }
+
+    #[test]
+    fn head_rust_style_accessor() {
+        // 对应 Java：head() Rust 风格访问器
+        let mut param = BasicParameter::new();
+        assert!(param.head().is_none());
+        param.set_head(Some(vec![vec!["A".to_owned()]]));
+        assert!(param.head().is_some());
+    }
+
+    #[test]
+    fn clazz_rust_style_accessor() {
+        // 对应 Java：clazz() Rust 风格访问器
+        let mut param = BasicParameter::new();
+        assert!(param.clazz().is_none());
+        param.set_clazz(Some("Test".to_owned()));
+        assert_eq!(param.clazz(), Some("Test"));
+    }
+
+    #[test]
+    fn custom_converter_list_rust_style_accessor() {
+        // 对应 Java：custom_converter_list() Rust 风格访问器
+        let param = BasicParameter::new();
+        assert!(param.custom_converter_list().is_empty());
+    }
+}

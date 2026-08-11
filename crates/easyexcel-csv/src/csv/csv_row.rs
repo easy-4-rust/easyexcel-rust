@@ -265,3 +265,232 @@ impl<V: CsvCellValue> CsvRow<V> {
         record
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::csv::{CsvCellType, CsvNumericCellType};
+    use easyexcel_model::CellValue as ModelCellValue;
+
+    type TestRow = CsvRow<ModelCellValue>;
+
+    #[test]
+    fn new_row_has_correct_index() {
+        let row = TestRow::new(5);
+        assert_eq!(row.row_index(), 5);
+        assert_eq!(row.row_num(), 5);
+        assert_eq!(row.get_row_num(), 5);
+        assert!(row.cells().is_empty());
+    }
+
+    #[test]
+    fn set_row_index_updates_index() {
+        let mut row = TestRow::new(0);
+        row.set_row_index(10);
+        assert_eq!(row.row_index(), 10);
+    }
+
+    #[test]
+    fn set_row_num_delegates() {
+        let mut row = TestRow::new(0);
+        row.set_row_num(7);
+        assert_eq!(row.row_num(), 7);
+    }
+
+    #[test]
+    fn try_create_cell_success() {
+        let mut row = TestRow::new(0);
+        let cell = row.try_create_cell(3).unwrap();
+        assert_eq!(cell.column_index(), 3);
+        assert_eq!(row.physical_number_of_cells(), 1);
+    }
+
+    #[test]
+    fn try_create_cell_duplicate_errors() {
+        let mut row = TestRow::new(0);
+        row.try_create_cell(0).unwrap();
+        assert!(row.try_create_cell(0).is_err());
+    }
+
+    #[test]
+    fn cell_lookup_finds_by_column() {
+        let mut row = TestRow::new(0);
+        row.try_create_cell(2).unwrap();
+        assert!(row.cell(2).is_some());
+        assert!(row.cell(5).is_none());
+    }
+
+    #[test]
+    fn cell_mut_lookup() {
+        let mut row = TestRow::new(0);
+        row.try_create_cell(0).unwrap();
+        let cell = row.cell_mut(0).unwrap();
+        cell.set_string_value("modified");
+        assert_eq!(row.cell(0).unwrap().string_cell_value(), "modified");
+    }
+
+    #[test]
+    fn first_and_last_cell_num() {
+        let mut row = TestRow::new(0);
+        assert_eq!(row.first_cell_num(), None);
+        assert_eq!(row.last_cell_num(), None);
+        row.try_create_cell(2).unwrap();
+        row.try_create_cell(5).unwrap();
+        assert_eq!(row.first_cell_num(), Some(2));
+        assert_eq!(row.last_cell_num(), Some(6)); // max + 1
+    }
+
+    #[test]
+    fn remove_cell_success() {
+        let mut row = TestRow::new(0);
+        row.try_create_cell(0).unwrap();
+        assert!(row.remove_cell(0).is_some());
+        assert!(row.cells().is_empty());
+    }
+
+    #[test]
+    fn remove_cell_missing_returns_none() {
+        let mut row = TestRow::new(0);
+        assert!(row.remove_cell(99).is_none());
+    }
+
+    #[test]
+    fn into_record_produces_dense_vector() {
+        let mut row = TestRow::new(0);
+        let cell = row.try_create_cell(0).unwrap();
+        cell.set_string_value("A");
+        let cell = row.try_create_cell(2).unwrap();
+        cell.set_string_value("C");
+        let record = row.into_record(4);
+        assert_eq!(record.len(), 4);
+        assert_eq!(record[0], "A");
+        assert_eq!(record[1], "");
+        assert_eq!(record[2], "C");
+        assert_eq!(record[3], "");
+    }
+
+    #[test]
+    fn into_record_width_smaller_than_column_skips() {
+        let mut row = TestRow::new(0);
+        let cell = row.try_create_cell(5).unwrap();
+        cell.set_string_value("beyond");
+        let record = row.into_record(2);
+        assert_eq!(record.len(), 2);
+        // column 5 超出 width 2，跳过
+    }
+
+    #[test]
+    fn height_and_height_in_points() {
+        let mut row = TestRow::new(0);
+        assert_eq!(row.height(), 0);
+        row.set_height(400);
+        assert_eq!(row.height(), 400);
+        assert!((row.height_in_points() - 20.0).abs() < f32::EPSILON);
+        assert!((row.get_height_in_points() - 20.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn set_height_in_points() {
+        let mut row = TestRow::new(0);
+        row.set_height_in_points(15.0);
+        assert_eq!(row.height(), 300);
+    }
+
+    #[test]
+    fn set_height_in_points_negative_clamps_to_zero() {
+        let mut row = TestRow::new(0);
+        row.set_height_in_points(-5.0);
+        assert_eq!(row.height(), 0);
+    }
+
+    #[test]
+    fn zero_height_flag() {
+        let mut row = TestRow::new(0);
+        assert!(!row.zero_height());
+        row.set_zero_height(true);
+        assert!(row.zero_height());
+        assert!(row.get_zero_height());
+    }
+
+    #[test]
+    fn cell_style_and_formatted() {
+        let mut row = TestRow::new(0);
+        assert!(!row.is_formatted());
+        assert!(row.cell_style().is_none());
+        let style = CsvCellStyle::new(3);
+        row.set_cell_style(style);
+        assert!(row.is_formatted());
+        assert_eq!(row.cell_style().unwrap().index(), 3);
+    }
+
+    #[test]
+    fn set_row_style_delegates() {
+        let mut row = TestRow::new(0);
+        let style = CsvCellStyle::new(1);
+        row.set_row_style(style);
+        assert!(row.is_formatted());
+        assert_eq!(row.get_row_style().unwrap().index(), 1);
+    }
+
+    #[test]
+    fn csv_workbook_and_sheet_propagation() {
+        let mut row = TestRow::new(0);
+        row.try_create_cell(0).unwrap();
+        row.set_csv_workbook(Some(10));
+        row.set_csv_sheet(Some(20));
+        assert_eq!(row.get_csv_workbook(), Some(10));
+        assert_eq!(row.get_csv_sheet(), Some(20));
+        // 单元格也应该收到传播
+        assert_eq!(row.cell(0).unwrap().get_csv_workbook(), Some(10));
+        assert_eq!(row.cell(0).unwrap().get_csv_sheet(), Some(20));
+    }
+
+    #[test]
+    fn iter_and_cell_iterator() {
+        let mut row = TestRow::new(0);
+        row.try_create_cell(0).unwrap();
+        row.try_create_cell(1).unwrap();
+        assert_eq!(row.iter().count(), 2);
+        assert_eq!(row.cell_iterator().count(), 2);
+    }
+
+    #[test]
+    fn get_cell_list_alias() {
+        let mut row = TestRow::new(0);
+        row.try_create_cell(0).unwrap();
+        assert_eq!(row.get_cell_list().len(), 1);
+    }
+
+    #[test]
+    fn shift_cells_right_and_left_are_noop() {
+        let mut row = TestRow::new(0);
+        row.try_create_cell(0).unwrap();
+        row.shift_cells_right(0, 5, 1);
+        row.shift_cells_left(0, 5, 1);
+        assert_eq!(row.physical_number_of_cells(), 1);
+    }
+
+    #[test]
+    fn get_outline_level_always_zero() {
+        let row = TestRow::new(0);
+        assert_eq!(row.get_outline_level(), 0);
+    }
+
+    #[test]
+    fn try_create_cell_propagates_ids() {
+        let mut row = TestRow::new(0);
+        row.set_csv_workbook(Some(100));
+        row.set_csv_sheet(Some(200));
+        let cell = row.try_create_cell(0).unwrap();
+        assert_eq!(cell.get_csv_workbook(), Some(100));
+        assert_eq!(cell.get_csv_sheet(), Some(200));
+    }
+
+    #[test]
+    fn get_cell_alias() {
+        let mut row = TestRow::new(0);
+        row.try_create_cell(0).unwrap();
+        assert!(row.get_cell(0).is_some());
+        assert!(row.get_cell(1).is_none());
+    }
+}

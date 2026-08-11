@@ -300,3 +300,281 @@ impl ReadCellData {
     #[must_use]
     pub fn clone_data(&self) -> Self { self.clone() }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bigdecimal::BigDecimal;
+
+    #[test]
+    fn empty_creates_default_cell() {
+        // 对应 Java：ReadCellData 无参构造器
+        let cell = ReadCellData::empty();
+        assert_eq!(cell.row_index(), 0);
+        assert_eq!(cell.column_index(), 0);
+        assert_eq!(cell.cell_type(), CellDataType::Empty);
+        assert!(cell.string_value().is_empty());
+    }
+
+    #[test]
+    fn new_empty_instance_with_indices() {
+        // 对应 Java：ReadCellData(rowIndex, columnIndex)
+        let cell = ReadCellData::new_empty_instance(Some(5), Some(3));
+        assert_eq!(cell.row_index(), 5);
+        assert_eq!(cell.column_index(), 3);
+    }
+
+    #[test]
+    fn new_empty_instance_with_none_indices() {
+        // 对应 Java：ReadCellData(null, null) 使用默认 0
+        let cell = ReadCellData::new_empty_instance(None, None);
+        assert_eq!(cell.row_index(), 0);
+        assert_eq!(cell.column_index(), 0);
+    }
+
+    #[test]
+    fn new_instance_from_string() {
+        // 对应 Java：ReadCellData(String)
+        let cell = ReadCellData::new_instance("hello".to_owned(), Some(1), Some(2));
+        assert_eq!(cell.string_value(), "hello");
+        assert_eq!(cell.row_index(), 1);
+        assert_eq!(cell.column_index(), 2);
+    }
+
+    #[test]
+    fn new_instance_from_bool() {
+        // 对应 Java：ReadCellData(Boolean)
+        let cell = ReadCellData::new_instance(true, None, None);
+        assert_eq!(cell.boolean_value(), Some(true));
+    }
+
+    #[test]
+    fn new_instance_from_int() {
+        // 对应 Java：ReadCellData(Integer)
+        let cell = ReadCellData::new_instance(42i64, None, None);
+        assert_eq!(cell.number_value(), Some(BigDecimal::from(42i64)));
+    }
+
+    #[test]
+    fn new_instance_original_preserves_original() {
+        // 对应 Java：ReadCellData(BigDecimal) with original
+        let original = BigDecimal::from(123i64);
+        let cell = ReadCellData::new_instance_original(original.clone(), Some(0), Some(0));
+        assert!(cell.original_number_value().is_some());
+        assert_eq!(cell.original_number_value().unwrap(), &original);
+    }
+
+    #[test]
+    fn from_type_sets_declared_type() {
+        // 对应 Java：ReadCellData(CellDataTypeEnum)
+        let cell = ReadCellData::from_type(CellDataType::String);
+        assert_eq!(cell.get_type(), Some(CellDataType::String));
+    }
+
+    #[test]
+    fn from_type_and_string_string_type() {
+        // 对应 Java：ReadCellData(CellDataTypeEnum.STRING, value)
+        let cell = ReadCellData::from_type_and_string(CellDataType::String, "test").unwrap();
+        assert_eq!(cell.string_value(), "test");
+        assert_eq!(cell.get_type(), Some(CellDataType::String));
+    }
+
+    #[test]
+    fn from_type_and_string_error_type() {
+        // 对应 Java：ReadCellData(CellDataTypeEnum.ERROR, value)
+        let cell = ReadCellData::from_type_and_string(CellDataType::Error, "#N/A").unwrap();
+        assert_eq!(cell.string_value(), "#N/A");
+        assert_eq!(cell.get_type(), Some(CellDataType::Error));
+    }
+
+    #[test]
+    fn from_type_and_string_rejects_number() {
+        // 对应 Java：ReadCellData(NUMBER, value) 抛异常
+        let result = ReadCellData::from_type_and_string(CellDataType::Number, "123");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn from_boolean_creates_bool_cell() {
+        // 对应 Java：ReadCellData(Boolean)
+        let cell = ReadCellData::from_boolean(true);
+        assert_eq!(cell.boolean_value(), Some(true));
+    }
+
+    #[test]
+    fn from_string_creates_string_cell() {
+        // 对应 Java：ReadCellData(String)
+        let cell = ReadCellData::from_string("abc");
+        assert_eq!(cell.string_value(), "abc");
+    }
+
+    #[test]
+    fn from_number_creates_number_cell() {
+        // 对应 Java：ReadCellData(BigDecimal)
+        let num = BigDecimal::from(99i64);
+        let cell = ReadCellData::from_number(num.clone());
+        assert_eq!(cell.number_value(), Some(num));
+    }
+
+    #[test]
+    fn set_and_get_string_value() {
+        // 对应 Java：setStringValue / getStringValue
+        let mut cell = ReadCellData::empty();
+        cell.set_string_value("new value");
+        assert_eq!(cell.get_string_value(), "new value");
+        assert_eq!(cell.string_value(), "new value");
+    }
+
+    #[test]
+    fn set_string_value_updates_type() {
+        // 对应 Java：setStringValue 同步更新类型
+        let mut cell = ReadCellData::empty();
+        cell.set_string_value("text");
+        assert_eq!(cell.cell_type(), CellDataType::String);
+    }
+
+    #[test]
+    fn set_and_get_number_value() {
+        // 对应 Java：setNumberValue / getNumberValue
+        let mut cell = ReadCellData::empty();
+        let num = BigDecimal::from(42i64);
+        cell.set_number_value(Some(num.clone()));
+        assert_eq!(cell.number_value(), Some(num));
+        assert_eq!(cell.get_number_value(), cell.number_value());
+    }
+
+    #[test]
+    fn set_number_value_none_clears() {
+        // 对应 Java：setNumberValue(null)
+        let mut cell = ReadCellData::from_number(BigDecimal::from(1i64));
+        cell.set_number_value(None);
+        assert!(cell.number_value().is_none());
+    }
+
+    #[test]
+    fn set_and_get_boolean_value() {
+        // 对应 Java：setBooleanValue / getBooleanValue
+        let mut cell = ReadCellData::empty();
+        cell.set_boolean_value(Some(true));
+        assert_eq!(cell.boolean_value(), Some(true));
+        assert_eq!(cell.get_boolean_value(), Some(true));
+    }
+
+    #[test]
+    fn set_boolean_value_none_clears() {
+        // 对应 Java：setBooleanValue(null)
+        let mut cell = ReadCellData::from_boolean(true);
+        cell.set_boolean_value(None);
+        assert!(cell.boolean_value().is_none());
+    }
+
+    #[test]
+    fn set_and_get_formula_data() {
+        // 对应 Java：setFormulaData / getFormulaData
+        let mut cell = ReadCellData::empty();
+        assert!(cell.formula_data().is_none());
+        cell.set_formula_data(None);
+        assert!(cell.formula_data().is_none());
+    }
+
+    #[test]
+    fn set_and_get_data_format_data() {
+        // 对应 Java：setDataFormatData / getDataFormatData
+        let mut cell = ReadCellData::empty();
+        assert!(cell.get_data_format_data().is_none());
+        cell.set_data_format_data(None);
+        assert!(cell.data_format_data().is_none());
+    }
+
+    #[test]
+    fn set_and_get_original_number_value() {
+        // 对应 Java：setOriginalNumberValue / getOriginalNumberValue
+        let mut cell = ReadCellData::empty();
+        assert!(cell.get_original_number_value().is_none());
+        let num = BigDecimal::from(100i64);
+        cell.set_original_number_value(Some(num.clone()));
+        assert_eq!(cell.original_number_value().unwrap(), &num);
+        assert_eq!(cell.get_original_number_value().unwrap(), &num);
+    }
+
+    #[test]
+    fn set_and_get_type() {
+        // 对应 Java：setType / getType
+        let mut cell = ReadCellData::empty();
+        cell.set_type(Some(CellDataType::Boolean));
+        assert_eq!(cell.get_type(), Some(CellDataType::Boolean));
+        cell.set_type(None);
+        assert!(cell.get_type().is_none());
+    }
+
+    #[test]
+    fn row_index_setter_and_getter() {
+        // 对应 Java：setRowIndex / getRowIndex
+        let mut cell = ReadCellData::empty();
+        cell.set_row_index(10);
+        assert_eq!(cell.row_index(), 10);
+        assert_eq!(cell.get_row_index(), 10);
+    }
+
+    #[test]
+    fn column_index_setter_and_getter() {
+        // 对应 Java：setColumnIndex / getColumnIndex
+        let mut cell = ReadCellData::empty();
+        cell.set_column_index(5);
+        assert_eq!(cell.column_index(), 5);
+        assert_eq!(cell.get_column_index(), 5);
+    }
+
+    #[test]
+    fn raw_value_and_data_accessors() {
+        // 对应 Java：getData / rawData
+        let cell = ReadCellData::from_string("test");
+        let _raw: &CellValue = cell.raw_value();
+        let _data: &CellValue = cell.data();
+        let _get_data: &CellValue = cell.get_data();
+    }
+
+    #[test]
+    fn display_value_returns_formatted_text() {
+        // 对应 Java：displayValue
+        let cell = ReadCellData::from_string("hello");
+        assert_eq!(cell.display_value(), "hello");
+    }
+
+    #[test]
+    fn clone_data_equals_original() {
+        // 对应 Java：clone()
+        let cell = ReadCellData::from_string("test");
+        let cloned = cell.clone_data();
+        assert_eq!(cell, cloned);
+    }
+
+    #[test]
+    fn number_value_for_int() {
+        // 对应 Java：getNumberValue for integer data
+        let cell = ReadCellData::new_instance(42i64, None, None);
+        assert!(cell.number_value().is_some());
+    }
+
+    #[test]
+    fn number_value_for_empty_is_none() {
+        // 对应 Java：getNumberValue for empty data
+        let cell = ReadCellData::empty();
+        assert!(cell.number_value().is_none());
+    }
+
+    #[test]
+    fn boolean_value_for_non_bool_is_none() {
+        // 对应 Java：getBooleanValue for non-boolean
+        let cell = ReadCellData::from_string("text");
+        assert!(cell.boolean_value().is_none());
+    }
+
+    #[test]
+    fn set_data_overrides_value() {
+        // 对应 Java：setData
+        let mut cell = ReadCellData::empty();
+        cell.set_data(CellValue::Int(99));
+        assert_eq!(*cell.data(), CellValue::Int(99));
+    }
+}

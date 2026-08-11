@@ -19,3 +19,32 @@ pub fn checked_row_index(index: usize) -> Result<u32> {
 pub fn checked_column_index(index: usize) -> Result<u32> {
     u32::try_from(index).map_err(|_| Error::Csv("CSV column index exceeds u32".to_owned()))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn checked_row_index_success() {
+        assert_eq!(checked_row_index(0).unwrap(), 0);
+        assert_eq!(checked_row_index(100).unwrap(), 100);
+        assert_eq!(checked_row_index(u32::MAX as usize).unwrap(), u32::MAX);
+    }
+
+    #[test]
+    fn checked_row_index_overflow() {
+        assert!(checked_row_index(u32::MAX as usize + 1).is_err());
+    }
+
+    #[test]
+    fn checked_column_index_success() {
+        assert_eq!(checked_column_index(0).unwrap(), 0);
+        assert_eq!(checked_column_index(25).unwrap(), 25);
+        assert_eq!(checked_column_index(u32::MAX as usize).unwrap(), u32::MAX);
+    }
+
+    #[test]
+    fn checked_column_index_overflow() {
+        assert!(checked_column_index(u32::MAX as usize + 1).is_err());
+    }
+}

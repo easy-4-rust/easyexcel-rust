@@ -1,3 +1,9 @@
+use std::fmt::Debug;
+
+use easyexcel_model::CellValue as ModelCellValue;
+
+use super::CsvNumericCellType;
+
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 可存入 [`CsvCell`] 的值契约。
 ///
 /// `EasyExcel` 门面通过此契约接入其 Java 风格 `CellValue`，基础 crate
@@ -83,5 +89,91 @@ impl CsvCellValue for ModelCellValue {
 
     fn csv_display_text(&self) -> String {
         self.to_display_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use easyexcel_model::CellValue;
+
+    #[test]
+    fn from_csv_text() {
+        let v = ModelCellValue::from_csv_text("hello".to_string());
+        assert_eq!(v, CellValue::Text("hello".into()));
+    }
+
+    #[test]
+    fn from_csv_formula_stores_as_text() {
+        let v = ModelCellValue::from_csv_formula("A1+B1".to_string());
+        assert_eq!(v, CellValue::Text("A1+B1".into()));
+    }
+
+    #[test]
+    fn from_csv_bool_true() {
+        let v = ModelCellValue::from_csv_bool(true);
+        assert_eq!(v, CellValue::Bool(true));
+    }
+
+    #[test]
+    fn from_csv_bool_false() {
+        let v = ModelCellValue::from_csv_bool(false);
+        assert_eq!(v, CellValue::Bool(false));
+    }
+
+    #[test]
+    fn from_csv_number() {
+        let v = ModelCellValue::from_csv_number(42.5);
+        assert_eq!(v, CellValue::Number(42.5));
+    }
+
+    #[test]
+    fn csv_number_some() {
+        let v = ModelCellValue::Number(3.14);
+        assert_eq!(v.csv_number(), Some(3.14));
+    }
+
+    #[test]
+    fn csv_number_none_for_text() {
+        let v = ModelCellValue::Text("not a number".into());
+        assert_eq!(v.csv_number(), None);
+    }
+
+    #[test]
+    fn csv_bool_some() {
+        let v = ModelCellValue::Bool(true);
+        assert_eq!(v.csv_bool(), Some(true));
+    }
+
+    #[test]
+    fn csv_bool_none_for_number() {
+        let v = ModelCellValue::Number(1.0);
+        assert_eq!(v.csv_bool(), None);
+    }
+
+    #[test]
+    fn csv_numeric_cell_type_for_number() {
+        let v = ModelCellValue::Number(1.0);
+        assert_eq!(v.csv_numeric_cell_type(), Some(CsvNumericCellType::Number));
+    }
+
+    #[test]
+    fn csv_numeric_cell_type_none_for_text() {
+        let v = ModelCellValue::Text("abc".into());
+        assert_eq!(v.csv_numeric_cell_type(), None);
+    }
+
+    #[test]
+    fn csv_display_text_variants() {
+        assert_eq!(ModelCellValue::Empty.csv_display_text(), "");
+        assert_eq!(ModelCellValue::Text("hi".into()).csv_display_text(), "hi");
+        assert_eq!(ModelCellValue::Bool(true).csv_display_text(), "TRUE");
+        assert_eq!(ModelCellValue::Bool(false).csv_display_text(), "FALSE");
+        assert_eq!(ModelCellValue::Number(42.0).csv_display_text(), "42");
+    }
+
+    #[test]
+    fn empty_constant() {
+        assert_eq!(ModelCellValue::EMPTY, CellValue::Empty);
     }
 }

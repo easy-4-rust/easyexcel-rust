@@ -110,7 +110,7 @@ pub fn looks_like_delimited_text(bytes: &[u8]) -> bool {
 mod tests {
     use std::io::Write;
 
-    use super::Format;
+    use super::*;
 
     #[test]
     fn unknown_extension_uses_magic_and_defaults_to_csv() {
@@ -133,6 +133,113 @@ mod tests {
         assert_eq!(
             Format::detect_path(csv.path()).expect("detect"),
             Format::Csv
+        );
+    }
+
+    #[test]
+    fn from_extension_resolves_known_types() {
+        assert_eq!(Format::from_extension("xlsx"), Some(Format::Xlsx));
+        assert_eq!(Format::from_extension("XLSX"), Some(Format::Xlsx));
+        assert_eq!(Format::from_extension("xlsm"), Some(Format::Xlsx));
+        assert_eq!(Format::from_extension("xls"), Some(Format::Xls));
+        assert_eq!(Format::from_extension("XLS"), Some(Format::Xls));
+        assert_eq!(Format::from_extension("csv"), Some(Format::Csv));
+        assert_eq!(Format::from_extension("CSV"), Some(Format::Csv));
+        assert_eq!(Format::from_extension("tsv"), Some(Format::Csv));
+        assert_eq!(Format::from_extension("txt"), Some(Format::Csv));
+        assert_eq!(Format::from_extension("pdf"), None);
+        assert_eq!(Format::from_extension(""), None);
+    }
+
+    #[test]
+    fn from_path_extracts_extension() {
+        assert_eq!(Format::from_path(std::path::Path::new("test.xlsx")), Some(Format::Xlsx));
+        assert_eq!(Format::from_path(std::path::Path::new("test.xls")), Some(Format::Xls));
+        assert_eq!(Format::from_path(std::path::Path::new("test.csv")), Some(Format::Csv));
+        assert_eq!(Format::from_path(std::path::Path::new("test")), None);
+        assert_eq!(Format::from_path(std::path::Path::new("test.pdf")), None);
+    }
+
+    #[test]
+    fn from_magic_detects_xlsx_zip() {
+        assert_eq!(Format::from_magic(b"PK\x03\x04extra"), Format::Xlsx);
+        assert_eq!(Format::from_magic(b"PK\x05\x06"), Format::Xlsx);
+        assert_eq!(Format::from_magic(b"PK\x07\x08"), Format::Xlsx);
+    }
+
+    #[test]
+    fn from_magic_detects_xls_cfb() {
+        assert_eq!(
+            Format::from_magic(&[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]),
+            Format::Xls
+        );
+    }
+
+    #[test]
+    fn from_magic_defaults_to_csv() {
+        assert_eq!(Format::from_magic(b"hello,world"), Format::Csv);
+        assert_eq!(Format::from_magic(&[]), Format::Csv);
+    }
+
+    #[test]
+    fn path_has_extension_checks_case_insensitively() {
+        assert!(path_has_extension(std::path::Path::new("test.xlsx"), "xlsx"));
+        assert!(path_has_extension(std::path::Path::new("test.XLSX"), "xlsx"));
+        assert!(!path_has_extension(std::path::Path::new("test.xls"), "xlsx"));
+        assert!(!path_has_extension(std::path::Path::new("test"), "xlsx"));
+    }
+
+    #[test]
+    fn looks_like_cfb_identifies_ole2() {
+        assert!(looks_like_cfb(&[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]));
+        assert!(!looks_like_cfb(b"PK\x03\x04"));
+        assert!(!looks_like_cfb(&[]));
+    }
+
+    #[test]
+    fn looks_like_zip_identifies_pk_signatures() {
+        assert!(looks_like_zip(b"PK\x03\x04rest"));
+        assert!(looks_like_zip(b"PK\x05\x06"));
+        assert!(looks_like_zip(b"PK\x07\x08"));
+        assert!(!looks_like_zip(b"notzip"));
+        assert!(!looks_like_zip(&[]));
+    }
+
+    #[test]
+    fn looks_like_delimited_text_accepts_ascii_and_bom() {
+        assert!(looks_like_delimited_text(b"a,b,c"));
+        assert!(looks_like_delimited_text(b"1\t2\t3"));
+        assert!(looks_like_delimited_text(b" hello"));
+        assert!(looks_like_delimited_text(&[0xEF, 0xBB, 0xBF, b'a']));
+        assert!(!looks_like_delimited_text(&[]));
+        // Binary data with non-ASCII first byte
+        assert!(!looks_like_delimited_text(&[0x80, 0x01, 0x02]));
+    }
+
+    #[test]
+    fn detect_path_with_known_extension_skips_magic() {
+        let mut file = tempfile::Builder::new()
+            .suffix(".xlsx")
+            .tempfile()
+            .expect("temp xlsx");
+        file.write_all(b"not really xlsx").expect("write");
+        assert_eq!(
+            Format::detect_path(file.path()).expect("detect"),
+            Format::Xlsx
+        );
+    }
+
+    #[test]
+    fn detect_path_xls_magic() {
+        let mut file = tempfile::Builder::new()
+            .suffix(".unknown")
+            .tempfile()
+            .expect("temp");
+        file.write_all(&[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1])
+            .expect("write");
+        assert_eq!(
+            Format::detect_path(file.path()).expect("detect"),
+            Format::Xls
         );
     }
 }

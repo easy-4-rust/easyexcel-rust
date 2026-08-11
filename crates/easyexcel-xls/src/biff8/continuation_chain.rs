@@ -33,9 +33,23 @@ impl Biff8ContinuationChain {
 
     /// 对应 Java：无直接对应对象；Rust 架构扩展。 将当前分段链解码为共享字符串表。
     ///
+    /// 当 `xls-lazy-sst` feature 启用时返回延迟解码容器 `LazySst`，
+    /// 否则返回立即解码的 `Vec<Biff8SstString>`。
+    ///
     /// # Errors
     ///
     /// SST 元数据、字符串标志或 CONTINUE 边界损坏时返回错误。
+    #[cfg(feature = "xls-lazy-sst")]
+    pub fn decode_sst(&self) -> Result<super::lazy_sst::LazySst> {
+        super::lazy_sst::LazySst::new(self.segments())
+    }
+
+    /// 对应 Java：无直接对应对象；Rust 架构扩展。 将当前分段链解码为共享字符串表。
+    ///
+    /// # Errors
+    ///
+    /// SST 元数据、字符串标志或 CONTINUE 边界损坏时返回错误。
+    #[cfg(not(feature = "xls-lazy-sst"))]
     pub fn decode_sst(&self) -> Result<Vec<crate::xls::Biff8SstString>> {
         super::string::decode_sst_segments(self.segments())
     }
@@ -47,5 +61,58 @@ impl Biff8ContinuationChain {
     /// 字符计数、编码标志或 CONTINUE 边界损坏时返回错误。
     pub fn decode_unicode_string(&self) -> Result<String> {
         super::string::decode_unicode_string_segments(self.segments())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_creates_single_segment() {
+        let chain = Biff8ContinuationChain::new(&[0xAA, 0xBB]);
+        assert_eq!(chain.segments().len(), 1);
+        assert_eq!(chain.segments()[0], vec![0xAA, 0xBB]);
+    }
+
+    #[test]
+    fn push_appends_segments() {
+        let mut chain = Biff8ContinuationChain::new(&[0x01]);
+        chain.push(&[0x02, 0x03]);
+        chain.push(&[0x04]);
+        assert_eq!(chain.segments().len(), 3);
+        assert_eq!(chain.segments()[1], vec![0x02, 0x03]);
+        assert_eq!(chain.segments()[2], vec![0x04]);
+    }
+
+    #[test]
+    fn default_is_empty() {
+        let chain = Biff8ContinuationChain::default();
+        assert!(chain.segments().is_empty());
+    }
+
+    #[test]
+    fn decode_unicode_string_compressed() {
+        // 3 字符压缩: character_count=3, flags=0, "abc"
+        let mut data = Vec::new();
+        data.extend_from_slice(&3u16.to_le_bytes());
+        data.push(0x00);
+        data.extend_from_slice(b"abc");
+        let chain = Biff8ContinuationChain::new(&data);
+        assert_eq!(chain.decode_unicode_string().unwrap(), "abc");
+    }
+
+    #[test]
+    fn decode_unicode_string_cross_segments() {
+        // 第一段: character_count=4, flags=0, "ab"
+        let mut first = Vec::new();
+        first.extend_from_slice(&4u16.to_le_bytes());
+        first.push(0x00);
+        first.extend_from_slice(b"ab");
+        // 第二段 (CONTINUE): continuation_flags=0, "cd"
+        let second = vec![0x00, b'c', b'd'];
+        let mut chain = Biff8ContinuationChain::new(&first);
+        chain.push(&second);
+        assert_eq!(chain.decode_unicode_string().unwrap(), "abcd");
     }
 }

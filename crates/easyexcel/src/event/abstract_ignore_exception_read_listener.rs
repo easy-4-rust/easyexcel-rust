@@ -1,9 +1,15 @@
 //! 对应 Java：`com.alibaba.excel.event.AbstractIgnoreExceptionReadListener`.
+//!
+//! 拆分后仅保留 `AbstractIgnoreExceptionReadListener` trait；
+//! `AbstractIgnoreExceptionListenerAdapter` 位于同级
+//! `abstract_ignore_exception_read_listener/abstract_ignore_exception_listener_adapter.rs`。
 
 use crate::core::analysis_context::AnalysisContext;
 use crate::core::cell_extra::CellExtra;
 use crate::core::read_listener::ReadListener;
 use std::collections::HashMap;
+
+include!("abstract_ignore_exception_read_listener/abstract_ignore_exception_listener_adapter.rs");
 
 /// 忽略异常的读取监听器：吞掉异常并继续处理，对应 Java `AbstractIgnoreExceptionReadListener`。
 pub trait AbstractIgnoreExceptionReadListener<T>: ReadListener<T> {
@@ -29,85 +35,6 @@ pub trait AbstractIgnoreExceptionReadListener<T>: ReadListener<T> {
         Self: Sized,
     {
         AbstractIgnoreExceptionListenerAdapter::new(self)
-    }
-}
-
-/// 将 Java 抽象忽略异常监听器的默认方法接入 `ReadListener` 动态分派。
-pub struct AbstractIgnoreExceptionListenerAdapter<L> {
-    inner: L,
-}
-
-impl<L> AbstractIgnoreExceptionListenerAdapter<L> {
-    /// 创建适配器。
-    #[must_use]
-    pub const fn new(inner: L) -> Self {
-        Self { inner }
-    }
-
-    /// 返回内部监听器。
-    #[must_use]
-    pub const fn inner(&self) -> &L {
-        &self.inner
-    }
-
-    /// 返回内部监听器的可变引用。
-    pub const fn inner_mut(&mut self) -> &mut L {
-        &mut self.inner
-    }
-
-    /// 消费适配器并返回内部监听器。
-    pub fn into_inner(self) -> L {
-        self.inner
-    }
-}
-
-impl<T, L> ReadListener<T> for AbstractIgnoreExceptionListenerAdapter<L>
-where
-    L: AbstractIgnoreExceptionReadListener<T>,
-{
-    fn on_exception(
-        &mut self,
-        error: &crate::core::excel_error::ExcelError,
-        context: &AnalysisContext,
-    ) -> crate::core::ErrorAction {
-        self.inner.on_exception_silent(error, context);
-        crate::core::ErrorAction::Continue
-    }
-
-    fn invoke_head(
-        &mut self,
-        head: &HashMap<String, usize>,
-        context: &AnalysisContext,
-    ) -> crate::core::analysis_context::Result<()> {
-        ReadListener::invoke_head(&mut self.inner, head, context)
-    }
-
-    fn invoke(
-        &mut self,
-        data: T,
-        context: &AnalysisContext,
-    ) -> crate::core::analysis_context::Result<()> {
-        ReadListener::invoke(&mut self.inner, data, context)
-    }
-
-    fn extra(
-        &mut self,
-        extra: &CellExtra,
-        context: &AnalysisContext,
-    ) -> crate::core::analysis_context::Result<()> {
-        self.inner.extra_silent(extra, context);
-        Ok(())
-    }
-
-    fn do_after_all_analysed(
-        &mut self,
-        context: &AnalysisContext,
-    ) -> crate::core::analysis_context::Result<()> {
-        ReadListener::do_after_all_analysed(&mut self.inner, context)
-    }
-
-    fn has_next(&mut self, _context: &AnalysisContext) -> bool {
-        true
     }
 }
 

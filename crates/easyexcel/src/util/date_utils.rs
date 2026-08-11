@@ -392,3 +392,479 @@ pub fn is_a_date_format_uncached(format_index: i32, format_string: Option<&str>)
 pub const fn remove_thread_local_cache() {
     // Rust 日期格式化器不持有 JVM ThreadLocal 状态，因此无需释放资源。
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bigdecimal::BigDecimal;
+
+    // ---- 常量测试 ----
+
+    #[test]
+    fn date_utils_struct_constants_match_module_constants() {
+        assert_eq!(DateUtils::DATE_FORMAT_10, DATE_FORMAT_10);
+        assert_eq!(DateUtils::DATE_FORMAT_14, DATE_FORMAT_14);
+        assert_eq!(DateUtils::DATE_FORMAT_16, DATE_FORMAT_16);
+        assert_eq!(DateUtils::DATE_FORMAT_16_FORWARD_SLASH, DATE_FORMAT_16_FORWARD_SLASH);
+        assert_eq!(DateUtils::DATE_FORMAT_17, DATE_FORMAT_17);
+        assert_eq!(DateUtils::DATE_FORMAT_19, DATE_FORMAT_19);
+        assert_eq!(DateUtils::DATE_FORMAT_19_FORWARD_SLASH, DATE_FORMAT_19_FORWARD_SLASH);
+        assert_eq!(DateUtils::DEFAULT_DATE_FORMAT, DEFAULT_DATE_FORMAT);
+        assert_eq!(DateUtils::DEFAULT_LOCAL_DATE_FORMAT, DEFAULT_LOCAL_DATE_FORMAT);
+        assert_eq!(DateUtils::SECONDS_PER_MINUTE, SECONDS_PER_MINUTE);
+        assert_eq!(DateUtils::MINUTES_PER_HOUR, MINUTES_PER_HOUR);
+        assert_eq!(DateUtils::HOURS_PER_DAY, HOURS_PER_DAY);
+        assert_eq!(DateUtils::SECONDS_PER_DAY, SECONDS_PER_DAY);
+        assert_eq!(DateUtils::DAY_MILLISECONDS, DAY_MILLISECONDS);
+    }
+
+    #[test]
+    fn date_format_10_is_yyyy_mm_dd() {
+        assert_eq!(DATE_FORMAT_10, "yyyy-MM-dd");
+    }
+
+    #[test]
+    fn date_format_19_is_full_datetime() {
+        assert_eq!(DATE_FORMAT_19, "yyyy-MM-dd HH:mm:ss");
+    }
+
+    #[test]
+    fn seconds_per_day_is_86400() {
+        assert_eq!(SECONDS_PER_DAY, 86_400);
+    }
+
+    #[test]
+    fn day_milliseconds_is_86400000() {
+        assert_eq!(DAY_MILLISECONDS, 86_400_000);
+    }
+
+    // ---- 默认日期格式设置 ----
+
+    #[test]
+    fn default_date_format_returns_initial_value() {
+        let fmt = default_date_format();
+        assert_eq!(fmt, DEFAULT_DATE_FORMAT);
+    }
+
+    #[test]
+    fn set_default_date_format_changes_value() {
+        let original = default_date_format();
+        set_default_date_format("yyyy/MM/dd");
+        assert_eq!(default_date_format(), "yyyy/MM/dd");
+        set_default_date_format(original);
+    }
+
+    #[test]
+    fn default_local_date_format_returns_initial_value() {
+        let fmt = default_local_date_format();
+        assert_eq!(fmt, DEFAULT_LOCAL_DATE_FORMAT);
+    }
+
+    #[test]
+    fn set_default_local_date_format_changes_value() {
+        let original = default_local_date_format();
+        set_default_local_date_format("MM/dd/yyyy");
+        assert_eq!(default_local_date_format(), "MM/dd/yyyy");
+        set_default_local_date_format(original);
+    }
+
+    // ---- DateUtils 结构体方法 ----
+
+    #[test]
+    fn date_utils_default_date_format() {
+        let fmt = DateUtils::default_date_format();
+        assert_eq!(fmt, DEFAULT_DATE_FORMAT);
+    }
+
+    #[test]
+    fn date_utils_set_default_date_format() {
+        let original = DateUtils::default_date_format();
+        DateUtils::set_default_date_format("yyyyMMdd");
+        assert_eq!(DateUtils::default_date_format(), "yyyyMMdd");
+        DateUtils::set_default_date_format(original);
+    }
+
+    #[test]
+    fn date_utils_default_local_date_format() {
+        let fmt = DateUtils::default_local_date_format();
+        assert_eq!(fmt, DEFAULT_LOCAL_DATE_FORMAT);
+    }
+
+    #[test]
+    fn date_utils_set_default_local_date_format() {
+        let original = DateUtils::default_local_date_format();
+        DateUtils::set_default_local_date_format("dd/MM/yyyy");
+        assert_eq!(DateUtils::default_local_date_format(), "dd/MM/yyyy");
+        DateUtils::set_default_local_date_format(original);
+    }
+
+    #[test]
+    fn date_utils_default_derives_correctly() {
+        let _ = DateUtils::default();
+    }
+
+    #[test]
+    fn date_utils_clone_copy() {
+        let a = DateUtils;
+        let _b = a;
+        let _c = a.clone();
+    }
+
+    // ---- is_valid_excel_date ----
+
+    #[test]
+    fn is_valid_excel_date_positive() {
+        assert!(is_valid_excel_date(1.0));
+        assert!(is_valid_excel_date(44000.0));
+    }
+
+    #[test]
+    fn is_valid_excel_date_zero() {
+        assert!(is_valid_excel_date(0.0));
+    }
+
+    #[test]
+    fn is_valid_excel_date_negative() {
+        assert!(!is_valid_excel_date(-1.0));
+    }
+
+    #[test]
+    fn date_utils_is_valid_excel_date_delegates() {
+        assert!(DateUtils::is_valid_excel_date(44000.0));
+        assert!(!DateUtils::is_valid_excel_date(-1.0));
+    }
+
+    // ---- switch_date_format ----
+
+    #[test]
+    fn switch_date_format_10_chars() {
+        // "2024-01-01" 10 个字符 → DATE_FORMAT_10
+        let result = switch_date_format("2024-01-01").unwrap();
+        assert_eq!(result, DATE_FORMAT_10);
+    }
+
+    #[test]
+    fn switch_date_format_19_chars() {
+        // "2024-01-01 12:00:00" 19 个字符 → DATE_FORMAT_19
+        let result = switch_date_format("2024-01-01 12:00:00").unwrap();
+        assert_eq!(result, DATE_FORMAT_19);
+    }
+
+    // ---- parse_date / format ----
+
+    #[test]
+    fn parse_date_with_explicit_format() {
+        let result = parse_date("2024-01-15", [DATE_FORMAT_10]);
+        assert!(result.is_ok(), "解析日期失败: {:?}", result.err());
+        let dt = result.unwrap();
+        assert_eq!(dt.format("%Y-%m-%d").to_string(), "2024-01-15");
+    }
+
+    #[test]
+    fn parse_date_with_format_19() {
+        let result = parse_date("2024-01-15 10:30:00", [DATE_FORMAT_19]);
+        assert!(result.is_ok(), "解析日期失败: {:?}", result.err());
+    }
+
+    #[test]
+    fn parse_date_invalid_format_returns_error() {
+        let result = parse_date("not-a-date", [DATE_FORMAT_10]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn format_date_roundtrip() {
+        let dt = NaiveDate::from_ymd_opt(2024, 6, 15)
+            .unwrap()
+            .and_hms_opt(10, 30, 0)
+            .unwrap();
+        let formatted = format(dt, DATE_FORMAT_19);
+        assert_eq!(formatted, "2024-06-15 10:30:00");
+    }
+
+    #[test]
+    fn format_date_format_10() {
+        let dt = NaiveDate::from_ymd_opt(2024, 1, 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
+        let formatted = format(dt, DATE_FORMAT_10);
+        assert_eq!(formatted, "2024-01-01");
+    }
+
+    // ---- DateUtils::parse_date / parse_date_default ----
+
+    #[test]
+    fn date_utils_parse_date_with_format() {
+        let result = DateUtils::parse_date("2024-03-20", Some(DATE_FORMAT_10));
+        assert!(result.is_ok(), "解析失败: {:?}", result.err());
+    }
+
+    #[test]
+    fn date_utils_parse_date_default_infers_format() {
+        // "2024-01-01" 10 字符应推断为 DATE_FORMAT_10
+        let result = DateUtils::parse_date_default("2024-01-01");
+        assert!(result.is_ok(), "推断格式解析失败: {:?}", result.err());
+    }
+
+    #[test]
+    fn date_utils_format_with_explicit_format() {
+        let dt = NaiveDate::from_ymd_opt(2024, 12, 25)
+            .unwrap()
+            .and_hms_opt(8, 0, 0)
+            .unwrap();
+        let result = DateUtils::format(dt, Some(DATE_FORMAT_19));
+        assert_eq!(result, "2024-12-25 08:00:00");
+    }
+
+    #[test]
+    fn date_utils_format_default() {
+        let dt = NaiveDate::from_ymd_opt(2024, 1, 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
+        let result = DateUtils::format_default(dt);
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn date_utils_format_with_locale() {
+        let dt = NaiveDate::from_ymd_opt(2024, 1, 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
+        let result = DateUtils::format_with_locale(dt, Some(DATE_FORMAT_10), "en_US");
+        assert_eq!(result, "2024-01-01");
+    }
+
+    // ---- DateUtils::parse_local_date_time / parse_local_date ----
+
+    #[test]
+    fn date_utils_parse_local_date_time() {
+        let result = DateUtils::parse_local_date_time("2024-01-01 12:00:00", Some(DATE_FORMAT_19));
+        assert!(result.is_ok(), "解析失败: {:?}", result.err());
+    }
+
+    #[test]
+    fn date_utils_parse_local_date() {
+        let result = DateUtils::parse_local_date("2024-01-01", Some(DATE_FORMAT_10));
+        assert!(result.is_ok(), "解析失败: {:?}", result.err());
+    }
+
+    // ---- format_local_date ----
+
+    #[test]
+    fn date_utils_format_local_date() {
+        let date = NaiveDate::from_ymd_opt(2024, 6, 15).unwrap();
+        let result = DateUtils::format_local_date(date, Some(DATE_FORMAT_10));
+        assert_eq!(result, "2024-06-15");
+    }
+
+    #[test]
+    fn date_utils_format_local_date_with_locale() {
+        let date = NaiveDate::from_ymd_opt(2024, 6, 15).unwrap();
+        let result = DateUtils::format_local_date_with_locale(date, Some(DATE_FORMAT_10), "zh_CN");
+        assert_eq!(result, "2024-06-15");
+    }
+
+    // ---- get_java_date (serial) ----
+
+    #[test]
+    fn get_java_date_from_serial() {
+        // Excel serial 44927 = 2023-01-01
+        let result = get_java_date(44927);
+        assert_eq!(result.format("%Y-%m-%d").to_string(), "2023-01-01");
+    }
+
+    // ---- get_local_date_time / get_local_date ----
+
+    #[test]
+    fn get_local_date_time_1900_system() {
+        // Excel serial 2 = 1900-01-01（1900 日期系统）
+        let result = get_local_date_time(2.0, false);
+        assert!(result.is_some(), "serial 2 应为有效日期");
+    }
+
+    #[test]
+    fn get_local_date_time_1904_system() {
+        let result = get_local_date_time(2.0, true);
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn get_local_date_time_negative_is_none() {
+        let result = get_local_date_time(-1.0, false);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn get_local_date_from_serial() {
+        let result = get_local_date(44927.0, false);
+        assert!(result.is_some(), "serial 44927 应为有效日期");
+    }
+
+    // ---- DateUtils::get_java_date / get_java_calendar ----
+
+    #[test]
+    fn date_utils_get_java_date_valid() {
+        let result = DateUtils::get_java_date(44927.0, false);
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn date_utils_get_java_date_invalid() {
+        let result = DateUtils::get_java_date(-1.0, false);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn date_utils_get_java_calendar_with_rounding() {
+        let result = DateUtils::get_java_calendar(44927.5, false, None, true);
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn date_utils_get_java_calendar_without_rounding() {
+        let result = DateUtils::get_java_calendar(44927.5, false, None, false);
+        assert!(result.is_some());
+    }
+
+    // ---- DateUtils::set_calendar ----
+
+    #[test]
+    fn set_calendar_basic() {
+        let result = DateUtils::set_calendar(2, 0, false, true);
+        assert!(result.is_some());
+    }
+
+    // ---- is_a_date_format ----
+
+    #[test]
+    fn is_a_date_format_builtin_date_formats() {
+        // 内建格式 14 = yyyy-MM-dd HH:mm:ss，应为日期格式
+        assert!(is_a_date_format(14, None));
+    }
+
+    #[test]
+    fn is_a_date_format_general_format_is_not_date() {
+        // 内建格式 0 = General，不是日期格式
+        assert!(!is_a_date_format(0, None));
+    }
+
+    #[test]
+    fn date_utils_is_a_date_format_delegates() {
+        assert!(DateUtils::is_a_date_format(14, None));
+        assert!(!DateUtils::is_a_date_format(0, None));
+    }
+
+    #[test]
+    fn date_utils_is_adate_format_alias() {
+        assert_eq!(
+            DateUtils::is_adate_format(14, None),
+            DateUtils::is_a_date_format(14, None)
+        );
+    }
+
+    // ---- is_internal_date_format ----
+
+    #[test]
+    fn is_internal_date_format_date_pattern() {
+        assert!(is_internal_date_format("yyyy-MM-dd"));
+    }
+
+    #[test]
+    fn is_internal_date_format_non_date_pattern() {
+        assert!(!is_internal_date_format("0.00"));
+    }
+
+    #[test]
+    fn date_utils_is_internal_date_format_delegates() {
+        assert!(DateUtils::is_internal_date_format(14));
+    }
+
+    // ---- is_a_date_format_uncached ----
+
+    #[test]
+    fn is_a_date_format_uncached_matches_cached() {
+        assert_eq!(
+            is_a_date_format_uncached(14, None),
+            is_a_date_format(14, None)
+        );
+    }
+
+    #[test]
+    fn date_utils_is_adate_format_uncached_alias() {
+        assert_eq!(
+            DateUtils::is_adate_format_uncached(14, None),
+            DateUtils::is_a_date_format_uncached(14, None)
+        );
+    }
+
+    // ---- format_decimal ----
+
+    #[test]
+    fn format_decimal_valid_serial() {
+        let dec = BigDecimal::from(44927_i32);
+        let result = DateUtils::format_decimal(&dec, false, Some(DATE_FORMAT_10));
+        assert!(!result.is_empty(), "格式化 BigDecimal 不应为空");
+    }
+
+    #[test]
+    fn format_decimal_invalid_serial_returns_empty() {
+        let dec = BigDecimal::from(-1_i32);
+        let result = DateUtils::format_decimal(&dec, false, Some(DATE_FORMAT_10));
+        assert!(result.is_empty(), "无效 serial 应返回空字符串");
+    }
+
+    // ---- parse_local_date_time / parse_local_date (模块级) ----
+
+    #[test]
+    fn parse_local_date_time_module_level() {
+        let result = parse_local_date_time("2024-01-01 12:00:00", Some(DATE_FORMAT_19));
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_local_date_time_inferred_format() {
+        let result = parse_local_date_time("2024-01-01", None);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_local_date_module_level() {
+        let result = parse_local_date("2024-01-01", Some(DATE_FORMAT_10));
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_local_date_inferred_format() {
+        let result = parse_local_date("2024-01-01", None);
+        assert!(result.is_ok());
+    }
+
+    // ---- remove_thread_local_cache ----
+
+    #[test]
+    fn remove_thread_local_cache_does_not_panic() {
+        remove_thread_local_cache();
+    }
+
+    #[test]
+    fn date_utils_remove_thread_local_cache_does_not_panic() {
+        DateUtils::remove_thread_local_cache();
+    }
+
+    // ---- switch_date_format (via DateUtils) ----
+
+    #[test]
+    fn date_utils_switch_date_format_10_chars() {
+        let result = DateUtils::switch_date_format("2024-01-01").unwrap();
+        assert_eq!(result, DATE_FORMAT_10);
+    }
+
+    #[test]
+    fn date_utils_switch_date_format_19_chars() {
+        let result = DateUtils::switch_date_format("2024-01-01 12:00:00").unwrap();
+        assert_eq!(result, DATE_FORMAT_19);
+    }
+}

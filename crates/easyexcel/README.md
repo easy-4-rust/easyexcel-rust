@@ -5,10 +5,18 @@
 The public EasyExcel-Rust facade with Java EasyExcel-style builders, listeners, converters, handlers and annotation metadata.
 
 > Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+>
+> Last updated: 2026-08-11 · Status: active
 
 ## Overview
 
 This crate is a published module in the EasyExcel-Rust workspace. It is intended for Rust developers who need its boundary, direct engine API or implementation details. Application code should normally consume the re-exported surface through the `easyexcel` facade.
+
+## Crate positioning
+
+`easyexcel` is the **public facade** for the entire EasyExcel-Rust workspace. It re-exports typed model, format engines (XLS / XLSX / CSV), formula, markdown projection, template fill and annotation metadata under a single dependency. Application code should depend on `easyexcel` rather than composing individual engine crates to prevent version drift.
+
+Web / HTTP transport concerns (upload spooling, backpressure, streaming download) live in `easyexcel-web` and its seven framework adapters (`easyexcel-axum`, `easyexcel-actix`, `easyexcel-hyper`, `easyexcel-poem`, `easyexcel-rocket`, `easyexcel-salvo`, `easyexcel-warp`).
 
 ## At a glance
 
@@ -32,6 +40,16 @@ flowchart TB
 ```
 
 Dependency direction remains from the facade or format engines toward foundations; this crate never depends back on an application.
+
+## Capabilities and Boundaries
+
+| What easyexcel does | What easyexcel does NOT do |
+|:---|:---|
+| Typed read/write for XLSX, XLS, CSV via builders | HTTP upload spooling / streaming download (use `easyexcel-web`) |
+| Event-driven and workbook read modes | Framework-specific extractor / responder (use adapter crates) |
+| Markdown projection with structured loss report | Business validation, authorization or persistence |
+| Template fill with loop merge and direction control | |
+| Annotation-driven `ExcelRow` derive macro | |
 
 ## Capability matrix
 
@@ -60,6 +78,17 @@ easyexcel = "0.1.3"
 ```
 
 If an application needs several EasyExcel engines, prefer a single `easyexcel = "0.1.3"` dependency and the `easyexcel::...` re-exports to prevent version drift.
+
+For Web endpoints, also add the appropriate framework adapter:
+
+```toml
+[dependencies]
+easyexcel = "0.1.3"
+easyexcel-web = "0.1.3"
+easyexcel-axum = "0.1.3"   # or actix / hyper / poem / rocket / salvo / warp
+```
+
+See the [Usage from examples](#usage-from-examples) section below for Web integration code, or jump to [`easyexcel-web`](#relationship-to-other-crates) for the transport runtime.
 
 ## Basic usage
 
@@ -111,6 +140,51 @@ Ok(())
 }
 ```
 
+## Usage from examples
+
+The examples below are extracted from runnable code in [`examples/`](https://github.com/easy-4-rust/easyexcel-rust/tree/main/examples).
+
+**Web download (Axum, port 8080)**
+
+```rust
+use axum::extract::State;
+use easyexcel::io::Format;
+use easyexcel_axum::{ExcelRejection, ExcelResponse, ExcelWebRuntime};
+
+async fn download(
+    State(runtime): State<ExcelWebRuntime>,
+) -> Result<ExcelResponse<ReportRow>, ExcelRejection> {
+    ExcelResponse::prepare(
+        report_rows(),
+        Format::Xlsx,
+        "report.xlsx",
+        "Data",
+        runtime.generated_context(),
+    ).await
+}
+```
+
+**Web upload (Axum)**
+
+```rust
+use easyexcel_axum::{ExcelRejection, ExcelRequest};
+
+async fn upload(
+    request: ExcelRequest<ReportRow>,
+) -> Result<String, ExcelRejection> {
+    let request_id = request.request_id().to_owned();
+    let mut rows = request.into_rows();
+    let mut count = 0_u64;
+    while let Some(row) = rows.next_row().await {
+        row.map_err(|error| ExcelRejection::new(error, &request_id))?;
+        count += 1;
+    }
+    Ok(format!("success: {count} rows"))
+}
+```
+
+Each framework adapter has its own example with a dedicated port. See the [Compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md) for the full adapter list.
+
 ## Errors and capability boundaries
 
 - This is the recommended application dependency; use `easyexcel::{model, io, csv, xls, xlsx, formula, markdown, tabular}` instead of versioning engine crates independently.
@@ -142,6 +216,8 @@ The diagram shows the public dependency direction, not that this crate depends o
 
 - [Repository](https://github.com/easy-4-rust/easyexcel-rust)
 - [API documentation](https://docs.rs/easyexcel)
+- [easyexcel-web](https://crates.io/crates/easyexcel-web) -- Web transport runtime
+- [Web conformance suite](https://github.com/easy-4-rust/easyexcel-rust/tree/main/tests/easyexcel-web-conformance)
 - [Compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
 - [Changelog](https://github.com/easy-4-rust/easyexcel-rust/blob/main/CHANGELOG.md)
 - [Chinese README](README.zh-CN.md)

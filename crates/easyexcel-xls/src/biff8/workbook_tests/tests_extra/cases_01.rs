@@ -8,6 +8,7 @@
             styles: Biff8StyleTable::default(),
             use_1904_windowing: false,
             active_sheet: 0,
+            formula_caches: Vec::new(),
         };
         let request = crate::biff8::style::Biff8StyleRequest {
             number_format: Some(crate::biff8::style::Biff8NumberFormat::Custom(
@@ -41,8 +42,10 @@
         assert_eq!(format_records.len(), 1);
         let data = &format_records[0];
         assert_eq!(u16::from_le_bytes([data[0], data[1]]), 164);
+        // BIFF8 FORMAT 记录：ifmt(u16) + XLUnicodeString(cch:u16 + grbit:u8 + chars)
         let slen = u16::from_le_bytes([data[2], data[3]]) as usize;
-        assert_eq!(&data[4..4 + slen], b"0.000");
+        assert_eq!(data[4], 0x00, "grbit: compressed encoding");
+        assert_eq!(&data[5..5 + slen], b"0.000");
         // 单元格 XF 的 ifmt 指向 164
         let xf_records: Vec<Vec<u8>> = records
             .iter()

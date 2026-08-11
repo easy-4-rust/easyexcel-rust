@@ -173,4 +173,123 @@ mod tests {
         assert!(html.contains("&lt;Sales&gt;"));
         assert!(!html.contains("<script"));
     }
+
+    /// 对应 Java：无直接对应；Rust 扩展。 测试 render_document 各格式分支。
+    #[test]
+    fn render_document_dispatches_formats() {
+        let mut table = TabularTable::new("T");
+        table.push_row(vec![TabularCell::new(CellValue::Number(1.0))]);
+        let doc = TabularDocument::from_tables(vec![table]);
+
+        // JSON
+        let json_out = render_document(&doc, TabularFormat::Json).expect("json");
+        assert!(json_out.contains("\"schemaVersion\""));
+
+        // HTML
+        let html_out = render_document(&doc, TabularFormat::Html).expect("html");
+        assert!(html_out.contains("<table>"));
+
+        // Markdown
+        let md_out = render_document(&doc, TabularFormat::Markdown).expect("md");
+        assert!(!md_out.is_empty());
+    }
+
+    /// 对应 Java：无直接对应；Rust 扩展。 测试 json_cell 各种 CellValue 类型。
+    #[test]
+    fn json_cell_handles_all_value_types() {
+        assert_eq!(json_cell(&CellValue::Empty), JsonValue::Null);
+        assert_eq!(json_cell(&CellValue::Bool(true)), JsonValue::Bool(true));
+        assert_eq!(
+            json_cell(&CellValue::Text("hi".to_owned())),
+            JsonValue::String("hi".to_owned())
+        );
+        // 正常浮点数
+        let n = json_cell(&CellValue::Number(3.14));
+        assert!(n.is_number());
+        // NaN/Inf 转为字符串
+        let nan = json_cell(&CellValue::Number(f64::NAN));
+        assert!(nan.is_string());
+        let inf = json_cell(&CellValue::Number(f64::INFINITY));
+        assert!(inf.is_string());
+        // Error
+        let err = json_cell(&CellValue::Error(easyexcel_model::CellError::Value));
+        assert!(err.is_string());
+    }
+
+    /// 对应 Java：无直接对应；Rust 扩展。 测试 HTML 转义。
+    #[test]
+    fn escape_html_replaces_special_chars() {
+        assert_eq!(escape_html("a&b<c>d\"e'f"), "a&amp;b&lt;c&gt;d&quot;e&#39;f");
+        assert_eq!(escape_html("no special"), "no special");
+    }
+
+    /// 对应 Java：无直接对应；Rust 扩展。 测试 merge_at 查找。
+    #[test]
+    fn merge_at_finds_correct_range() {
+        let ranges = vec![
+            CellRange::new(CellAddress::new(0, 0), CellAddress::new(1, 1)),
+            CellRange::new(CellAddress::new(2, 0), CellAddress::new(2, 1)),
+        ];
+        assert!(merge_at(&ranges, 0, 0).is_some());
+        assert!(merge_at(&ranges, 0, 1).is_none()); // 不是起始位置
+        assert!(merge_at(&ranges, 2, 0).is_some());
+        assert!(merge_at(&ranges, 5, 0).is_none());
+    }
+
+    /// 对应 Java：无直接对应；Rust 扩展。 测试 covered_cells 计算。
+    #[test]
+    fn covered_cells_excludes_start_cell() {
+        let ranges = vec![CellRange::new(CellAddress::new(0, 0), CellAddress::new(1, 1))];
+        let covered = covered_cells(&ranges);
+        // (0,0) 是起始单元格，不包含在 covered 中
+        assert!(!covered.contains(&(0, 0)));
+        assert!(covered.contains(&(0, 1)));
+        assert!(covered.contains(&(1, 0)));
+        assert!(covered.contains(&(1, 1)));
+    }
+
+    /// 对应 Java：无直接对应；Rust 扩展。 测试渲染含合并的表格输出 rowspan/colspan。
+    #[test]
+    fn render_html_includes_span_attributes() {
+        let mut table = TabularTable::new("T");
+        table.push_row(vec![
+            TabularCell::new(CellValue::Text("a".to_owned())),
+            TabularCell::new(CellValue::Text("b".to_owned())),
+        ]);
+        table.push_row(vec![
+            TabularCell::new(CellValue::Text("c".to_owned())),
+            TabularCell::new(CellValue::Text("d".to_owned())),
+        ]);
+        table.push_merge(CellRange::new(
+            CellAddress::new(0, 0),
+            CellAddress::new(1, 1),
+        ));
+        let doc = TabularDocument::from_tables(vec![table]);
+        let html = render_html(&doc);
+        assert!(html.contains("rowspan=\"2\""));
+        assert!(html.contains("colspan=\"2\""));
+    }
+
+    /// 对应 Java：无直接对应；Rust 扩展。 测试 JSON 渲染含合并区域。
+    #[test]
+    fn render_json_includes_merges() {
+        let mut table = TabularTable::new("T");
+        table.push_row(vec![TabularCell::new(CellValue::Number(1.0))]);
+        table.push_merge(CellRange::new(
+            CellAddress::new(0, 0),
+            CellAddress::new(0, 1),
+        ));
+        let doc = TabularDocument::from_tables(vec![table]);
+        let json_str = render_json(&doc);
+        assert!(json_str.contains("\"merges\""));
+        assert!(json_str.contains("A1:B1"));
+    }
+
+    /// 对应 Java：无直接对应；Rust 扩展。 测试渲染空文档。
+    #[test]
+    fn render_json_empty_tables() {
+        let doc = TabularDocument::from_tables(vec![]);
+        let json_str = render_json(&doc);
+        assert!(json_str.contains("\"tables\":[]"));
+    }
 }

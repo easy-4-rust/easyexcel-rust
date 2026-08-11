@@ -106,6 +106,43 @@ pub fn walk_biff_records(
     Ok(())
 }
 
+/// 从 `BufRead + Seek` 源流式遍历 BIFF records（不合并 CONTINUE 链）。
+///
+/// 功能等价于 [`walk_biff_records`]，但读取源从 `&[u8]` 切片变为支持
+/// `BufRead + Seek` 的流式 reader（如 `cfb::Stream`）。
+///
+/// 该函数使用 [`StreamingRecordIter::next_raw`](super::streaming_record_iter::StreamingRecordIter::next_raw)
+/// 遍历物理 record，不自动合并 CONTINUE 链——`CONTINUE` 记录作为独立 record
+/// 传给 `process` 回调，由上层 dispatcher（如 `XlsRecordDispatcher`）自行管理
+/// CONTINUE 生命周期。
+///
+/// # 参数
+///
+/// - `reader`：底层 `BufRead + Seek` 源。
+/// - `start`：BIFF record 流的起始偏移（字节）。
+/// - `end`：BIFF record 流的结束偏移（不含）。
+/// - `process`：每条 record 的回调，接收 `(sid, payload)`。
+///
+/// # Errors
+///
+/// reader 定位失败、record 损坏或回调处理失败时返回错误。
+///
+/// 对应 Java：无直接对应对象；Rust 架构扩展（Phase 3 集成用）。
+#[cfg(feature = "xls-streaming-iter")]
+pub fn walk_biff_records_streaming<R: std::io::BufRead + std::io::Seek>(
+    reader: &mut R,
+    start: u64,
+    end: u64,
+    mut process: impl FnMut(u16, &[u8]) -> Result<()>,
+) -> Result<()> {
+    let mut iter = super::streaming_record_iter::StreamingRecordIter::new(reader, start, end)?;
+    while let Some(result) = iter.next_raw() {
+        let (sid, data) = result?;
+        process(sid, &data)?;
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

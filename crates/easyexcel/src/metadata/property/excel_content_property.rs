@@ -99,3 +99,131 @@ impl ExcelContentProperty {
     /// Java `setConverter` 的后端中立映射。
     pub fn set_converter(&mut self, value: Option<String>) { self.converter_key = value; }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_constant_is_all_none() {
+        // 对应 Java：ExcelContentProperty.EMPTY 所有字段为 null
+        let empty = ExcelContentProperty::EMPTY;
+        assert!(empty.get_content_style_property().is_none());
+        assert!(empty.get_content_font_property().is_none());
+        assert!(empty.get_date_time_format_property().is_none());
+        assert!(empty.get_number_format_property().is_none());
+        assert!(empty.get_field().is_none());
+        assert!(empty.get_converter().is_none());
+    }
+
+    #[test]
+    fn new_returns_empty() {
+        // 对应 Java：new ExcelContentProperty() 等价于 EMPTY
+        let prop = ExcelContentProperty::new();
+        assert_eq!(prop, ExcelContentProperty::EMPTY);
+    }
+
+    #[test]
+    fn default_trait_returns_empty() {
+        // 对应 Java：Default 派生等价于 new()
+        let prop = ExcelContentProperty::default();
+        assert_eq!(prop, ExcelContentProperty::new());
+    }
+
+    #[test]
+    fn set_and_get_content_style_property() {
+        // 对应 Java：contentStyleProperty getter/setter
+        let mut prop = ExcelContentProperty::new();
+        assert!(prop.get_content_style_property().is_none());
+        let style = StyleProperty::new();
+        prop.set_content_style_property(Some(style));
+        assert!(prop.get_content_style_property().is_some());
+        prop.set_content_style_property(None);
+        assert!(prop.get_content_style_property().is_none());
+    }
+
+    #[test]
+    fn set_and_get_content_font_property() {
+        // 对应 Java：contentFontProperty getter/setter
+        let mut prop = ExcelContentProperty::new();
+        assert!(prop.get_content_font_property().is_none());
+        let font = FontProperty::new();
+        prop.set_content_font_property(Some(font));
+        assert!(prop.get_content_font_property().is_some());
+        prop.set_content_font_property(None);
+        assert!(prop.get_content_font_property().is_none());
+    }
+
+    #[test]
+    fn set_and_get_date_time_format_property() {
+        // 对应 Java：dateTimeFormatProperty getter/setter
+        let mut prop = ExcelContentProperty::new();
+        assert!(prop.get_date_time_format_property().is_none());
+        prop.set_date_time_format_property(None);
+        assert!(prop.get_date_time_format_property().is_none());
+    }
+
+    #[test]
+    fn set_and_get_number_format_property() {
+        // 对应 Java：numberFormatProperty getter/setter
+        let mut prop = ExcelContentProperty::new();
+        assert!(prop.get_number_format_property().is_none());
+        prop.set_number_format_property(None);
+        assert!(prop.get_number_format_property().is_none());
+    }
+
+    #[test]
+    fn set_and_get_field() {
+        // 对应 Java：field getter/setter
+        let mut prop = ExcelContentProperty::new();
+        assert!(prop.get_field().is_none());
+        prop.set_field(Some("myField".to_owned()));
+        assert_eq!(prop.get_field(), Some("myField"));
+        prop.set_field(None);
+        assert!(prop.get_field().is_none());
+    }
+
+    #[test]
+    fn set_and_get_converter() {
+        // 对应 Java：converter getter/setter
+        let mut prop = ExcelContentProperty::new();
+        assert!(prop.get_converter().is_none());
+        prop.set_converter(Some("MyConverter".to_owned()));
+        assert_eq!(prop.get_converter(), Some("MyConverter"));
+        prop.set_converter(None);
+        assert!(prop.get_converter().is_none());
+    }
+
+    #[test]
+    fn clone_produces_equal_instance() {
+        // 对应 Java：clone 产生相等对象
+        let mut prop = ExcelContentProperty::new();
+        prop.set_field(Some("f".to_owned()));
+        prop.set_converter(Some("c".to_owned()));
+        let cloned = prop.clone();
+        assert_eq!(prop, cloned);
+    }
+
+    #[test]
+    fn debug_format_does_not_panic() {
+        // 对应 Java：toString 不崩溃
+        let prop = ExcelContentProperty::new();
+        let _debug = format!("{prop:?}");
+    }
+
+    #[test]
+    fn hash_consistency() {
+        // 对应 Java：相同内容哈希一致
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        let mut a = ExcelContentProperty::new();
+        a.set_field(Some("x".to_owned()));
+        let mut b = ExcelContentProperty::new();
+        b.set_field(Some("x".to_owned()));
+        let mut h1 = DefaultHasher::new();
+        let mut h2 = DefaultHasher::new();
+        a.hash(&mut h1);
+        b.hash(&mut h2);
+        assert_eq!(h1.finish(), h2.finish());
+    }
+}

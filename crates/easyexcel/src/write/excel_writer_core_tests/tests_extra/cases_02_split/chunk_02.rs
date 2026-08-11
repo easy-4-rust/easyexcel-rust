@@ -196,6 +196,8 @@
             )
             .is_err()
         );
+        // absent sheet index 9 + XLS template bytes → resolve_package_target
+        // 会 create_new=true，ensure_sheet 自动创建新 sheet，写入成功
         let absent_path = directory.path().join("absent.xls");
         let absent_options = WriteOptions {
             sheet_index: Some(9),
@@ -208,7 +210,7 @@
                 &absent_options,
                 [dyn_row(&[(0, "x")])],
             )
-            .is_err()
+            .is_ok()
         );
         Ok(())
     }

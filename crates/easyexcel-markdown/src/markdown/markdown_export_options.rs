@@ -125,6 +125,89 @@ impl MarkdownExportOptions {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_values() {
+        let opts = MarkdownExportOptions::default();
+        assert_eq!(opts.profile(), MarkdownProfile::AgentStable);
+        assert_eq!(opts.mode(), MarkdownConversionMode::Auto);
+        assert_eq!(opts.sheets(), &MarkdownSheetSelection::All);
+        assert_eq!(opts.header(), MarkdownHeaderPolicy::FirstRow);
+        assert_eq!(opts.formulas(), MarkdownFormulaPolicy::CachedValue);
+        assert_eq!(opts.merges(), MarkdownMergePolicy::AnchorWithWarning);
+        assert_eq!(opts.values(), MarkdownValuePolicy::Formatted);
+        assert!(!opts.include_hidden());
+    }
+
+    #[test]
+    fn with_profile_human_readable_sets_merge_policy() {
+        let opts = MarkdownExportOptions::default()
+            .with_profile(MarkdownProfile::HumanReadable);
+        assert_eq!(opts.profile(), MarkdownProfile::HumanReadable);
+        assert_eq!(opts.merges(), MarkdownMergePolicy::HtmlFallback);
+    }
+
+    #[test]
+    fn with_mode() {
+        let opts = MarkdownExportOptions::default()
+            .with_mode(MarkdownConversionMode::Event);
+        assert_eq!(opts.mode(), MarkdownConversionMode::Event);
+    }
+
+    #[test]
+    fn with_header() {
+        let opts = MarkdownExportOptions::default()
+            .with_header(MarkdownHeaderPolicy::Generated);
+        assert_eq!(opts.header(), MarkdownHeaderPolicy::Generated);
+    }
+
+    #[test]
+    fn with_formulas() {
+        let opts = MarkdownExportOptions::default()
+            .with_formulas(MarkdownFormulaPolicy::Expression);
+        assert_eq!(opts.formulas(), MarkdownFormulaPolicy::Expression);
+    }
+
+    #[test]
+    fn with_merges() {
+        let opts = MarkdownExportOptions::default()
+            .with_merges(MarkdownMergePolicy::Error);
+        assert_eq!(opts.merges(), MarkdownMergePolicy::Error);
+    }
+
+    #[test]
+    fn with_values() {
+        let opts = MarkdownExportOptions::default()
+            .with_values(MarkdownValuePolicy::Raw);
+        assert_eq!(opts.values(), MarkdownValuePolicy::Raw);
+    }
+
+    #[test]
+    fn with_include_hidden() {
+        let opts = MarkdownExportOptions::default()
+            .with_include_hidden(true);
+        assert!(opts.include_hidden());
+    }
+
+    #[test]
+    fn builder_chaining() {
+        let opts = MarkdownExportOptions::default()
+            .with_profile(MarkdownProfile::HumanReadable)
+            .with_mode(MarkdownConversionMode::Event)
+            .with_header(MarkdownHeaderPolicy::Generated)
+            .with_include_hidden(true);
+        assert_eq!(opts.profile(), MarkdownProfile::HumanReadable);
+        assert_eq!(opts.mode(), MarkdownConversionMode::Event);
+        assert_eq!(opts.header(), MarkdownHeaderPolicy::Generated);
+        assert!(opts.include_hidden());
+        // HumanReadable profile sets merges to HtmlFallback
+        assert_eq!(opts.merges(), MarkdownMergePolicy::HtmlFallback);
+    }
+}
+
 impl Default for MarkdownExportOptions {
     fn default() -> Self {
         Self {

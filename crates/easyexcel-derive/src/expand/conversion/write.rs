@@ -137,3 +137,89 @@ pub(crate) fn is_side_effect_free_original_type(ty: &Type) -> bool {
             | "NaiveDateTime"
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn side_effect_free_primitives() {
+        assert!(is_side_effect_free_original_type(&syn::parse_quote!(String)));
+        assert!(is_side_effect_free_original_type(&syn::parse_quote!(bool)));
+        assert!(is_side_effect_free_original_type(&syn::parse_quote!(i32)));
+        assert!(is_side_effect_free_original_type(&syn::parse_quote!(u64)));
+        assert!(is_side_effect_free_original_type(&syn::parse_quote!(f64)));
+        assert!(is_side_effect_free_original_type(&syn::parse_quote!(BigDecimal)));
+        assert!(is_side_effect_free_original_type(&syn::parse_quote!(NaiveDate)));
+        assert!(is_side_effect_free_original_type(&syn::parse_quote!(NaiveDateTime)));
+    }
+
+    #[test]
+    fn not_side_effect_free_complex_types() {
+        assert!(!is_side_effect_free_original_type(&syn::parse_quote!(Vec<String>)));
+        assert!(!is_side_effect_free_original_type(&syn::parse_quote!(Option<i32>)));
+        assert!(!is_side_effect_free_original_type(&syn::parse_quote!(MyCustomType)));
+    }
+
+    #[test]
+    fn option_null_expression_for_option_type() {
+        let ident = syn::parse_quote!(value);
+        let ts = option_null_expression(&syn::parse_quote!(Option<String>), &ident);
+        assert!(ts.to_string().contains("is_none"));
+    }
+
+    #[test]
+    fn option_null_expression_for_non_option_type() {
+        let ident = syn::parse_quote!(value);
+        let ts = option_null_expression(&syn::parse_quote!(String), &ident);
+        assert!(ts.to_string().contains("false"));
+    }
+
+    #[test]
+    fn field_write_conversion_without_converter() {
+        let crate_path: TokenStream = quote!(::easyexcel);
+        let ty: Type = syn::parse_quote!(String);
+        let ident: Ident = syn::parse_quote!(name);
+        let ts = field_write_conversion(&crate_path, &ty, &ident, None);
+        assert!(ts.to_string().contains("to_excel_cell"));
+    }
+
+    #[test]
+    fn field_write_conversion_with_converter() {
+        let crate_path: TokenStream = quote!(::easyexcel);
+        let ty: Type = syn::parse_quote!(String);
+        let ident: Ident = syn::parse_quote!(name);
+        let converter: Path = syn::parse_quote!(MyConverter);
+        let ts = field_write_conversion(&crate_path, &ty, &ident, Some(&converter));
+        assert!(ts.to_string().contains("convert_to_excel_data"));
+    }
+
+    #[test]
+    fn field_original_write_conversion_no_converter() {
+        let crate_path: TokenStream = quote!(::easyexcel);
+        let ty: Type = syn::parse_quote!(i32);
+        let ident: Ident = syn::parse_quote!(value);
+        let ts = field_original_write_conversion(&crate_path, &ty, &ident, None);
+        assert!(ts.to_string().contains("to_excel_cell"));
+    }
+
+    #[test]
+    fn field_original_write_conversion_with_converter_and_side_effect_free() {
+        let crate_path: TokenStream = quote!(::easyexcel);
+        let ty: Type = syn::parse_quote!(String);
+        let ident: Ident = syn::parse_quote!(name);
+        let converter: Path = syn::parse_quote!(MyConverter);
+        let ts = field_original_write_conversion(&crate_path, &ty, &ident, Some(&converter));
+        assert!(ts.to_string().contains("to_excel_cell"));
+    }
+
+    #[test]
+    fn field_original_write_conversion_with_converter_not_side_effect_free() {
+        let crate_path: TokenStream = quote!(::easyexcel);
+        let ty: Type = syn::parse_quote!(Vec<String>);
+        let ident: Ident = syn::parse_quote!(items);
+        let converter: Path = syn::parse_quote!(MyConverter);
+        let ts = field_original_write_conversion(&crate_path, &ty, &ident, Some(&converter));
+        assert!(ts.to_string().contains("Empty"));
+    }
+}

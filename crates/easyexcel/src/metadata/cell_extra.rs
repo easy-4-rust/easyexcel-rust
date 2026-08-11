@@ -171,3 +171,197 @@ fn parse_cell_reference(reference: &str) -> Result<(u32, usize), String> {
     if row == 0 { return Err(format!("cell row must start at 1: {reference}")); }
     Ok((row - 1, column - 1))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_creates_extra_with_bounds() {
+        // 对应 Java：CellExtra 构造器
+        let extra = CellExtra::new(
+            CellExtraType::Comment,
+            Some("note".to_owned()),
+            0, 5, 1, 3,
+        );
+        assert_eq!(extra.extra_type(), CellExtraType::Comment);
+        assert_eq!(extra.text(), Some("note"));
+        assert_eq!(extra.first_row_index(), 0);
+        assert_eq!(extra.last_row_index(), 5);
+        assert_eq!(extra.first_column_index(), 1);
+        assert_eq!(extra.last_column_index(), 3);
+    }
+
+    #[test]
+    fn for_cell_creates_single_cell_extra() {
+        // 对应 Java：CellExtra 单单元格构造器
+        let extra = CellExtra::for_cell(
+            CellExtraType::Hyperlink,
+            Some("https://example.com".to_owned()),
+            2, 4,
+        );
+        assert_eq!(extra.first_row_index(), 2);
+        assert_eq!(extra.last_row_index(), 2);
+        assert_eq!(extra.first_column_index(), 4);
+        assert_eq!(extra.last_column_index(), 4);
+    }
+
+    #[test]
+    fn from_range_single_cell() {
+        // 对应 Java：fromRange 单单元格 "A1"
+        let extra = CellExtra::from_range(
+            CellExtraType::Comment,
+            Some("text".to_owned()),
+            "A1",
+        )
+        .unwrap();
+        assert_eq!(extra.first_row_index(), 0);
+        assert_eq!(extra.first_column_index(), 0);
+    }
+
+    #[test]
+    fn from_range_cell_range() {
+        // 对应 Java：fromRange 范围 "A1:B2"
+        let extra = CellExtra::from_range(
+            CellExtraType::Merge,
+            None,
+            "A1:B2",
+        )
+        .unwrap();
+        assert_eq!(extra.first_row_index(), 0);
+        assert_eq!(extra.last_row_index(), 1);
+        assert_eq!(extra.first_column_index(), 0);
+        assert_eq!(extra.last_column_index(), 1);
+    }
+
+    #[test]
+    fn from_range_rejects_empty() {
+        // 对应 Java：空范围报错
+        let result = CellExtra::from_range(CellExtraType::Comment, None, "");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn from_range_rejects_triple_colon() {
+        // 对应 Java：三个冒号报错
+        let result = CellExtra::from_range(CellExtraType::Comment, None, "A1:B2:C3");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn get_type_and_set_type() {
+        // 对应 Java：getType / setType
+        let mut extra = CellExtra::new(CellExtraType::Comment, None, 0, 0, 0, 0);
+        assert_eq!(extra.get_type(), CellExtraType::Comment);
+        extra.set_type(CellExtraType::Hyperlink);
+        assert_eq!(extra.extra_type(), CellExtraType::Hyperlink);
+    }
+
+    #[test]
+    fn get_text_and_set_text() {
+        // 对应 Java：getText / setText
+        let mut extra = CellExtra::new(CellExtraType::Comment, None, 0, 0, 0, 0);
+        assert!(extra.get_text().is_none());
+        extra.set_text(Some("hello".to_owned()));
+        assert_eq!(extra.get_text(), Some("hello"));
+        extra.set_text(None);
+        assert!(extra.text().is_none());
+    }
+
+    #[test]
+    fn row_index_accessor() {
+        // 对应 Java：rowIndex getter/setter
+        let mut extra = CellExtra::new(CellExtraType::Comment, None, 0, 0, 0, 0);
+        assert!(extra.get_row_index().is_some());
+        extra.set_row_index(Some(5));
+        assert_eq!(extra.get_row_index(), Some(5));
+        extra.set_row_index(None);
+        assert!(extra.get_row_index().is_none());
+    }
+
+    #[test]
+    fn column_index_accessor() {
+        // 对应 Java：columnIndex getter/setter
+        let mut extra = CellExtra::new(CellExtraType::Comment, None, 0, 0, 0, 0);
+        assert!(extra.get_column_index().is_some());
+        extra.set_column_index(Some(3));
+        assert_eq!(extra.get_column_index(), Some(3));
+        extra.set_column_index(None);
+        assert!(extra.get_column_index().is_none());
+    }
+
+    #[test]
+    fn first_row_index_setter() {
+        // 对应 Java：firstRowIndex setter
+        let mut extra = CellExtra::new(CellExtraType::Comment, None, 0, 0, 0, 0);
+        extra.set_first_row_index(10);
+        assert_eq!(extra.get_first_row_index(), 10);
+    }
+
+    #[test]
+    fn last_row_index_setter() {
+        // 对应 Java：lastRowIndex setter
+        let mut extra = CellExtra::new(CellExtraType::Comment, None, 0, 0, 0, 0);
+        extra.set_last_row_index(20);
+        assert_eq!(extra.get_last_row_index(), 20);
+    }
+
+    #[test]
+    fn first_column_index_setter() {
+        // 对应 Java：firstColumnIndex setter
+        let mut extra = CellExtra::new(CellExtraType::Comment, None, 0, 0, 0, 0);
+        extra.set_first_column_index(2);
+        assert_eq!(extra.get_first_column_index(), 2);
+    }
+
+    #[test]
+    fn last_column_index_setter() {
+        // 对应 Java：lastColumnIndex setter
+        let mut extra = CellExtra::new(CellExtraType::Comment, None, 0, 0, 0, 0);
+        extra.set_last_column_index(8);
+        assert_eq!(extra.get_last_column_index(), 8);
+    }
+
+    #[test]
+    fn clone_produces_equal() {
+        // 对应 Java：clone
+        let extra = CellExtra::new(CellExtraType::Comment, Some("t".to_owned()), 1, 2, 3, 4);
+        let cloned = extra.clone();
+        assert_eq!(extra, cloned);
+    }
+
+    #[test]
+    fn debug_format_does_not_panic() {
+        // 对应 Java：toString
+        let extra = CellExtra::new(CellExtraType::Comment, None, 0, 0, 0, 0);
+        let _debug = format!("{extra:?}");
+    }
+
+    #[test]
+    fn parse_cell_reference_a1() {
+        // 内部函数：A1 解析
+        let (row, col) = parse_cell_reference("A1").unwrap();
+        assert_eq!(row, 0);
+        assert_eq!(col, 0);
+    }
+
+    #[test]
+    fn parse_cell_reference_with_dollar() {
+        // 内部函数：$A$1 解析
+        let (row, col) = parse_cell_reference("$A$1").unwrap();
+        assert_eq!(row, 0);
+        assert_eq!(col, 0);
+    }
+
+    #[test]
+    fn parse_cell_reference_rejects_zero_row() {
+        // 内部函数：行号 0 报错
+        assert!(parse_cell_reference("A0").is_err());
+    }
+
+    #[test]
+    fn parse_cell_reference_rejects_no_column() {
+        // 内部函数：无列号报错
+        assert!(parse_cell_reference("1").is_err());
+    }
+}

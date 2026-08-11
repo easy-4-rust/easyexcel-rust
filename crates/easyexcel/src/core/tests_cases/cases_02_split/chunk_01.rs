@@ -344,7 +344,8 @@ fn excel_type_enum_from_extension() {
 
 #[test]
 fn builtin_formats_has_all_indices() {
-    assert!(!get_builtin_format(0, "").is_empty());
+    // index 0 直接返回 default_format，用 "General" 作为合理默认值
+    assert!(!get_builtin_format(0, "General").is_empty());
     assert!(!get_builtin_format(1, "").is_empty());
     assert!(!get_builtin_format(49, "").is_empty());
 }

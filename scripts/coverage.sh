@@ -1,6 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# --- T5.3: argument parsing ---
+SNAPSHOT_DIR=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --snapshot)
+      SNAPSHOT_DIR="$2"
+      shift 2
+      ;;
+    --help|-h)
+      echo "Usage: coverage.sh [--snapshot <dir>]"
+      echo ""
+      echo "Run workspace coverage with llvm-cov and gate at 95%."
+      echo ""
+      echo "Options:"
+      echo "  --snapshot <dir>  Copy coverage/summary.json to <dir>"
+      echo "                    e.g. reports/coverage-snapshots/\$(date +%F)"
+      echo "  --help, -h        Show this help message"
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
 # 排除项：derive 宏属性行与生成代码。git 依赖（xls 公式引擎 fork）源码位于
 # ~/.cargo/git/checkouts，不在 workspace 编译单元内，llvm-cov 天然不统计。
 ignore='easyexcel-derive/src/lib\.rs|easyexcel-reader/src/locale_generated\.rs'
@@ -12,6 +38,18 @@ cargo llvm-cov \
   --ignore-filename-regex "$ignore" \
   --html \
   --output-dir coverage
+
+# T5.1: Generate lcov for CI artifact consumption
+cargo llvm-cov report \
+  --ignore-filename-regex "$ignore" \
+  --lcov \
+  --output-path coverage/lcov.info
+
+# T5.3: Generate JSON summary for snapshot support
+cargo llvm-cov report \
+  --ignore-filename-regex "$ignore" \
+  --json \
+  --output-path coverage/summary.json
 
 # 门禁语义（与 docs/compatibility.md verification evidence 6 对齐）：
 # 字面 100% 不可达成——残差（195 行/37 文件）为 8 个审查 agent 逐行验证的
@@ -25,3 +63,10 @@ cargo llvm-cov report \
   --fail-under-regions 95 \
   --fail-under-functions 95 \
   --summary-only 2>&1
+
+# T5.3: snapshot — copy JSON summary to the requested directory
+if [[ -n "$SNAPSHOT_DIR" ]]; then
+  mkdir -p "$SNAPSHOT_DIR"
+  cp coverage/summary.json "$SNAPSHOT_DIR/"
+  echo "Coverage snapshot saved to $SNAPSHOT_DIR/summary.json"
+fi

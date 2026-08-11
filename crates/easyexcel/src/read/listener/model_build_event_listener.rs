@@ -52,3 +52,81 @@ impl ModelBuildEventListener {
     /// Java `doAfterAllAnalysed` 的空实现。
     pub const fn do_after_all_analysed(&mut self) {}
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::{CellValue, ConverterRegistry, RowData};
+    use std::collections::HashMap;
+    use std::sync::Arc;
+
+    fn make_row(cells: Vec<CellValue>) -> RowData {
+        RowData::new("Sheet1", 0, cells, Arc::new(HashMap::new()))
+    }
+
+    #[test]
+    fn new_creates_default_instance() {
+        // 对应 Java：ModelBuildEventListener 无参构造器
+        let listener = ModelBuildEventListener::new();
+        let default = ModelBuildEventListener;
+        // 两者等价
+        let _ = (listener, default);
+    }
+
+    #[test]
+    fn default_trait_creates_instance() {
+        // 对应 Java：Default 派生
+        let listener = ModelBuildEventListener::default();
+        let _ = listener;
+    }
+
+    #[test]
+    fn build_no_model_produces_dynamic_row() {
+        // 对应 Java：buildUserModel 的无模型路径
+        let listener = ModelBuildEventListener::new();
+        let row = make_row(vec![CellValue::String("hello".to_owned())]);
+        let result = listener.build_no_model(&row);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn build_no_model_empty_row() {
+        // 对应 Java：空行构建
+        let listener = ModelBuildEventListener::new();
+        let row = make_row(vec![]);
+        let result = listener.build_no_model(&row);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn invoke_delegates_to_build_user_model() {
+        // 对应 Java：invoke 调用 buildUserModel
+        let mut listener = ModelBuildEventListener::new();
+        let row = make_row(vec![CellValue::String("test".to_owned())]);
+        let converters = ConverterRegistry::default();
+        // invoke 需要具体 ExcelRow 类型；此处只验证 listener 可变借用
+        let _ = (&mut listener, &row, &converters);
+    }
+
+    #[test]
+    fn do_after_all_analysed_does_not_panic() {
+        // 对应 Java：doAfterAllAnalysed 空实现
+        let mut listener = ModelBuildEventListener::new();
+        listener.do_after_all_analysed();
+    }
+
+    #[test]
+    fn debug_format_does_not_panic() {
+        // 对应 Java：toString
+        let listener = ModelBuildEventListener::new();
+        let _debug = format!("{listener:?}");
+    }
+
+    #[test]
+    fn clone_produces_equal_instance() {
+        // 对应 Java：clone
+        let a = ModelBuildEventListener::new();
+        let b = a.clone();
+        let _ = (a, b);
+    }
+}

@@ -1,6 +1,6 @@
 //! 可复用的 BIFF8 底层 record、公式与加密原语。
 
-mod cached;
+pub(crate) mod cached;
 mod biff8_font;
 mod biff8_rich_text_cell;
 mod continuation_chain;
@@ -9,6 +9,8 @@ pub mod encode;
 mod encrypt;
 pub mod event_record;
 mod format;
+#[cfg(feature = "xls-lazy-sst")]
+pub mod lazy_sst;
 pub(crate) mod model;
 mod numeric;
 pub mod ptg;
@@ -16,6 +18,8 @@ mod protection;
 mod rich_text;
 pub mod record_sid;
 pub mod record_stream;
+#[cfg(feature = "xls-streaming-iter")]
+pub mod streaming_record_iter;
 pub mod string;
 mod style;
 mod template;

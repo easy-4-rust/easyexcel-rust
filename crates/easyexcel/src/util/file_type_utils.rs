@@ -51,3 +51,33 @@ pub fn set_default_image_type(image_type: ImageType) {
         .write()
         .unwrap_or_else(std::sync::PoisonError::into_inner) = image_type;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_image_type_is_png() {
+        assert_eq!(default_image_type(), ImageType::Png);
+    }
+
+    #[test]
+    fn set_and_get_default_image_type() {
+        let original = default_image_type();
+        set_default_image_type(ImageType::Jpeg);
+        assert_eq!(default_image_type(), ImageType::Jpeg);
+        set_default_image_type(original);
+    }
+
+    #[test]
+    fn get_image_type_short_input() {
+        assert!(get_image_type(&[0u8; 10]).is_none());
+        assert!(get_image_type(&[0u8; 28]).is_none());
+    }
+
+    #[test]
+    fn get_image_type_format_uses_default() {
+        let result = get_image_type_format(&[0u8; 10]);
+        assert!(result > 0);
+    }
+}

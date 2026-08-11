@@ -246,54 +246,6 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
         self.try_create_sheet(sheet_name)
     }
 
-    /// CSV 没有字体表，对齐 Java 的固定返回值。
-    #[must_use]
-    pub const fn number_of_fonts(&self) -> usize {
-        0
-    }
-    pub const fn get_number_of_fonts(&self) -> usize { self.number_of_fonts() }
-    pub const fn get_number_of_fonts_as_int(&self) -> usize { self.number_of_fonts() }
-
-    /// CSV 没有名称表，对齐 Java 的固定返回值。
-    #[must_use]
-    pub const fn number_of_names(&self) -> usize {
-        0
-    }
-    pub const fn get_number_of_names(&self) -> usize { self.number_of_names() }
-
-    /// CSV 工作簿本身不持久化隐藏状态。
-    #[must_use]
-    pub const fn is_hidden(&self) -> bool {
-        false
-    }
-
-    /// CSV 工作簿本身不执行公式重算。
-    #[must_use]
-    pub const fn force_formula_recalculation(&self) -> bool {
-        false
-    }
-    pub const fn get_force_formula_recalculation(&self) -> bool {
-        self.force_formula_recalculation()
-    }
-
-    /// Java CSV Workbook 对 POI 非 CSV 能力的确定性默认语义。
-    pub const fn get_active_sheet_index(&self) -> usize { 0 }
-    pub const fn get_first_visible_tab(&self) -> usize { 0 }
-    pub const fn get_sheet_index(&self, _name: &str) -> usize { 0 }
-    pub const fn get_missing_cell_policy(&self) -> u8 { 0 }
-    pub const fn is_sheet_hidden(&self, _index: usize) -> bool { false }
-    pub const fn is_sheet_very_hidden(&self, _index: usize) -> bool { false }
-    pub const fn set_active_sheet(&mut self, _index: usize) {}
-    pub const fn set_first_visible_tab(&mut self, _index: usize) {}
-    pub const fn set_selected_tab(&mut self, _index: usize) {}
-    pub const fn set_sheet_order(&mut self, _name: &str, _index: usize) {}
-    pub const fn set_sheet_name(&mut self, _index: usize, _name: &str) {}
-    pub const fn set_hidden(&mut self, _hidden: bool) {}
-    pub const fn set_sheet_hidden(&mut self, _index: usize, _hidden: bool) {}
-    pub const fn set_force_formula_recalculation(&mut self, _value: bool) {}
-    pub fn iterator(&self) -> impl Iterator<Item = &CsvSheet<V>> { self.sheets() }
-    pub fn sheet_iterator(&self) -> impl Iterator<Item = &CsvSheet<V>> { self.sheets() }
-
     /// Java `getCellStyleAt`。
     #[must_use]
     pub fn get_cell_style_at(&self, index: usize) -> Option<&CsvCellStyle> {
@@ -308,20 +260,6 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
         }
         self.sheet = value;
     }
-
-    /// CSV 不保存名称、图片、字体或打印区域。
-    #[must_use] pub const fn get_all_names(&self) -> Vec<&str> { Vec::new() }
-    #[must_use] pub const fn get_names(&self, _name: &str) -> Vec<&str> { Vec::new() }
-    #[must_use] pub const fn get_all_pictures(&self) -> Vec<&[u8]> { Vec::new() }
-    #[must_use] pub const fn get_print_area(&self, _sheet_index: usize) -> Option<&str> { None }
-    #[must_use] pub const fn get_font_at(&self, _index: usize) -> Option<&str> { None }
-    #[must_use] pub const fn find_font(&self) -> Option<&str> { None }
-    #[must_use] pub const fn get_sheet_visibility(&self, _sheet_index: usize) -> &'static str { "VISIBLE" }
-    #[must_use] pub const fn get_spreadsheet_version(&self) -> &'static str { "EXCEL2007" }
-    pub const fn set_sheet_visibility(&mut self, _sheet_index: usize, _visibility: &str) {}
-    pub const fn set_print_area(&mut self, _sheet_index: usize, _reference: &str) {}
-    pub const fn remove_print_area(&mut self, _sheet_index: usize) {}
-    pub const fn flush_data(&mut self) {}
 
     /// 删除唯一工作表；越界与 Java 一样产生可见错误。
     pub fn remove_sheet_at(&mut self, index: usize) -> Result<()> {
@@ -347,16 +285,284 @@ impl<V: CsvCellValue> CsvWorkbook<V> {
     pub fn link_external_workbook(&mut self, _name: &str) -> Result<usize> {
         Err(Error::Unsupported("CSV cannot link external workbook".to_owned()))
     }
-    pub const fn remove_name(&mut self, _name: &str) {}
-    pub const fn set_missing_cell_policy(&mut self, _policy: u8) {}
-    /// Java CSV 为空操作。
-    pub const fn add_tool_pack(&mut self) {}
-    /// Java CSV 返回 `null`。
-    #[must_use] pub const fn create_evaluation_workbook(&self) -> Option<()> { None }
-    /// Java CSV 返回 `null`。
-    #[must_use] pub const fn get_creation_helper(&self) -> Option<()> { None }
-    /// Java CSV 返回 `null`。
-    #[must_use] pub const fn get_cell_reference_type(&self) -> Option<()> { None }
-    /// Java CSV 为空操作。
-    pub const fn set_cell_reference_type(&mut self, _value: Option<()>) {}
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use easyexcel_model::CellValue as ModelCellValue;
+
+    type TestWorkbook = CsvWorkbook<ModelCellValue>;
+
+    fn make_wb() -> TestWorkbook {
+        CsvWorkbook::new("", false, false, CsvCharset::utf8(), false)
+    }
+
+    #[test]
+    fn new_workbook_stores_settings() {
+        let wb: TestWorkbook = CsvWorkbook::new("zh-CN", true, false, CsvCharset::utf8(), true);
+        assert_eq!(wb.locale(), "zh-CN");
+        assert!(wb.use_1904_windowing());
+        assert!(!wb.use_scientific_format());
+        assert_eq!(wb.charset(), &CsvCharset::utf8());
+        assert!(wb.with_bom());
+    }
+
+    #[test]
+    fn identity_is_unique() {
+        let wb1 = make_wb();
+        let wb2 = make_wb();
+        assert_ne!(wb1.identity(), wb2.identity());
+    }
+
+    #[test]
+    fn locale_setter_and_getter() {
+        let mut wb: TestWorkbook = CsvWorkbook::new("en", false, false, CsvCharset::utf8(), false);
+        wb.set_locale("fr-FR");
+        assert_eq!(wb.locale(), "fr-FR");
+        assert_eq!(wb.get_locale(), "fr-FR");
+    }
+
+    #[test]
+    fn out_buffer() {
+        let mut wb = make_wb();
+        assert_eq!(wb.get_out(), "");
+        wb.set_out("data");
+        assert_eq!(wb.get_out(), "data");
+    }
+
+    #[test]
+    fn charset_setter() {
+        let mut wb = make_wb();
+        let gbk = CsvCharset::new("GBK");
+        wb.set_charset(gbk.clone());
+        assert_eq!(wb.charset(), &gbk);
+        assert_eq!(wb.get_charset(), &gbk);
+    }
+
+    #[test]
+    fn with_bom_setter() {
+        let mut wb = make_wb();
+        assert!(!wb.with_bom());
+        wb.set_with_bom(true);
+        assert!(wb.with_bom());
+        assert!(wb.get_with_bom());
+    }
+
+    #[test]
+    fn use_1904_windowing_setter() {
+        let mut wb = make_wb();
+        wb.set_use_1904_windowing(true);
+        assert!(wb.use_1904_windowing());
+        assert!(wb.get_use_1904_windowing());
+        assert!(wb.get_use1904windowing());
+        wb.set_use1904windowing(false);
+        assert!(!wb.use_1904_windowing());
+    }
+
+    #[test]
+    fn use_scientific_format_setter() {
+        let mut wb = make_wb();
+        wb.set_use_scientific_format(true);
+        assert!(wb.use_scientific_format());
+        assert!(wb.get_use_scientific_format());
+    }
+
+    #[test]
+    fn no_sheet_initially() {
+        let mut wb = make_wb();
+        assert!(wb.sheet().is_none());
+        assert!(wb.get_csv_sheet().is_none());
+        assert!(wb.sheet_mut().is_none());
+        assert_eq!(wb.number_of_sheets(), 0);
+        assert_eq!(wb.get_number_of_sheets(), 0);
+    }
+
+    #[test]
+    fn try_create_sheet_success() {
+        let mut wb = make_wb();
+        wb.try_create_sheet("Data").unwrap();
+        assert!(wb.sheet().is_some());
+        assert_eq!(wb.sheet().unwrap().name(), "Data");
+        assert_eq!(wb.number_of_sheets(), 1);
+    }
+
+    #[test]
+    fn try_create_sheet_duplicate_errors() {
+        let mut wb = make_wb();
+        wb.try_create_sheet("S1").unwrap();
+        assert!(wb.try_create_sheet("S2").is_err());
+    }
+
+    #[test]
+    fn create_sheet_default_name() {
+        let mut wb = make_wb();
+        wb.create_sheet().unwrap();
+        assert_eq!(wb.sheet().unwrap().name(), "Sheet1");
+    }
+
+    #[test]
+    fn create_sheet_named() {
+        let mut wb = make_wb();
+        wb.create_sheet_named("Custom").unwrap();
+        assert_eq!(wb.sheet().unwrap().name(), "Custom");
+    }
+
+    #[test]
+    fn sheet_at_index_0_ok() {
+        let mut wb = make_wb();
+        wb.create_sheet().unwrap();
+        assert!(wb.sheet_at(0).is_ok());
+        assert!(wb.get_sheet_at(0).is_ok());
+    }
+
+    #[test]
+    fn sheet_at_nonzero_errors() {
+        let mut wb = make_wb();
+        wb.create_sheet().unwrap();
+        assert!(wb.sheet_at(1).is_err());
+    }
+
+    #[test]
+    fn sheet_at_no_sheet_errors() {
+        let wb = make_wb();
+        assert!(wb.sheet_at(0).is_err());
+    }
+
+    #[test]
+    fn sheet_by_name() {
+        let mut wb = make_wb();
+        wb.create_sheet_named("Test").unwrap();
+        assert!(wb.sheet_by_name("Test").is_some());
+        assert!(wb.sheet_by_name("Other").is_none());
+        assert!(wb.get_sheet("Test").is_some());
+    }
+
+    #[test]
+    fn sheets_iterator() {
+        let mut wb = make_wb();
+        assert_eq!(wb.sheets().count(), 0);
+        wb.create_sheet().unwrap();
+        assert_eq!(wb.sheets().count(), 1);
+    }
+
+    #[test]
+    fn remove_sheet_at_success() {
+        let mut wb = make_wb();
+        wb.create_sheet().unwrap();
+        wb.remove_sheet_at(0).unwrap();
+        assert!(wb.sheet().is_none());
+    }
+
+    #[test]
+    fn remove_sheet_at_no_sheet_errors() {
+        let mut wb = make_wb();
+        assert!(wb.remove_sheet_at(0).is_err());
+    }
+
+    #[test]
+    fn remove_sheet_at_nonzero_errors() {
+        let mut wb = make_wb();
+        wb.create_sheet().unwrap();
+        assert!(wb.remove_sheet_at(1).is_err());
+    }
+
+    #[test]
+    fn create_cell_style() {
+        let mut wb = make_wb();
+        let style = wb.create_cell_style();
+        assert_eq!(style.index(), 0);
+        assert_eq!(wb.number_of_cell_styles(), 1);
+        assert_eq!(wb.get_num_cell_styles(), 1);
+    }
+
+    #[test]
+    fn cell_style_at_index() {
+        let mut wb = make_wb();
+        wb.create_cell_style();
+        assert!(wb.cell_style(0).is_some());
+        assert!(wb.cell_style(99).is_none());
+        assert!(wb.get_cell_style_at(0).is_some());
+    }
+
+    #[test]
+    fn cell_styles_list() {
+        let mut wb = make_wb();
+        wb.create_cell_style();
+        wb.create_cell_style();
+        assert_eq!(wb.cell_styles().len(), 2);
+        assert_eq!(wb.get_csv_cell_style_list().len(), 2);
+    }
+
+    #[test]
+    fn data_format() {
+        let mut wb = make_wb();
+        let _ = wb.data_format();
+        let _ = wb.data_format_mut();
+        let _ = wb.get_csv_data_format();
+    }
+
+    #[test]
+    fn set_csv_cell_style_list() {
+        let mut wb = make_wb();
+        wb.set_csv_cell_style_list(vec![CsvCellStyle::new(0), CsvCellStyle::new(1)]);
+        assert_eq!(wb.number_of_cell_styles(), 2);
+    }
+
+    #[test]
+    fn set_csv_data_format() {
+        let mut wb = make_wb();
+        let fmt = CsvDataFormat::new();
+        wb.set_csv_data_format(fmt);
+    }
+
+    #[test]
+    fn set_csv_sheet_propagates_workbook_id() {
+        let mut wb = make_wb();
+        let mut sheet = CsvSheet::new("Test");
+        assert!(sheet.get_csv_workbook().is_none());
+        wb.set_csv_sheet(Some(sheet));
+        assert!(wb.sheet().is_some());
+        assert!(wb.sheet().unwrap().get_csv_workbook().is_some());
+    }
+
+    #[test]
+    fn set_csv_sheet_none() {
+        let mut wb = make_wb();
+        wb.create_sheet().unwrap();
+        wb.set_csv_sheet(None);
+        assert!(wb.sheet().is_none());
+    }
+
+    // ── 不支持的操作返回错误 ──
+
+    #[test]
+    fn clone_sheet_unsupported() {
+        let mut wb = make_wb();
+        assert!(wb.clone_sheet(0).is_err());
+    }
+
+    #[test]
+    fn add_picture_unsupported() {
+        let mut wb = make_wb();
+        assert!(wb.add_picture(&[0], 0).is_err());
+    }
+
+    #[test]
+    fn add_ole_package_unsupported() {
+        let mut wb = make_wb();
+        assert!(wb.add_ole_package(&[0], "label").is_err());
+    }
+
+    #[test]
+    fn create_name_unsupported() {
+        let mut wb = make_wb();
+        assert!(wb.create_name("name").is_err());
+    }
+
+    #[test]
+    fn link_external_workbook_unsupported() {
+        let mut wb = make_wb();
+        assert!(wb.link_external_workbook("name").is_err());
+    }
 }

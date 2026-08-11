@@ -87,3 +87,116 @@ impl ExcelFontStyle {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+
+    #[test]
+    fn new_creates_all_none() {
+        let style = ExcelFontStyle::new();
+        assert!(style.font_name.is_none());
+        assert!(style.font_height_in_points.is_none());
+        assert!(style.italic.is_none());
+        assert!(style.strikeout.is_none());
+        assert!(style.color.is_none());
+        assert!(style.type_offset.is_none());
+        assert!(style.underline.is_none());
+        assert!(style.charset.is_none());
+        assert!(style.bold.is_none());
+    }
+
+    #[test]
+    fn partial_eq_compares_all_fields() {
+        let a = ExcelFontStyle {
+            font_name: Some("Arial"),
+            bold: Some(true),
+            ..ExcelFontStyle::new()
+        };
+        let b = ExcelFontStyle {
+            font_name: Some("Arial"),
+            bold: Some(true),
+            ..ExcelFontStyle::new()
+        };
+        let c = ExcelFontStyle {
+            font_name: Some("Arial"),
+            bold: Some(false),
+            ..ExcelFontStyle::new()
+        };
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+    }
+
+    #[test]
+    fn partial_eq_normalizes_nan() {
+        let a = ExcelFontStyle {
+            font_height_in_points: Some(f64::NAN),
+            ..ExcelFontStyle::new()
+        };
+        let b = ExcelFontStyle {
+            font_height_in_points: Some(f64::NAN),
+            ..ExcelFontStyle::new()
+        };
+        assert_eq!(a, b); // NaN 应该等于 NaN（Java 行为）
+    }
+
+    #[test]
+    fn hash_consistent_with_eq() {
+        let a = ExcelFontStyle {
+            font_name: Some("Arial"),
+            bold: Some(true),
+            ..ExcelFontStyle::new()
+        };
+        let b = ExcelFontStyle {
+            font_name: Some("Arial"),
+            bold: Some(true),
+            ..ExcelFontStyle::new()
+        };
+        let mut ha = DefaultHasher::new();
+        let mut hb = DefaultHasher::new();
+        a.hash(&mut ha);
+        b.hash(&mut hb);
+        assert_eq!(ha.finish(), hb.finish());
+    }
+
+    #[test]
+    fn hash_normalizes_nan() {
+        let a = ExcelFontStyle {
+            font_height_in_points: Some(f64::NAN),
+            ..ExcelFontStyle::new()
+        };
+        let b = ExcelFontStyle {
+            font_height_in_points: Some(f64::NAN),
+            ..ExcelFontStyle::new()
+        };
+        let mut ha = DefaultHasher::new();
+        let mut hb = DefaultHasher::new();
+        a.hash(&mut ha);
+        b.hash(&mut hb);
+        assert_eq!(ha.finish(), hb.finish());
+    }
+
+    #[test]
+    fn debug_format_works() {
+        let style = ExcelFontStyle {
+            font_name: Some("Arial"),
+            ..ExcelFontStyle::new()
+        };
+        let debug = format!("{:?}", style);
+        assert!(debug.contains("Arial"));
+    }
+
+    #[test]
+    fn clone_preserves_fields() {
+        let style = ExcelFontStyle {
+            font_name: Some("Arial"),
+            bold: Some(true),
+            italic: Some(true),
+            ..ExcelFontStyle::new()
+        };
+        let cloned = style;
+        assert_eq!(style, cloned);
+    }
+}

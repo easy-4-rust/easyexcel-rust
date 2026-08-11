@@ -628,7 +628,8 @@ fn median(ctx: &mut dyn Context, args: &[Value]) -> Value {
             if ns.is_empty() {
                 return Value::Error(CellError::Num);
             }
-            ns.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            // 修复: NaN 时 partial_cmp 返回 None，unwrap 会 panic；NaN 视为 Equal
+            ns.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
             let n = ns.len();
             if n % 2 == 1 {
                 Value::Number(ns[n / 2])

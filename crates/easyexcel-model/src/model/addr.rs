@@ -337,4 +337,119 @@ mod tests {
         assert!(CellAddress::parse_r1c1("RC[1]", base).is_none());
         assert!(CellAddress::parse_r1c1("R[4294967296]C", CellAddress::new(0, 0)).is_none());
     }
+
+    #[test]
+    fn cell_address_new_has_no_absolute_flags() {
+        let a = CellAddress::new(5, 10);
+        assert_eq!(a.row, 5);
+        assert_eq!(a.col, 10);
+        assert!(!a.abs_row);
+        assert!(!a.abs_col);
+    }
+
+    #[test]
+    fn cell_address_absolute_sets_flags() {
+        let a = CellAddress::absolute(5, 10);
+        assert!(a.abs_row);
+        assert!(a.abs_col);
+    }
+
+    #[test]
+    fn parse_a1_with_dollar_col_only() {
+        let a = CellAddress::parse_a1("$A1").unwrap();
+        assert_eq!((a.row, a.col, a.abs_row, a.abs_col), (0, 0, false, true));
+    }
+
+    #[test]
+    fn to_a1_all_combinations() {
+        let a = CellAddress { row: 0, col: 0, abs_row: false, abs_col: false };
+        assert_eq!(a.to_a1(), "A1");
+        let b = CellAddress { row: 0, col: 0, abs_row: true, abs_col: true };
+        assert_eq!(b.to_a1(), "$A$1");
+        let c = CellAddress { row: 0, col: 0, abs_row: false, abs_col: true };
+        assert_eq!(c.to_a1(), "$A1");
+        let d = CellAddress { row: 0, col: 0, abs_row: true, abs_col: false };
+        assert_eq!(d.to_a1(), "A$1");
+    }
+
+    #[test]
+    fn to_r1c1_absolute() {
+        let a = CellAddress::new(0, 0);
+        assert_eq!(a.to_r1c1(), "R1C1");
+        let b = CellAddress::new(9, 2);
+        assert_eq!(b.to_r1c1(), "R10C3");
+    }
+
+    #[test]
+    fn to_r1c1_relative_same_cell() {
+        let a = CellAddress::new(5, 5);
+        assert_eq!(a.to_r1c1_relative(a), "RC");
+    }
+
+    #[test]
+    fn to_r1c1_relative_with_absolute_components() {
+        let base = CellAddress::new(5, 5);
+        let a = CellAddress { row: 3, col: 7, abs_row: true, abs_col: false };
+        assert_eq!(a.to_r1c1_relative(base), "R4C[2]");
+    }
+
+    #[test]
+    fn parse_r1c1_invalid_start() {
+        assert!(CellAddress::parse_r1c1("X1C1", CellAddress::new(0, 0)).is_none());
+    }
+
+    #[test]
+    fn parse_r1c1_missing_c() {
+        assert!(CellAddress::parse_r1c1("R1X1", CellAddress::new(0, 0)).is_none());
+    }
+
+    #[test]
+    fn parse_r1c1_invalid_row_zero() {
+        assert!(CellAddress::parse_r1c1("R0C1", CellAddress::new(0, 0)).is_none());
+    }
+
+    #[test]
+    fn parse_r1c1_trailing_chars() {
+        assert!(CellAddress::parse_r1c1("R1C1X", CellAddress::new(0, 0)).is_none());
+    }
+
+    #[test]
+    fn parse_r1c1_negative_offset() {
+        let base = CellAddress::new(10, 10);
+        let a = CellAddress::parse_r1c1("R[-5]C[-3]", base).unwrap();
+        assert_eq!((a.row, a.col), (5, 7));
+    }
+
+    #[test]
+    fn parse_r1c1_plus_sign() {
+        let base = CellAddress::new(0, 0);
+        let a = CellAddress::parse_r1c1("R[+1]C[+2]", base).unwrap();
+        assert_eq!((a.row, a.col), (1, 2));
+    }
+
+    #[test]
+    fn display_cell_address() {
+        let a = CellAddress::new(9, 2);
+        assert_eq!(format!("{a}"), "C10");
+    }
+
+    #[test]
+    fn col_letters_to_index_invalid() {
+        assert_eq!(col_letters_to_index(""), None);
+        assert_eq!(col_letters_to_index("1"), None);
+    }
+
+    #[test]
+    fn row_from_a1_basic() {
+        assert_eq!(row_from_a1("A1"), 0);
+        assert_eq!(row_from_a1("B10"), 9);
+        assert_eq!(row_from_a1("invalid"), 0);
+    }
+
+    #[test]
+    fn column_from_a1_basic() {
+        assert_eq!(column_from_a1("A1"), 0);
+        assert_eq!(column_from_a1("B10"), 1);
+        assert_eq!(column_from_a1("Z1"), 25);
+    }
 }

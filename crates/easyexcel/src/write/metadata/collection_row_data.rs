@@ -74,3 +74,74 @@ impl crate::core::ExcelRow for CollectionRowData {
         Ok(self.0.clone())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::CellValue;
+
+    #[test]
+    fn new_and_values() {
+        let data = CollectionRowData::new(vec![
+            CellValue::String("hello".to_owned()),
+            CellValue::Int(42),
+        ]);
+        assert_eq!(data.values().len(), 2);
+        assert_eq!(data.size(), 2);
+        assert!(!data.is_empty());
+    }
+
+    #[test]
+    fn empty_collection() {
+        let data = CollectionRowData::new(vec![]);
+        assert!(data.is_empty());
+        assert_eq!(data.size(), 0);
+    }
+
+    #[test]
+    fn get_by_index() {
+        let data = CollectionRowData::new(vec![
+            CellValue::Int(10),
+            CellValue::Int(20),
+        ]);
+        assert!(data.get(0).is_some());
+        assert!(data.get(2).is_none());
+    }
+
+    #[test]
+    fn default_is_empty() {
+        let data = CollectionRowData::default();
+        assert!(data.is_empty());
+    }
+
+    #[test]
+    fn clone_and_eq() {
+        let a = CollectionRowData::new(vec![CellValue::Bool(true)]);
+        let b = a.clone();
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn debug_fmt() {
+        let data = CollectionRowData::new(vec![]);
+        assert!(format!("{:?}", data).contains("CollectionRowData"));
+    }
+
+    #[test]
+    fn row_data_trait_impl() {
+        use super::super::row_data::RowData;
+        let data = CollectionRowData::new(vec![CellValue::Float(1.5)]);
+        let rd: &dyn RowData = &data;
+        assert_eq!(rd.size(), 1);
+        assert!(!rd.is_empty());
+        assert!(rd.get(0).is_some());
+    }
+
+    #[test]
+    fn excel_row_to_row_roundtrip() {
+        use crate::core::ExcelRow;
+        let data = CollectionRowData::new(vec![CellValue::String("x".to_owned())]);
+        let row = data.to_row().expect("to_row");
+        assert_eq!(row.len(), 1);
+    }
+}

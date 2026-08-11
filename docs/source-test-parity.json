@@ -7,13 +7,13 @@
     "test_root": "."
   },
   "rust": {
-    "git_sha": "ad6092264acea2c83c63dca98ef40a2ab1143242",
+    "git_sha": "9b2f2a8e85530a7fcb69bb6137fa7f6e3a46e819",
     "test_root": "tests/easyexcel-test/tests"
   },
   "summary": {
     "java_tests": 335,
-    "mapped_unverified": 333,
-    "partial_unverified": 2
+    "gap": 1,
+    "mapped_unverified": 334
   },
   "fixture_sets": [
     {
@@ -970,18 +970,18 @@
     {
       "label": "rust-golden-artifacts",
       "root": "tests/easyexcel-test/tests/golden/artifacts",
-      "file_count": 72,
-      "tree_sha256": "a4bac4c413d6691c2fe446f98161b7ea8110f4d8bd03010187609a530318680d",
+      "file_count": 83,
+      "tree_sha256": "0900935e178d2dada1bf99ea3d694a3e0273ba495e0c9b72784c43fd574366df",
       "files": [
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/annotation_data.xlsx",
-          "bytes": 3777,
-          "sha256": "61ec403b6edd0c5131094b208987d12e83583edc77d4239768399b2661ff0828"
+          "bytes": 3778,
+          "sha256": "5a59b254bfc5c2fb24ec99bd2dbbef6c6fef8079c8c62fd82c3a2e1d58865d7e"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/annotation_index_name.csv",
-          "bytes": 74,
-          "sha256": "37fb010bc795ddc416328f1b1dfb006060a8dcccfa67dd7ca7b8ae7ec4cd8c05"
+          "bytes": 76,
+          "sha256": "9a3d457f2d24276f0171c34749480340830dccb713a6cc017fd1b68b5e65adb0"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/annotation_index_name.xls",
@@ -990,13 +990,13 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/annotation_index_name.xlsx",
-          "bytes": 3625,
-          "sha256": "ff9bdce3c3b6ffda0168425fc41bbe0ef74fcf530940e888c8c6699469dfeb3f"
+          "bytes": 3626,
+          "sha256": "c28c1e52594b01f02fa65bd5b303620985cf04516d8a268a60dce0dd90abec23"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/cache_data.csv",
-          "bytes": 117,
-          "sha256": "2f11db51159f4ee27b8f6e269359f9467afea41a95cfcf9b74aca96dbb2b88d1"
+          "bytes": 128,
+          "sha256": "3ff2409abd7c3b7401edd938665ea18df5c18719a12f18636da5a92094fb7be5"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/cache_data.xls",
@@ -1005,13 +1005,13 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/cache_data.xlsx",
-          "bytes": 3734,
-          "sha256": "bf0d2eaf189530193c1f99a0ed414569f3d6cedf4bd5a525dddd99b9d328671f"
+          "bytes": 3735,
+          "sha256": "92902f19d55b2fe816e5066aa533bcdf8dd3aae53927e68ae9177709cad35919"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/celldata_data.csv",
-          "bytes": 62,
-          "sha256": "8c2dff72b6300b697fa26384305b5a5a9289f69ea0418ace14b4492df863ab40"
+          "bytes": 64,
+          "sha256": "c91f155abb827a3afcf0e117208a333d7e44ddc20e7962de1763012ee315adc2"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/celldata_data.xls",
@@ -1020,23 +1020,23 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/celldata_data.xlsx",
-          "bytes": 3708,
-          "sha256": "f4257aaddfe03e847258e38897a2dd2f84eec3871e9d11047e2ea8f12186bf24"
+          "bytes": 3709,
+          "sha256": "f31de2f427d4c045671a9c8b02416841144fe4765edada249e56885020c161f0"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/charset_gbk.csv",
-          "bytes": 90,
-          "sha256": "a59baa4a005a63b5c4aec551afd3152273e6b1446eefc5afc1f889696921e6d4"
+          "bytes": 101,
+          "sha256": "6c5a6d7bc4c16afafdc816d5d1231a3031bde161e1c39aaa759c330e1c4c0e7f"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/charset_utf8.csv",
-          "bytes": 117,
-          "sha256": "55a15321857e05cc50c8fd4403878011e797b9ce575501de71a5a486ee0c463b"
+          "bytes": 128,
+          "sha256": "6e86ab27de24214f66c4f65c13c8ca0dd343af444f0ef5120576c8ae6253b119"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/complex_head.csv",
-          "bytes": 163,
-          "sha256": "a107dbfc3854a342178102945de0c6e1597ca23429e3d644e3fc9c5c37060148"
+          "bytes": 167,
+          "sha256": "f888328a22c2948b5363ff4ac4ef9326a03a347390ddf5d3f83f13dfc587fa4f"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/complex_head.xls",
@@ -1045,13 +1045,13 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/complex_head.xlsx",
-          "bytes": 3742,
-          "sha256": "fae80195f70d94c195fd5f7dddba481b86a6f7b500a2e032f49b5b271127d777"
+          "bytes": 3743,
+          "sha256": "23a6380d981e8bc42339fc302c27839097da05af1db9661ccda6990e303e0d64"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/converter_write.csv",
-          "bytes": 245,
-          "sha256": "ff955fd09a5c4e04c22d94dc5bf4cb6ad9e0250af7f506659a57dfba0425b08c"
+          "bytes": 247,
+          "sha256": "494800fd99a4035153648e8ab6832f17bef5d3590ce45ee7b2f43c4b1e37e7d8"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/converter_write.xls",
@@ -1060,18 +1060,73 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/converter_write.xlsx",
-          "bytes": 3900,
-          "sha256": "17ca0d5a5cb0a4c9624099222c6d5886c6eeeeb3bb090a47edcba921a6b11087"
+          "bytes": 3901,
+          "sha256": "3d4f0d8337b404ea71656d3e93c7056ee20cfc119d6c69ad33ef58cd8f0933ec"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/encrypt_data.xlsx",
           "bytes": 7680,
-          "sha256": "5b7b9c807015a388fd9a5fad84190b78f17a7849f8822fb162c63485c96042e0"
+          "sha256": "5144d132529f9954710bc11e3b3051715eaf79e0bc801dd52960adb93f34fde6"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/golden/artifacts/excel_analyser_api.xls",
+          "bytes": 4096,
+          "sha256": "9221ac00e89a8aa8b12aa10398d4c9a679202efe991b31ff046feb188f9ab4ea"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/golden/artifacts/excel_analyser_api.xlsx",
+          "bytes": 3485,
+          "sha256": "1b9585814e48fcf97d49010ff057df69d87cead0536332cc5976e90ba468c175"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/golden/artifacts/excel_builder_api.xlsx",
+          "bytes": 3401,
+          "sha256": "42cb31319d3ab7f77a1bdf6cdb941105c016034a8b450d90b4e260ad951343e1"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/golden/artifacts/excel_builder_exception.xlsx",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/golden/artifacts/excel_builder_fill_api.xlsx",
+          "bytes": 3606,
+          "sha256": "63a2833ab93f22cf99258bf9cd2b3b780917b2a9c08295a8e3b56f1a3a6726af"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/golden/artifacts/excel_builder_fill_template.xlsx",
+          "bytes": 3554,
+          "sha256": "990f9c529b27e96f5a7e8753dcee9483aae973f69e1a3a48117b0311287ddc32"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/golden/artifacts/excel_builder_missing_template.xlsx",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/golden/artifacts/excel_read_executor_api.csv",
+          "bytes": 14,
+          "sha256": "63b22822a8c0cd84ed98b8a37250e4ec221707a3cca1ec8a56f6294c4fa82e5a"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/golden/artifacts/excel_writer_api.xlsx",
+          "bytes": 3375,
+          "sha256": "97c6c84ff9e6c1145ab1aa3788c412262429f262ddd7c55bb2a1083ec7feaed1"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/golden/artifacts/excel_writer_fill_api.xlsx",
+          "bytes": 3580,
+          "sha256": "ec70f7ce9b65c2278cb324707953c38c7fb100faac974a362a8eef1f471782c9"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/golden/artifacts/excel_writer_fill_template.xlsx",
+          "bytes": 3554,
+          "sha256": "990f9c529b27e96f5a7e8753dcee9483aae973f69e1a3a48117b0311287ddc32"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/exception_data.csv",
-          "bytes": 90,
-          "sha256": "6274afb14a57e33b01aec212a80be5458231e1adf796acabd022439deeb9a5f4"
+          "bytes": 101,
+          "sha256": "f67feedcf9d492e650da11e82543f84abf7280bd28c65eb7a82365e73bd410fb"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/exception_data.xls",
@@ -1080,28 +1135,28 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/exception_data.xlsx",
-          "bytes": 3653,
-          "sha256": "726fa9c89654065d9ba8038b9a8d53d68b2c438d0edfb7aa4a6ed3473cf45340"
+          "bytes": 3654,
+          "sha256": "5d0a07d0ed83d2152789df58f1734bdda891f87ce3f2fa9ca6e6ab7c3bd32e33"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/exception_stop.xlsx",
-          "bytes": 5887,
-          "sha256": "05c81495570a4891772551decc6be1c0cbc248bb7ac17c9dd92712bcf444cba0"
+          "bytes": 5888,
+          "sha256": "1c217397ae275af514504fe1b1d5e475c8c2708179c933f6343d17703c74961b"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/exclude_field.xlsx",
-          "bytes": 3558,
-          "sha256": "d5d50270fdb272d3567f00d81413d04ffc2ead99029727ff0cb965d9a7a74a4a"
+          "bytes": 3559,
+          "sha256": "620c111097f7ef566e76280c5fa07b3eb85305020858a79f7fe00d643257e23e"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/exclude_index.csv",
-          "bytes": 35,
-          "sha256": "424f6cccd31251173040ccf62c3ac584c09d2cb4a2fa219c787db8f7c9b96191"
+          "bytes": 37,
+          "sha256": "fcb38ab069cb5f81951177c2748df1920a2ff1ba3749f15e562927ffb56197dc"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/exclude_index.xlsx",
-          "bytes": 3574,
-          "sha256": "c702c1c41f9bb02392e0bb2f096f4945616a6b69222546b955d9dd8da13ef419"
+          "bytes": 3575,
+          "sha256": "7a6eeb3e20c74f654f4a983ccd718bad481334f1b5742cfc175b43045e5049ce"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/fill_by_name.xlsx",
@@ -1145,8 +1200,8 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/handler_data.csv",
-          "bytes": 90,
-          "sha256": "6274afb14a57e33b01aec212a80be5458231e1adf796acabd022439deeb9a5f4"
+          "bytes": 101,
+          "sha256": "f67feedcf9d492e650da11e82543f84abf7280bd28c65eb7a82365e73bd410fb"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/handler_data.xls",
@@ -1155,28 +1210,28 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/handler_data.xlsx",
-          "bytes": 3653,
-          "sha256": "726fa9c89654065d9ba8038b9a8d53d68b2c438d0edfb7aa4a6ed3473cf45340"
+          "bytes": 3654,
+          "sha256": "5d0a07d0ed83d2152789df58f1734bdda891f87ce3f2fa9ca6e6ab7c3bd32e33"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/include_field.xlsx",
-          "bytes": 3574,
-          "sha256": "311c59083561e9fd6e9be0f75bbf44875c1708dc9ad3c4acf15fd2e57419fbd9"
+          "bytes": 3575,
+          "sha256": "7a6eeb3e20c74f654f4a983ccd718bad481334f1b5742cfc175b43045e5049ce"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/include_field_order.xlsx",
-          "bytes": 3584,
-          "sha256": "c745fc3e3de86a89ebefe5927b4f801a437d7ef89e2dbc903d8e4073b4c33a2e"
+          "bytes": 3585,
+          "sha256": "a3f8592e56fc0b21ebeae7af32408e5f1436cdacd53a88fa297fd422c320db1b"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/include_index.xlsx",
-          "bytes": 3574,
-          "sha256": "311c59083561e9fd6e9be0f75bbf44875c1708dc9ad3c4acf15fd2e57419fbd9"
+          "bytes": 3575,
+          "sha256": "7a6eeb3e20c74f654f4a983ccd718bad481334f1b5742cfc175b43045e5049ce"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/large_sample.csv",
-          "bytes": 21494,
-          "sha256": "263e7e90a8c59103c13f02047983b01a05952d91d798d9206fb8b6ff6bab88bb"
+          "bytes": 21595,
+          "sha256": "71c546169446e86d489fb6fabc3e2fb3f714aef8f0781a8089a78b9bc98c33ee"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/large_sample.xls",
@@ -1185,13 +1240,13 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/large_sample.xlsx",
-          "bytes": 14493,
-          "sha256": "063bdaef609a8b1ea88dd959e0eb118c2868b6b3d1b28a34e24fca9174109c9b"
+          "bytes": 14494,
+          "sha256": "917fd5f9ef3b9536b1a11992b9ca731a1dcb47299b66de5d7b3ea4962b023d18"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/list_head.csv",
-          "bytes": 73,
-          "sha256": "e7a63702d3d92c97f75b87ffd1b3d84d0f65ae7d160572e66007a900d5b3938b"
+          "bytes": 75,
+          "sha256": "13b72a94aac22d657963ea1a1bd4d486b207782f06a7e0f90b376777873192b8"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/list_head.xls",
@@ -1200,13 +1255,13 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/list_head.xlsx",
-          "bytes": 3708,
-          "sha256": "6768847b077c132d68589cee768bcc902b3ad0e936793ef87fcd31e30b4cef79"
+          "bytes": 3709,
+          "sha256": "8d4092404d0bfed33052ddbf09dad480991b684a104310ab468d8616d4bd5d8b"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/no_head_data.csv",
-          "bytes": 14,
-          "sha256": "bc26483d79081ad12ab95ff6ba9baaf252cd1e3d0fc51629a16fe7c480991d7a"
+          "bytes": 15,
+          "sha256": "3b42f92ef8ff32397b756b36762041611ebdd4d7fed78c75cc25db35d5ea91aa"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/no_head_data.xls",
@@ -1215,13 +1270,13 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/no_head_data.xlsx",
-          "bytes": 3396,
-          "sha256": "db33bb0ee1b03ec6cc3bda15f9135868afce6e429c20b8c23c1afa1ffbfca6bc"
+          "bytes": 3397,
+          "sha256": "5616377c877be582c0e4d8a341ffe2608f3a2680d51fefcc255d04bd6c4b47c4"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/nomodel_data.csv",
-          "bytes": 333,
-          "sha256": "a767e7f21d25c90c277b78f0a39850b5773df4f131740ce3e4413fb54a79ac28"
+          "bytes": 343,
+          "sha256": "d7b6cd9f2128747d03bf197a26acc1146aba165df3aec49d0d252f0d889d271e"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/nomodel_data.xls",
@@ -1230,18 +1285,18 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/nomodel_data.xlsx",
-          "bytes": 3628,
-          "sha256": "f05ac7f6b8f3a6ccd501f94cbaffa663b2e545b789862a55563b34c1509e565e"
+          "bytes": 3629,
+          "sha256": "3350d3693f0990d935aa64a01c9f03232c9121181a1223f22090e7b3e3bbbfd5"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/nomodel_repeat.xlsx",
-          "bytes": 3554,
-          "sha256": "b4a3b0cd0b9f5734f4c907b5a40650f61a1fe1c5ce49a6eb957cd5686ac6bbff"
+          "bytes": 3555,
+          "sha256": "c53627de15b3eb473048f70512d389e836a980b6e6a8e552e324115ed376e17d"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/nomodel_repeat_csv.csv",
-          "bytes": 333,
-          "sha256": "a767e7f21d25c90c277b78f0a39850b5773df4f131740ce3e4413fb54a79ac28"
+          "bytes": 343,
+          "sha256": "d7b6cd9f2128747d03bf197a26acc1146aba165df3aec49d0d252f0d889d271e"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/nomodel_repeat_xls.xls",
@@ -1250,8 +1305,8 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/noncamel_data.csv",
-          "bytes": 531,
-          "sha256": "de7cfca99dcd7a64cb063828f43b1673d52db2fe39c0dffc316c4317da2ee68e"
+          "bytes": 542,
+          "sha256": "1e2e63e229d3d8813fd8bfd4372366d73b6285fa25d97db92e3fbf4a3d435bdc"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/noncamel_data.xls",
@@ -1260,13 +1315,13 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/noncamel_data.xlsx",
-          "bytes": 3847,
-          "sha256": "d466580babc2d11a9f9b426b56fac74cfee69f244375ce584dd454ef53a6041d"
+          "bytes": 3848,
+          "sha256": "8cb9eb0ae46c47c8e4d6c5831bf26690137cddc07b318604480577ee46dd821a"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/parameter_data.csv",
-          "bytes": 90,
-          "sha256": "6274afb14a57e33b01aec212a80be5458231e1adf796acabd022439deeb9a5f4"
+          "bytes": 101,
+          "sha256": "f67feedcf9d492e650da11e82543f84abf7280bd28c65eb7a82365e73bd410fb"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/parameter_data.xls",
@@ -1275,13 +1330,13 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/parameter_data.xlsx",
-          "bytes": 3653,
-          "sha256": "726fa9c89654065d9ba8038b9a8d53d68b2c438d0edfb7aa4a6ed3473cf45340"
+          "bytes": 3654,
+          "sha256": "5d0a07d0ed83d2152789df58f1734bdda891f87ce3f2fa9ca6e6ab7c3bd32e33"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/repetition_data.csv",
-          "bytes": 35,
-          "sha256": "406a43c445708944c337c5b086713e0ec2de42fa97e81669d85c011920699a98"
+          "bytes": 38,
+          "sha256": "808caaa32fc57b312071b08a8df57ad951833ac8a2db3929f9a0f8a51d254cb2"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/repetition_data.xls",
@@ -1290,18 +1345,18 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/repetition_data.xlsx",
-          "bytes": 3585,
-          "sha256": "f6562c418e781a4bb131a91f9aeb6368cbb821f712e1816c3e1c01d930af23af"
+          "bytes": 3586,
+          "sha256": "7b8533121df3ca2ab0ba1f122f769263d2b4f4a4608122910dd7a329dd3baa3e"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/repetition_table.xlsx",
-          "bytes": 3593,
-          "sha256": "b43aaa71a1eb644bcc8678aafd860b7824bcebd27b0065348bdf7d6e0008c335"
+          "bytes": 3594,
+          "sha256": "df98f93767becc193a0802df0f1106c43cf952ed10b3611654fbffc9fadd15b1"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/simple_data.csv",
-          "bytes": 90,
-          "sha256": "6274afb14a57e33b01aec212a80be5458231e1adf796acabd022439deeb9a5f4"
+          "bytes": 101,
+          "sha256": "f67feedcf9d492e650da11e82543f84abf7280bd28c65eb7a82365e73bd410fb"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/simple_data.xls",
@@ -1310,18 +1365,18 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/simple_data.xlsx",
-          "bytes": 3658,
-          "sha256": "073b70aa4e8ce4e5f34b27e8293aaa09b3fa1c718b1866d8d077784497cb57e5"
+          "bytes": 3659,
+          "sha256": "ce5b270606a84abdc8df35bef25657ade59bfb7ae1b8c3c9e24831fa7346a7a6"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/skip_data.xlsx",
-          "bytes": 5025,
-          "sha256": "85aa83d7d20c4d96be46412b724d32bdfd580496ec108b351e1d7403ea706834"
+          "bytes": 5026,
+          "sha256": "5449815682ffcc26d6bf01528e2aac7e5e023d0a18cf8b90ab3c6dcc79870007"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/sort_data.xlsx",
-          "bytes": 3616,
-          "sha256": "a086bc658fd619020fb0e75a6b3d53a37a8065da138318ccee0d0beb0ef63542"
+          "bytes": 3617,
+          "sha256": "bba7fb8585323f0c46c345ef3f7bd2b70e157fa0826d75a0664d46fafb789718"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/style_data.xls",
@@ -1330,8 +1385,8 @@
         },
         {
           "path": "tests/easyexcel-test/tests/golden/artifacts/style_data.xlsx",
-          "bytes": 3680,
-          "sha256": "7b45861109fb0a83b72a36a717d798eca5cfc4ac79693380963131335c72de73"
+          "bytes": 3681,
+          "sha256": "b0011bd62cfe3c57c18cd46b90502b06dbde5bfc11cc71b553d7f5416c21913e"
         }
       ]
     }
@@ -1454,8 +1509,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 65,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/annotation_index_and_name_data_test.rs",
+          "line": 6,
           "function": "t01_read_and_write07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -1475,8 +1530,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 71,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/annotation_index_and_name_data_test.rs",
+          "line": 12,
           "function": "t02_read_and_write03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -1496,8 +1551,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 77,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/annotation_index_and_name_data_test.rs",
+          "line": 18,
           "function": "t03_read_and_write_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2124,17 +2179,8 @@
         "annotation_line": 82,
         "method_line": 83
       },
-      "status": "mapped_unverified",
-      "rust_evidence": [
-        {
-          "path": "tests/easyexcel-test/tests/core_phase5_xls_features_1to1_tests.rs",
-          "line": 76,
-          "function": "t22_write_image03",
-          "reference_kind": "unique_class_name",
-          "coverage": "mapped",
-          "verification": "not_run"
-        }
-      ]
+      "status": "gap",
+      "rust_evidence": []
     },
     {
       "id": "com.alibaba.easyexcel.test.core.converter.ConverterTest#t01FloatNumberConverter",
@@ -2279,29 +2325,23 @@
         "annotation_line": 55,
         "method_line": 56
       },
-      "status": "partial_unverified",
+      "status": "mapped_unverified",
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 190,
+          "line": 189,
           "function": "t02_read_and_write03",
           "reference_kind": "unique_class_name",
-          "coverage": "partial",
-          "verification": "not_run",
-          "limitations": [
-            "Rust rejects BIFF8 password output until a POI-compatible `FILEPASS` implementation exists."
-          ]
+          "coverage": "mapped",
+          "verification": "not_run"
         },
         {
           "path": "tests/easyexcel-test/tests/core_phase5_xls_features_1to1_tests.rs",
-          "line": 32,
+          "line": 29,
           "function": "t02_read_and_write03",
           "reference_kind": "unique_class_name",
-          "coverage": "partial",
-          "verification": "not_run",
-          "limitations": [
-            "Rust rejects BIFF8 password output instead of producing Java HSSF encryption."
-          ]
+          "coverage": "mapped",
+          "verification": "not_run"
         }
       ]
     },
@@ -2318,7 +2358,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 202,
+          "line": 195,
           "function": "t03_read_and_write_stream07",
           "reference_kind": "unique_class_name",
           "coverage": "mapped",
@@ -2335,18 +2375,15 @@
         "annotation_line": 65,
         "method_line": 66
       },
-      "status": "partial_unverified",
+      "status": "mapped_unverified",
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 209,
+          "line": 201,
           "function": "t04_read_and_write_stream03",
           "reference_kind": "unique_class_name",
-          "coverage": "partial",
-          "verification": "not_run",
-          "limitations": [
-            "Rust rejects BIFF8 password output until a POI-compatible `FILEPASS` implementation exists."
-          ]
+          "coverage": "mapped",
+          "verification": "not_run"
         }
       ]
     },
@@ -2405,7 +2442,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 325,
+          "line": 311,
           "function": "t03_read_and_write_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2426,7 +2463,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 331,
+          "line": 317,
           "function": "t11_read_and_write07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2447,7 +2484,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 337,
+          "line": 323,
           "function": "t12_read_and_write03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2468,7 +2505,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 343,
+          "line": 329,
           "function": "t21_read_and_write07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2489,7 +2526,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 349,
+          "line": 335,
           "function": "t22_read_and_write03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2509,8 +2546,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 199,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 6,
           "function": "t01_exclude_index07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2530,8 +2567,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 205,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 12,
           "function": "t02_exclude_index03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2551,8 +2588,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 211,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 18,
           "function": "t03_exclude_index_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2572,8 +2609,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 217,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 24,
           "function": "t11_exclude_field_name07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2593,8 +2630,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 223,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 30,
           "function": "t12_exclude_field_name03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2614,8 +2651,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 229,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 36,
           "function": "t13_exclude_field_name_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2635,8 +2672,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 235,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 42,
           "function": "t21_include_index07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2656,8 +2693,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 241,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 48,
           "function": "t22_include_index03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2677,8 +2714,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 247,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 54,
           "function": "t23_include_index_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2698,8 +2735,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 253,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 60,
           "function": "t31_include_field_name07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2719,8 +2756,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 259,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 66,
           "function": "t32_include_field_name03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2740,8 +2777,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 265,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 72,
           "function": "t33_include_field_name_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2761,8 +2798,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 271,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 78,
           "function": "t41_include_field_name_order07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2782,8 +2819,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 277,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 84,
           "function": "t42_include_field_name_order03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2803,8 +2840,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 283,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 90,
           "function": "t43_include_field_name_order_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2824,8 +2861,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 289,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 96,
           "function": "t41_include_field_name_order_index07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2845,8 +2882,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 295,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 102,
           "function": "t42_include_field_name_order_index03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2866,8 +2903,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 301,
+          "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/exclude_or_include_data_test.rs",
+          "line": 108,
           "function": "t43_include_field_name_order_index_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -2888,7 +2925,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 431,
+          "line": 417,
           "function": "t01_read07",
           "reference_kind": "unique_class_name",
           "coverage": "mapped",
@@ -2909,7 +2946,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 438,
+          "line": 424,
           "function": "t02_read03",
           "reference_kind": "unique_class_name",
           "coverage": "mapped",
@@ -2917,7 +2954,7 @@
         },
         {
           "path": "tests/easyexcel-test/tests/core_phase5_xls_features_1to1_tests.rs",
-          "line": 252,
+          "line": 501,
           "function": "t02_read03",
           "reference_kind": "unique_class_name",
           "coverage": "mapped",
@@ -2938,7 +2975,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_converter_extra_compat_1to1_tests_cases/date_format_test_to_extra_data_test.rs",
-          "line": 525,
+          "line": 511,
           "function": "t03_read",
           "reference_kind": "unique_class_name",
           "coverage": "mapped",
@@ -3009,7 +3046,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_fill_1to1_tests.rs",
-          "line": 367,
+          "line": 416,
           "function": "t03_fill_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3030,7 +3067,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_fill_1to1_tests.rs",
-          "line": 391,
+          "line": 440,
           "function": "t03_complex_fill07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3051,7 +3088,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_fill_1to1_tests.rs",
-          "line": 398,
+          "line": 447,
           "function": "t04_complex_fill03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3072,7 +3109,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_fill_1to1_tests.rs",
-          "line": 408,
+          "line": 457,
           "function": "t05_horizontal_fill07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3101,7 +3138,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_fill_1to1_tests.rs",
-          "line": 415,
+          "line": 464,
           "function": "t06_horizontal_fill03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3122,7 +3159,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_fill_1to1_tests.rs",
-          "line": 425,
+          "line": 474,
           "function": "t07_by_name_fill07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3143,7 +3180,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_fill_1to1_tests.rs",
-          "line": 432,
+          "line": 481,
           "function": "t08_by_name_fill03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3172,7 +3209,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_fill_1to1_tests.rs",
-          "line": 442,
+          "line": 491,
           "function": "t09_composite_fill07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3193,7 +3230,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_fill_1to1_tests.rs",
-          "line": 449,
+          "line": 498,
           "function": "t10_composite_fill03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3214,7 +3251,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_fill_1to1_tests.rs",
-          "line": 468,
+          "line": 517,
           "function": "t01_read_and_write07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3235,7 +3272,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_fill_1to1_tests.rs",
-          "line": 475,
+          "line": 524,
           "function": "t02_read_and_write03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3256,7 +3293,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_fill_1to1_tests.rs",
-          "line": 541,
+          "line": 590,
           "function": "t01_fill07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3277,7 +3314,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_fill_1to1_tests.rs",
-          "line": 554,
+          "line": 603,
           "function": "t02_fill03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3298,7 +3335,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_fill_1to1_tests.rs",
-          "line": 494,
+          "line": 543,
           "function": "t01_fill07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3319,7 +3356,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_fill_1to1_tests.rs",
-          "line": 501,
+          "line": 550,
           "function": "t02_fill03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3340,7 +3377,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_fill_1to1_tests.rs",
-          "line": 508,
+          "line": 557,
           "function": "t11_fill_style_handler07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3361,7 +3398,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_fill_1to1_tests.rs",
-          "line": 522,
+          "line": 571,
           "function": "t12_fill_style_handler03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3382,7 +3419,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 134,
+          "line": 107,
           "function": "t01_workbook_write07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3403,7 +3440,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 140,
+          "line": 113,
           "function": "t02_workbook_write03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3424,7 +3461,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 146,
+          "line": 119,
           "function": "t03_workbook_write_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3445,7 +3482,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 152,
+          "line": 125,
           "function": "t11_sheet_write07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3466,7 +3503,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 159,
+          "line": 132,
           "function": "t12_sheet_write03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3487,7 +3524,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 165,
+          "line": 138,
           "function": "t13_sheet_write_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3508,7 +3545,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 171,
+          "line": 144,
           "function": "t21_table_write07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3529,7 +3566,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 178,
+          "line": 151,
           "function": "t22_table_write03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3550,7 +3587,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 184,
+          "line": 157,
           "function": "t23_table_write_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3570,8 +3607,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 247,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/complex_head_data_test.rs",
+          "line": 6,
           "function": "t01_read_and_write07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3591,8 +3628,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 253,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/complex_head_data_test.rs",
+          "line": 12,
           "function": "t02_read_and_write03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3612,8 +3649,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 260,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/complex_head_data_test.rs",
+          "line": 19,
           "function": "t03_read_and_write_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3633,8 +3670,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 275,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/complex_head_data_test.rs",
+          "line": 34,
           "function": "t11_read_and_write_automatic_merge_head07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3654,8 +3691,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 282,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/complex_head_data_test.rs",
+          "line": 41,
           "function": "t12_read_and_write_automatic_merge_head03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3675,8 +3712,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 289,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/complex_head_data_test.rs",
+          "line": 48,
           "function": "t13_read_and_write_automatic_merge_head_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3696,8 +3733,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 312,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/list_head_data_test.rs",
+          "line": 6,
           "function": "t01_read_and_write07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3717,8 +3754,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 318,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/list_head_data_test.rs",
+          "line": 12,
           "function": "t02_read_and_write03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3738,8 +3775,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 325,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/list_head_data_test.rs",
+          "line": 19,
           "function": "t03_read_and_write_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3759,8 +3796,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 362,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/no_head_data_test.rs",
+          "line": 6,
           "function": "t01_read_and_write07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3780,8 +3817,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 368,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/no_head_data_test.rs",
+          "line": 12,
           "function": "t02_read_and_write03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3801,8 +3838,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 375,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/no_head_data_test.rs",
+          "line": 19,
           "function": "t03_read_and_write_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3906,8 +3943,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 191,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/multiple_sheets_data_test.rs",
+          "line": 6,
           "function": "t01_read07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3927,8 +3964,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 203,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/multiple_sheets_data_test.rs",
+          "line": 18,
           "function": "t02_read03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3948,8 +3985,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 215,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/multiple_sheets_data_test.rs",
+          "line": 30,
           "function": "t03_read07_all",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -3969,8 +4006,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 227,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/multiple_sheets_data_test.rs",
+          "line": 42,
           "function": "t04_read03_all",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -4053,8 +4090,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 401,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/un_camel_data_test.rs",
+          "line": 6,
           "function": "t01_read_and_write07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -4074,8 +4111,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 407,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/un_camel_data_test.rs",
+          "line": 12,
           "function": "t02_read_and_write03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -4095,8 +4132,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 414,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/un_camel_data_test.rs",
+          "line": 19,
           "function": "t03_read_and_write_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -4158,8 +4195,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 145,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/repetition_data_test.rs",
+          "line": 6,
           "function": "t01_read_and_write07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -4179,8 +4216,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 151,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/repetition_data_test.rs",
+          "line": 12,
           "function": "t02_read_and_write03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -4200,8 +4237,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 158,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/repetition_data_test.rs",
+          "line": 19,
           "function": "t03_read_and_write_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -4221,8 +4258,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 164,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/repetition_data_test.rs",
+          "line": 25,
           "function": "t11_read_and_write_table07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -4242,8 +4279,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 170,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/repetition_data_test.rs",
+          "line": 31,
           "function": "t12_read_and_write_table03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -4263,8 +4300,8 @@
       "status": "mapped_unverified",
       "rust_evidence": [
         {
-          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 177,
+          "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/repetition_data_test.rs",
+          "line": 38,
           "function": "t13_read_and_write_table_csv",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -4705,7 +4742,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 92,
+          "line": 65,
           "function": "t01_read_and_write07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -4726,7 +4763,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 98,
+          "line": 71,
           "function": "t02_read_and_write03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -4747,7 +4784,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 104,
+          "line": 77,
           "function": "t03_abstract_vertical_cell_style_strategy",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -4768,7 +4805,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 110,
+          "line": 83,
           "function": "t04_abstract_vertical_cell_style_strategy02",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -4789,7 +4826,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_annotation_style_handler_1to1_tests_cases/assert_include_field_name_order_index_to_exclude_or_include_data_test.rs",
-          "line": 118,
+          "line": 91,
           "function": "t05_loop_merge_strategy",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -4810,7 +4847,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 437,
+          "line": 145,
           "function": "t01_read_and_write07",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -4818,7 +4855,7 @@
         },
         {
           "path": "tests/easyexcel-test/tests/java_full_parity_tests_cases/converterdata_to_style_data10.rs",
-          "line": 506,
+          "line": 507,
           "function": "template_t01_read_and_write_xlsx",
           "reference_kind": "unique_class_name",
           "coverage": "mapped",
@@ -4839,7 +4876,7 @@
       "rust_evidence": [
         {
           "path": "tests/easyexcel-test/tests/core_simple_sort_head_1to1_tests_cases/sort_data_test_to_template_data_test.rs",
-          "line": 456,
+          "line": 164,
           "function": "t02_read_and_write03",
           "reference_kind": "fully_qualified",
           "coverage": "mapped",
@@ -4847,7 +4884,7 @@
         },
         {
           "path": "tests/easyexcel-test/tests/java_full_parity_tests_cases/converterdata_to_style_data10.rs",
-          "line": 546,
+          "line": 547,
           "function": "template_t02_read_and_write_xls",
           "reference_kind": "unique_class_name",
           "coverage": "mapped",

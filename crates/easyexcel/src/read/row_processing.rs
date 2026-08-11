@@ -82,6 +82,7 @@ pub(crate) fn read_sheet(
     consumer: &mut dyn RowConsumer,
 ) -> Result<ReadFlow> {
     let dispatch_plan = crate::read::read_dispatch_plan::ReadDispatchPlan::compile(consumer);
+    let fast = dispatch_plan.typed_scalar_fast_path() && extras.is_empty();
     let mut current_index = None;
     let mut current_cells = Vec::new();
     let mut current_formulas = HashMap::new();
@@ -95,22 +96,34 @@ pub(crate) fn read_sheet(
         let (row, column) = cell.position;
         if current_index != Some(row) {
             if let Some(current) = current_index {
-                if dispatch_row(
-                    consumer,
-                    sheet_no,
-                    sheet_name,
-                    current,
-                    std::mem::take(&mut current_cells),
-                    SourceRowMetadata {
-                        formulas: std::mem::take(&mut current_formulas),
-                        display_values: std::mem::take(&mut current_display_values),
-                        decimal_values: std::mem::take(&mut current_decimal_values),
-                        present_columns: std::mem::take(&mut current_present_columns),
-                    },
-                    options,
-                    &mut headers,
-                )? == ReadFlow::Stop
-                {
+                let stop = if fast {
+                    dispatch_row_fast(
+                        consumer,
+                        sheet_no,
+                        sheet_name,
+                        current,
+                        std::mem::take(&mut current_cells),
+                        options,
+                        &mut headers,
+                    )?
+                } else {
+                    dispatch_row(
+                        consumer,
+                        sheet_no,
+                        sheet_name,
+                        current,
+                        std::mem::take(&mut current_cells),
+                        SourceRowMetadata {
+                            formulas: Some(std::mem::take(&mut current_formulas)),
+                            display_values: Some(std::mem::take(&mut current_display_values)),
+                            decimal_values: Some(std::mem::take(&mut current_decimal_values)),
+                            present_columns: Some(std::mem::take(&mut current_present_columns)),
+                        },
+                        options,
+                        &mut headers,
+                    )?
+                };
+                if stop == ReadFlow::Stop {
                     return Ok(ReadFlow::Stop);
                 }
                 next_row_index = current.saturating_add(1);
@@ -123,17 +136,22 @@ pub(crate) fn read_sheet(
                 options,
                 &mut headers,
                 consumer,
+                fast,
             )? == ReadFlow::Stop
             {
                 return Ok(ReadFlow::Stop);
             }
             current_index = Some(row);
         }
-        if let Some(value) = cell.display_value {
-            current_display_values.insert(column, value);
+        if dispatch_plan.retain_display_values() {
+            if let Some(value) = cell.display_value {
+                current_display_values.insert(column, value);
+            }
         }
-        if let Some(value) = cell.decimal_value {
-            current_decimal_values.insert(column, value);
+        if dispatch_plan.retain_decimal_values() {
+            if let Some(value) = cell.decimal_value {
+                current_decimal_values.insert(column, value);
+            }
         }
         if current_cells.len() <= column {
             current_cells.resize(column + 1, CellValue::Empty);
@@ -142,29 +160,44 @@ pub(crate) fn read_sheet(
             current_present_columns.insert(column);
         }
         current_cells[column] = cell.value;
-        if let Some(formula) = cell.formula {
-            current_formulas.insert(column, formula);
+        if dispatch_plan.retain_formulas() {
+            if let Some(formula) = cell.formula {
+                current_formulas.insert(column, formula);
+            }
         }
     }
 
-    if let Some(row) = current_index
-        && dispatch_row(
-            consumer,
-            sheet_no,
-            sheet_name,
-            row,
-            current_cells,
-            SourceRowMetadata {
-                formulas: current_formulas,
-                display_values: current_display_values,
-                decimal_values: current_decimal_values,
-                present_columns: current_present_columns,
-            },
-            options,
-            &mut headers,
-        )? == ReadFlow::Stop
-    {
-        return Ok(ReadFlow::Stop);
+    if let Some(row) = current_index {
+        let stop = if fast {
+            dispatch_row_fast(
+                consumer,
+                sheet_no,
+                sheet_name,
+                row,
+                current_cells,
+                options,
+                &mut headers,
+            )?
+        } else {
+            dispatch_row(
+                consumer,
+                sheet_no,
+                sheet_name,
+                row,
+                current_cells,
+                SourceRowMetadata {
+                    formulas: Some(current_formulas),
+                    display_values: Some(current_display_values),
+                    decimal_values: Some(current_decimal_values),
+                    present_columns: Some(current_present_columns),
+                },
+                options,
+                &mut headers,
+            )?
+        };
+        if stop == ReadFlow::Stop {
+            return Ok(ReadFlow::Stop);
+        }
     }
 
     if let Some(last_row) = last_explicit_row {
@@ -177,6 +210,7 @@ pub(crate) fn read_sheet(
             options,
             &mut headers,
             consumer,
+            fast,
         )? == ReadFlow::Stop
         {
             return Ok(ReadFlow::Stop);
@@ -204,19 +238,32 @@ pub(crate) fn process_missing_rows(
     options: &ReadOptions,
     headers: &mut Arc<HashMap<String, usize>>,
     consumer: &mut dyn RowConsumer,
+    fast: bool,
 ) -> Result<ReadFlow> {
     for row_index in start_row..end_row {
-        if dispatch_row(
-            consumer,
-            sheet_no,
-            sheet_name,
-            row_index,
-            Vec::new(),
-            SourceRowMetadata::default(),
-            options,
-            headers,
-        )? == ReadFlow::Stop
-        {
+        let stop = if fast {
+            dispatch_row_fast(
+                consumer,
+                sheet_no,
+                sheet_name,
+                row_index,
+                Vec::new(),
+                options,
+                headers,
+            )?
+        } else {
+            dispatch_row(
+                consumer,
+                sheet_no,
+                sheet_name,
+                row_index,
+                Vec::new(),
+                SourceRowMetadata::default(),
+                options,
+                headers,
+            )?
+        };
+        if stop == ReadFlow::Stop {
             return Ok(ReadFlow::Stop);
         }
     }
@@ -267,8 +314,8 @@ pub(crate) fn read_range(
             row_index,
             cells,
             SourceRowMetadata {
-                display_values,
-                present_columns,
+                display_values: Some(display_values),
+                present_columns: Some(present_columns),
                 ..SourceRowMetadata::default()
             },
             options,
@@ -346,9 +393,9 @@ pub(crate) fn read_model_sheet(
             row_index,
             cells,
             SourceRowMetadata {
-                formulas,
-                display_values,
-                present_columns,
+                formulas: Some(formulas),
+                display_values: Some(display_values),
+                present_columns: Some(present_columns),
                 ..SourceRowMetadata::default()
             },
             options,
@@ -399,9 +446,9 @@ where
     // 已固定列位置，不为 CSV 的每一行构造 0..len 的 HashSet；与 XLSX
     // ReadDispatchPlan 的 capability 判定保持一致。
     let present_columns = if T::schema().is_empty() {
-        (0..cells.len()).collect()
+        Some((0..cells.len()).collect())
     } else {
-        HashSet::new()
+        None
     };
     let mut consumer = TypedRowConsumer::<T> { listener };
     dispatch_row(
@@ -442,4 +489,26 @@ pub(crate) fn dispatch_row(
     consumer.process(
         sheet_no, sheet_name, row_index, cells, metadata, options, headers,
     )
+}
+
+/// 轻量快路径分派：跳过 `SourceRowMetadata` 装配，直接调用 `process_fast`。
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn dispatch_row_fast(
+    consumer: &mut dyn RowConsumer,
+    sheet_no: usize,
+    sheet_name: &str,
+    row_index: u32,
+    cells: Vec<CellValue>,
+    options: &ReadOptions,
+    headers: &mut Arc<HashMap<String, usize>>,
+) -> Result<ReadFlow> {
+    if !easyexcel_io::row_is_selected(
+        row_index,
+        options.head_row_number,
+        options.start_row,
+        options.end_row,
+    ) {
+        return Ok(ReadFlow::Continue);
+    }
+    consumer.process_fast(sheet_no, sheet_name, row_index, cells, options, headers)
 }

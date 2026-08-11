@@ -59,3 +59,106 @@ impl From<ExcelDataConvertException> for crate::ExcelError {
         crate::ExcelError::Data { sheet: String::new(), row: u32::try_from(value.row_index).unwrap_or(u32::MAX), column: Some(value.column_index), field: "", value: value.cell_data.get_string_value().unwrap_or("").to_owned(), message: value.to_string() }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::CellData;
+    use crate::CellValue;
+
+    fn sample_cell_data() -> CellData<CellValue> {
+        let mut data: CellData<CellValue> = CellData::new();
+        data.string_value = Some("test".to_owned());
+        data
+    }
+
+    #[test]
+    fn new_constructor_and_getters() {
+        let ex = ExcelDataConvertException::new(
+            5, 3, sample_cell_data(), None, "conversion failed",
+        );
+        assert_eq!(ex.get_row_index(), 5);
+        assert_eq!(ex.get_column_index(), 3);
+        assert_eq!(ex.get_cell_data().get_string_value(), Some("test"));
+        assert!(ex.get_excel_content_property().is_none());
+        assert!(ex.to_string().contains("conversion failed"));
+    }
+
+    #[test]
+    fn with_cause_constructor() {
+        let ex = ExcelDataConvertException::with_cause(
+            1, 2, sample_cell_data(), None, "bad value", "parse error",
+        );
+        assert_eq!(ex.get_row_index(), 1);
+        assert_eq!(ex.get_column_index(), 2);
+    }
+
+    #[test]
+    fn setters() {
+        let mut ex = ExcelDataConvertException::new(
+            0, 0, sample_cell_data(), None, "err",
+        );
+        ex.set_row_index(10);
+        assert_eq!(ex.get_row_index(), 10);
+        ex.set_column_index(20);
+        assert_eq!(ex.get_column_index(), 20);
+        let new_data: CellData<CellValue> = CellData::new();
+        ex.set_cell_data(new_data);
+        assert!(ex.get_cell_data().get_string_value().is_none());
+        ex.set_excel_content_property(None);
+        assert!(ex.get_excel_content_property().is_none());
+    }
+
+    #[test]
+    fn partial_eq_ignores_message() {
+        let a = ExcelDataConvertException::new(1, 2, sample_cell_data(), None, "msg A");
+        let b = ExcelDataConvertException::new(1, 2, sample_cell_data(), None, "msg B");
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn hash_consistent_with_eq() {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        let a = ExcelDataConvertException::new(1, 2, sample_cell_data(), None, "A");
+        let b = ExcelDataConvertException::new(1, 2, sample_cell_data(), None, "B");
+        let mut ha = DefaultHasher::new();
+        let mut hb = DefaultHasher::new();
+        a.hash(&mut ha);
+        b.hash(&mut hb);
+        assert_eq!(ha.finish(), hb.finish());
+    }
+
+    #[test]
+    fn display_trait() {
+        let ex = ExcelDataConvertException::new(0, 0, sample_cell_data(), None, "hello");
+        assert_eq!(format!("{}", ex), "hello");
+    }
+
+    #[test]
+    fn error_trait() {
+        let ex = ExcelDataConvertException::new(0, 0, sample_cell_data(), None, "err");
+        let err: &dyn std::error::Error = &ex;
+        assert!(err.to_string().contains("err"));
+    }
+
+    #[test]
+    fn from_converts_to_excel_error() {
+        let ex = ExcelDataConvertException::new(3, 5, sample_cell_data(), None, "bad");
+        let err: crate::ExcelError = ex.into();
+        match &err {
+            crate::ExcelError::Data { row, column, message, .. } => {
+                assert_eq!(*row, 3);
+                assert_eq!(*column, Some(5));
+                assert!(message.contains("bad"));
+            }
+            other => panic!("expected Data variant, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn runtime_exception_ref() {
+        let ex = ExcelDataConvertException::new(0, 0, sample_cell_data(), None, "inner");
+        let _inner = ex.runtime_exception();
+    }
+}

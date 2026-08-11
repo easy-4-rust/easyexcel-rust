@@ -302,4 +302,300 @@ mod tests {
         write_csv(&wb, 0, &mut out, &CsvWriteOptions::default()).unwrap();
         assert_eq!(String::from_utf8(out).unwrap(), "1,2,3\n4\n");
     }
+
+    // ── resolve_encoding 测试 ──
+
+    #[test]
+    fn resolve_encoding_utf8() {
+        let charset = CsvCharset::utf8();
+        let enc = resolve_encoding(&charset).unwrap();
+        assert_eq!(enc, encoding_rs::UTF_8);
+    }
+
+    #[test]
+    fn resolve_encoding_unsupported() {
+        let charset = CsvCharset::new("NOT-A-CHARSET");
+        assert!(resolve_encoding(&charset).is_err());
+    }
+
+    // ── decode_reader 测试 ──
+
+    #[test]
+    fn decode_reader_passthrough_utf8() {
+        let data = b"hello,world";
+        let mut reader = decode_reader(&data[..], &CsvCharset::utf8()).unwrap();
+        let mut out = String::new();
+        reader.read_to_string(&mut out).unwrap();
+        assert_eq!(out, "hello,world");
+    }
+
+    #[test]
+    fn decode_reader_strips_bom() {
+        let data = b"\xEF\xBB\xBFhello,world";
+        let mut reader = decode_reader(&data[..], &CsvCharset::utf8()).unwrap();
+        let mut out = String::new();
+        reader.read_to_string(&mut out).unwrap();
+        assert_eq!(out, "hello,world");
+    }
+
+    #[test]
+    fn decode_reader_unsupported_charset() {
+        let data = b"hello";
+        assert!(decode_reader(&data[..], &CsvCharset::new("INVALID")).is_err());
+    }
+
+    // ── decode_bytes 更多路径 ──
+
+    #[test]
+    fn decode_bytes_utf16_le() {
+        // "AB" in UTF-16LE: 0x41 0x00 0x42 0x00, with BOM 0xFF 0xFE
+        let bytes = [0xFF, 0xFE, 0x41, 0x00, 0x42, 0x00];
+        assert_eq!(decode_bytes(&bytes), "AB");
+    }
+
+    #[test]
+    fn decode_bytes_utf16_be() {
+        // "AB" in UTF-16BE: 0x00 0x41 0x00 0x42, with BOM 0xFE 0xFF
+        let bytes = [0xFE, 0xFF, 0x00, 0x41, 0x00, 0x42];
+        assert_eq!(decode_bytes(&bytes), "AB");
+    }
+
+    #[test]
+    fn decode_bytes_non_utf8_fallback() {
+        // Windows-1252: 0x80 is Euro sign (U+20AC)
+        let bytes = [0x80];
+        let result = decode_bytes(&bytes);
+        assert_eq!(result, "\u{20AC}");
+    }
+
+    #[test]
+    fn decode_bytes_no_bom() {
+        let bytes = b"plain text";
+        assert_eq!(decode_bytes(bytes), "plain text");
+    }
+
+    #[test]
+    fn decode_bytes_empty() {
+        assert_eq!(decode_bytes(b""), "");
+    }
+
+    // ── detect_delimiter 更多路径 ──
+
+    #[test]
+    fn detect_delimiter_pipe() {
+        assert_eq!(detect_delimiter("a|b|c"), b'|');
+    }
+
+    #[test]
+    fn detect_delimiter_defaults_to_comma_when_no_candidates() {
+        assert_eq!(detect_delimiter("no delimiters here"), b',');
+    }
+
+    #[test]
+    fn detect_delimiter_empty_input() {
+        assert_eq!(detect_delimiter(""), b',');
+    }
+
+    #[test]
+    fn detect_delimiter_skips_blank_lines() {
+        assert_eq!(detect_delimiter("\n\na;b;c"), b';');
+    }
+
+    #[test]
+    fn detect_delimiter_respects_quotes() {
+        // 逗号在引号内不应计入；分号在引号外应该胜出
+        assert_eq!(detect_delimiter("\"a,b\";c;d"), b';');
+    }
+
+    // ── infer_cell 测试 ──
+
+    #[test]
+    fn infer_cell_empty() {
+        assert_eq!(infer_cell(""), Cell::Empty);
+    }
+
+    #[test]
+    fn infer_cell_bool_true_case_insensitive() {
+        assert_eq!(infer_cell("TRUE"), Cell::Bool(true));
+        assert_eq!(infer_cell("True"), Cell::Bool(true));
+    }
+
+    #[test]
+    fn infer_cell_bool_false_case_insensitive() {
+        assert_eq!(infer_cell("FALSE"), Cell::Bool(false));
+    }
+
+    #[test]
+    fn infer_cell_integer() {
+        assert_eq!(infer_cell("42"), Cell::Number(42.0));
+    }
+
+    #[test]
+    fn infer_cell_negative_number() {
+        assert_eq!(infer_cell("-3.14"), Cell::Number(-3.14));
+    }
+
+    #[test]
+    fn infer_cell_positive_sign() {
+        assert_eq!(infer_cell("+7"), Cell::Number(7.0));
+    }
+
+    #[test]
+    fn infer_cell_iso_date_stays_text() {
+        // ISO 日期存为文本以避免丢失格式
+        assert_eq!(infer_cell("2024-01-15"), Cell::Text("2024-01-15".to_string()));
+    }
+
+    #[test]
+    fn infer_cell_leading_zero_stays_text() {
+        assert_eq!(infer_cell("007"), Cell::Text("007".to_string()));
+    }
+
+    #[test]
+    fn infer_cell_plain_text() {
+        assert_eq!(infer_cell("hello"), Cell::Text("hello".to_string()));
+    }
+
+    // ── looks_numeric 内部函数测试 ──
+
+    #[test]
+    fn looks_numeric_various() {
+        assert!(looks_numeric("1.5"));
+        assert!(looks_numeric("-1"));
+        assert!(looks_numeric("0.5"));
+        assert!(looks_numeric("0"));
+        assert!(!looks_numeric(""));
+        assert!(!looks_numeric("  "));
+        assert!(!looks_numeric("007"));
+        assert!(!looks_numeric("abc"));
+    }
+
+    // ── read_csv 更多路径 ──
+
+    #[test]
+    fn read_csv_no_type_inference() {
+        let data = "123,true,";
+        let opts = CsvReadOptions {
+            infer_types: false,
+            ..Default::default()
+        };
+        let wb = read_csv(data.as_bytes(), &opts).unwrap();
+        let s = &wb.sheets[0];
+        assert_eq!(s.value(0, 0), CellValue::Text("123".into()));
+        assert_eq!(s.value(0, 1), CellValue::Text("true".into()));
+        // 空字段不会产生单元格
+    }
+
+    #[test]
+    fn read_csv_explicit_delimiter() {
+        let data = "a;b;c";
+        let opts = CsvReadOptions {
+            delimiter: Some(b';'),
+            ..Default::default()
+        };
+        let wb = read_csv(data.as_bytes(), &opts).unwrap();
+        assert_eq!(wb.sheets[0].value(0, 0), CellValue::Text("a".into()));
+        assert_eq!(wb.sheets[0].value(0, 1), CellValue::Text("b".into()));
+        assert_eq!(wb.sheets[0].value(0, 2), CellValue::Text("c".into()));
+    }
+
+    #[test]
+    fn read_csv_custom_sheet_name() {
+        let data = "x";
+        let opts = CsvReadOptions {
+            sheet_name: "MySheet".to_string(),
+            ..Default::default()
+        };
+        let wb = read_csv(data.as_bytes(), &opts).unwrap();
+        assert_eq!(wb.sheets[0].name, "MySheet");
+    }
+
+    #[test]
+    fn read_csv_empty_input() {
+        let wb = read_csv(b"" as &[u8], &CsvReadOptions::default()).unwrap();
+        assert_eq!(wb.sheets[0].dimensions(), (0, 0));
+    }
+
+    #[test]
+    fn read_csv_multiline() {
+        let data = "a,b\nc,d\ne,f";
+        let wb = read_csv(data.as_bytes(), &CsvReadOptions::default()).unwrap();
+        let s = &wb.sheets[0];
+        assert_eq!(s.value(0, 0), CellValue::Text("a".into()));
+        assert_eq!(s.value(1, 0), CellValue::Text("c".into()));
+        assert_eq!(s.value(2, 0), CellValue::Text("e".into()));
+    }
+
+    #[test]
+    fn read_csv_with_bom_input() {
+        let mut data = b"\xEF\xBB\xBF".to_vec();
+        data.extend_from_slice(b"name,value\nfoo,123");
+        let wb = read_csv(data.as_slice(), &CsvReadOptions::default()).unwrap();
+        assert_eq!(wb.sheets[0].value(0, 0), CellValue::Text("name".into()));
+        assert_eq!(wb.sheets[0].value(1, 1), CellValue::Number(123.0));
+    }
+
+    // ── write_csv 更多路径 ──
+
+    #[test]
+    fn write_csv_crlf() {
+        let data = "a,b\n1,2";
+        let wb = read_csv(data.as_bytes(), &CsvReadOptions::default()).unwrap();
+        let opts = CsvWriteOptions {
+            crlf: true,
+            ..Default::default()
+        };
+        let mut out = Vec::new();
+        write_csv(&wb, 0, &mut out, &opts).unwrap();
+        assert_eq!(String::from_utf8(out).unwrap(), "a,b\r\n1,2\r\n");
+    }
+
+    #[test]
+    fn write_csv_tab_delimiter() {
+        let mut wb = Workbook::new();
+        let s = wb.sheet_mut(0).unwrap();
+        s.set(0, 0, Cell::Text("x".to_string()));
+        s.set(0, 1, Cell::Text("y".to_string()));
+        let opts = CsvWriteOptions {
+            delimiter: b'\t',
+            ..Default::default()
+        };
+        let mut out = Vec::new();
+        write_csv(&wb, 0, &mut out, &opts).unwrap();
+        assert_eq!(String::from_utf8(out).unwrap(), "x\ty\n");
+    }
+
+    #[test]
+    fn write_csv_invalid_sheet_index() {
+        let wb = Workbook::empty();
+        let mut out = Vec::new();
+        let result = write_csv(&wb, 99, &mut out, &CsvWriteOptions::default());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn write_csv_empty_sheet() {
+        let wb = Workbook::new();
+        // 新建工作簿有一个空工作表，写入后输出为空
+        let mut out = Vec::new();
+        write_csv(&wb, 0, &mut out, &CsvWriteOptions::default()).unwrap();
+        assert_eq!(out.len(), 0);
+    }
+
+    // ── CsvReadOptions / CsvWriteOptions 默认值 ──
+
+    #[test]
+    fn csv_read_options_default() {
+        let opts = CsvReadOptions::default();
+        assert!(opts.delimiter.is_none());
+        assert!(opts.infer_types);
+        assert_eq!(opts.sheet_name, "Sheet1");
+    }
+
+    #[test]
+    fn csv_write_options_default() {
+        let opts = CsvWriteOptions::default();
+        assert_eq!(opts.delimiter, b',');
+        assert!(!opts.crlf);
+    }
 }

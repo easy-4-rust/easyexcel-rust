@@ -53,3 +53,48 @@ impl OnceAbsoluteMergeProperty {
     /// Java `setLastColumnIndex`。
     pub const fn set_last_column_index(&mut self, value: i32) { self.last_column_index = value; }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn constructor_and_getters() {
+        let prop = OnceAbsoluteMergeProperty::new(1, 5, 2, 8);
+        assert_eq!(prop.get_first_row_index(), 1);
+        assert_eq!(prop.get_last_row_index(), 5);
+        assert_eq!(prop.get_first_column_index(), 2);
+        assert_eq!(prop.get_last_column_index(), 8);
+    }
+
+    #[test]
+    fn setters() {
+        let mut prop = OnceAbsoluteMergeProperty::new(0, 0, 0, 0);
+        prop.set_first_row_index(10);
+        assert_eq!(prop.get_first_row_index(), 10);
+        prop.set_last_row_index(20);
+        assert_eq!(prop.get_last_row_index(), 20);
+        prop.set_first_column_index(3);
+        assert_eq!(prop.get_first_column_index(), 3);
+        prop.set_last_column_index(7);
+        assert_eq!(prop.get_last_column_index(), 7);
+    }
+
+    #[test]
+    fn equality_and_hash() {
+        let a = OnceAbsoluteMergeProperty::new(1, 2, 3, 4);
+        let b = OnceAbsoluteMergeProperty::new(1, 2, 3, 4);
+        assert_eq!(a, b);
+        let c = OnceAbsoluteMergeProperty::new(0, 0, 0, 0);
+        assert_ne!(a, c);
+    }
+
+    #[test]
+    fn clone_and_debug() {
+        let prop = OnceAbsoluteMergeProperty::new(1, 2, 3, 4);
+        let cloned = prop;
+        assert_eq!(prop, cloned);
+        let text = format!("{:?}", prop);
+        assert!(text.contains("OnceAbsoluteMergeProperty"));
+    }
+}

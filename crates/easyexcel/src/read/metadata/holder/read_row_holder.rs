@@ -89,4 +89,83 @@ mod tests {
         assert_eq!(holder.row_index, 3);
         assert_eq!(holder.cell_map, cells);
     }
+
+    #[test]
+    fn new_with_metadata_sets_row_type() {
+        // 对应 Java：ReadRowHolder 完整构造器
+        let holder = ReadRowHolder::new_with_metadata(
+            5,
+            RowTypeEnum::Data,
+            GlobalConfiguration::default(),
+            vec![(0, CellValue::Int(42))],
+        );
+        assert_eq!(holder.get_row_index(), 5);
+        assert_eq!(holder.get_row_type(), RowTypeEnum::Data);
+    }
+
+    #[test]
+    fn set_row_index_and_get() {
+        // 对应 Java：setRowIndex / getRowIndex
+        let mut holder = ReadRowHolder::new(0, vec![]);
+        holder.set_row_index(10);
+        assert_eq!(holder.get_row_index(), 10);
+    }
+
+    #[test]
+    fn set_row_type_and_get() {
+        // 对应 Java：setRowType / getRowType
+        let mut holder = ReadRowHolder::new(0, vec![]);
+        holder.set_row_type(RowTypeEnum::Empty);
+        assert_eq!(holder.get_row_type(), RowTypeEnum::Empty);
+    }
+
+    #[test]
+    fn set_cell_map_and_get() {
+        // 对应 Java：setCellMap / getCellMap
+        let mut holder = ReadRowHolder::new(0, vec![]);
+        holder.set_cell_map(vec![
+            (0, CellValue::String("a".to_owned())),
+            (1, CellValue::Int(1)),
+        ]);
+        assert_eq!(holder.get_cell_map().len(), 2);
+    }
+
+    #[test]
+    fn global_configuration_accessor() {
+        // 对应 Java：globalConfiguration getter/setter
+        let mut holder = ReadRowHolder::new(0, vec![]);
+        let _gc: &GlobalConfiguration = holder.get_global_configuration();
+        holder.set_global_configuration(GlobalConfiguration::default());
+    }
+
+    #[test]
+    fn current_row_analysis_result_accessor() {
+        // 对应 Java：currentRowAnalysisResult getter/setter
+        let mut holder = ReadRowHolder::new(0, vec![]);
+        assert!(holder.get_current_row_analysis_result().is_none());
+        holder.set_current_row_analysis_result(None);
+        assert!(holder.get_current_row_analysis_result().is_none());
+    }
+
+    #[test]
+    fn holder_type_is_row() {
+        // 对应 Java：HolderEnum.Row
+        let holder = ReadRowHolder::new(0, vec![]);
+        assert_eq!(holder.holder_type(), HolderEnum::Row);
+    }
+
+    #[test]
+    fn clone_produces_equal() {
+        // 对应 Java：clone
+        let holder = ReadRowHolder::new(1, vec![(0, CellValue::Bool(true))]);
+        let cloned = holder.clone();
+        assert_eq!(holder.row_index, cloned.row_index);
+    }
+
+    #[test]
+    fn debug_format_does_not_panic() {
+        // 对应 Java：toString
+        let holder = ReadRowHolder::new(0, vec![]);
+        let _debug = format!("{holder:?}");
+    }
 }

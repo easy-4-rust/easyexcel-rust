@@ -1,8 +1,12 @@
 //! 集合填充配置与展开方向。
 //!
 //! 对应 Java：`com.alibaba.excel.write.metadata.fill.FillConfig`
+//!
+//! 拆分后仅保留 `FillConfig` 结构体；
+//! `FillConfigBuilder` 位于同级 `fill_config/fill_config_builder.rs`。
 
 include!("fill_config/fill_direction.rs");
+include!("fill_config/fill_config_builder.rs");
 
 /// 对应 Java：com.alibaba.excel.write.metadata.fill.FillConfig。 Collection fill behavior corresponding to Java `EasyExcel`'s `FillConfig`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -129,47 +133,4 @@ impl FillConfig {
     /// 返回执行 `init` 后的有效自动样式配置，不改变当前对象。
     #[must_use]
     pub fn effective_auto_style(self) -> bool { self.auto_style.unwrap_or(true) }
-}
-
-/// 对应 Java：`FillConfig.FillConfigBuilder`。
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct FillConfigBuilder {
-    value: FillConfig,
-}
-
-impl FillConfigBuilder {
-    /// 创建 builder。
-    #[must_use]
-    pub const fn new() -> Self { Self { value: FillConfig::new() } }
-    /// 设置方向。
-    #[must_use]
-    pub const fn direction(mut self, value: FillDirection) -> Self {
-        self.value.direction = Some(value);
-        self
-    }
-    /// 设置强制新行。
-    #[must_use]
-    pub const fn force_new_row(mut self, value: bool) -> Self {
-        self.value.force_new_row = Some(value);
-        self
-    }
-    /// 设置自动样式。
-    #[must_use]
-    pub const fn auto_style(mut self, value: bool) -> Self {
-        self.value.auto_style = Some(value);
-        self
-    }
-    /// 设置内部初始化标志。对应 Lombok builder 的 `hasInit(boolean)`。
-    #[must_use]
-    pub const fn has_init(mut self, value: bool) -> Self {
-        self.value.has_init = value;
-        self
-    }
-    /// 构建配置。
-    #[must_use]
-    pub const fn build(self) -> FillConfig { self.value }
-}
-
-impl Default for FillConfigBuilder {
-    fn default() -> Self { Self::new() }
 }

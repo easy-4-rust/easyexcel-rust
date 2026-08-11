@@ -145,3 +145,112 @@ impl WriteMutationPlan {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_plan_is_empty_and_snapshot_returns_empty() {
+        let plan = WriteMutationPlan::default();
+        assert!(plan.is_empty().unwrap());
+        assert!(plan.snapshot().unwrap().is_empty());
+    }
+
+    #[test]
+    fn set_cell_records_mutation() {
+        let plan = WriteMutationPlan::default();
+        plan.set_cell("Sheet1", 0, 0, CellValue::String("hello".to_owned()))
+            .unwrap();
+        assert!(!plan.is_empty().unwrap());
+        let snapshot = plan.snapshot().unwrap();
+        assert_eq!(snapshot.len(), 1);
+    }
+
+    #[test]
+    fn protect_sheet_records_mutation() {
+        let plan = WriteMutationPlan::default();
+        plan.protect_sheet("Sheet1", "password").unwrap();
+        let snapshot = plan.snapshot().unwrap();
+        assert_eq!(snapshot.len(), 1);
+    }
+
+    #[test]
+    fn add_merge_records_mutation() {
+        let plan = WriteMutationPlan::default();
+        let range = MergeRange::new(0, 1, 0, 1);
+        plan.add_merge("Sheet1", range).unwrap();
+        let snapshot = plan.snapshot().unwrap();
+        assert_eq!(snapshot.len(), 1);
+    }
+
+    #[test]
+    fn remove_comment_records_mutation() {
+        let plan = WriteMutationPlan::default();
+        plan.remove_comment("Sheet1", 0, 0).unwrap();
+        let snapshot = plan.snapshot().unwrap();
+        assert_eq!(snapshot.len(), 1);
+    }
+
+    #[test]
+    fn merge_ranges_extracts_only_merge_mutations() {
+        let plan = WriteMutationPlan::default();
+        let range = MergeRange::new(0, 1, 0, 1);
+        plan.add_merge("Sheet1", range).unwrap();
+        plan.set_cell("Sheet1", 0, 0, CellValue::String("x".to_owned()))
+            .unwrap();
+        plan.add_merge("Sheet2", MergeRange::new(2, 3, 2, 3))
+            .unwrap();
+
+        let merges = plan.merge_ranges().unwrap();
+        assert_eq!(merges.len(), 2);
+        assert_eq!(merges[0].0, "Sheet1");
+        assert_eq!(merges[1].0, "Sheet2");
+    }
+
+    #[test]
+    fn comment_removals_deduplicates_and_filters_overrides() {
+        let plan = WriteMutationPlan::default();
+        // 删除批注
+        plan.remove_comment("Sheet1", 0, 0).unwrap();
+        // 后续设置批注覆盖删除
+        plan.set_cell(
+            "Sheet1",
+            0,
+            0,
+            CellValue::Comment {
+                value: Box::new(CellValue::String("x".to_owned())),
+                text: "note".to_owned(),
+            },
+        )
+        .unwrap();
+        // 另一个删除
+        plan.remove_comment("Sheet1", 1, 1).unwrap();
+
+        let removals = plan.comment_removals().unwrap();
+        // (0,0) 被 setCellComment 覆盖，只剩 (1,1)
+        assert_eq!(removals.len(), 1);
+        assert_eq!(removals[0], ("Sheet1".to_owned(), 1, 1));
+    }
+
+    #[test]
+    fn partial_eq_compares_content() {
+        let plan_a = WriteMutationPlan::default();
+        let plan_b = WriteMutationPlan::default();
+        assert_eq!(plan_a, plan_b);
+
+        plan_a
+            .set_cell("S", 0, 0, CellValue::Int(1))
+            .unwrap();
+        assert_ne!(plan_a, plan_b);
+    }
+
+    #[test]
+    fn clone_shares_mutation_queue() {
+        let plan = WriteMutationPlan::default();
+        plan.set_cell("S", 0, 0, CellValue::Int(1)).unwrap();
+        let cloned = plan.clone();
+        // Arc 共享，内容相同
+        assert_eq!(plan, cloned);
+    }
+}

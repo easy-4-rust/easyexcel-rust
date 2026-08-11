@@ -5,6 +5,8 @@
 Native EasyExcel request extraction and response adapter for Hyper.
 
 > Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+>
+> Last updated: 2026-08-11 · Status: active
 
 ## Overview
 
@@ -32,6 +34,15 @@ flowchart LR
 
 The adapter does not reimplement spreadsheet parsing, writing or resource policy. Business rows are consumed through a bounded channel and downloads are exposed to Hyper as an asynchronous file stream.
 
+## Capabilities and Boundaries
+
+| What easyexcel-hyper does | What easyexcel-hyper does NOT do |
+|:---|:---|
+| Explicit request bridge for typed backpressured row stream | Upload spooling / resource limits / timeouts (in `easyexcel-web`) |
+| `Response<ResponseBody>` conversion for streaming download | Business validation, authorization or persistence |
+| `ExcelHyperError` mapping to HTTP error responses | Reimplementing spreadsheet parsing or writing |
+| Cloned `ExcelWebRuntime` in service closure | TUI / HTML form handling |
+
 ## Capability matrix
 
 | Capability | Status | Implementation |
@@ -51,6 +62,17 @@ easyexcel-hyper = "0.1.3"
 ```
 
 All workbook APIs remain under `easyexcel::...`; only Hyper-native request, response and error bridge types come from this adapter. The adapter depends on `easyexcel`, so facade-side re-export would create a cycle. Keep both crates on the same release line.
+
+## Usage from examples
+
+The runnable example is in [`examples/hyper`](https://github.com/easy-4-rust/easyexcel-rust/tree/main/examples/hyper). Default port: **8082**.
+
+```bash
+cargo run -p example-hyper
+# Listening on http://127.0.0.1:8082
+# POST /upload   - upload an Excel file
+# GET  /download - download a sample XLSX
+```
 
 ## Define the row model
 
@@ -178,7 +200,8 @@ Reverse dependencies such as `easyexcel-web -> easyexcel-hyper` or `easyexcel ->
 
 - [Repository](https://github.com/easy-4-rust/easyexcel-rust)
 - [API documentation](https://docs.rs/easyexcel-hyper)
-- [easyexcel-web](https://crates.io/crates/easyexcel-web)
+- [easyexcel-web](https://crates.io/crates/easyexcel-web) -- shared Web execution kernel
+- [Web conformance suite](https://github.com/easy-4-rust/easyexcel-rust/tree/main/tests/easyexcel-web-conformance)
 - [Runnable example](https://github.com/easy-4-rust/easyexcel-rust/tree/main/examples/hyper)
 - [Compatibility matrix](https://github.com/easy-4-rust/easyexcel-rust/blob/main/docs/compatibility.md)
 - [Chinese README](README.zh-CN.md)

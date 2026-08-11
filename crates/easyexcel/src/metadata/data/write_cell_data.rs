@@ -449,4 +449,288 @@ mod tests_extra {
         assert!(data.get_hyperlink_data().is_none());
         assert!(data.get_formula_data().is_none());
     }
+
+    #[test]
+    fn empty_constructor() {
+        let data = WriteCellData::empty();
+        assert_eq!(*data.value(), CellValue::Empty);
+        assert!(data.is_plain());
+    }
+
+    #[test]
+    fn from_type_sets_declared_type() {
+        let data = WriteCellData::from_type(crate::CellDataType::String);
+        assert_eq!(data.get_type(), crate::CellDataType::String);
+    }
+
+    #[test]
+    fn from_typed_string_string_type() {
+        let data = WriteCellData::from_typed_string(crate::CellDataType::String, "hello").unwrap();
+        assert_eq!(*data.value(), CellValue::String("hello".to_owned()));
+    }
+
+    #[test]
+    fn from_typed_string_direct_string_type() {
+        let data =
+            WriteCellData::from_typed_string(crate::CellDataType::DirectString, "hello").unwrap();
+        assert_eq!(*data.value(), CellValue::String("hello".to_owned()));
+    }
+
+    #[test]
+    fn from_typed_string_error_type() {
+        let data =
+            WriteCellData::from_typed_string(crate::CellDataType::Error, "#N/A").unwrap();
+        assert_eq!(*data.value(), CellValue::Error("#N/A".to_owned()));
+    }
+
+    #[test]
+    fn from_typed_string_rejects_other_types() {
+        assert!(WriteCellData::from_typed_string(crate::CellDataType::Number, "42").is_err());
+    }
+
+    #[test]
+    fn from_number_creates_decimal_cell() {
+        use std::str::FromStr;
+        let val = bigdecimal::BigDecimal::from_str("42.5").unwrap();
+        let data = WriteCellData::from_number(val.clone());
+        assert_eq!(*data.value(), CellValue::Decimal(val));
+    }
+
+    #[test]
+    fn from_boolean_creates_bool_cell() {
+        let data = WriteCellData::from_boolean(true);
+        assert_eq!(*data.value(), CellValue::Bool(true));
+    }
+
+    #[test]
+    fn from_formula_creates_formula_cell() {
+        let data = WriteCellData::from_formula("=SUM(A1:A10)");
+        assert_eq!(
+            *data.value(),
+            CellValue::Formula("=SUM(A1:A10)".to_owned())
+        );
+    }
+
+    #[test]
+    fn from_rich_text_creates_rich_cell() {
+        let rich = RichTextStringData::new("hello");
+        let data = WriteCellData::from_rich_text(rich.clone());
+        assert_eq!(*data.value(), CellValue::RichText(rich));
+    }
+
+    #[test]
+    fn is_plain_returns_false_with_decorations() {
+        let data = WriteCellData::from_string("x")
+            .formula_data(FormulaData::new("=A1"));
+        assert!(!data.is_plain());
+    }
+
+    #[test]
+    fn set_value_replaces_and_clears_type() {
+        let mut data = WriteCellData::from_type(crate::CellDataType::String);
+        data.set_value(CellValue::Int(42));
+        assert_eq!(*data.value(), CellValue::Int(42));
+        assert_eq!(data.get_type(), crate::CellDataType::Number);
+    }
+
+    #[test]
+    fn image_data_list_setter_and_getter() {
+        let data = WriteCellData::from_string("x")
+            .image_data_list(vec![ImageData::new(vec![1, 2, 3])]);
+        assert_eq!(data.images().len(), 1);
+        assert_eq!(data.get_image_data_list().len(), 1);
+    }
+
+    #[test]
+    fn set_comment_data_and_hyperlink_data() {
+        let mut data = WriteCellData::from_string("x");
+        data.set_comment_data(Some(CommentData::new().text("note".to_owned())));
+        assert!(data.get_comment_data().is_some());
+        data.set_comment_data(None);
+        assert!(data.get_comment_data().is_none());
+
+        data.set_hyperlink_data(Some(HyperlinkData::new().address("https://x".to_owned())));
+        assert!(data.get_hyperlink_data().is_some());
+        data.set_hyperlink_data(None);
+        assert!(data.get_hyperlink_data().is_none());
+    }
+
+    #[test]
+    fn set_formula_data() {
+        let mut data = WriteCellData::from_string("x");
+        data.set_formula_data(Some(FormulaData::new("=A1")));
+        assert!(data.get_formula_data().is_some());
+        data.set_formula_data(None);
+        assert!(data.get_formula_data().is_none());
+    }
+
+    #[test]
+    fn write_cell_style_setter_and_getter() {
+        let mut data = WriteCellData::from_string("x");
+        assert!(data.write_cell_style().is_none());
+        assert!(data.get_write_cell_style().is_none());
+        let style = WriteCellStyle::default();
+        data.set_write_cell_style(Some(style));
+        assert!(data.write_cell_style().is_some());
+    }
+
+    #[test]
+    fn origin_cell_style_setter_and_getter() {
+        let mut data = WriteCellData::from_string("x");
+        assert!(data.get_origin_cell_style().is_none());
+        data.set_origin_cell_style(Some(WriteCellStyle::default()));
+        assert!(data.get_origin_cell_style().is_some());
+        data.set_origin_cell_style(None);
+        assert!(data.get_origin_cell_style().is_none());
+    }
+
+    #[test]
+    fn rich_text_string_data_value_setter_and_getter() {
+        let rich = RichTextStringData::new("hello");
+        let mut data = WriteCellData::from_string("x");
+        assert!(data.get_rich_text_string_data_value().is_none());
+        data.set_rich_text_string_data_value(Some(rich.clone()));
+        assert!(data.get_rich_text_string_data_value().is_some());
+        data.set_rich_text_string_data_value(None);
+        assert!(data.get_rich_text_string_data_value().is_none());
+    }
+
+    #[test]
+    fn date_value_setter_and_getter() {
+        let dt = chrono::NaiveDateTime::parse_from_str("2024-01-01 12:00:00", "%Y-%m-%d %H:%M:%S")
+            .unwrap();
+        let mut data = WriteCellData::from_string("x");
+        assert!(data.get_date_value().is_none());
+        data.set_date_value(Some(dt));
+        assert!(data.get_date_value().is_some());
+        data.set_date_value(None);
+        assert!(data.get_date_value().is_none());
+    }
+
+    #[test]
+    fn get_or_create_style_creates_when_absent() {
+        let mut data = WriteCellData::from_string("x");
+        assert!(data.write_cell_style().is_none());
+        let _ = data.get_or_create_style();
+        assert!(data.write_cell_style().is_some());
+    }
+
+    #[test]
+    fn data_format_data_setter_and_getter() {
+        let mut data = WriteCellData::from_string("x");
+        assert!(data.data_format_data().is_none());
+        assert!(data.get_data_format_data().is_none());
+        let fmt = DataFormatData::default();
+        data.set_data_format_data(Some(fmt));
+        assert!(data.data_format_data().is_some());
+    }
+
+    #[test]
+    fn get_or_create_data_format_creates_when_absent() {
+        let mut data = WriteCellData::from_string("x");
+        let _ = data.get_or_create_data_format();
+        assert!(data.data_format_data().is_some());
+    }
+
+    #[test]
+    fn effective_value_wraps_formula_and_hyperlink() {
+        let data = WriteCellData::from_string("text")
+            .formula_data(FormulaData::new("=A1"));
+        let val = data.effective_value();
+        assert!(matches!(val, CellValue::Formula(_)));
+
+        let data = WriteCellData::from_string("text")
+            .hyperlink_data(HyperlinkData::new().address("https://x".to_owned()));
+        let val = data.effective_value();
+        assert!(matches!(val, CellValue::HyperlinkWithMetadata { .. }));
+    }
+
+    #[test]
+    fn effective_value_wraps_comment_and_images() {
+        let data = WriteCellData::from_string("text")
+            .comment_data(CommentData::new().text("note".to_owned()));
+        let val = data.effective_value();
+        assert!(matches!(val, CellValue::CommentWithMetadata { .. }));
+
+        let data = WriteCellData::from_string("text")
+            .image_data_list(vec![ImageData::new(vec![1, 2, 3])]);
+        let val = data.effective_value();
+        assert!(matches!(val, CellValue::Images { .. }));
+    }
+
+    #[test]
+    fn get_type_returns_value_type_when_no_declared() {
+        let data = WriteCellData::from_string("hello");
+        assert_eq!(data.get_type(), crate::CellDataType::String);
+    }
+
+    #[test]
+    fn set_type_overrides() {
+        let mut data = WriteCellData::from_string("hello");
+        data.set_type(crate::CellDataType::DirectString);
+        assert_eq!(data.get_type(), crate::CellDataType::DirectString);
+    }
+
+    #[test]
+    fn set_image_data_list_replaces() {
+        let mut data = WriteCellData::from_string("x");
+        data.set_image_data_list(vec![ImageData::new(vec![1, 2])]);
+        assert_eq!(data.images().len(), 1);
+    }
+
+    #[test]
+    fn to_excel_cell_returns_effective_value() {
+        let data = WriteCellData::from_string("hello");
+        let context = crate::ConvertContext {
+            sheet_name: String::new(),
+            row_index: 0,
+            column_index: None,
+            field: "",
+            format: None,
+            date_time_format: None,
+            number_format: None,
+            use_1904_windowing: false,
+        };
+        let val = data.to_excel_cell(&context).unwrap();
+        assert_eq!(val, CellValue::String("hello".to_owned()));
+    }
+
+    #[test]
+    fn from_excel_cell_creates_from_some_value() {
+        let context = crate::ConvertContext {
+            sheet_name: String::new(),
+            row_index: 0,
+            column_index: None,
+            field: "",
+            format: None,
+            date_time_format: None,
+            number_format: None,
+            use_1904_windowing: false,
+        };
+        let data =
+            WriteCellData::from_excel_cell(Some(&CellValue::Int(42)), &context).unwrap();
+        assert_eq!(*data.value(), CellValue::Int(42));
+    }
+
+    #[test]
+    fn from_excel_cell_creates_from_none() {
+        let context = crate::ConvertContext {
+            sheet_name: String::new(),
+            row_index: 0,
+            column_index: None,
+            field: "",
+            format: None,
+            date_time_format: None,
+            number_format: None,
+            use_1904_windowing: false,
+        };
+        let data = WriteCellData::from_excel_cell(None, &context).unwrap();
+        assert_eq!(*data.value(), CellValue::Empty);
+    }
+
+    #[test]
+    fn default_returns_empty() {
+        let data = WriteCellData::default();
+        assert_eq!(*data.value(), CellValue::Empty);
+    }
 }

@@ -114,3 +114,108 @@ impl Deref for AbstractReadHolder {
 impl DerefMut for AbstractReadHolder {
     fn deref_mut(&mut self) -> &mut Self::Target { &mut self.abstract_holder }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_creates_workbook_holder() {
+        // 对应 Java：AbstractReadHolder 默认构造器
+        let holder = AbstractReadHolder::default();
+        assert_eq!(holder.holder_type(), HolderEnum::Workbook);
+    }
+
+    #[test]
+    fn from_parameter_creates_sheet_holder() {
+        // 对应 Java：fromParameter 指定 HolderType
+        let holder = AbstractReadHolder::from_parameter(
+            &ReadBasicParameter::default(),
+            None,
+            HolderEnum::Sheet,
+        );
+        assert_eq!(holder.holder_type(), HolderEnum::Sheet);
+    }
+
+    #[test]
+    fn head_row_number_accessor() {
+        // 对应 Java：headRowNumber getter/setter
+        let mut holder = AbstractReadHolder::default();
+        holder.set_head_row_number(3);
+        assert_eq!(holder.get_head_row_number(), 3);
+    }
+
+    #[test]
+    fn excel_read_head_property_accessor() {
+        // 对应 Java：excelReadHeadProperty getter/setter
+        let holder = AbstractReadHolder::default();
+        let _prop: &ExcelReadHeadProperty = holder.get_excel_read_head_property();
+        let _prop: &ExcelReadHeadProperty = holder.excel_read_head_property();
+    }
+
+    #[test]
+    fn read_listener_list_accessor() {
+        // 对应 Java：readListenerList getter/setter
+        let mut holder = AbstractReadHolder::default();
+        assert!(holder.get_read_listener_list().is_empty());
+        assert!(holder.read_listener_list().is_empty());
+        holder.set_read_listener_list(vec!["listener1".to_owned()]);
+        assert_eq!(holder.get_read_listener_list().len(), 1);
+    }
+
+    #[test]
+    fn abstract_holder_accessor() {
+        // 对应 Java：abstractHolder 访问器
+        let holder = AbstractReadHolder::default();
+        let _ah: &AbstractHolder = holder.abstract_holder();
+    }
+
+    #[test]
+    fn is_new_from_abstract_holder() {
+        // 对应 Java：isNew 委托
+        let holder = AbstractReadHolder::default();
+        let _is_new: bool = ConfigurationHolder::is_new(&holder);
+    }
+
+    #[test]
+    fn global_configuration_from_abstract_holder() {
+        // 对应 Java：globalConfiguration 委托
+        let holder = AbstractReadHolder::default();
+        let _gc: &crate::GlobalConfiguration = ConfigurationHolder::global_configuration(&holder);
+    }
+
+    #[test]
+    fn converter_map_from_abstract_holder() {
+        // 对应 Java：converterMap 委托
+        let holder = AbstractReadHolder::default();
+        let _cm: &crate::ConverterRegistry = ConfigurationHolder::converter_map(&holder);
+    }
+
+    #[test]
+    fn clone_produces_equal() {
+        // 对应 Java：clone
+        let holder = AbstractReadHolder::default();
+        let cloned = holder.clone();
+        assert_eq!(holder.holder_type(), cloned.holder_type());
+    }
+
+    #[test]
+    fn debug_format_does_not_panic() {
+        // 对应 Java：toString
+        let holder = AbstractReadHolder::default();
+        let _debug = format!("{holder:?}");
+    }
+
+    #[test]
+    fn parent_inherits_listener_list() {
+        // 对应 Java：子 Holder 继承父监听器列表
+        let mut parent = AbstractReadHolder::default();
+        parent.set_read_listener_list(vec!["p1".to_owned()]);
+        let child = AbstractReadHolder::from_parameter(
+            &ReadBasicParameter::default(),
+            Some(&parent),
+            HolderEnum::Sheet,
+        );
+        assert!(child.read_listener_list().contains(&"p1".to_owned()));
+    }
+}

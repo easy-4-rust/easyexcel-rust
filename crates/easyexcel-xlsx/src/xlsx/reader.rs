@@ -6,7 +6,7 @@ use std::io::{Cursor, Read, Seek, SeekFrom};
 use quick_xml::Reader;
 use quick_xml::events::Event;
 
-use easyexcel_io::{Error, Result};
+use easyexcel_io::{Error, ResourceLimits, Result};
 use easyexcel_model::CellError;
 use easyexcel_model::addr::{CellAddress, CellRange};
 use easyexcel_model::dates::DateSystem;
@@ -44,6 +44,15 @@ pub fn read<R: Read + Seek>(reader: R) -> Result<Workbook> {
     read_with_password(reader, None)
 }
 
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Read an XLSX workbook from any seekable reader，使用指定的资源限制。
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，输入不符合格式约束，或解压后数据超过资源限制时返回错误。
+pub fn read_with_limits<R: Read + Seek>(reader: R, limits: ResourceLimits) -> Result<Workbook> {
+    read_with_password_and_limits(reader, None, limits)
+}
+
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 Read an XLSX workbook, transparently decrypting a password-protected
 /// (MS-OFFCRYPTO) file when `password` is supplied.
 ///
@@ -58,6 +67,29 @@ pub fn read_with_password<R: Read + Seek>(
     mut reader: R,
     password: Option<&str>,
 ) -> Result<Workbook> {
+    read_with_password_and_limits_inner(&mut reader, password, ResourceLimits::default())
+}
+
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 Read an XLSX workbook, transparently decrypting a password-protected
+/// (MS-OFFCRYPTO) file when `password` is supplied，使用指定的资源限制。
+///
+/// # Errors
+///
+/// 底层 OOXML、ZIP、XML 或目标 I/O 操作失败，输入不符合格式约束，或解压后数据超过资源限制时返回错误。
+pub fn read_with_password_and_limits<R: Read + Seek>(
+    mut reader: R,
+    password: Option<&str>,
+    limits: ResourceLimits,
+) -> Result<Workbook> {
+    read_with_password_and_limits_inner(&mut reader, password, limits)
+}
+
+/// 对应 Java：无直接对应对象；Rust 架构扩展。 内部实现：根据魔数判断是否需要解密，然后用指定资源限制解压 ZIP。
+fn read_with_password_and_limits_inner<R: Read + Seek>(
+    reader: &mut R,
+    password: Option<&str>,
+    limits: ResourceLimits,
+) -> Result<Workbook> {
     let mut magic = [0u8; 8];
     let n = reader.read(&mut magic)?;
     reader.seek(SeekFrom::Start(0))?;
@@ -70,28 +102,61 @@ pub fn read_with_password<R: Read + Seek>(
             return Err(Error::PasswordProtected(scheme));
         };
         let inner = super::crypto::decrypt(&bytes, pw)?;
-        return read_zip(Cursor::new(inner));
+        return read_zip_with_limits(Cursor::new(inner), limits);
     }
 
-    read_zip(reader)
+    read_zip_with_limits(reader, limits)
 }
 
-/// Parse a plain (unencrypted) XLSX ZIP from a seekable reader.
+/// Parse a plain (unencrypted) XLSX ZIP from a seekable reader，使用默认资源限制。
 fn read_zip<R: Read + Seek>(reader: R) -> Result<Workbook> {
+    read_zip_with_limits(reader, ResourceLimits::default())
+}
+
+/// Parse a plain (unencrypted) XLSX ZIP from a seekable reader，使用指定资源限制。
+///
+/// 在解压循环中检查：
+/// - 单个 entry 解压后大小不超过 `max_file_bytes`（防止单个 entry 为 ZIP bomb）
+/// - 所有 entry 解压后累计大小不超过 `max_file_bytes`（防止多个小 entry 累积爆炸）
+fn read_zip_with_limits<R: Read + Seek>(reader: R, limits: ResourceLimits) -> Result<Workbook> {
     let mut archive = match zip::ZipArchive::new(reader) {
         Ok(a) => a,
         Err(e) => return Err(Error::Zip(e.to_string())),
     };
 
+    let max_bytes = limits.max_file_bytes();
+
     // Read all parts into memory (so we can re-borrow the archive freely).
     let mut parts: HashMap<String, Vec<u8>> = HashMap::new();
+    let mut total_uncompressed: u64 = 0;
     for i in 0..archive.len() {
         let mut f = archive.by_index(i)?;
         if f.is_dir() {
             continue;
         }
         let name = f.name().to_string();
-        let capacity = usize::try_from(f.size())
+
+        // 单个 entry 解压后大小检查（防止 ZIP bomb：高压缩比单文件）
+        let entry_size = f.size();
+        if entry_size > max_bytes {
+            return Err(Error::ResourceLimit {
+                resource: "zip_entry_uncompressed_bytes",
+                limit: max_bytes,
+                actual: entry_size,
+            });
+        }
+
+        // 累计解压后大小检查（防止 ZIP bomb：多个小 entry 累积爆炸）
+        total_uncompressed += entry_size;
+        if total_uncompressed > max_bytes {
+            return Err(Error::ResourceLimit {
+                resource: "zip_total_uncompressed_bytes",
+                limit: max_bytes,
+                actual: total_uncompressed,
+            });
+        }
+
+        let capacity = usize::try_from(entry_size)
             .map_err(|_| Error::Zip("ZIP entry exceeds address space".into()))?;
         let mut data = Vec::with_capacity(capacity);
         f.read_to_end(&mut data)?;

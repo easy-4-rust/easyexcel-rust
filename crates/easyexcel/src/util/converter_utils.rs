@@ -180,4 +180,84 @@ mod tests_extra {
         // 对应 Java：defaultClassGeneric 默认实现
         assert_eq!(default_class_generic(), TypeId::of::<String>());
     }
+
+    #[test]
+    fn text_fallback_converts_numeric_types() {
+        // 对应 Java：convertTextToRustValue 各数值类型分支
+        assert_eq!(
+            convert_text_to_rust_value("42", TypeId::of::<i8>()).unwrap(),
+            "42"
+        );
+        assert_eq!(
+            convert_text_to_rust_value("1000", TypeId::of::<i16>()).unwrap(),
+            "1000"
+        );
+        assert_eq!(
+            convert_text_to_rust_value("100000", TypeId::of::<i32>()).unwrap(),
+            "100000"
+        );
+        assert_eq!(
+            convert_text_to_rust_value("9999999", TypeId::of::<i64>()).unwrap(),
+            "9999999"
+        );
+        assert_eq!(
+            convert_text_to_rust_value("255", TypeId::of::<u8>()).unwrap(),
+            "255"
+        );
+        assert_eq!(
+            convert_text_to_rust_value("65535", TypeId::of::<u16>()).unwrap(),
+            "65535"
+        );
+        assert_eq!(
+            convert_text_to_rust_value("100000", TypeId::of::<u32>()).unwrap(),
+            "100000"
+        );
+        assert_eq!(
+            convert_text_to_rust_value("9999999", TypeId::of::<u64>()).unwrap(),
+            "9999999"
+        );
+        assert_eq!(
+            convert_text_to_rust_value("3.14", TypeId::of::<f32>()).unwrap(),
+            "3.14"
+        );
+        assert_eq!(
+            convert_text_to_rust_value("3.14", TypeId::of::<f64>()).unwrap(),
+            "3.14"
+        );
+    }
+
+    #[test]
+    fn text_fallback_converts_bool() {
+        assert_eq!(
+            convert_text_to_rust_value("true", TypeId::of::<bool>()).unwrap(),
+            "true"
+        );
+        assert_eq!(
+            convert_text_to_rust_value("false", TypeId::of::<bool>()).unwrap(),
+            "false"
+        );
+        assert!(convert_text_to_rust_value("notbool", TypeId::of::<bool>()).is_err());
+    }
+
+    #[test]
+    fn text_fallback_rejects_invalid_numeric() {
+        assert!(convert_text_to_rust_value("abc", TypeId::of::<i32>()).is_err());
+        assert!(convert_text_to_rust_value("abc", TypeId::of::<i8>()).is_err());
+        assert!(convert_text_to_rust_value("abc", TypeId::of::<i16>()).is_err());
+        assert!(convert_text_to_rust_value("abc", TypeId::of::<i64>()).is_err());
+        assert!(convert_text_to_rust_value("abc", TypeId::of::<u8>()).is_err());
+        assert!(convert_text_to_rust_value("abc", TypeId::of::<u16>()).is_err());
+        assert!(convert_text_to_rust_value("abc", TypeId::of::<u32>()).is_err());
+        assert!(convert_text_to_rust_value("abc", TypeId::of::<u64>()).is_err());
+        assert!(convert_text_to_rust_value("abc", TypeId::of::<f32>()).is_err());
+        assert!(convert_text_to_rust_value("abc", TypeId::of::<f64>()).is_err());
+    }
+
+    #[test]
+    fn text_fallback_converts_str_type() {
+        assert_eq!(
+            convert_text_to_rust_value("hello", TypeId::of::<&'static str>()).unwrap(),
+            "hello"
+        );
+    }
 }

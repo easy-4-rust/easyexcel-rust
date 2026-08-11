@@ -187,3 +187,178 @@ parse_with_property!(parse_integer_with_property, i32, parse_integer);
 parse_with_property!(parse_float_with_property, f32, parse_float);
 parse_with_property!(parse_byte_with_property, i8, parse_byte);
 parse_with_property!(parse_double_with_property, f64, parse_double);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::str::FromStr;
+
+    // --- parse_short ---
+    #[test]
+    fn parse_short_valid_values() {
+        assert_eq!(parse_short("0").unwrap(), 0);
+        assert_eq!(parse_short("42").unwrap(), 42);
+        assert_eq!(parse_short("-100").unwrap(), -100);
+        assert_eq!(parse_short("32767").unwrap(), i16::MAX);
+        assert_eq!(parse_short("-32768").unwrap(), i16::MIN);
+    }
+
+    #[test]
+    fn parse_short_invalid_values() {
+        assert!(parse_short("abc").is_err());
+    }
+
+    // --- parse_long ---
+    #[test]
+    fn parse_long_valid_values() {
+        assert_eq!(parse_long("0").unwrap(), 0_i64);
+        assert_eq!(parse_long("123456789").unwrap(), 123_456_789_i64);
+        assert_eq!(parse_long("-999").unwrap(), -999_i64);
+    }
+
+    #[test]
+    fn parse_long_invalid_values() {
+        assert!(parse_long("abc").is_err());
+        assert!(parse_long("").is_err());
+    }
+
+    // --- parse_integer ---
+    #[test]
+    fn parse_integer_valid_values() {
+        assert_eq!(parse_integer("0").unwrap(), 0_i32);
+        assert_eq!(parse_integer("42").unwrap(), 42_i32);
+        assert_eq!(parse_integer("-1").unwrap(), -1_i32);
+        assert_eq!(parse_integer("2147483647").unwrap(), i32::MAX);
+    }
+
+    #[test]
+    fn parse_integer_invalid_values() {
+        assert!(parse_integer("abc").is_err());
+    }
+
+    // --- parse_float ---
+    #[test]
+    fn parse_float_valid_values() {
+        assert!((parse_float("3.14").unwrap() - 3.14_f32).abs() < f32::EPSILON);
+        assert!((parse_float("-1.5").unwrap() - (-1.5_f32)).abs() < f32::EPSILON);
+        assert!((parse_float("0").unwrap()).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn parse_float_invalid_values() {
+        assert!(parse_float("abc").is_err());
+        assert!(parse_float("").is_err());
+    }
+
+    // --- parse_double ---
+    #[test]
+    fn parse_double_valid_values() {
+        assert!((parse_double("3.14").unwrap() - 3.14_f64).abs() < f64::EPSILON);
+        assert!((parse_double("-1.5").unwrap() - (-1.5_f64)).abs() < f64::EPSILON);
+        assert!((parse_double("0").unwrap()).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn parse_double_invalid_values() {
+        assert!(parse_double("abc").is_err());
+    }
+
+    // --- parse_byte ---
+    #[test]
+    fn parse_byte_valid_values() {
+        assert_eq!(parse_byte("0").unwrap(), 0_i8);
+        assert_eq!(parse_byte("127").unwrap(), i8::MAX);
+        assert_eq!(parse_byte("-128").unwrap(), i8::MIN);
+    }
+
+    #[test]
+    fn parse_byte_invalid_values() {
+        assert!(parse_byte("abc").is_err());
+    }
+
+    // --- parse_big_decimal ---
+    #[test]
+    fn parse_big_decimal_valid_values() {
+        let val = parse_big_decimal("123.456").unwrap();
+        assert_eq!(val, BigDecimal::from_str("123.456").unwrap());
+    }
+
+    #[test]
+    fn parse_big_decimal_invalid_values() {
+        assert!(parse_big_decimal("abc").is_err());
+    }
+
+    // --- parse_big_int ---
+    #[test]
+    fn parse_big_int_valid_values() {
+        let val = parse_big_int("99999999999999999999").unwrap();
+        assert_eq!(val, BigInt::from_str("99999999999999999999").unwrap());
+    }
+
+    #[test]
+    fn parse_big_int_invalid_values() {
+        assert!(parse_big_int("abc").is_err());
+    }
+
+    // --- format ---
+    #[test]
+    fn format_returns_string_when_no_property() {
+        let value = BigDecimal::from_str("123.45").unwrap();
+        let result = format(&value, None).unwrap();
+        assert_eq!(result, "123.45");
+    }
+
+    // --- format_to_cell_data ---
+    #[test]
+    fn format_to_cell_data_creates_decimal_cell() {
+        let value = BigDecimal::from_str("42").unwrap();
+        let cell = format_to_cell_data(&value, None);
+        assert!(matches!(cell.value(), CellValue::Decimal(_)));
+    }
+
+    // --- format_to_cell_data_string ---
+    #[test]
+    fn format_to_cell_data_string_creates_string_cell() {
+        let value = BigDecimal::from_str("42").unwrap();
+        let cell = format_to_cell_data_string(&value, None).unwrap();
+        assert!(matches!(cell.value(), CellValue::String(_)));
+    }
+
+    // --- parse_with_property (without property) ---
+    #[test]
+    fn parse_short_with_property_no_property() {
+        assert_eq!(parse_short_with_property("42", None).unwrap(), 42_i16);
+    }
+
+    #[test]
+    fn parse_long_with_property_no_property() {
+        assert_eq!(parse_long_with_property("123", None).unwrap(), 123_i64);
+    }
+
+    #[test]
+    fn parse_integer_with_property_no_property() {
+        assert_eq!(parse_integer_with_property("42", None).unwrap(), 42_i32);
+    }
+
+    #[test]
+    fn parse_float_with_property_no_property() {
+        assert!((parse_float_with_property("3.14", None).unwrap() - 3.14_f32).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn parse_byte_with_property_no_property() {
+        assert_eq!(parse_byte_with_property("42", None).unwrap(), 42_i8);
+    }
+
+    #[test]
+    fn parse_double_with_property_no_property() {
+        assert!((parse_double_with_property("3.14", None).unwrap() - 3.14_f64).abs() < f64::EPSILON);
+    }
+
+    // --- parse_big_decimal_with_property ---
+    #[test]
+    fn parse_big_decimal_with_property_no_property() {
+        let val = parse_big_decimal_with_property("123.456", None).unwrap();
+        assert_eq!(val, BigDecimal::from_str("123.456").unwrap());
+    }
+}
