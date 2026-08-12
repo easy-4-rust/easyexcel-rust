@@ -754,10 +754,7 @@ mod tests_extra {
     #[test]
     fn write_merge_cells_multiple() {
         let mut out = Vec::new();
-        let ranges = [
-            pack_merge_range(0, 1, 0, 1),
-            pack_merge_range(2, 3, 2, 3),
-        ];
+        let ranges = [pack_merge_range(0, 1, 0, 1), pack_merge_range(2, 3, 2, 3)];
         write_merge_cells(&mut out, &ranges);
         // Should contain MERGECELLS header + count + range data
         assert!(!out.is_empty());
@@ -841,9 +838,7 @@ mod tests_extra {
 
     #[test]
     fn pack_cell_xf_with_borders() {
-        let xf = pack_cell_xf(
-            0, 0, 0, 2, false, 0, 0, 0, 1, 2, 3, 4, 10, 11, 12, 13,
-        );
+        let xf = pack_cell_xf(0, 0, 0, 2, false, 0, 0, 0, 1, 2, 3, 4, 10, 11, 12, 13);
         assert_eq!(xf.len(), 20);
     }
 }

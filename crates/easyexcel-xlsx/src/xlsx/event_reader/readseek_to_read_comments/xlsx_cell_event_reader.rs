@@ -239,13 +239,19 @@ impl<'a> XlsxCellEventReader<'a> {
         let date_formatted = number.is_some()
             && compiled_format.is_some_and(CompiledExcelFormat::is_date_format);
         let (display_value, decimal_value) = number.map_or((None, None), |number| {
-            let decimal = self
-                .options
-                .retain_decimal_values
-                // Java/POI exposes the precision-normalized numeric value rather
-                // than every binary tail digit serialized by an OOXML producer.
-                .then(|| number.to_string().parse::<BigDecimal>().ok())
-                .flatten();
+            // `retain_decimal_values` 为 true 时才构造 BigDecimal；高层 API
+            // `EasyExcel::read` 会按 schema 自动覆盖此值（见 `requires_decimal_metadata`），
+            // 低层 API 用户按需显式传 false 避免逐格构造。
+            let decimal = if self.options.retain_decimal_values {
+                #[cold]
+                #[inline(never)]
+                fn parse_big_decimal(number: f64) -> Option<BigDecimal> {
+                    number.to_string().parse::<BigDecimal>().ok()
+                }
+                parse_big_decimal(number)
+            } else {
+                None
+            };
             let retain_display = self
                 .options
                 .retain_display_columns

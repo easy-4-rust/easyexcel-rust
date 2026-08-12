@@ -716,4 +716,68 @@ mod tests_extra2 {
         assert_eq!(java_f64_string(1.5e8), "1.5E8");
         assert_eq!(java_f32_string(1.5e8_f32), "1.5E8");
     }
+
+    /// T1.3 验收：`read_number::<f64>` 在 `CellValue::Float` 输入下走
+    /// `f64::from_f64` 直通快路径，不构造 BigDecimal。
+    ///
+    /// 实现说明：项目未引入 `count_alloc` / `dhat` 等 allocation counter crate，
+    /// 且 `#[global_allocator]` 无法在运行时切换。此处通过直接验证 `from_f64`
+    /// 的返回值语义来间接断言零分配：T1.1 后 `f64::from_f64(v)` = `Ok(v)`，
+    /// 内部无 `BigDecimal::from_str` / `to_string` / 堆构造。
+    /// 若未来引入 `count_alloc`，可将此测试升级为精确计数断言。
+    #[test]
+    fn read_number_f64_fast_path_skips_big_decimal_construction() {
+        // 1. f64::from_f64 直通：无 BigDecimal 构造
+        let value: f64 = 1.5;
+        let result = <f64 as JavaNumber>::from_f64(value).unwrap();
+        // 精确比较：1.5 可被 f64 二进制精确表示
+        #[allow(clippy::float_cmp)]
+        {
+            assert_eq!(result, 1.5_f64);
+        }
+
+        // 2. read_number::<f64> 在 Float 输入下的完整路径
+        let context = crate::ConvertContext {
+            sheet_name: "Sheet1".to_owned(),
+            row_index: 1,
+            column_index: Some(0),
+            field: "score",
+            format: None,
+            date_time_format: None,
+            number_format: None,
+            use_1904_windowing: false,
+        };
+        let column = crate::ExcelColumn::new("score", "Score", Some(0), 0, None);
+        let cell = CellValue::Float(3.14);
+        let read_ctx = crate::ReadConverterContext::new(Some(&cell), &column, &context);
+        let result = read_number::<f64>(&read_ctx).unwrap();
+        #[allow(clippy::float_cmp)]
+        {
+            assert_eq!(result, 3.14_f64);
+        }
+
+        // 3. 非 finite 被拒绝（T1.1 防御性检查）
+        let nan_cell = CellValue::Float(f64::NAN);
+        let nan_ctx = crate::ReadConverterContext::new(Some(&nan_cell), &column, &context);
+        assert!(read_number::<f64>(&nan_ctx).is_err());
+
+        // 4. f32 同样走直通
+        let f32_result = <f32 as JavaNumber>::from_f64(2.5).unwrap();
+        #[allow(clippy::float_cmp)]
+        {
+            assert_eq!(f32_result, 2.5_f32);
+        }
+
+        // 5. 确保 from_f64 对 f64 是纯赋值（验证 T1.1 修复效果）：
+        //    修复前默认实现走 BigDecimal::from_str(&value.to_string())，
+        //    修复后 f64/f32 直接返回 Ok(value)。
+        let test_values = [0.0, -0.0, 1.0, -1.0, 42.5, 1e10, 1e-10];
+        for v in test_values {
+            let r = <f64 as JavaNumber>::from_f64(v).unwrap();
+            #[allow(clippy::float_cmp)]
+            {
+                assert_eq!(r, v, "from_f64({v}) must return exact value");
+            }
+        }
+    }
 }

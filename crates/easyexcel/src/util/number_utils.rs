@@ -26,8 +26,20 @@ pub(crate) fn format_non_finite(
     easyexcel_format::format_non_finite(value, pattern).map_err(Into::into)
 }
 /// 对应 Java：NumberUtils.parseShort。
-pub(crate) fn parse_decimal(value: &str, pattern: Option<&str>) -> Result<BigDecimal, ExcelError> {
+pub fn parse_decimal(value: &str, pattern: Option<&str>) -> Result<BigDecimal, ExcelError> {
     easyexcel_format::parse_decimal(value, pattern).map_err(Into::into)
+}
+
+/// Parse a number-format-aware decimal and convert it to `f64`.
+///
+/// Derive macros call this instead of touching `bigdecimal::ToPrimitive`
+/// directly, so downstream crates don't need to depend on `bigdecimal`.
+pub fn parse_decimal_as_f64(value: &str, pattern: Option<&str>) -> Result<f64, ExcelError> {
+    let decimal = parse_decimal(value, pattern)?;
+    use bigdecimal::ToPrimitive;
+    decimal
+        .to_f64()
+        .ok_or_else(|| ExcelError::Unsupported(format!("cannot convert decimal to f64: {value}")))
 }
 
 /// 对应 Java：`NumberUtils.parseShort`。

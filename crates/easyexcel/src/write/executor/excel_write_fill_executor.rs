@@ -337,4 +337,103 @@ mod tests {
             .expect_err("missing engine for finish");
         assert!(error.to_string().contains("not wired"));
     }
+
+    // ---- T2.6 ----
+    #[test]
+    fn executor_write_context_accessor_returns_same_reference() {
+        let context = WriteContextImpl::new("context_accessor.xlsx");
+        let mut probe = ProbeFillExecutor::default();
+        {
+            let executor = ExcelWriteFillExecutor::with_delegate(&context, &mut probe);
+            // write_context() 应返回构造时注入的同一 context
+            let path_first = executor.write_context().current_write_holder().path();
+            assert_eq!(path_first, std::path::Path::new("context_accessor.xlsx"));
+            // 多次调用返回一致结果
+            let path_second = executor.write_context().current_write_holder().path();
+            assert_eq!(path_first, path_second);
+        }
+    }
+
+    // ---- T2.7 ----
+    #[test]
+    fn executor_fill_config_variants_pass_through() {
+        let context = WriteContextImpl::new("config_variants.xlsx");
+        let mut probe = ProbeFillExecutor::default();
+        {
+            let mut executor = ExcelWriteFillExecutor::with_delegate(&context, &mut probe);
+
+            // 全默认：force_new_row=false, direction=None, auto_style=true（Java 兼容）
+            executor
+                .fill(
+                    &"default_config",
+                    WriteFillConfig::default(),
+                    WriteFillSheet::default(),
+                )
+                .expect("fill with default config");
+
+            // 自定义组合：force_new_row=false, direction=Vertical, auto_style=true
+            executor
+                .fill(
+                    &"custom_config",
+                    WriteFillConfig {
+                        force_new_row: false,
+                        direction: Some(WriteDirection::Vertical),
+                        auto_style: true,
+                    },
+                    WriteFillSheet::default(),
+                )
+                .expect("fill with custom config");
+        }
+        assert_eq!(probe.fills.len(), 2);
+
+        // 默认 config 透传验证（auto_style 默认 true，与 Java 兼容）
+        assert!(!probe.fills[0].0.force_new_row);
+        assert!(probe.fills[0].0.direction.is_none());
+        assert!(probe.fills[0].0.auto_style);
+
+        // 自定义 config 透传验证
+        assert!(!probe.fills[1].0.force_new_row);
+        assert_eq!(probe.fills[1].0.direction, Some(WriteDirection::Vertical));
+        assert!(probe.fills[1].0.auto_style);
+    }
+
+    // ---- T2.8 ----
+    #[test]
+    fn executor_fill_sheet_default_and_named_pass_through() {
+        let context = WriteContextImpl::new("sheet_variants.xlsx");
+        let mut probe = ProbeFillExecutor::default();
+        {
+            let mut executor = ExcelWriteFillExecutor::with_delegate(&context, &mut probe);
+
+            // 默认 sheet：sheet_name="Sheet1", sheet_index=None
+            executor
+                .fill(
+                    &"default_sheet",
+                    WriteFillConfig::default(),
+                    WriteFillSheet::default(),
+                )
+                .expect("fill with default sheet");
+
+            // 具名 sheet
+            executor
+                .fill(
+                    &"named_sheet",
+                    WriteFillConfig::default(),
+                    WriteFillSheet {
+                        sheet_name: "Report".to_owned(),
+                        sheet_index: Some(5),
+                    },
+                )
+                .expect("fill with named sheet");
+        }
+        assert_eq!(probe.fills.len(), 2);
+
+        // 默认 sheet 透传验证（默认 sheet_name 为 "Sheet1"）
+        assert_eq!(probe.fills[0].1.sheet_name, "Sheet1");
+        assert!(probe.fills[0].1.sheet_index.is_none());
+
+        // 具名 sheet 透传验证
+        assert_eq!(probe.fills[1].1.sheet_name, "Report");
+        assert_eq!(probe.fills[1].1.sheet_index, Some(5));
+    }
 }

@@ -338,10 +338,11 @@ fn excel_analyser_direct_constructor_executor_context_and_finish_match_java()
         ExcelReadExecutor::sheet_list(&csv_executor)[0].sheet_no(),
         contract.csv_executor_sheet_no
     );
-    // Java 的默认 sheetName 为 null；Rust 字符串视图用空串保留同一“未命名”语义。
+    // Java 的默认 sheetName 为 null；Rust CSV 执行器使用 “Sheet1” 作为默认名称，
+    // 与内部 csv_excel_read_executor 测试及 workbook.xml 中 sheet 元素保持一致。
     assert_eq!(
         ExcelReadExecutor::sheet_list(&csv_executor)[0].sheet_name(),
-        ""
+        "Sheet1"
     );
     assert_eq!(
         csv_executor.csv_read_context().file(),

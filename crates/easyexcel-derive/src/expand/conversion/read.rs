@@ -67,8 +67,18 @@ fn primitive_cell_read(kind: &str, crate_path: &TokenStream) -> TokenStream {
                     .map_err(|_| context.invalid(cell, "f64"))
                 }
                 #crate_path::CellValue::String(v) => {
-                    ::std::str::FromStr::from_str(v.as_str())
+                    // Fast path: plain numeric string.
+                    if let Ok(result) = ::std::str::FromStr::from_str(v.as_str()) {
+                        Ok(result)
+                    // Slow path: number_format-aware parsing (e.g. "123.5%" with "#.##%").
+                    } else if let Some(pattern) = context.effective_number_format() {
+                        #crate_path::util::number_utils::parse_decimal_as_f64(
+                            v.as_str(), Some(pattern),
+                        )
                         .map_err(|_| context.invalid(cell, "f64"))
+                    } else {
+                        Err(context.invalid(cell, "f64"))
+                    }
                 }
                 other => Err(context.invalid(other, "f64")),
             }?

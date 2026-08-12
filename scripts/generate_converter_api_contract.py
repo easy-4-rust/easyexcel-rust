@@ -46,6 +46,24 @@ SUPPORT_JAVA_RE = re.compile(
     re.DOTALL,
 )
 
+# java.lang types are auto-imported in every Java file, so converters never
+# spell them out. Map the short name → FQN to keep parity-check evidence
+# stable (matches the contract asserted by easyexcel-test::JAVA_CONVERTERS).
+JAVA_LANG_PRIMITIVES = {
+    "Boolean": "java.lang.Boolean",
+    "Byte": "java.lang.Byte",
+    "Character": "java.lang.Character",
+    "Double": "java.lang.Double",
+    "Float": "java.lang.Float",
+    "Integer": "java.lang.Integer",
+    "Long": "java.lang.Long",
+    "Short": "java.lang.Short",
+    "String": "java.lang.String",
+    "Object": "java.lang.Object",
+    "Number": "java.lang.Number",
+    "Void": "java.lang.Void",
+}
+
 # Matches: public CellDataTypeEnum supportExcelTypeKey() { return CellDataTypeEnum.XXX; }
 SUPPORT_EXCEL_RE = re.compile(
     r"public\s+CellDataTypeEnum\s+supportExcelTypeKey\s*\(\s*\)\s*\{[^}]*?return\s+CellDataTypeEnum\.(?P<enum>\w+)\s*;[^}]*\}",
@@ -124,8 +142,24 @@ def parse_converter_file(path: Path) -> dict[str, Any] | None:
         short = short_class(raw_cls)
         if "." not in raw_cls and short in imports:
             record["support_java_type_key"] = imports[short]
+        elif raw_cls.endswith("[]") and not raw_cls.startswith("["):
+            # Map Java source array syntax to JVM Class.getName() descriptors.
+            #   byte[]     -> [B   (primitive array)
+            #   Byte[]     -> [Ljava.lang.Byte;  (object array)
+            #   Foo[]      -> [L<fqcn>;
+            elem = raw_cls[:-2]
+            primitive_descriptors = {
+                "boolean": "Z", "byte": "B", "char": "C", "short": "S",
+                "int": "I", "long": "J", "float": "F", "double": "D",
+            }
+            if elem in primitive_descriptors:
+                record["support_java_type_key"] = f"[{primitive_descriptors[elem]}"
+            else:
+                elem_fqcn = JAVA_LANG_PRIMITIVES.get(elem, elem)
+                record["support_java_type_key"] = f"[L{elem_fqcn};"
         else:
-            record["support_java_type_key"] = raw_cls
+            # Map java.lang.* short names to FQN (auto-imported, never explicit).
+            record["support_java_type_key"] = JAVA_LANG_PRIMITIVES.get(short, raw_cls)
 
     # supportExcelTypeKey
     se = SUPPORT_EXCEL_RE.search(source)

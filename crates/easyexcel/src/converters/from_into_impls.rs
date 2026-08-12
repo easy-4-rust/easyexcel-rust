@@ -190,6 +190,17 @@ macro_rules! float_conversion {
 
 float_conversion!(f32, f64);
 
+/// Tries to parse a percentage/formatted numeric string using the
+/// `number_format` context (e.g. `"123.5%"` with pattern `"#.##%"`).
+///
+/// Returns `None` when no format is available or parsing fails, so the
+/// caller can fall through to the normal error path.
+fn try_format_aware_parse(text: &str, context: &ConvertContext) -> Option<f64> {
+    let pattern = context.effective_number_format()?;
+    let decimal = crate::util::number_utils::parse_decimal(text, Some(pattern)).ok()?;
+    bigdecimal::ToPrimitive::to_f64(&decimal)
+}
+
 fn parse_float<T>(
     value: Option<&CellValue>,
     context: &ConvertContext,
@@ -207,8 +218,21 @@ where
         CellValue::String(inner) => inner.clone(),
         other => return Err(context.invalid(other, target)),
     };
-    text.parse::<T>()
-        .map_err(|_| context.invalid(value, target))
+    // Fast path: direct parse without number_format.
+    if let Ok(result) = text.parse::<T>() {
+        return Ok(result);
+    }
+    // Slow path: use number_format-aware parsing (e.g. "123.5%" with "#.##%").
+    // Corresponds to Java `DoubleStringConverter` / `FloatStringConverter`
+    // which delegate to `NumberUtils.parseDouble(value, contentProperty)`.
+    if let Some(as_f64) = try_format_aware_parse(&text, context) {
+        // f64→f64 is lossless; f64→f32 truncates (expected behavior).
+        return as_f64
+            .to_string()
+            .parse::<T>()
+            .map_err(|_| context.invalid(value, target));
+    }
+    Err(context.invalid(value, target))
 }
 
 impl FromExcelCell for BigDecimal {

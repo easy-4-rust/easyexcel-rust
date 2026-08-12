@@ -1,0 +1,1961 @@
+{
+  "authority": "materialized_exact_public_api_evidence",
+  "candidate_mapping_sha256": "fc5bfc3216d2b718fe28dcb539c02e1e135844449a32db7eb61922ba61e69b0c",
+  "evidence": [
+    {
+      "commands": [
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel-test",
+          "--test",
+          "public_api_converter_evidence_tests",
+          "--no-run"
+        ],
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel-test",
+          "--all-features",
+          "--test",
+          "public_api_converter_evidence_tests",
+          "--no-run"
+        ],
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel",
+          "--lib",
+          "--no-run"
+        ],
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel",
+          "--all-features",
+          "--lib",
+          "--no-run"
+        ]
+      ],
+      "id": "converter-family.compile.v1",
+      "java_ids": [
+        "com.alibaba.excel.converters.AutoConverter",
+        "com.alibaba.excel.converters.Converter",
+        "com.alibaba.excel.converters.Converter#convertToExcelData(Lcom/alibaba/excel/converters/WriteConverterContext;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.Converter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.NullableObjectConverter",
+        "com.alibaba.excel.converters.ReadConverterContext",
+        "com.alibaba.excel.converters.ReadConverterContext#<init>(Lcom/alibaba/excel/metadata/data/ReadCellData;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/context/AnalysisContext;)V",
+        "com.alibaba.excel.converters.WriteConverterContext",
+        "com.alibaba.excel.converters.WriteConverterContext#<init>()V",
+        "com.alibaba.excel.converters.WriteConverterContext#<init>(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/context/WriteContext;)V",
+        "com.alibaba.excel.converters.WriteConverterContext#getValue()Ljava/lang/Object;",
+        "com.alibaba.excel.converters.WriteConverterContext#setValue(Ljava/lang/Object;)V",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalBooleanConverter",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalBooleanConverter#convertToExcelData(Ljava/math/BigDecimal;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalNumberConverter",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalNumberConverter#convertToExcelData(Ljava/math/BigDecimal;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalStringConverter",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalStringConverter#convertToExcelData(Ljava/math/BigDecimal;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerBooleanConverter",
+        "com.alibaba.excel.converters.biginteger.BigIntegerBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerBooleanConverter#convertToExcelData(Ljava/math/BigInteger;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerNumberConverter",
+        "com.alibaba.excel.converters.biginteger.BigIntegerNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerNumberConverter#convertToExcelData(Ljava/math/BigInteger;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerStringConverter",
+        "com.alibaba.excel.converters.biginteger.BigIntegerStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerStringConverter#convertToExcelData(Ljava/math/BigInteger;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanBooleanConverter",
+        "com.alibaba.excel.converters.booleanconverter.BooleanBooleanConverter#convertToExcelData(Ljava/lang/Boolean;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanNumberConverter",
+        "com.alibaba.excel.converters.booleanconverter.BooleanNumberConverter#convertToExcelData(Ljava/lang/Boolean;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanStringConverter",
+        "com.alibaba.excel.converters.booleanconverter.BooleanStringConverter#convertToExcelData(Ljava/lang/Boolean;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bytearray.BoxingByteArrayImageConverter",
+        "com.alibaba.excel.converters.bytearray.BoxingByteArrayImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bytearray.BoxingByteArrayImageConverter#convertToExcelData([Ljava/lang/Byte;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bytearray.ByteArrayImageConverter",
+        "com.alibaba.excel.converters.bytearray.ByteArrayImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bytearray.ByteArrayImageConverter#convertToExcelData([BLcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteBooleanConverter",
+        "com.alibaba.excel.converters.byteconverter.ByteBooleanConverter#convertToExcelData(Ljava/lang/Byte;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteNumberConverter",
+        "com.alibaba.excel.converters.byteconverter.ByteNumberConverter#convertToExcelData(Ljava/lang/Byte;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteStringConverter",
+        "com.alibaba.excel.converters.byteconverter.ByteStringConverter#convertToExcelData(Ljava/lang/Byte;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateDateConverter",
+        "com.alibaba.excel.converters.date.DateDateConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateDateConverter#convertToExcelData(Ljava/util/Date;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateNumberConverter",
+        "com.alibaba.excel.converters.date.DateNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateNumberConverter#convertToExcelData(Ljava/util/Date;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateStringConverter",
+        "com.alibaba.excel.converters.date.DateStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateStringConverter#convertToExcelData(Ljava/util/Date;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleBooleanConverter",
+        "com.alibaba.excel.converters.doubleconverter.DoubleBooleanConverter#convertToExcelData(Ljava/lang/Double;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleNumberConverter",
+        "com.alibaba.excel.converters.doubleconverter.DoubleNumberConverter#convertToExcelData(Ljava/lang/Double;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleStringConverter",
+        "com.alibaba.excel.converters.doubleconverter.DoubleStringConverter#convertToExcelData(Ljava/lang/Double;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.file.FileImageConverter",
+        "com.alibaba.excel.converters.file.FileImageConverter#convertToExcelData(Ljava/io/File;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.file.FileImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.floatconverter.FloatBooleanConverter",
+        "com.alibaba.excel.converters.floatconverter.FloatBooleanConverter#convertToExcelData(Ljava/lang/Float;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.floatconverter.FloatBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.floatconverter.FloatNumberConverter",
+        "com.alibaba.excel.converters.floatconverter.FloatNumberConverter#convertToExcelData(Lcom/alibaba/excel/converters/WriteConverterContext;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.floatconverter.FloatStringConverter",
+        "com.alibaba.excel.converters.floatconverter.FloatStringConverter#convertToExcelData(Ljava/lang/Float;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.floatconverter.FloatStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.inputstream.InputStreamImageConverter",
+        "com.alibaba.excel.converters.inputstream.InputStreamImageConverter#convertToExcelData(Ljava/io/InputStream;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.inputstream.InputStreamImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.integer.IntegerBooleanConverter",
+        "com.alibaba.excel.converters.integer.IntegerBooleanConverter#convertToExcelData(Ljava/lang/Integer;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.integer.IntegerBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.integer.IntegerNumberConverter",
+        "com.alibaba.excel.converters.integer.IntegerNumberConverter#convertToExcelData(Lcom/alibaba/excel/converters/WriteConverterContext;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.integer.IntegerStringConverter",
+        "com.alibaba.excel.converters.integer.IntegerStringConverter#convertToExcelData(Ljava/lang/Integer;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.integer.IntegerStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateDateConverter",
+        "com.alibaba.excel.converters.localdate.LocalDateDateConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateDateConverter#convertToExcelData(Ljava/time/LocalDate;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateNumberConverter",
+        "com.alibaba.excel.converters.localdate.LocalDateNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateNumberConverter#convertToExcelData(Ljava/time/LocalDate;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateStringConverter",
+        "com.alibaba.excel.converters.localdate.LocalDateStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateStringConverter#convertToExcelData(Ljava/time/LocalDate;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeDateConverter",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeDateConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeDateConverter#convertToExcelData(Ljava/time/LocalDateTime;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeNumberConverter",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeNumberConverter#convertToExcelData(Ljava/time/LocalDateTime;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeStringConverter",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeStringConverter#convertToExcelData(Ljava/time/LocalDateTime;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.longconverter.LongBooleanConverter",
+        "com.alibaba.excel.converters.longconverter.LongBooleanConverter#convertToExcelData(Ljava/lang/Long;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.longconverter.LongBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.longconverter.LongNumberConverter",
+        "com.alibaba.excel.converters.longconverter.LongNumberConverter#convertToExcelData(Lcom/alibaba/excel/converters/WriteConverterContext;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.longconverter.LongStringConverter",
+        "com.alibaba.excel.converters.longconverter.LongStringConverter#convertToExcelData(Ljava/lang/Long;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.longconverter.LongStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.shortconverter.ShortBooleanConverter",
+        "com.alibaba.excel.converters.shortconverter.ShortBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.shortconverter.ShortBooleanConverter#convertToExcelData(Ljava/lang/Short;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.shortconverter.ShortNumberConverter",
+        "com.alibaba.excel.converters.shortconverter.ShortNumberConverter#convertToExcelData(Lcom/alibaba/excel/converters/WriteConverterContext;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.shortconverter.ShortStringConverter",
+        "com.alibaba.excel.converters.shortconverter.ShortStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.shortconverter.ShortStringConverter#convertToExcelData(Ljava/lang/Short;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringBooleanConverter",
+        "com.alibaba.excel.converters.string.StringBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringBooleanConverter#convertToExcelData(Ljava/lang/String;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringErrorConverter",
+        "com.alibaba.excel.converters.string.StringErrorConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringErrorConverter#convertToExcelData(Ljava/lang/String;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringImageConverter",
+        "com.alibaba.excel.converters.string.StringImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringImageConverter#convertToExcelData(Ljava/lang/String;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringNumberConverter",
+        "com.alibaba.excel.converters.string.StringNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringNumberConverter#convertToExcelData(Ljava/lang/String;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringStringConverter",
+        "com.alibaba.excel.converters.string.StringStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringStringConverter#convertToExcelData(Ljava/lang/String;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.url.UrlImageConverter",
+        "com.alibaba.excel.converters.url.UrlImageConverter#<init>()V",
+        "com.alibaba.excel.converters.url.UrlImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.url.UrlImageConverter#convertToExcelData(Ljava/net/URL;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;"
+      ],
+      "kind": "compile_probe",
+      "materialized_family": {
+        "expected_java_api_items": 147,
+        "selector": {
+          "java_owner_prefixes": [
+            "com.alibaba.excel.converters."
+          ]
+        },
+        "skipped": 240,
+        "total_matched": 387
+      },
+      "profiles": [
+        "stable-default-features",
+        "stable-all-features"
+      ],
+      "rust_ids": [
+        "easyexcel:0942a222b8e1df99d8e4",
+        "easyexcel:0ad9bf4fd0b03a673162",
+        "easyexcel:0c055d8ab245b6c9cc25",
+        "easyexcel:0f01521299f6aa27af6e",
+        "easyexcel:11c50d35a2f32b5d3422",
+        "easyexcel:13f4e106bce5e335ebb9",
+        "easyexcel:171985c1eeca6b0c3c9f",
+        "easyexcel:1ca49ac9e84c36c0efae",
+        "easyexcel:1cc69619f0d604b821fc",
+        "easyexcel:231b654a5d91be224917",
+        "easyexcel:2417047c7389cd8d0605",
+        "easyexcel:2479ae75f5cc613a6f60",
+        "easyexcel:2998532d920aca7b0333",
+        "easyexcel:2ae054de9f092623605d",
+        "easyexcel:379f1b8bf78ea584178f",
+        "easyexcel:398b10c73dcc4860a068",
+        "easyexcel:39dd6160ec00627c27fd",
+        "easyexcel:3cfdd60cda964afb5ce0",
+        "easyexcel:3d24f4e9ffd2fc66db6c",
+        "easyexcel:3d9d219816a9b0fb203f",
+        "easyexcel:3fbeddf4db1240f91975",
+        "easyexcel:405a87a4a165fad705fc",
+        "easyexcel:422c97eac361d9093d61",
+        "easyexcel:432a5334deca36553ca4",
+        "easyexcel:478786462708c20ea10a",
+        "easyexcel:493ce23204617f705dce",
+        "easyexcel:498f508c62ef756d4372",
+        "easyexcel:4a9f85423c04868b0952",
+        "easyexcel:4d7e6df3af158b7d9d26",
+        "easyexcel:4e68a23560d54dffb0a7",
+        "easyexcel:55cb120e182d4fd72c94",
+        "easyexcel:574cd30bb68f762a670b",
+        "easyexcel:5a30b818e187c1f3a201",
+        "easyexcel:60179190956e8d0fefcc",
+        "easyexcel:6869551de534829c7bc2",
+        "easyexcel:719920527d71af1ae1e4",
+        "easyexcel:7283d27dcbe744340477",
+        "easyexcel:74d08373b6ffc0f1ed45",
+        "easyexcel:7623d8a3f18998f21774",
+        "easyexcel:79290af564bac93be25f",
+        "easyexcel:7aefa90fd4d7e1958952",
+        "easyexcel:7cc001d3670663440abd",
+        "easyexcel:7ee8f41b4b97e2627599",
+        "easyexcel:855de6171af5d834ed79",
+        "easyexcel:85c1ca47d82cbdd69bcb",
+        "easyexcel:88c8263086ef1c31658a",
+        "easyexcel:8a1977ab31738aca524b",
+        "easyexcel:8bf22be7ce682119578c",
+        "easyexcel:8d7534f7ab8e382d02a4",
+        "easyexcel:8f250990740888b98534",
+        "easyexcel:8f9892bc97a45e5636d4",
+        "easyexcel:9115d0dd46224fa0b20c",
+        "easyexcel:934b1e03c700e52c80d2",
+        "easyexcel:939236bd636b2312c6f5",
+        "easyexcel:9451b517394d2640f3c6",
+        "easyexcel:98fc79a6804cc392a6b5",
+        "easyexcel:9a9832e787fdd3065217",
+        "easyexcel:9bbf42041d344cc0350a",
+        "easyexcel:9c27e677f7a6e7ba1e4d",
+        "easyexcel:9d46968dada6a9bae1c7",
+        "easyexcel:9dadca96a029c8870387",
+        "easyexcel:9ea06c710bc1a116510b",
+        "easyexcel:a09c6ceae7541ec68892",
+        "easyexcel:a1e3616b87361b3fcf2a",
+        "easyexcel:a27849bb57d40c54815d",
+        "easyexcel:a30064ec7b9a465e434a",
+        "easyexcel:a30e573c380643403a21",
+        "easyexcel:a75a4c6f453c2a724729",
+        "easyexcel:add5a1138526e67a4217",
+        "easyexcel:ae62c3b07b529afd65ba",
+        "easyexcel:b0fc411920b2603c2c88",
+        "easyexcel:b11a7e53632b7f99ef3b",
+        "easyexcel:b29f0415c6cdd8b34d16",
+        "easyexcel:b5cf75dc0d909add71c4",
+        "easyexcel:b66a1371d0cc5b1f0c78",
+        "easyexcel:b6d1665219dc277e6d1a",
+        "easyexcel:b929396bc5b8de5cea5e",
+        "easyexcel:c14b7b15eec31f03f5fd",
+        "easyexcel:c2c9d953f2a8de78a296",
+        "easyexcel:c37875027710d8e06478",
+        "easyexcel:c64ba8e985233076483c",
+        "easyexcel:c66c304d685093a7f38a",
+        "easyexcel:c82d5889e25e79557c39",
+        "easyexcel:cb0905e81742df9d77b8",
+        "easyexcel:cbbd71ec055da62a0172",
+        "easyexcel:cf5baf0cd437d1ec27c6",
+        "easyexcel:da516c96b92a52244708",
+        "easyexcel:dba129600ffc08748d51",
+        "easyexcel:dbc772abaf95656e705d",
+        "easyexcel:dd01eb88f6caa8f17c87",
+        "easyexcel:e4f04d905b12c0ad76bb",
+        "easyexcel:e82ef7bb71ab594303d3",
+        "easyexcel:e857f41d031fa9c997fa",
+        "easyexcel:f1402d7ed0f92fb88a49",
+        "easyexcel:f2aee9f309f365d4f7d2",
+        "easyexcel:f64677cb4c1e1ce40507",
+        "easyexcel:f6cc9ef0c23abcd14814",
+        "easyexcel:f70cb1ad9686bfc5a72e",
+        "easyexcel:f7188455dda732efc7c1",
+        "easyexcel:fdf1f821ccd1571d1d9a",
+        "easyexcel:fe8bf4a6046f1c419899",
+        "easyexcel:ff3b125c4d7df71b4e36"
+      ],
+      "source_files": [
+        {
+          "path": "crates/easyexcel/src/converters/auto_converter.rs",
+          "sha256": "c9f4f3ce883fee7c799b6edc8e52d2c3d3cafbd3247ed3fdcd32f385aaa87f5e"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bigdecimal/big_decimal_boolean_converter.rs",
+          "sha256": "d1ad76764c2d8f191df4429487177cfdcfdd48c709986f6b3fba2eb87deb2a1a"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bigdecimal/big_decimal_number_converter.rs",
+          "sha256": "b166f4c4b870fb65264dab01432a8656b281e2bed622012375e1c02b327ccee8"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bigdecimal/big_decimal_string_converter.rs",
+          "sha256": "8d8763ea21cc1bfc61308d3490f099ddf85587f0ef5677e88b7883d65a5adfc3"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bigdecimal/mod.rs",
+          "sha256": "2ecc540c2f8220aaa2d3a7593d0de55bebaa2d3f48d62d7ce9c8912511a4eb88"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/biginteger/big_integer_boolean_converter.rs",
+          "sha256": "c20a7a281e6b6fbb67e8bce561614de22f9eb0c24dd595241ae48221bde19621"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/biginteger/big_integer_number_converter.rs",
+          "sha256": "967afe44b6b1b2ae63db70ad51487b6367687e6aa35f1e397689ed9eeb8164fe"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/biginteger/big_integer_string_converter.rs",
+          "sha256": "4b6bfaccf4e86f7a2c7dfa107af1a1daa89b15e08065d5f01a8d4f64a4791c4d"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/biginteger/mod.rs",
+          "sha256": "7ae991403f16d9a3b573f7f3e74e85658e1254b3e952bad02567c31dd6148884"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/boolean_support.rs",
+          "sha256": "63e4be72c702dbb817cd05bcc42ea73a92609c7a643563a132c7784d9ffdbe93"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/booleanconverter/boolean_boolean_converter.rs",
+          "sha256": "aa8dbc2a81285333720b63158f6315d80a0889dc5cc7970d6fd4686eca0109e6"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/booleanconverter/boolean_number_converter.rs",
+          "sha256": "4eeb9f3c39d41e7b36d81e41df27922f0806a48bfe4f51274832c7e78ec4e5cc"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/booleanconverter/boolean_string_converter.rs",
+          "sha256": "66db63d698f7fd7008b125cc3108082577655c049a488a96d1fd8a81ed296b9b"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/booleanconverter/mod.rs",
+          "sha256": "a6536d63deb0f9f716edf47d37534cd72583844b3ad34176fed772663443cd92"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bytearray/boxing_byte_array_image_converter.rs",
+          "sha256": "8193e9b6799bb05820d30d8ef403fd44468301420ea89739fee7f0b7e13f9184"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bytearray/byte_array_image_converter.rs",
+          "sha256": "9a2ff0ac900ae34432190ea205debe42698b707946298633f55119f673e6b9a9"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bytearray/mod.rs",
+          "sha256": "76a077eddeeecac99a14764d491109c201a1ff66247160a2f6271855e27edb2d"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/byteconverter/byte_boolean_converter.rs",
+          "sha256": "ed925cec3db891dce3c08962f8e59ba3beb9e51fb658e84cf8aaaae51b921f15"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/byteconverter/byte_number_converter.rs",
+          "sha256": "3ab66bfe9fad7c7dd3db8be668c4b15e7e7c48eb7296aacf8731aa86bb224db7"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/byteconverter/byte_string_converter.rs",
+          "sha256": "e488c662976d8aa7553609a64618b5396b1906e742ba15cc217a8b1450f106f8"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/byteconverter/mod.rs",
+          "sha256": "c0cd3fa047111974cf06633355e6fb64a4d8c188e3a3001d58e0e7390392048a"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/convert_context.rs",
+          "sha256": "68d9b9037af9a2b092707626b9a19c21888aa19a60cb6dc42f706ce9499737f4"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter.rs",
+          "sha256": "94dc35b213e3cdf9113b2a87ef270cb30067c8bc35874b88fa223ffdf2a05741"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter_key.rs",
+          "sha256": "67c1c69e7ae7f379b60c04b2a3052d1e0719c066f73d6c7e9ac9119137f47817"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter_key_build.rs",
+          "sha256": "615301325a403141526d5655aa42a87fce7cf6e3793f8f0b99a0d8fab2a5f36d"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter_registry/erased_converter.rs",
+          "sha256": "4bed1e5d272272aba9a59dcf76a412225e0947fd0432e5ddaf269b332855a840"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter_registry/typed_converter.rs",
+          "sha256": "488ee34451f25bbbbb679bfce2d593fd9383aa68726af06b4d00d7dedfba0cf9"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter_registry.rs",
+          "sha256": "e10d7783dfe036e6429fbacbdd53f6b8d286944c6298670492424087d8666e66"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/custom_read_object.rs",
+          "sha256": "282659e74e3c5e4910000d5d4848ec63eb6227839d0f4a6db930eedede1210c4"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/date/date_date_converter.rs",
+          "sha256": "2c340f8ced7f4d1dbd0c702223ea67ea3c6c6ad2f4df673c8ec7aaae3f694231"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/date/date_number_converter.rs",
+          "sha256": "d47c735d01068cd37cd5b96af211fa32a304d8200e4869fc1ada5d7f42da6e6f"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/date/date_string_converter.rs",
+          "sha256": "b1fc1029bc93151a9c2f91074d925efe18f7ab7ff41597f9f0ba3d60bb08b6e7"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/date/mod.rs",
+          "sha256": "23f81f0af8680d237a1d41879a7e85edc614520bae00e8ef9da4821db884e1e5"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/date_support.rs",
+          "sha256": "77eace953fc22a44ca8f6fd9084d88e1329923b5ae9c4164a579e11d1c63fe68"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/default_converter_loader.rs",
+          "sha256": "379413032f1c9f43bd774920f826d82dabc1636d259790d0fa5f75fb68fe648c"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/doubleconverter/double_boolean_converter.rs",
+          "sha256": "b88c547e71d27305aa4b9bcc765faa43809dd7dd2f8a7322d99af55e58fec3f2"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/doubleconverter/double_number_converter.rs",
+          "sha256": "e21d09584303ac005860aac105b2b67e2aa646ca860618b0056ba41fe1a36160"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/doubleconverter/double_string_converter.rs",
+          "sha256": "1a6a7b0c17c226d2ecd10ecedeb22051889b6c837a820a53e46f014b0ce216fb"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/doubleconverter/mod.rs",
+          "sha256": "46bffde2fc4121f67b6c58f789ddaa025d0b46baf3b995db8c78c732a27cd3df"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/file/file_image_converter.rs",
+          "sha256": "eb519b842881c1553225309abce45bd5864c8a588e46678ac2d51a1b6dd16ddb"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/file/mod.rs",
+          "sha256": "3d093ed00870710f08efd2e04b8dfa91f2bb7bd7710e1b36b78b8cc5ee3ec390"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/floatconverter/float_boolean_converter.rs",
+          "sha256": "9491ff0ff120a8fa9bfd44a36a6c1283727f58ba405835b62778f3c3315ddf29"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/floatconverter/float_number_converter.rs",
+          "sha256": "201addc06b7a80c2cee8e5d565440aa93039bfd0343e3a1e55d02af43c7ae1b0"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/floatconverter/float_string_converter.rs",
+          "sha256": "7f652389d8f28fd9cafca434e3b07631dcfe22f7ac70906952d3155573e71137"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/floatconverter/mod.rs",
+          "sha256": "24aeee2403e8c1b710e0539764113e58d30ccf38a2c87c0e4c955fe4b5935142"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/from_excel_cell.rs",
+          "sha256": "c904a770bfd021600ddd2d4a3ecc07d4630868601a05611fb1af9a6751be74ca"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/from_into_impls.rs",
+          "sha256": "ec037bbe6c6eca85bae7ea76027d3cd44df123ea464653cb32ed6ead4f699511"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/image_input_stream.rs",
+          "sha256": "6993fda7bc892734b7f708f3bd5cdb31b7dff2f6050b11d6b83fb61bdb48466f"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/input_stream_image_converter.rs",
+          "sha256": "d2299de782fa40f830afc606c52bef13df4a4c7b8afc7c611d7b4752ec7e87b0"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/inputstream/input_stream_image_converter.rs",
+          "sha256": "a32f1abbc1169ec4bc4ac65506673f5cb5e670b9995fdb3d8d72b59be15fc1a4"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/inputstream/mod.rs",
+          "sha256": "40e101013cb04f5fc8650d9cdb2d1acf4c6d0dcfe81e7de2eb6f3915734fdd22"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/integer/integer_boolean_converter.rs",
+          "sha256": "579c3f6f9de3ede96531ec44d9fadb5caaf6dc366a433ea704530b26b4323374"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/integer/integer_number_converter.rs",
+          "sha256": "8e91eb0b7b2343e406334bece710d5f686bb30afad3d54756bde8f98c5bc1f0e"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/integer/integer_string_converter.rs",
+          "sha256": "44d7c84c89a6f813f82ffcb5c7e482dee1c5190a66757d12d24744240634287d"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/integer/mod.rs",
+          "sha256": "4cbfdd95ad110656328a7d5b2079943aeb0427db9dd5aa53ad3b59a5c50a30a1"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/into_excel_cell.rs",
+          "sha256": "882762f4d0ea53f7a2e3d2a4a72a1f7eb7f4d5317b99bd5e189f0f420698fdb9"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdate/local_date_date_converter.rs",
+          "sha256": "c65759052de03c82d48239c08ab513235b44ace351b7507d7638f62620ab0c48"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdate/local_date_number_converter.rs",
+          "sha256": "e18b5789f4edcaaff57c7681a9da4b57c56f546a0d45f7e65c46c02bff0d3e4f"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdate/local_date_string_converter.rs",
+          "sha256": "4312b466dcfd480a4b2278f52b14f0624b4915f28149c0e8ffff7995b1a3953c"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdate/mod.rs",
+          "sha256": "856000047fabe28eaefcaf1d08308cea3adefd854e989390959cc580411be5b9"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdatetime/local_date_time_date_converter.rs",
+          "sha256": "bd583a251447072382893b8a9fb26520912dbb4f27e70e041b70faf271bd0244"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdatetime/local_date_time_number_converter.rs",
+          "sha256": "e3e8c06065e688168ac3ce73ddaec43ffefc50ad8eb148b64726c464a83e2cfc"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdatetime/local_date_time_string_converter.rs",
+          "sha256": "d54aa86e1599413012fadb155ef80ab70fe20d9d80c984c24d59d12a7ab52816"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdatetime/mod.rs",
+          "sha256": "f9b4e14aa1ea9b15a3ac53f34aff29e53bb6bfe17b785955dd46f133bbae0888"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/longconverter/long_boolean_converter.rs",
+          "sha256": "14909b2a5f1c9cfc247fab9043c169fdd0c4beb47f6440ea63f5bbc334c2b368"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/longconverter/long_number_converter.rs",
+          "sha256": "725f567ecff753062f6ecccd5b0d093b2c2c61edc58dd0b8eeb78ae60228d67f"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/longconverter/long_string_converter.rs",
+          "sha256": "35063b467415d8789924fd6b1101e033890341d7b1329af9b24018e9c9d76fcb"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/longconverter/mod.rs",
+          "sha256": "3b00a58442b38baee2221c0ebb0a3363da090e37417c8a3c5b0c711b0c60a3e8"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/mod.rs",
+          "sha256": "286aeee812b9f5dc008d576c85ac2765316483258134c467883a22b78f5bff00"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/mod_enums.rs",
+          "sha256": "2cf6ec947561219077fc57bbeb3c01ee64034bd2fc63f12d46005563ecf03f5f"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/nullable_object_converter.rs",
+          "sha256": "fdbf73b0ae9f347a29efab341d23891b9f0eccd08668ae445854baddf2a7fe3e"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/number_support.rs",
+          "sha256": "8e59d71892ca74b79a527253e3853e39fd0936c4bebddfc8a36e63d4cbb84165"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/read_converter_context.rs",
+          "sha256": "d9679bd2eae1f540aa0409bd89c0827642fd3f05818e8626f22c48e3c62c10b4"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/shortconverter/mod.rs",
+          "sha256": "4b755ca1f07501ff3137c208be2c286f7e357d5e2fc0334339fe86dc98edabec"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/shortconverter/short_boolean_converter.rs",
+          "sha256": "51b7150891cc951293b88abf6c104f7c33faeb3cc44935ed6e3bdf68534e9cc3"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/shortconverter/short_number_converter.rs",
+          "sha256": "576aeadf3c40e91b52b93a7bd1a64b65f2d4e790ed1b940e358959db04ed1ee7"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/shortconverter/short_string_converter.rs",
+          "sha256": "15db3921e91e70ef78f3d3fe67576bd1726aaf7c812c7cecbfb02157a3fc05a6"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/mod.rs",
+          "sha256": "14430582cdb16c9b7638d5e9ba9247d13f780812e68891df3ad96f629c3dde81"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/string_boolean_converter.rs",
+          "sha256": "f8237821f7a5ad60a4fdefbfea4e81b0ac82d826647809eb0b15e9235bbb43cf"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/string_error_converter.rs",
+          "sha256": "195444cb580c4cf8b758a747a44d63aa9b2af73f0bec8d021b522dd4749efbe6"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/string_image_converter.rs",
+          "sha256": "e6a19490a774558d8e8e7b466a622aed9bbafed1013b54deb1111fc14afcf33e"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/string_number_converter.rs",
+          "sha256": "a50eef4ae7f69e2fdd1d375e0887fd682c72dc35d714e13e13ce24f2d0398eb1"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/string_string_converter.rs",
+          "sha256": "622a24ec04b20dbcb29e08119f4c0f49d0c4414d86ac9b947cc9054b333d7b54"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/url/mod.rs",
+          "sha256": "83ff20cdcae2c000445650e0ee0d595697d98aa3ed84c88e6e420d76629c583d"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/url/url_image_converter.rs",
+          "sha256": "381a046fd81e6e730c67c10603fc39c1797daae669dfa5e42936ae4844752765"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/url_image_converter.rs",
+          "sha256": "76d4138b747b452011af68501fc6c0b015c6c02f68f1cfb6455fa3185a5a8fdf"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/write_converter_context.rs",
+          "sha256": "56a5c7a169a98bdb27574b17f7d3c316eef336f78ce522bd188bf08f015afa21"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/public_api_converter_evidence_tests.rs",
+          "sha256": "472d621108a73577bde6349f402aca7e86b254359f47666511d6dfe62af866c4"
+        }
+      ]
+    },
+    {
+      "commands": [
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel",
+          "--lib",
+          "converters::"
+        ],
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel-test",
+          "--test",
+          "public_api_converter_evidence_tests"
+        ]
+      ],
+      "id": "converter-family.behavior.v1",
+      "java_ids": [
+        "com.alibaba.excel.converters.AutoConverter",
+        "com.alibaba.excel.converters.Converter",
+        "com.alibaba.excel.converters.Converter#convertToExcelData(Lcom/alibaba/excel/converters/WriteConverterContext;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.Converter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.NullableObjectConverter",
+        "com.alibaba.excel.converters.ReadConverterContext",
+        "com.alibaba.excel.converters.ReadConverterContext#<init>(Lcom/alibaba/excel/metadata/data/ReadCellData;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/context/AnalysisContext;)V",
+        "com.alibaba.excel.converters.WriteConverterContext",
+        "com.alibaba.excel.converters.WriteConverterContext#<init>()V",
+        "com.alibaba.excel.converters.WriteConverterContext#<init>(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/context/WriteContext;)V",
+        "com.alibaba.excel.converters.WriteConverterContext#getValue()Ljava/lang/Object;",
+        "com.alibaba.excel.converters.WriteConverterContext#setValue(Ljava/lang/Object;)V",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalBooleanConverter",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalBooleanConverter#convertToExcelData(Ljava/math/BigDecimal;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalNumberConverter",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalNumberConverter#convertToExcelData(Ljava/math/BigDecimal;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalStringConverter",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalStringConverter#convertToExcelData(Ljava/math/BigDecimal;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerBooleanConverter",
+        "com.alibaba.excel.converters.biginteger.BigIntegerBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerBooleanConverter#convertToExcelData(Ljava/math/BigInteger;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerNumberConverter",
+        "com.alibaba.excel.converters.biginteger.BigIntegerNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerNumberConverter#convertToExcelData(Ljava/math/BigInteger;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerStringConverter",
+        "com.alibaba.excel.converters.biginteger.BigIntegerStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerStringConverter#convertToExcelData(Ljava/math/BigInteger;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanBooleanConverter",
+        "com.alibaba.excel.converters.booleanconverter.BooleanBooleanConverter#convertToExcelData(Ljava/lang/Boolean;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanNumberConverter",
+        "com.alibaba.excel.converters.booleanconverter.BooleanNumberConverter#convertToExcelData(Ljava/lang/Boolean;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanStringConverter",
+        "com.alibaba.excel.converters.booleanconverter.BooleanStringConverter#convertToExcelData(Ljava/lang/Boolean;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bytearray.BoxingByteArrayImageConverter",
+        "com.alibaba.excel.converters.bytearray.BoxingByteArrayImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bytearray.BoxingByteArrayImageConverter#convertToExcelData([Ljava/lang/Byte;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bytearray.ByteArrayImageConverter",
+        "com.alibaba.excel.converters.bytearray.ByteArrayImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bytearray.ByteArrayImageConverter#convertToExcelData([BLcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteBooleanConverter",
+        "com.alibaba.excel.converters.byteconverter.ByteBooleanConverter#convertToExcelData(Ljava/lang/Byte;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteNumberConverter",
+        "com.alibaba.excel.converters.byteconverter.ByteNumberConverter#convertToExcelData(Ljava/lang/Byte;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteStringConverter",
+        "com.alibaba.excel.converters.byteconverter.ByteStringConverter#convertToExcelData(Ljava/lang/Byte;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateDateConverter",
+        "com.alibaba.excel.converters.date.DateDateConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateDateConverter#convertToExcelData(Ljava/util/Date;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateNumberConverter",
+        "com.alibaba.excel.converters.date.DateNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateNumberConverter#convertToExcelData(Ljava/util/Date;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateStringConverter",
+        "com.alibaba.excel.converters.date.DateStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateStringConverter#convertToExcelData(Ljava/util/Date;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleBooleanConverter",
+        "com.alibaba.excel.converters.doubleconverter.DoubleBooleanConverter#convertToExcelData(Ljava/lang/Double;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleNumberConverter",
+        "com.alibaba.excel.converters.doubleconverter.DoubleNumberConverter#convertToExcelData(Ljava/lang/Double;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleStringConverter",
+        "com.alibaba.excel.converters.doubleconverter.DoubleStringConverter#convertToExcelData(Ljava/lang/Double;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.file.FileImageConverter",
+        "com.alibaba.excel.converters.file.FileImageConverter#convertToExcelData(Ljava/io/File;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.file.FileImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.floatconverter.FloatBooleanConverter",
+        "com.alibaba.excel.converters.floatconverter.FloatBooleanConverter#convertToExcelData(Ljava/lang/Float;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.floatconverter.FloatBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.floatconverter.FloatNumberConverter",
+        "com.alibaba.excel.converters.floatconverter.FloatNumberConverter#convertToExcelData(Lcom/alibaba/excel/converters/WriteConverterContext;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.floatconverter.FloatStringConverter",
+        "com.alibaba.excel.converters.floatconverter.FloatStringConverter#convertToExcelData(Ljava/lang/Float;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.floatconverter.FloatStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.inputstream.InputStreamImageConverter",
+        "com.alibaba.excel.converters.inputstream.InputStreamImageConverter#convertToExcelData(Ljava/io/InputStream;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.inputstream.InputStreamImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.integer.IntegerBooleanConverter",
+        "com.alibaba.excel.converters.integer.IntegerBooleanConverter#convertToExcelData(Ljava/lang/Integer;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.integer.IntegerBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.integer.IntegerNumberConverter",
+        "com.alibaba.excel.converters.integer.IntegerNumberConverter#convertToExcelData(Lcom/alibaba/excel/converters/WriteConverterContext;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.integer.IntegerStringConverter",
+        "com.alibaba.excel.converters.integer.IntegerStringConverter#convertToExcelData(Ljava/lang/Integer;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.integer.IntegerStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateDateConverter",
+        "com.alibaba.excel.converters.localdate.LocalDateDateConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateDateConverter#convertToExcelData(Ljava/time/LocalDate;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateNumberConverter",
+        "com.alibaba.excel.converters.localdate.LocalDateNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateNumberConverter#convertToExcelData(Ljava/time/LocalDate;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateStringConverter",
+        "com.alibaba.excel.converters.localdate.LocalDateStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateStringConverter#convertToExcelData(Ljava/time/LocalDate;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeDateConverter",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeDateConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeDateConverter#convertToExcelData(Ljava/time/LocalDateTime;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeNumberConverter",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeNumberConverter#convertToExcelData(Ljava/time/LocalDateTime;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeStringConverter",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeStringConverter#convertToExcelData(Ljava/time/LocalDateTime;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.longconverter.LongBooleanConverter",
+        "com.alibaba.excel.converters.longconverter.LongBooleanConverter#convertToExcelData(Ljava/lang/Long;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.longconverter.LongBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.longconverter.LongNumberConverter",
+        "com.alibaba.excel.converters.longconverter.LongNumberConverter#convertToExcelData(Lcom/alibaba/excel/converters/WriteConverterContext;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.longconverter.LongStringConverter",
+        "com.alibaba.excel.converters.longconverter.LongStringConverter#convertToExcelData(Ljava/lang/Long;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.longconverter.LongStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.shortconverter.ShortBooleanConverter",
+        "com.alibaba.excel.converters.shortconverter.ShortBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.shortconverter.ShortBooleanConverter#convertToExcelData(Ljava/lang/Short;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.shortconverter.ShortNumberConverter",
+        "com.alibaba.excel.converters.shortconverter.ShortNumberConverter#convertToExcelData(Lcom/alibaba/excel/converters/WriteConverterContext;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.shortconverter.ShortStringConverter",
+        "com.alibaba.excel.converters.shortconverter.ShortStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.shortconverter.ShortStringConverter#convertToExcelData(Ljava/lang/Short;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringBooleanConverter",
+        "com.alibaba.excel.converters.string.StringBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringBooleanConverter#convertToExcelData(Ljava/lang/String;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringErrorConverter",
+        "com.alibaba.excel.converters.string.StringErrorConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringErrorConverter#convertToExcelData(Ljava/lang/String;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringImageConverter",
+        "com.alibaba.excel.converters.string.StringImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringImageConverter#convertToExcelData(Ljava/lang/String;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringNumberConverter",
+        "com.alibaba.excel.converters.string.StringNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringNumberConverter#convertToExcelData(Ljava/lang/String;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringStringConverter",
+        "com.alibaba.excel.converters.string.StringStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringStringConverter#convertToExcelData(Ljava/lang/String;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.url.UrlImageConverter",
+        "com.alibaba.excel.converters.url.UrlImageConverter#<init>()V",
+        "com.alibaba.excel.converters.url.UrlImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.url.UrlImageConverter#convertToExcelData(Ljava/net/URL;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;"
+      ],
+      "kind": "behavior_test",
+      "materialized_family": {
+        "expected_java_api_items": 147,
+        "selector": {
+          "java_owner_prefixes": [
+            "com.alibaba.excel.converters."
+          ]
+        },
+        "skipped": 240,
+        "total_matched": 387
+      },
+      "rust_ids": [
+        "easyexcel:0942a222b8e1df99d8e4",
+        "easyexcel:0ad9bf4fd0b03a673162",
+        "easyexcel:0c055d8ab245b6c9cc25",
+        "easyexcel:0f01521299f6aa27af6e",
+        "easyexcel:11c50d35a2f32b5d3422",
+        "easyexcel:13f4e106bce5e335ebb9",
+        "easyexcel:171985c1eeca6b0c3c9f",
+        "easyexcel:1ca49ac9e84c36c0efae",
+        "easyexcel:1cc69619f0d604b821fc",
+        "easyexcel:231b654a5d91be224917",
+        "easyexcel:2417047c7389cd8d0605",
+        "easyexcel:2479ae75f5cc613a6f60",
+        "easyexcel:2998532d920aca7b0333",
+        "easyexcel:2ae054de9f092623605d",
+        "easyexcel:379f1b8bf78ea584178f",
+        "easyexcel:398b10c73dcc4860a068",
+        "easyexcel:39dd6160ec00627c27fd",
+        "easyexcel:3cfdd60cda964afb5ce0",
+        "easyexcel:3d24f4e9ffd2fc66db6c",
+        "easyexcel:3d9d219816a9b0fb203f",
+        "easyexcel:3fbeddf4db1240f91975",
+        "easyexcel:405a87a4a165fad705fc",
+        "easyexcel:422c97eac361d9093d61",
+        "easyexcel:432a5334deca36553ca4",
+        "easyexcel:478786462708c20ea10a",
+        "easyexcel:493ce23204617f705dce",
+        "easyexcel:498f508c62ef756d4372",
+        "easyexcel:4a9f85423c04868b0952",
+        "easyexcel:4d7e6df3af158b7d9d26",
+        "easyexcel:4e68a23560d54dffb0a7",
+        "easyexcel:55cb120e182d4fd72c94",
+        "easyexcel:574cd30bb68f762a670b",
+        "easyexcel:5a30b818e187c1f3a201",
+        "easyexcel:60179190956e8d0fefcc",
+        "easyexcel:6869551de534829c7bc2",
+        "easyexcel:719920527d71af1ae1e4",
+        "easyexcel:7283d27dcbe744340477",
+        "easyexcel:74d08373b6ffc0f1ed45",
+        "easyexcel:7623d8a3f18998f21774",
+        "easyexcel:79290af564bac93be25f",
+        "easyexcel:7aefa90fd4d7e1958952",
+        "easyexcel:7cc001d3670663440abd",
+        "easyexcel:7ee8f41b4b97e2627599",
+        "easyexcel:855de6171af5d834ed79",
+        "easyexcel:85c1ca47d82cbdd69bcb",
+        "easyexcel:88c8263086ef1c31658a",
+        "easyexcel:8a1977ab31738aca524b",
+        "easyexcel:8bf22be7ce682119578c",
+        "easyexcel:8d7534f7ab8e382d02a4",
+        "easyexcel:8f250990740888b98534",
+        "easyexcel:8f9892bc97a45e5636d4",
+        "easyexcel:9115d0dd46224fa0b20c",
+        "easyexcel:934b1e03c700e52c80d2",
+        "easyexcel:939236bd636b2312c6f5",
+        "easyexcel:9451b517394d2640f3c6",
+        "easyexcel:98fc79a6804cc392a6b5",
+        "easyexcel:9a9832e787fdd3065217",
+        "easyexcel:9bbf42041d344cc0350a",
+        "easyexcel:9c27e677f7a6e7ba1e4d",
+        "easyexcel:9d46968dada6a9bae1c7",
+        "easyexcel:9dadca96a029c8870387",
+        "easyexcel:9ea06c710bc1a116510b",
+        "easyexcel:a09c6ceae7541ec68892",
+        "easyexcel:a1e3616b87361b3fcf2a",
+        "easyexcel:a27849bb57d40c54815d",
+        "easyexcel:a30064ec7b9a465e434a",
+        "easyexcel:a30e573c380643403a21",
+        "easyexcel:a75a4c6f453c2a724729",
+        "easyexcel:add5a1138526e67a4217",
+        "easyexcel:ae62c3b07b529afd65ba",
+        "easyexcel:b0fc411920b2603c2c88",
+        "easyexcel:b11a7e53632b7f99ef3b",
+        "easyexcel:b29f0415c6cdd8b34d16",
+        "easyexcel:b5cf75dc0d909add71c4",
+        "easyexcel:b66a1371d0cc5b1f0c78",
+        "easyexcel:b6d1665219dc277e6d1a",
+        "easyexcel:b929396bc5b8de5cea5e",
+        "easyexcel:c14b7b15eec31f03f5fd",
+        "easyexcel:c2c9d953f2a8de78a296",
+        "easyexcel:c37875027710d8e06478",
+        "easyexcel:c64ba8e985233076483c",
+        "easyexcel:c66c304d685093a7f38a",
+        "easyexcel:c82d5889e25e79557c39",
+        "easyexcel:cb0905e81742df9d77b8",
+        "easyexcel:cbbd71ec055da62a0172",
+        "easyexcel:cf5baf0cd437d1ec27c6",
+        "easyexcel:da516c96b92a52244708",
+        "easyexcel:dba129600ffc08748d51",
+        "easyexcel:dbc772abaf95656e705d",
+        "easyexcel:dd01eb88f6caa8f17c87",
+        "easyexcel:e4f04d905b12c0ad76bb",
+        "easyexcel:e82ef7bb71ab594303d3",
+        "easyexcel:e857f41d031fa9c997fa",
+        "easyexcel:f1402d7ed0f92fb88a49",
+        "easyexcel:f2aee9f309f365d4f7d2",
+        "easyexcel:f64677cb4c1e1ce40507",
+        "easyexcel:f6cc9ef0c23abcd14814",
+        "easyexcel:f70cb1ad9686bfc5a72e",
+        "easyexcel:f7188455dda732efc7c1",
+        "easyexcel:fdf1f821ccd1571d1d9a",
+        "easyexcel:fe8bf4a6046f1c419899",
+        "easyexcel:ff3b125c4d7df71b4e36"
+      ],
+      "source_files": [
+        {
+          "path": "crates/easyexcel/src/converters/auto_converter.rs",
+          "sha256": "c9f4f3ce883fee7c799b6edc8e52d2c3d3cafbd3247ed3fdcd32f385aaa87f5e"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bigdecimal/big_decimal_boolean_converter.rs",
+          "sha256": "d1ad76764c2d8f191df4429487177cfdcfdd48c709986f6b3fba2eb87deb2a1a"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bigdecimal/big_decimal_number_converter.rs",
+          "sha256": "b166f4c4b870fb65264dab01432a8656b281e2bed622012375e1c02b327ccee8"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bigdecimal/big_decimal_string_converter.rs",
+          "sha256": "8d8763ea21cc1bfc61308d3490f099ddf85587f0ef5677e88b7883d65a5adfc3"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bigdecimal/mod.rs",
+          "sha256": "2ecc540c2f8220aaa2d3a7593d0de55bebaa2d3f48d62d7ce9c8912511a4eb88"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/biginteger/big_integer_boolean_converter.rs",
+          "sha256": "c20a7a281e6b6fbb67e8bce561614de22f9eb0c24dd595241ae48221bde19621"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/biginteger/big_integer_number_converter.rs",
+          "sha256": "967afe44b6b1b2ae63db70ad51487b6367687e6aa35f1e397689ed9eeb8164fe"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/biginteger/big_integer_string_converter.rs",
+          "sha256": "4b6bfaccf4e86f7a2c7dfa107af1a1daa89b15e08065d5f01a8d4f64a4791c4d"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/biginteger/mod.rs",
+          "sha256": "7ae991403f16d9a3b573f7f3e74e85658e1254b3e952bad02567c31dd6148884"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/boolean_support.rs",
+          "sha256": "63e4be72c702dbb817cd05bcc42ea73a92609c7a643563a132c7784d9ffdbe93"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/booleanconverter/boolean_boolean_converter.rs",
+          "sha256": "aa8dbc2a81285333720b63158f6315d80a0889dc5cc7970d6fd4686eca0109e6"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/booleanconverter/boolean_number_converter.rs",
+          "sha256": "4eeb9f3c39d41e7b36d81e41df27922f0806a48bfe4f51274832c7e78ec4e5cc"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/booleanconverter/boolean_string_converter.rs",
+          "sha256": "66db63d698f7fd7008b125cc3108082577655c049a488a96d1fd8a81ed296b9b"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/booleanconverter/mod.rs",
+          "sha256": "a6536d63deb0f9f716edf47d37534cd72583844b3ad34176fed772663443cd92"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bytearray/boxing_byte_array_image_converter.rs",
+          "sha256": "8193e9b6799bb05820d30d8ef403fd44468301420ea89739fee7f0b7e13f9184"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bytearray/byte_array_image_converter.rs",
+          "sha256": "9a2ff0ac900ae34432190ea205debe42698b707946298633f55119f673e6b9a9"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bytearray/mod.rs",
+          "sha256": "76a077eddeeecac99a14764d491109c201a1ff66247160a2f6271855e27edb2d"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/byteconverter/byte_boolean_converter.rs",
+          "sha256": "ed925cec3db891dce3c08962f8e59ba3beb9e51fb658e84cf8aaaae51b921f15"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/byteconverter/byte_number_converter.rs",
+          "sha256": "3ab66bfe9fad7c7dd3db8be668c4b15e7e7c48eb7296aacf8731aa86bb224db7"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/byteconverter/byte_string_converter.rs",
+          "sha256": "e488c662976d8aa7553609a64618b5396b1906e742ba15cc217a8b1450f106f8"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/byteconverter/mod.rs",
+          "sha256": "c0cd3fa047111974cf06633355e6fb64a4d8c188e3a3001d58e0e7390392048a"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/convert_context.rs",
+          "sha256": "68d9b9037af9a2b092707626b9a19c21888aa19a60cb6dc42f706ce9499737f4"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter.rs",
+          "sha256": "94dc35b213e3cdf9113b2a87ef270cb30067c8bc35874b88fa223ffdf2a05741"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter_key.rs",
+          "sha256": "67c1c69e7ae7f379b60c04b2a3052d1e0719c066f73d6c7e9ac9119137f47817"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter_key_build.rs",
+          "sha256": "615301325a403141526d5655aa42a87fce7cf6e3793f8f0b99a0d8fab2a5f36d"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter_registry/erased_converter.rs",
+          "sha256": "4bed1e5d272272aba9a59dcf76a412225e0947fd0432e5ddaf269b332855a840"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter_registry/typed_converter.rs",
+          "sha256": "488ee34451f25bbbbb679bfce2d593fd9383aa68726af06b4d00d7dedfba0cf9"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter_registry.rs",
+          "sha256": "e10d7783dfe036e6429fbacbdd53f6b8d286944c6298670492424087d8666e66"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/custom_read_object.rs",
+          "sha256": "282659e74e3c5e4910000d5d4848ec63eb6227839d0f4a6db930eedede1210c4"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/date/date_date_converter.rs",
+          "sha256": "2c340f8ced7f4d1dbd0c702223ea67ea3c6c6ad2f4df673c8ec7aaae3f694231"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/date/date_number_converter.rs",
+          "sha256": "d47c735d01068cd37cd5b96af211fa32a304d8200e4869fc1ada5d7f42da6e6f"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/date/date_string_converter.rs",
+          "sha256": "b1fc1029bc93151a9c2f91074d925efe18f7ab7ff41597f9f0ba3d60bb08b6e7"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/date/mod.rs",
+          "sha256": "23f81f0af8680d237a1d41879a7e85edc614520bae00e8ef9da4821db884e1e5"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/date_support.rs",
+          "sha256": "77eace953fc22a44ca8f6fd9084d88e1329923b5ae9c4164a579e11d1c63fe68"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/default_converter_loader.rs",
+          "sha256": "379413032f1c9f43bd774920f826d82dabc1636d259790d0fa5f75fb68fe648c"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/doubleconverter/double_boolean_converter.rs",
+          "sha256": "b88c547e71d27305aa4b9bcc765faa43809dd7dd2f8a7322d99af55e58fec3f2"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/doubleconverter/double_number_converter.rs",
+          "sha256": "e21d09584303ac005860aac105b2b67e2aa646ca860618b0056ba41fe1a36160"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/doubleconverter/double_string_converter.rs",
+          "sha256": "1a6a7b0c17c226d2ecd10ecedeb22051889b6c837a820a53e46f014b0ce216fb"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/doubleconverter/mod.rs",
+          "sha256": "46bffde2fc4121f67b6c58f789ddaa025d0b46baf3b995db8c78c732a27cd3df"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/file/file_image_converter.rs",
+          "sha256": "eb519b842881c1553225309abce45bd5864c8a588e46678ac2d51a1b6dd16ddb"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/file/mod.rs",
+          "sha256": "3d093ed00870710f08efd2e04b8dfa91f2bb7bd7710e1b36b78b8cc5ee3ec390"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/floatconverter/float_boolean_converter.rs",
+          "sha256": "9491ff0ff120a8fa9bfd44a36a6c1283727f58ba405835b62778f3c3315ddf29"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/floatconverter/float_number_converter.rs",
+          "sha256": "201addc06b7a80c2cee8e5d565440aa93039bfd0343e3a1e55d02af43c7ae1b0"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/floatconverter/float_string_converter.rs",
+          "sha256": "7f652389d8f28fd9cafca434e3b07631dcfe22f7ac70906952d3155573e71137"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/floatconverter/mod.rs",
+          "sha256": "24aeee2403e8c1b710e0539764113e58d30ccf38a2c87c0e4c955fe4b5935142"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/from_excel_cell.rs",
+          "sha256": "c904a770bfd021600ddd2d4a3ecc07d4630868601a05611fb1af9a6751be74ca"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/from_into_impls.rs",
+          "sha256": "ec037bbe6c6eca85bae7ea76027d3cd44df123ea464653cb32ed6ead4f699511"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/image_input_stream.rs",
+          "sha256": "6993fda7bc892734b7f708f3bd5cdb31b7dff2f6050b11d6b83fb61bdb48466f"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/input_stream_image_converter.rs",
+          "sha256": "d2299de782fa40f830afc606c52bef13df4a4c7b8afc7c611d7b4752ec7e87b0"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/inputstream/input_stream_image_converter.rs",
+          "sha256": "a32f1abbc1169ec4bc4ac65506673f5cb5e670b9995fdb3d8d72b59be15fc1a4"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/inputstream/mod.rs",
+          "sha256": "40e101013cb04f5fc8650d9cdb2d1acf4c6d0dcfe81e7de2eb6f3915734fdd22"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/integer/integer_boolean_converter.rs",
+          "sha256": "579c3f6f9de3ede96531ec44d9fadb5caaf6dc366a433ea704530b26b4323374"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/integer/integer_number_converter.rs",
+          "sha256": "8e91eb0b7b2343e406334bece710d5f686bb30afad3d54756bde8f98c5bc1f0e"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/integer/integer_string_converter.rs",
+          "sha256": "44d7c84c89a6f813f82ffcb5c7e482dee1c5190a66757d12d24744240634287d"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/integer/mod.rs",
+          "sha256": "4cbfdd95ad110656328a7d5b2079943aeb0427db9dd5aa53ad3b59a5c50a30a1"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/into_excel_cell.rs",
+          "sha256": "882762f4d0ea53f7a2e3d2a4a72a1f7eb7f4d5317b99bd5e189f0f420698fdb9"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdate/local_date_date_converter.rs",
+          "sha256": "c65759052de03c82d48239c08ab513235b44ace351b7507d7638f62620ab0c48"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdate/local_date_number_converter.rs",
+          "sha256": "e18b5789f4edcaaff57c7681a9da4b57c56f546a0d45f7e65c46c02bff0d3e4f"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdate/local_date_string_converter.rs",
+          "sha256": "4312b466dcfd480a4b2278f52b14f0624b4915f28149c0e8ffff7995b1a3953c"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdate/mod.rs",
+          "sha256": "856000047fabe28eaefcaf1d08308cea3adefd854e989390959cc580411be5b9"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdatetime/local_date_time_date_converter.rs",
+          "sha256": "bd583a251447072382893b8a9fb26520912dbb4f27e70e041b70faf271bd0244"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdatetime/local_date_time_number_converter.rs",
+          "sha256": "e3e8c06065e688168ac3ce73ddaec43ffefc50ad8eb148b64726c464a83e2cfc"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdatetime/local_date_time_string_converter.rs",
+          "sha256": "d54aa86e1599413012fadb155ef80ab70fe20d9d80c984c24d59d12a7ab52816"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdatetime/mod.rs",
+          "sha256": "f9b4e14aa1ea9b15a3ac53f34aff29e53bb6bfe17b785955dd46f133bbae0888"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/longconverter/long_boolean_converter.rs",
+          "sha256": "14909b2a5f1c9cfc247fab9043c169fdd0c4beb47f6440ea63f5bbc334c2b368"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/longconverter/long_number_converter.rs",
+          "sha256": "725f567ecff753062f6ecccd5b0d093b2c2c61edc58dd0b8eeb78ae60228d67f"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/longconverter/long_string_converter.rs",
+          "sha256": "35063b467415d8789924fd6b1101e033890341d7b1329af9b24018e9c9d76fcb"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/longconverter/mod.rs",
+          "sha256": "3b00a58442b38baee2221c0ebb0a3363da090e37417c8a3c5b0c711b0c60a3e8"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/mod.rs",
+          "sha256": "286aeee812b9f5dc008d576c85ac2765316483258134c467883a22b78f5bff00"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/mod_enums.rs",
+          "sha256": "2cf6ec947561219077fc57bbeb3c01ee64034bd2fc63f12d46005563ecf03f5f"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/nullable_object_converter.rs",
+          "sha256": "fdbf73b0ae9f347a29efab341d23891b9f0eccd08668ae445854baddf2a7fe3e"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/number_support.rs",
+          "sha256": "8e59d71892ca74b79a527253e3853e39fd0936c4bebddfc8a36e63d4cbb84165"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/read_converter_context.rs",
+          "sha256": "d9679bd2eae1f540aa0409bd89c0827642fd3f05818e8626f22c48e3c62c10b4"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/shortconverter/mod.rs",
+          "sha256": "4b755ca1f07501ff3137c208be2c286f7e357d5e2fc0334339fe86dc98edabec"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/shortconverter/short_boolean_converter.rs",
+          "sha256": "51b7150891cc951293b88abf6c104f7c33faeb3cc44935ed6e3bdf68534e9cc3"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/shortconverter/short_number_converter.rs",
+          "sha256": "576aeadf3c40e91b52b93a7bd1a64b65f2d4e790ed1b940e358959db04ed1ee7"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/shortconverter/short_string_converter.rs",
+          "sha256": "15db3921e91e70ef78f3d3fe67576bd1726aaf7c812c7cecbfb02157a3fc05a6"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/mod.rs",
+          "sha256": "14430582cdb16c9b7638d5e9ba9247d13f780812e68891df3ad96f629c3dde81"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/string_boolean_converter.rs",
+          "sha256": "f8237821f7a5ad60a4fdefbfea4e81b0ac82d826647809eb0b15e9235bbb43cf"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/string_error_converter.rs",
+          "sha256": "195444cb580c4cf8b758a747a44d63aa9b2af73f0bec8d021b522dd4749efbe6"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/string_image_converter.rs",
+          "sha256": "e6a19490a774558d8e8e7b466a622aed9bbafed1013b54deb1111fc14afcf33e"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/string_number_converter.rs",
+          "sha256": "a50eef4ae7f69e2fdd1d375e0887fd682c72dc35d714e13e13ce24f2d0398eb1"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/string_string_converter.rs",
+          "sha256": "622a24ec04b20dbcb29e08119f4c0f49d0c4414d86ac9b947cc9054b333d7b54"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/url/mod.rs",
+          "sha256": "83ff20cdcae2c000445650e0ee0d595697d98aa3ed84c88e6e420d76629c583d"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/url/url_image_converter.rs",
+          "sha256": "381a046fd81e6e730c67c10603fc39c1797daae669dfa5e42936ae4844752765"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/url_image_converter.rs",
+          "sha256": "76d4138b747b452011af68501fc6c0b015c6c02f68f1cfb6455fa3185a5a8fdf"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/write_converter_context.rs",
+          "sha256": "56a5c7a169a98bdb27574b17f7d3c316eef336f78ce522bd188bf08f015afa21"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/public_api_converter_evidence_tests.rs",
+          "sha256": "472d621108a73577bde6349f402aca7e86b254359f47666511d6dfe62af866c4"
+        }
+      ]
+    },
+    {
+      "commands": [
+        [
+          "./scripts/export-java-golden.sh",
+          "--check"
+        ],
+        [
+          "cargo",
+          "test",
+          "-p",
+          "easyexcel-test",
+          "--test",
+          "public_api_converter_evidence_tests"
+        ]
+      ],
+      "id": "converter-family.java-golden.v1",
+      "java_ids": [
+        "com.alibaba.excel.converters.AutoConverter",
+        "com.alibaba.excel.converters.Converter",
+        "com.alibaba.excel.converters.Converter#convertToExcelData(Lcom/alibaba/excel/converters/WriteConverterContext;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.Converter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.NullableObjectConverter",
+        "com.alibaba.excel.converters.ReadConverterContext",
+        "com.alibaba.excel.converters.ReadConverterContext#<init>(Lcom/alibaba/excel/metadata/data/ReadCellData;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/context/AnalysisContext;)V",
+        "com.alibaba.excel.converters.WriteConverterContext",
+        "com.alibaba.excel.converters.WriteConverterContext#<init>()V",
+        "com.alibaba.excel.converters.WriteConverterContext#<init>(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/context/WriteContext;)V",
+        "com.alibaba.excel.converters.WriteConverterContext#getValue()Ljava/lang/Object;",
+        "com.alibaba.excel.converters.WriteConverterContext#setValue(Ljava/lang/Object;)V",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalBooleanConverter",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalBooleanConverter#convertToExcelData(Ljava/math/BigDecimal;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalNumberConverter",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalNumberConverter#convertToExcelData(Ljava/math/BigDecimal;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalStringConverter",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bigdecimal.BigDecimalStringConverter#convertToExcelData(Ljava/math/BigDecimal;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerBooleanConverter",
+        "com.alibaba.excel.converters.biginteger.BigIntegerBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerBooleanConverter#convertToExcelData(Ljava/math/BigInteger;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerNumberConverter",
+        "com.alibaba.excel.converters.biginteger.BigIntegerNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerNumberConverter#convertToExcelData(Ljava/math/BigInteger;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerStringConverter",
+        "com.alibaba.excel.converters.biginteger.BigIntegerStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.biginteger.BigIntegerStringConverter#convertToExcelData(Ljava/math/BigInteger;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanBooleanConverter",
+        "com.alibaba.excel.converters.booleanconverter.BooleanBooleanConverter#convertToExcelData(Ljava/lang/Boolean;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanNumberConverter",
+        "com.alibaba.excel.converters.booleanconverter.BooleanNumberConverter#convertToExcelData(Ljava/lang/Boolean;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanStringConverter",
+        "com.alibaba.excel.converters.booleanconverter.BooleanStringConverter#convertToExcelData(Ljava/lang/Boolean;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.booleanconverter.BooleanStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bytearray.BoxingByteArrayImageConverter",
+        "com.alibaba.excel.converters.bytearray.BoxingByteArrayImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bytearray.BoxingByteArrayImageConverter#convertToExcelData([Ljava/lang/Byte;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bytearray.ByteArrayImageConverter",
+        "com.alibaba.excel.converters.bytearray.ByteArrayImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.bytearray.ByteArrayImageConverter#convertToExcelData([BLcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteBooleanConverter",
+        "com.alibaba.excel.converters.byteconverter.ByteBooleanConverter#convertToExcelData(Ljava/lang/Byte;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteNumberConverter",
+        "com.alibaba.excel.converters.byteconverter.ByteNumberConverter#convertToExcelData(Ljava/lang/Byte;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteStringConverter",
+        "com.alibaba.excel.converters.byteconverter.ByteStringConverter#convertToExcelData(Ljava/lang/Byte;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.byteconverter.ByteStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateDateConverter",
+        "com.alibaba.excel.converters.date.DateDateConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateDateConverter#convertToExcelData(Ljava/util/Date;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateNumberConverter",
+        "com.alibaba.excel.converters.date.DateNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateNumberConverter#convertToExcelData(Ljava/util/Date;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateStringConverter",
+        "com.alibaba.excel.converters.date.DateStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.date.DateStringConverter#convertToExcelData(Ljava/util/Date;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleBooleanConverter",
+        "com.alibaba.excel.converters.doubleconverter.DoubleBooleanConverter#convertToExcelData(Ljava/lang/Double;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleNumberConverter",
+        "com.alibaba.excel.converters.doubleconverter.DoubleNumberConverter#convertToExcelData(Ljava/lang/Double;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleStringConverter",
+        "com.alibaba.excel.converters.doubleconverter.DoubleStringConverter#convertToExcelData(Ljava/lang/Double;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.doubleconverter.DoubleStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.file.FileImageConverter",
+        "com.alibaba.excel.converters.file.FileImageConverter#convertToExcelData(Ljava/io/File;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.file.FileImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.floatconverter.FloatBooleanConverter",
+        "com.alibaba.excel.converters.floatconverter.FloatBooleanConverter#convertToExcelData(Ljava/lang/Float;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.floatconverter.FloatBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.floatconverter.FloatNumberConverter",
+        "com.alibaba.excel.converters.floatconverter.FloatNumberConverter#convertToExcelData(Lcom/alibaba/excel/converters/WriteConverterContext;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.floatconverter.FloatStringConverter",
+        "com.alibaba.excel.converters.floatconverter.FloatStringConverter#convertToExcelData(Ljava/lang/Float;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.floatconverter.FloatStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.inputstream.InputStreamImageConverter",
+        "com.alibaba.excel.converters.inputstream.InputStreamImageConverter#convertToExcelData(Ljava/io/InputStream;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.inputstream.InputStreamImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.integer.IntegerBooleanConverter",
+        "com.alibaba.excel.converters.integer.IntegerBooleanConverter#convertToExcelData(Ljava/lang/Integer;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.integer.IntegerBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.integer.IntegerNumberConverter",
+        "com.alibaba.excel.converters.integer.IntegerNumberConverter#convertToExcelData(Lcom/alibaba/excel/converters/WriteConverterContext;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.integer.IntegerStringConverter",
+        "com.alibaba.excel.converters.integer.IntegerStringConverter#convertToExcelData(Ljava/lang/Integer;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.integer.IntegerStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateDateConverter",
+        "com.alibaba.excel.converters.localdate.LocalDateDateConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateDateConverter#convertToExcelData(Ljava/time/LocalDate;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateNumberConverter",
+        "com.alibaba.excel.converters.localdate.LocalDateNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateNumberConverter#convertToExcelData(Ljava/time/LocalDate;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateStringConverter",
+        "com.alibaba.excel.converters.localdate.LocalDateStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdate.LocalDateStringConverter#convertToExcelData(Ljava/time/LocalDate;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeDateConverter",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeDateConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeDateConverter#convertToExcelData(Ljava/time/LocalDateTime;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeNumberConverter",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeNumberConverter#convertToExcelData(Ljava/time/LocalDateTime;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeStringConverter",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.localdatetime.LocalDateTimeStringConverter#convertToExcelData(Ljava/time/LocalDateTime;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.longconverter.LongBooleanConverter",
+        "com.alibaba.excel.converters.longconverter.LongBooleanConverter#convertToExcelData(Ljava/lang/Long;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.longconverter.LongBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.longconverter.LongNumberConverter",
+        "com.alibaba.excel.converters.longconverter.LongNumberConverter#convertToExcelData(Lcom/alibaba/excel/converters/WriteConverterContext;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.longconverter.LongStringConverter",
+        "com.alibaba.excel.converters.longconverter.LongStringConverter#convertToExcelData(Ljava/lang/Long;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.longconverter.LongStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.shortconverter.ShortBooleanConverter",
+        "com.alibaba.excel.converters.shortconverter.ShortBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.shortconverter.ShortBooleanConverter#convertToExcelData(Ljava/lang/Short;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.shortconverter.ShortNumberConverter",
+        "com.alibaba.excel.converters.shortconverter.ShortNumberConverter#convertToExcelData(Lcom/alibaba/excel/converters/WriteConverterContext;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.shortconverter.ShortStringConverter",
+        "com.alibaba.excel.converters.shortconverter.ShortStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.shortconverter.ShortStringConverter#convertToExcelData(Ljava/lang/Short;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringBooleanConverter",
+        "com.alibaba.excel.converters.string.StringBooleanConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringBooleanConverter#convertToExcelData(Ljava/lang/String;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringErrorConverter",
+        "com.alibaba.excel.converters.string.StringErrorConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringErrorConverter#convertToExcelData(Ljava/lang/String;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringImageConverter",
+        "com.alibaba.excel.converters.string.StringImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringImageConverter#convertToExcelData(Ljava/lang/String;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringNumberConverter",
+        "com.alibaba.excel.converters.string.StringNumberConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringNumberConverter#convertToExcelData(Ljava/lang/String;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringStringConverter",
+        "com.alibaba.excel.converters.string.StringStringConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.string.StringStringConverter#convertToExcelData(Ljava/lang/String;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.url.UrlImageConverter",
+        "com.alibaba.excel.converters.url.UrlImageConverter#<init>()V",
+        "com.alibaba.excel.converters.url.UrlImageConverter#convertToExcelData(Ljava/lang/Object;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;",
+        "com.alibaba.excel.converters.url.UrlImageConverter#convertToExcelData(Ljava/net/URL;Lcom/alibaba/excel/metadata/property/ExcelContentProperty;Lcom/alibaba/excel/metadata/GlobalConfiguration;)Lcom/alibaba/excel/metadata/data/WriteCellData;"
+      ],
+      "kind": "java_golden",
+      "materialized_family": {
+        "expected_java_api_items": 147,
+        "selector": {
+          "java_owner_prefixes": [
+            "com.alibaba.excel.converters."
+          ]
+        },
+        "skipped": 240,
+        "total_matched": 387
+      },
+      "rust_ids": [
+        "easyexcel:0942a222b8e1df99d8e4",
+        "easyexcel:0ad9bf4fd0b03a673162",
+        "easyexcel:0c055d8ab245b6c9cc25",
+        "easyexcel:0f01521299f6aa27af6e",
+        "easyexcel:11c50d35a2f32b5d3422",
+        "easyexcel:13f4e106bce5e335ebb9",
+        "easyexcel:171985c1eeca6b0c3c9f",
+        "easyexcel:1ca49ac9e84c36c0efae",
+        "easyexcel:1cc69619f0d604b821fc",
+        "easyexcel:231b654a5d91be224917",
+        "easyexcel:2417047c7389cd8d0605",
+        "easyexcel:2479ae75f5cc613a6f60",
+        "easyexcel:2998532d920aca7b0333",
+        "easyexcel:2ae054de9f092623605d",
+        "easyexcel:379f1b8bf78ea584178f",
+        "easyexcel:398b10c73dcc4860a068",
+        "easyexcel:39dd6160ec00627c27fd",
+        "easyexcel:3cfdd60cda964afb5ce0",
+        "easyexcel:3d24f4e9ffd2fc66db6c",
+        "easyexcel:3d9d219816a9b0fb203f",
+        "easyexcel:3fbeddf4db1240f91975",
+        "easyexcel:405a87a4a165fad705fc",
+        "easyexcel:422c97eac361d9093d61",
+        "easyexcel:432a5334deca36553ca4",
+        "easyexcel:478786462708c20ea10a",
+        "easyexcel:493ce23204617f705dce",
+        "easyexcel:498f508c62ef756d4372",
+        "easyexcel:4a9f85423c04868b0952",
+        "easyexcel:4d7e6df3af158b7d9d26",
+        "easyexcel:4e68a23560d54dffb0a7",
+        "easyexcel:55cb120e182d4fd72c94",
+        "easyexcel:574cd30bb68f762a670b",
+        "easyexcel:5a30b818e187c1f3a201",
+        "easyexcel:60179190956e8d0fefcc",
+        "easyexcel:6869551de534829c7bc2",
+        "easyexcel:719920527d71af1ae1e4",
+        "easyexcel:7283d27dcbe744340477",
+        "easyexcel:74d08373b6ffc0f1ed45",
+        "easyexcel:7623d8a3f18998f21774",
+        "easyexcel:79290af564bac93be25f",
+        "easyexcel:7aefa90fd4d7e1958952",
+        "easyexcel:7cc001d3670663440abd",
+        "easyexcel:7ee8f41b4b97e2627599",
+        "easyexcel:855de6171af5d834ed79",
+        "easyexcel:85c1ca47d82cbdd69bcb",
+        "easyexcel:88c8263086ef1c31658a",
+        "easyexcel:8a1977ab31738aca524b",
+        "easyexcel:8bf22be7ce682119578c",
+        "easyexcel:8d7534f7ab8e382d02a4",
+        "easyexcel:8f250990740888b98534",
+        "easyexcel:8f9892bc97a45e5636d4",
+        "easyexcel:9115d0dd46224fa0b20c",
+        "easyexcel:934b1e03c700e52c80d2",
+        "easyexcel:939236bd636b2312c6f5",
+        "easyexcel:9451b517394d2640f3c6",
+        "easyexcel:98fc79a6804cc392a6b5",
+        "easyexcel:9a9832e787fdd3065217",
+        "easyexcel:9bbf42041d344cc0350a",
+        "easyexcel:9c27e677f7a6e7ba1e4d",
+        "easyexcel:9d46968dada6a9bae1c7",
+        "easyexcel:9dadca96a029c8870387",
+        "easyexcel:9ea06c710bc1a116510b",
+        "easyexcel:a09c6ceae7541ec68892",
+        "easyexcel:a1e3616b87361b3fcf2a",
+        "easyexcel:a27849bb57d40c54815d",
+        "easyexcel:a30064ec7b9a465e434a",
+        "easyexcel:a30e573c380643403a21",
+        "easyexcel:a75a4c6f453c2a724729",
+        "easyexcel:add5a1138526e67a4217",
+        "easyexcel:ae62c3b07b529afd65ba",
+        "easyexcel:b0fc411920b2603c2c88",
+        "easyexcel:b11a7e53632b7f99ef3b",
+        "easyexcel:b29f0415c6cdd8b34d16",
+        "easyexcel:b5cf75dc0d909add71c4",
+        "easyexcel:b66a1371d0cc5b1f0c78",
+        "easyexcel:b6d1665219dc277e6d1a",
+        "easyexcel:b929396bc5b8de5cea5e",
+        "easyexcel:c14b7b15eec31f03f5fd",
+        "easyexcel:c2c9d953f2a8de78a296",
+        "easyexcel:c37875027710d8e06478",
+        "easyexcel:c64ba8e985233076483c",
+        "easyexcel:c66c304d685093a7f38a",
+        "easyexcel:c82d5889e25e79557c39",
+        "easyexcel:cb0905e81742df9d77b8",
+        "easyexcel:cbbd71ec055da62a0172",
+        "easyexcel:cf5baf0cd437d1ec27c6",
+        "easyexcel:da516c96b92a52244708",
+        "easyexcel:dba129600ffc08748d51",
+        "easyexcel:dbc772abaf95656e705d",
+        "easyexcel:dd01eb88f6caa8f17c87",
+        "easyexcel:e4f04d905b12c0ad76bb",
+        "easyexcel:e82ef7bb71ab594303d3",
+        "easyexcel:e857f41d031fa9c997fa",
+        "easyexcel:f1402d7ed0f92fb88a49",
+        "easyexcel:f2aee9f309f365d4f7d2",
+        "easyexcel:f64677cb4c1e1ce40507",
+        "easyexcel:f6cc9ef0c23abcd14814",
+        "easyexcel:f70cb1ad9686bfc5a72e",
+        "easyexcel:f7188455dda732efc7c1",
+        "easyexcel:fdf1f821ccd1571d1d9a",
+        "easyexcel:fe8bf4a6046f1c419899",
+        "easyexcel:ff3b125c4d7df71b4e36"
+      ],
+      "source_files": [
+        {
+          "path": "crates/easyexcel/src/converters/auto_converter.rs",
+          "sha256": "c9f4f3ce883fee7c799b6edc8e52d2c3d3cafbd3247ed3fdcd32f385aaa87f5e"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bigdecimal/big_decimal_boolean_converter.rs",
+          "sha256": "d1ad76764c2d8f191df4429487177cfdcfdd48c709986f6b3fba2eb87deb2a1a"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bigdecimal/big_decimal_number_converter.rs",
+          "sha256": "b166f4c4b870fb65264dab01432a8656b281e2bed622012375e1c02b327ccee8"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bigdecimal/big_decimal_string_converter.rs",
+          "sha256": "8d8763ea21cc1bfc61308d3490f099ddf85587f0ef5677e88b7883d65a5adfc3"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bigdecimal/mod.rs",
+          "sha256": "2ecc540c2f8220aaa2d3a7593d0de55bebaa2d3f48d62d7ce9c8912511a4eb88"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/biginteger/big_integer_boolean_converter.rs",
+          "sha256": "c20a7a281e6b6fbb67e8bce561614de22f9eb0c24dd595241ae48221bde19621"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/biginteger/big_integer_number_converter.rs",
+          "sha256": "967afe44b6b1b2ae63db70ad51487b6367687e6aa35f1e397689ed9eeb8164fe"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/biginteger/big_integer_string_converter.rs",
+          "sha256": "4b6bfaccf4e86f7a2c7dfa107af1a1daa89b15e08065d5f01a8d4f64a4791c4d"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/biginteger/mod.rs",
+          "sha256": "7ae991403f16d9a3b573f7f3e74e85658e1254b3e952bad02567c31dd6148884"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/boolean_support.rs",
+          "sha256": "63e4be72c702dbb817cd05bcc42ea73a92609c7a643563a132c7784d9ffdbe93"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/booleanconverter/boolean_boolean_converter.rs",
+          "sha256": "aa8dbc2a81285333720b63158f6315d80a0889dc5cc7970d6fd4686eca0109e6"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/booleanconverter/boolean_number_converter.rs",
+          "sha256": "4eeb9f3c39d41e7b36d81e41df27922f0806a48bfe4f51274832c7e78ec4e5cc"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/booleanconverter/boolean_string_converter.rs",
+          "sha256": "66db63d698f7fd7008b125cc3108082577655c049a488a96d1fd8a81ed296b9b"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/booleanconverter/mod.rs",
+          "sha256": "a6536d63deb0f9f716edf47d37534cd72583844b3ad34176fed772663443cd92"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bytearray/boxing_byte_array_image_converter.rs",
+          "sha256": "8193e9b6799bb05820d30d8ef403fd44468301420ea89739fee7f0b7e13f9184"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bytearray/byte_array_image_converter.rs",
+          "sha256": "9a2ff0ac900ae34432190ea205debe42698b707946298633f55119f673e6b9a9"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/bytearray/mod.rs",
+          "sha256": "76a077eddeeecac99a14764d491109c201a1ff66247160a2f6271855e27edb2d"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/byteconverter/byte_boolean_converter.rs",
+          "sha256": "ed925cec3db891dce3c08962f8e59ba3beb9e51fb658e84cf8aaaae51b921f15"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/byteconverter/byte_number_converter.rs",
+          "sha256": "3ab66bfe9fad7c7dd3db8be668c4b15e7e7c48eb7296aacf8731aa86bb224db7"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/byteconverter/byte_string_converter.rs",
+          "sha256": "e488c662976d8aa7553609a64618b5396b1906e742ba15cc217a8b1450f106f8"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/byteconverter/mod.rs",
+          "sha256": "c0cd3fa047111974cf06633355e6fb64a4d8c188e3a3001d58e0e7390392048a"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/convert_context.rs",
+          "sha256": "68d9b9037af9a2b092707626b9a19c21888aa19a60cb6dc42f706ce9499737f4"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter.rs",
+          "sha256": "94dc35b213e3cdf9113b2a87ef270cb30067c8bc35874b88fa223ffdf2a05741"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter_key.rs",
+          "sha256": "67c1c69e7ae7f379b60c04b2a3052d1e0719c066f73d6c7e9ac9119137f47817"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter_key_build.rs",
+          "sha256": "615301325a403141526d5655aa42a87fce7cf6e3793f8f0b99a0d8fab2a5f36d"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter_registry/erased_converter.rs",
+          "sha256": "4bed1e5d272272aba9a59dcf76a412225e0947fd0432e5ddaf269b332855a840"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter_registry/typed_converter.rs",
+          "sha256": "488ee34451f25bbbbb679bfce2d593fd9383aa68726af06b4d00d7dedfba0cf9"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/converter_registry.rs",
+          "sha256": "e10d7783dfe036e6429fbacbdd53f6b8d286944c6298670492424087d8666e66"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/custom_read_object.rs",
+          "sha256": "282659e74e3c5e4910000d5d4848ec63eb6227839d0f4a6db930eedede1210c4"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/date/date_date_converter.rs",
+          "sha256": "2c340f8ced7f4d1dbd0c702223ea67ea3c6c6ad2f4df673c8ec7aaae3f694231"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/date/date_number_converter.rs",
+          "sha256": "d47c735d01068cd37cd5b96af211fa32a304d8200e4869fc1ada5d7f42da6e6f"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/date/date_string_converter.rs",
+          "sha256": "b1fc1029bc93151a9c2f91074d925efe18f7ab7ff41597f9f0ba3d60bb08b6e7"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/date/mod.rs",
+          "sha256": "23f81f0af8680d237a1d41879a7e85edc614520bae00e8ef9da4821db884e1e5"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/date_support.rs",
+          "sha256": "77eace953fc22a44ca8f6fd9084d88e1329923b5ae9c4164a579e11d1c63fe68"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/default_converter_loader.rs",
+          "sha256": "379413032f1c9f43bd774920f826d82dabc1636d259790d0fa5f75fb68fe648c"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/doubleconverter/double_boolean_converter.rs",
+          "sha256": "b88c547e71d27305aa4b9bcc765faa43809dd7dd2f8a7322d99af55e58fec3f2"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/doubleconverter/double_number_converter.rs",
+          "sha256": "e21d09584303ac005860aac105b2b67e2aa646ca860618b0056ba41fe1a36160"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/doubleconverter/double_string_converter.rs",
+          "sha256": "1a6a7b0c17c226d2ecd10ecedeb22051889b6c837a820a53e46f014b0ce216fb"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/doubleconverter/mod.rs",
+          "sha256": "46bffde2fc4121f67b6c58f789ddaa025d0b46baf3b995db8c78c732a27cd3df"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/file/file_image_converter.rs",
+          "sha256": "eb519b842881c1553225309abce45bd5864c8a588e46678ac2d51a1b6dd16ddb"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/file/mod.rs",
+          "sha256": "3d093ed00870710f08efd2e04b8dfa91f2bb7bd7710e1b36b78b8cc5ee3ec390"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/floatconverter/float_boolean_converter.rs",
+          "sha256": "9491ff0ff120a8fa9bfd44a36a6c1283727f58ba405835b62778f3c3315ddf29"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/floatconverter/float_number_converter.rs",
+          "sha256": "201addc06b7a80c2cee8e5d565440aa93039bfd0343e3a1e55d02af43c7ae1b0"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/floatconverter/float_string_converter.rs",
+          "sha256": "7f652389d8f28fd9cafca434e3b07631dcfe22f7ac70906952d3155573e71137"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/floatconverter/mod.rs",
+          "sha256": "24aeee2403e8c1b710e0539764113e58d30ccf38a2c87c0e4c955fe4b5935142"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/from_excel_cell.rs",
+          "sha256": "c904a770bfd021600ddd2d4a3ecc07d4630868601a05611fb1af9a6751be74ca"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/from_into_impls.rs",
+          "sha256": "ec037bbe6c6eca85bae7ea76027d3cd44df123ea464653cb32ed6ead4f699511"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/image_input_stream.rs",
+          "sha256": "6993fda7bc892734b7f708f3bd5cdb31b7dff2f6050b11d6b83fb61bdb48466f"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/input_stream_image_converter.rs",
+          "sha256": "d2299de782fa40f830afc606c52bef13df4a4c7b8afc7c611d7b4752ec7e87b0"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/inputstream/input_stream_image_converter.rs",
+          "sha256": "a32f1abbc1169ec4bc4ac65506673f5cb5e670b9995fdb3d8d72b59be15fc1a4"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/inputstream/mod.rs",
+          "sha256": "40e101013cb04f5fc8650d9cdb2d1acf4c6d0dcfe81e7de2eb6f3915734fdd22"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/integer/integer_boolean_converter.rs",
+          "sha256": "579c3f6f9de3ede96531ec44d9fadb5caaf6dc366a433ea704530b26b4323374"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/integer/integer_number_converter.rs",
+          "sha256": "8e91eb0b7b2343e406334bece710d5f686bb30afad3d54756bde8f98c5bc1f0e"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/integer/integer_string_converter.rs",
+          "sha256": "44d7c84c89a6f813f82ffcb5c7e482dee1c5190a66757d12d24744240634287d"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/integer/mod.rs",
+          "sha256": "4cbfdd95ad110656328a7d5b2079943aeb0427db9dd5aa53ad3b59a5c50a30a1"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/into_excel_cell.rs",
+          "sha256": "882762f4d0ea53f7a2e3d2a4a72a1f7eb7f4d5317b99bd5e189f0f420698fdb9"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdate/local_date_date_converter.rs",
+          "sha256": "c65759052de03c82d48239c08ab513235b44ace351b7507d7638f62620ab0c48"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdate/local_date_number_converter.rs",
+          "sha256": "e18b5789f4edcaaff57c7681a9da4b57c56f546a0d45f7e65c46c02bff0d3e4f"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdate/local_date_string_converter.rs",
+          "sha256": "4312b466dcfd480a4b2278f52b14f0624b4915f28149c0e8ffff7995b1a3953c"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdate/mod.rs",
+          "sha256": "856000047fabe28eaefcaf1d08308cea3adefd854e989390959cc580411be5b9"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdatetime/local_date_time_date_converter.rs",
+          "sha256": "bd583a251447072382893b8a9fb26520912dbb4f27e70e041b70faf271bd0244"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdatetime/local_date_time_number_converter.rs",
+          "sha256": "e3e8c06065e688168ac3ce73ddaec43ffefc50ad8eb148b64726c464a83e2cfc"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdatetime/local_date_time_string_converter.rs",
+          "sha256": "d54aa86e1599413012fadb155ef80ab70fe20d9d80c984c24d59d12a7ab52816"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/localdatetime/mod.rs",
+          "sha256": "f9b4e14aa1ea9b15a3ac53f34aff29e53bb6bfe17b785955dd46f133bbae0888"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/longconverter/long_boolean_converter.rs",
+          "sha256": "14909b2a5f1c9cfc247fab9043c169fdd0c4beb47f6440ea63f5bbc334c2b368"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/longconverter/long_number_converter.rs",
+          "sha256": "725f567ecff753062f6ecccd5b0d093b2c2c61edc58dd0b8eeb78ae60228d67f"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/longconverter/long_string_converter.rs",
+          "sha256": "35063b467415d8789924fd6b1101e033890341d7b1329af9b24018e9c9d76fcb"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/longconverter/mod.rs",
+          "sha256": "3b00a58442b38baee2221c0ebb0a3363da090e37417c8a3c5b0c711b0c60a3e8"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/mod.rs",
+          "sha256": "286aeee812b9f5dc008d576c85ac2765316483258134c467883a22b78f5bff00"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/mod_enums.rs",
+          "sha256": "2cf6ec947561219077fc57bbeb3c01ee64034bd2fc63f12d46005563ecf03f5f"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/nullable_object_converter.rs",
+          "sha256": "fdbf73b0ae9f347a29efab341d23891b9f0eccd08668ae445854baddf2a7fe3e"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/number_support.rs",
+          "sha256": "8e59d71892ca74b79a527253e3853e39fd0936c4bebddfc8a36e63d4cbb84165"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/read_converter_context.rs",
+          "sha256": "d9679bd2eae1f540aa0409bd89c0827642fd3f05818e8626f22c48e3c62c10b4"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/shortconverter/mod.rs",
+          "sha256": "4b755ca1f07501ff3137c208be2c286f7e357d5e2fc0334339fe86dc98edabec"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/shortconverter/short_boolean_converter.rs",
+          "sha256": "51b7150891cc951293b88abf6c104f7c33faeb3cc44935ed6e3bdf68534e9cc3"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/shortconverter/short_number_converter.rs",
+          "sha256": "576aeadf3c40e91b52b93a7bd1a64b65f2d4e790ed1b940e358959db04ed1ee7"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/shortconverter/short_string_converter.rs",
+          "sha256": "15db3921e91e70ef78f3d3fe67576bd1726aaf7c812c7cecbfb02157a3fc05a6"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/mod.rs",
+          "sha256": "14430582cdb16c9b7638d5e9ba9247d13f780812e68891df3ad96f629c3dde81"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/string_boolean_converter.rs",
+          "sha256": "f8237821f7a5ad60a4fdefbfea4e81b0ac82d826647809eb0b15e9235bbb43cf"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/string_error_converter.rs",
+          "sha256": "195444cb580c4cf8b758a747a44d63aa9b2af73f0bec8d021b522dd4749efbe6"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/string_image_converter.rs",
+          "sha256": "e6a19490a774558d8e8e7b466a622aed9bbafed1013b54deb1111fc14afcf33e"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/string_number_converter.rs",
+          "sha256": "a50eef4ae7f69e2fdd1d375e0887fd682c72dc35d714e13e13ce24f2d0398eb1"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/string/string_string_converter.rs",
+          "sha256": "622a24ec04b20dbcb29e08119f4c0f49d0c4414d86ac9b947cc9054b333d7b54"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/url/mod.rs",
+          "sha256": "83ff20cdcae2c000445650e0ee0d595697d98aa3ed84c88e6e420d76629c583d"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/url/url_image_converter.rs",
+          "sha256": "381a046fd81e6e730c67c10603fc39c1797daae669dfa5e42936ae4844752765"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/url_image_converter.rs",
+          "sha256": "76d4138b747b452011af68501fc6c0b015c6c02f68f1cfb6455fa3185a5a8fdf"
+        },
+        {
+          "path": "crates/easyexcel/src/converters/write_converter_context.rs",
+          "sha256": "56a5c7a169a98bdb27574b17f7d3c316eef336f78ce522bd188bf08f015afa21"
+        },
+        {
+          "path": "scripts/java-golden-export/src/main/java/com/alibaba/easyexcel/golden/JavaGoldenExporter.java",
+          "sha256": "790dbc84da0e6b4f200616e9228696c79bb9b3ef4ed9b39a6cd8019f351cf529"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/golden/converter_api.contract.json",
+          "sha256": "e0b7188f605e4f71a5ec8540bc9dd59a736bea51596453d57b6daf34d61cc27e"
+        },
+        {
+          "path": "tests/easyexcel-test/tests/public_api_converter_evidence_tests.rs",
+          "sha256": "472d621108a73577bde6349f402aca7e86b254359f47666511d6dfe62af866c4"
+        }
+      ]
+    }
+  ],
+  "java_manifest_sha256": "c76c399a5683f3756b1feea922f8f260cc970de6255e26a53ca145576f830c3d",
+  "mapping_resolutions": [],
+  "schema_version": 2,
+  "template_sources": [
+    {
+      "path": "converters.json",
+      "sha256": "bb7815a801b817cd6f4981bbe3e16710105e75fd094d0d9c757b2912d45dc36f"
+    }
+  ],
+  "template_tree_sha256": "f64db55d1a85b1ada99aadae8524321ea9e8333093d476d85ca8437e909564ab"
+}

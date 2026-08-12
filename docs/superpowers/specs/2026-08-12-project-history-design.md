@@ -28,6 +28,10 @@
 - **2026-08-10~11**：Q3 ROADMAP P0 任务执行（5 个任务全部通过测试验证）
 - **2026-08-11**：生产就绪审计（依赖/代码/fuzz/覆盖率）+ fuzz 基础设施搭建
 - **2026-08-11**：Coverage 6 轮提升（75.53% → 88.38%）
+- **2026-08-12**：Superpowers 结构对齐 liteflow（`plans/` + `specs/` 二级目录、命名约定对齐）
+- **2026-08-12**：文档收敛（ARCHITECTURE.md 补 WriteBackendSelection 状态机 Mermaid 图 + 迁移条件表；shared_string_cache.rs 补交叉引用）
+- **2026-08-12**：迁移证据推进（performance-optimization.md T1.2/T1.3 残留清理、write-optimization.md 4.1 Moka 审计交叉引用）
+- **2026-08-12**：规格数字校正（coverage 75.53%→89.24% 实测更新、test-audit 1315→4447 实测更新）
 
 ---
 
@@ -102,9 +106,9 @@
 | 工作流 | 子文档 | 任务项 | 工时(h) | 当前状态 |
 |--------|--------|-------:|--------:|----------|
 | ① 迁移 gap 闭环 | `docs/superpowers/plans/2026-08-12-migration-gap-closure.md` | 31 | 116 | A1 完成；A2 阻塞于 A3；B/C/D/E/F/G 待开始 |
-| ② 事件读追上 Java 吞吐 | `docs/superpowers/plans/2026-08-12-performance-optimization.md` | 13 | 73 | T1.1 完成；T2.1/T3.1/T5.1/T6.2 待开始 |
+| ② 事件读追上 Java 吞吐 | `docs/superpowers/plans/2026-08-12-performance-optimization.md` | 13 | 73 | T1.1 完成；T1.2 残留清理完成（#[cold] + doc）；T1.3 残留清理完成（allocation test）；T2.1 决策记录完成（不改，风险/收益比低）；T3.1/T5.1/T6.2 待开始 |
 | ③ 补测试盲区 | `docs/superpowers/plans/2026-08-12-coverage-improvement.md` | 42 | 44.6 | T1.1-T1.8 完成（8/8 测试绿）；其余待开始 |
-| ④ 恒定内存与写优化 | `docs/superpowers/plans/2026-08-12-write-optimization.md` | 8 + 2 RFC | 15.5 | 1.1 完成；2.1/3.1/4.1/5.1/6.1 待开始 |
+| ④ 恒定内存与写优化 | `docs/superpowers/plans/2026-08-12-write-optimization.md` | 8 + 2 RFC | 15.5 | 1.1 完成；3.1 完成（ARCHITECTURE.md 状态机图）；4.1 完成（Moka 交叉引用）；2.1/5.1/6.1 待开始 |
 
 ### 已完成项
 
@@ -226,12 +230,12 @@
 | 当前版本 | 0.1.3（`Cargo.toml` `workspace.version`） |
 | Java 基线 | Alibaba EasyExcel 4.0.3 |
 | workspace crate 数 | 21 个正式发布 crate + 7 个 web 适配器 + xtask + 测试 + benchmark |
-| 总测试数 | 1315+（全绿） |
+| 总测试数 | 4,449（2026-08-12 实测：4,447 passed / 2 failed / 2 ignored） |
 | Java golden 对拍 | 88 个 |
 | parity 映射项 | 3236 项（candidate 2673 / ambiguous 479 / unmapped 84 / verified 0） |
-| 覆盖率 | 88.38%（6 轮提升后） |
+| 覆盖率 | 89.24%（2026-08-12 实测，`/tmp/cov10.json`） |
 | MSRV | rustc 1.88 |
-| 安全 | 0 CVE、0 unsafe blocks、0 `#[ignore]`（CI 标注的 2 个为已知格式差异） |
+| 安全 | 0 CVE、0 unsafe blocks、2 `#[ignore]`（easyexcel-xls 1 个 + easyexcel-test 1 个） |
 | Fuzz target | 5 个（XLSX/XLS/CSV/formula/markdown） |
 | Web 框架适配器 | 7 个（Axum / Actix / Hyper / Poem / Rocket / Salvo / Warp） |
 | 总 commit 数 | 289 |

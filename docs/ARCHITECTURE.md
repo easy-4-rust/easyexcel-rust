@@ -202,6 +202,53 @@ flowchart TB
     Biff8Template --> Output
 ```
 
+## WriteBackendSelection 状态机
+
+`WriteBackendSelection`（`write_backend_selection.rs:7-23`）是 stateful 写入器的 7 态
+后端选择状态机。迁移逻辑分布在 `new_to_output_path.rs:398-466`（`ensure_backend_for_write`）、
+`:468-514`（`promote_auto_streaming_to_memory`）、`:518-529`（`record_streaming_write_result`）。
+
+```mermaid
+stateDiagram-v2
+    [*] --> AutoUndecided : build() 初始<br/>(builder.rs:414-421 / new_to_output_path.rs:39-41)
+    [*] --> ExplicitStreaming : constant_memory(true)<br/>(builder.rs:418 / new_to_output_path.rs:39)
+    [*] --> ExplicitInMemory : in_memory(true)<br/>(builder.rs:420 / excel_writer_builder.rs:258)
+    [*] --> InMemory : CSV / XLS 路径<br/>(new_to_output_path.rs:406-410)
+
+    AutoUndecided --> AutoStreaming : 首写且 schema+handler 全 StreamingSafe<br/>(new_to_output_path.rs:432-437)
+    AutoUndecided --> InMemory : 首写但能力不满足<br/>(new_to_output_path.rs:439-441)
+
+    AutoStreaming --> InMemory : 冲突且尚无已落盘 sheet<br/>(new_to_output_path.rs:449-453)
+    AutoStreaming --> Promoting : 冲突且有已落盘 sheet（journal 回放）<br/>(new_to_output_path.rs:455-456 / :468-469)
+
+    Promoting --> InMemory : journal 重放成功<br/>(new_to_output_path.rs:510)
+    Promoting --> Failed : finish() 已消费 journal，无法回滚<br/>(new_to_output_path.rs:499)
+
+    ExplicitStreaming --> Failed : 遇到能力冲突（显式禁止晋升）<br/>(new_to_output_path.rs:443-448)
+    ExplicitStreaming --> Failed : 写入中途出错<br/>(new_to_output_path.rs:518-528)
+
+    AutoStreaming --> Failed : 写入中途出错<br/>(new_to_output_path.rs:518-528)
+    InMemory --> InMemory : 后续写直接复用
+    ExplicitInMemory --> ExplicitInMemory : 后续写直接复用
+    Failed --> [*] : 终止态，fail-closed
+```
+
+### 迁移条件表
+
+| 迁移 | 触发文件:行号 | 触发条件 | 副作用 |
+|------|-------------|---------|--------|
+| `AutoUndecided → AutoStreaming` | `new_to_output_path.rs:432-437` | 首写且 `safe=true`（schema+handler+无 template/mutation） | `default_constant_memory=true; compress_temp_files=true` |
+| `AutoUndecided → InMemory` | `new_to_output_path.rs:439-441` | 首写但 `safe=false` | 无 |
+| `AutoStreaming → InMemory` | `new_to_output_path.rs:449-453` | 能力冲突且 `sheets.is_empty()` | `default_constant_memory=false; compress_temp_files=false` |
+| `AutoStreaming → Promoting` | `new_to_output_path.rs:455-456` | 能力冲突且已有落盘 sheet | 启动 journal 回放 |
+| `ExplicitStreaming → Failed` | `new_to_output_path.rs:443-448` | 能力冲突（显式禁止晋升） | 返回 `Err(Unsupported)` |
+| `Promoting → InMemory` | `new_to_output_path.rs:510` | journal 重放成功 | 清空各 sheet 的 `constant_memory`/`compress_temp_files` |
+| `Promoting → Failed` | `new_to_output_path.rs:499` | `finish()` 已消费 journal | fail-closed |
+| `* → Failed` | `new_to_output_path.rs:518-528` | 写入中途出错 | fail-closed |
+
+`is_streaming()` 仅对 `AutoStreaming | ExplicitStreaming` 返回 true
+（`write_backend_selection.rs:28-30`）；`InMemory`/`Promoting`/`Failed` 均非 streaming。
+
 ## Performance Architecture
 
 ### Design Goals
@@ -442,15 +489,15 @@ flowchart LR
 
 | Category | Count | Status |
 |----------|-------|--------|
-| Total tests | 1315+ | All pass |
+| Total tests | 4,449 | 4,447 passed / 2 failed / 2 ignored |
 | Golden tests (Java output comparison) | 88 | All pass |
 | Parity tests (behavioral equivalence) | 152 | All pass |
 | 1:1 method tests | 78 | All pass |
-| `#[ignore]` annotations | 0 | Eliminated |
+| `#[ignore]` annotations | 2 | 1 (easyexcel-xls) + 1 (easyexcel-test) |
 
 ---
 
-**文档版本**：V1.0.0
+**文档版本**：V1.0.1
 **创建日期**：2026-08-11
-**最后更新**：2026-08-11
+**最后更新**：2026-08-12
 **文档状态**：✅ 已评审

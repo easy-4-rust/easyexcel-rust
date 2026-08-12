@@ -83,6 +83,12 @@ pub fn create_file_cache() -> Result<Box<dyn SharedStringCache>> {
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 创建生命周期内不淘汰对象的 Moka 共享字符串缓存。
 ///
 /// 不设置容量、TTL 或 TTI；条目只在缓存对象销毁时整体释放。
+///
+/// 设计意图：禁止 capacity/TTL/TTI。Moka 后端语义 = "一次性载入全部 shared strings，
+/// 读完即销毁"；`get(index)` 对越界返回 Err，加淘汰会让合法 index 偶发 Err，破坏
+/// `SharedStringCacheReader` 契约。大文件保护由 `SharedStringCachePolicy::select_mode`
+/// 在 5MB 阈值切到 `FileSharedStringCache`。详见 `docs/ARCHITECTURE.md` 边界约束章节
+/// 与 `docs/superpowers/plans/2026-08-12-write-optimization.md` 子任务 4.1 审计结论。
 #[must_use]
 pub fn create_moka_cache() -> Box<dyn SharedStringCache> {
     Box::new(MokaSharedStringCache::new())

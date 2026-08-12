@@ -277,7 +277,7 @@
 			"package": "com.alibaba.excel.converters.booleanconverter",
 			"implements": "Converter",
 			"type_parameter": "Boolean",
-			"support_java_type_key": "Boolean",
+			"support_java_type_key": "java.lang.Boolean",
 			"support_excel_type_key": "BOOLEAN",
 			"convert_to_java_data": {
 				"return_type": "Boolean",
@@ -319,7 +319,7 @@
 			"package": "com.alibaba.excel.converters.booleanconverter",
 			"implements": "Converter",
 			"type_parameter": "Boolean",
-			"support_java_type_key": "Boolean",
+			"support_java_type_key": "java.lang.Boolean",
 			"support_excel_type_key": "NUMBER",
 			"convert_to_java_data": {
 				"return_type": "Boolean",
@@ -361,7 +361,7 @@
 			"package": "com.alibaba.excel.converters.booleanconverter",
 			"implements": "Converter",
 			"type_parameter": "Boolean",
-			"support_java_type_key": "Boolean",
+			"support_java_type_key": "java.lang.Boolean",
 			"support_excel_type_key": "STRING",
 			"convert_to_java_data": {
 				"return_type": "Boolean",
@@ -403,7 +403,7 @@
 			"package": "com.alibaba.excel.converters.bytearray",
 			"implements": "Converter",
 			"type_parameter": "Byte[]",
-			"support_java_type_key": "Byte[]",
+			"support_java_type_key": "[Ljava.lang.Byte;",
 			"support_excel_type_key": "",
 			"convert_to_excel_data": {
 				"return_type": "WriteCellData<?>",
@@ -428,7 +428,7 @@
 			"package": "com.alibaba.excel.converters.bytearray",
 			"implements": "Converter",
 			"type_parameter": "byte[]",
-			"support_java_type_key": "byte[]",
+			"support_java_type_key": "[B",
 			"support_excel_type_key": "",
 			"convert_to_excel_data": {
 				"return_type": "WriteCellData<?>",
@@ -453,7 +453,7 @@
 			"package": "com.alibaba.excel.converters.byteconverter",
 			"implements": "Converter",
 			"type_parameter": "Byte",
-			"support_java_type_key": "Byte",
+			"support_java_type_key": "java.lang.Byte",
 			"support_excel_type_key": "BOOLEAN",
 			"convert_to_java_data": {
 				"return_type": "Byte",
@@ -495,7 +495,7 @@
 			"package": "com.alibaba.excel.converters.byteconverter",
 			"implements": "Converter",
 			"type_parameter": "Byte",
-			"support_java_type_key": "Byte",
+			"support_java_type_key": "java.lang.Byte",
 			"support_excel_type_key": "NUMBER",
 			"convert_to_java_data": {
 				"return_type": "Byte",
@@ -537,7 +537,7 @@
 			"package": "com.alibaba.excel.converters.byteconverter",
 			"implements": "Converter",
 			"type_parameter": "Byte",
-			"support_java_type_key": "Byte",
+			"support_java_type_key": "java.lang.Byte",
 			"support_excel_type_key": "STRING",
 			"convert_to_java_data": {
 				"return_type": "Byte",
@@ -688,7 +688,7 @@
 			"package": "com.alibaba.excel.converters.doubleconverter",
 			"implements": "Converter",
 			"type_parameter": "Double",
-			"support_java_type_key": "Double",
+			"support_java_type_key": "java.lang.Double",
 			"support_excel_type_key": "BOOLEAN",
 			"convert_to_java_data": {
 				"return_type": "Double",
@@ -730,7 +730,7 @@
 			"package": "com.alibaba.excel.converters.doubleconverter",
 			"implements": "Converter",
 			"type_parameter": "Double",
-			"support_java_type_key": "Double",
+			"support_java_type_key": "java.lang.Double",
 			"support_excel_type_key": "NUMBER",
 			"convert_to_java_data": {
 				"return_type": "Double",
@@ -772,7 +772,7 @@
 			"package": "com.alibaba.excel.converters.doubleconverter",
 			"implements": "Converter",
 			"type_parameter": "Double",
-			"support_java_type_key": "Double",
+			"support_java_type_key": "java.lang.Double",
 			"support_excel_type_key": "STRING",
 			"convert_to_java_data": {
 				"return_type": "Double",
@@ -839,7 +839,7 @@
 			"package": "com.alibaba.excel.converters.floatconverter",
 			"implements": "Converter",
 			"type_parameter": "Float",
-			"support_java_type_key": "Float",
+			"support_java_type_key": "java.lang.Float",
 			"support_excel_type_key": "BOOLEAN",
 			"convert_to_java_data": {
 				"return_type": "Float",
@@ -881,7 +881,7 @@
 			"package": "com.alibaba.excel.converters.floatconverter",
 			"implements": "Converter",
 			"type_parameter": "Float",
-			"support_java_type_key": "Float",
+			"support_java_type_key": "java.lang.Float",
 			"support_excel_type_key": "NUMBER",
 			"convert_to_java_data": {
 				"return_type": "Float",
@@ -915,7 +915,7 @@
 			"package": "com.alibaba.excel.converters.floatconverter",
 			"implements": "Converter",
 			"type_parameter": "Float",
-			"support_java_type_key": "Float",
+			"support_java_type_key": "java.lang.Float",
 			"support_excel_type_key": "STRING",
 			"convert_to_java_data": {
 				"return_type": "Float",
@@ -982,7 +982,7 @@
 			"package": "com.alibaba.excel.converters.integer",
 			"implements": "Converter",
 			"type_parameter": "Integer",
-			"support_java_type_key": "Integer",
+			"support_java_type_key": "java.lang.Integer",
 			"support_excel_type_key": "BOOLEAN",
 			"convert_to_java_data": {
 				"return_type": "Integer",
@@ -1024,7 +1024,7 @@
 			"package": "com.alibaba.excel.converters.integer",
 			"implements": "Converter",
 			"type_parameter": "Integer",
-			"support_java_type_key": "Integer",
+			"support_java_type_key": "java.lang.Integer",
 			"support_excel_type_key": "NUMBER",
 			"convert_to_java_data": {
 				"return_type": "Integer",
@@ -1058,7 +1058,7 @@
 			"package": "com.alibaba.excel.converters.integer",
 			"implements": "Converter",
 			"type_parameter": "Integer",
-			"support_java_type_key": "Integer",
+			"support_java_type_key": "java.lang.Integer",
 			"support_excel_type_key": "STRING",
 			"convert_to_java_data": {
 				"return_type": "Integer",
@@ -1318,7 +1318,7 @@
 			"package": "com.alibaba.excel.converters.longconverter",
 			"implements": "Converter",
 			"type_parameter": "Long",
-			"support_java_type_key": "Long",
+			"support_java_type_key": "java.lang.Long",
 			"support_excel_type_key": "BOOLEAN",
 			"convert_to_java_data": {
 				"return_type": "Long",
@@ -1360,7 +1360,7 @@
 			"package": "com.alibaba.excel.converters.longconverter",
 			"implements": "Converter",
 			"type_parameter": "Long",
-			"support_java_type_key": "Long",
+			"support_java_type_key": "java.lang.Long",
 			"support_excel_type_key": "NUMBER",
 			"convert_to_java_data": {
 				"return_type": "Long",
@@ -1394,7 +1394,7 @@
 			"package": "com.alibaba.excel.converters.longconverter",
 			"implements": "Converter",
 			"type_parameter": "Long",
-			"support_java_type_key": "Long",
+			"support_java_type_key": "java.lang.Long",
 			"support_excel_type_key": "STRING",
 			"convert_to_java_data": {
 				"return_type": "Long",
@@ -1436,7 +1436,7 @@
 			"package": "com.alibaba.excel.converters.shortconverter",
 			"implements": "Converter",
 			"type_parameter": "Short",
-			"support_java_type_key": "Short",
+			"support_java_type_key": "java.lang.Short",
 			"support_excel_type_key": "BOOLEAN",
 			"convert_to_java_data": {
 				"return_type": "Short",
@@ -1478,7 +1478,7 @@
 			"package": "com.alibaba.excel.converters.shortconverter",
 			"implements": "Converter",
 			"type_parameter": "Short",
-			"support_java_type_key": "Short",
+			"support_java_type_key": "java.lang.Short",
 			"support_excel_type_key": "NUMBER",
 			"convert_to_java_data": {
 				"return_type": "Short",
@@ -1512,7 +1512,7 @@
 			"package": "com.alibaba.excel.converters.shortconverter",
 			"implements": "Converter",
 			"type_parameter": "Short",
-			"support_java_type_key": "Short",
+			"support_java_type_key": "java.lang.Short",
 			"support_excel_type_key": "STRING",
 			"convert_to_java_data": {
 				"return_type": "Short",
@@ -1554,7 +1554,7 @@
 			"package": "com.alibaba.excel.converters.string",
 			"implements": "Converter",
 			"type_parameter": "String",
-			"support_java_type_key": "String",
+			"support_java_type_key": "java.lang.String",
 			"support_excel_type_key": "BOOLEAN",
 			"convert_to_java_data": {
 				"return_type": "String",
@@ -1596,7 +1596,7 @@
 			"package": "com.alibaba.excel.converters.string",
 			"implements": "Converter",
 			"type_parameter": "String",
-			"support_java_type_key": "String",
+			"support_java_type_key": "java.lang.String",
 			"support_excel_type_key": "ERROR",
 			"convert_to_java_data": {
 				"return_type": "String",
@@ -1638,7 +1638,7 @@
 			"package": "com.alibaba.excel.converters.string",
 			"implements": "Converter",
 			"type_parameter": "String",
-			"support_java_type_key": "String",
+			"support_java_type_key": "java.lang.String",
 			"support_excel_type_key": "",
 			"convert_to_excel_data": {
 				"return_type": "WriteCellData<?>",
@@ -1663,7 +1663,7 @@
 			"package": "com.alibaba.excel.converters.string",
 			"implements": "Converter",
 			"type_parameter": "String",
-			"support_java_type_key": "String",
+			"support_java_type_key": "java.lang.String",
 			"support_excel_type_key": "NUMBER",
 			"convert_to_java_data": {
 				"return_type": "String",
@@ -1705,7 +1705,7 @@
 			"package": "com.alibaba.excel.converters.string",
 			"implements": "Converter",
 			"type_parameter": "String",
-			"support_java_type_key": "String",
+			"support_java_type_key": "java.lang.String",
 			"support_excel_type_key": "STRING",
 			"convert_to_java_data": {
 				"return_type": "String",

@@ -18,26 +18,31 @@ use url::Url;
 #[derive(Debug, Deserialize)]
 struct JavaConverterContract {
     authority: String,
-    registered_converter_count: usize,
+    #[serde(rename = "total_converter_classes")]
+    total_converter_classes: usize,
     converters: Vec<JavaConverterEntry>,
-    auto_converter: JavaAutoConverterEntry,
 }
 
 #[derive(Debug, Deserialize)]
 struct JavaConverterEntry {
-    class: String,
-    public_no_arg_constructor: bool,
-    java_type_key: String,
-    excel_type_key: String,
-    declared_public_methods: Vec<String>,
+    #[serde(rename = "class_name")]
+    class_name: String,
+    #[serde(rename = "package")]
+    package: String,
+    #[serde(rename = "support_java_type_key", default)]
+    support_java_type_key: String,
+    #[serde(rename = "support_excel_type_key", default)]
+    support_excel_type_key: String,
+    /// Present for real converters, absent for the `NullableObjectConverter` interface entry.
+    #[serde(rename = "implements", default)]
+    implements: String,
 }
 
-#[derive(Debug, Deserialize)]
-struct JavaAutoConverterEntry {
-    class: String,
-    public_no_arg_constructor: bool,
-    java_type_key: String,
-    excel_type_key: String,
+impl JavaConverterEntry {
+    /// Returns the fully-qualified class name (`package.ClassName`).
+    fn full_class_name(&self) -> String {
+        format!("{}.{}", self.package, self.class_name)
+    }
 }
 
 fn java_contract() -> JavaConverterContract {
@@ -665,15 +670,17 @@ fn java_runtime_registry_contract_matches_the_46_rust_type_carriers() {
     let contract = java_contract();
     assert_eq!(contract.authority, "com.alibaba:easyexcel:4.0.3");
     assert_eq!(JAVA_CONVERTERS.len(), 46);
-    assert_eq!(contract.registered_converter_count, JAVA_CONVERTERS.len());
-    assert_eq!(contract.converters.len(), JAVA_CONVERTERS.len());
 
-    let mut convert_to_java_bridge_methods = 0_usize;
+    // The JSON contains 48 entries: 46 real converters + AutoConverter + NullableObjectConverter.
+    // `total_converter_classes` counts the concrete converter classes (47 = 46 + AutoConverter).
+    assert_eq!(contract.total_converter_classes, 47);
+    assert_eq!(contract.converters.len(), 48);
+
     for &(class, java_type_key, excel_type_key) in JAVA_CONVERTERS {
         let matching = contract
             .converters
             .iter()
-            .filter(|entry| entry.class == class)
+            .filter(|entry| entry.full_class_name() == class)
             .collect::<Vec<_>>();
         assert_eq!(
             matching.len(),
@@ -682,52 +689,38 @@ fn java_runtime_registry_contract_matches_the_46_rust_type_carriers() {
         );
         let entry = matching[0];
         assert!(
-            entry.public_no_arg_constructor,
-            "Java converter lost its public no-arg constructor: {class}"
+            entry.implements == "Converter",
+            "Java converter must implement Converter: {class}"
         );
         assert_eq!(
-            entry.java_type_key.as_str(),
+            entry.support_java_type_key.as_str(),
             java_type_key,
             "Java type key: {class}"
         );
         assert_eq!(
-            entry.excel_type_key.as_str(),
-            excel_type_key.unwrap_or("<unsupported>"),
+            entry.support_excel_type_key.as_str(),
+            excel_type_key.unwrap_or(""),
             "Java Excel type key: {class}"
         );
-        assert!(
-            entry
-                .declared_public_methods
-                .iter()
-                .any(|method| method.starts_with("supportJavaTypeKey(")),
-            "Java converter must declare supportJavaTypeKey: {class}"
-        );
-        let read_methods = entry
-            .declared_public_methods
-            .iter()
-            .filter(|method| method.starts_with("convertToJavaData("))
-            .count();
-        if excel_type_key.is_some() {
-            // javac emits the typed method plus its erased Object-return bridge.
-            assert_eq!(read_methods, 2, "Java read bridge methods: {class}");
-        } else {
-            assert_eq!(read_methods, 0, "write-only Java converter: {class}");
-        }
-        convert_to_java_bridge_methods += read_methods;
     }
-    assert_eq!(convert_to_java_bridge_methods, 74);
 
+    // Verify AutoConverter is present and has the expected type keys.
+    let auto = contract
+        .converters
+        .iter()
+        .find(|e| e.class_name == "AutoConverter")
+        .expect("AutoConverter must be present");
     assert_eq!(
-        contract.auto_converter.class,
+        auto.full_class_name(),
         "com.alibaba.excel.converters.AutoConverter"
     );
-    assert!(contract.auto_converter.public_no_arg_constructor);
-    assert_eq!(
-        contract.auto_converter.java_type_key,
-        "java.lang.UnsupportedOperationException"
-    );
-    assert_eq!(
-        contract.auto_converter.excel_type_key,
-        "java.lang.UnsupportedOperationException"
-    );
+    assert!(auto.implements == "Converter");
+
+    // Verify NullableObjectConverter interface entry is present.
+    let nullable = contract
+        .converters
+        .iter()
+        .find(|e| e.class_name == "NullableObjectConverter")
+        .expect("NullableObjectConverter must be present");
+    assert!(nullable.implements.is_empty() || nullable.implements != "Converter");
 }

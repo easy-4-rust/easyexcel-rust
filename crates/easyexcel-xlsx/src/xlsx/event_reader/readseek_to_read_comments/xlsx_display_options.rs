@@ -11,6 +11,12 @@ pub struct XlsxDisplayOptions {
     ///
     /// 动态读取和自定义 Converter 需要该元数据；只读取不含 `BigDecimal` 的静态
     /// scalar model 时可以关闭，避免每个数字单元格都构造 `BigDecimal`。
+    ///
+    /// **高层 API 自动覆盖**：`EasyExcel::read` 会根据 schema 和 converter
+    /// 配置通过 `requires_decimal_metadata`（`read_xlsx.rs:107-116`）自动决定
+    /// 此值。typed 非 BigDecimal schema + 标准 converter 路径下自动设为 `false`，
+    /// 无需低层用户手动干预。直接使用 `XlsxCellEventReader` 的低层 API 用户
+    /// 应按需显式传 `false` 以避免不必要的 BigDecimal 构造。
     pub retain_decimal_values: bool,
     /// 需要保留数字显示文本的物理列；`None` 表示全部列。
     ///

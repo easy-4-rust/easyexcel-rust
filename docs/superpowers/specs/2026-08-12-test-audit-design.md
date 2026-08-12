@@ -1,17 +1,27 @@
 # EasyExcel Java→Rust Test Audit Report (Phase 5.2 Update)
 
 > Generated 2026-07-21. Updated after Phase 5.2 BIFF8 template fill implementation.
+> **2026-08-12 数字校正**：原报告声称 "1315/1315 passed"，与实测不符。
+> 以下为 2026-08-12 `cargo test --workspace` 全量实测结果。
 
 ## Executive Summary
 
-| Metric | Value |
-|--------|-------|
-| Java test classes | **66** |
-| Java @Test methods | **335** |
-| Rust test methods (total, all crates) | **1315** |
-| Golden tests passing | **88/88** ✅ |
-| Parity tests passing | **152/152** ✅ (95 full + 57 basic) |
-| Full suite passing | **1315/1315** ✅ |
+| Metric | 旧值（声称） | 2026-08-12 实测 | 说明 |
+|--------|-------------|----------------|------|
+| Java test classes | **66** | 66 | 不变 |
+| Java @Test methods | **335** | 335 | 不变 |
+| Rust test methods (total, all crates) | ~~1315~~ | **4,449** | 25+ 测试二进制合计 |
+| Golden tests passing | **88/88** | 88/88 | 不变 |
+| Parity tests passing | **152/152** | 152/152 | 不变 |
+| Full suite passing | ~~1315/1315~~ | **4,447/4,449** | 2 failed（fill executor） |
+| `#[ignore]` annotations | ~~0~~ | **2** | 1 (easyexcel-xls) + 1 (easyexcel-test) |
+
+> **测量方式**：`cargo test --workspace 2>&1 | grep "^test result:"` 汇总全部 25+ 个
+> 测试二进制。easyexcel lib 主二进制 2197 passed / 0 failed / 0 ignored。
+> easyexcel-derive 1253 passed。easyexcel-xlsx 285 passed。easyexcel-xls 39 passed / 1 ignored。
+> easyexcel-test 集成测试 49 passed / 2 failed / 1 ignored。
+> 失败的 2 个测试为 `excel_write_fill_executor` 相关（`executor_fill_config_variants_pass_through`、
+> `executor_fill_sheet_default_and_named_pass_through`）。
 
 ### Gap breakdown after Phase 5.2
 

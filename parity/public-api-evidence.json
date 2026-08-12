@@ -549,7 +549,7 @@
     "public-api-evidence/excel-analyser.json",
     "public-api-evidence/poi-enums.json",
     "public-api-evidence/style-annotations.json",
-    "templates/converters.json"
+    "public-api-evidence/converters-materialized.json"
   ],
   "schema_version": 2
 }

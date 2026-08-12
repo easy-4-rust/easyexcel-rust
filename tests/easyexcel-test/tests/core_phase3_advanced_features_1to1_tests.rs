@@ -111,6 +111,8 @@ mod hyperlink_cell_test {
     }
 
     /// Java: applying hyperlink decoration wraps the display text.
+    /// `effective_value()` returns `HyperlinkWithMetadata` when `HyperlinkData`
+    /// is present on the `WriteCellData`, matching the Java `HyperlinkData` carrier.
     #[test]
     fn t04_write_hyperlink07() {
         let col = <HyperlinkRow as ExcelRowTrait>::schema()[0];
@@ -127,11 +129,11 @@ mod hyperlink_cell_test {
             use_1904_windowing: false,
         };
         let cv = easyexcel::core::IntoExcelCell::to_excel_cell(&decorated, &ctx).unwrap();
-        if let CellValue::Hyperlink { url, text } = &cv {
-            assert_eq!(url, "https://example.com");
+        if let CellValue::HyperlinkWithMetadata { address, text, .. } = &cv {
+            assert_eq!(address, "https://example.com");
             assert_eq!(text, "example");
         } else {
-            panic!("expected CellValue::Hyperlink, got {cv:?}");
+            panic!("expected CellValue::HyperlinkWithMetadata, got {cv:?}");
         }
     }
 }
@@ -170,6 +172,11 @@ mod comment_cell_test {
     }
 
     /// Java: applying comment decoration wraps value + attaches note text.
+    ///
+    /// `apply_decorations` stores `CommentData` on `WriteCellData`; the
+    /// `effective_value()` path then emits `CommentWithMetadata` (full Java
+    /// `CommentData` with rich-text and anchor metadata), not the simpler
+    /// `Comment` variant.
     #[test]
     fn t06_write_comment07() {
         let col = <CommentRow as ExcelRowTrait>::schema()[0];
@@ -186,11 +193,11 @@ mod comment_cell_test {
             use_1904_windowing: false,
         };
         let cv = easyexcel::core::IntoExcelCell::to_excel_cell(&decorated, &ctx).unwrap();
-        if let CellValue::Comment { value, text } = &cv {
-            assert_eq!(text, "note text");
+        if let CellValue::CommentWithMetadata { value, comment } = &cv {
+            assert_eq!(comment.note_text(), "note text", "comment text must match");
             assert_eq!(**value, CellValue::String("hello".to_owned()));
         } else {
-            panic!("expected CellValue::Comment, got {cv:?}");
+            panic!("expected CellValue::CommentWithMetadata, got {cv:?}");
         }
     }
 }

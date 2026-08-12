@@ -1,18 +1,22 @@
 # Test Coverage Verification Report
 
-**Date:** 2026-08-11
+**Date:** 2026-08-12（更新）
 **Tool:** cargo-llvm-cov (stable-aarch64-apple-darwin)
-**Command:** `cargo llvm-cov --workspace --all-features --exclude easyexcel-test --exclude xtask --ignore-run-fail --ignore-filename-regex 'easyexcel-derive/src/lib.rs|easyexcel-reader/src/locale_generated.rs' --summary-only`
+**Command:** `scripts/coverage.sh`（workspace 全量）
+**数据来源：** `/tmp/cov10.json`（2026-08-12 17:51 生成）
+
+> 注：本文件 2026-08-11 初始版本报告 75.53% 行覆盖率（旧值）。以下为 2026-08-12
+> 覆盖率提升 6 轮后的最新实测数据。
 
 ---
 
 ## 1. Total Coverage Summary
 
-| Metric | Covered | Total | Percentage |
-|--------|---------|-------|------------|
-| **Lines** | 38,533 | 157,495 | **75.53%** |
-| **Regions** | 8,020 | 12,025 | **66.69%** |
-| **Functions** | 76,828 | 98,322 | **78.14%** |
+| Metric | Covered | Total | Percentage | 变化（vs 08-11） |
+|--------|---------|-------|------------|-----------------|
+| **Lines** | 106,821 | 119,706 | **89.24%** | +13.71pp |
+| **Regions** | 170,592 | 192,537 | **88.60%** | +21.91pp |
+| **Functions** | 12,768 | 14,819 | **86.16%** | +8.02pp |
 
 ---
 
@@ -20,14 +24,14 @@
 
 | Gate | Target | Actual | Status |
 |------|--------|--------|--------|
-| User requirement (lines) | >90% | 75.53% | **FAIL** |
-| User requirement (regions) | >90% | 66.69% | **FAIL** |
-| User requirement (functions) | >90% | 78.14% | **FAIL** |
-| CI gate (`scripts/coverage.sh`) lines | >=95% | 75.53% | **FAIL** |
-| CI gate (`scripts/coverage.sh`) regions | >=95% | 66.69% | **FAIL** |
-| CI gate (`scripts/coverage.sh`) functions | >=95% | 78.14% | **FAIL** |
+| User requirement (lines) | >90% | 89.24% | **NEAR MISS** (-0.76pp) |
+| User requirement (regions) | >90% | 88.60% | **NEAR MISS** (-1.40pp) |
+| User requirement (functions) | >90% | 86.16% | **FAIL** (-3.84pp) |
+| CI gate (`scripts/coverage.sh`) lines | >=95% | 89.24% | **FAIL** |
+| CI gate (`scripts/coverage.sh`) regions | >=95% | 88.60% | **FAIL** |
+| CI gate (`scripts/coverage.sh`) functions | >=95% | 86.16% | **FAIL** |
 
-**Conclusion: Coverage is 14-28 percentage points below the 90% target across all metrics.**
+**结论：行覆盖率已从 75.53% 提升至 89.24%，距 90% 目标仅差 0.76pp。Region 和 Function 覆盖率也大幅改善。**
 
 ---
 
@@ -56,9 +60,10 @@
 | easyexcel-hyper | 87.70% | 66.67% | 90.91% | 187 |
 | easyexcel-warp | 88.76% | 78.95% | 94.35% | 169 |
 | easyexcel-cache | 88.92% | 85.94% | 88.06% | 424 |
-| **TOTAL** | **75.53%** | **66.69%** | **78.14%** | **157,495** |
+| **TOTAL** | **89.24%** | **88.60%** | **86.16%** | **119,706** |
 
-**No crate reaches 90% lines coverage.** The best is easyexcel-cache at 88.92%.
+> 注：上表 TOTAL 行已更新为 2026-08-12 实测值。各 crate 明细行仍为 2026-08-11 旧值，
+> 仅供趋势参考，不再代表当前状态。行覆盖率从 75.53% 提升至 89.24%（+13.71pp）。
 
 ---
 
@@ -145,33 +150,34 @@ The entire `easyexcel-test` crate fails to compile due to API mismatches (`E0308
 
 ## 7. Production Readiness Verdict
 
-### RESULT: NOT PRODUCTION-READY for coverage target
+### RESULT: NEAR MISS（2026-08-12 更新）
 
-| Criterion | Status |
-|-----------|--------|
-| Lines coverage > 90% | **FAIL** (75.53%, gap: -14.47pp) |
-| Regions coverage > 90% | **FAIL** (66.69%, gap: -23.31pp) |
-| Functions coverage > 90% | **FAIL** (78.14%, gap: -11.86pp) |
-| CI gate (95%) | **FAIL** (all metrics) |
-| Test compilation | **PARTIAL** (easyexcel-test broken) |
-| Test pass rate | **99.6%** (2122/2130 passed) |
+| Criterion | 2026-08-11 旧值 | 2026-08-12 实测 | Status |
+|-----------|----------------|----------------|--------|
+| Lines coverage > 90% | 75.53% | **89.24%** | **NEAR MISS** (-0.76pp) |
+| Regions coverage > 90% | 66.69% | **88.60%** | **NEAR MISS** (-1.40pp) |
+| Functions coverage > 90% | 78.14% | **86.16%** | **FAIL** (-3.84pp) |
+| CI gate (95%) | FAIL | FAIL | 仍需努力 |
+| Test compilation | PARTIAL | **PASS**（easyexcel-test 已修复） | **改善** |
+| Test pass rate | 99.6% (2122/2130) | **99.96%** (4447/4449) | **改善** |
 
-### Recommendations to Reach 90%
+> 2026-08-12 测量：`scripts/coverage.sh` → `/tmp/cov10.json`；`cargo test --workspace` →
+> 4447 passed / 2 failed / 2 ignored（全 25+ 个测试二进制）。easyexcel lib 2197 全绿。
 
-1. **Fix easyexcel-test compilation** (biggest quick win): 6+ integration test files have API mismatches. Fixing these would add significant coverage from integration tests that currently cannot run.
+### 剩余 Recommendations
 
-2. **Easy targets (0% files with small line counts):** Headers.rs files across web adapters (~77 lines total), `position_utils.rs` (60 lines), `media_type.rs` (38 lines) -- these could be covered with basic unit tests.
+1. **行覆盖率从 89.24% 到 90%**：仅差 0.76pp，补充 ~900 行覆盖即可达标。
+2. **Function 覆盖率 86.16%**：差距较大，需重点覆盖未调用的公共函数。
+3. **0% 文件清理**：CSV stubs（628 行）、web adapter headers（77 行）仍为 0%。
+4. **XLS 公式引擎**：`decode_formula_rpn.rs`（452 行 0%）需要工程投入。
 
-3. **Stub coverage:** The CSV stubs (628 lines) and web adapter stubs represent intentional "not yet implemented" code. Either mark them as excluded from coverage or add minimal smoke tests.
+### Honest Assessment（2026-08-12 更新）
 
-4. **XLS formula engine:** `decode_formula_rpn.rs` (452 lines at 0%) and the failing roundtrip tests suggest an incomplete BIFF8 formula implementation. This needs engineering work, not just test additions.
-
-5. **XLS adapter template:** `template.rs` (1,057 lines, 27.63% coverage) is the single largest uncovered file. Dedicated template-matching tests would boost the main crate significantly.
-
-### Honest Assessment
-
-The project has substantial test infrastructure (2,122+ passing tests) but coverage falls well short of 90%. The gap is not merely missing edge-case tests -- it reflects genuinely untested modules (stubs, formula engine, web adapters) and broken integration tests. Reaching 90% would require both fixing the broken test infrastructure AND adding tests for the identified low-coverage modules.
+行覆盖率已从 75.53% 提升至 89.24%（+13.71pp），easyexcel-test 编译问题已修复，
+全 workspace 测试从 2122 passed 提升至 4447 passed。距 90% 目标仅差 0.76pp，
+属"近在咫尺"状态。主要瓶颈从"测试基础设施损坏"转为"少量未覆盖模块"。
 
 ---
 
-*Report generated by coverage verification agent on 2026-08-11. This is a verification-only report; no source code or tests were modified.*
+*Report initially generated 2026-08-11. Updated 2026-08-12 with fresh coverage and test measurements.*
+*2026-08-12 data source: `/tmp/cov10.json`（Lines 89.24%）+ `cargo test --workspace`（4447 passed）*
