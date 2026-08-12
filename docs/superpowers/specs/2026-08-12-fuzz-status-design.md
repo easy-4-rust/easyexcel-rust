@@ -70,7 +70,7 @@ done
 Each target has a seeded corpus in `fuzz/corpus/<target>/`:
 
 - **XLSX/XLS:** Real conformance test files from `tests/easyexcel-web-conformance/src/fixtures/`
-- **CSV:** Real migration file-map from `docs/migration/file-map.csv`
+- **CSV:** Real migration file-map from `docs/data/migration/file-map.csv`
 - **Formula:** Hand-crafted Excel formulas (`=SUM(A1:A10)`, `=IF(...)`)
 - **Markdown:** GFM table with headers and data rows
 

@@ -16,7 +16,7 @@ Workspace 同时提供 `easyexcel-model`、`easyexcel-formula`、`easyexcel-io`�
 XLS/XLSX/CSV 后端和表格转换。library-first 命令应用层由独立 `xls-cli`
 产品仓库自行维护；`easyexcel` 门面已不再依赖完整 `xls` fork。
 
-> [English README](README.md) · [使用指南](docs/GUIDE.md) · [API 参数](docs/API.md) · [架构](docs/ARCHITECTURE.md) · [xls-cli 整合计划](docs/xls-cli-integration-plan.md) · [能力矩阵](docs/xls-cli-capability-matrix.md)
+> [English README](README.md) · [使用指南](docs/GUIDE.md) · [API 参数](docs/API.md) · [架构](docs/ARCHITECTURE.md) · [xls-cli 整合计划](docs/superpowers/plans/2026-08-12-xls-cli-integration.md) · [能力矩阵](docs/superpowers/specs/2026-08-12-xls-cli-capability-matrix-design.md)
 
 ---
 
@@ -382,7 +382,7 @@ xychart-beta
 | csv-event-read | 1,227,002 | 1,293,649 |
 | xls-event-read | 70,379 | 74,651 |
 
-数据来源：`docs/ci/NIGHTLY_DRYRUN_REPORT.md`
+数据来源：`docs/superpowers/specs/2026-08-12-nightly-dryrun-report-design.md`
 
 ### 优化时间线
 
@@ -473,9 +473,9 @@ Markdown 是带结构化损失报告的语义投影，不承诺与 Excel 无损 
 | [使用指南](docs/GUIDE.md) | 含示例的详细使用指南 |
 | [API 参数](docs/API.md) | 完整 API 参数参考 |
 | [架构](docs/ARCHITECTURE.md) | Crate 布局、数据流、依赖方向 |
-| [迁移文档](docs/migration/TEST_AUDIT_REPORT.md) | Java 到 Rust 测试对齐报告 |
-| [xls-cli 整合计划](docs/xls-cli-integration-plan.md) | xls-cli 产品整合详情 |
-| [能力矩阵](docs/xls-cli-capability-matrix.md) | xls-cli 运行时能力矩阵 |
+| [迁移文档](docs/superpowers/specs/2026-08-12-test-audit-design.md) | Java 到 Rust 测试对齐报告 |
+| [xls-cli 整合计划](docs/superpowers/plans/2026-08-12-xls-cli-integration.md) | xls-cli 产品整合详情 |
+| [能力矩阵](docs/superpowers/specs/2026-08-12-xls-cli-capability-matrix-design.md) | xls-cli 运行时能力矩阵 |
 
 ## 许可证
 

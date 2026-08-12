@@ -947,9 +947,9 @@ def main() -> int:
     parser.add_argument(
         "--java-api",
         type=Path,
-        default=Path("docs/java-public-api-v4.0.3.json"),
+        default=Path("docs/data/java-public-api-v4.0.3.json"),
         help=(
-            "Path to the Java public API manifest JSON (default: docs/java-public-api-v4.0.3.json). "
+            "Path to the Java public API manifest JSON (default: docs/data/java-public-api-v4.0.3.json). "
             "Expected fields: schema_version, artifact, easyexcel_version, java_repo, jars, "
             "types[], members[], summary.public_api_items."
         ),
@@ -957,9 +957,9 @@ def main() -> int:
     parser.add_argument(
         "--rust-api",
         type=Path,
-        default=Path("docs/rust-public-api.json"),
+        default=Path("docs/data/rust-public-api.json"),
         help=(
-            "Path to the Rust public API manifest JSON (default: docs/rust-public-api.json). "
+            "Path to the Rust public API manifest JSON (default: docs/data/rust-public-api.json). "
             "Expected fields: schema_version, artifact, rust_repo, extractor, scope, "
             "packages[].snapshots[].items[].id/kind/signature, summary."
         ),

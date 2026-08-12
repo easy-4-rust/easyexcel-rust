@@ -5,7 +5,7 @@
 //! processing_timeout、RowLimitExceeded 传播、解析错误转换以及 `Stream` trait
 //! 适配。
 //!
-//! 8 个测试对应 `docs/test/COVERAGE-GAP-CLOSURE.md` 子任务一（T1.1 - T1.8）。
+//! 8 个测试对应 `docs/superpowers/plans/2026-08-12-coverage-improvement.md` 子任务一（T1.1 - T1.8）。
 
 use std::time::Duration;
 

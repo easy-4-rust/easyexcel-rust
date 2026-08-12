@@ -22,9 +22,9 @@ fn run_in(dir: &Path, args: &[&str]) -> Output {
         .expect("spawn")
 }
 
-/// 在临时目录中构造 `docs/migration/file-map.csv`。
+/// 在临时目录中构造 `docs/data/migration/file-map.csv`。
 fn write_map(dir: &Path, content: &str) {
-    let map_dir = dir.join("docs/migration");
+    let map_dir = dir.join("docs/data/migration");
     fs::create_dir_all(&map_dir).expect("create dirs");
     fs::write(map_dir.join("file-map.csv"), content).expect("write map");
 }
@@ -84,7 +84,7 @@ fn xtask_missing_map_file_fails() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(
-        text.contains("missing docs/migration/file-map.csv"),
+        text.contains("missing docs/data/migration/file-map.csv"),
         "{text}"
     );
 }

@@ -60,12 +60,12 @@ python3 scripts/generate_java_public_api.py \
     --java-root "$JAVA_REPO" \
     --jar "$JAVA_CORE_JAR" \
     --javap "$JAVAP" \
-    --output docs/java-public-api-v4.0.3.json \
-    --markdown-output docs/java-public-api-v4.0.3.md \
+    --output docs/data/java-public-api-v4.0.3.json \
+    --markdown-output docs/data/java-public-api-v4.0.3.md \
     --check
 python3 scripts/generate_rust_public_api.py \
     --rust-root "$REPO_ROOT" \
-    --output docs/rust-public-api.json \
+    --output docs/data/rust-public-api.json \
     --check
 
 echo "[2/4] Java source inventory and Rust compile-presence gate"
@@ -86,8 +86,8 @@ echo "[4/4] Java-produced golden and public API evidence gate"
 ./scripts/export-java-golden.sh --check
 cargo test -p easyexcel-test --test java_golden_tests
 python3 scripts/suggest_public_api_mapping.py \
-    --java-api docs/java-public-api-v4.0.3.json \
-    --rust-api docs/rust-public-api.json \
+    --java-api docs/data/java-public-api-v4.0.3.json \
+    --rust-api docs/data/rust-public-api.json \
     --output target/public-api-candidates.json
 python3 scripts/apply_public_api_evidence.py \
     --mapping target/public-api-candidates.json \
@@ -102,10 +102,10 @@ python3 scripts/run_public_api_evidence.py \
     --output target/public-api-evidence-results.json \
     --repo-root "$REPO_ROOT"
 python3 scripts/verify_public_api_parity.py \
-    --java-api docs/java-public-api-v4.0.3.json \
-    --rust-api docs/rust-public-api.json \
+    --java-api docs/data/java-public-api-v4.0.3.json \
+    --rust-api docs/data/rust-public-api.json \
     --mapping target/java-rust-public-api.json \
     --evidence-catalog parity/public-api-evidence.json \
     --evidence-results target/public-api-evidence-results.json \
     --repo-root "$REPO_ROOT" \
-    --report docs/public-api-parity-report.json
+    --report docs/data/public-api-parity-report.json

@@ -19,7 +19,7 @@
 | evidence catalog `schema_version` | **1**（未升级） | `parity/public-api-evidence.json` `schema_version:1`；`parity/public-api-evidence/converters.json` 含 `family_evidence`（3 条） | 与输入一致 |
 | 4 个 POI enum | **已全部实现并已映射**（candidate/idiomatic_alternative） | `crates/easyexcel/src/enums/poi/{border_style,fill_pattern_type,horizontal_alignment,vertical_alignment}_enum.rs`；parity 中 `ContentStyle#borderBottom()` 等已 candidate | 输入称"4 个缺失"——**已过时**，gap 缩为"补 verified 证据" |
 | 9 个 write/style 注解 | **9 个 parser 全部已实现**（`#[excel(...)]` 已支持） | `crates/easyexcel-derive/src/annotation/write/style/{column_width,head_row_height,content_row_height,head_style,content_style,head_font_style,content_font_style,once_absolute_merge,content_loop_merge}.rs` | 输入称"缺失 9 个注解"——**已过时**，gap 缩为"补 verified 证据 + 桥接" |
-| 9 个 Java 测试类 | manifest 已 `mapped_unverified`，但其中 **7 个类无对应 Rust 测试 mod**（仅静态映射指向同名共享文件） | `docs/source-test-parity.json`；`grep -rl "mod complex_head_data_test" tests/` → NONE | 与输入"未覆盖"一致，但机制更精确 |
+| 9 个 Java 测试类 | manifest 已 `mapped_unverified`，但其中 **7 个类无对应 Rust 测试 mod**（仅静态映射指向同名共享文件） | `docs/data/source-test-parity.json`；`grep -rl "mod complex_head_data_test" tests/` → NONE | 与输入"未覆盖"一致，但机制更精确 |
 
 **结论**：真正的闭环工作量集中在 3 类——(a) evidence catalog 的 `family_evidence` → 逐 ID 物化；(b) 84 unmapped + 479 ambiguous 的逐项策略裁定与消歧；(c) 9 个测试类的真实 Rust 测试实现。POI enum 与 style 注解的"迁移"已完成，剩余仅为"补 verified 证据"。
 
@@ -299,7 +299,7 @@ if status != "verified":
   3. 默认值不一致 → 在 `field_options.rs`/`struct_options.rs` 的 `Option<T>` 默认 None 语义上对齐 Java `-1`/`DEFAULT`。
 - **验收标准**：
   - `cargo test -p easyexcel-derive` 全部通过。
-  - 9 个注解各自 Java 属性数 == Rust parser 支持的 meta key 数（人工核对表见 `docs/migration/语义迁移对照表.md`，若有差异在任务里标注"待确认"）。
+  - 9 个注解各自 Java 属性数 == Rust parser 支持的 meta key 数（人工核对表见 `docs/data/migration/语义迁移对照表.md`，若有差异在任务里标注"待确认"）。
 - **估算**：4h
 - **优先级**：P1
 - **依赖**：—
@@ -369,7 +369,7 @@ if status != "verified":
 
 ### 阶段 F：9 个 Java 测试类的真实 Rust 实现（子任务 6）
 
-> **澄清**：`docs/source-test-parity.json` 中这 9 个类标为 `mapped_unverified`，但 `rust_evidence` 指向的是同名共享文件（如 `sort_data_test_to_template_data_test.rs`），且 `grep -rl "mod complex_head_data_test" tests/` 返回 NONE——即**真正按 Java 方法名 1:1 实现的测试 mod 不存在**。`generate_source_test_parity.py:114` 的 `rust_evidence` 靠扫 Rust `#[test]` 函数 doc 注释里的 `JavaClass#method` 引用匹配，故 manifest 的"映射"是 doc 注释级而非行为级。本阶段为每个类新建独立测试文件并加 `/// Java: <FQCN>#<method>` 注解。
+> **澄清**：`docs/data/source-test-parity.json` 中这 9 个类标为 `mapped_unverified`，但 `rust_evidence` 指向的是同名共享文件（如 `sort_data_test_to_template_data_test.rs`），且 `grep -rl "mod complex_head_data_test" tests/` 返回 NONE——即**真正按 Java 方法名 1:1 实现的测试 mod 不存在**。`generate_source_test_parity.py:114` 的 `rust_evidence` 靠扫 Rust `#[test]` 函数 doc 注释里的 `JavaClass#method` 引用匹配，故 manifest 的"映射"是 doc 注释级而非行为级。本阶段为每个类新建独立测试文件并加 `/// Java: <FQCN>#<method>` 注解。
 
 #### F1 实现 ComplexHeadDataTest（7 @Test）
 - **Java 源**：`.../core/head/ComplexHeadDataTest.java`（方法：`t01ReadAndWrite07`/`t02ReadAndWrite03`/`t03ReadAndWriteCsv`/`t11-t13ReadAndWriteAutomaticMergeHead*`/`t21-t23*`，具体以 Java 为准）
@@ -431,10 +431,10 @@ if status != "verified":
 - **优先级**：P1
 - **依赖**：F1
 
-#### F7 更新 docs/source-test-parity.json 与 Java测试对应关系.md
-- **涉及文件**：`docs/source-test-parity.json`（重生成）、`docs/migration/Java测试对应关系.md`（更新 Rust 文件列指向真实独立 mod）
+#### F7 更新 docs/data/source-test-parity.json 与 Java测试对应关系.md
+- **涉及文件**：`docs/data/source-test-parity.json`（重生成）、`docs/data/migration/Java测试对应关系.md`（更新 Rust 文件列指向真实独立 mod）
 - **动作步骤**：
-  1. 跑 `python3 scripts/generate_source_test_parity.py --java-root <java> --rust-root . --output docs/source-test-parity.json` 重生成。
+  1. 跑 `python3 scripts/generate_source_test_parity.py --java-root <java> --rust-root . --output docs/data/source-test-parity.json` 重生成。
   2. 核对 9 个类的 `rust_evidence` 不再指向共享 `sort_data_test_to_template_data_test.rs`，而是各自的独立 case 文件。
   3. 更新 `Java测试对应关系.md` 表格的 Rust 文件列。
 - **验收标准**：
@@ -611,7 +611,7 @@ python3 -c "import json;from collections import Counter;d=json.load(open('parity
 - 物化器：`/Users/wandl/workspaces/workspace-github-easy-4-rust/easyexcel-rust/scripts/materialize_public_api_evidence.py`
 - overlay 应用：`/Users/wandl/workspaces/workspace-github-easy-4-rust/easyexcel-rust/scripts/apply_public_api_evidence.py`
 - 证据执行：`/Users/wandl/workspaces/workspace-github-easy-4-rust/easyexcel-rust/scripts/run_public_api_evidence.py`
-- 测试静态映射：`/Users/wandl/workspaces/workspace-github-easy-4-rust/easyexcel-rust/scripts/generate_source_test_parity.py` + `docs/source-test-parity.json`
+- 测试静态映射：`/Users/wandl/workspaces/workspace-github-easy-4-rust/easyexcel-rust/scripts/generate_source_test_parity.py` + `docs/data/source-test-parity.json`
 - derive 注解入口：`/Users/wandl/workspaces/workspace-github-easy-4-rust/easyexcel-rust/crates/easyexcel-derive/src/annotation/write/style/`
 - POI enum：`/Users/wandl/workspaces/workspace-github-easy-4-rust/easyexcel-rust/crates/easyexcel/src/enums/poi/`
 - facade 边界审计：`/Users/wandl/workspaces/workspace-github-easy-4-rust/easyexcel-rust/xtask/src/facade_boundary/audit.rs`

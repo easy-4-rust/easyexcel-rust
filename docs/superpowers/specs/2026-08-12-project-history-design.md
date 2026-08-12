@@ -64,7 +64,7 @@
 | **决策** | 读侧不引入写侧风格的 `GzipSheetDataWriter` spill-to-disk 机制，改为对 XLSX ZIP entry 按需读取（lazy parts） |
 | **理由** | 内存放大点在 `reader.rs:86-99` 的全包 DOM 物化（所有 zip entry 一次性 `read_to_end`），而非 worksheet body（已是 SAX 流式）；`ZipArchive` 天然支持随机访问，spill 临时文件纯属多此一举 |
 | **替代方案** | (a) 完整读侧 spill（复杂度高、维护成本与写侧不对称）；(b) 维持现状全量读取（Web 场景资源限制形同虚设） |
-| **详细文档** | `docs/performance/READ-CONSTANT-MEMORY-RFC.md` |
+| **详细文档** | `docs/superpowers/specs/2026-08-12-read-spill-decision-design.md` |
 
 ### ADR-5：公式引擎不做 dirty-cell 增量重算（短期）
 
@@ -73,7 +73,7 @@
 | **决策** | 短期维持 `Engine::recalc()` 全量重算，不引入结果缓存或 dirty 标记 |
 | **理由** | 当前没有基准证明 recalc 是真热点；AST 缓存已覆盖最贵的解析部分；正确性风险高（spill 收敛 + volatile 函数 + range 依赖的 dirty 传播交互复杂） |
 | **替代方案** | (a) dirty-cell 增量重算（中长期演进路径，需先补 criterion 基准）；(b) 全量重算 + 结果缓存表（指纹方案对简单公式是负收益） |
-| **详细文档** | `docs/performance/FORMULA-RESULT-CACHE-RFC.md` |
+| **详细文档** | `docs/superpowers/specs/2026-08-12-formula-cache-decision-design.md` |
 
 ### ADR-6：Moka 缓存不做 capacity/TTL/TTI
 
@@ -95,16 +95,16 @@
 
 ## 3. ROADMAP 状态仪表盘
 
-> 引用来源：`docs/ROADMAP-2026Q3.md`（v1.3，2026-08-11）
+> 引用来源：`docs/superpowers/plans/2026-08-12-q3-roadmap.md`（v1.3，2026-08-11）
 
 ### 总览
 
 | 工作流 | 子文档 | 任务项 | 工时(h) | 当前状态 |
 |--------|--------|-------:|--------:|----------|
-| ① 迁移 gap 闭环 | `docs/migration/ROADMAP-gap-closure.md` | 31 | 116 | A1 完成；A2 阻塞于 A3；B/C/D/E/F/G 待开始 |
-| ② 事件读追上 Java 吞吐 | `docs/performance/EVENT-READ-OPTIMIZATION.md` | 13 | 73 | T1.1 完成；T2.1/T3.1/T5.1/T6.2 待开始 |
-| ③ 补测试盲区 | `docs/test/COVERAGE-GAP-CLOSURE.md` | 42 | 44.6 | T1.1-T1.8 完成（8/8 测试绿）；其余待开始 |
-| ④ 恒定内存与写优化 | `docs/performance/WRITE-CONSTANT-MEMORY-OPTIMIZATION.md` | 8 + 2 RFC | 15.5 | 1.1 完成；2.1/3.1/4.1/5.1/6.1 待开始 |
+| ① 迁移 gap 闭环 | `docs/superpowers/plans/2026-08-12-migration-gap-closure.md` | 31 | 116 | A1 完成；A2 阻塞于 A3；B/C/D/E/F/G 待开始 |
+| ② 事件读追上 Java 吞吐 | `docs/superpowers/plans/2026-08-12-performance-optimization.md` | 13 | 73 | T1.1 完成；T2.1/T3.1/T5.1/T6.2 待开始 |
+| ③ 补测试盲区 | `docs/superpowers/plans/2026-08-12-coverage-improvement.md` | 42 | 44.6 | T1.1-T1.8 完成（8/8 测试绿）；其余待开始 |
+| ④ 恒定内存与写优化 | `docs/superpowers/plans/2026-08-12-write-optimization.md` | 8 + 2 RFC | 15.5 | 1.1 完成；2.1/3.1/4.1/5.1/6.1 待开始 |
 
 ### 已完成项
 
@@ -151,7 +151,7 @@
 
 ## 4. 待确认事项
 
-> 来源：`docs/ROADMAP-2026Q3.md` 第 5 节（10 项）
+> 来源：`docs/superpowers/plans/2026-08-12-q3-roadmap.md` 第 5 节（10 项）
 
 | ID | 待确认事项 | 影响范围 | 当前状态 |
 |----|-----------|----------|----------|
@@ -159,7 +159,7 @@
 | ①-C | `mapping_resolutions` 落盘位置（顶层 vs 子文件） | C 阶段执行方式 | 待确认 |
 | ①-G1 | gate4 catalog 比对范围（catalog 是否需检入） | G1 验收 | 待确认 |
 | ②-T2.1 | `RowConsumer::process` 签名变更是否允许（影响 trait ABI） | scratch 复用方案 | 待确认 |
-| ②-T4.1 | 并发管线方案 A（仅转换并发）vs B（多 sheet XML 并发） | 并发管线范围 | 待确认（RFC 已产出，见 `docs/performance/EVENT-READ-OPTIMIZATION.md`） |
+| ②-T4.1 | 并发管线方案 A（仅转换并发）vs B（多 sheet XML 并发） | 并发管线范围 | 待确认（RFC 已产出，见 `docs/superpowers/plans/2026-08-12-performance-optimization.md`） |
 | ②-T5.1 | Linux 固定 runner 机型规格 | 基线可复现性 | 待确认 |
 | ③-T1.4 | 稳定触发 `processing_timeout` 的夹具策略 | 超时测试可行性 | ✅ 已解决：用 `Duration::from_nanos(1)` 触发 |
 | ③-T3.6 | 各框架 test harness 是否支持中途 drop body stream | 取消传播测试 | 待确认 |
@@ -175,39 +175,39 @@
 | 文档 | 路径 | 说明 |
 |------|------|------|
 | 架构总览 | `docs/ARCHITECTURE.md` | crate 分层、依赖方向、数据流、格式支持边界、代码放置规则、性能架构 |
-| 路线图 | `docs/ROADMAP-2026Q3.md` | 2026 Q3 推进路线图总清单（4 工作流、94 任务、~249h） |
+| 路线图 | `docs/superpowers/plans/2026-08-12-q3-roadmap.md` | 2026 Q3 推进路线图总清单（4 工作流、94 任务、~249h） |
 | Changelog | `CHANGELOG.md` | 4 个版本发布记录（v0.1.0-alpha.1 ~ v0.1.3） |
 
 ### 迁移与对齐
 
 | 文档 | 路径 | 说明 |
 |------|------|------|
-| 迁移 gap 闭环 | `docs/migration/ROADMAP-gap-closure.md` | 31 任务 WBS：evidence catalog schema / unmapped / ambiguous / 注解 / enum / 测试类移植 |
-| Java 测试对应关系 | `docs/migration/Java测试对应关系.md` | Java 测试类与 Rust 测试的静态映射 |
+| 迁移 gap 闭环 | `docs/superpowers/plans/2026-08-12-migration-gap-closure.md` | 31 任务 WBS：evidence catalog schema / unmapped / ambiguous / 注解 / enum / 测试类移植 |
+| Java 测试对应关系 | `docs/data/migration/Java测试对应关系.md` | Java 测试类与 Rust 测试的静态映射 |
 
 ### 性能优化
 
 | 文档 | 路径 | 说明 |
 |------|------|------|
-| 事件读优化 | `docs/performance/EVENT-READ-OPTIMIZATION.md` | 13 任务 WBS：205K → 307K+ rows/s 目标分解 |
-| 写恒定内存优化 | `docs/performance/WRITE-CONSTANT-MEMORY-OPTIMIZATION.md` | 8 任务 + 2 RFC：样式去重、状态机文档、Moka 审计、spill 矩阵 |
-| 读恒定内存 RFC | `docs/performance/READ-CONSTANT-MEMORY-RFC.md` | 决策：不做 spill，改做包级惰性加载 |
-| 公式缓存 RFC | `docs/performance/FORMULA-RESULT-CACHE-RFC.md` | 决策：短期维持全量重算，中长期评估 dirty-cell 增量 |
+| 事件读优化 | `docs/superpowers/plans/2026-08-12-performance-optimization.md` | 13 任务 WBS：205K → 307K+ rows/s 目标分解 |
+| 写恒定内存优化 | `docs/superpowers/plans/2026-08-12-write-optimization.md` | 8 任务 + 2 RFC：样式去重、状态机文档、Moka 审计、spill 矩阵 |
+| 读恒定内存 RFC | `docs/superpowers/specs/2026-08-12-read-spill-decision-design.md` | 决策：不做 spill，改做包级惰性加载 |
+| 公式缓存 RFC | `docs/superpowers/specs/2026-08-12-formula-cache-decision-design.md` | 决策：短期维持全量重算，中长期评估 dirty-cell 增量 |
 
 ### 测试与质量
 
 | 文档 | 路径 | 说明 |
 |------|------|------|
-| 覆盖率 gap 闭环 | `docs/test/COVERAGE-GAP-CLOSURE.md` | 42 任务 WBS：ExcelRows 单测 / Fill executor 单测 / Web conformance / parity 证据 |
-| 规范合规审计 | `docs/refactor/COMPLIANCE_AUDIT.md` | 4 维度扫描：多类型文件 / mod.rs 类型定义 / wildcard import / STUB 空实现 |
+| 覆盖率 gap 闭环 | `docs/superpowers/plans/2026-08-12-coverage-improvement.md` | 42 任务 WBS：ExcelRows 单测 / Fill executor 单测 / Web conformance / parity 证据 |
+| 规范合规审计 | `docs/superpowers/specs/2026-08-12-compliance-audit-design.md` | 4 维度扫描：多类型文件 / mod.rs 类型定义 / wildcard import / STUB 空实现 |
 
 ### 安全审计
 
 | 文档 | 路径 | 说明 |
 |------|------|------|
-| 依赖安全审计 | `docs/security/DEPS_AUDIT.md` | cargo-audit + cargo-deny：0 CVE，1 unsound warning（lru） |
-| 代码安全审计 | `docs/security/CODE_AUDIT.md` | unsafe 代码 / clippy / panic 风险 / ResourceLimits / ZIP bomb / XXE |
-| Fuzz 状态 | `docs/security/FUZZ_STATUS.md` | 5 个 fuzz target，初始 100 迭代 0 panic |
+| 依赖安全审计 | `docs/superpowers/specs/2026-08-12-dependency-audit-design.md` | cargo-audit + cargo-deny：0 CVE，1 unsound warning（lru） |
+| 代码安全审计 | `docs/superpowers/specs/2026-08-12-code-audit-design.md` | unsafe 代码 / clippy / panic 风险 / ResourceLimits / ZIP bomb / XXE |
+| Fuzz 状态 | `docs/superpowers/specs/2026-08-12-fuzz-status-design.md` | 5 个 fuzz target，初始 100 迭代 0 panic |
 
 ### 其他参考
 

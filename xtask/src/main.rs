@@ -17,7 +17,7 @@ use std::process::ExitCode;
 
 const SOURCE_COMMIT: &str = "3afdea9d5da7f24a66eda6ec44a9dfce80b16802";
 const EXPECTED_JAVA_MAIN: usize = 325;
-const MAP_PATH: &str = "docs/migration/file-map.csv";
+const MAP_PATH: &str = "docs/data/migration/file-map.csv";
 const LEGACY_FACADE_PREFIX: &str = "easyexcel/src/";
 const WORKSPACE_FACADE_PREFIX: &str = "crates/easyexcel/src/";
 

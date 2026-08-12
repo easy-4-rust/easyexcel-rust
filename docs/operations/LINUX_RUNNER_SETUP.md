@@ -373,7 +373,7 @@ df -h /tmp
 |------|------|
 | Baseline schema | `benchmarks/baselines/baseline.schema.json` |
 | Baseline runbook | `benchmarks/baselines/README.md` |
-| cross_runtime gate runbook | `docs/performance/CROSS_RUNTIME_RUNBOOK.md` |
+| cross_runtime gate runbook | `docs/operations/CROSS_RUNTIME_RUNBOOK.md` |
 | Benchmark spec | `benchmarks/spec/benchmark-suite-v1.json` |
 | Approve script | `benchmarks/scripts/approve_benchmark_baseline.py` |
 | Compare script | `benchmarks/scripts/compare_results.py` |

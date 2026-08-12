@@ -176,7 +176,7 @@ python3 scripts/normalize_mapping_java_ids.py \
 - `scripts/normalize_baseline_v1.py` - v2 baseline 转 v1 格式
 - `scripts/normalize_java_ids.py` - evidence java_ids 规范化
 - `scripts/normalize_mapping_java_ids.py` - mapping java_ids 格式验证
-- `docs/ci/WORKFLOW_FIXES.md` - 本文档
+- `docs/superpowers/specs/2026-08-12-workflow-fixes-design.md` - 本文档
 
 ### 修改文件
 - `.github/workflows/nightly-benchmark.yml` - 删除 `--repo-root .` 参数

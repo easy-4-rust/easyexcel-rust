@@ -19,7 +19,7 @@ The workspace also exposes reusable format-neutral foundations (`easyexcel-model
 The independent `xls-cli` product owns its library-first command application layer;
 this facade no longer depends on the full `xls` fork.
 
-> [中文 README](README_CN.md) | [Usage Guide](docs/GUIDE.md) | [API reference](docs/API.md) | [Architecture](docs/ARCHITECTURE.md) | [xls-cli integration](docs/xls-cli-integration-plan.md) | [Capability matrix](docs/xls-cli-capability-matrix.md)
+> [中文 README](README_CN.md) | [Usage Guide](docs/GUIDE.md) | [API reference](docs/API.md) | [Architecture](docs/ARCHITECTURE.md) | [xls-cli integration](docs/superpowers/plans/2026-08-12-xls-cli-integration.md) | [Capability matrix](docs/superpowers/specs/2026-08-12-xls-cli-capability-matrix-design.md)
 
 ---
 
@@ -351,7 +351,7 @@ xychart-beta
 | csv-event-read | 1,227,002 | 1,293,649 |
 | xls-event-read | 70,379 | 74,651 |
 
-Source: `docs/ci/NIGHTLY_DRYRUN_REPORT.md`
+Source: `docs/superpowers/specs/2026-08-12-nightly-dryrun-report-design.md`
 
 ### Optimization Timeline
 
@@ -455,9 +455,9 @@ Axum, Actix Web, Hyper, Poem, Rocket, Salvo, and Warp expose equivalent `ExcelRe
 | [Usage Guide](docs/GUIDE.md) | Detailed usage guide with examples |
 | [API Reference](docs/API.md) | Complete API parameter reference |
 | [Architecture](docs/ARCHITECTURE.md) | Crate layout, data flow, dependency direction |
-| [Migration Audit](docs/migration/TEST_AUDIT_REPORT.md) | Java-to-Rust test parity report |
-| [xls-cli Integration Plan](docs/xls-cli-integration-plan.md) | xls-cli product integration details |
-| [Capability Matrix](docs/xls-cli-capability-matrix.md) | xls-cli runtime capability matrix |
+| [Migration Audit](docs/superpowers/specs/2026-08-12-test-audit-design.md) | Java-to-Rust test parity report |
+| [xls-cli Integration Plan](docs/superpowers/plans/2026-08-12-xls-cli-integration.md) | xls-cli product integration details |
+| [Capability Matrix](docs/superpowers/specs/2026-08-12-xls-cli-capability-matrix-design.md) | xls-cli runtime capability matrix |
 
 ## License
 

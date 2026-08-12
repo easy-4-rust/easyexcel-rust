@@ -97,11 +97,11 @@ declare -a phase_files
 case "$PHASE" in
     phase0)
         phase_files=(
-            "docs/migration/java-tree-full.md"
-            "docs/migration/rust-tree-full.md"
-            "docs/migration/project-tree-diff.md"
-            "docs/migration/object-method-matrix.md"
-            "docs/migration/MIGRATION_STATUS.md"
+            "docs/data/migration/java-tree-full.md"
+            "docs/data/migration/rust-tree-full.md"
+            "docs/data/migration/project-tree-diff.md"
+            "docs/data/migration/object-method-matrix.md"
+            "docs/data/migration/MIGRATION_STATUS.md"
         )
         ;;
     phase1)

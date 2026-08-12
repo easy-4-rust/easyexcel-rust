@@ -59,8 +59,8 @@ manifest 哈希漂移时三个进度分子全部归零；evidence catalog 漂移
 
 ```bash
 python3 scripts/suggest_public_api_mapping.py \
-  --java-api docs/java-public-api-v4.0.3.json \
-  --rust-api docs/rust-public-api.json \
+  --java-api docs/data/java-public-api-v4.0.3.json \
+  --rust-api docs/data/rust-public-api.json \
   --output target/public-api-candidates.json
 python3 scripts/apply_public_api_evidence.py \
   --mapping target/public-api-candidates.json \

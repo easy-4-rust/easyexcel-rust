@@ -278,7 +278,7 @@ flowchart LR
 
 ### Optimization Timeline
 
-Rust 版本从初始基线到超越 Java 历史基线的优化轨迹（数据来源：`benchmarks/profiles/HOTSPOTS.md` + `docs/ci/NIGHTLY_DRYRUN_REPORT.md`）：
+Rust 版本从初始基线到超越 Java 历史基线的优化轨迹（数据来源：`benchmarks/profiles/HOTSPOTS.md` + `docs/superpowers/specs/2026-08-12-nightly-dryrun-report-design.md`）：
 
 ```
 Event read 优化轨迹：

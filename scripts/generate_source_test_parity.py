@@ -239,7 +239,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--java-root", type=Path, required=True)
     parser.add_argument("--rust-root", type=Path, default=Path.cwd())
-    parser.add_argument("--output", type=Path, default=Path("docs/source-test-parity.json"))
+    parser.add_argument("--output", type=Path, default=Path("docs/data/source-test-parity.json"))
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
 

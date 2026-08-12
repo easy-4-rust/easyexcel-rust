@@ -104,7 +104,7 @@
 
 ### 任务 2.1 - 起草 READ-CONSTANT-MEMORY-RFC.md
 
-- **涉及文件**：新建 `docs/performance/READ-CONSTANT-MEMORY-RFC.md`
+- **涉及文件**：新建 `docs/superpowers/specs/2026-08-12-read-spill-decision-design.md`
 - **当前状态**：读侧无 spill-to-disk。`sharedStrings` 走 File 缓存（`shared_string_cache.rs:147-168` `FileSharedStringCache`），worksheet body 是 SAX 流式（`crates/easyexcel-xlsx/src/xlsx/event_reader.rs`）。但 XLSX workbook reader（`crates/easyexcel-xlsx/src/xlsx/reader.rs:80-99`）把所有 zip entry 读进 `HashMap<String, Vec<u8>>`（全 DOM），`f.read_to_end(&mut data)?`（`:97`）。
 - **具体动作步骤**：按 RFC 模板（背景、决策选项≥2、推荐、风险、回滚）撰写，结论必须给出明确推荐。详见独立 RFC 文件。
 - **验收标准**：RFC 文件存在；含「推荐方案」小节且不模棱两可；引用 `reader.rs:80-99` 作为全 DOM 证据。
@@ -250,7 +250,7 @@
 
 ### 任务 6.1 - 起草 FORMULA-RESULT-CACHE-RFC.md（dirty-cell 增量重算）
 
-- **涉及文件**：新建 `docs/performance/FORMULA-RESULT-CACHE-RFC.md`
+- **涉及文件**：新建 `docs/superpowers/specs/2026-08-12-formula-cache-decision-design.md`
 - **当前状态**
   - `Engine` 仅缓存 AST（`engine.rs:41-44` `ast_cache: HashMap<String, Rc<Expr>>`），`parse_cached()`（`:64-72`）只省解析。
   - `recalc()`（`:89-281`）每次全量重算所有公式 cell，`report.evaluated` 每趟重置计数（`:201`）。

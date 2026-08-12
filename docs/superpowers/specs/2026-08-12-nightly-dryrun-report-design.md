@@ -115,7 +115,7 @@ if report.get("schema_version") != 1:
 | 文件 | 说明 |
 |------|------|
 | `benchmarks/scripts/convert_macos_to_nightly.py` | 将 macOS benchmark 结果转换为 nightly workflow 期望的 JSONL + schema_version=1 baseline 格式 |
-| `docs/ci/NIGHTLY_DRYRUN_REPORT.md` | 本报告 |
+| `docs/superpowers/specs/2026-08-12-nightly-dryrun-report-design.md` | 本报告 |
 
 ## 总结
 

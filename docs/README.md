@@ -1,6 +1,7 @@
 # easyexcel-rust 文档索引
 
 > 最后更新：2026-08-12
+> 结构对齐：`liteflow/docs`（用户指南 + superpowers 规格中心）
 
 ---
 
@@ -8,39 +9,37 @@
 
 | 文件 | 说明 |
 |---|---|
+| [GUIDE.md](GUIDE.md) | 使用指南（含示例） |
 | [API.md](API.md) | 公共 API 参考 |
-| [GUIDE.md](GUIDE.md) | 使用指南 |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | 架构说明 |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | 架构说明（crate 布局、数据流、依赖方向） |
 | [compatibility.md](compatibility.md) | Java EasyExcel 兼容性矩阵 |
 | [benchmarks.md](benchmarks.md) | 基准测试说明 |
 | [LARGEREAD.md](LARGEREAD.md) | 大文件读取指南 |
 
-## 测试与质量
+## 规格与计划（superpowers/）
 
-| 文件 | 说明 |
-|---|---|
-| [test-parity-status.md](test-parity-status.md) | 测试对等状态仪表盘 |
-| [security-audit.md](security-audit.md) | 安全审计摘要 |
-| [hutool-poi-adoption.md](hutool-poi-adoption.md) | hutool-poi 采纳说明 |
-
-## 设计与规划（已迁移至 superpowers/）
-
-所有计划（plans）、设计规格（specs）、RFC、审计报告已整合到：
+所有设计规格（RFC / 审计报告 / 设计决策）与实施计划（路线图 / 任务清单）集中在：
 
 **[docs/superpowers/](superpowers/README.md)**
 
-包含：
-- 6 个实施计划（路线图、迁移、性能、测试、写优化、生态）
-- 9 个设计规格（项目历史、审计报告、RFC）
+- 9 个实施计划（`plans/`）
+- 21 个设计规格（`specs/`）
+- 命名约定与 liteflow 一致：`plans/<date>-<feature>.md`、`specs/<date>-<feature>-design.md`
 
-## 参考数据（保留）
+## 工程手册（operations/）
 
-| 目录/文件 | 说明 |
+| 文件 | 说明 |
 |---|---|
-| [migration/](migration/) | 迁移对照表、文件映射、审计报告（参考数据） |
-| [performance/CROSS_RUNTIME_RUNBOOK.md](performance/CROSS_RUNTIME_RUNBOOK.md) | 跨运行时操作手册 |
-| [refactor/CSV_STUB_STRATEGY.md](refactor/CSV_STUB_STRATEGY.md) | CSV stub 策略 |
-| [test/COVERAGE_VERIFY.md](test/COVERAGE_VERIFY.md) | 覆盖率验证 |
-| [operations/](operations/) | 运维文档 |
-| [ci/](ci/) | CI 配置文档 |
-| `*.json` | API 对等报告、公共 API 快照等数据文件 |
+| [LINUX_RUNNER_SETUP.md](operations/LINUX_RUNNER_SETUP.md) | Linux runner 环境搭建 |
+| [CROSS_RUNTIME_RUNBOOK.md](operations/CROSS_RUNTIME_RUNBOOK.md) | 跨运行时对比操作手册 |
+| [CI_BENCHMARKS.md](operations/CI_BENCHMARKS.md) | CI 基准测试说明 |
+| [CI_COVERAGE.md](operations/CI_COVERAGE.md) | CI 覆盖率说明 |
+
+## 机器数据（data/）
+
+脚本生成/消费的数据文件与迁移参考，非人工阅读文档：
+
+| 路径 | 说明 |
+|---|---|
+| [data/](data/) | API 对等报告、公共 API 快照（JSON） |
+| [data/migration/](data/migration/) | Java↔Rust 文件映射、对象对照表、代码树快照 |
