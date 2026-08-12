@@ -82,3 +82,93 @@ impl Biff8ContinuableRecordDecoder {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_decoder_is_idle() {
+        let mut decoder = Biff8ContinuableRecordDecoder::default();
+        assert!(!decoder.is_pending());
+        let status = decoder.try_finish(true).expect("should succeed");
+        assert_eq!(status, Biff8ContinuationStatus::Idle);
+    }
+
+    #[test]
+    fn default_decoder_try_finish_false_returns_idle() {
+        let mut decoder = Biff8ContinuableRecordDecoder::default();
+        let status = decoder.try_finish(false).expect("should succeed");
+        assert_eq!(status, Biff8ContinuationStatus::Idle);
+    }
+
+    #[test]
+    fn push_without_begin_returns_false() {
+        let mut decoder = Biff8ContinuableRecordDecoder::default();
+        assert!(!decoder.push(&[0x01, 0x02]));
+    }
+
+    #[test]
+    fn begin_sets_pending_state() {
+        let mut decoder = Biff8ContinuableRecordDecoder::default();
+        // A minimal SST header: 4 bytes (total strings u32 LE)
+        let first_segment = &[0x01, 0x00, 0x00, 0x00];
+        decoder.begin(Biff8ContinuableRecordKind::SharedStringTable, first_segment);
+        assert!(decoder.is_pending());
+    }
+
+    #[test]
+    fn push_after_begin_returns_true() {
+        let mut decoder = Biff8ContinuableRecordDecoder::default();
+        let first_segment = &[0x01, 0x00, 0x00, 0x00];
+        decoder.begin(Biff8ContinuableRecordKind::SharedStringTable, first_segment);
+        assert!(decoder.push(&[0x02, 0x03]));
+    }
+
+    #[test]
+    fn unicode_string_kind_begins_pending() {
+        let mut decoder = Biff8ContinuableRecordDecoder::default();
+        // Minimal Unicode string: 2 bytes char count + grbit
+        let first_segment = &[0x01, 0x00, 0x00];
+        decoder.begin(Biff8ContinuableRecordKind::UnicodeString, first_segment);
+        assert!(decoder.is_pending());
+    }
+
+    #[test]
+    fn decoder_clone_and_eq() {
+        let mut decoder = Biff8ContinuableRecordDecoder::default();
+        let first_segment = &[0x01, 0x00, 0x00, 0x00];
+        decoder.begin(Biff8ContinuableRecordKind::SharedStringTable, first_segment);
+
+        let cloned = decoder.clone();
+        assert_eq!(decoder, cloned);
+    }
+
+    #[test]
+    fn decoder_debug_format() {
+        let decoder = Biff8ContinuableRecordDecoder::default();
+        let debug = format!("{decoder:?}");
+        assert!(debug.contains("Biff8ContinuableRecordDecoder"));
+    }
+
+    #[test]
+    fn begin_replaces_existing_pending() {
+        let mut decoder = Biff8ContinuableRecordDecoder::default();
+        let seg1 = &[0x01, 0x00, 0x00, 0x00];
+        decoder.begin(Biff8ContinuableRecordKind::SharedStringTable, seg1);
+        assert!(decoder.is_pending());
+
+        // Begin again with different kind
+        let seg2 = &[0x01, 0x00, 0x00];
+        decoder.begin(Biff8ContinuableRecordKind::UnicodeString, seg2);
+        assert!(decoder.is_pending());
+    }
+
+    #[test]
+    fn continuation_status_variants() {
+        // Verify the enum variants exist and can be compared
+        let idle = Biff8ContinuationStatus::Idle;
+        let pending = Biff8ContinuationStatus::Pending;
+        assert_ne!(idle, pending);
+    }
+}

@@ -252,4 +252,208 @@ mod tests {
         assert_eq!(brd2 & 0x7F, 12);
         assert_eq!((brd2 >> 7) & 0x7F, 13);
     }
+
+    #[test]
+    fn resolve_font_index_returns_font_index() {
+        let mut table = Biff8StyleTable::default();
+        let request = Biff8StyleRequest {
+            bold: true,
+            ..Biff8StyleRequest::default()
+        };
+        let idx = table.resolve_font_index(&request);
+        assert!(idx > 0);
+    }
+
+    #[test]
+    fn resolve_font_index_reuses_same_font() {
+        let mut table = Biff8StyleTable::default();
+        let request = Biff8StyleRequest {
+            bold: true,
+            ..Biff8StyleRequest::default()
+        };
+        let idx1 = table.resolve_font_index(&request);
+        let idx2 = table.resolve_font_index(&request);
+        assert_eq!(idx1, idx2);
+    }
+
+    #[test]
+    fn resolve_xf_date_base() {
+        let mut table = Biff8StyleTable::default();
+        let request = Biff8StyleRequest::default();
+        let xf = table.resolve_xf(&request, XF_DATE);
+        assert_eq!(xf, XF_DATE);
+    }
+
+    #[test]
+    fn resolve_xf_datetime_base() {
+        let mut table = Biff8StyleTable::default();
+        let request = Biff8StyleRequest::default();
+        let xf = table.resolve_xf(&request, XF_DATETIME);
+        assert_eq!(xf, XF_DATETIME);
+    }
+
+    #[test]
+    fn resolve_xf_caches_identical_requests() {
+        let mut table = Biff8StyleTable::default();
+        let request = Biff8StyleRequest {
+            bold: true,
+            italic: true,
+            ..Biff8StyleRequest::default()
+        };
+        let xf1 = table.resolve_xf(&request, XF_GENERAL);
+        let xf2 = table.resolve_xf(&request, XF_GENERAL);
+        assert_eq!(xf1, xf2);
+        assert_eq!(table.custom_xfs().len(), 1);
+    }
+
+    #[test]
+    fn resolve_xf_different_requests_different_xf() {
+        let mut table = Biff8StyleTable::default();
+        let req1 = Biff8StyleRequest {
+            bold: true,
+            ..Biff8StyleRequest::default()
+        };
+        let req2 = Biff8StyleRequest {
+            italic: true,
+            ..Biff8StyleRequest::default()
+        };
+        let xf1 = table.resolve_xf(&req1, XF_GENERAL);
+        let xf2 = table.resolve_xf(&req2, XF_GENERAL);
+        assert_ne!(xf1, xf2);
+    }
+
+    #[test]
+    fn needs_palette_false_by_default() {
+        let table = Biff8StyleTable::default();
+        assert!(!table.needs_palette());
+    }
+
+    #[test]
+    fn needs_palette_true_with_overrides() {
+        let mut table = Biff8StyleTable::default();
+        let request = Biff8StyleRequest {
+            font_color: Some(Biff8Color::Rgb(0xFF_00_00)),
+            ..Biff8StyleRequest::default()
+        };
+        let _ = table.resolve_xf(&request, XF_GENERAL);
+        assert!(table.needs_palette());
+    }
+
+    #[test]
+    fn palette_overrides_empty_by_default() {
+        let table = Biff8StyleTable::default();
+        assert!(table.palette_overrides().is_empty());
+    }
+
+    #[test]
+    fn custom_formats_empty_by_default() {
+        let table = Biff8StyleTable::default();
+        assert!(table.custom_formats().is_empty());
+    }
+
+    #[test]
+    fn custom_xfs_empty_by_default() {
+        let table = Biff8StyleTable::default();
+        assert!(table.custom_xfs().is_empty());
+    }
+
+    #[test]
+    fn custom_fonts_empty_by_default() {
+        let table = Biff8StyleTable::default();
+        assert!(table.custom_fonts().is_empty());
+    }
+
+    #[test]
+    fn alloc_rgb_icv_returns_consistent_index() {
+        let mut table = Biff8StyleTable::default();
+        let idx1 = table.alloc_rgb_icv(0xFF_00_00);
+        let idx2 = table.alloc_rgb_icv(0xFF_00_00);
+        assert_eq!(idx1, idx2);
+    }
+
+    #[test]
+    fn alloc_rgb_icv_different_colors_different_index() {
+        let mut table = Biff8StyleTable::default();
+        let idx1 = table.alloc_rgb_icv(0xFF_00_00);
+        let idx2 = table.alloc_rgb_icv(0x00_FF_00);
+        assert_ne!(idx1, idx2);
+    }
+
+    #[test]
+    fn resolve_xf_with_wrap() {
+        let mut table = Biff8StyleTable::default();
+        let request = Biff8StyleRequest {
+            wrap: true,
+            ..Biff8StyleRequest::default()
+        };
+        let xf = table.resolve_xf(&request, XF_GENERAL);
+        assert!(xf >= XF_CUSTOM_BASE);
+        let packed = &table.custom_xfs()[0];
+        assert_ne!(packed[6] & 0x08, 0); // wrap flag
+    }
+
+    #[test]
+    fn resolve_xf_with_fill_pattern() {
+        let mut table = Biff8StyleTable::default();
+        let request = Biff8StyleRequest {
+            fill_pattern: Some(Biff8FillPattern::Solid),
+            fill_foreground_color: Some(Biff8Color::Indexed(10)),
+            ..Biff8StyleRequest::default()
+        };
+        let xf = table.resolve_xf(&request, XF_GENERAL);
+        assert!(xf >= XF_CUSTOM_BASE);
+    }
+
+    #[test]
+    fn resolve_xf_with_horizontal_alignment() {
+        let mut table = Biff8StyleTable::default();
+        let request = Biff8StyleRequest {
+            horizontal_alignment: Some(Biff8HorizontalAlignment::Center),
+            ..Biff8StyleRequest::default()
+        };
+        let xf = table.resolve_xf(&request, XF_GENERAL);
+        assert!(xf >= XF_CUSTOM_BASE);
+    }
+
+    #[test]
+    fn resolve_xf_with_vertical_alignment() {
+        let mut table = Biff8StyleTable::default();
+        let request = Biff8StyleRequest {
+            vertical_alignment: Some(Biff8VerticalAlignment::Top),
+            ..Biff8StyleRequest::default()
+        };
+        let xf = table.resolve_xf(&request, XF_GENERAL);
+        assert!(xf >= XF_CUSTOM_BASE);
+    }
+
+    #[test]
+    fn nearest_indexed_black() {
+        assert_eq!(nearest_indexed(0, 0, 0), 8);
+    }
+
+    #[test]
+    fn nearest_indexed_white() {
+        assert_eq!(nearest_indexed(255, 255, 255), 9);
+    }
+
+    #[test]
+    fn nearest_indexed_red() {
+        assert_eq!(nearest_indexed(255, 0, 0), 10);
+    }
+
+    #[test]
+    fn nearest_indexed_green() {
+        assert_eq!(nearest_indexed(0, 255, 0), 11);
+    }
+
+    #[test]
+    fn nearest_indexed_blue() {
+        assert_eq!(nearest_indexed(0, 0, 255), 12);
+    }
+
+    #[test]
+    fn nearest_indexed_closest_match() {
+        // A color close to red should map to red
+        assert_eq!(nearest_indexed(250, 5, 5), 10);
+    }
 }

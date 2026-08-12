@@ -434,3 +434,519 @@ impl Biff8Sheet {
         (max_row, max_col)
     }
 }
+
+#[cfg(test)]
+mod biff8sheet_tests {
+    use super::*;
+
+    #[test]
+    fn new_sheet_has_correct_name() {
+        let sheet = Biff8Sheet::new("Sheet1");
+        assert_eq!(sheet.name, "Sheet1");
+        assert_eq!(sheet.visibility, easyexcel_model::Visibility::Visible);
+        assert!(sheet.cells.is_empty());
+        assert!(sheet.merges.is_empty());
+        assert!(sheet.hyperlinks.is_empty());
+        assert!(sheet.comments.is_empty());
+        assert!(sheet.charts.is_empty());
+        assert!(sheet.freeze.is_none());
+        assert_eq!(sheet.next_row, 0);
+    }
+
+    #[test]
+    fn new_sheet_with_string() {
+        let sheet = Biff8Sheet::new("Test".to_owned());
+        assert_eq!(sheet.name, "Test");
+    }
+
+    #[test]
+    fn set_cell_valid_coordinates() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        let cell = Biff8Cell::general(Biff8Value::Text("hello".to_owned()));
+        sheet.set(0, 0, cell).expect("should succeed");
+        assert!(sheet.cells.contains_key(&(0, 0)));
+    }
+
+    #[test]
+    fn set_cell_max_row() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        let cell = Biff8Cell::general(Biff8Value::Number(1.0));
+        sheet.set(65535, 0, cell).expect("max row should be valid");
+    }
+
+    #[test]
+    fn set_cell_out_of_range_row() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        let cell = Biff8Cell::general(Biff8Value::Number(1.0));
+        assert!(sheet.set(65536, 0, cell).is_err());
+    }
+
+    #[test]
+    fn set_cell_out_of_range_column() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        let cell = Biff8Cell::general(Biff8Value::Number(1.0));
+        assert!(sheet.set(0, 256, cell).is_err());
+    }
+
+    #[test]
+    fn validate_row_index_valid() {
+        assert!(Biff8Sheet::validate_row_index(0).is_ok());
+        assert!(Biff8Sheet::validate_row_index(65535).is_ok());
+    }
+
+    #[test]
+    fn validate_row_index_invalid() {
+        assert!(Biff8Sheet::validate_row_index(65536).is_err());
+    }
+
+    #[test]
+    fn column_index_valid() {
+        assert_eq!(Biff8Sheet::column_index(0).unwrap(), 0);
+        assert_eq!(Biff8Sheet::column_index(255).unwrap(), 255);
+    }
+
+    #[test]
+    fn column_index_invalid() {
+        assert!(Biff8Sheet::column_index(256).is_err());
+    }
+
+    #[test]
+    fn set_column_width() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet.set_column_width(1, 100);
+        assert_eq!(sheet.column_widths.get(&1), Some(&100));
+        assert_eq!(sheet.column_width_units.get(&1), Some(&25600));
+        assert!(sheet.column_user_set_widths.contains(&1));
+    }
+
+    #[test]
+    fn set_column_width_at_valid() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet.set_column_width_at(5, 80).expect("should succeed");
+        assert_eq!(sheet.column_widths.get(&5), Some(&80));
+    }
+
+    #[test]
+    fn set_column_width_at_out_of_range() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.set_column_width_at(256, 80).is_err());
+    }
+
+    #[test]
+    fn set_column_width_units_at_valid() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet
+            .set_column_width_units_at(3, 5120)
+            .expect("should succeed");
+        assert_eq!(sheet.column_width_units.get(&3), Some(&5120));
+        assert!(sheet.column_user_set_widths.contains(&3));
+    }
+
+    #[test]
+    fn set_column_width_units_at_out_of_range() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.set_column_width_units_at(256, 5120).is_err());
+    }
+
+    #[test]
+    fn set_default_column_width_units() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet.set_default_column_width_units(8000);
+        assert_eq!(sheet.default_column_width_units, Some(8000));
+    }
+
+    #[test]
+    fn set_column_metadata_at_valid() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet
+            .set_column_metadata_at(2, 4800, 15, true, true)
+            .expect("should succeed");
+        assert_eq!(sheet.column_width_units.get(&2), Some(&4800));
+        assert_eq!(sheet.column_xfs.get(&2), Some(&15));
+        assert!(sheet.hidden_columns.contains(&2));
+        assert!(sheet.column_user_set_widths.contains(&2));
+    }
+
+    #[test]
+    fn set_column_metadata_at_not_hidden() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet
+            .set_column_metadata_at(2, 4800, 15, false, false)
+            .expect("should succeed");
+        assert!(!sheet.hidden_columns.contains(&2));
+        assert!(!sheet.column_user_set_widths.contains(&2));
+    }
+
+    #[test]
+    fn set_column_metadata_at_out_of_range() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.set_column_metadata_at(256, 4800, 15, false, false).is_err());
+    }
+
+    #[test]
+    fn set_row_height() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet.set_row_height(5, 30);
+        assert_eq!(sheet.row_heights.get(&5), Some(&30));
+        assert_eq!(sheet.row_height_twips.get(&5), Some(&600));
+    }
+
+    #[test]
+    fn set_row_height_at_valid() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet.set_row_height_at(10, 20).expect("should succeed");
+        assert_eq!(sheet.row_heights.get(&10), Some(&20));
+        assert_eq!(sheet.row_height_twips.get(&10), Some(&400));
+    }
+
+    #[test]
+    fn set_row_height_at_out_of_range_row() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.set_row_height_at(65536, 20).is_err());
+    }
+
+    #[test]
+    fn set_row_height_at_overflow_twips() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        // u16::MAX * 20 would overflow
+        assert!(sheet.set_row_height_at(0, u16::MAX).is_err());
+    }
+
+    #[test]
+    fn set_row_height_twips_at_valid() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet
+            .set_row_height_twips_at(5, 400)
+            .expect("should succeed");
+        assert_eq!(sheet.row_height_twips.get(&5), Some(&400));
+    }
+
+    #[test]
+    fn set_row_height_twips_at_too_low() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.set_row_height_twips_at(0, 1).is_err());
+    }
+
+    #[test]
+    fn set_row_height_twips_at_too_high() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.set_row_height_twips_at(0, 8193).is_err());
+    }
+
+    #[test]
+    fn set_row_height_twips_at_out_of_range_row() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.set_row_height_twips_at(65536, 400).is_err());
+    }
+
+    #[test]
+    fn set_default_row_height_twips_valid() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet
+            .set_default_row_height_twips(300)
+            .expect("should succeed");
+        assert_eq!(sheet.default_row_height_twips, Some(300));
+    }
+
+    #[test]
+    fn set_default_row_height_twips_too_low() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.set_default_row_height_twips(0).is_err());
+    }
+
+    #[test]
+    fn set_default_row_height_twips_too_high() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.set_default_row_height_twips(8180).is_err());
+    }
+
+    #[test]
+    fn set_row_metadata_at_valid() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet
+            .set_row_metadata_at(5, 400, true, Some(15), true)
+            .expect("should succeed");
+        assert_eq!(sheet.row_height_twips.get(&5), Some(&400));
+        assert_eq!(sheet.row_xfs.get(&5), Some(&15));
+        assert!(sheet.hidden_rows.contains(&5));
+    }
+
+    #[test]
+    fn set_row_metadata_at_no_custom_height() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet
+            .set_row_metadata_at(5, 400, false, None, false)
+            .expect("should succeed");
+        // When custom_height is false, twips should not be set
+        assert!(sheet.row_height_twips.get(&5).is_none());
+        // When xf_index is None, row_xfs should not have entry
+        assert!(sheet.row_xfs.get(&5).is_none());
+        assert!(!sheet.hidden_rows.contains(&5));
+    }
+
+    #[test]
+    fn set_row_metadata_at_remove_xf() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        // First set an XF
+        sheet
+            .set_row_metadata_at(5, 400, true, Some(15), false)
+            .expect("should succeed");
+        assert_eq!(sheet.row_xfs.get(&5), Some(&15));
+        // Then remove it
+        sheet
+            .set_row_metadata_at(5, 400, true, None, false)
+            .expect("should succeed");
+        assert!(sheet.row_xfs.get(&5).is_none());
+    }
+
+    #[test]
+    fn set_row_metadata_at_invalid_height() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.set_row_metadata_at(0, 1, true, None, false).is_err());
+        assert!(sheet.set_row_metadata_at(0, 8193, true, None, false).is_err());
+    }
+
+    #[test]
+    fn set_freeze_panes_valid() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet.set_freeze_panes(3, 2).expect("should succeed");
+        assert_eq!(sheet.freeze, Some((3, 2)));
+    }
+
+    #[test]
+    fn set_freeze_panes_out_of_range_row() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.set_freeze_panes(65536, 0).is_err());
+    }
+
+    #[test]
+    fn set_freeze_panes_out_of_range_col() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.set_freeze_panes(0, 256).is_err());
+    }
+
+    #[test]
+    fn add_merge_valid() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        let merge = Biff8Merge {
+            first_row: 0,
+            last_row: 1,
+            first_col: 0,
+            last_col: 1,
+        };
+        sheet.add_merge(merge).expect("should succeed");
+        assert_eq!(sheet.merges.len(), 1);
+    }
+
+    #[test]
+    fn add_merge_single_cell_is_noop() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        let merge = Biff8Merge {
+            first_row: 0,
+            last_row: 0,
+            first_col: 0,
+            last_col: 0,
+        };
+        sheet.add_merge(merge).expect("should succeed");
+        assert!(sheet.merges.is_empty());
+    }
+
+    #[test]
+    fn add_merge_reversed_rows_fails() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        let merge = Biff8Merge {
+            first_row: 5,
+            last_row: 3,
+            first_col: 0,
+            last_col: 1,
+        };
+        assert!(sheet.add_merge(merge).is_err());
+    }
+
+    #[test]
+    fn add_merge_reversed_cols_fails() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        let merge = Biff8Merge {
+            first_row: 0,
+            last_row: 1,
+            first_col: 5,
+            last_col: 3,
+        };
+        assert!(sheet.add_merge(merge).is_err());
+    }
+
+    #[test]
+    fn protect_sheet_sets_hash() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.protection_password_hash.is_none());
+        sheet.protect_sheet("test");
+        assert!(sheet.protection_password_hash.is_some());
+    }
+
+    #[test]
+    fn add_comment_valid() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet
+            .add_comment(0, 0, "note text", "author")
+            .expect("should succeed");
+        assert_eq!(sheet.comments.len(), 1);
+    }
+
+    #[test]
+    fn add_comment_with_nul_text_fails() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.add_comment(0, 0, "text\0with\0nul", "author").is_err());
+    }
+
+    #[test]
+    fn add_comment_with_nul_author_fails() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.add_comment(0, 0, "text", "author\0nul").is_err());
+    }
+
+    #[test]
+    fn add_comment_out_of_range_row() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.add_comment(65536, 0, "text", "author").is_err());
+    }
+
+    #[test]
+    fn add_comment_out_of_range_col() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.add_comment(0, 256, "text", "author").is_err());
+    }
+
+    #[test]
+    fn set_comment_replaces_existing() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        let c1 = Biff8Comment::new(0, 0, "first".to_owned(), "a".to_owned());
+        let c2 = Biff8Comment::new(0, 0, "second".to_owned(), "b".to_owned());
+        sheet.set_comment(c1);
+        assert_eq!(sheet.comments.len(), 1);
+        sheet.set_comment(c2);
+        assert_eq!(sheet.comments.len(), 1);
+        assert_eq!(sheet.comments[0].text, "second");
+    }
+
+    #[test]
+    fn set_comment_different_coords() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        let c1 = Biff8Comment::new(0, 0, "first".to_owned(), "a".to_owned());
+        let c2 = Biff8Comment::new(1, 0, "second".to_owned(), "b".to_owned());
+        sheet.set_comment(c1);
+        sheet.set_comment(c2);
+        assert_eq!(sheet.comments.len(), 2);
+    }
+
+    #[test]
+    fn remove_comment_existing() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet
+            .add_comment(0, 0, "text", "author")
+            .expect("should succeed");
+        let removed = sheet.remove_comment(0, 0).expect("should succeed");
+        assert!(removed);
+        assert!(sheet.comments.is_empty());
+    }
+
+    #[test]
+    fn remove_comment_nonexistent() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        let removed = sheet.remove_comment(0, 0).expect("should succeed");
+        assert!(!removed);
+    }
+
+    #[test]
+    fn remove_comment_out_of_range_row() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.remove_comment(65536, 0).is_err());
+    }
+
+    #[test]
+    fn remove_comment_out_of_range_col() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        assert!(sheet.remove_comment(0, 256).is_err());
+    }
+
+    #[test]
+    fn add_hyperlink_valid() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet
+            .add_hyperlink(0, 0, "https://example.com", "Example")
+            .expect("should succeed");
+        assert_eq!(sheet.hyperlinks.len(), 1);
+    }
+
+    #[test]
+    fn add_typed_hyperlink_valid() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet
+            .add_typed_hyperlink(
+                0,
+                1,
+                0,
+                1,
+                "https://example.com",
+                "Example",
+                Biff8HyperlinkKind::Url,
+            )
+            .expect("should succeed");
+        assert_eq!(sheet.hyperlinks.len(), 1);
+    }
+
+    #[test]
+    fn add_chart() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        let chart = Biff8Chart::new(Biff8ChartKind::Bar, 0, 0, 10, 5);
+        sheet.add_chart(chart);
+        assert_eq!(sheet.charts.len(), 1);
+    }
+
+    #[test]
+    fn dimensions_empty_sheet() {
+        let sheet = Biff8Sheet::new("Sheet1");
+        let (max_row, max_col) = sheet.dimensions();
+        assert_eq!(max_row, 0);
+        assert_eq!(max_col, 0);
+    }
+
+    #[test]
+    fn dimensions_with_cells() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        let cell = Biff8Cell::general(Biff8Value::Number(1.0));
+        sheet.set(5, 3, cell).expect("should succeed");
+        let (max_row, max_col) = sheet.dimensions();
+        assert_eq!(max_row, 6);
+        assert_eq!(max_col, 4);
+    }
+
+    #[test]
+    fn dimensions_with_merges() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        let merge = Biff8Merge {
+            first_row: 0,
+            last_row: 10,
+            first_col: 0,
+            last_col: 5,
+        };
+        sheet.merges.push(merge);
+        let (max_row, max_col) = sheet.dimensions();
+        assert_eq!(max_row, 11);
+        assert_eq!(max_col, 6);
+    }
+
+    #[test]
+    fn set_row_height_zero_points() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        // 0 * 20 = 0 twips, which is below minimum of 2
+        assert!(sheet.set_row_height_at(0, 0).is_err());
+    }
+
+    #[test]
+    fn column_width_saturating_mul() {
+        let mut sheet = Biff8Sheet::new("Sheet1");
+        sheet.set_column_width(0, u16::MAX);
+        // Should saturate, not overflow
+        assert!(sheet.column_width_units.get(&0).is_some());
+    }
+}

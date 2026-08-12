@@ -45,3 +45,111 @@ impl GeneratedBiff8CellValue {
         }
     }
 }
+
+#[cfg(test)]
+mod generated_cell_value_tests {
+    use super::*;
+
+    #[test]
+    fn blank_into_cell() {
+        let cell = GeneratedBiff8CellValue::Blank.into_cell();
+        assert!(matches!(cell.value, Biff8Value::Blank));
+        assert_eq!(cell.xf, XF_GENERAL);
+    }
+
+    #[test]
+    fn text_into_cell() {
+        let cell = GeneratedBiff8CellValue::Text("hello".to_owned()).into_cell();
+        match &cell.value {
+            Biff8Value::Text(s) => assert_eq!(s, "hello"),
+            _ => panic!("expected Text"),
+        }
+        assert_eq!(cell.xf, XF_GENERAL);
+    }
+
+    #[test]
+    fn rich_text_into_cell() {
+        let cell = GeneratedBiff8CellValue::RichText {
+            text: "bold".to_owned(),
+            runs: vec![(0, 1)],
+        }
+        .into_cell();
+        match &cell.value {
+            Biff8Value::RichText(rt) => assert_eq!(rt.text, "bold"),
+            _ => panic!("expected RichText"),
+        }
+        assert_eq!(cell.xf, XF_GENERAL);
+    }
+
+    #[test]
+    fn number_into_cell() {
+        let cell = GeneratedBiff8CellValue::Number(42.5).into_cell();
+        match cell.value {
+            Biff8Value::Number(v) => assert!((v - 42.5).abs() < f64::EPSILON),
+            _ => panic!("expected Number"),
+        }
+        assert_eq!(cell.xf, XF_GENERAL);
+    }
+
+    #[test]
+    fn bool_into_cell() {
+        let cell = GeneratedBiff8CellValue::Bool(true).into_cell();
+        match cell.value {
+            Biff8Value::Bool(v) => assert!(v),
+            _ => panic!("expected Bool"),
+        }
+        assert_eq!(cell.xf, XF_GENERAL);
+    }
+
+    #[test]
+    fn formula_into_cell() {
+        let cell = GeneratedBiff8CellValue::Formula("SUM(A1:A10)".to_owned()).into_cell();
+        match &cell.value {
+            Biff8Value::Formula(f) => assert_eq!(f, "SUM(A1:A10)"),
+            _ => panic!("expected Formula"),
+        }
+        assert_eq!(cell.xf, XF_GENERAL);
+    }
+
+    #[test]
+    fn date_serial_into_cell() {
+        let cell = GeneratedBiff8CellValue::DateSerial(44927.0).into_cell();
+        match cell.value {
+            Biff8Value::Number(v) => assert!((v - 44927.0).abs() < f64::EPSILON),
+            _ => panic!("expected Number for date"),
+        }
+        assert_eq!(cell.xf, XF_DATE);
+    }
+
+    #[test]
+    fn datetime_serial_into_cell() {
+        let cell = GeneratedBiff8CellValue::DateTimeSerial(44927.5).into_cell();
+        match cell.value {
+            Biff8Value::Number(v) => assert!((v - 44927.5).abs() < f64::EPSILON),
+            _ => panic!("expected Number for datetime"),
+        }
+        assert_eq!(cell.xf, XF_DATETIME);
+    }
+
+    #[test]
+    fn debug_format() {
+        let value = GeneratedBiff8CellValue::Blank;
+        let debug = format!("{value:?}");
+        assert!(debug.contains("Blank"));
+
+        let value = GeneratedBiff8CellValue::Text("test".to_owned());
+        let debug = format!("{value:?}");
+        assert!(debug.contains("Text"));
+    }
+
+    #[test]
+    fn clone_works() {
+        let value = GeneratedBiff8CellValue::Number(1.0);
+        let cloned = value.clone();
+        let cell = cloned.into_cell();
+        match cell.value {
+            Biff8Value::Number(v) => assert!((v - 1.0).abs() < f64::EPSILON),
+            _ => panic!("expected Number"),
+        }
+    }
+}

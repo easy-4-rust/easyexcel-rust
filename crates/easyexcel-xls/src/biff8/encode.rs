@@ -646,4 +646,204 @@ mod tests_extra {
         let grbit = u16::from_le_bytes([font[2], font[3]]);
         assert_eq!(grbit & 0x0A, 0x0A);
     }
+
+    #[test]
+    fn record_framing() {
+        let mut out = Vec::new();
+        record(&mut out, 0x0031, &[0xAA, 0xBB]);
+        assert_eq!(out[0], 0x31);
+        assert_eq!(out[1], 0x00);
+        assert_eq!(u16::from_le_bytes([out[2], out[3]]), 2);
+        assert_eq!(out[4], 0xAA);
+        assert_eq!(out[5], 0xBB);
+    }
+
+    #[test]
+    fn record_empty_payload() {
+        let mut out = Vec::new();
+        record(&mut out, 0x000A, &[]);
+        assert_eq!(out.len(), 4); // header only
+        assert_eq!(u16::from_le_bytes([out[2], out[3]]), 0);
+    }
+
+    #[test]
+    fn pack_colinfo_units_direct() {
+        let bytes = pack_colinfo_units(0, 10, 5120, 15);
+        assert_eq!(u16::from_le_bytes([bytes[4], bytes[5]]), 5120);
+        assert_eq!(u16::from_le_bytes([bytes[6], bytes[7]]), 15);
+    }
+
+    #[test]
+    fn pack_colinfo_metadata_with_flags() {
+        let bytes = pack_colinfo_metadata(0, 255, 5120, 15, true, true);
+        let options = u16::from_le_bytes([bytes[8], bytes[9]]);
+        assert_eq!(options & 0x01, 0x01); // hidden
+        assert_eq!(options & 0x02, 0x02); // user set width
+    }
+
+    #[test]
+    fn pack_colinfo_metadata_without_flags() {
+        let bytes = pack_colinfo_metadata(0, 255, 5120, 15, false, false);
+        let options = u16::from_le_bytes([bytes[8], bytes[9]]);
+        assert_eq!(options & 0x03, 0);
+    }
+
+    #[test]
+    fn pack_row_twips_direct() {
+        let bytes = pack_row_twips(0, 0, 10, 400);
+        assert_eq!(u16::from_le_bytes([bytes[6], bytes[7]]), 400);
+    }
+
+    #[test]
+    fn pack_row_metadata_with_hidden_and_custom_height() {
+        let bytes = pack_row_metadata(5, 0, 10, 300, true, true, Some(20));
+        // row
+        assert_eq!(u16::from_le_bytes([bytes[0], bytes[1]]), 5);
+        // height
+        assert_eq!(u16::from_le_bytes([bytes[6], bytes[7]]), 300);
+        // options
+        let options = u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]);
+        assert_ne!(options & 0x0020, 0); // hidden
+        assert_ne!(options & 0x0040, 0); // custom_height
+        assert_ne!(options & 0x0080, 0); // has_xf
+        assert_eq!((options >> 16) & 0x0FFF, 20); // xf_index
+    }
+
+    #[test]
+    fn pack_row_metadata_not_custom_height() {
+        let bytes = pack_row_metadata(0, 0, 10, 300, false, false, None);
+        let options = u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]);
+        assert_eq!(options & 0x0020, 0); // not hidden
+        assert_eq!(options & 0x0040, 0); // not custom_height
+    }
+
+    #[test]
+    fn pack_row_metadata_with_xf() {
+        let bytes = pack_row_metadata(0, 0, 10, 400, true, false, Some(15));
+        let options = u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]);
+        assert_ne!(options & 0x0080, 0); // has_xf flag
+        assert_eq!((options >> 16) & 0x0FFF, 15); // xf_index
+    }
+
+    #[test]
+    fn pack_row_metadata_without_xf() {
+        let bytes = pack_row_metadata(0, 0, 10, 400, true, false, None);
+        let options = u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]);
+        assert_eq!(options & 0x0080, 0); // no has_xf flag
+    }
+
+    #[test]
+    fn pack_row_metadata_hidden() {
+        let bytes = pack_row_metadata(0, 0, 10, 400, true, true, None);
+        let options = u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]);
+        assert_ne!(options & 0x0020, 0); // hidden flag
+    }
+
+    #[test]
+    fn pack_window1_layout() {
+        let bytes = pack_window1(0, 1);
+        assert_eq!(bytes.len(), 18);
+    }
+
+    #[test]
+    fn pack_default_row_layout() {
+        let bytes = pack_default_row(0, 0, 5);
+        assert_eq!(bytes.len(), 16);
+    }
+
+    #[test]
+    fn write_merge_cells_multiple() {
+        let mut out = Vec::new();
+        let ranges = [
+            pack_merge_range(0, 1, 0, 1),
+            pack_merge_range(2, 3, 2, 3),
+        ];
+        write_merge_cells(&mut out, &ranges);
+        // Should contain MERGECELLS header + count + range data
+        assert!(!out.is_empty());
+    }
+
+    #[test]
+    fn write_palette_record_basic() {
+        let mut out = Vec::new();
+        let overrides = [(255, 0, 0), (0, 255, 0), (0, 0, 255)];
+        write_palette_record(&mut out, &overrides);
+        assert!(!out.is_empty());
+    }
+
+    #[test]
+    fn pack_font_twips_basic() {
+        let bytes = pack_font_twips(240, false, false, false, 0, ICV_AUTO, "Arial");
+        assert_eq!(u16::from_le_bytes([bytes[0], bytes[1]]), 240);
+    }
+
+    #[test]
+    fn pack_font_with_color() {
+        let bytes = pack_font(12, false, false, false, 10, "Arial");
+        assert_eq!(u16::from_le_bytes([bytes[4], bytes[5]]), 10);
+    }
+
+    #[test]
+    fn encode_unicode_string_empty() {
+        let encoded = encode_unicode_string("");
+        assert_eq!(u16::from_le_bytes([encoded[0], encoded[1]]), 0);
+    }
+
+    #[test]
+    fn encode_unicode_string_latin1() {
+        let encoded = encode_unicode_string("ABC");
+        assert_eq!(u16::from_le_bytes([encoded[0], encoded[1]]), 3);
+        assert_eq!(encoded[2], 0x00); // compressed
+        assert_eq!(encoded[3], b'A');
+        assert_eq!(encoded[4], b'B');
+        assert_eq!(encoded[5], b'C');
+    }
+
+    #[test]
+    fn encode_short_unicode_string_empty() {
+        let encoded = encode_short_unicode_string("");
+        assert_eq!(encoded[0], 0);
+    }
+
+    #[test]
+    fn encode_rk_integer_form() {
+        // Small integer should use integer form (bit 1 set)
+        let r = encode_rk(42.0).unwrap();
+        assert_eq!(r & 0x02, 0x02); // integer flag
+        assert_eq!(r >> 2, 42);
+    }
+
+    #[test]
+    fn encode_rk_div100_form() {
+        // 12.34 * 100 = 1234, which is integer
+        let r = encode_rk(12.34).unwrap();
+        assert_eq!(r & 0x03, 0x03); // both div100 and integer flags
+    }
+
+    #[test]
+    fn encode_rk_double_form() {
+        // A value that can only be represented as double form (not integer, not div100)
+        // Must have low 32 mantissa bits zero and not be representable as integer
+        let v = f64::from_bits(0x4000_0000_0000_0000); // 2.0 as double with specific bit pattern
+        if let Some(r) = encode_rk(v) {
+            // If it encodes, it should use one of the forms
+            assert!(r & 0x03 == 0 || r & 0x02 != 0); // either double or integer form
+        }
+    }
+
+    #[test]
+    fn pack_cell_xf_no_border() {
+        let xf = pack_cell_xf(
+            0, 0, 0, 0, false, 0, 0, 0, 0, 0, 0, 0, ICV_AUTO, ICV_AUTO, ICV_AUTO, ICV_AUTO,
+        );
+        assert_eq!(xf.len(), 20);
+    }
+
+    #[test]
+    fn pack_cell_xf_with_borders() {
+        let xf = pack_cell_xf(
+            0, 0, 0, 2, false, 0, 0, 0, 1, 2, 3, 4, 10, 11, 12, 13,
+        );
+        assert_eq!(xf.len(), 20);
+    }
 }

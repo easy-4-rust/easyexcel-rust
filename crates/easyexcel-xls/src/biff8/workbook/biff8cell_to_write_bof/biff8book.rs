@@ -351,3 +351,506 @@ fn checked_chart_column(column: u16) -> Result<u8> {
         ))
     })
 }
+
+#[cfg(test)]
+mod biff8book_tests {
+    use super::*;
+
+    #[test]
+    fn create_sheet_adds_new_sheet() {
+        let mut book = Biff8Book::default();
+        let sheet = book.create_sheet("Sheet1").expect("should succeed");
+        assert_eq!(sheet.name, "Sheet1");
+        assert_eq!(book.sheets.len(), 1);
+    }
+
+    #[test]
+    fn create_sheet_rejects_duplicate_name() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Sheet1").expect("first create");
+        let result = book.create_sheet("Sheet1");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("already in use"));
+    }
+
+    #[test]
+    fn create_sheet_multiple_sheets() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Sheet1").expect("should succeed");
+        book.create_sheet("Sheet2").expect("should succeed");
+        book.create_sheet("Sheet3").expect("should succeed");
+        assert_eq!(book.sheets.len(), 3);
+    }
+
+    #[test]
+    fn sheet_mut_existing_sheet() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Sheet1").expect("should succeed");
+        let sheet = book.sheet_mut("Sheet1");
+        assert_eq!(sheet.name, "Sheet1");
+    }
+
+    #[test]
+    fn sheet_mut_creates_missing_sheet() {
+        let mut book = Biff8Book::default();
+        let sheet = book.sheet_mut("NewSheet");
+        assert_eq!(sheet.name, "NewSheet");
+        assert_eq!(book.sheets.len(), 1);
+    }
+
+    #[test]
+    fn default_book_has_no_sheets() {
+        let book = Biff8Book::default();
+        assert!(book.sheets.is_empty());
+        assert!(!book.use_1904_windowing);
+        assert_eq!(book.active_sheet, 0);
+    }
+
+    #[test]
+    fn to_cfb_bytes_produces_valid_output() {
+        let mut book = Biff8Book::default();
+        let sheet = book.create_sheet("Test").expect("should succeed");
+        sheet
+            .set(0, 0, Biff8Cell::general(Biff8Value::Text("hello".to_owned())))
+            .expect("should set cell");
+        let bytes = book.to_cfb_bytes().expect("should serialize");
+        assert!(!bytes.is_empty());
+        // OLE2 magic bytes
+        assert_eq!(&bytes[0..4], &[0xD0, 0xCF, 0x11, 0xE0]);
+    }
+
+    #[test]
+    fn to_cfb_bytes_empty_book() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Empty").expect("should succeed");
+        let bytes = book.to_cfb_bytes().expect("should serialize empty book");
+        assert!(!bytes.is_empty());
+    }
+
+    #[test]
+    fn to_cfb_bytes_with_password() {
+        let mut book = Biff8Book::default();
+        let sheet = book.create_sheet("Test").expect("should succeed");
+        sheet
+            .set(0, 0, Biff8Cell::general(Biff8Value::Number(42.0)))
+            .expect("should set cell");
+        let bytes = book
+            .to_cfb_bytes_with_password(Some("password123"))
+            .expect("should serialize with password");
+        assert!(!bytes.is_empty());
+    }
+
+    #[test]
+    fn write_to_and_flush() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Test").expect("should succeed");
+        let mut buf = Vec::new();
+        book.write_to_and_flush(&mut buf).expect("should write");
+        assert!(!buf.is_empty());
+    }
+
+    #[test]
+    fn write_to_with_password() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Test").expect("should succeed");
+        let mut buf = Vec::new();
+        book.write_to_with_password(&mut buf, Some("pass"))
+            .expect("should write");
+        assert!(!buf.is_empty());
+    }
+
+    #[test]
+    fn write_to_without_password() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Test").expect("should succeed");
+        let mut buf = Vec::new();
+        book.write_to_with_password(&mut buf, None)
+            .expect("should write");
+        assert!(!buf.is_empty());
+    }
+
+    #[test]
+    fn save_to_path_creates_file() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Test").expect("should succeed");
+        let dir = tempfile::tempdir().expect("temp dir");
+        let path = dir.path().join("test.xls");
+        book.save_to_path(&path).expect("should save");
+        assert!(path.exists());
+        let bytes = std::fs::read(&path).expect("should read");
+        assert!(!bytes.is_empty());
+    }
+
+    #[test]
+    fn save_to_path_with_password() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Test").expect("should succeed");
+        let dir = tempfile::tempdir().expect("temp dir");
+        let path = dir.path().join("test_encrypted.xls");
+        book.save_to_path_with_password(&path, Some("secret"))
+            .expect("should save");
+        assert!(path.exists());
+    }
+
+    #[test]
+    fn save_to_path_creates_parent_dirs() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Test").expect("should succeed");
+        let dir = tempfile::tempdir().expect("temp dir");
+        let path = dir.path().join("sub").join("dir").join("test.xls");
+        book.save_to_path(&path).expect("should save");
+        assert!(path.exists());
+    }
+
+    #[test]
+    fn add_chart_mutation_valid() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Sheet1").expect("should succeed");
+        let mutation = easyexcel_model::ChartMutation {
+            sheet_name: "Sheet1".to_owned(),
+            chart_type: easyexcel_model::ChartType::Bar,
+            first_row: 0,
+            last_row: 10,
+            first_column: 0,
+            last_column: 5,
+            title: Some("Chart Title".to_owned()),
+            series: vec![easyexcel_model::ChartSeries {
+                name: Some("Series 1".to_owned()),
+                values: easyexcel_model::ChartRange {
+                    sheet_name: "Sheet1".to_owned(),
+                    first_row: 0,
+                    last_row: 10,
+                    first_column: 1,
+                    last_column: 1,
+                },
+                categories: Some(easyexcel_model::ChartRange {
+                    sheet_name: "Sheet1".to_owned(),
+                    first_row: 0,
+                    last_row: 10,
+                    first_column: 0,
+                    last_column: 0,
+                }),
+            }],
+        };
+        book.add_chart_mutation(&mutation).expect("should add chart");
+        assert_eq!(book.sheets[0].charts.len(), 1);
+    }
+
+    #[test]
+    fn add_chart_mutation_empty_series_fails() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Sheet1").expect("should succeed");
+        let mutation = easyexcel_model::ChartMutation {
+            sheet_name: "Sheet1".to_owned(),
+            chart_type: easyexcel_model::ChartType::Bar,
+            first_row: 0,
+            last_row: 10,
+            first_column: 0,
+            last_column: 5,
+            title: None,
+            series: vec![],
+        };
+        assert!(book.add_chart_mutation(&mutation).is_err());
+    }
+
+    #[test]
+    fn add_chart_mutation_nonexistent_sheet_fails() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Sheet1").expect("should succeed");
+        let mutation = easyexcel_model::ChartMutation {
+            sheet_name: "NonExistent".to_owned(),
+            chart_type: easyexcel_model::ChartType::Bar,
+            first_row: 0,
+            last_row: 10,
+            first_column: 0,
+            last_column: 5,
+            title: None,
+            series: vec![easyexcel_model::ChartSeries {
+                name: None,
+                values: easyexcel_model::ChartRange {
+                    sheet_name: "Sheet1".to_owned(),
+                    first_row: 0,
+                    last_row: 10,
+                    first_column: 0,
+                    last_column: 0,
+                },
+                categories: None,
+            }],
+        };
+        assert!(book.add_chart_mutation(&mutation).is_err());
+    }
+
+    #[test]
+    fn add_chart_mutation_reversed_anchor_fails() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Sheet1").expect("should succeed");
+        let mutation = easyexcel_model::ChartMutation {
+            sheet_name: "Sheet1".to_owned(),
+            chart_type: easyexcel_model::ChartType::Bar,
+            first_row: 10,
+            last_row: 5, // reversed
+            first_column: 0,
+            last_column: 5,
+            title: None,
+            series: vec![easyexcel_model::ChartSeries {
+                name: None,
+                values: easyexcel_model::ChartRange {
+                    sheet_name: "Sheet1".to_owned(),
+                    first_row: 0,
+                    last_row: 10,
+                    first_column: 0,
+                    last_column: 0,
+                },
+                categories: None,
+            }],
+        };
+        assert!(book.add_chart_mutation(&mutation).is_err());
+    }
+
+    #[test]
+    fn add_chart_mutation_nul_title_fails() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Sheet1").expect("should succeed");
+        let mutation = easyexcel_model::ChartMutation {
+            sheet_name: "Sheet1".to_owned(),
+            chart_type: easyexcel_model::ChartType::Line,
+            first_row: 0,
+            last_row: 10,
+            first_column: 0,
+            last_column: 5,
+            title: Some("Title\0With\0Nul".to_owned()),
+            series: vec![easyexcel_model::ChartSeries {
+                name: None,
+                values: easyexcel_model::ChartRange {
+                    sheet_name: "Sheet1".to_owned(),
+                    first_row: 0,
+                    last_row: 10,
+                    first_column: 0,
+                    last_column: 0,
+                },
+                categories: None,
+            }],
+        };
+        assert!(book.add_chart_mutation(&mutation).is_err());
+    }
+
+    #[test]
+    fn add_chart_mutation_nul_series_name_fails() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Sheet1").expect("should succeed");
+        let mutation = easyexcel_model::ChartMutation {
+            sheet_name: "Sheet1".to_owned(),
+            chart_type: easyexcel_model::ChartType::Pie,
+            first_row: 0,
+            last_row: 10,
+            first_column: 0,
+            last_column: 5,
+            title: None,
+            series: vec![easyexcel_model::ChartSeries {
+                name: Some("Name\0Nul".to_owned()),
+                values: easyexcel_model::ChartRange {
+                    sheet_name: "Sheet1".to_owned(),
+                    first_row: 0,
+                    last_row: 10,
+                    first_column: 0,
+                    last_column: 0,
+                },
+                categories: None,
+            }],
+        };
+        assert!(book.add_chart_mutation(&mutation).is_err());
+    }
+
+    #[test]
+    fn add_chart_mutation_pie_chart() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Sheet1").expect("should succeed");
+        let mutation = easyexcel_model::ChartMutation {
+            sheet_name: "Sheet1".to_owned(),
+            chart_type: easyexcel_model::ChartType::Pie,
+            first_row: 0,
+            last_row: 5,
+            first_column: 0,
+            last_column: 3,
+            title: Some("Pie Chart".to_owned()),
+            series: vec![easyexcel_model::ChartSeries {
+                name: Some("Data".to_owned()),
+                values: easyexcel_model::ChartRange {
+                    sheet_name: "Sheet1".to_owned(),
+                    first_row: 0,
+                    last_row: 5,
+                    first_column: 1,
+                    last_column: 1,
+                },
+                categories: None,
+            }],
+        };
+        book.add_chart_mutation(&mutation).expect("should add pie chart");
+    }
+
+    #[test]
+    fn add_chart_mutation_line_chart() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Sheet1").expect("should succeed");
+        let mutation = easyexcel_model::ChartMutation {
+            sheet_name: "Sheet1".to_owned(),
+            chart_type: easyexcel_model::ChartType::Line,
+            first_row: 0,
+            last_row: 10,
+            first_column: 0,
+            last_column: 5,
+            title: None,
+            series: vec![easyexcel_model::ChartSeries {
+                name: None,
+                values: easyexcel_model::ChartRange {
+                    sheet_name: "Sheet1".to_owned(),
+                    first_row: 0,
+                    last_row: 10,
+                    first_column: 0,
+                    last_column: 0,
+                },
+                categories: None,
+            }],
+        };
+        book.add_chart_mutation(&mutation).expect("should add line chart");
+    }
+
+    #[test]
+    fn to_cfb_bytes_with_multiple_sheets() {
+        let mut book = Biff8Book::default();
+        for i in 0..5 {
+            let name = format!("Sheet{i}");
+            let sheet = book.create_sheet(&name).expect("should create");
+            sheet
+                .set(0, 0, Biff8Cell::general(Biff8Value::Number(i as f64)))
+                .expect("should set cell");
+        }
+        let bytes = book.to_cfb_bytes().expect("should serialize");
+        assert!(!bytes.is_empty());
+    }
+
+    #[test]
+    fn to_cfb_bytes_with_various_cell_types() {
+        let mut book = Biff8Book::default();
+        let sheet = book.create_sheet("Test").expect("should succeed");
+
+        sheet
+            .set(0, 0, Biff8Cell::general(Biff8Value::Text("text".to_owned())))
+            .expect("should set");
+        sheet
+            .set(1, 0, Biff8Cell::general(Biff8Value::Number(42.0)))
+            .expect("should set");
+        sheet
+            .set(2, 0, Biff8Cell::general(Biff8Value::Bool(true)))
+            .expect("should set");
+        sheet
+            .set(3, 0, Biff8Cell::general(Biff8Value::Blank))
+            .expect("should set");
+        sheet
+            .set(
+                4,
+                0,
+                Biff8Cell::general(Biff8Value::Formula("SUM(A1:A3)".to_owned())),
+            )
+            .expect("should set");
+        sheet
+            .set(5, 0, Biff8Cell::date_serial(44927.0))
+            .expect("should set");
+        sheet
+            .set(6, 0, Biff8Cell::datetime_serial(44927.5))
+            .expect("should set");
+
+        let bytes = book.to_cfb_bytes().expect("should serialize all cell types");
+        assert!(!bytes.is_empty());
+    }
+
+    #[test]
+    fn formula_cache_roundtrip() {
+        let mut book = Biff8Book::default();
+        let _sheet = book.create_sheet("Test").expect("should succeed");
+
+        // Add a formula cache entry
+        let mut cache = std::collections::HashMap::new();
+        cache.insert(
+            (0, 0),
+            super::super::cached::Biff8Cached::Number(99.0),
+        );
+        book.formula_caches.push(cache);
+
+        let bytes = book.to_cfb_bytes().expect("should serialize");
+        assert!(!bytes.is_empty());
+    }
+
+    #[test]
+    fn chart_range_valid() {
+        let mut known = std::collections::HashSet::new();
+        known.insert("Sheet1");
+        let range = easyexcel_model::ChartRange {
+            sheet_name: "Sheet1".to_owned(),
+            first_row: 0,
+            last_row: 10,
+            first_column: 0,
+            last_column: 5,
+        };
+        let result = chart_range(&range, &known);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn chart_range_reversed_rows_fails() {
+        let mut known = std::collections::HashSet::new();
+        known.insert("Sheet1");
+        let range = easyexcel_model::ChartRange {
+            sheet_name: "Sheet1".to_owned(),
+            first_row: 10,
+            last_row: 5,
+            first_column: 0,
+            last_column: 5,
+        };
+        assert!(chart_range(&range, &known).is_err());
+    }
+
+    #[test]
+    fn chart_range_unknown_sheet_fails() {
+        let known = std::collections::HashSet::new();
+        let range = easyexcel_model::ChartRange {
+            sheet_name: "Unknown".to_owned(),
+            first_row: 0,
+            last_row: 10,
+            first_column: 0,
+            last_column: 5,
+        };
+        assert!(chart_range(&range, &known).is_err());
+    }
+
+    #[test]
+    fn checked_chart_row_valid() {
+        assert_eq!(checked_chart_row(0).unwrap(), 0);
+        assert_eq!(checked_chart_row(65535).unwrap(), 65535);
+    }
+
+    #[test]
+    fn checked_chart_row_overflow() {
+        assert!(checked_chart_row(65536).is_err());
+    }
+
+    #[test]
+    fn checked_chart_column_valid() {
+        assert_eq!(checked_chart_column(0).unwrap(), 0);
+        assert_eq!(checked_chart_column(255).unwrap(), 255);
+    }
+
+    #[test]
+    fn checked_chart_column_overflow() {
+        assert!(checked_chart_column(256).is_err());
+    }
+
+    #[test]
+    fn write_to_writer() {
+        let mut book = Biff8Book::default();
+        book.create_sheet("Test").expect("should succeed");
+        let mut buf = Vec::new();
+        book.write_to(&mut buf).expect("should write");
+        assert!(!buf.is_empty());
+    }
+}
