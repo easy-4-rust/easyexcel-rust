@@ -574,7 +574,21 @@ mod tests {
 
 #[cfg(test)]
 mod tests_extra {
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    };
+
     use super::*;
+
+    struct Probe(Arc<AtomicUsize>);
+
+    impl WriteHandler for Probe {
+        fn before_workbook_create(&mut self, _context: &WriteWorkbookContext) -> Result<()> {
+            self.0.fetch_add(1, Ordering::Relaxed);
+            Ok(())
+        }
+    }
 
     #[test]
     fn compatibility_factories_build_contexts_from_names() {
@@ -618,5 +632,249 @@ mod tests_extra {
         );
         assert_eq!(cell.column.map(|column| column.field), Some("field"));
         assert_eq!(cell.head_name.as_deref(), None);
+    }
+
+    #[test]
+    fn before_workbook_create_with_run_own_true_dispatches_own() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let mut own: Vec<Box<dyn WriteHandler>> = vec![Box::new(Probe(Arc::clone(&calls)))];
+        let mut inherited: Vec<Box<dyn WriteHandler>> = vec![];
+        let context = create_workbook_write_handler_context_from_path("test.xlsx");
+        before_workbook_create_with_run_own(&mut inherited, &mut own, &context, true)
+            .expect("dispatch");
+        assert_eq!(calls.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn before_workbook_create_with_run_own_false_dispatches_inherited() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let mut inherited: Vec<Box<dyn WriteHandler>> = vec![Box::new(Probe(Arc::clone(&calls)))];
+        let mut own: Vec<Box<dyn WriteHandler>> = vec![];
+        let context = create_workbook_write_handler_context_from_path("test.xlsx");
+        before_workbook_create_with_run_own(&mut inherited, &mut own, &context, false)
+            .expect("dispatch");
+        assert_eq!(calls.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn after_workbook_create_dispatches() {
+        struct AfterProbe(Arc<AtomicUsize>);
+        impl WriteHandler for AfterProbe {
+            fn after_workbook_create(&mut self, _context: &WriteWorkbookContext) -> Result<()> {
+                self.0.fetch_add(1, Ordering::Relaxed);
+                Ok(())
+            }
+        }
+        let calls = Arc::new(AtomicUsize::new(0));
+        let mut handlers: Vec<Box<dyn WriteHandler>> =
+            vec![Box::new(AfterProbe(Arc::clone(&calls)))];
+        let context = create_workbook_write_handler_context_from_path("test.xlsx");
+        after_workbook_create(&mut handlers, &context).expect("dispatch");
+        assert_eq!(calls.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn after_workbook_create_with_run_own_dispatches_correctly() {
+        struct AfterProbe(Arc<AtomicUsize>);
+        impl WriteHandler for AfterProbe {
+            fn after_workbook_create(&mut self, _context: &WriteWorkbookContext) -> Result<()> {
+                self.0.fetch_add(1, Ordering::Relaxed);
+                Ok(())
+            }
+        }
+        let calls = Arc::new(AtomicUsize::new(0));
+        let mut own: Vec<Box<dyn WriteHandler>> = vec![Box::new(AfterProbe(Arc::clone(&calls)))];
+        let mut inherited: Vec<Box<dyn WriteHandler>> = vec![];
+        let context = create_workbook_write_handler_context_from_path("test.xlsx");
+        after_workbook_create_with_run_own(&mut inherited, &mut own, &context, true)
+            .expect("dispatch");
+        assert_eq!(calls.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn after_workbook_dispose_dispatches() {
+        struct DisposeProbe(Arc<AtomicUsize>);
+        impl WriteHandler for DisposeProbe {
+            fn after_workbook_dispose(&mut self, _context: &WriteWorkbookContext) -> Result<()> {
+                self.0.fetch_add(1, Ordering::Relaxed);
+                Ok(())
+            }
+        }
+        let calls = Arc::new(AtomicUsize::new(0));
+        let mut handlers: Vec<Box<dyn WriteHandler>> =
+            vec![Box::new(DisposeProbe(Arc::clone(&calls)))];
+        let context = create_workbook_write_handler_context_from_path("test.xlsx");
+        after_workbook_dispose(&mut handlers, &context).expect("dispatch");
+        assert_eq!(calls.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn sheet_handler_dispatch_functions() {
+        struct SheetProbe(Arc<AtomicUsize>);
+        impl WriteHandler for SheetProbe {
+            fn before_sheet_create(&mut self, _context: &WriteSheetContext) -> Result<()> {
+                self.0.fetch_add(1, Ordering::Relaxed);
+                Ok(())
+            }
+            fn after_sheet_create(&mut self, _context: &WriteSheetContext) -> Result<()> {
+                self.0.fetch_add(10, Ordering::Relaxed);
+                Ok(())
+            }
+        }
+        let calls = Arc::new(AtomicUsize::new(0));
+        let mut handlers: Vec<Box<dyn WriteHandler>> =
+            vec![Box::new(SheetProbe(Arc::clone(&calls)))];
+        let context = create_sheet_write_handler_context_from_name("Sheet1");
+        before_sheet_create(&mut handlers, &context).expect("dispatch");
+        after_sheet_create(&mut handlers, &context).expect("dispatch");
+        assert_eq!(calls.load(Ordering::Relaxed), 11);
+    }
+
+    #[test]
+    fn row_handler_dispatch_functions() {
+        struct RowProbe(Arc<AtomicUsize>);
+        impl WriteHandler for RowProbe {
+            fn before_row_create(&mut self, _context: &WriteRowContext) -> Result<()> {
+                self.0.fetch_add(1, Ordering::Relaxed);
+                Ok(())
+            }
+            fn after_row_create(&mut self, _context: &WriteRowContext) -> Result<()> {
+                self.0.fetch_add(10, Ordering::Relaxed);
+                Ok(())
+            }
+            fn after_row_dispose(&mut self, _context: &WriteRowContext) -> Result<()> {
+                self.0.fetch_add(100, Ordering::Relaxed);
+                Ok(())
+            }
+        }
+        let calls = Arc::new(AtomicUsize::new(0));
+        let mut handlers: Vec<Box<dyn WriteHandler>> = vec![Box::new(RowProbe(Arc::clone(&calls)))];
+        let context = create_row_write_handler_context_from_sheet("S", 0, None, false);
+        before_row_create(&mut handlers, &context).expect("dispatch");
+        after_row_create(&mut handlers, &context).expect("dispatch");
+        after_row_dispose(&mut handlers, &context).expect("dispatch");
+        assert_eq!(calls.load(Ordering::Relaxed), 111);
+    }
+
+    #[test]
+    fn cell_handler_dispatch_functions() {
+        struct CellProbe(Arc<AtomicUsize>);
+        impl WriteHandler for CellProbe {
+            fn before_cell_create(&mut self, _context: &mut WriteCellContext) -> Result<()> {
+                self.0.fetch_add(1, Ordering::Relaxed);
+                Ok(())
+            }
+            fn after_cell_create(&mut self, _context: &WriteCellContext) -> Result<()> {
+                self.0.fetch_add(10, Ordering::Relaxed);
+                Ok(())
+            }
+            fn after_cell_dispose(&mut self, _context: &WriteCellContext) -> Result<()> {
+                self.0.fetch_add(100, Ordering::Relaxed);
+                Ok(())
+            }
+        }
+        let calls = Arc::new(AtomicUsize::new(0));
+        let mut handlers: Vec<Box<dyn WriteHandler>> =
+            vec![Box::new(CellProbe(Arc::clone(&calls)))];
+        let mut context = create_cell_write_handler_context_from_sheet(
+            "S",
+            0,
+            0,
+            None,
+            false,
+            None,
+            None,
+            CellValue::Int(1),
+        );
+        before_cell_create(&mut handlers, &mut context).expect("dispatch");
+        after_cell_create(&mut handlers, &context).expect("dispatch");
+        after_cell_dispose(&mut handlers, &context).expect("dispatch");
+        assert_eq!(calls.load(Ordering::Relaxed), 111);
+    }
+
+    #[test]
+    fn after_cell_data_converted_skips_head() {
+        struct ConvertedProbe(Arc<AtomicUsize>);
+        impl WriteHandler for ConvertedProbe {
+            fn after_cell_data_converted(&mut self, _context: &WriteCellContext) -> Result<()> {
+                self.0.fetch_add(1, Ordering::Relaxed);
+                Ok(())
+            }
+        }
+        let calls = Arc::new(AtomicUsize::new(0));
+        let mut handlers: Vec<Box<dyn WriteHandler>> =
+            vec![Box::new(ConvertedProbe(Arc::clone(&calls)))];
+        let mut context = create_cell_write_handler_context_from_sheet(
+            "S",
+            0,
+            0,
+            None,
+            true, // is_head = true
+            Some("header".to_owned()),
+            None,
+            CellValue::Empty,
+        );
+        after_cell_data_converted(&mut handlers, &mut context).expect("ok");
+        // Head cells skip handler dispatch
+        assert_eq!(calls.load(Ordering::Relaxed), 0);
+    }
+
+    #[test]
+    fn after_cell_data_converted_calls_handler_for_content() {
+        struct ConvertedProbe(Arc<AtomicUsize>);
+        impl WriteHandler for ConvertedProbe {
+            fn after_cell_data_converted(&mut self, _context: &WriteCellContext) -> Result<()> {
+                self.0.fetch_add(1, Ordering::Relaxed);
+                Ok(())
+            }
+        }
+        let calls = Arc::new(AtomicUsize::new(0));
+        let mut handlers: Vec<Box<dyn WriteHandler>> =
+            vec![Box::new(ConvertedProbe(Arc::clone(&calls)))];
+        let mut context = create_cell_write_handler_context_from_sheet(
+            "S",
+            0,
+            0,
+            None,
+            false, // is_head = false
+            None,
+            None,
+            CellValue::Int(42),
+        );
+        after_cell_data_converted(&mut handlers, &mut context).expect("ok");
+        assert_eq!(calls.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn empty_handler_list_succeeds() {
+        let mut handlers: Vec<Box<dyn WriteHandler>> = vec![];
+        let wb_ctx = create_workbook_write_handler_context_from_path("test.xlsx");
+        before_workbook_create(&mut handlers, &wb_ctx).expect("ok");
+        after_workbook_create(&mut handlers, &wb_ctx).expect("ok");
+        after_workbook_dispose(&mut handlers, &wb_ctx).expect("ok");
+
+        let sheet_ctx = create_sheet_write_handler_context_from_name("S");
+        before_sheet_create(&mut handlers, &sheet_ctx).expect("ok");
+        after_sheet_create(&mut handlers, &sheet_ctx).expect("ok");
+
+        let row_ctx = create_row_write_handler_context_from_sheet("S", 0, None, false);
+        before_row_create(&mut handlers, &row_ctx).expect("ok");
+        after_row_create(&mut handlers, &row_ctx).expect("ok");
+        after_row_dispose(&mut handlers, &row_ctx).expect("ok");
+
+        let mut cell_ctx = create_cell_write_handler_context_from_sheet(
+            "S",
+            0,
+            0,
+            None,
+            false,
+            None,
+            None,
+            CellValue::Empty,
+        );
+        before_cell_create(&mut handlers, &mut cell_ctx).expect("ok");
+        after_cell_create(&mut handlers, &cell_ctx).expect("ok");
+        after_cell_data_converted(&mut handlers, &mut cell_ctx).expect("ok");
+        after_cell_dispose(&mut handlers, &cell_ctx).expect("ok");
     }
 }

@@ -39,3 +39,37 @@ impl Writer for ExcelSalvoError {
         response.render(Json(self.error.problem_details(self.request_id)));
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_wraps_error() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let err = ExcelSalvoError::new(error, "req-1");
+        assert!(!err.to_string().is_empty());
+    }
+
+    #[test]
+    fn display_delegates() {
+        let error = easyexcel_web::ExcelWebError::ProcessingTimeout;
+        let err = ExcelSalvoError::new(error, "req-2");
+        assert!(!err.to_string().is_empty());
+    }
+
+    #[test]
+    fn error_trait() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let err = ExcelSalvoError::new(error, "req-3");
+        let dyn_err: &dyn std::error::Error = &err;
+        assert!(!dyn_err.to_string().is_empty());
+    }
+
+    #[test]
+    fn debug_contains_struct_name() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let err = ExcelSalvoError::new(error, "req");
+        assert!(format!("{err:?}").contains("ExcelSalvoError"));
+    }
+}

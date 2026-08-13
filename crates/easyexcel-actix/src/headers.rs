@@ -24,3 +24,29 @@ pub fn apply_excel_xlsx_attachment_headers(headers: &mut header::HeaderMap, file
     headers.insert(header::CONTENT_TYPE, content_type);
     headers.insert(header::CONTENT_DISPOSITION, content_disposition);
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn excel_xlsx_attachment_headers_returns_pair() {
+        let (ct, cd) = excel_xlsx_attachment_headers("report");
+        assert_eq!(ct, XLSX_CONTENT_TYPE);
+        let cd_str = cd.to_str().unwrap();
+        assert!(cd_str.contains("report.xlsx"), "cd: {cd_str}");
+    }
+
+    #[test]
+    fn apply_writes_to_header_map() {
+        let mut headers = header::HeaderMap::new();
+        apply_excel_xlsx_attachment_headers(&mut headers, "test");
+        assert!(headers.contains_key(header::CONTENT_TYPE));
+        assert!(headers.contains_key(header::CONTENT_DISPOSITION));
+    }
+
+    #[test]
+    fn xlsx_content_type_constant() {
+        assert!(XLSX_CONTENT_TYPE.contains("spreadsheetml"));
+    }
+}

@@ -55,3 +55,47 @@ impl From<ExcelPoemError> for poem::Error {
         error.into_poem_error()
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_wraps_error() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let err = ExcelPoemError::new(error, "req-1");
+        assert!(!err.to_string().is_empty());
+    }
+
+    #[test]
+    fn display_delegates() {
+        let error = easyexcel_web::ExcelWebError::ProcessingTimeout;
+        let err = ExcelPoemError::new(error, "req-2");
+        let msg = err.to_string();
+        assert!(!msg.is_empty());
+    }
+
+    #[test]
+    fn error_trait() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let err = ExcelPoemError::new(error, "req-3");
+        let dyn_err: &dyn std::error::Error = &err;
+        assert!(!dyn_err.to_string().is_empty());
+    }
+
+    #[test]
+    fn into_response_has_status() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let err = ExcelPoemError::new(error, "req-4");
+        let response = err.into_response();
+        assert_eq!(response.status(), poem::http::StatusCode::REQUEST_TIMEOUT);
+    }
+
+    #[test]
+    fn from_converts_to_poem_error() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let err = ExcelPoemError::new(error, "req-5");
+        let poem_err: poem::Error = err.into();
+        assert_eq!(poem_err.status(), poem::http::StatusCode::REQUEST_TIMEOUT);
+    }
+}

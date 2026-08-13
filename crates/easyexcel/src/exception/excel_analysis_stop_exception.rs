@@ -42,3 +42,70 @@ impl From<ExcelAnalysisStopException> for crate::ExcelError {
         crate::ExcelError::AnalysisStop(v.to_string())
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_has_no_message() {
+        let ex = ExcelAnalysisStopException::new();
+        assert!(ex.inner.runtime_exception().message().is_none());
+    }
+
+    #[test]
+    fn with_message() {
+        let ex = ExcelAnalysisStopException::with_message("stop");
+        assert_eq!(ex.inner.runtime_exception().message(), Some("stop"));
+    }
+
+    #[test]
+    fn with_message_and_cause() {
+        let ex = ExcelAnalysisStopException::with_message_and_cause("wrap", "root");
+        assert_eq!(ex.inner.runtime_exception().cause(), Some("root"));
+    }
+
+    #[test]
+    fn with_cause() {
+        let ex = ExcelAnalysisStopException::with_cause("done");
+        assert_eq!(ex.inner.runtime_exception().cause(), Some("done"));
+    }
+
+    #[test]
+    fn display_shows_message() {
+        let ex = ExcelAnalysisStopException::with_message("halt");
+        assert_eq!(format!("{ex}"), "halt");
+    }
+
+    #[test]
+    fn error_trait() {
+        let ex = ExcelAnalysisStopException::with_message("stop err");
+        let err: &dyn std::error::Error = &ex;
+        assert!(err.to_string().contains("stop err"));
+    }
+
+    #[test]
+    fn from_converts_to_analysis_stop() {
+        let ex = ExcelAnalysisStopException::with_message("stop");
+        let err: crate::ExcelError = ex.into();
+        match &err {
+            crate::ExcelError::AnalysisStop(msg) => assert!(msg.contains("stop")),
+            other => panic!("expected AnalysisStop, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn default_matches_new() {
+        assert_eq!(
+            ExcelAnalysisStopException::default(),
+            ExcelAnalysisStopException::new()
+        );
+    }
+
+    #[test]
+    fn clone_eq() {
+        let a = ExcelAnalysisStopException::with_message("x");
+        let b = a.clone();
+        assert_eq!(a, b);
+    }
+}

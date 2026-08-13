@@ -44,3 +44,62 @@ impl ResponseError for ExcelActixError {
         HttpResponse::build(self.status_code()).json(self.error.problem_details(&self.request_id))
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_wraps_error() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let err = ExcelActixError::new(error, "req-1");
+        assert!(!err.to_string().is_empty());
+    }
+
+    #[test]
+    fn error_returns_reference() {
+        let error = easyexcel_web::ExcelWebError::ProcessingTimeout;
+        let err = ExcelActixError::new(error, "req-2");
+        assert_eq!(
+            err.error().code(),
+            easyexcel_web::ExcelWebErrorCode::ProcessingTimeout
+        );
+    }
+
+    #[test]
+    fn display_delegates() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let err = ExcelActixError::new(error, "req-3");
+        assert!(!err.to_string().is_empty());
+    }
+
+    #[test]
+    fn error_trait() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let err = ExcelActixError::new(error, "req-4");
+        let dyn_err: &dyn std::error::Error = &err;
+        assert!(!dyn_err.to_string().is_empty());
+    }
+
+    #[test]
+    fn status_code_returns_correct_value() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let err = ExcelActixError::new(error, "req-5");
+        assert_eq!(err.status_code(), StatusCode::REQUEST_TIMEOUT);
+    }
+
+    #[test]
+    fn error_response_returns_json() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let err = ExcelActixError::new(error, "req-6");
+        let response = err.error_response();
+        assert_eq!(response.status(), StatusCode::REQUEST_TIMEOUT);
+    }
+
+    #[test]
+    fn debug_contains_struct_name() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let err = ExcelActixError::new(error, "req");
+        assert!(format!("{err:?}").contains("ExcelActixError"));
+    }
+}

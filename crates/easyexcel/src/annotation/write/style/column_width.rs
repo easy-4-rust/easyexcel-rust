@@ -35,3 +35,55 @@ impl ColumnWidth {
         u16::try_from(self.value).ok().map(ColumnWidthProperty::new)
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_returns_default_minus_one() {
+        let w = ColumnWidth::new();
+        assert_eq!(w.value(), -1);
+    }
+
+    #[test]
+    fn default_matches_new() {
+        assert_eq!(ColumnWidth::default(), ColumnWidth::new());
+    }
+
+    #[test]
+    fn setter_and_getter() {
+        let mut w = ColumnWidth::new();
+        w.set_value(25);
+        assert_eq!(w.value(), 25);
+    }
+
+    #[test]
+    fn to_property_with_valid_value() {
+        let mut w = ColumnWidth::new();
+        w.set_value(20);
+        assert!(w.to_property().is_some());
+    }
+
+    #[test]
+    fn to_property_negative_returns_none() {
+        let w = ColumnWidth::new();
+        assert!(w.to_property().is_none());
+    }
+
+    #[test]
+    fn to_property_overflow_returns_none() {
+        let mut w = ColumnWidth::new();
+        w.set_value(i32::MAX);
+        assert!(w.to_property().is_none());
+    }
+
+    #[test]
+    fn copy_clone_eq() {
+        let a = ColumnWidth::new();
+        let b = a;
+        let c = a.clone();
+        assert_eq!(a, b);
+        assert_eq!(a, c);
+    }
+}

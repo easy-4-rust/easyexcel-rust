@@ -30,3 +30,25 @@ pub fn excel_xlsx_attachment_headers(file_name: &str) -> HeaderMap {
     );
     headers
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn headers_contain_content_type() {
+        let headers = excel_xlsx_attachment_headers("report");
+        let ct = headers.get(CONTENT_TYPE).expect("Content-Type present");
+        assert_eq!(ct, XLSX_CONTENT_TYPE);
+    }
+
+    #[test]
+    fn headers_contain_content_disposition_with_filename() {
+        let headers = excel_xlsx_attachment_headers("report");
+        let cd = headers
+            .get(CONTENT_DISPOSITION)
+            .expect("Content-Disposition present");
+        let cd_str = cd.to_str().unwrap();
+        assert!(cd_str.contains("report.xlsx"), "cd: {cd_str}");
+    }
+}

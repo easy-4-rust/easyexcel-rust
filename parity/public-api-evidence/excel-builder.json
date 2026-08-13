@@ -47,19 +47,19 @@
       ],
       "rust_ids": [
         "easyexcel:061aa6f983700f725dfc",
-        "easyexcel:3ab060c3324d684dbea0",
-        "easyexcel:bf0af246070ae3dbc72f",
-        "easyexcel:bf56c77c849a014c0698",
-        "easyexcel:5d79eb1ddf278cbc8c25",
-        "easyexcel:bd336b8046432b36ac40",
+        "easyexcel:52376cba0a21cb2cc2f1",
+        "easyexcel:a3bae6b5f2c3b3b950d1",
+        "easyexcel:6c09dd0c4a4c88eecddb",
+        "easyexcel:6ecbfc598c1da34d6ac2",
+        "easyexcel:96cb5669caf030529c85",
         "easyexcel:2657d57257140dd5e12e",
         "easyexcel:33b1c0862ad6388f3f14",
-        "easyexcel:2be0b8efa5fea60c5c67",
-        "easyexcel:c8fc1e08306fa392a22d",
-        "easyexcel:5d0187881bcc1ca1fe9f",
-        "easyexcel:5f2809812c53d2ae9094",
-        "easyexcel:f75c8e93192cc4c9d65b",
-        "easyexcel:5552a0039e513e89003a",
+        "easyexcel:a44eee95e02d8feccf82",
+        "easyexcel:b2a88cc10e6982e2ebab",
+        "easyexcel:a20438e4d457f5489b68",
+        "easyexcel:0277c2a979006e0b2d80",
+        "easyexcel:3f8604d2db3526bc7c41",
+        "easyexcel:c4e5af069105bdfbcc82",
         "easyexcel:4e11602d4ddeebeb32d5"
       ],
       "source_files": [
@@ -69,7 +69,7 @@
         },
         {
           "path": "crates/easyexcel/src/write/excel_builder_impl.rs",
-          "sha256": "a0cb721987ad3af46b6b13a36e04aca54b45ce39d78f37c873827c3a98a9ce92"
+          "sha256": "9c5f505be24988d101475a3642c23d1d2af6b7dda637202c3fa4891e782142f8"
         },
         {
           "path": "tests/easyexcel-test/tests/public_api_excel_builder_evidence_tests.rs",
@@ -109,25 +109,25 @@
       "kind": "behavior_test",
       "rust_ids": [
         "easyexcel:061aa6f983700f725dfc",
-        "easyexcel:3ab060c3324d684dbea0",
-        "easyexcel:bf0af246070ae3dbc72f",
-        "easyexcel:bf56c77c849a014c0698",
-        "easyexcel:5d79eb1ddf278cbc8c25",
-        "easyexcel:bd336b8046432b36ac40",
+        "easyexcel:52376cba0a21cb2cc2f1",
+        "easyexcel:a3bae6b5f2c3b3b950d1",
+        "easyexcel:6c09dd0c4a4c88eecddb",
+        "easyexcel:6ecbfc598c1da34d6ac2",
+        "easyexcel:96cb5669caf030529c85",
         "easyexcel:2657d57257140dd5e12e",
         "easyexcel:33b1c0862ad6388f3f14",
-        "easyexcel:2be0b8efa5fea60c5c67",
-        "easyexcel:c8fc1e08306fa392a22d",
-        "easyexcel:5d0187881bcc1ca1fe9f",
-        "easyexcel:5f2809812c53d2ae9094",
-        "easyexcel:f75c8e93192cc4c9d65b",
-        "easyexcel:5552a0039e513e89003a",
+        "easyexcel:a44eee95e02d8feccf82",
+        "easyexcel:b2a88cc10e6982e2ebab",
+        "easyexcel:a20438e4d457f5489b68",
+        "easyexcel:0277c2a979006e0b2d80",
+        "easyexcel:3f8604d2db3526bc7c41",
+        "easyexcel:c4e5af069105bdfbcc82",
         "easyexcel:4e11602d4ddeebeb32d5"
       ],
       "source_files": [
         {
           "path": "crates/easyexcel/src/write/excel_builder_impl.rs",
-          "sha256": "a0cb721987ad3af46b6b13a36e04aca54b45ce39d78f37c873827c3a98a9ce92"
+          "sha256": "9c5f505be24988d101475a3642c23d1d2af6b7dda637202c3fa4891e782142f8"
         },
         {
           "path": "crates/easyexcel/src/context/write_fill_executor.rs",
@@ -135,11 +135,11 @@
         },
         {
           "path": "crates/easyexcel/src/template/builder_fill_executor.rs",
-          "sha256": "3d7edcd7e52fd59529ab151612072371cea17ab4c8dcb5adb5924b46dbc2aafe"
+          "sha256": "93f3999a3504c9c9c327d21417eb8f5b3b8601bcfc54e08cc437471114278a79"
         },
         {
           "path": "crates/easyexcel/src/template/template_writer.rs",
-          "sha256": "d98a6ce0577d8bef59f9f5eed79838ba763ec2e73dd1fbf46ad5516b54de052f"
+          "sha256": "70db84af6e2eb428755e9e58ac51c770ef2c6c89e2797dbc31dbaf405e5017c9"
         },
         {
           "path": "crates/easyexcel/src/context/write_mutation.rs",
@@ -147,7 +147,7 @@
         },
         {
           "path": "crates/easyexcel/src/context/write_mutation_plan.rs",
-          "sha256": "b60ca045853fa7fa472fc3933aaf5edf1bfa340bb764ae9493ab0ba921edf855"
+          "sha256": "a67ce6c4ec67dba91761be7649f0370276dc5facd8af33291cfbd56e84fe5b0b"
         },
         {
           "path": "crates/easyexcel/src/excel_writer/write_raw_bytes_to_write_xls_batch_onto_template.rs",
@@ -207,19 +207,19 @@
       "kind": "java_golden",
       "rust_ids": [
         "easyexcel:061aa6f983700f725dfc",
-        "easyexcel:3ab060c3324d684dbea0",
-        "easyexcel:bf0af246070ae3dbc72f",
-        "easyexcel:bf56c77c849a014c0698",
-        "easyexcel:5d79eb1ddf278cbc8c25",
-        "easyexcel:bd336b8046432b36ac40",
+        "easyexcel:52376cba0a21cb2cc2f1",
+        "easyexcel:a3bae6b5f2c3b3b950d1",
+        "easyexcel:6c09dd0c4a4c88eecddb",
+        "easyexcel:6ecbfc598c1da34d6ac2",
+        "easyexcel:96cb5669caf030529c85",
         "easyexcel:2657d57257140dd5e12e",
         "easyexcel:33b1c0862ad6388f3f14",
-        "easyexcel:2be0b8efa5fea60c5c67",
-        "easyexcel:c8fc1e08306fa392a22d",
-        "easyexcel:5d0187881bcc1ca1fe9f",
-        "easyexcel:5f2809812c53d2ae9094",
-        "easyexcel:f75c8e93192cc4c9d65b",
-        "easyexcel:5552a0039e513e89003a",
+        "easyexcel:a44eee95e02d8feccf82",
+        "easyexcel:b2a88cc10e6982e2ebab",
+        "easyexcel:a20438e4d457f5489b68",
+        "easyexcel:0277c2a979006e0b2d80",
+        "easyexcel:3f8604d2db3526bc7c41",
+        "easyexcel:c4e5af069105bdfbcc82",
         "easyexcel:4e11602d4ddeebeb32d5"
       ],
       "source_files": [
@@ -288,8 +288,8 @@
       ],
       "kind": "behavior_test",
       "rust_ids": [
-        "easyexcel:bf0af246070ae3dbc72f",
-        "easyexcel:5d0187881bcc1ca1fe9f"
+        "easyexcel:a3bae6b5f2c3b3b950d1",
+        "easyexcel:a20438e4d457f5489b68"
       ],
       "source_files": [
         {

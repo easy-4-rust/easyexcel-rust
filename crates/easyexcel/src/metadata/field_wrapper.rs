@@ -101,4 +101,57 @@ mod tests_extra {
         assert_eq!(empty.field_name(), "");
         assert!(empty.heads().is_empty());
     }
+
+    #[test]
+    fn with_field_name_sets_field_and_field_name() {
+        let wrapper = FieldWrapper::with_field_name("age", vec!["年龄".to_owned()]);
+        assert_eq!(wrapper.get_field(), Some("age"));
+        assert_eq!(wrapper.get_field_name(), "age");
+        assert_eq!(wrapper.get_heads(), &["年龄".to_owned()][..]);
+    }
+
+    #[test]
+    fn get_field_returns_none_for_default() {
+        let wrapper = FieldWrapper::default();
+        assert!(wrapper.get_field().is_none());
+    }
+
+    #[test]
+    fn set_field_and_set_field_name() {
+        let mut wrapper = FieldWrapper::new("x", vec![]);
+        wrapper.set_field(Some("y".to_owned()));
+        assert_eq!(wrapper.get_field(), Some("y"));
+        wrapper.set_field(None);
+        assert!(wrapper.get_field().is_none());
+        wrapper.set_field_name("z");
+        assert_eq!(wrapper.get_field_name(), "z");
+    }
+
+    #[test]
+    fn set_heads() {
+        let mut wrapper = FieldWrapper::new("x", vec![]);
+        wrapper.set_heads(vec!["A".to_owned(), "B".to_owned()]);
+        assert_eq!(wrapper.get_heads(), &["A".to_owned(), "B".to_owned()][..]);
+    }
+
+    #[test]
+    fn clone_eq_hash() {
+        let a = FieldWrapper::new("x", vec!["h".to_owned()]);
+        let b = a.clone();
+        assert_eq!(a, b);
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        let mut ha = DefaultHasher::new();
+        let mut hb = DefaultHasher::new();
+        a.hash(&mut ha);
+        b.hash(&mut hb);
+        assert_eq!(ha.finish(), hb.finish());
+    }
+
+    #[test]
+    fn debug_contains_field_name() {
+        let wrapper = FieldWrapper::new("my_field", vec![]);
+        let dbg = format!("{wrapper:?}");
+        assert!(dbg.contains("my_field"));
+    }
 }

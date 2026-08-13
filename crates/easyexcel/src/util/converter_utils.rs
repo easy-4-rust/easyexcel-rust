@@ -280,4 +280,66 @@ mod tests_extra {
             "hello"
         );
     }
+
+    #[test]
+    fn convert_read_cells_to_string_map_empty() {
+        let cells = std::collections::BTreeMap::new();
+        let result = convert_read_cells_to_string_map(&cells).unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn convert_read_cells_to_string_map_consecutive_columns() {
+        let mut cells = std::collections::BTreeMap::new();
+        cells.insert(0, crate::ReadCellData::from_string("Alice"));
+        cells.insert(1, crate::ReadCellData::from_string("Bob"));
+        cells.insert(2, crate::ReadCellData::from_string("Charlie"));
+        let result = convert_read_cells_to_string_map(&cells).unwrap();
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[&0], Some("Alice".to_owned()));
+        assert_eq!(result[&1], Some("Bob".to_owned()));
+        assert_eq!(result[&2], Some("Charlie".to_owned()));
+    }
+
+    #[test]
+    fn convert_read_cells_to_string_map_sparse_columns_fills_none() {
+        let mut cells = std::collections::BTreeMap::new();
+        cells.insert(0, crate::ReadCellData::from_string("first"));
+        // Column 1 is missing
+        cells.insert(2, crate::ReadCellData::from_string("third"));
+        let result = convert_read_cells_to_string_map(&cells).unwrap();
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[&0], Some("first".to_owned()));
+        assert_eq!(result[&1], None); // sparse column
+        assert_eq!(result[&2], Some("third".to_owned()));
+    }
+
+    #[test]
+    fn convert_read_cells_to_string_map_empty_cell() {
+        let mut cells = std::collections::BTreeMap::new();
+        cells.insert(0, crate::ReadCellData::from_string("val"));
+        cells.insert(1, crate::ReadCellData::new_empty_instance(None, None));
+        let result = convert_read_cells_to_string_map(&cells).unwrap();
+        assert_eq!(result[&0], Some("val".to_owned()));
+        // Empty cell type -> None
+        assert_eq!(result[&1], None);
+    }
+
+    #[test]
+    fn convert_read_cells_to_string_map_multiple_sparse_gaps() {
+        let mut cells = std::collections::BTreeMap::new();
+        cells.insert(0, crate::ReadCellData::from_string("a"));
+        // 1, 2 missing
+        cells.insert(3, crate::ReadCellData::from_string("d"));
+        // 4 missing
+        cells.insert(5, crate::ReadCellData::from_string("f"));
+        let result = convert_read_cells_to_string_map(&cells).unwrap();
+        assert_eq!(result.len(), 6);
+        assert_eq!(result[&0], Some("a".to_owned()));
+        assert_eq!(result[&1], None);
+        assert_eq!(result[&2], None);
+        assert_eq!(result[&3], Some("d".to_owned()));
+        assert_eq!(result[&4], None);
+        assert_eq!(result[&5], Some("f".to_owned()));
+    }
 }

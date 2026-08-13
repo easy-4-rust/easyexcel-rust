@@ -54,3 +54,76 @@ impl ContentLoopMerge {
         ))
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_returns_defaults() {
+        let m = ContentLoopMerge::new();
+        assert_eq!(m.each_row(), 1);
+        assert_eq!(m.column_extend(), 1);
+    }
+
+    #[test]
+    fn default_trait_matches_new() {
+        let m = ContentLoopMerge::default();
+        assert_eq!(m, ContentLoopMerge::new());
+    }
+
+    #[test]
+    fn setters_and_getters() {
+        let mut m = ContentLoopMerge::new();
+        m.set_each_row(5);
+        assert_eq!(m.each_row(), 5);
+        m.set_column_extend(3);
+        assert_eq!(m.column_extend(), 3);
+    }
+
+    #[test]
+    fn to_property_with_valid_values() {
+        let mut m = ContentLoopMerge::new();
+        m.set_each_row(10);
+        m.set_column_extend(2);
+        let prop = m.to_property();
+        assert!(prop.is_some());
+    }
+
+    #[test]
+    fn to_property_rejects_negative_each_row() {
+        let mut m = ContentLoopMerge::new();
+        m.set_each_row(-1);
+        assert!(m.to_property().is_none());
+    }
+
+    #[test]
+    fn to_property_rejects_negative_column_extend() {
+        let mut m = ContentLoopMerge::new();
+        m.set_column_extend(-1);
+        assert!(m.to_property().is_none());
+    }
+
+    #[test]
+    fn to_property_rejects_column_extend_overflow() {
+        let mut m = ContentLoopMerge::new();
+        m.set_column_extend(i32::MAX);
+        // i32::MAX does not fit in u16
+        assert!(m.to_property().is_none());
+    }
+
+    #[test]
+    fn copy_clone_eq() {
+        let a = ContentLoopMerge::new();
+        let b = a;
+        let c = a.clone();
+        assert_eq!(a, b);
+        assert_eq!(a, c);
+    }
+
+    #[test]
+    fn debug_contains_struct_name() {
+        let m = ContentLoopMerge::new();
+        assert!(format!("{m:?}").contains("ContentLoopMerge"));
+    }
+}

@@ -36,16 +36,12 @@
         "stable-all-features"
       ],
       "rust_ids": [
-        "easyexcel::enums::poi::border_style_enum::BorderStyleEnum",
-        "easyexcel::enums::poi::border_style_enum::BorderStyleEnum::ALL",
-        "easyexcel::enums::poi::border_style_enum::BorderStyleEnum::java_name",
-        "easyexcel::enums::poi::border_style_enum::BorderStyleEnum::poi_border_style",
-        "easyexcel::enums::poi::border_style_enum::BorderStyleEnum::Default"
+        "easyexcel:2ac0edc6df8da6d28214"
       ],
       "source_files": [
         {
           "path": "crates/easyexcel/src/enums/poi/border_style_enum.rs",
-          "sha256": "b9d3108c3a6853cab135af3ffc19f190942acf49173ab7eb4f720a8666ce4ec1"
+          "sha256": "15f73df56c0877baddbff98232c1aebb613ca76c76676c172ad5aac9e1f2d9db"
         },
         {
           "path": "crates/easyexcel/src/enums/poi/mod.rs",
@@ -53,7 +49,7 @@
         },
         {
           "path": "tests/easyexcel-test/tests/public_api_poi_enums_evidence_tests.rs",
-          "sha256": "c4b2ffc8920c4adad0de6c723600d1ccf1dcb014f757259cb2b421a1746cd8a9"
+          "sha256": "980e143eb499c36556d47d328d9bac0096fa139cde7606405c2457415fa606e0"
         }
       ]
     },
@@ -79,20 +75,16 @@
       ],
       "kind": "behavior_test",
       "rust_ids": [
-        "easyexcel::enums::poi::border_style_enum::BorderStyleEnum",
-        "easyexcel::enums::poi::border_style_enum::BorderStyleEnum::ALL",
-        "easyexcel::enums::poi::border_style_enum::BorderStyleEnum::java_name",
-        "easyexcel::enums::poi::border_style_enum::BorderStyleEnum::poi_border_style",
-        "easyexcel::enums::poi::border_style_enum::BorderStyleEnum::Default"
+        "easyexcel:2ac0edc6df8da6d28214"
       ],
       "source_files": [
         {
           "path": "crates/easyexcel/src/enums/poi/border_style_enum.rs",
-          "sha256": "b9d3108c3a6853cab135af3ffc19f190942acf49173ab7eb4f720a8666ce4ec1"
+          "sha256": "15f73df56c0877baddbff98232c1aebb613ca76c76676c172ad5aac9e1f2d9db"
         },
         {
           "path": "tests/easyexcel-test/tests/public_api_poi_enums_evidence_tests.rs",
-          "sha256": "c4b2ffc8920c4adad0de6c723600d1ccf1dcb014f757259cb2b421a1746cd8a9"
+          "sha256": "980e143eb499c36556d47d328d9bac0096fa139cde7606405c2457415fa606e0"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/poi_enums_mapping.json",
@@ -136,16 +128,12 @@
         "stable-all-features"
       ],
       "rust_ids": [
-        "easyexcel::enums::poi::fill_pattern_type_enum::FillPatternTypeEnum",
-        "easyexcel::enums::poi::fill_pattern_type_enum::FillPatternTypeEnum::ALL",
-        "easyexcel::enums::poi::fill_pattern_type_enum::FillPatternTypeEnum::java_name",
-        "easyexcel::enums::poi::fill_pattern_type_enum::FillPatternTypeEnum::poi_fill_pattern_type",
-        "easyexcel::enums::poi::fill_pattern_type_enum::FillPatternTypeEnum::Default"
+        "easyexcel:692b8d2b03625fe453c3"
       ],
       "source_files": [
         {
           "path": "crates/easyexcel/src/enums/poi/fill_pattern_type_enum.rs",
-          "sha256": "6ac7eb563297bea7258e5450508a2c93e595731917b33764f99881def31d1bee"
+          "sha256": "85671992b060081c47dfe4381aa00c39c3a7f873ac873fef1ed917b7460ef4c0"
         },
         {
           "path": "crates/easyexcel/src/enums/poi/mod.rs",
@@ -153,7 +141,7 @@
         },
         {
           "path": "tests/easyexcel-test/tests/public_api_poi_enums_evidence_tests.rs",
-          "sha256": "c4b2ffc8920c4adad0de6c723600d1ccf1dcb014f757259cb2b421a1746cd8a9"
+          "sha256": "980e143eb499c36556d47d328d9bac0096fa139cde7606405c2457415fa606e0"
         }
       ]
     },
@@ -179,20 +167,16 @@
       ],
       "kind": "behavior_test",
       "rust_ids": [
-        "easyexcel::enums::poi::fill_pattern_type_enum::FillPatternTypeEnum",
-        "easyexcel::enums::poi::fill_pattern_type_enum::FillPatternTypeEnum::ALL",
-        "easyexcel::enums::poi::fill_pattern_type_enum::FillPatternTypeEnum::java_name",
-        "easyexcel::enums::poi::fill_pattern_type_enum::FillPatternTypeEnum::poi_fill_pattern_type",
-        "easyexcel::enums::poi::fill_pattern_type_enum::FillPatternTypeEnum::Default"
+        "easyexcel:692b8d2b03625fe453c3"
       ],
       "source_files": [
         {
           "path": "crates/easyexcel/src/enums/poi/fill_pattern_type_enum.rs",
-          "sha256": "6ac7eb563297bea7258e5450508a2c93e595731917b33764f99881def31d1bee"
+          "sha256": "85671992b060081c47dfe4381aa00c39c3a7f873ac873fef1ed917b7460ef4c0"
         },
         {
           "path": "tests/easyexcel-test/tests/public_api_poi_enums_evidence_tests.rs",
-          "sha256": "c4b2ffc8920c4adad0de6c723600d1ccf1dcb014f757259cb2b421a1746cd8a9"
+          "sha256": "980e143eb499c36556d47d328d9bac0096fa139cde7606405c2457415fa606e0"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/poi_enums_mapping.json",
@@ -236,16 +220,12 @@
         "stable-all-features"
       ],
       "rust_ids": [
-        "easyexcel::enums::poi::horizontal_alignment_enum::HorizontalAlignmentEnum",
-        "easyexcel::enums::poi::horizontal_alignment_enum::HorizontalAlignmentEnum::ALL",
-        "easyexcel::enums::poi::horizontal_alignment_enum::HorizontalAlignmentEnum::java_name",
-        "easyexcel::enums::poi::horizontal_alignment_enum::HorizontalAlignmentEnum::poi_horizontal_alignment",
-        "easyexcel::enums::poi::horizontal_alignment_enum::HorizontalAlignmentEnum::Default"
+        "easyexcel:4c6465629fb6e91e5df8"
       ],
       "source_files": [
         {
           "path": "crates/easyexcel/src/enums/poi/horizontal_alignment_enum.rs",
-          "sha256": "1e45e6ad002330590978c34dc62bdcdbb96eb1a1c5e5c8e82fe6b639e443469b"
+          "sha256": "65c4c64d5b8dbccd800593da49e949904c73243e3ad2b7e7c08374294f47b524"
         },
         {
           "path": "crates/easyexcel/src/enums/poi/mod.rs",
@@ -253,7 +233,7 @@
         },
         {
           "path": "tests/easyexcel-test/tests/public_api_poi_enums_evidence_tests.rs",
-          "sha256": "c4b2ffc8920c4adad0de6c723600d1ccf1dcb014f757259cb2b421a1746cd8a9"
+          "sha256": "980e143eb499c36556d47d328d9bac0096fa139cde7606405c2457415fa606e0"
         }
       ]
     },
@@ -279,20 +259,16 @@
       ],
       "kind": "behavior_test",
       "rust_ids": [
-        "easyexcel::enums::poi::horizontal_alignment_enum::HorizontalAlignmentEnum",
-        "easyexcel::enums::poi::horizontal_alignment_enum::HorizontalAlignmentEnum::ALL",
-        "easyexcel::enums::poi::horizontal_alignment_enum::HorizontalAlignmentEnum::java_name",
-        "easyexcel::enums::poi::horizontal_alignment_enum::HorizontalAlignmentEnum::poi_horizontal_alignment",
-        "easyexcel::enums::poi::horizontal_alignment_enum::HorizontalAlignmentEnum::Default"
+        "easyexcel:4c6465629fb6e91e5df8"
       ],
       "source_files": [
         {
           "path": "crates/easyexcel/src/enums/poi/horizontal_alignment_enum.rs",
-          "sha256": "1e45e6ad002330590978c34dc62bdcdbb96eb1a1c5e5c8e82fe6b639e443469b"
+          "sha256": "65c4c64d5b8dbccd800593da49e949904c73243e3ad2b7e7c08374294f47b524"
         },
         {
           "path": "tests/easyexcel-test/tests/public_api_poi_enums_evidence_tests.rs",
-          "sha256": "c4b2ffc8920c4adad0de6c723600d1ccf1dcb014f757259cb2b421a1746cd8a9"
+          "sha256": "980e143eb499c36556d47d328d9bac0096fa139cde7606405c2457415fa606e0"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/poi_enums_mapping.json",
@@ -336,16 +312,12 @@
         "stable-all-features"
       ],
       "rust_ids": [
-        "easyexcel::enums::poi::vertical_alignment_enum::VerticalAlignmentEnum",
-        "easyexcel::enums::poi::vertical_alignment_enum::VerticalAlignmentEnum::ALL",
-        "easyexcel::enums::poi::vertical_alignment_enum::VerticalAlignmentEnum::java_name",
-        "easyexcel::enums::poi::vertical_alignment_enum::VerticalAlignmentEnum::poi_vertical_alignment_enum",
-        "easyexcel::enums::poi::vertical_alignment_enum::VerticalAlignmentEnum::Default"
+        "easyexcel:357d0abd7ca6d5befacc"
       ],
       "source_files": [
         {
           "path": "crates/easyexcel/src/enums/poi/vertical_alignment_enum.rs",
-          "sha256": "1525963f9d0b6d825fbe862dbafa9dae448c50b435bd785abafef2bec3101518"
+          "sha256": "b7c0f90ad0e3fe937a898517fc2f052dc1a1089d3e07777858d910c7fba87de4"
         },
         {
           "path": "crates/easyexcel/src/enums/poi/mod.rs",
@@ -353,7 +325,7 @@
         },
         {
           "path": "tests/easyexcel-test/tests/public_api_poi_enums_evidence_tests.rs",
-          "sha256": "c4b2ffc8920c4adad0de6c723600d1ccf1dcb014f757259cb2b421a1746cd8a9"
+          "sha256": "980e143eb499c36556d47d328d9bac0096fa139cde7606405c2457415fa606e0"
         }
       ]
     },
@@ -379,20 +351,16 @@
       ],
       "kind": "behavior_test",
       "rust_ids": [
-        "easyexcel::enums::poi::vertical_alignment_enum::VerticalAlignmentEnum",
-        "easyexcel::enums::poi::vertical_alignment_enum::VerticalAlignmentEnum::ALL",
-        "easyexcel::enums::poi::vertical_alignment_enum::VerticalAlignmentEnum::java_name",
-        "easyexcel::enums::poi::vertical_alignment_enum::VerticalAlignmentEnum::poi_vertical_alignment_enum",
-        "easyexcel::enums::poi::vertical_alignment_enum::VerticalAlignmentEnum::Default"
+        "easyexcel:357d0abd7ca6d5befacc"
       ],
       "source_files": [
         {
           "path": "crates/easyexcel/src/enums/poi/vertical_alignment_enum.rs",
-          "sha256": "1525963f9d0b6d825fbe862dbafa9dae448c50b435bd785abafef2bec3101518"
+          "sha256": "b7c0f90ad0e3fe937a898517fc2f052dc1a1089d3e07777858d910c7fba87de4"
         },
         {
           "path": "tests/easyexcel-test/tests/public_api_poi_enums_evidence_tests.rs",
-          "sha256": "c4b2ffc8920c4adad0de6c723600d1ccf1dcb014f757259cb2b421a1746cd8a9"
+          "sha256": "980e143eb499c36556d47d328d9bac0096fa139cde7606405c2457415fa606e0"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/poi_enums_mapping.json",
@@ -421,31 +389,31 @@
       ],
       "kind": "behavior_test",
       "rust_ids": [
-        "easyexcel::enums::poi::border_style_enum::BorderStyleEnum::Default",
-        "easyexcel::enums::poi::fill_pattern_type_enum::FillPatternTypeEnum::Default",
-        "easyexcel::enums::poi::horizontal_alignment_enum::HorizontalAlignmentEnum::Default",
-        "easyexcel::enums::poi::vertical_alignment_enum::VerticalAlignmentEnum::Default"
+        "easyexcel:2ac0edc6df8da6d28214",
+        "easyexcel:692b8d2b03625fe453c3",
+        "easyexcel:4c6465629fb6e91e5df8",
+        "easyexcel:357d0abd7ca6d5befacc"
       ],
       "source_files": [
         {
           "path": "crates/easyexcel/src/enums/poi/border_style_enum.rs",
-          "sha256": "b9d3108c3a6853cab135af3ffc19f190942acf49173ab7eb4f720a8666ce4ec1"
+          "sha256": "15f73df56c0877baddbff98232c1aebb613ca76c76676c172ad5aac9e1f2d9db"
         },
         {
           "path": "crates/easyexcel/src/enums/poi/fill_pattern_type_enum.rs",
-          "sha256": "6ac7eb563297bea7258e5450508a2c93e595731917b33764f99881def31d1bee"
+          "sha256": "85671992b060081c47dfe4381aa00c39c3a7f873ac873fef1ed917b7460ef4c0"
         },
         {
           "path": "crates/easyexcel/src/enums/poi/horizontal_alignment_enum.rs",
-          "sha256": "1e45e6ad002330590978c34dc62bdcdbb96eb1a1c5e5c8e82fe6b639e443469b"
+          "sha256": "65c4c64d5b8dbccd800593da49e949904c73243e3ad2b7e7c08374294f47b524"
         },
         {
           "path": "crates/easyexcel/src/enums/poi/vertical_alignment_enum.rs",
-          "sha256": "1525963f9d0b6d825fbe862dbafa9dae448c50b435bd785abafef2bec3101518"
+          "sha256": "b7c0f90ad0e3fe937a898517fc2f052dc1a1089d3e07777858d910c7fba87de4"
         },
         {
           "path": "tests/easyexcel-test/tests/public_api_poi_enums_evidence_tests.rs",
-          "sha256": "c4b2ffc8920c4adad0de6c723600d1ccf1dcb014f757259cb2b421a1746cd8a9"
+          "sha256": "980e143eb499c36556d47d328d9bac0096fa139cde7606405c2457415fa606e0"
         },
         {
           "path": "tests/easyexcel-test/tests/golden/poi_enums_mapping.json",

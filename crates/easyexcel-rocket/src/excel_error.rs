@@ -48,3 +48,45 @@ impl<'r> Responder<'r, 'static> for ExcelRocketError {
             .ok()
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_wraps_error() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let err = ExcelRocketError::new(error, "req-1");
+        assert!(!err.to_string().is_empty());
+    }
+
+    #[test]
+    fn status_returns_correct_code() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let err = ExcelRocketError::new(error, "req-2");
+        // Cancelled maps to 408
+        assert_eq!(err.status().code, 408);
+    }
+
+    #[test]
+    fn display_delegates() {
+        let error = easyexcel_web::ExcelWebError::ProcessingTimeout;
+        let err = ExcelRocketError::new(error, "req-3");
+        assert!(!err.to_string().is_empty());
+    }
+
+    #[test]
+    fn error_trait() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let err = ExcelRocketError::new(error, "req-4");
+        let dyn_err: &dyn std::error::Error = &err;
+        assert!(!dyn_err.to_string().is_empty());
+    }
+
+    #[test]
+    fn debug_contains_struct_name() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let err = ExcelRocketError::new(error, "req");
+        assert!(format!("{err:?}").contains("ExcelRocketError"));
+    }
+}

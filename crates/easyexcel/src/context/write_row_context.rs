@@ -256,4 +256,82 @@ mod tests_extra {
         assert_eq!(context.write_context().sheet_no(), Some(1));
         assert_eq!(context.row().row_index(), 0);
     }
+
+    #[test]
+    fn with_holder_context_table_branch() {
+        // 对应 Java：table_no is Some 时为 Table holder
+        let context = WriteRowContext::new("Sheet1", 5, Some(2), true).with_holder_context(
+            WriteWorkbookHolderView::new("out.xlsx"),
+            1,
+            Some(3),
+        );
+        assert_eq!(context.write_context().holder_type(), crate::Holder::Table);
+        assert!(context.write_table_holder().is_some());
+        assert_eq!(context.write_table_holder().unwrap().table_no(), 3);
+    }
+
+    #[test]
+    fn new_initializes_fields() {
+        let ctx = WriteRowContext::new("MySheet", 10, Some(3), true);
+        assert_eq!(ctx.sheet_name, "MySheet");
+        assert_eq!(ctx.row_index, 10);
+        assert_eq!(ctx.relative_row_index, Some(3));
+        assert!(ctx.is_head);
+        assert_eq!(ctx.get_row_index(), 10);
+        assert_eq!(ctx.relative_row_index(), Some(3));
+        assert!(ctx.head());
+    }
+
+    #[test]
+    fn get_aliases_match_primary() {
+        let ctx = WriteRowContext::new("S", 0, None, false);
+        assert_eq!(ctx.get_row(), ctx.row());
+        assert_eq!(ctx.get_head(), ctx.head());
+        assert_eq!(ctx.get_relative_row_index(), ctx.relative_row_index());
+        assert_eq!(ctx.get_row_index(), ctx.row_index);
+        assert_eq!(ctx.get_write_context(), ctx.write_context());
+    }
+
+    #[test]
+    fn set_row_index_rebuilds_handle() {
+        let mut ctx = WriteRowContext::new("S", 0, None, false);
+        ctx.set_row_index(99);
+        assert_eq!(ctx.row_index, 99);
+        assert_eq!(ctx.row().row_index(), 99);
+    }
+
+    #[test]
+    fn set_row_updates_index_and_handle() {
+        let mut ctx = WriteRowContext::new("S", 0, None, false);
+        let new_row = WriteRowHandle::new(42);
+        ctx.set_row(new_row);
+        assert_eq!(ctx.row_index, 42);
+        assert_eq!(ctx.row().row_index(), 42);
+    }
+
+    #[test]
+    fn set_relative_row_index() {
+        let mut ctx = WriteRowContext::new("S", 0, None, false);
+        ctx.set_relative_row_index(Some(7));
+        assert_eq!(ctx.relative_row_index(), Some(7));
+    }
+
+    #[test]
+    fn set_head_flag() {
+        let mut ctx = WriteRowContext::new("S", 0, None, false);
+        ctx.set_head(true);
+        assert!(ctx.head());
+        ctx.set_head(false);
+        assert!(!ctx.head());
+    }
+
+    #[test]
+    fn no_sheet_holder_panics_on_write_sheet_holder() {
+        // write_sheet_holder() panics when no sheet is set
+        let ctx = WriteRowContext::new("S", 0, None, false);
+        // Before with_holder_context, holders has sheet from new()
+        // But write_workbook_holder should be None
+        assert!(ctx.write_workbook_holder().is_none());
+        assert!(ctx.write_table_holder().is_none());
+    }
 }

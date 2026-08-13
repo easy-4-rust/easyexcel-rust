@@ -67,3 +67,56 @@ impl std::str::FromStr for ImageType {
             .ok_or_else(|| format!("unknown ImageData.ImageType value: {value}"))
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn java_names_match_java_constants() {
+        assert_eq!(ImageType::Emf.java_name(), "PICTURE_TYPE_EMF");
+        assert_eq!(ImageType::Wmf.java_name(), "PICTURE_TYPE_WMF");
+        assert_eq!(ImageType::Pict.java_name(), "PICTURE_TYPE_PICT");
+        assert_eq!(ImageType::Jpeg.java_name(), "PICTURE_TYPE_JPEG");
+        assert_eq!(ImageType::Png.java_name(), "PICTURE_TYPE_PNG");
+        assert_eq!(ImageType::Dib.java_name(), "PICTURE_TYPE_DIB");
+    }
+
+    #[test]
+    fn get_value_matches_poi_codes() {
+        assert_eq!(ImageType::Emf.get_value(), 2);
+        assert_eq!(ImageType::Wmf.get_value(), 3);
+        assert_eq!(ImageType::Pict.get_value(), 4);
+        assert_eq!(ImageType::Jpeg.get_value(), 5);
+        assert_eq!(ImageType::Png.get_value(), 6);
+        assert_eq!(ImageType::Dib.get_value(), 7);
+    }
+
+    #[test]
+    fn all_contains_six_variants() {
+        assert_eq!(ImageType::ALL.len(), 6);
+    }
+
+    #[test]
+    fn from_str_parses_all_variants() {
+        for img in ImageType::ALL {
+            let parsed: ImageType = img.java_name().parse().unwrap();
+            assert_eq!(parsed, img);
+        }
+    }
+
+    #[test]
+    fn from_str_rejects_unknown() {
+        let result: Result<ImageType, _> = "UNKNOWN".parse();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("unknown"));
+    }
+
+    #[test]
+    fn serde_roundtrip() {
+        let img = ImageType::Png;
+        let json = serde_json::to_string(&img).unwrap();
+        let parsed: ImageType = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, ImageType::Png);
+    }
+}

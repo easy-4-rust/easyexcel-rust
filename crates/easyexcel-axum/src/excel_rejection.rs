@@ -33,3 +33,44 @@ impl IntoResponse for ExcelRejection {
         (status, Json(problem)).into_response()
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_wraps_error_and_request_id() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let rejection = ExcelRejection::new(error, "req-123");
+        assert_eq!(
+            rejection.error().code(),
+            easyexcel_web::ExcelWebErrorCode::Cancelled
+        );
+    }
+
+    #[test]
+    fn error_returns_reference() {
+        let error = easyexcel_web::ExcelWebError::ProcessingTimeout;
+        let rejection = ExcelRejection::new(error, "req-456");
+        assert_eq!(
+            rejection.error().code(),
+            easyexcel_web::ExcelWebErrorCode::ProcessingTimeout
+        );
+    }
+
+    #[test]
+    fn into_response_produces_status_and_json() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let rejection = ExcelRejection::new(error, "req-789");
+        let response = rejection.into_response();
+        assert_eq!(response.status(), http::StatusCode::REQUEST_TIMEOUT);
+    }
+
+    #[test]
+    fn debug_contains_struct_name() {
+        let error = easyexcel_web::ExcelWebError::Cancelled;
+        let rejection = ExcelRejection::new(error, "req");
+        let dbg = format!("{rejection:?}");
+        assert!(dbg.contains("ExcelRejection"));
+    }
+}

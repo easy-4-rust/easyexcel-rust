@@ -33,3 +33,48 @@ impl HeadRowHeight {
         u16::try_from(self.value).ok().map(RowHeightProperty::new)
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_returns_default_minus_one() {
+        let h = HeadRowHeight::new();
+        assert_eq!(h.value(), -1);
+    }
+
+    #[test]
+    fn default_matches_new() {
+        assert_eq!(HeadRowHeight::default(), HeadRowHeight::new());
+    }
+
+    #[test]
+    fn setter_and_getter() {
+        let mut h = HeadRowHeight::new();
+        h.set_value(25);
+        assert_eq!(h.value(), 25);
+    }
+
+    #[test]
+    fn to_property_with_valid_value() {
+        let mut h = HeadRowHeight::new();
+        h.set_value(20);
+        assert!(h.to_property().is_some());
+    }
+
+    #[test]
+    fn to_property_negative_returns_none() {
+        let h = HeadRowHeight::new();
+        assert!(h.to_property().is_none());
+    }
+
+    #[test]
+    fn copy_clone_eq() {
+        let a = HeadRowHeight::new();
+        let b = a;
+        let c = a.clone();
+        assert_eq!(a, b);
+        assert_eq!(a, c);
+    }
+}

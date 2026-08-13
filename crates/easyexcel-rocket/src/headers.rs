@@ -28,3 +28,28 @@ pub fn excel_xlsx_attachment_headers(file_name: &str) -> Vec<Header<'static>> {
         Header::new(http::header::CONTENT_DISPOSITION.as_str(), disposition),
     ]
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn headers_contain_two_entries() {
+        let headers = excel_xlsx_attachment_headers("report");
+        assert_eq!(headers.len(), 2);
+    }
+
+    #[test]
+    fn content_type_is_xlsx() {
+        let headers = excel_xlsx_attachment_headers("report");
+        let ct = &headers[0];
+        assert_eq!(ct.value, XLSX_CONTENT_TYPE);
+    }
+
+    #[test]
+    fn content_disposition_contains_filename() {
+        let headers = excel_xlsx_attachment_headers("report");
+        let cd = &headers[1];
+        assert!(cd.value.contains("report.xlsx"), "cd: {}", cd.value);
+    }
+}

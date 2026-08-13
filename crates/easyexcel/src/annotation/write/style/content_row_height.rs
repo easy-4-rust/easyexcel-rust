@@ -33,3 +33,48 @@ impl ContentRowHeight {
         u16::try_from(self.value).ok().map(RowHeightProperty::new)
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_returns_default_minus_one() {
+        let h = ContentRowHeight::new();
+        assert_eq!(h.value(), -1);
+    }
+
+    #[test]
+    fn default_matches_new() {
+        assert_eq!(ContentRowHeight::default(), ContentRowHeight::new());
+    }
+
+    #[test]
+    fn setter_and_getter() {
+        let mut h = ContentRowHeight::new();
+        h.set_value(30);
+        assert_eq!(h.value(), 30);
+    }
+
+    #[test]
+    fn to_property_with_valid_value() {
+        let mut h = ContentRowHeight::new();
+        h.set_value(20);
+        assert!(h.to_property().is_some());
+    }
+
+    #[test]
+    fn to_property_negative_returns_none() {
+        let h = ContentRowHeight::new();
+        assert!(h.to_property().is_none());
+    }
+
+    #[test]
+    fn copy_clone_eq() {
+        let a = ContentRowHeight::new();
+        let b = a;
+        let c = a.clone();
+        assert_eq!(a, b);
+        assert_eq!(a, c);
+    }
+}

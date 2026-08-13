@@ -46,3 +46,71 @@ impl From<ExcelAnalysisException> for crate::ExcelError {
         crate::ExcelError::Format(v.to_string())
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn new_has_no_message() {
+        let ex = ExcelAnalysisException::new();
+        assert!(ex.runtime_exception().message().is_none());
+    }
+
+    #[test]
+    fn with_message() {
+        let ex = ExcelAnalysisException::with_message("parse error");
+        assert_eq!(ex.runtime_exception().message(), Some("parse error"));
+    }
+
+    #[test]
+    fn with_message_and_cause() {
+        let ex = ExcelAnalysisException::with_message_and_cause("wrap", "io");
+        assert_eq!(ex.runtime_exception().message(), Some("wrap"));
+        assert_eq!(ex.runtime_exception().cause(), Some("io"));
+    }
+
+    #[test]
+    fn with_cause() {
+        let ex = ExcelAnalysisException::with_cause("io error");
+        assert_eq!(ex.runtime_exception().cause(), Some("io error"));
+    }
+
+    #[test]
+    fn display_delegates() {
+        let ex = ExcelAnalysisException::with_message("hello");
+        assert_eq!(format!("{ex}"), "hello");
+    }
+
+    #[test]
+    fn error_trait() {
+        let ex = ExcelAnalysisException::with_message("err");
+        let err: &dyn std::error::Error = &ex;
+        assert!(err.to_string().contains("err"));
+    }
+
+    #[test]
+    fn from_converts_to_excel_error_format() {
+        let ex = ExcelAnalysisException::with_message("bad");
+        let err: crate::ExcelError = ex.into();
+        match &err {
+            crate::ExcelError::Format(msg) => assert!(msg.contains("bad")),
+            other => panic!("expected Format, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn default_matches_new() {
+        assert_eq!(
+            ExcelAnalysisException::default(),
+            ExcelAnalysisException::new()
+        );
+    }
+
+    #[test]
+    fn clone_eq() {
+        let a = ExcelAnalysisException::with_message("x");
+        let b = a.clone();
+        assert_eq!(a, b);
+    }
+}
