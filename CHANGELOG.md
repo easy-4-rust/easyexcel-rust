@@ -2,7 +2,9 @@
 
 本文件记录 easyexcel-rust 各版本变更。格式参照 [Keep a Changelog](https://keepachangelog.com/)。
 
-## [Unreleased]
+## [0.1.4] - 2026-09-03
+
+文档核对修正 + 首个 crates.io 全流程发布版本。
 
 ### CI / 发布
 
@@ -18,6 +20,26 @@
   改在 build-and-test 补跑 ci.yml 缺失的 `xtask facade-boundary-audit`。
 - `scripts/publish-order.py`：`--roots` 输出可 full dry-run 的无内部依赖
   crate，`--json` 输出完整发布顺序（本地预览用）。
+
+### 文档
+
+- README.md / README_CN.md：基础 crate 列表与 ASCII 树补
+  `easyexcel-cache` / `easyexcel-format` / `easyexcel-utils`；Crate Map 补
+  cache / format；测试统计 1315+ → 4,451（含 2 ignored），`#[ignore]` 0 → 2。
+- docs/ARCHITECTURE.md：Total tests 4,449 → 4,451（数字自洽）；
+  `#[ignore]` 分布修正为 2 (easyexcel-test `temp_1to1_tests/`)；
+  当前 crate 布局树补 cache / format / utils；门面重导出列表补 `util`。
+- docs/compatibility.md：移除过时的 `quick-xml 0.38.4` + `office-crypto 0.3.0`
+  安全描述（依赖图已无此 pin，实际为 `quick-xml 0.41.0`）。
+- docs/operations/CI_COVERAGE.md：llvm-cov 排除项修正 crate 名
+  `easyexcel-reader` → `easyexcel-format`。
+- crates/easyexcel-salvo/README{,.zh-CN}.md：MSRV 标识 1.89+ → 1.88+
+  （与 workspace 一致）。
+
+### 移除
+
+- 删除孤儿 crate `crates/easyexcel-util/`（无 s）：不在 workspace members、
+  代码零引用；其角色已由 `easyexcel-utils`（带 s）取代。
 
 ### 兼容性
 
