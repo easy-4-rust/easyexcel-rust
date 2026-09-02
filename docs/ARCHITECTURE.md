@@ -22,6 +22,9 @@ easyexcel-rust/                       (workspace root)
 │   ├── easyexcel-csv/               ← CSV/TSV codec
 │   ├── easyexcel-markdown/          ← GFM codec/policy/report/streaming
 │   ├── easyexcel-tabular/           ← static HTML/JSON/generic dispatch
+│   ├── easyexcel-cache/             ← Moka/File shared-string cache
+│   ├── easyexcel-format/            ← Excel 15-digit math context, number formats
+│   ├── easyexcel-utils/             ← Java-compatible string/collection/coordinate helpers
 │   ├── easyexcel-derive/            ← internal `#[derive(ExcelRow)]` proc macro
 │   ├── easyexcel/                    ← user-facing EasyExcel facade
 │   ├── easyexcel-web/                ← framework-neutral Web execution kernel
@@ -158,7 +161,7 @@ Java 中仅用于 JVM 反射可访问性修复的包级 `MemberUtils` 没有 Rus
 
 `crates/easyexcel/src/analysis/v03` 中保留的同名文件只做 EasyExcel 错误和事件回调适配，不再实现底层格式算法。`read/xlsx_rows.rs` 与 `write/template_write.rs` 仍然较大，是因为它们承载 listener/cache/handler 和 Java 模板语义；其 ZIP、OPC、BIFF、gzip 与 XML 修改原语已经由基础 crate 提供。
 
-基础引擎类型不仅供门面内部使用，也通过 `easyexcel::{csv,io,model,xls,xlsx,...}` 显式重导出。以 XLSX 为例，`XlsxSource`、事件读取器、`OoxmlTemplatePackage`、输入流物化函数和 `template_xml` 等能力均从 `easyexcel::xlsx` 到达，业务用户无需直接依赖 `easyexcel-xlsx`。
+基础引擎类型不仅供门面内部使用，也通过 `easyexcel::{csv,io,model,xls,xlsx,formula,markdown,tabular,format,util,...}` 显式重导出。以 XLSX 为例，`XlsxSource`、事件读取器、`OoxmlTemplatePackage`、输入流物化函数和 `template_xml` 等能力均从 `easyexcel::xlsx` 到达，业务用户无需直接依赖 `easyexcel-xlsx`。
 
 边界回归由 `cargo run -p xtask -- facade-boundary-audit` 检查：`easyexcel` 必须依赖各基础引擎 crate，不得在生产依赖中直接引入 `calamine`、`cfb`、`zip`、`quick-xml`、`flate2`、`rust_xlsxwriter`、`moka` 或加密实现库；Moka 不得配置容量/时间淘汰，文件缓存不得进入门面实现层。
 
@@ -489,11 +492,11 @@ flowchart LR
 
 | Category | Count | Status |
 |----------|-------|--------|
-| Total tests | 4,449 | 4,447 passed / 2 failed / 2 ignored |
+| Total tests | 4,451 | 4,447 passed / 2 failed / 2 ignored |
 | Golden tests (Java output comparison) | 88 | All pass |
 | Parity tests (behavioral equivalence) | 152 | All pass |
 | 1:1 method tests | 78 | All pass |
-| `#[ignore]` annotations | 2 | 1 (easyexcel-xls) + 1 (easyexcel-test) |
+| `#[ignore]` annotations | 2 | 2 (easyexcel-test `temp_1to1_tests/`) |
 
 ---
 

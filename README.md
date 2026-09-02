@@ -33,7 +33,7 @@ this facade no longer depends on the full `xls` fork.
 
 ## Architecture and Core Flow
 
-`easyexcel` is the user-facing facade. It owns builders, listeners, converters, handlers, and the `#[derive(ExcelRow)]` macro. All format parsing, encoding, formula evaluation and I/O contracts live in one-way foundation crates (`easyexcel-io`, `easyexcel-model`, `easyexcel-xls`, `easyexcel-xlsx`, `easyexcel-csv`, `easyexcel-formula`, `easyexcel-markdown`, `easyexcel-tabular`).
+`easyexcel` is the user-facing facade. It owns builders, listeners, converters, handlers, and the `#[derive(ExcelRow)]` macro. All format parsing, encoding, formula evaluation and I/O contracts live in one-way foundation crates (`easyexcel-io`, `easyexcel-model`, `easyexcel-xls`, `easyexcel-xlsx`, `easyexcel-csv`, `easyexcel-formula`, `easyexcel-markdown`, `easyexcel-tabular`, `easyexcel-cache`, `easyexcel-format`, `easyexcel-utils`).
 
 ```
 User Code
@@ -47,6 +47,9 @@ easyexcel (facade)  ──►  easyexcel-io  (format detection, streaming traits
     │                ──►  easyexcel-formula (AST, evaluator, recalc)
     │                ──►  easyexcel-markdown (GFM projection)
     │                ──►  easyexcel-tabular (HTML/JSON dispatch)
+    │                ──►  easyexcel-cache (Moka/File shared-string cache)
+    │                ──►  easyexcel-format (Excel 15-digit math context, number formats)
+    │                ──►  easyexcel-utils (Java-compatible string/collection/coordinate helpers)
     ▼
 Output: XLSX / XLS / CSV / Markdown
 ```
@@ -397,8 +400,8 @@ For detailed performance architecture (read/write path chains, memory model, and
 | Golden tests (byte-level Java output comparison) | 88 | All pass |
 | Parity tests (behavioral equivalence) | 152 | All pass |
 | 1:1 method tests | 78 | All pass |
-| Total workspace tests | 1315+ | All pass |
-| `#[ignore]` annotations | 0 | Eliminated |
+| Total workspace tests | 4,451 | 4,447 passed / 2 failed / 2 ignored |
+| `#[ignore]` annotations | 2 | 2 (easyexcel-test `temp_1to1_tests/`) |
 
 ### Crate Map
 
@@ -414,6 +417,8 @@ For detailed performance architecture (read/write path chains, memory model, and
 | `easyexcel-formula` | Formula AST, parser and evaluator | Formula engine |
 | `easyexcel-markdown` | GFM parsing, streaming export, projection policy and loss reports | Markdown projection |
 | `easyexcel-tabular` | Static HTML, JSON and generic text-format dispatch | Tabular interchange |
+| `easyexcel-cache` | Moka object cache + temporary file cache with auto threshold | Shared string cache |
+| `easyexcel-format` | Excel 15-digit math context and number format handling | `EasyExcelConstants` |
 | `easyexcel-web` | Framework-neutral streaming import/export, limits, cancellation and error protocol | Web execution kernel |
 
 Foundation crates are internal engine layers. Application code should depend only on `easyexcel`:
@@ -427,7 +432,7 @@ use easyexcel::xls;
 use easyexcel::xlsx;
 ```
 
-`easyexcel::{csv, io, markdown, model, formula, tabular, xls, xlsx}` directly re-export the public engine types without creating a second model. The facade continues to own `EasyExcel`, builders, listeners, converters, handlers, and `#[derive(ExcelRow)]`.
+`easyexcel::{csv, io, markdown, model, formula, tabular, xls, xlsx, format, util}` directly re-export the public engine types without creating a second model. The facade continues to own `EasyExcel`, builders, listeners, converters, handlers, and `#[derive(ExcelRow)]`.
 
 Markdown is a semantic projection with an explicit loss report, not a lossless
 Excel round trip. XLS uses Workbook Mode; XLSX and CSV also support real Event

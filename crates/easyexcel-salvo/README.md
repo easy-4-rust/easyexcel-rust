@@ -4,7 +4,7 @@
 
 Native EasyExcel request extraction and response adapter for Salvo.
 
-> Release: 0.1.3 · Rust 1.89+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
 >
 > Last updated: 2026-08-11 · Status: active
 

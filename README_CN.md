@@ -30,10 +30,10 @@ XLS/XLSX/CSV 后端和表格转换。library-first 命令应用层由独立 `xls
 
 ## 架构与核心流程
 
-`easyexcel` 是面向用户的门面。它拥有 Builder、监听器、转换器、处理器和 `#[derive(ExcelRow)]` 宏。所有格式解析、编码、公式求值和 I/O 契约均位于单向依赖的基础 crate 中（`easyexcel-io`、`easyexcel-model`、`easyexcel-xls`、`easyexcel-xlsx`、`easyexcel-csv`、`easyexcel-formula`、`easyexcel-markdown`、`easyexcel-tabular`）。
+`easyexcel` 是面向用户的门面。它拥有 Builder、监听器、转换器、处理器和 `#[derive(ExcelRow)]` 宏。所有格式解析、编码、公式求值和 I/O 契约均位于单向依赖的基础 crate 中（`easyexcel-io`、`easyexcel-model`、`easyexcel-xls`、`easyexcel-xlsx`、`easyexcel-csv`、`easyexcel-formula`、`easyexcel-markdown`、`easyexcel-tabular`、`easyexcel-cache`、`easyexcel-format`、`easyexcel-utils`）。
 
 ```
-User Code
+user Code
     │
     ▼
 easyexcel（门面）──►  easyexcel-io    （格式识别、流接口、资源限制）
@@ -44,6 +44,9 @@ easyexcel（门面）──►  easyexcel-io    （格式识别、流接口、�
     │             ──►  easyexcel-formula（AST、求值、重算）
     │             ──►  easyexcel-markdown（GFM 语义投影）
     │             ──►  easyexcel-tabular（HTML/JSON 分派）
+    │             ──►  easyexcel-cache （Moka/文件共享字符串缓存）
+    │             ──►  easyexcel-format（Excel 15 位有效数字与数字格式）
+    │             ──►  easyexcel-utils （Java 兼容字符串/集合/坐标工具）
     ▼
 输出：XLSX / XLS / CSV / Markdown
 ```
@@ -428,8 +431,8 @@ python3 benchmarks/scripts/compare_results.py results.jsonl \
 | Golden 测试（字节级 Java 输出比对） | 88 | 全部通过 |
 | Parity 测试（行为等价） | 152 | 全部通过 |
 | 1:1 方法测试 | 78 | 全部通过 |
-| 全量 Workspace 测试 | 1315+ | 全部通过 |
-| `#[ignore]` 注解 | 0 | 已消除 |
+| 全量 Workspace 测试 | 4,451 | 4,447 通过 / 2 失败 / 2 忽略 |
+| `#[ignore]` 注解 | 2 | 2 处（位于 `easyexcel-test temp_1to1_tests/`） |
 
 ### 模块结构
 
@@ -445,6 +448,8 @@ python3 benchmarks/scripts/compare_results.py results.jsonl \
 | `easyexcel-formula` | 公式 AST、解析、计算与重算 | 公式引擎 |
 | `easyexcel-markdown` | GFM 解析、流式输出、策略与损失报告 | Markdown 语义投影 |
 | `easyexcel-tabular` | 静态 HTML、JSON 与通用文本格式分派 | 表格交换 |
+| `easyexcel-cache` | Moka 对象缓存 + 临时文件缓存 + Auto 阈值 | 共享字符串缓存 |
+| `easyexcel-format` | Excel 15 位有效数字数学上下文与数字格式处理 | `EasyExcelConstants` |
 | `easyexcel-web` | 统一流式 Web 导入导出、限制与错误协议 | Web 执行内核 |
 
 普通用户仍只依赖 `easyexcel`，不直接依赖内部引擎 crate：

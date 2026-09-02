@@ -89,15 +89,9 @@ reference. The adoption boundary and dependency direction are documented in
 
 Security audit status is tracked in [security-audit.md](security-audit.md)
 (run with `cargo audit`). As of 2026-08-05 the audit gate is **green**
-(`cargo audit` exits 0). Two high-severity findings on transitive
-`quick-xml 0.38.4` (pinned by upstream `office-crypto 0.3.0`, the latest
-published version, 2026-07-22) are **documented exemptions** in
-`.cargo/audit.toml`: the crate is used directly from crates.io per project
-decision (2026-08-05, after a 2026-08-03→05 vendor attempt proved upstream
-has no patched release); the attack surface is parsing user-supplied local
-file metadata for password-protected XLSX only, while the workspace's own
-SAX parsing uses the direct `quick-xml 0.41.0` dependency (patched). See the
-audit document for the full analysis.
+(`cargo audit` exits 0). The workspace's SAX parsing uses the direct
+`quick-xml 0.41.0` dependency (patched); see the audit document for the
+full analysis.
 
 ### Verification evidence 6: `cargo llvm-cov` coverage
 

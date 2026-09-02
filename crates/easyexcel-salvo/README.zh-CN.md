@@ -4,7 +4,7 @@
 
 面向 Salvo 的 EasyExcel 原生请求提取与响应适配器。
 
-> 版本: 0.1.3 · Rust 1.89+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
 >
 > 最后更新: 2026-08-11 · 状态: 活跃
 

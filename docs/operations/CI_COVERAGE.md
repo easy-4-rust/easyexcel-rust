@@ -16,7 +16,7 @@
 
 **排除项**：
 - `easyexcel-derive/src/lib.rs`（derive 宏属性行）
-- `easyexcel-reader/src/locale_generated.rs`（生成代码）
+- `easyexcel-format/src/format/locale_generated.rs`（生成代码）
 
 ### 2. PR 覆盖率 Job (`coverage-pr`)
 
