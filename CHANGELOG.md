@@ -2,6 +2,27 @@
 
 本文件记录 easyexcel-rust 各版本变更。格式参照 [Keep a Changelog](https://keepachangelog.com/)。
 
+## [Unreleased]
+
+### CI / 发布
+
+- 新增 `release.yml`（参考 wxrust v0.1.4 起验证的 GitHub Actions 全流程发布）：
+  5 job 链 validate-tag → build-and-test → dry-run-publish → publish-crates →
+  create-release，`git tag vX.Y.Z && git push --tags` 即触发全 21 个 crate
+  的 crates.io 顺序发布。
+- 相对 wxrust 模板的差异：tag 模式用 `[0-9]*` 排除预发布 tag（本仓库有
+  `v0.1.0-alpha.1`）；validate-tag 校验 tag == `workspace.package.version`
+  （防打错 tag 发错版本）；发布顺序由 `scripts/publish-order.py` 从
+  `cargo metadata` 动态拓扑排序（21 crate、4 层依赖，不硬编码数组）；
+  coverage 门禁不重复（ci.yml 在 `release: published` 自动补跑 90%），
+  改在 build-and-test 补跑 ci.yml 缺失的 `xtask facade-boundary-audit`。
+- `scripts/publish-order.py`：`--roots` 输出可 full dry-run 的无内部依赖
+  crate，`--json` 输出完整发布顺序（本地预览用）。
+
+### 兼容性
+
+- 不修改数据模型、文件格式或运行时行为。
+
 ## [0.1.3] - 2026-08-07
 
 公共门面文档修订版。
@@ -10,7 +31,7 @@
 
 - 明确基础引擎 crate 独立发布仅用于内部依赖分层，业务应用统一依赖
   `easyexcel`，并通过 `easyexcel::{model, io, csv, xls, xlsx, formula,
-  markdown, tabular, format}` 使用能力。
+  markdown, tabular, format, util}` 使用能力。
 - 将全部基础引擎 README 的安装片段和 Rust 示例改为 `easyexcel::...`
   公共路径，避免用户直接组合 `easyexcel-*` 内部 crate。
 - 明确 Web runtime 与各框架适配器是传输扩展：工作簿 API 仍来自

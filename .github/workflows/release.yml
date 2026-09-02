@@ -1,0 +1,283 @@
+name: Release
+
+# easyexcel-rust crates.io 发布流水线。
+#
+# 参考 wxrust release.yml（v0.1.4 起 GitHub Actions 全流程发布，已验证）：
+#   validate-tag → build-and-test → dry-run-publish → publish-crates → create-release
+#
+# 相对 wxrust 模板的优化点：
+#   1. tag 模式用 [0-9]* 而非 *.*.*：本仓库存在 v0.1.0-alpha.1 等预发布 tag，
+#      v*.*.* 会误触发并立即失败。
+#   2. 校验 tag 版本 == workspace.package.version：防打错 tag 发错版本。
+#   3. 发布顺序由 scripts/publish-order.py 从 cargo metadata 动态拓扑排序，
+#      不硬编码数组（21 crate、4 层依赖，手写易错；加/删 crate 无需改 workflow）。
+#   4. build-and-test 不再重复 coverage 门禁：ci.yml 已在 release: published
+#      事件自动跑 90% 覆盖率 gate（约 20 分钟），此处补跑 xtask
+#      facade-boundary-audit（ci.yml 缺失的 easyexcel 特有门禁）。
+#   5. publish-crates 前置校验各 crate version == tag version（workspace
+#      统一 version，防未 bump 即发旧版本）。
+#
+# 使用：bump 版本 → commit → git tag vX.Y.Z && git push --tags。
+# 需要 secrets.CARGO_REGISTRY_TOKEN（仓库 Settings → Secrets → Actions）。
+# 备选：crates.io Trusted Publishing (OIDC) 可免 token，但需先在 crates.io
+# 为 easy-4-rust/easyexcel-rust 配置 trusted publisher。
+
+on:
+  push:
+    tags:
+      - "v[0-9]*.[0-9]*.[0-9]*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release (e.g. v0.1.4)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  # 与 ci.yml 一致：固定 1.97.1，避免 stable 漂移。
+  RUST_TOOLCHAIN: "1.97.1"
+  # Java golden 期望文件在中文 locale 下导出（DateFormatTest 的 MMM 月份名）。
+  LANG: zh_CN.UTF-8
+  LC_ALL: zh_CN.UTF-8
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-tag:
+    name: Validate Tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract and validate version
+        id: extract
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.version }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid tag format: $TAG (expected vX.Y.Z)"
+            exit 1
+          fi
+          echo "version=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Validated version: $TAG"
+
+      - name: Validate workspace version matches tag
+        run: |
+          EXPECTED="${TAG#v}"
+          ACTUAL="$(sed -n 's/^version = "\([^"]*\)".*/\1/p' Cargo.toml | head -1)"
+          if [ -z "$ACTUAL" ]; then
+            echo "::error::workspace.package.version not found in Cargo.toml"
+            exit 1
+          fi
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::Cargo.toml version $ACTUAL != tag version $EXPECTED"
+            echo "先 bump Cargo.toml 版本再打 tag：sed -i 's/^version = \".*\"/version = \"$EXPECTED\"/' Cargo.toml"
+            exit 1
+          fi
+          echo "Workspace version $ACTUAL matches tag $TAG"
+
+  build-and-test:
+    name: Build & Test
+    needs: validate-tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install zh_CN locale and zlib dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y locales zlib1g-dev
+          sudo locale-gen zh_CN.UTF-8
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          components: clippy, rustfmt
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: cargo check
+        run: cargo check --workspace --all-features
+
+      - name: cargo test
+        run: cargo test --workspace --all-features
+
+      - name: cargo clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: cargo fmt
+        run: cargo fmt --all -- --check
+
+      # ci.yml 缺失的 easyexcel 特有门禁：门面不得直接引入底层引擎依赖。
+      # （ci.yml 的 coverage job 会在 GitHub Release 创建后自动补跑 90% 门禁。）
+      - name: Facade boundary audit
+        run: cargo run -p xtask -- facade-boundary-audit
+
+  dry-run-publish:
+    name: Dry-run Publish
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install zh_CN locale and zlib dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y locales zlib1g-dev
+          sudo locale-gen zh_CN.UTF-8
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Dry-run publish (root crates) / package-check (dependents)
+        run: |
+          # roots = 无内部依赖的 crate，可做完整 publish --dry-run；
+          # 其余 crate 依赖 crates.io 上尚未发布的内部 crate，full dry-run
+          # 会在依赖解析阶段失败，只做打包内容校验（同 wxrust 分层策略）。
+          ROOTS="$(python3 scripts/publish-order.py --roots)"
+          ORDER="$(python3 scripts/publish-order.py)"
+          FAILED=0
+          for crate in $ORDER; do
+            echo "::group::$crate"
+            if echo "$ROOTS" | grep -qx "$crate"; then
+              if ! cargo publish -p "$crate" --dry-run --allow-dirty; then
+                echo "::error::dry-run failed for $crate"
+                FAILED=1
+              fi
+            else
+              if ! cargo package -p "$crate" --list --allow-dirty > /dev/null; then
+                echo "::error::package check failed for $crate"
+                FAILED=1
+              else
+                echo "package OK (skipped full dry-run: internal deps not yet on crates.io)"
+              fi
+            fi
+            echo "::endgroup::"
+          done
+          if [ "$FAILED" -ne 0 ]; then
+            exit 1
+          fi
+
+  publish-crates:
+    name: Publish to crates.io
+    needs: [validate-tag, dry-run-publish]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install zh_CN locale and zlib dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y locales zlib1g-dev
+          sudo locale-gen zh_CN.UTF-8
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Publish crates in dependency order
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          EXPECTED_VERSION: ${{ needs.validate-tag.outputs.version }}
+        run: |
+          # 前置：token 未配置立即失败（避免空 token 重试的假绿）。
+          if [ -z "$CARGO_REGISTRY_TOKEN" ]; then
+            echo "::error::CARGO_REGISTRY_TOKEN secret 未配置（仓库 Settings -> Secrets -> Actions）"
+            exit 1
+          fi
+          EXPECTED_VERSION="${EXPECTED_VERSION#v}"
+          # 动态拓扑序（见 scripts/publish-order.py）。
+          mapfile -t CRATES < <(python3 scripts/publish-order.py)
+          # 一次性读取全部 crate 版本（cargo metadata 较重，避免每 crate 调一次）。
+          declare -A VERSIONS
+          while read -r name version; do
+            VERSIONS["$name"]="$version"
+          done < <(cargo metadata --format-version 1 --no-deps | \
+            python3 -c "import json,sys; [print(p['name'], p['version']) for p in json.load(sys.stdin)['packages']]")
+          FAILED=()
+          for crate in "${CRATES[@]}"; do
+            echo "::group::Publishing $crate"
+            # 每个 crate 的版本必须与 tag 一致（workspace 统一继承 version）。
+            CRATE_VERSION="${VERSIONS[$crate]}"
+            if [ "$CRATE_VERSION" != "$EXPECTED_VERSION" ]; then
+              echo "::error::$crate version $CRATE_VERSION != tag version $EXPECTED_VERSION"
+              FAILED+=("$crate")
+              echo "::endgroup::"
+              continue
+            fi
+            ok=0
+            # Retry up to 3 times with backoff for crates.io index propagation.
+            for attempt in 1 2 3; do
+              if out=$(cargo publish -p "$crate" --allow-dirty 2>&1); then
+                echo "Successfully published $crate"
+                ok=1
+                break
+              fi
+              # 幂等重跑：版本已上传视为成功（cargo publish 对已存在版本报错退出）。
+              if echo "$out" | grep -qiE "already (uploaded|exists)"; then
+                echo "$crate already published (version exists), skipping"
+                ok=1
+                break
+              fi
+              echo "$out" | tail -5
+              echo "Attempt $attempt failed for $crate, waiting before retry..."
+              sleep 15
+            done
+            if [ "$ok" -ne 1 ]; then
+              echo "::error::$crate 3 次重试后仍发布失败"
+              FAILED+=("$crate")
+            fi
+            echo "::endgroup::"
+          done
+          if [ "${#FAILED[@]}" -gt 0 ]; then
+            echo "::error::发布失败的 crate: ${FAILED[*]}"
+            exit 1
+          fi
+
+  create-release:
+    name: Create GitHub Release
+    needs: [validate-tag, publish-crates]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # GitHub Release 创建会触发 ci.yml 的 release: published 事件，
+      # 自动补跑全量 90% 覆盖率门禁（约 20 分钟）。
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.validate-tag.outputs.version }}
+          name: ${{ needs.validate-tag.outputs.version }}
+          body: |
+            ## Release ${{ needs.validate-tag.outputs.version }}
+
+            See [CHANGELOG.md](CHANGELOG.md) for details.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
