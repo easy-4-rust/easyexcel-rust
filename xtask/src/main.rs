@@ -18,8 +18,6 @@ use std::process::ExitCode;
 const SOURCE_COMMIT: &str = "3afdea9d5da7f24a66eda6ec44a9dfce80b16802";
 const EXPECTED_JAVA_MAIN: usize = 325;
 const MAP_PATH: &str = "docs/data/migration/file-map.csv";
-const LEGACY_FACADE_PREFIX: &str = "easyexcel/src/";
-const WORKSPACE_FACADE_PREFIX: &str = "crates/easyexcel/src/";
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) type TaskResult<T = ()> = Result<T, Box<dyn std::error::Error>>;
@@ -136,14 +134,21 @@ fn audit(strict: bool) -> TaskResult {
 
 /// 判断迁移表中的 Rust 目标是否存在。
 ///
-/// 迁移表保留了历史逻辑路径 `easyexcel/src/...`，而 workspace 规范化后门面
-/// crate 位于 `crates/easyexcel/src/...`。审计同时识别两种表示，避免目录布局
-/// 调整使既有迁移证据失效；新建的 engine crate 路径则按原值校验。
+/// 迁移表 rust 字段支持 `|` 分隔的多承载文件（一个 Java 类被拆到多个
+/// Rust 实现时，如 Ehcache → SharedStringCachePolicy/Handle/ReadCache/
+/// ReadCacheSelector），全部候选存在才视为已落地。迁移表保留了历史逻辑
+/// 路径（`easyexcel/src/...`、`easyexcel-cache/src/...`），而 workspace
+/// 规范化后源码统一位于 `crates/<crate>/src/...`；审计为不带 `crates/`
+/// 前缀的候选自动补全，避免目录布局调整使既有迁移证据失效。
 fn rust_target_exists(rust: &str) -> bool {
-    if Path::new(rust).is_file() {
+    rust.split('|')
+        .filter(|candidate| !candidate.is_empty())
+        .all(rust_candidate_exists)
+}
+
+fn rust_candidate_exists(candidate: &str) -> bool {
+    if Path::new(candidate).is_file() {
         return true;
     }
-
-    rust.strip_prefix(LEGACY_FACADE_PREFIX)
-        .is_some_and(|relative| Path::new(WORKSPACE_FACADE_PREFIX).join(relative).is_file())
+    Path::new("crates").join(candidate).is_file()
 }
