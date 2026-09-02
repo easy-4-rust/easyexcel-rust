@@ -26,7 +26,14 @@ pub(crate) fn resolve_easyexcel_path(found: Option<FoundCrate>) -> TokenStream {
 /// 对应 Java：无直接对应对象；Rust 架构扩展。
 pub(crate) fn found_crate_path(found: FoundCrate) -> TokenStream {
     match found {
-        FoundCrate::Itself => quote!(crate),
+        // 包内使用（lib 单元测试 / examples / 集成测试同属 easyexcel
+        // package）也统一生成 `::easyexcel`：easyexcel lib.rs 顶部声明了
+        // `extern crate self as easyexcel;`，而 examples 的 `crate::` 根是
+        // example 自身（没有 util 模块），不能生成 `crate`。
+        FoundCrate::Itself => {
+            let ident = format_ident!("easyexcel");
+            quote!(::#ident)
+        }
         FoundCrate::Name(name) => {
             let ident = format_ident!("{}", name.replace('-', "_"));
             quote!(::#ident)

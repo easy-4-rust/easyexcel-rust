@@ -10,6 +10,11 @@
 #![allow(missing_docs)]
 //! 拆分到独立文件（每个类型一个 `.rs`，命名 1:1 对应 Java 类）。
 
+// 让 `easyexcel-derive` 生成的 `::easyexcel::...` 路径在包内（lib 单元
+// 测试 / examples / 集成测试）也能解析到本 crate。derive 宏不再生成
+// `crate::...`，因为 example 的 crate 根是 example 自身（没有 util 模块）。
+extern crate self as easyexcel;
+
 pub mod analysis;
 pub mod annotation;
 pub mod cache;

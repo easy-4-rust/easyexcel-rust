@@ -41,6 +41,14 @@
 - 删除孤儿 crate `crates/easyexcel-util/`（无 s）：不在 workspace members、
   代码零引用；其角色已由 `easyexcel-utils`（带 s）取代。
 
+### 修复
+
+- `easyexcel-derive` 在 easyexcel package 自身的 examples / 集成测试内展开
+  失败（E0433 `cannot find util in crate`）：宏此前在 `FoundCrate::Itself`
+  时生成 `crate::...`，而 example 的 crate 根是 example 自身。改为统一生成
+  `::easyexcel::...`，并在 easyexcel lib.rs 顶部声明
+  `extern crate self as easyexcel;`（serde 同款模式）。
+
 ### 兼容性
 
 - 不修改数据模型、文件格式或运行时行为。
