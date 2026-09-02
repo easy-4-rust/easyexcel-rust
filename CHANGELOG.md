@@ -16,8 +16,10 @@
   `v0.1.0-alpha.1`）；validate-tag 校验 tag == `workspace.package.version`
   （防打错 tag 发错版本）；发布顺序由 `scripts/publish-order.py` 从
   `cargo metadata` 动态拓扑排序（21 crate、4 层依赖，不硬编码数组）；
-  coverage 门禁不重复（ci.yml 在 `release: published` 自动补跑 90%），
-  改在 build-and-test 补跑 ci.yml 缺失的 `xtask facade-boundary-audit`。
+  发布验证门禁与 ci.yml 对齐（check/test/clippy/fmt），coverage 由
+  ci.yml 在 `release: published` 自动补跑 90% 门禁（约 20 分钟）。
+  发布首跑暴露并修复：derive 宏包内展开 E0433、xtask migration-audit
+  `|` 多承载候选、release clippy 与 ci 门禁对齐。
 - `scripts/publish-order.py`：`--roots` 输出可 full dry-run 的无内部依赖
   crate，`--json` 输出完整发布顺序（本地预览用）。
 
@@ -48,6 +50,15 @@
   时生成 `crate::...`，而 example 的 crate 根是 example 自身。改为统一生成
   `::easyexcel::...`，并在 easyexcel lib.rs 顶部声明
   `extern crate self as easyexcel;`（serde 同款模式）。
+- `xtask migration-audit` 支持 `|` 分隔的多承载 Rust 目标（如 Ehcache → 4
+  个承载文件，AND 语义）与 `easyexcel-cache/src` 等 engine crate 逻辑前缀
+  （自动补 `crates/`）；file-map 中目录候选改为具体文件。
+
+### 已知待办
+
+- `xtask facade-boundary-audit` 当前失败（门面直接依赖 `cfb`（optional
+  feature）/ `tempfile`）；ci.yml 与 release.yml 均不跑此门禁，待门面依赖
+  下沉到 engine crate 后纳入 CI。
 
 ### 兼容性
 
