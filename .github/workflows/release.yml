@@ -75,7 +75,10 @@ jobs:
 
       - name: Validate workspace version matches tag
         run: |
-          EXPECTED="${TAG#v}"
+          # TAG 在上一个 step 是局部 shell 变量，此处不可见；
+          # 从 step output 取回（含 v 前缀），再去 v 比较。
+          EXPECTED="${{ steps.extract.outputs.version }}"
+          EXPECTED="${EXPECTED#v}"
           ACTUAL="$(sed -n 's/^version = "\([^"]*\)".*/\1/p' Cargo.toml | head -1)"
           if [ -z "$ACTUAL" ]; then
             echo "::error::workspace.package.version not found in Cargo.toml"
@@ -86,7 +89,7 @@ jobs:
             echo "先 bump Cargo.toml 版本再打 tag：sed -i 's/^version = \".*\"/version = \"$EXPECTED\"/' Cargo.toml"
             exit 1
           fi
-          echo "Workspace version $ACTUAL matches tag $TAG"
+          echo "Workspace version $ACTUAL matches tag $EXPECTED"
 
   build-and-test:
     name: Build & Test
