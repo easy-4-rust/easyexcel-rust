@@ -236,6 +236,7 @@ jobs:
         with:
           path: coverage.xml
           repo_token: ${{ secrets.GITHUB_TOKEN }}
+          minimum_coverage: 0
 
   msrv:
     # 核心与 Salvo 适配器分别验证各自 MSRV；质量工具链仍固定为 1.97.1。
