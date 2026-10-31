@@ -458,7 +458,7 @@ fn derive_uses_java_style_byte_array_and_file_image_converters() -> Result<()> {
         .map(|index| {
             archive
                 .by_index(index)
-                .map(|entry| entry.name().to_owned())
+                .and_then(|entry| entry.name().map(|name| name.into_owned()))
                 .map_err(|error| ExcelError::Format(error.to_string()))
         })
         .collect::<Result<Vec<_>>>()?
@@ -553,10 +553,8 @@ fn default_registry_writes_type_erased_input_stream_as_image() -> Result<()> {
     let media_name = (0..archive.len())
         .find_map(|index| {
             let entry = archive.by_index(index).ok()?;
-            entry
-                .name()
-                .starts_with("xl/media/")
-                .then(|| entry.name().to_owned())
+            let name = entry.name().ok()?;
+            name.starts_with("xl/media/").then(|| name.into_owned())
         })
         .expect("default InputStream converter writes an XLSX media part");
     let mut embedded = Vec::new();
