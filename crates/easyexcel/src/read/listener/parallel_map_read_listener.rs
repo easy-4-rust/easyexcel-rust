@@ -454,13 +454,15 @@ mod tests {
         .expect("new");
 
         let context = ctx();
-        for i in 0..5 {
-            let result = ReadListener::invoke(&mut listener, i, &context);
-            if result.is_err() {
-                break;
-            }
+        for i in 0..4 {
+            ReadListener::invoke(&mut listener, i, &context).expect("queue row");
         }
-        // 后续调用应该返回 pipeline cancelled
+        // Drain the submitted rows to observe the mapper error before checking cancellation.
+        // An immediate next invoke can race with the worker and is not an error boundary.
+        let error = ReadListener::do_after_all_analysed(&mut listener, &context)
+            .expect_err("mapper error must propagate");
+        assert!(error.to_string().contains("bad value"));
+        assert!(!ReadListener::has_next(&mut listener, &context));
         let result = ReadListener::invoke(&mut listener, 99, &context);
         assert!(result.is_err());
     }
