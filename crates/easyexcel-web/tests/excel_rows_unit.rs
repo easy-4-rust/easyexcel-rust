@@ -153,9 +153,9 @@ async fn excel_rows_explicit_cancel_terminates_stream() {
 
 // T1.4 — processing_timeout 触发 ExcelWebError::ProcessingTimeout
 //
-// 用极短的 processing_timeout (1ns) 配合 5 行 CSV 触发 tokio::time::timeout
-// 分支：`spawn_blocking` worker 还没机会完成就被超时打断，excel_rows.rs:92-100
-// 的 cancel + send ProcessingTimeout 路径被执行。
+// 用极短的 processing_timeout (1ns) 配合容量为 1 的行通道。消费前让后台任务
+// 运行一个 timer tick，使 worker 在通道背压下无法先于 timeout 完成，
+// 稳定覆盖 excel_rows.rs 的 cancel + send ProcessingTimeout 路径。
 #[tokio::test]
 async fn excel_rows_processing_timeout_emits_timeout_error() {
     let directory = tempfile::tempdir().expect("temporary directory");
@@ -171,6 +171,7 @@ async fn excel_rows_processing_timeout_emits_timeout_error() {
         .expect("receive CSV");
 
     let mut rows = import.rows();
+    tokio::time::sleep(Duration::from_millis(1)).await;
     let mut saw_timeout = false;
     while let Some(item) = rows.next_row().await {
         if let Err(error) = item {

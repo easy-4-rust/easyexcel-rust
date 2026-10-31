@@ -101,6 +101,9 @@ fn display_text(value: &DynamicValue) -> String {
 fn read_display_rows(path: &Path, golden: &GoldenExpectation) -> Vec<DynamicRow> {
     let mut builder = EasyExcel::read_sync::<DynamicRow>(path)
         .head_row_number(golden.head_row_number)
+        // The Java golden files were exported with zh_CN. macOS reports the
+        // host locale through sys-locale even when LANG/LC_ALL are set.
+        .locale(ExcelLocale::from_name("zh_CN").expect("zh_CN locale"))
         .read_default_return(ReadDefaultReturn::String);
     if let Some(password) = golden.password.as_deref()
         && !password.is_empty()
