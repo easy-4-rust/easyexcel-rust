@@ -246,7 +246,7 @@ jobs:
               return (number * 100).toFixed(2);
             };
             const marker = '<!-- easyexcel-pr-coverage -->';
-            const body = `${marker}\nPR coverage (informational): ${rate('line-rate')}% lines, ${rate('branch-rate')}% branches. [Download the full lcov report](${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`;
+            const body = `${marker}\nPR coverage (informational): ${rate('line-rate')}% lines. Branch coverage was not collected. [Download the full lcov report](${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`;
             const issue_number = context.issue.number;
             const comments = await github.paginate(github.rest.issues.listComments, {
               ...context.repo, issue_number,
