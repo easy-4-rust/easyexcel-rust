@@ -49,7 +49,10 @@ jobs:
       # ── 编译 Rust benchmark runner ──
       - name: Build Rust benchmark runner (release)
         run: |
-          cargo build --release -p easyexcel-benchmark-runner
+          # Embed the exact source and compiler provenance required by the comparator.
+          EASYEXCEL_GIT_SHA="$(git rev-parse HEAD)" \
+          EASYEXCEL_RUSTC="$(rustc --version | sed 's/^rustc //')" \
+            cargo build --locked --release -p easyexcel-benchmark-runner
           echo "RUST_BIN=target/release/easyexcel-benchmark-runner" >> "$GITHUB_ENV"
 
       # ── 编译 Java benchmark runner ──
