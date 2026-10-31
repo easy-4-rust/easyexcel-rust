@@ -232,11 +232,32 @@ jobs:
           pip install lcov_cobertura
           lcov_cobertura lcov.info -o coverage.xml -b "${{ github.workspace }}"
       - name: Post coverage comment on PR
-        uses: 5monkeys/cobertura-action@master
+        uses: actions/github-script@v7
         with:
-          path: coverage.xml
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          minimum_coverage: 0
+          script: |
+            const fs = require('fs');
+            const xml = fs.readFileSync('coverage.xml', 'utf8');
+            const header = xml.match(/<coverage\b[^>]*>/)?.[0];
+            if (!header) throw new Error('Cobertura XML has no coverage root');
+            const rate = (name) => {
+              const value = header.match(new RegExp(`${name}="([^"]+)"`))?.[1];
+              const number = Number(value);
+              if (!Number.isFinite(number)) throw new Error(`Invalid ${name}`);
+              return (number * 100).toFixed(2);
+            };
+            const marker = '<!-- easyexcel-pr-coverage -->';
+            const body = `${marker}\nPR coverage (informational): ${rate('line-rate')}% lines, ${rate('branch-rate')}% branches. [Download the full lcov report](${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              ...context.repo, issue_number,
+            });
+            const previous = comments.find((comment) =>
+              comment.user?.type === 'Bot' && comment.body?.startsWith(marker));
+            if (previous) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: previous.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number, body });
+            }
 
   msrv:
     # 核心与 Salvo 适配器分别验证各自 MSRV；质量工具链仍固定为 1.97.1。
