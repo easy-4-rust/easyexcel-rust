@@ -3,7 +3,7 @@ name = "easyexcel-web-conformance"
 description = "Shared conformance suite for EasyExcel Web framework adapters"
 version.workspace = true
 edition.workspace = true
-rust-version.workspace = true
+rust-version = "1.89"
 license.workspace = true
 publish = false
 
@@ -22,6 +22,8 @@ easyexcel-rocket.workspace = true
 easyexcel-salvo.workspace = true
 easyexcel-warp.workspace = true
 actix-web.workspace = true
+actix-http.workspace = true
+brotli.workspace = true
 axum.workspace = true
 http.workspace = true
 http-body-util.workspace = true
@@ -29,7 +31,7 @@ hyper.workspace = true
 poem.workspace = true
 rocket.workspace = true
 salvo.workspace = true
-tokio.workspace = true
+tokio = { workspace = true, features = ["net"] }
 tower.workspace = true
 warp.workspace = true
 

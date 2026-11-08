@@ -260,7 +260,7 @@ jobs:
             }
 
   msrv:
-    # 核心与 Salvo 适配器分别验证各自 MSRV；质量工具链仍固定为 1.97.1。
+    # 核心保持 1.88；Actix/Salvo adapter 与 Web conformance 分别验证 1.89；质量工具链固定为 1.97.1。
     name: MSRV check
     runs-on: ubuntu-latest
     steps:
@@ -282,6 +282,8 @@ jobs:
           cargo check --workspace --all-features
           --exclude easyexcel-salvo
           --exclude easyexcel-demo-salvo
+          --exclude easyexcel-actix
+          --exclude easyexcel-demo-actix
           --exclude easyexcel-web-conformance
 
       - name: Install Rust 1.89
@@ -289,5 +291,8 @@ jobs:
         with:
           toolchain: 1.89
 
-      - name: Check Salvo adapter at Rust 1.89
-        run: cargo check -p easyexcel-salvo --all-features
+      - name: Check framework adapters at Rust 1.89
+        run: >-
+          cargo check -p easyexcel-salvo -p easyexcel-actix
+          -p easyexcel-demo-actix -p easyexcel-web-conformance
+          --all-features
