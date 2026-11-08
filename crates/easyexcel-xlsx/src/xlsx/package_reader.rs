@@ -22,7 +22,7 @@ impl<R: Read + Seek> XlsxPackageReader<R> {
     /// Returns a ZIP error when the stream is not a readable package.
     pub fn new(reader: R) -> Result<Self> {
         let archive = ZipArchive::new(reader).map_err(Error::from)?;
-        let path_cache = super::package::path_cache(&archive);
+        let path_cache = super::package::path_cache(&archive)?;
         Ok(Self {
             archive,
             path_cache,
