@@ -18,7 +18,7 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use easyexcel::{CellValue, DynamicRow, DynamicValue, EasyExcel, ReadDefaultReturn};
+use easyexcel::{CellValue, DynamicRow, DynamicValue, EasyExcel, ExcelLocale, ReadDefaultReturn};
 use serde::Deserialize;
 
 include!("java_golden_tests_cases/fixture_to_golden_compatibility_t06.rs");
