@@ -21,6 +21,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check out Java 4.0.3 benchmark authority
+        uses: actions/checkout@v4
+        with:
+          repository: easy-4-java/easyexcel
+          ref: v4.0.3
+          path: java
+
       # ── Rust 工具链（与 spec runtime_contract.rust_toolchain 一致） ──
       - uses: dtolnay/rust-toolchain@master
         with:
@@ -42,44 +49,27 @@ jobs:
       # ── 编译 Rust benchmark runner ──
       - name: Build Rust benchmark runner (release)
         run: |
-          cargo build --release -p easyexcel-benchmark-runner
+          # Embed the exact source and compiler provenance required by the comparator.
+          EASYEXCEL_GIT_SHA="$(git rev-parse HEAD)" \
+          EASYEXCEL_RUSTC="$(rustc --version | sed 's/^rustc //')" \
+            cargo build --locked --release -p easyexcel-benchmark-runner
           echo "RUST_BIN=target/release/easyexcel-benchmark-runner" >> "$GITHUB_ENV"
 
       # ── 编译 Java benchmark runner ──
-      # Java runner 源码在 benchmarks/java-runner/src，需要 easyexcel Java v4.0.3 的依赖。
-      # 此处从 Maven Central 拉取 easyexcel 4.0.3 JAR + 依赖，编译 runner class。
+      # 与 benchmark.yml 使用同一 Java 源码和 test classpath，包含所有传递依赖。
       - name: Build Java benchmark runner
         run: |
-          EASYEXCEL_VERSION="4.0.3"
-          JAVA_RUNNER_SRC="benchmarks/java-runner/src"
-          JAVA_RUNNER_OUT="/tmp/java-runner-classes"
-          JAVA_LIB_DIR="/tmp/easyexcel-java-libs"
-
-          mkdir -p "$JAVA_RUNNER_OUT" "$JAVA_LIB_DIR"
-
-          # 下载 easyexcel 4.0.3 及其传递依赖
-          mvn dependency:copy-dependencies \
-            -DoutputDirectory="$JAVA_LIB_DIR" \
-            -DincludeArtifactIds=easyexcel \
-            -Dartifact=com.alibaba:easyexcel:${EASYEXCEL_VERSION} \
-            -Dtransitive=true \
-            -f /dev/null 2>/dev/null || true
-
-          # 如果 mvn 方式失败，用 mvn 直接下载
-          if [ ! -f "$JAVA_LIB_DIR/easyexcel-${EASYEXCEL_VERSION}.jar" ]; then
-            mvn org.apache.maven.plugins:maven-dependency-plugin:3.6.1:copy \
-              -Dartifact=com.alibaba:easyexcel:${EASYEXCEL_VERSION} \
-              -DoutputDirectory="$JAVA_LIB_DIR"
-          fi
-
-          CLASSPATH="$JAVA_LIB_DIR/*"
-
-          # 编译 Java benchmark runner
-          find "$JAVA_RUNNER_SRC" -name "*.java" | xargs javac \
-            -cp "$CLASSPATH" \
-            -d "$JAVA_RUNNER_OUT"
-
-          echo "JAVA_CLASSPATH=$JAVA_RUNNER_OUT:$JAVA_LIB_DIR/*" >> "$GITHUB_ENV"
+          (cd java && ./mvnw -q -pl easyexcel-test -am -DskipTests test-compile)
+          (cd java && ./mvnw -q -pl easyexcel-test dependency:build-classpath \
+            -DincludeScope=test \
+            -Dmdep.outputFile=target/benchmark-classpath.txt)
+          module_classes="$(find java -type d -path '*/target/classes' -print | paste -sd: -)"
+          dependencies="$(cat java/easyexcel-test/target/benchmark-classpath.txt)"
+          java_test_classes="$PWD/java/easyexcel-test/target/test-classes"
+          classpath="$java_test_classes:$module_classes:$dependencies"
+          javac -encoding UTF-8 -cp "$classpath" -d "$java_test_classes" \
+            $(find benchmarks/java-runner/src -name '*.java' -print | sort)
+          echo "JAVA_CLASSPATH=$classpath" >> "$GITHUB_ENV"
 
       # ── 执行 nightly benchmark matrix ──
       - name: Run nightly benchmark matrix
@@ -89,6 +79,7 @@ jobs:
             --rust-bin "$RUST_BIN" \
             --rust-repo . \
             --java-bin java \
+            --java-repo java \
             --java-classpath "$JAVA_CLASSPATH" \
             --output-dir /tmp/nightly-run
 

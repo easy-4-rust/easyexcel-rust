@@ -241,7 +241,6 @@ public final class EasyExcelBenchmarkRunner {
         result.put("allocator_peak_bytes", null);
         result.put("temporary_disk_peak_bytes", null);
         result.put("file_size_bytes", operation.getFileSizeBytes());
-        result.put("logical_payload_bytes", BenchmarkChecksum.logicalPayloadBytes(rows));
         result.put(
             "total_written_bytes",
             List.of("write", "roundtrip").contains(scenario.getOperation())
