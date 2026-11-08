@@ -28,7 +28,7 @@ pub fn create_worksheet<'a>(
     constant_memory: bool,
 ) -> Result<&'a mut Worksheet> {
     let worksheet = if constant_memory {
-        workbook.add_worksheet_with_constant_memory()
+        workbook.add_worksheet_with_constant_memory().map_err(xlsxwriter_error)?
     } else {
         workbook.add_worksheet()
     };

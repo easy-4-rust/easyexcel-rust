@@ -73,7 +73,7 @@ impl OoxmlPackage {
                 entry.read_to_end(&mut content)?;
             }
             entries.push(OoxmlZipEntry {
-                name: entry.name().to_owned(),
+                name: entry.name()?.into_owned(),
                 is_dir: entry.is_dir(),
                 compression: entry.compression(),
                 unix_mode: entry.unix_mode(),

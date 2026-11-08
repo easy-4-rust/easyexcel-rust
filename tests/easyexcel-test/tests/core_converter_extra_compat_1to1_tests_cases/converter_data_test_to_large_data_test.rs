@@ -128,7 +128,7 @@ mod converter_data_test {
             let mut zip = zip::ZipArchive::new(file).unwrap();
             let mut names = Vec::new();
             for i in 0..zip.len() {
-                names.push(zip.by_index(i).unwrap().name().to_owned());
+                names.push(zip.by_index(i).unwrap().name().unwrap().into_owned());
             }
             names
         };
