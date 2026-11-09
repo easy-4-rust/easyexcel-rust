@@ -235,7 +235,7 @@ Cargo.lock 还同时存在 hyper 1.11.0 / h2 0.4.20、zstd 0.14.3 / zstd-safe 8.
 
 ## 7. 全局验收门槛
 
-- cargo audit --no-fetch --deny warnings：退出码 0；0 vulnerabilities；0 unsound warnings；0 yanked crate。
+- CI Security Audit workflow 的实际命令为 cargo audit；本地可额外执行 cargo audit --no-fetch --deny warnings。两者最终均须退出码 0；0 vulnerabilities；0 unsound warnings；0 yanked crate。
 - cargo deny check advisories bans licenses sources：退出码 0；无新增许可证/来源豁免。
 - cargo tree -i 对本报告所有 advisory crate 检查，不存在受影响版本。
 - cargo tree -d 审查新增重复版本；不得为了“减少重复”牺牲 MSRV/功能。
@@ -258,6 +258,53 @@ Cargo.lock 还同时存在 hyper 1.11.0 / h2 0.4.20、zstd 0.14.3 / zstd-safe 8.
 - zstd 0.14.3 / 0.13.4 release matrix：https://docs.rs/crate/zstd/latest
 - lru 0.18.5 changelog：https://docs.rs/crate/lru/latest/source/CHANGELOG.md
 - ssfmt 0.1.2 dependency metadata：https://docs.rs/crate/ssfmt/0.1.2
+
+- Actix HTTP security fix commit：https://github.com/actix/actix-web/commit/61c6a15c1c0e505a5cd6842610a5f1faea432a83
+
+## 9. Remediation progress — SEC-ACTIX
+
+### 9.1 Change record
+
+- Remediation commit: 51d04e9b282a6a8b0f3ee6199179c3cdfcf10e17
+- PR #5 branch: fix/compatible-security-deps-20261031
+- actix-web: 4.14.0 -> 4.18.2
+- actix-http: 3.19.0 -> 3.20.3, pinned to upstream commit 61c6a15c1c0e505a5cd6842610a5f1faea432a83 until crates.io publication.
+- Actix adapter, Actix example and Web conformance package MSRV: 1.89.
+- Core workspace MSRV remains 1.88.
+- CI MSRV job now excludes Actix adapter/example from the 1.88 workspace check and validates Actix, Salvo and Web conformance packages with Rust 1.89.
+- No HTTP/2 or compression feature was removed.
+
+### 9.2 Regression tests and local verification
+
+| Command | Result |
+|---|---|
+| cargo test --locked -p easyexcel-web-conformance --test actix_security --all-features | 3 passed: large-window Brotli rejection, decoded output limit, malformed chunked request smuggling |
+| cargo test --locked -p easyexcel-web-conformance --test actix --all-features | 5 passed, 1 pre-existing ignored |
+| cargo test --locked -p easyexcel-actix --all-features | 10 passed |
+| cargo fmt --all -- --check | passed |
+| cargo clippy --locked -p easyexcel-actix -p easyexcel-demo-actix -p easyexcel-web-conformance --all-targets --all-features | passed; existing unrelated unused-import warning in easyexcel remains |
+| cargo +1.88 check --locked -p easyexcel -p easyexcel-web --all-features | passed |
+| cargo +1.89 check --locked -p easyexcel-actix -p easyexcel-demo-actix -p easyexcel-web-conformance --all-features | passed |
+| cargo +1.89 check --locked -p easyexcel-salvo --all-features | passed |
+| git diff --check | passed |
+
+The full workspace Rust 1.88 command was also attempted on Windows and stopped in examples/axum/src/main.rs because that example unconditionally imports tokio::signal::unix. This is a Windows-host limitation of the existing example; the repository CI runs this MSRV job on Ubuntu. The targeted core 1.88 checks passed.
+
+### 9.3 Re-audit after SEC-ACTIX
+
+Local cargo audit --json after commit 51d04e9 reported:
+
+- 5 vulnerabilities remain: RUSTSEC-2026-0436 (calamine 0.37.0), RUSTSEC-2026-0258 (h2 0.3.27), RUSTSEC-2026-0391 (zstd 0.13.3), RUSTSEC-2026-0398 and RUSTSEC-2026-0403 (zstd-safe 7.2.4).
+- 11 unsound warnings remain: 10 on zstd-safe 7.2.4 and 1 on lru 0.16.4.
+- 0 yanked warnings.
+- Actix advisories RUSTSEC-2026-0446, 0447, 0448 and 0455 are absent from the post-fix audit result.
+- cargo audit exits 1 and cargo deny check advisories bans licenses sources exits 9 because the other remediation groups remain open. This is expected; the PR remains Draft.
+
+The h2 0.3.27 tree still has two paths: patched actix-http 3.20.3 and rocket_http 0.5.1 -> hyper 0.14.32. This is explicitly not considered fixed by SEC-ACTIX and remains SEC-H2 work.
+
+GitHub CI after the push:
+- Security Audit Run 42450269311 (queued at record time).
+- CI Run 42450269320 (queued at record time).
 
 ---
 

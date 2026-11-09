@@ -10,16 +10,16 @@ PR: #5
 - [x] T0.2 Map confirmed dependency edges and manifest/adapter entry points; explicitly mark unresolved callsites.
 - [x] T0.3 Define remediation order, MSRV boundary, feature preservation rules and serialized Cargo.lock ownership.
 - [ ] T0.4 Add exact source line references for Calamine call sites and all Salvo test-feature consumers.
-- [ ] T0.5 Record exact CI audit command, tool versions, RustSec database commit and Cargo.lock SHA-256.
+- [x] T0.5 Record exact CI audit commands, local tool versions, RustSec advisory-db commit and current Cargo.lock SHA-256; refresh these values after each dependency-group commit.
 
 ## Phase 1 — Actix
 
-- [ ] T1.1 Verify actix-web >=4.18.2 and actix-http >=3.20.3 release metadata, API compatibility and Rust 1.89 MSRV.
-- [ ] T1.2 Update only the required Actix adapter/example MSRV; keep core MSRV 1.88.
-- [ ] T1.3 Update the lockfile serially; prove no vulnerable actix-http/actix-web version remains.
-- [ ] T1.4 Add malformed chunked trailer regression for RUSTSEC-2026-0446.
-- [ ] T1.5 Add compressed-body and Brotli large-window resource-limit regressions for RUSTSEC-2026-0448/0455/0447.
-- [ ] T1.6 Run Actix tests, Rust 1.89 adapter check, Rust 1.88 core check, Clippy/fmt and audit.
+- [x] T1.1 Verify actix-web 4.18.2 and upstream actix-http 3.20.3 commit metadata, API compatibility and Rust 1.89 MSRV; pin upstream commit 61c6a15c until the crate release is available.
+- [x] T1.2 Set Actix adapter/example and Web conformance MSRV to 1.89; keep core MSRV 1.88 and update the Linux CI split.
+- [x] T1.3 Update Cargo.lock serially to actix-web 4.18.2 and patched actix-http 3.20.3; cargo tree confirms these versions replace 4.14.0/3.19.0.
+- [x] T1.4 Add raw TCP malformed chunked trailer/pipelining regression for RUSTSEC-2026-0446; 1/1 passed.
+- [x] T1.5 Add decoder output-limit and Brotli large-window regressions for RUSTSEC-2026-0448/0455/0447; 2/2 passed.
+- [x] T1.6 Run Actix tests, Rust 1.89 adapter checks, targeted Rust 1.88 core checks, Clippy/fmt and re-audit. Actix advisories are absent; global audit remains blocked by Calamine, h2, zstd/zstd-safe and lru tasks.
 
 ## Phase 2 — Calamine
 
@@ -56,7 +56,7 @@ PR: #5
 
 ## Phase 6 — Final verification and closeout
 
-- [ ] T6.1 cargo audit --no-fetch --deny warnings passes with 0 vulnerabilities, 0 unsound warnings and 0 yanked packages.
+- [ ] T6.1 CI cargo audit and local cargo audit --no-fetch --deny warnings both pass with 0 vulnerabilities, 0 unsound warnings and 0 yanked packages.
 - [ ] T6.2 cargo deny check advisories bans licenses sources passes without ignore/allow additions.
 - [ ] T6.3 cargo tree -i confirms none of the reported affected versions remain; review cargo tree -d.
 - [ ] T6.4 Run workspace tests, adapter tests, Java golden tests, XLSX round-trip, benchmark build, fmt and Clippy.
@@ -68,4 +68,6 @@ PR: #5
 
 | Task | Commit | Command / CI | Result | Evidence |
 |---|---|---|---|---|
-| T0.1–T0.3 | pending docs commit | Security Audit Run 42447661141 / Job 128629914044 | baseline failed: 9 vulnerabilities + 11 warnings | GitHub Actions log |
+| T0.1–T0.3 | 6983857eec6c9f06764a4fd0c4086b05c8230c97 | Security Audit Run 42447661141 / Job 128629914044 | baseline failed: 9 vulnerabilities + 11 warnings | docs/audit + OpenSpec files |
+| T0.5 | 6983857eec6c9f06764a4fd0c4086b05c8230c97 | cargo audit; cargo deny check advisories bans licenses sources; rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2 | captured | RustSec DB 309392b18f6b17022f82c701f300433126901068; Cargo.lock SHA256 435BB5E3285EBBCBC20628776264E662AB6BE22159684A5AE72930697E5D70CD |
+| T1.1–T1.6 | 51d04e9b282a6a8b0f3ee6199179c3cdfcf10e17 | Actix security tests (3/3), conformance (5 passed/1 ignored), adapter unit tests (10/10), fmt, Clippy, Rust 1.88 core and Rust 1.89 adapter checks | Actix IDs 0446/0447/0448/0455 removed; global audit still has 5 vulnerabilities + 11 unsound warnings | Security Audit Run 42450269311 / Job 128637778367 failed on remaining groups; CI Run 42450269320: rustfmt, MSRV, Clippy, Doc and benchmark passed; OS tests/coverage pending |

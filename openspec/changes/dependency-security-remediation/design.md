@@ -23,7 +23,7 @@ Agent 可以提出方案，但不能在未更新本文件前改变版本策略�
 
 ### SEC-ACTIX
 
-Target actix-web >=4.18.2 and actix-http >=3.20.3 to cover RUSTSEC-2026-0446, 0448, 0455 and 0447. Verify upstream dependency requirements and API compatibility. Actix Web 4.18.2 documents Rust 1.89+, so update only the Actix adapter/example package MSRV that actually builds against it; preserve root/core 1.88.
+Target actix-web >=4.18.2 and actix-http >=3.20.3 to cover RUSTSEC-2026-0446, 0448, 0455 and 0447. The crates.io actix-http 3.20.3 release was not yet available at remediation time, so pin upstream actix/actix-web commit 61c6a15c1c0e505a5cd6842610a5f1faea432a83 through [patch.crates-io]; replace the git patch with the crates.io release once available. Actix Web 4.18.2 documents Rust 1.89+, so Actix adapter/example and Web conformance declare 1.89; core remains 1.88. This patch does NOT fix h2 0.3.27, which remains assigned to SEC-H2.
 
 ### SEC-CALAMINE
 
