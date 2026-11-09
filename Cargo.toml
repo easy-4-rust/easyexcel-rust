@@ -82,7 +82,7 @@ axum = "0.8.9"
 base64 = "0.23.0"
 bigdecimal = "0.4.10"
 bytes = "1.11.1"
-calamine = { version = "0.37.0", features = ["chrono"] }
+calamine = { version = "0.38.0", features = ["chrono"] }
 cfb = "0.14.0"
 chrono = { version = "0.4.45", default-features = false, features = ["std"] }
 csv = "1.4.0"
