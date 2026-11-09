@@ -80,7 +80,7 @@ axum = "0.8.9"
 base64 = "0.23.0"
 bigdecimal = "0.4.10"
 bytes = "1.11.1"
-calamine = { version = "0.36.0", features = ["chrono"] }
+calamine = { version = "0.38.0", features = ["chrono"] }
 cfb = "0.14.0"
 chrono = { version = "0.4.45", default-features = false, features = ["std"] }
 csv = "1.4.0"
@@ -111,7 +111,7 @@ quick-xml = "0.41.0"
 quote = "1.0.47"
 rand = "0.9.5"  # ms-offcrypto-writer 1.0.7 支持的最高 rand 线
 regex = { version = "1.11.1", default-features = false, features = ["std", "unicode"] }
-rust_xlsxwriter = { version = "0.97.0", features = ["chrono", "constant_memory", "zlib"] }
+rust_xlsxwriter = { version = "0.102.0", features = ["chrono", "constant_memory", "zlib"] }
 scraper = "0.27.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
