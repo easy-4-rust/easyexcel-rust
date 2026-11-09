@@ -23,12 +23,12 @@ PR: #5
 
 ## Phase 2 — Calamine
 
-- [ ] T2.1 Locate every calamine API call and map untrusted .xls/.xlsb/VBA input paths.
-- [ ] T2.2 Verify calamine >=0.38.0 release/MSRV/API changes.
-- [ ] T2.3 Upgrade and update lockfile; preserve EasyExcel reader public API.
-- [ ] T2.4 Add truncated CFB directory, 64-byte mini-sector and cyclic DIFAT fixtures.
-- [ ] T2.5 Execute hostile fixtures in a bounded subprocess; verify typed error/no panic/no unbounded allocation.
-- [ ] T2.6 Run Java golden, XLS/XLSB import, workspace tests and audit.
+- [x] T2.1 Locate calamine API calls; repository usage is in dev-dependencies or #[cfg(test)] code. Production Excel parsing uses easyexcel-xls / easyexcel-xlsx; source paths are recorded in the audit.
+- [x] T2.2 Verify calamine 0.38.0 and Rust 1.88 build; upstream fix b8ec4f09cba6aea7d8359ababc240c9ed064751b.
+- [x] T2.3 Upgrade Cargo.lock to calamine 0.38.0; EasyExcel reader API unchanged. Commit e4044f1505caac0413ecd4e8d4043e4d69c1f54e.
+- [ ] T2.4 Short-directory and cyclic-DIFAT upstream CFB fixtures added and passed (2/2); distinct 64-byte mini-sector fixture remains pending.
+- [ ] T2.5 Two hostile fixtures tested in isolated integration binary; OS-enforced memory-bound subprocess validation remains pending.
+- [ ] T2.6 Partial: 2330 facade and 17 round-trip tests passed (one Windows-locale test excluded); Rust 1.88 check passed; audit now 4 vulnerabilities + 11 unsound warnings. Full Java Golden, XLSB and workspace CI pending.
 
 ## Phase 3 — h2
 
@@ -71,3 +71,4 @@ PR: #5
 | T0.1–T0.3 | 6983857eec6c9f06764a4fd0c4086b05c8230c97 | Security Audit Run 42447661141 / Job 128629914044 | baseline failed: 9 vulnerabilities + 11 warnings | docs/audit + OpenSpec files |
 | T0.5 | 6983857eec6c9f06764a4fd0c4086b05c8230c97 | cargo audit; cargo deny check advisories bans licenses sources; rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2 | captured | RustSec DB 309392b18f6b17022f82c701f300433126901068; Cargo.lock SHA256 435BB5E3285EBBCBC20628776264E662AB6BE22159684A5AE72930697E5D70CD |
 | T1.1–T1.6 | 51d04e9b282a6a8b0f3ee6199179c3cdfcf10e17 | Actix security tests (3/3), conformance (5 passed/1 ignored), adapter unit tests (10/10), fmt, Clippy, Rust 1.88 core and Rust 1.89 adapter checks | Actix IDs 0446/0447/0448/0455 removed; global audit still has 5 vulnerabilities + 11 unsound warnings | Security Audit Run 42450269311 / Job 128637778367 failed on remaining groups; CI Run 42450269320: rustfmt, MSRV, Clippy, Doc and benchmark passed; OS tests/coverage pending |
+| T2.1–T2.3 (T2.4–T2.6 partial) | e4044f1505caac0413ecd4e8d4043e4d69c1f54e | calamine 0.38.0; 2 hostile CFB fixtures; Rust 1.88 check; facade 2330; round-trip 17 | RUSTSEC-2026-0436 absent; local audit 4 vulnerabilities + 11 unsound warnings | Upstream calamine b8ec4f0; CI pending |

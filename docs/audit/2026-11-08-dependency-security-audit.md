@@ -305,6 +305,37 @@ The h2 0.3.27 tree still has two paths: patched actix-http 3.20.3 and rocket_htt
 GitHub CI after the push:
 - Security Audit Run 42450269311 (queued at record time).
 - CI Run 42450269320 (queued at record time).
+## 10. Remediation progress — SEC-CALAMINE
+
+### 10.1 Source mapping and dependency decision
+
+- Remediation commit: e4044f1505caac0413ecd4e8d4043e4d69c1f54e.
+- Calamine 0.37.0 -> 0.38.0 in root Cargo.toml and Cargo.lock.
+- Upstream security fix: https://github.com/tafia/calamine/commit/b8ec4f09cba6aea7d8359ababc240c9ed064751b.
+- Calamine appears as a dev-dependency in crates/easyexcel/Cargo.toml and tests/easyexcel-test/Cargo.toml. In the production facade, crates/easyexcel/src/read/cell_conversion.rs:4-5 and row_processing.rs:14-15 gate their calamine imports with #[cfg(test)]. Native production XLS/XLSX readers remain easyexcel-xls / easyexcel-xlsx.
+- Additional test-only callsites include crates/easyexcel/src/read/tests.rs, write/tests.rs, template/tests.rs, template/template_writer.rs and tests/easyexcel-test.
+
+### 10.2 Reproducible malicious-input fixtures
+
+Copied from the fixed upstream commit into crates/easyexcel/tests/fixtures/calamine/:
+
+| Fixture | Bytes | SHA-256 | Expected outcome |
+|---|---:|---|---|
+| cfb_difat_oom.xls | 512 | B0FF76967DFBB4E4870C848A6365C74F361E48BFD98AFED1A5ED378B0AB2A6A8 | Reject cyclic DIFAT (typed error) |
+| cfb_dir_short_chunk_panic.xls | 4153 | 82DE55B1A1C0EE69E8460E29172AF5711A109F7AD04A75F7D112E938FE3EC9C7 | Skip short trailing directory chunk; Sheet1 remains readable |
+
+The intentionally malformed OLE2 fixtures should only be parsed using patched calamine or a resource-limited sandbox.
+
+### 10.3 Verification
+
+- cargo test --locked -p easyexcel --test calamine_cfb_security -- --nocapture: 2 passed.
+- cargo +1.88 check --locked -p easyexcel --all-targets --all-features: passed.
+- cargo test --locked -p easyexcel --lib -- --skip choice_excel_executor_propagates_executor_creation_errors: 2330 passed; one existing Windows locale-dependent error-message assertion excluded.
+- cargo test --locked -p easyexcel-test --test round_trip: 17 passed.
+- Local cargo audit --json: RUSTSEC-2026-0436 removed. Remaining vulnerabilities: RUSTSEC-2026-0258 (h2), 2026-0391 (zstd), 2026-0398/0403 (zstd-safe). Unsound warnings remain 11.
+- T2.4/T2.5/T2.6 remain partially open: separate 64-byte mini-sector fixture, bounded-subprocess stress test, full workspace and Java Golden still pending.
+- No advisory ignore/allow and no framework features were removed.
+
 
 ---
 
