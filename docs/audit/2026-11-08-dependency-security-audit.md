@@ -368,8 +368,13 @@ Upstream Actix HTTP 3.21.0 still declares optional h2 0.3.27. The current implem
 - vendor/actix-http/src/h2/mod.rs: h2 0.4 handshake, connection and RecvStream integration.
 - vendor/actix-http/EASYEXCEL_PATCH.md: upstream provenance, local diff scope, compatibility boundary and validation requirements.
 - tests/easyexcel-web-conformance/tests/actix_h2.rs: end-to-end h2c request/response test using the workspace h2 0.4 client.
+- h2 0.4.20 includes the upstream empty DATA-frame flood/backpressure fix and upstream regression tests from h2 PR #935 / commit 193833e87c639e39751f339a9c375a44c8bfab54.
 
 Rocket was upgraded to 0.5.2. Its rocket_http 0.5.2 path uses Hyper 1.12.0 and h2 0.4.20, removing the former Hyper 0.14/h2 0.3 path.
+
+### 11.2.1 Salvo test feature scope
+
+The Salvo 0.89.3 TestClient is used only in tests/easyexcel-web-conformance/tests/salvo.rs. The root workspace Salvo dependency now enables only http1/server; the test feature is enabled only on the conformance crate's dev-dependency. Therefore zstd 0.13.4/zstd-safe 7.4.0 remain available to the test harness but are no longer part of the normal production dependency graph. Actix compression uses zstd 0.14.3/zstd-safe 8.2.0. Validation: cargo tree --locked -e normal -i zstd@0.13.4 has no matching production package; cargo test -p easyexcel-web-conformance --test salvo passed; cargo test -p easyexcel-salvo passed.
 
 ### 11.3 LRU panic-safety backport
 
@@ -382,7 +387,7 @@ vendor/lru contains upstream lru 0.16.4 with the panic-safety fix from lru-rs PR
 | cargo tree --locked -i h2 | Only h2 0.4.20; Actix HTTP, Rocket HTTP, Hyper 1, Axum, Poem, Salvo and Warp paths converge on 0.4.20 |
 | cargo tree --locked -i h2@0.3.27 | No matching package; exit 101 is expected for an absent package |
 | cargo test --locked -p easyexcel-web-conformance --test actix_h2 --all-features | 1 passed |
-| cargo test --locked -p easyexcel-web-conformance --all-features | 41 tests detected, 41 passed, 0 failed |
+| cargo test --locked -p easyexcel-web-conformance --all-features | 41 tests detected, 41 passed, 0 failed (re-run after Salvo feature scoping) |
 | cargo test --locked -p easyexcel-actix --all-features | 10 passed |
 | cargo test --manifest-path vendor/lru/Cargo.toml easyexcel_panic_safety_tests::pop_panicking_key_drop_keeps_list_consistent | 1 passed (panic is caught by catch_unwind as expected) |
 | cargo test -p easyexcel-format | 93 passed |
@@ -391,7 +396,7 @@ vendor/lru contains upstream lru 0.16.4 with the panic-safety fix from lru-rs PR
 | cargo +1.88 check --locked -p easyexcel -p easyexcel-web --all-features | passed |
 | cargo +1.89 check --locked -p easyexcel-actix -p easyexcel-demo-actix -p easyexcel-web-conformance --all-features | passed |
 | cargo audit --no-fetch | exit 0; 0 vulnerabilities, 0 unsound warnings, 0 yanked packages |
-| cargo deny check advisories bans licenses sources | passed; no source allow or advisory ignore added |
+| cargo deny check advisories bans licenses sources | passed after Salvo test feature scoping; no source allow or advisory ignore added |
 | git diff --check | passed |
 
 ### 11.5 Known validation blockers / not yet accepted
@@ -401,10 +406,11 @@ vendor/lru contains upstream lru 0.16.4 with the panic-safety fix from lru-rs PR
 3. cargo clippy --workspace --all-targets --all-features -- -D warnings additionally exposes pre-existing workspace warnings (unused imports, doc_markdown, assert_is_empty, etc.); no repository-wide warning cleanup was performed as part of this security patch.
 4. Running vendored Actix HTTP standalone Rustls integration tests on this Windows host fails before test execution because OpenSSL development libraries are not installed. The end-to-end Actix h2c bridge test passes; Linux CI must run the upstream Actix HTTP Rustls/HTTP2 test targets.
 5. Calamine's 64-byte mini-sector hostile fixture and OS-enforced memory-bound subprocess test remain pending from T2.4/T2.5. Full Java Golden and full Linux/macOS CI remain pending.
-6. These changes are currently uncommitted in the isolated worktree. Re-run CI on the pushed commit before marking the change complete or merging PR #5.
+6. Commit a90b61dfad447f3be0a1ad8ff1f0ff737fe978b1 is pushed to PR #5. A follow-up change scopes Salvo's test feature to the conformance dev-dependency; this follow-up is not yet committed/pushed. GitHub CI for a90b61d has Security Audit, Clippy, rustfmt, Doc build, MSRV and Bench build passing; Ubuntu/macOS tests and coverage-pr were still running when this snapshot was updated.
 
 Current worktree:
 - Branch: fix/compatible-security-deps-20261031
-- Base worktree HEAD: 1086ac8ad9537764aa9a6db36a208305f1bd599b
-- Current Cargo.lock SHA-256: 0463F23F75B39527CB0411D9BE146CF08B317868B163B00EC538EAB416D59E15
-- RustSec database commit and toolchain versions should be refreshed at push time.
+- Pushed commit: a90b61dfad447f3be0a1ad8ff1f0ff737fe978b1
+- Follow-up local changes: root Cargo.toml Salvo feature scope; tests/easyexcel-web-conformance/Cargo.toml dev feature; OpenSpec/audit evidence updates.
+- Current Cargo.lock SHA-256: 0463F23F75B39527CB0411D9BE146CF08B317868B163B00EC538EAB416D59E15 (unchanged by feature scoping).
+- rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2; RustSec advisory-db commit 7a40350e1b8ba5b656d909f88222a8059a83d88d.

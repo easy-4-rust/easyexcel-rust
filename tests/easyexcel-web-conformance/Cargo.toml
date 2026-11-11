@@ -31,7 +31,7 @@ http-body-util.workspace = true
 hyper.workspace = true
 poem.workspace = true
 rocket.workspace = true
-salvo.workspace = true
+salvo = { workspace = true, features = ["test"] }
 tokio = { workspace = true, features = ["net"] }
 tower.workspace = true
 warp.workspace = true
