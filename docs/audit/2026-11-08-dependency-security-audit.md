@@ -340,3 +340,71 @@ The intentionally malformed OLE2 fixtures should only be parsed using patched ca
 ---
 
 审计结论：PR #5 已经解决 ZIP 8.6.0 yanked 的构建阻塞方向，但当前依赖锁文件仍有明确的安全问题。必须完成上述逐项修复并重新审计后才能合并。
+
+
+## 11. Current remediation verification snapshot — 2026-11-12
+
+> This section records the current local PR #5 worktree state after SEC-H2 and SEC-LRU changes. It does not replace the historical 2026-11-08 baseline above. The changes are not yet committed/pushed and GitHub CI has not yet validated this snapshot.
+
+### 11.1 Current dependency decisions
+
+| Component | Current locked/source state | Security result |
+|---|---|---|
+| actix-web | 4.19.0 | RUSTSEC-2026-0447 absent |
+| actix-http | 3.21.0, local compatibility package at vendor/actix-http | RUSTSEC-2026-0446/0448/0455 absent; HTTP/2 retained |
+| h2 | 0.4.20 only | RUSTSEC-2026-0258 absent; no h2 0.3.x lock entry |
+| Rocket / rocket_http | 0.5.2 | Uses Hyper 1.12.0 and h2 0.4.20 |
+| calamine | 0.38.0 | RUSTSEC-2026-0436 absent |
+| zstd | 0.13.4 and 0.14.3 (different parent semver lines) | RUSTSEC-2026-0391 absent |
+| zstd-safe | 7.4.0 and 8.2.0 (matching parent semver lines) | RUSTSEC-2026-0398/0403 and all 10 unsound warnings absent |
+| lru | 0.16.4, local path patch at vendor/lru | RUSTSEC-2026-0253 absent |
+
+### 11.2 Actix HTTP 3.21.0 / h2 0.4 bridge
+
+Upstream Actix HTTP 3.21.0 still declares optional h2 0.3.27. The current implementation therefore uses a local copy of the upstream 3.21.0 package and changes its internal HTTP/2 bridge only:
+
+- vendor/actix-http/Cargo.toml: h2 0.4.20 and an http1 alias for http 1.5.
+- vendor/actix-http/src/h2/dispatcher.rs: convert incoming h2/http 1.x request parts into Actix http 0.2 Request; convert Actix response head into http 1.x before sending through h2 0.4.
+- vendor/actix-http/src/h2/mod.rs: h2 0.4 handshake, connection and RecvStream integration.
+- vendor/actix-http/EASYEXCEL_PATCH.md: upstream provenance, local diff scope, compatibility boundary and validation requirements.
+- tests/easyexcel-web-conformance/tests/actix_h2.rs: end-to-end h2c request/response test using the workspace h2 0.4 client.
+
+Rocket was upgraded to 0.5.2. Its rocket_http 0.5.2 path uses Hyper 1.12.0 and h2 0.4.20, removing the former Hyper 0.14/h2 0.3 path.
+
+### 11.3 LRU panic-safety backport
+
+vendor/lru contains upstream lru 0.16.4 with the panic-safety fix from lru-rs PR #238 / commit f9a7f00fcf2d33e00adb03758cb350aaaa52cddb. The node is detached from the intrusive list before invoking the key destructor. The crate version and public API remain 0.16.4 to satisfy ssfmt 0.1.2's lru ^0.16 constraint. Cargo.toml [patch.crates-io] directs lru to the local copy. vendor/lru/EASYEXCEL_PATCH.md documents provenance and scope.
+
+### 11.4 Local verification evidence
+
+| Command | Result |
+|---|---|
+| cargo tree --locked -i h2 | Only h2 0.4.20; Actix HTTP, Rocket HTTP, Hyper 1, Axum, Poem, Salvo and Warp paths converge on 0.4.20 |
+| cargo tree --locked -i h2@0.3.27 | No matching package; exit 101 is expected for an absent package |
+| cargo test --locked -p easyexcel-web-conformance --test actix_h2 --all-features | 1 passed |
+| cargo test --locked -p easyexcel-web-conformance --all-features | 41 tests detected, 41 passed, 0 failed |
+| cargo test --locked -p easyexcel-actix --all-features | 10 passed |
+| cargo test --manifest-path vendor/lru/Cargo.toml easyexcel_panic_safety_tests::pop_panicking_key_drop_keeps_list_consistent | 1 passed (panic is caught by catch_unwind as expected) |
+| cargo test -p easyexcel-format | 93 passed |
+| cargo fmt --all -- --check | passed |
+| cargo clippy --locked -p easyexcel-actix -p easyexcel-demo-actix -p easyexcel-web-conformance --all-targets --all-features | passed |
+| cargo +1.88 check --locked -p easyexcel -p easyexcel-web --all-features | passed |
+| cargo +1.89 check --locked -p easyexcel-actix -p easyexcel-demo-actix -p easyexcel-web-conformance --all-features | passed |
+| cargo audit --no-fetch | exit 0; 0 vulnerabilities, 0 unsound warnings, 0 yanked packages |
+| cargo deny check advisories bans licenses sources | passed; no source allow or advisory ignore added |
+| git diff --check | passed |
+
+### 11.5 Known validation blockers / not yet accepted
+
+1. Full workspace cargo test --workspace --all-features --exclude easyexcel-demo-axum on Windows ran 2,331 tests: 2,330 passed and one existing test choice_excel_executor_propagates_executor_creation_errors failed because its assertion requires an English "open" / "No such" error substring. The test is platform/OS error-message dependent and is unrelated to HTTP/2 or dependency changes. Do not mark the full workspace suite green.
+2. Full workspace Clippy on Windows cannot compile examples/axum/src/main.rs because it unconditionally imports tokio::signal::unix. The targeted Actix/Web conformance Clippy command passes.
+3. cargo clippy --workspace --all-targets --all-features -- -D warnings additionally exposes pre-existing workspace warnings (unused imports, doc_markdown, assert_is_empty, etc.); no repository-wide warning cleanup was performed as part of this security patch.
+4. Running vendored Actix HTTP standalone Rustls integration tests on this Windows host fails before test execution because OpenSSL development libraries are not installed. The end-to-end Actix h2c bridge test passes; Linux CI must run the upstream Actix HTTP Rustls/HTTP2 test targets.
+5. Calamine's 64-byte mini-sector hostile fixture and OS-enforced memory-bound subprocess test remain pending from T2.4/T2.5. Full Java Golden and full Linux/macOS CI remain pending.
+6. These changes are currently uncommitted in the isolated worktree. Re-run CI on the pushed commit before marking the change complete or merging PR #5.
+
+Current worktree:
+- Branch: fix/compatible-security-deps-20261031
+- Base worktree HEAD: 1086ac8ad9537764aa9a6db36a208305f1bd599b
+- Current Cargo.lock SHA-256: 0463F23F75B39527CB0411D9BE146CF08B317868B163B00EC538EAB416D59E15
+- RustSec database commit and toolchain versions should be refreshed at push time.

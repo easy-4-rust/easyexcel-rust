@@ -23,6 +23,7 @@ easyexcel-salvo.workspace = true
 easyexcel-warp.workspace = true
 actix-web.workspace = true
 actix-http.workspace = true
+h2.workspace = true
 brotli.workspace = true
 axum.workspace = true
 http.workspace = true

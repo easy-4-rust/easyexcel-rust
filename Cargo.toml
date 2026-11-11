@@ -51,6 +51,7 @@ keywords = ["excel", "xlsx", "easyexcel", "spreadsheet", "csv"]
 categories = ["parser-implementations", "encoding"]
 
 [workspace.dependencies]
+h2 = "0.4.20"
 easyexcel = { path = "crates/easyexcel", version = "0.1.4" }
 easyexcel-actix = { path = "crates/easyexcel-actix", version = "0.1.4" }
 easyexcel-axum = { path = "crates/easyexcel-axum", version = "0.1.4" }
@@ -74,8 +75,8 @@ easyexcel-derive = { path = "crates/easyexcel-derive", version = "0.1.4" }
 easyexcel-web = { path = "crates/easyexcel-web", version = "0.1.4" }
 anyhow = "1.0.102"
 actix-multipart = "0.8.0"
-actix-web = "4.18.2"
-actix-http = { version = "3.20.1", features = ["compress-brotli"] }
+actix-web = "4.19.0"
+actix-http = { version = "3.21.0", features = ["compress-brotli"] }
 brotli = "9.1.1"
 aes = "0.8.4"
 axum = "0.8.9"
@@ -144,6 +145,6 @@ all = "warn"
 pedantic = "warn"
 
 [patch.crates-io]
-# Actix HTTP 3.20.3 fixes the November 2026 chunked, decompression-limit and Brotli advisories.
-# Pin the upstream fix commit until the crates.io release is available.
-actix-http = { git = "https://github.com/actix/actix-web", rev = "61c6a15c1c0e505a5cd6842610a5f1faea432a83" }
+# Local Actix HTTP 3.21.0 bridge: Actix http 0.2 API over h2 0.4/http 1.x.
+actix-http = { path = "vendor/actix-http" }
+lru = { path = "vendor/lru" }

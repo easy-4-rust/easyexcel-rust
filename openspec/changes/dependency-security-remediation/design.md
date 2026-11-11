@@ -35,7 +35,7 @@ The vulnerable h2 0.3.27 is reached through actix-http and rocket_http -> hyper 
 
 Decision D3-A (2026-11-09): Rocket v0.5.2, published 2026-10-23, replaces rocket_http's Hyper 0.14.32 with Hyper 1.12.0 and directly declares h2 0.4.20. It declares MSRV 1.89. Upgrade Rocket adapter/demo only and move their MSRV checks to the Rust 1.89 group; keep root/core 1.88 and HTTP/2 enabled. Official source: https://github.com/rwf2/Rocket/blob/v0.5.2/core/http/Cargo.toml.
 
-Decision D3-B (pending): actix-http v3.21.0 and v3.20.5 still declare optional h2 ^0.3.27 (https://github.com/actix/actix-web/blob/actix-http-v3.21.0/actix-http/Cargo.toml). Do not disable HTTP/2, suppress RUSTSEC-2026-0258, or claim the issue fixed by upgrading Rocket alone. Assess a controlled backport of https://github.com/hyperium/h2/pull/935 or an upstream Actix migration, including Cargo semver and security scanner implications, before any second-path changes.
+Decision D3-C (2026-11-12, implemented in the current PR #5 worktree): Actix HTTP 3.21.0 still declares optional h2 0.3.27, and Actix Web 4.19.0 depends on Actix HTTP 3.21.0. To preserve Actix Web 4.x public APIs and HTTP/2, vendor the upstream Actix HTTP 3.21.0 source as a narrowly scoped local compatibility package at vendor/actix-http. Change only its internal HTTP/2 engine dependency to h2 0.4.20, add an http1 alias for http 1.5, and bridge request/response heads between Actix's public http 0.2 types and h2 0.4/http 1.x. Keep HTTP/1, HTTP/2, compression, TLS and WebSocket features. Rocket is upgraded to 0.5.2, whose rocket_http uses Hyper 1.12.0 and h2 0.4.20. The root workspace h2 dependency is 0.4.20. No h2 0.3 crate remains in Cargo.lock. The local Actix fork source provenance and compatibility boundary are documented in vendor/actix-http/EASYEXCEL_PATCH.md. The end-to-end h2c bridge test passes; the Actix HTTP standalone Rustls tests are blocked on the Windows host because OpenSSL development libraries are not installed, so Linux CI remains required.
 
 ### SEC-ZSTD
 
@@ -43,7 +43,7 @@ Prefer a compatible zstd 0.13 maintenance line (>=0.13.4) plus zstd-safe >=7.4.0
 
 ### SEC-LRU
 
-ssfmt 0.1.2 constrains lru to ^0.16, while the panic-safety fix is in lru >=0.18.2. Check for a compatible ssfmt upstream release first. If none exists, maintain a minimal, documented ssfmt fork/patch or evaluate replacement only after Java formatting parity tests. Do not edit Cargo.lock to violate semver.
+ssfmt 0.1.2 constrains lru to ^0.16, while the panic-safety fix is in lru >=0.18.2. The upstream fix is merged in lru-rs PR #238 (commit f9a7f00fcf2d33e00adb03758cb350aaaa52cddb). To avoid an incompatible ssfmt upgrade, vendor lru 0.16.4 and backport only the panic-safe node-detach ordering; patch crates.io to vendor/lru without changing its version/API. The patch and regression are documented in vendor/lru/EASYEXCEL_PATCH.md.
 
 ## 4. Validation Strategy
 
