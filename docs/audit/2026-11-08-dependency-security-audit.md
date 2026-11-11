@@ -358,6 +358,7 @@ The intentionally malformed OLE2 fixtures should only be parsed using patched ca
 | zstd | 0.13.4 and 0.14.3 (different parent semver lines) | RUSTSEC-2026-0391 absent |
 | zstd-safe | 7.4.0 and 8.2.0 (matching parent semver lines) | RUSTSEC-2026-0398/0403 and all 10 unsound warnings absent |
 | lru | 0.16.4, local path patch at vendor/lru | RUSTSEC-2026-0253 absent |
+| rustix | 1.1.6 | RUSTSEC-2026-0486 absent; fixes newly issued zero-length xattr buffer unsoundness |
 
 ### 11.2 Actix HTTP 3.21.0 / h2 0.4 bridge
 
@@ -400,17 +401,33 @@ vendor/lru contains upstream lru 0.16.4 with the panic-safety fix from lru-rs PR
 | git diff --check | passed |
 
 ### 11.5 Known validation blockers / not yet accepted
+### 11.4.1 Fresh advisory delta after the initial security cleanup
+
+GitHub Security Audit on commit 325ff561cb22c23272cbdca59c0ed7a651ceaed3 refreshed the RustSec database and found one new allowed unsoundness warning:
+
+- Advisory: RUSTSEC-2026-0486
+- Crate/version: rustix 1.1.4
+- Fixed version: rustix >= 1.1.6
+- Affected API: rustix::fs xattr query/read/list functions with a zero-length output buffer; size-query results could be incorrectly marked initialized, permitting safe code to set a Vec length beyond capacity.
+- Dependency update: cargo update -p rustix --precise 1.1.6.
+- Lock verification: rustix 1.1.4 absent; rustix 1.1.6 present.
+- Fresh local verification: cargo audit --deny warnings exits 0; cargo deny check advisories bans licenses sources exits 0.
+- Advisory source: https://rustsec.org/advisories/RUSTSEC-2026-0486.html
+- Upstream fix reference: https://github.com/bytecodealliance/rustix/commit/8e6aaa6713d2bb64b1fdd8c472e3a32a10a76d70
+
+This advisory was issued on 2026-11-11 and therefore was not present in the original 2026-11-08 baseline. The CI run on 325ff56 completed Security Audit successfully but reported one allowed unsound warning; the local rustix update removes it. A new GitHub CI run is required on the rustix 1.1.6 commit before PR #5 can be marked ready.
+
 
 1. Full workspace cargo test --workspace --all-features --exclude easyexcel-demo-axum on Windows ran 2,331 tests: 2,330 passed and one existing test choice_excel_executor_propagates_executor_creation_errors failed because its assertion requires an English "open" / "No such" error substring. The test is platform/OS error-message dependent and is unrelated to HTTP/2 or dependency changes. Do not mark the full workspace suite green.
 2. Full workspace Clippy on Windows cannot compile examples/axum/src/main.rs because it unconditionally imports tokio::signal::unix. The targeted Actix/Web conformance Clippy command passes.
 3. cargo clippy --workspace --all-targets --all-features -- -D warnings additionally exposes pre-existing workspace warnings (unused imports, doc_markdown, assert_is_empty, etc.); no repository-wide warning cleanup was performed as part of this security patch.
 4. Running vendored Actix HTTP standalone Rustls integration tests on this Windows host fails before test execution because OpenSSL development libraries are not installed. The end-to-end Actix h2c bridge test passes; Linux CI must run the upstream Actix HTTP Rustls/HTTP2 test targets.
 5. Calamine's 64-byte mini-sector hostile fixture and OS-enforced memory-bound subprocess test remain pending from T2.4/T2.5. Full Java Golden and full Linux/macOS CI remain pending.
-6. Commit a90b61dfad447f3be0a1ad8ff1f0ff737fe978b1 is pushed to PR #5. A follow-up change scopes Salvo's test feature to the conformance dev-dependency; this follow-up is not yet committed/pushed. GitHub CI for a90b61d has Security Audit, Clippy, rustfmt, Doc build, MSRV and Bench build passing; Ubuntu/macOS tests and coverage-pr were still running when this snapshot was updated.
+6. Commit 325ff561cb22c23272cbdca59c0ed7a651ceaed3 is pushed to PR #5. Its CI Security Audit found the newly issued RUSTSEC-2026-0486 on rustix 1.1.4; the local lock update to rustix 1.1.6 and fresh local audit are clean, but this fix is not yet committed/pushed. Keep PR #5 Draft until a new GitHub CI run confirms zero vulnerabilities and zero unsound warnings.
 
 Current worktree:
 - Branch: fix/compatible-security-deps-20261031
-- Pushed commit: a90b61dfad447f3be0a1ad8ff1f0ff737fe978b1
-- Follow-up local changes: root Cargo.toml Salvo feature scope; tests/easyexcel-web-conformance/Cargo.toml dev feature; OpenSpec/audit evidence updates.
-- Current Cargo.lock SHA-256: 0463F23F75B39527CB0411D9BE146CF08B317868B163B00EC538EAB416D59E15 (unchanged by feature scoping).
-- rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2; RustSec advisory-db commit 7a40350e1b8ba5b656d909f88222a8059a83d88d.
+- Pushed commit: 325ff561cb22c23272cbdca59c0ed7a651ceaed3
+- Follow-up local change: Cargo.lock upgrades rustix 1.1.4 -> 1.1.6; docs/tasks record the new RUSTSEC-2026-0486 delta.
+- Current Cargo.lock SHA-256: 85F92A71932BEB7CA43236E3A8097D4EEAB27FB497F4097B9D8F9E30291E7777.
+- rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2; RustSec advisory-db commit fd6f39814c4d3c359fdbe223d0280dec4933f78f.

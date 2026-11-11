@@ -56,12 +56,13 @@ PR: #5
 
 ## Phase 6 — Final verification and closeout
 
-- [x] T6.1 Local cargo audit --no-fetch --deny warnings passes with 0 vulnerabilities, 0 unsound warnings and 0 yanked packages; GitHub Security Audit Run 43120553173 / Job 130859615963 passed.
-- [x] T6.2 cargo deny check advisories bans licenses sources passes locally and in Security Audit Run 43120553173 / Job 130859615963 without ignore/allow additions.
+- [x] T6.0 Follow-up CI on commit 325ff56 detected newly issued RUSTSEC-2026-0486 for rustix 1.1.4 (unsound xattr buffer initialization); update to fixed rustix 1.1.6 and re-run fresh cargo audit/cargo deny. The advisory was issued 2026-11-11 after the original audit baseline.
+- [x] T6.1 Fresh local cargo audit --deny warnings passes with 0 vulnerabilities, 0 unsound warnings and 0 yanked packages after upgrading rustix 1.1.4 -> 1.1.6. CI for commit 325ff56 reported the new RUSTSEC-2026-0486 warning; CI must be rerun on the rustix fix commit.
+- [x] T6.2 cargo deny check advisories bans licenses sources passes locally after rustix 1.1.6; no ignore/allow/source exceptions added.
 - [x] T6.3 cargo tree confirms only h2 0.4.20; h2 0.3.27 is absent; lru resolves to local patched 0.16.4; Salvo zstd 0.13.4 is dev/test-only while Actix uses zstd 0.14.3. Duplicate zstd/zstd-safe versions are required by distinct upstream semver lines.
 - [ ] T6.4 Run workspace tests, adapter tests, Java golden tests, XLSX round-trip, benchmark build, fmt and Clippy.
 - [x] T6.5 Targeted core Rust 1.88 check and Actix/Salvo/Web conformance Rust 1.89 checks pass.
-- [x] T6.6 Update docs/audit report with pushed commit a90b61dfad447f3be0a1ad8ff1f0ff737fe978b1, Cargo.lock hash, RustSec DB revision, toolchain, test evidence and known host-specific blockers; refresh CI IDs after the follow-up dev-feature scoping commit.
+- [x] T6.6 Update docs/audit report with pushed commit 325ff561cb22c23272cbdca59c0ed7a651ceaed3, follow-up rustix 1.1.6 lock update, Cargo.lock hash, refreshed RustSec DB revision, toolchain, test evidence and known host-specific blockers.
 - [ ] T6.7 Mark PR #5 ready only after every task is complete and all required checks are green; merge only after final review.
 
 ## Evidence Log
@@ -74,5 +75,6 @@ PR: #5
 | T2.1–T2.3 (T2.4–T2.6 partial) | e4044f1505caac0413ecd4e8d4043e4d69c1f54e | calamine 0.38.0; 2 hostile CFB fixtures; Rust 1.88 check; facade 2330; round-trip 17 | RUSTSEC-2026-0436 absent; local audit 4 vulnerabilities + 11 unsound warnings | Upstream calamine b8ec4f0; CI pending |
 | T3.1–T3.5 | a90b61dfad447f3be0a1ad8ff1f0ff737fe978b1 | h2 0.4.20 only; Actix h2c bridge 1/1; web conformance 41 tests; Actix adapter 10/10; audit/deny pass | RUSTSEC-2026-0258 removed | Cargo.lock + vendor/actix-http + actix_h2.rs |
 | T4.1–T4.6 | local follow-up changes after a90b61d | Salvo TestClient 5 passed/1 ignored; Salvo adapter 6/6; web conformance 41 tests; production dependency tree has no zstd 0.13.4 path; audit/deny pass | All zstd/zstd-safe advisories and 10 unsound warnings absent | Cargo.toml + conformance dev-dependency feature scope |
+| T6.0–T6.2 | local follow-up after 325ff561cb22c23272cbdca59c0ed7a651ceaed3 | rustix 1.1.4 -> 1.1.6; strict cargo audit 0/0/0; cargo deny all pass; conformance 41 tests; Salvo tests 5 passed/1 ignored | Newly published RUSTSEC-2026-0486 removed locally | Cargo.lock + RustSec advisory RUSTSEC-2026-0486 |
 | T5.1–T5.4 | a90b61dfad447f3be0a1ad8ff1f0ff737fe978b1 | vendored lru panic-safety regression 1/1; easyexcel-format 93/93; audit/deny pass | RUSTSEC-2026-0253 removed | Cargo.lock + vendor/lru |
 | T6.1–T6.3/T6.5/T6.6 | current uncommitted worktree | cargo audit 0/0/0; cargo deny all pass; h2 0.3 absent; Rust 1.88/1.89 targeted checks pass | Security dependency gate locally green | docs/audit current verification snapshot |
