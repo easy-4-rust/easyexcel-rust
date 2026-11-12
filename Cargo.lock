@@ -958,6 +958,7 @@ dependencies = [
  "encoding_rs",
  "flate2",
  "indexmap",
+ "libc",
  "mockall",
  "num-bigint",
  "rust_xlsxwriter",

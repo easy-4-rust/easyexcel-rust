@@ -344,7 +344,7 @@ The intentionally malformed OLE2 fixtures should only be parsed using patched ca
 
 ## 11. Current remediation verification snapshot — 2026-11-12
 
-> This section records the PR #5 security remediation state as of commit 9bc05f235c7ab872d1d90a4e3b3936e3a180b3a4. It does not replace the historical 2026-11-08 baseline above. Fresh local security gates and all required GitHub CI jobs pass. PR #5 remains Draft because the Calamine mini-sector and OS-enforced memory-bound tests are still outstanding.
+> This section records the PR #5 security remediation state through commit 9bc05f235c7ab872d1d90a4e3b3936e3a180b3a4 and subsequent follow-up work. Fresh local security gates pass. The CFB security integration binary passes 3/3 on Windows; the Linux RLIMIT_AS subprocess regression awaits GitHub CI execution.
 
 ### 11.1 Current dependency decisions
 
@@ -423,14 +423,14 @@ This advisory was issued on 2026-11-11 and therefore was not present in the orig
 2. Full workspace Clippy on Windows cannot compile examples/axum/src/main.rs because it unconditionally imports tokio::signal::unix. GitHub Linux CI Clippy passes for the workspace.
 3. cargo clippy --workspace --all-targets --all-features -- -D warnings additionally exposes pre-existing workspace warnings (unused imports, doc_markdown, assert_is_empty, etc.); no repository-wide warning cleanup was performed as part of this security patch.
 4. Running vendored Actix HTTP standalone Rustls integration tests on this Windows host fails before test execution because OpenSSL development libraries are not installed. The end-to-end Actix h2c bridge test passes; Linux CI must run the upstream Actix HTTP Rustls/HTTP2 test targets.
-5. Calamine's 64-byte mini-sector hostile fixture and OS-enforced memory-bound subprocess test remain pending from T2.4/T2.5. Required Linux/macOS CI and Java parity tests pass; these two targeted hostile-input acceptance tests remain the outstanding security work.
-6. Commit 9bc05f235c7ab872d1d90a4e3b3936e3a180b3a4 is pushed to PR #5. It updates rustix to 1.1.6. GitHub CI Run 43122592373 and Security Audit Run 43122592406 completed successfully, including Ubuntu/macOS tests, coverage-pr, MSRV, Clippy, rustfmt, docs and benchmark build. Keep PR #5 Draft until T2.4/T2.5 hostile-input tests are completed and reviewed.
+5. The generated one-mini-sector CFB regression passes locally (1/1), and the full CFB security integration binary passes 3/3 on Windows. A Linux-only subprocess regression sets RLIMIT_AS to 512 MiB before parsing the 512-byte cyclic-DIFAT fixture. The Windows host cannot execute this Linux-only test; the latest GitHub Ubuntu CI must validate its compile and execution.
+6. Commit 9bc05f235c7ab872d1d90a4e3b3936e3a180b3a4 is pushed to PR #5 and its GitHub CI Run 43122592373 and Security Audit Run 43122592406 passed. Commit b1ae804 adds the cross-platform missing-file assertion and its CI is running. The current local follow-up adds the mini-sector and Linux RLIMIT_AS regression; its CI must pass before T2.5 is closed. Keep PR #5 Draft until that validation and review complete.
 
 Current worktree:
 - Branch: fix/compatible-security-deps-20261031
-- Pushed commit: 9bc05f235c7ab872d1d90a4e3b3936e3a180b3a4
-- Cargo.lock rustix: 1.1.6; 1.1.4 is absent.
-- Current Cargo.lock SHA-256: 85F92A71932BEB7CA43236E3A8097D4EEAB27FB497F4097B9D8F9E30291E7777.
+- Latest pushed commit: b1ae804acdd3f9d5f76b0eb5b71ba73cc7771eb9
+- Follow-up local changes: `crates/easyexcel/tests/calamine_cfb_security.rs` adds a generated one-64-byte-mini-sector CFB regression and a Linux-only RLIMIT_AS=512 MiB child-process test; `crates/easyexcel/Cargo.toml` adds libc as a dev-dependency; Cargo.lock records the dev-dependency edge.
+- Cargo.lock rustix: 1.1.6; 1.1.4 is absent. Current Cargo.lock SHA-256: D3FD4C89431E2698BB0F63AE30FAE2851D00D1D9653A059C95CF24F76A8CA9E6.
 - rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2; RustSec advisory-db commit fd6f39814c4d3c359fdbe223d0280dec4933f78f.
-- GitHub CI: Run 43122592373 (Ubuntu/macOS tests, coverage-pr, MSRV, Clippy, rustfmt, docs, benchmark) passed; Security Audit Run 43122592406 passed.
-- Latest local-only follow-up: cross-platform error assertion in crates/easyexcel/src/analysis/excel_analyser_impl.rs; focused test, fmt and diff-check pass. This follow-up has not yet been committed/pushed.
+- GitHub CI/Security Audit for 9bc05f2 passed; CI for b1ae804 is running.
+- Local CFB security integration tests pass 3/3; Linux-only RLIMIT_AS subprocess test is pending CI.

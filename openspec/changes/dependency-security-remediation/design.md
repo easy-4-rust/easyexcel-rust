@@ -27,7 +27,7 @@ Target actix-web >=4.18.2 and actix-http >=3.20.3 to cover RUSTSEC-2026-0446, 04
 
 ### SEC-CALAMINE
 
-Target calamine >=0.38.0 for RUSTSEC-2026-0436. First locate all direct call sites and identify .xls/.xlsb/VBA entry paths. Preserve the public EasyExcel reader API and test malformed CFB/OLE2 inputs in a resource-limited subprocess.
+Target calamine >=0.38.0 for RUSTSEC-2026-0436. First locate all direct call sites and identify .xls/.xlsb/VBA entry paths. Preserve the public EasyExcel reader API and test malformed CFB/OLE2 inputs in a resource-limited subprocess. Regression coverage includes upstream short-directory and cyclic-DIFAT fixtures, a generated one-64-byte-mini-sector CFB workbook, and a Linux child process constrained by RLIMIT_AS=512 MiB while parsing the 512-byte cyclic-DIFAT fixture.
 
 ### SEC-H2
 
