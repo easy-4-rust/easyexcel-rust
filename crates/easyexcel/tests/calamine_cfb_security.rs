@@ -1,10 +1,12 @@
 //! Regression fixtures from calamine's RUSTSEC-2026-0436 fix:
-//! https://github.com/tafia/calamine/commit/b8ec4f09cba6aea7d8359ababc240c9ed064751b
+//! Upstream fix: <https://github.com/tafia/calamine/commit/b8ec4f09cba6aea7d8359ababc240c9ed064751b>
 //!
 //! Both files are deliberately malformed OLE2/CFB inputs. They must only be
 //! parsed by patched calamine (>= 0.38.0).
 
 use std::io::Cursor;
+#[cfg(target_os = "linux")]
+use std::process::Command;
 
 use calamine::{Reader, Xls};
 
@@ -48,7 +50,9 @@ fn write_directory_entry(
     for (index, unit) in name.encode_utf16().enumerate() {
         put_u16(bytes, index * 2, unit);
     }
-    put_u16(bytes, 64, ((name.encode_utf16().count() + 1) * 2) as u16);
+    let name_len = u16::try_from((name.encode_utf16().count() + 1) * 2)
+        .expect("CFB directory name length fits the 16-bit field");
+    put_u16(bytes, 64, name_len);
     bytes[66] = entry_type;
     bytes[67] = 1;
     put_u32(bytes, 68, u32::MAX);
@@ -136,39 +140,23 @@ fn test_cfb_cyclic_difat_is_bounded_in_memory_limited_subprocess() {
         return;
     }
 
-    use std::os::unix::process::CommandExt;
-    use std::process::Command;
-
-    let mut command = Command::new(std::env::current_exe().expect("test executable path"));
-    command
+    // The vulnerable 512-byte fixture attempts a multi-gigabyte allocation.
+    // util-linux prlimit applies a 512 MiB RLIMIT_AS before exec'ing the child.
+    let output = Command::new("prlimit")
+        .args(["--as=536870912", "--"])
+        .arg(std::env::current_exe().expect("test executable path"))
         .args([
             "--exact",
             "test_cfb_cyclic_difat_is_bounded_in_memory_limited_subprocess",
             "--nocapture",
         ])
-        .env(CHILD, "1");
+        .env(CHILD, "1")
+        .output()
+        .expect("spawn test child through prlimit");
 
-    // The vulnerable 512-byte fixture attempts a multi-gigabyte allocation.
-    // A 512 MiB address-space limit makes the regression deterministic while
-    // leaving enough room for the test harness and runtime to start.
-    unsafe {
-        command.pre_exec(|| {
-            let limit = libc::rlimit {
-                rlim_cur: 512 * 1024 * 1024,
-                rlim_max: 512 * 1024 * 1024,
-            };
-            if unsafe { libc::setrlimit(libc::RLIMIT_AS, &limit) } == 0 {
-                Ok(())
-            } else {
-                Err(std::io::Error::last_os_error())
-            }
-        });
-    }
-
-    let output = command.output().expect("spawn memory-limited child");
     assert!(
         output.status.success(),
-        "memory-limited child failed: status={:?}\\nstdout={}\\nstderr={}",
+        "memory-limited child failed: status={:?}\nstdout={}\nstderr={}",
         output.status.code(),
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr),

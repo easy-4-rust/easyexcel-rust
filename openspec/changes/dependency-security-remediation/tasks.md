@@ -27,7 +27,7 @@ PR: #5
 - [x] T2.2 Verify calamine 0.38.0 and Rust 1.88 build; upstream fix b8ec4f09cba6aea7d8359ababc240c9ed064751b.
 - [x] T2.3 Upgrade Cargo.lock to calamine 0.38.0; EasyExcel reader API unchanged. Commit e4044f1505caac0413ecd4e8d4043e4d69c1f54e.
 - [x] T2.4 Short-directory and cyclic-DIFAT upstream CFB fixtures plus a generated minimal CFB with a single 64-byte mini-sector are covered; `cargo test --locked -p easyexcel --test calamine_cfb_security` passes 3/3 on Windows.
-- [ ] T2.5 Two upstream hostile fixtures and the 64-byte mini-sector case run in the isolated integration binary. Added a Linux-only child-process regression that applies RLIMIT_AS=512 MiB before parsing the 512-byte cyclic-DIFAT fixture; Linux CI compile/execution is pending.
+- [ ] T2.5 Two upstream hostile fixtures and the 64-byte mini-sector case run in the isolated integration binary. Added a Linux-only child-process regression using util-linux `prlimit --as=536870912` before parsing the 512-byte cyclic-DIFAT fixture; Linux CI compile/execution is pending. No unsafe Rust is used.
 - [ ] T2.6 Partial: 2330 facade and 17 round-trip tests passed (one Windows-locale test excluded); Rust 1.88 check passed; audit now 4 vulnerabilities + 11 unsound warnings. Full Java Golden, XLSB and workspace CI pending.
 
 ## Phase 3 — h2
@@ -60,7 +60,7 @@ PR: #5
 - [x] T6.1 Fresh local cargo audit --deny warnings passes with 0 vulnerabilities, 0 unsound warnings and 0 yanked packages after upgrading rustix 1.1.4 -> 1.1.6; GitHub Security Audit Run 43122592406 / Job 130866514483 passed on commit 9bc05f2.
 - [x] T6.2 cargo deny check advisories bans licenses sources passes locally and in GitHub Security Audit Run 43122592406 / Job 130866514483; no ignore/allow/source exceptions added.
 - [x] T6.3 cargo tree confirms only h2 0.4.20; h2 0.3.27 is absent; lru resolves to local patched 0.16.4; Salvo zstd 0.13.4 is dev/test-only while Actix uses zstd 0.14.3. Duplicate zstd/zstd-safe versions are required by distinct upstream semver lines.
-- [x] T6.4 GitHub CI Run 43122592373: Ubuntu + macOS workspace tests, coverage-pr, benchmark build, fmt, Clippy, docs and MSRV all passed. Local Windows workspace run exceeded the 60-minute runner limit while executing long large-workbook tests; no test failure was reported before timeout. The platform-dependent missing-file assertion was changed to assert the typed Io/Format error category; its focused test, fmt and diff-check pass.
+- [x] T6.4 GitHub CI Run 43122592373: Ubuntu + macOS workspace tests, coverage-pr, benchmark build, fmt, Clippy, docs and MSRV all passed on 9bc05f2. Follow-up CI for b8be70c exposed `unsafe-code` lint violations in the first RLIMIT implementation; the current uncommitted fix uses `prlimit` instead and removes unsafe code. Re-run CI on the next pushed commit. Local Windows workspace run exceeded the 60-minute runner limit; focused CFB tests, fmt and targeted Clippy pass locally.
 - [x] T6.5 Targeted core Rust 1.88 check and Actix/Salvo/Web conformance Rust 1.89 checks pass.
 - [x] T6.6 Update docs/audit report with pushed commit 9bc05f235c7ab872d1d90a4e3b3936e3a180b3a4, rustix 1.1.6 lock update, Cargo.lock hash, refreshed RustSec DB revision, toolchain, CI Run/Job IDs, test evidence and known host-specific blockers.
 - [ ] T6.7 Mark PR #5 ready only after every task is complete and all required checks are green; merge only after final review.

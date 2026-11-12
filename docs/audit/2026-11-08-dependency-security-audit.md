@@ -423,14 +423,14 @@ This advisory was issued on 2026-11-11 and therefore was not present in the orig
 2. Full workspace Clippy on Windows cannot compile examples/axum/src/main.rs because it unconditionally imports tokio::signal::unix. GitHub Linux CI Clippy passes for the workspace.
 3. cargo clippy --workspace --all-targets --all-features -- -D warnings additionally exposes pre-existing workspace warnings (unused imports, doc_markdown, assert_is_empty, etc.); no repository-wide warning cleanup was performed as part of this security patch.
 4. Running vendored Actix HTTP standalone Rustls integration tests on this Windows host fails before test execution because OpenSSL development libraries are not installed. The end-to-end Actix h2c bridge test passes; Linux CI must run the upstream Actix HTTP Rustls/HTTP2 test targets.
-5. The generated one-mini-sector CFB regression passes locally (1/1), and the full CFB security integration binary passes 3/3 on Windows. A Linux-only subprocess regression sets RLIMIT_AS to 512 MiB before parsing the 512-byte cyclic-DIFAT fixture. The Windows host cannot execute this Linux-only test; the latest GitHub Ubuntu CI must validate its compile and execution.
-6. Commit 9bc05f235c7ab872d1d90a4e3b3936e3a180b3a4 is pushed to PR #5 and its GitHub CI Run 43122592373 and Security Audit Run 43122592406 passed. Commit b1ae804 adds the cross-platform missing-file assertion and its CI is running. The current local follow-up adds the mini-sector and Linux RLIMIT_AS regression; its CI must pass before T2.5 is closed. Keep PR #5 Draft until that validation and review complete.
+5. The generated one-mini-sector CFB regression passes locally (1/1), and the full CFB security integration binary passes 3/3 on Windows. A Linux-only subprocess regression now invokes util-linux `prlimit --as=536870912` before parsing the 512-byte cyclic-DIFAT fixture; it uses no unsafe Rust. The Windows host cannot execute this Linux-only test; GitHub Ubuntu CI must validate its compile and execution.
+6. Commit 9bc05f2 passed full CI and Security Audit. Commit b1ae804's cross-platform missing-file assertion passed local validation; its CI is running. Commit b8be70c added the CFB mini-sector and initial RLIMIT test, but Clippy rejected its unsafe implementation. The current local follow-up replaces that implementation with `prlimit` and removes the libc dev-dependency; rerun CI after pushing this fix. Keep PR #5 Draft until Linux subprocess validation and all required checks pass.
 
 Current worktree:
 - Branch: fix/compatible-security-deps-20261031
-- Latest pushed commit: b1ae804acdd3f9d5f76b0eb5b71ba73cc7771eb9
-- Follow-up local changes: `crates/easyexcel/tests/calamine_cfb_security.rs` adds a generated one-64-byte-mini-sector CFB regression and a Linux-only RLIMIT_AS=512 MiB child-process test; `crates/easyexcel/Cargo.toml` adds libc as a dev-dependency; Cargo.lock records the dev-dependency edge.
-- Cargo.lock rustix: 1.1.6; 1.1.4 is absent. Current Cargo.lock SHA-256: D3FD4C89431E2698BB0F63AE30FAE2851D00D1D9653A059C95CF24F76A8CA9E6.
+- Latest pushed commit: b8be70c88b961ad3101f00eb75183b646b3d3448
+- Current local follow-up: `crates/easyexcel/tests/calamine_cfb_security.rs` adds a generated one-64-byte-mini-sector CFB regression and a Linux-only subprocess using util-linux `prlimit --as=536870912`; no libc dev-dependency or unsafe Rust is needed.
+- Cargo.lock rustix: 1.1.6; 1.1.4 is absent. Current Cargo.lock SHA-256: 85F92A71932BEB7CA43236E3A8097D4EEAB27FB497F4097B9D8F9E30291E7777.
 - rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2; RustSec advisory-db commit fd6f39814c4d3c359fdbe223d0280dec4933f78f.
-- GitHub CI/Security Audit for 9bc05f2 passed; CI for b1ae804 is running.
-- Local CFB security integration tests pass 3/3; Linux-only RLIMIT_AS subprocess test is pending CI.
+- GitHub Security Audit for b8be70c passed; its Clippy job failed on the initial unsafe implementation. The local prlimit replacement passes local Windows tests, targeted Clippy, strict audit/deny and fmt; the next commit's Linux CI is pending.
+- Local CFB security integration tests pass 3/3; Linux-only RLIMIT_AS subprocess test awaits CI.
