@@ -344,7 +344,7 @@ The intentionally malformed OLE2 fixtures should only be parsed using patched ca
 
 ## 11. Current remediation verification snapshot — 2026-11-12
 
-> This section records the current local PR #5 worktree state after SEC-H2 and SEC-LRU changes. It does not replace the historical 2026-11-08 baseline above. The changes are not yet committed/pushed and GitHub CI has not yet validated this snapshot.
+> This section records the PR #5 security remediation state as of commit 9bc05f235c7ab872d1d90a4e3b3936e3a180b3a4. It does not replace the historical 2026-11-08 baseline above. Fresh local security gates and all required GitHub CI jobs pass. PR #5 remains Draft because the Calamine mini-sector and OS-enforced memory-bound tests are still outstanding.
 
 ### 11.1 Current dependency decisions
 
@@ -388,7 +388,7 @@ vendor/lru contains upstream lru 0.16.4 with the panic-safety fix from lru-rs PR
 | cargo tree --locked -i h2 | Only h2 0.4.20; Actix HTTP, Rocket HTTP, Hyper 1, Axum, Poem, Salvo and Warp paths converge on 0.4.20 |
 | cargo tree --locked -i h2@0.3.27 | No matching package; exit 101 is expected for an absent package |
 | cargo test --locked -p easyexcel-web-conformance --test actix_h2 --all-features | 1 passed |
-| cargo test --locked -p easyexcel-web-conformance --all-features | 41 tests detected, 41 passed, 0 failed (re-run after Salvo feature scoping) |
+| cargo test --locked -p easyexcel-web-conformance --all-features | 41 tests detected, 41 passed, 0 failed; Ubuntu/macOS CI also passes |
 | cargo test --locked -p easyexcel-actix --all-features | 10 passed |
 | cargo test --manifest-path vendor/lru/Cargo.toml easyexcel_panic_safety_tests::pop_panicking_key_drop_keeps_list_consistent | 1 passed (panic is caught by catch_unwind as expected) |
 | cargo test -p easyexcel-format | 93 passed |
@@ -396,11 +396,10 @@ vendor/lru contains upstream lru 0.16.4 with the panic-safety fix from lru-rs PR
 | cargo clippy --locked -p easyexcel-actix -p easyexcel-demo-actix -p easyexcel-web-conformance --all-targets --all-features | passed |
 | cargo +1.88 check --locked -p easyexcel -p easyexcel-web --all-features | passed |
 | cargo +1.89 check --locked -p easyexcel-actix -p easyexcel-demo-actix -p easyexcel-web-conformance --all-features | passed |
-| cargo audit --no-fetch | exit 0; 0 vulnerabilities, 0 unsound warnings, 0 yanked packages |
+| cargo audit --deny warnings | exit 0; 0 vulnerabilities, 0 unsound warnings, 0 yanked packages; GitHub Security Audit passed on 9bc05f2 |
 | cargo deny check advisories bans licenses sources | passed after Salvo test feature scoping; no source allow or advisory ignore added |
 | git diff --check | passed |
 
-### 11.5 Known validation blockers / not yet accepted
 ### 11.4.1 Fresh advisory delta after the initial security cleanup
 
 GitHub Security Audit on commit 325ff561cb22c23272cbdca59c0ed7a651ceaed3 refreshed the RustSec database and found one new allowed unsoundness warning:
@@ -415,19 +414,23 @@ GitHub Security Audit on commit 325ff561cb22c23272cbdca59c0ed7a651ceaed3 refresh
 - Advisory source: https://rustsec.org/advisories/RUSTSEC-2026-0486.html
 - Upstream fix reference: https://github.com/bytecodealliance/rustix/commit/8e6aaa6713d2bb64b1fdd8c472e3a32a10a76d70
 
-This advisory was issued on 2026-11-11 and therefore was not present in the original 2026-11-08 baseline. The CI run on 325ff56 completed Security Audit successfully but reported one allowed unsound warning; the local rustix update removes it. A new GitHub CI run is required on the rustix 1.1.6 commit before PR #5 can be marked ready.
+This advisory was issued on 2026-11-11 and therefore was not present in the original 2026-11-08 baseline. The CI run on 325ff56 completed Security Audit successfully but reported one allowed unsound warning; commit 9bc05f2 upgrades rustix to 1.1.6. Fresh local cargo audit --deny warnings and cargo deny checks pass with no remaining advisory. GitHub Security Audit Run 43122592406 / Job 130866514483 passed on 9bc05f2.
+
+### 11.5 Known validation blockers / not yet accepted
 
 
-1. Full workspace cargo test --workspace --all-features --exclude easyexcel-demo-axum on Windows ran 2,331 tests: 2,330 passed and one existing test choice_excel_executor_propagates_executor_creation_errors failed because its assertion requires an English "open" / "No such" error substring. The test is platform/OS error-message dependent and is unrelated to HTTP/2 or dependency changes. Do not mark the full workspace suite green.
-2. Full workspace Clippy on Windows cannot compile examples/axum/src/main.rs because it unconditionally imports tokio::signal::unix. The targeted Actix/Web conformance Clippy command passes.
+1. The Windows local full-workspace test command exceeded the 60-minute runner limit while executing long large-workbook tests; no test failure was reported before timeout. GitHub CI workspace tests passed on both Ubuntu and macOS. The focused Windows missing-file test also passes after replacing an English OS-error substring assertion with a typed Io/Format error-category assertion.
+2. Full workspace Clippy on Windows cannot compile examples/axum/src/main.rs because it unconditionally imports tokio::signal::unix. GitHub Linux CI Clippy passes for the workspace.
 3. cargo clippy --workspace --all-targets --all-features -- -D warnings additionally exposes pre-existing workspace warnings (unused imports, doc_markdown, assert_is_empty, etc.); no repository-wide warning cleanup was performed as part of this security patch.
 4. Running vendored Actix HTTP standalone Rustls integration tests on this Windows host fails before test execution because OpenSSL development libraries are not installed. The end-to-end Actix h2c bridge test passes; Linux CI must run the upstream Actix HTTP Rustls/HTTP2 test targets.
-5. Calamine's 64-byte mini-sector hostile fixture and OS-enforced memory-bound subprocess test remain pending from T2.4/T2.5. Full Java Golden and full Linux/macOS CI remain pending.
-6. Commit 325ff561cb22c23272cbdca59c0ed7a651ceaed3 is pushed to PR #5. Its CI Security Audit found the newly issued RUSTSEC-2026-0486 on rustix 1.1.4; the local lock update to rustix 1.1.6 and fresh local audit are clean, but this fix is not yet committed/pushed. Keep PR #5 Draft until a new GitHub CI run confirms zero vulnerabilities and zero unsound warnings.
+5. Calamine's 64-byte mini-sector hostile fixture and OS-enforced memory-bound subprocess test remain pending from T2.4/T2.5. Required Linux/macOS CI and Java parity tests pass; these two targeted hostile-input acceptance tests remain the outstanding security work.
+6. Commit 9bc05f235c7ab872d1d90a4e3b3936e3a180b3a4 is pushed to PR #5. It updates rustix to 1.1.6. GitHub CI Run 43122592373 and Security Audit Run 43122592406 completed successfully, including Ubuntu/macOS tests, coverage-pr, MSRV, Clippy, rustfmt, docs and benchmark build. Keep PR #5 Draft until T2.4/T2.5 hostile-input tests are completed and reviewed.
 
 Current worktree:
 - Branch: fix/compatible-security-deps-20261031
-- Pushed commit: 325ff561cb22c23272cbdca59c0ed7a651ceaed3
-- Follow-up local change: Cargo.lock upgrades rustix 1.1.4 -> 1.1.6; docs/tasks record the new RUSTSEC-2026-0486 delta.
+- Pushed commit: 9bc05f235c7ab872d1d90a4e3b3936e3a180b3a4
+- Cargo.lock rustix: 1.1.6; 1.1.4 is absent.
 - Current Cargo.lock SHA-256: 85F92A71932BEB7CA43236E3A8097D4EEAB27FB497F4097B9D8F9E30291E7777.
 - rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2; RustSec advisory-db commit fd6f39814c4d3c359fdbe223d0280dec4933f78f.
+- GitHub CI: Run 43122592373 (Ubuntu/macOS tests, coverage-pr, MSRV, Clippy, rustfmt, docs, benchmark) passed; Security Audit Run 43122592406 passed.
+- Latest local-only follow-up: cross-platform error assertion in crates/easyexcel/src/analysis/excel_analyser_impl.rs; focused test, fmt and diff-check pass. This follow-up has not yet been committed/pushed.
