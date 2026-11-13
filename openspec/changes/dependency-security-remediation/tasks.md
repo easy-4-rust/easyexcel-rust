@@ -9,7 +9,7 @@ PR: #5
 - [x] T0.1 Capture the fixed audit baseline, all 9 vulnerability IDs and all 11 unsoundness IDs.
 - [x] T0.2 Map confirmed dependency edges and manifest/adapter entry points; explicitly mark unresolved callsites.
 - [x] T0.3 Define remediation order, MSRV boundary, feature preservation rules and serialized Cargo.lock ownership.
-- [ ] T0.4 Add exact source line references for Calamine call sites and all Salvo test-feature consumers.
+- [x] T0.4 Add exhaustive git grep-verified source references for Calamine manifests/callsites and the only Salvo test-feature consumer; see audit §10.1.1. Calamine remains dev/test-only; Salvo test is scoped to Web conformance dev-dependencies.
 - [x] T0.5 Record exact CI audit commands, local tool versions, RustSec advisory-db commit and current Cargo.lock SHA-256; refresh these values after each dependency-group commit.
 
 ## Phase 1 — Actix
@@ -57,12 +57,12 @@ PR: #5
 ## Phase 6 — Final verification and closeout
 
 - [x] T6.0 Follow-up CI on commit 325ff56 detected newly issued RUSTSEC-2026-0486 for rustix 1.1.4 (unsound xattr buffer initialization); update to fixed rustix 1.1.6 in pushed commit 9bc05f235c7ab872d1d90a4e3b3936e3a180b3a4. The advisory was issued 2026-11-11 after the original audit baseline.
-- [x] T6.1 Fresh local `cargo audit --no-fetch --deny warnings` passes with 0 vulnerabilities, 0 unsound warnings and 0 yanked packages; GitHub Security Audit Run 43150254805 / Job 130957480940 passed on commit a82aabf.
-- [x] T6.2 `cargo deny check advisories bans licenses sources` passes locally and in GitHub Security Audit Run 43150254805 / Job 130957480940; no ignore/allow/source exceptions added.
+- [x] T6.1 Fresh local cargo audit --no-fetch --deny warnings passes with 0 vulnerabilities, 0 unsound warnings and 0 yanked packages; GitHub Security Audit Run 43354243171 / Job 131652325083 passed on commit 67dab8005023b0befe5abe2b9684d5933600d75e.
+- [x] T6.2 cargo deny check advisories bans licenses sources passes locally and in GitHub Security Audit Run 43354243171 / Job 131652325083; no ignore/allow/source exceptions added.
 - [x] T6.3 cargo tree confirms only h2 0.4.20; h2 0.3.27 is absent; lru resolves to local patched 0.16.4; Salvo zstd 0.13.4 is dev/test-only while Actix uses zstd 0.14.3. Duplicate zstd/zstd-safe versions are required by distinct upstream semver lines.
-- [x] T6.4 GitHub CI Run 43150254881: Ubuntu + macOS workspace tests, coverage-pr, benchmark build, fmt, Clippy, docs and MSRV all passed on a82aabf. Ubuntu evidence includes EasyExcel 2331 tests, Java parity 95, Java Golden 88, round-trip 17 and the four CFB security tests including the prlimit child. Local Windows full-workspace run exceeded the 60-minute runner limit; focused CFB tests pass.
+- [x] T6.4 GitHub CI Run 43354243228: Ubuntu + macOS workspace tests, coverage-pr, benchmark build, fmt, Clippy, docs and MSRV all passed on 67dab8005023b0befe5abe2b9684d5933600d75e. Ubuntu evidence includes EasyExcel 2331 tests, Java parity 95, Java Golden 88, round-trip 17 and all four CFB security tests including the prlimit child. Local Windows full-workspace run exceeded the 60-minute runner limit; focused CFB tests pass.
 - [x] T6.5 Targeted core Rust 1.88 check and Actix/Salvo/Web conformance Rust 1.89 checks pass.
-- [x] T6.6 Update docs/audit report with pushed commit a82aabf76bfb5d7b347aaa2acf0f7b468be29db8, rustix 1.1.6 lock update, Cargo.lock hash, refreshed RustSec DB revision, toolchain, CI Run/Job IDs, test evidence and remaining review items.
+- [x] T6.6 Update docs/audit report with pushed commit 67dab8005023b0befe5abe2b9684d5933600d75e, rustix 1.1.6 lock update, Cargo.lock hash, refreshed RustSec DB revision, toolchain, CI Run/Job IDs, test evidence and remaining review items.
 - [ ] T6.7 Mark PR #5 ready only after every task is complete and all required checks are green; merge only after final review.
 
 ## Evidence Log
@@ -73,9 +73,10 @@ PR: #5
 | T0.5 | 6983857eec6c9f06764a4fd0c4086b05c8230c97 | cargo audit; cargo deny check advisories bans licenses sources; rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2 | captured | RustSec DB 309392b18f6b17022f82c701f300433126901068; Cargo.lock SHA256 435BB5E3285EBBCBC20628776264E662AB6BE22159684A5AE72930697E5D70CD |
 | T1.1–T1.6 | 51d04e9b282a6a8b0f3ee6199179c3cdfcf10e17 | Actix security tests (3/3), conformance (5 passed/1 ignored), adapter unit tests (10/10), fmt, Clippy, Rust 1.88 core and Rust 1.89 adapter checks | Actix IDs 0446/0447/0448/0455 removed; global audit still has 5 vulnerabilities + 11 unsound warnings | Security Audit Run 42450269311 / Job 128637778367 failed on remaining groups; CI Run 42450269320: rustfmt, MSRV, Clippy, Doc and benchmark passed; OS tests/coverage pending |
 | T2.1–T2.3 (T2.4–T2.6 partial) | e4044f1505caac0413ecd4e8d4043e4d69c1f54e | calamine 0.38.0; 2 hostile CFB fixtures; Rust 1.88 check; facade 2330; round-trip 17 | RUSTSEC-2026-0436 absent; local audit 4 vulnerabilities + 11 unsound warnings | Upstream calamine b8ec4f0; CI pending |
-| T2.4–T2.6 | a82aabf76bfb5d7b347aaa2acf0f7b468be29db8 | CFB integration 4/4 on Ubuntu (including prlimit child); Windows CFB 3/3; EasyExcel 2331; Java parity 95; Java Golden 88; round-trip 17 | Calamine CFB acceptance tests pass; XLSB explicitly unsupported | CI Run 43150254881 / Job 130957481545 + local fixture validation |
+| T0.4 | 67dab8005023b0befe5abe2b9684d5933600d75e | git grep for Calamine source/manifest refs and Salvo TestClient/feature refs | Exact source references recorded; Calamine and Salvo test features are test-only | docs/audit §10.1.1 + tasks T0.4 |
+| T2.4–T2.6 | 67dab8005023b0befe5abe2b9684d5933600d75e | CFB integration 4/4 on Ubuntu (including prlimit child); Windows CFB 3/3; EasyExcel 2331; Java parity 95; Java Golden 88; round-trip 17 | Calamine CFB acceptance tests pass; XLSB explicitly unsupported | CI Run 43354243228 / Job 131652325519 + local fixture validation |
 | T3.1–T3.5 | a90b61dfad447f3be0a1ad8ff1f0ff737fe978b1 | h2 0.4.20 only; Actix h2c bridge 1/1; web conformance 41 tests; Actix adapter 10/10; audit/deny pass | RUSTSEC-2026-0258 removed | Cargo.lock + vendor/actix-http + actix_h2.rs |
 | T4.1–T4.6 | local follow-up changes after a90b61d | Salvo TestClient 5 passed/1 ignored; Salvo adapter 6/6; web conformance 41 tests; production dependency tree has no zstd 0.13.4 path; audit/deny pass | All zstd/zstd-safe advisories and 10 unsound warnings absent | Cargo.toml + conformance dev-dependency feature scope |
-| T6.0–T6.2 | a82aabf76bfb5d7b347aaa2acf0f7b468be29db8 | rustix 1.1.4 -> 1.1.6; strict cargo audit 0/0/0; cargo deny all pass; h2 0.3 absent | RUSTSEC-2026-0486 removed; GitHub Security Audit passed | Cargo.lock + Run 43150254805 / Job 130957480940 |
+| T6.0–T6.2 | 67dab8005023b0befe5abe2b9684d5933600d75e | rustix 1.1.4 -> 1.1.6; strict cargo audit 0/0/0; cargo deny all pass; h2 0.3 absent | RUSTSEC-2026-0486 removed; GitHub Security Audit passed | Cargo.lock + Run 43354243171 / Job 131652325083 |
 | T5.1–T5.4 | a90b61dfad447f3be0a1ad8ff1f0ff737fe978b1 | vendored lru panic-safety regression 1/1; easyexcel-format 93/93; audit/deny pass | RUSTSEC-2026-0253 removed | Cargo.lock + vendor/lru |
-| T6.1–T6.6 | a82aabf76bfb5d7b347aaa2acf0f7b468be29db8 | strict audit/deny pass; h2 0.3 absent; rustix 1.1.6; Rust 1.88/1.89; Ubuntu/macOS tests; coverage; fmt/Clippy/docs/bench | Security dependency gate and required CI green; final CFB fixture assertion follow-up awaiting CI | docs/audit + CI Runs 43150254881 / 43150254805 |
+| T6.1–T6.6 | 67dab8005023b0befe5abe2b9684d5933600d75e | strict audit/deny pass; h2 0.3 absent; rustix 1.1.6; Rust 1.88/1.89; Ubuntu/macOS tests; coverage; fmt/Clippy/docs/bench | Security dependency gate and required CI green; one additional Linux Actix/Rustls compile guard is being added locally and awaits CI | docs/audit + CI Runs 43354243228 / 43354243171 |

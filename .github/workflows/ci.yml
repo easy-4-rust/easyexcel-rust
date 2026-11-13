@@ -59,6 +59,12 @@ jobs:
       - name: Examples build
         run: cargo build --workspace --examples --all-features
 
+      - name: Check vendored Actix HTTP/2 + Rustls feature (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cargo tree --manifest-path vendor/actix-http/Cargo.toml -e normal -i h2
+          cargo check --manifest-path vendor/actix-http/Cargo.toml --features "http2 rustls-0_23" --lib
+
   clippy:
     name: Clippy
     runs-on: ubuntu-latest

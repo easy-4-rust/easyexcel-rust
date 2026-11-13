@@ -315,6 +315,39 @@ GitHub CI after the push:
 - Calamine appears as a dev-dependency in crates/easyexcel/Cargo.toml and tests/easyexcel-test/Cargo.toml. In the production facade, crates/easyexcel/src/read/cell_conversion.rs:4-5 and row_processing.rs:14-15 gate their calamine imports with #[cfg(test)]. Native production XLS/XLSX readers remain easyexcel-xls / easyexcel-xlsx.
 - Additional test-only callsites include crates/easyexcel/src/read/tests.rs, write/tests.rs, template/tests.rs, template/template_writer.rs and tests/easyexcel-test.
 
+#### 10.1.1 Exhaustive Calamine and Salvo test-feature source references
+
+The following inventory was verified with git grep over crates/ and tests/, plus a repository scan for salvo::test, TestClient, and Cargo test features.
+
+**Calamine dependency boundary**
+- Workspace version declaration: Cargo.toml:86.
+- EasyExcel facade: [dev-dependencies] at crates/easyexcel/Cargo.toml:52-55, with calamine.workspace at line 54.
+- Java-style test host: [dev-dependencies] at tests/easyexcel-test/Cargo.toml:11-15, with calamine.workspace at line 15. No direct calamine Rust source import was found under tests/easyexcel-test by the repository scan.
+- CFB security integration test: crates/easyexcel/tests/calamine_cfb_security.rs:11-12 (the four tests use the patched parser and malicious fixtures).
+
+**EasyExcel facade test-only callsites**
+- crates/easyexcel/src/read/cell_conversion.rs:4-5,7-8,49-50,64-65: Calamine imports and conversion helpers are all cfg(test).
+- crates/easyexcel/src/read/row_processing.rs:4-15,29-43: Calamine import and workbook/sheet helpers are cfg(test).
+- crates/easyexcel/src/read/tests.rs:14-16: read-test oracle imports.
+- crates/easyexcel/src/write/tests.rs:20: write-test oracle imports.
+- crates/easyexcel/src/template/tests.rs:11,246: template-test oracle imports/type references.
+- crates/easyexcel/src/template/template_writer.rs:958-961,1076-1124: cfg(test) module tests_extra uses Calamine to read back generated template output.
+- crates/easyexcel/src/template/tests_cases/cases_01_split/chunk_01.rs:121: test-only Calamine error fixture.
+- crates/easyexcel/src/write/builder/excel_writer_sheet_builder.rs:431-451: test reads back generated XLSX.
+- crates/easyexcel/src/write/builder/excel_writer_table_builder.rs:372-388: cfg(test) module uses Calamine.
+- crates/easyexcel/src/write/excel_writer_builder_tests/tests.rs:12 and tests/cases_01_split/chunk_01.rs:17,168,263,288,327 plus chunk_02.rs:81,106: writer-builder test read-back.
+- crates/easyexcel/src/write/excel_writer_core_tests/tests_extra.rs:9 and tests_extra/cases_01_split/chunk_01.rs:304-313: XLS/XLSX writer-core test read-back.
+- crates/easyexcel/src/write/executor/excel_write_add_executor.rs:376-383: cfg(test) module imports Calamine.
+- crates/easyexcel/src/write/tests_cases/cases_07_split/chunk_02.rs:30: test-only range assertion.
+
+No production XLS/XLSX parser callsite was found. The two production readers remain easyexcel-xls and easyexcel-xlsx; Calamine is retained as a dev-dependency/test oracle.
+
+**Salvo test feature boundary**
+- Workspace dependency: Cargo.toml:103 enables only http1 and server; it does not enable test.
+- The only feature opt-in: tests/easyexcel-web-conformance/Cargo.toml:34 enables test on the dev-dependency.
+- The only source consumer found: tests/easyexcel-web-conformance/tests/salvo.rs:11,17,65,84,107,144, where salvo::test::TestClient is imported and used for the five conformance requests.
+- No other salvo::test or TestClient source consumer was found by the repository scan.
+
 ### 10.2 Reproducible malicious-input fixtures
 
 Copied from the fixed upstream commit into crates/easyexcel/tests/fixtures/calamine/:
@@ -331,12 +364,12 @@ The intentionally malformed OLE2 fixtures should only be parsed using patched ca
 - `cargo test --locked -p easyexcel --test calamine_cfb_security`: Windows 3/3 cross-platform tests passed; Linux CI executes 4/4 including the memory-limited child-process regression.
 - `cargo +1.88 check --locked -p easyexcel --all-targets --all-features`: passed; latest GitHub MSRV job passes.
 - Latest Ubuntu workspace CI: EasyExcel facade library 2331/2331; `java_full_parity_tests` 95/95; `java_golden_tests` 88/88; `tests/easyexcel-test/tests/round_trip.rs` 17/17.
-- Full workspace test jobs passed on Ubuntu and macOS; coverage-pr, rustfmt, Clippy, docs, MSRV and benchmark build all passed.
-- `cargo audit --no-fetch --deny warnings`: 0 vulnerabilities, 0 unsound warnings and 0 yanked packages; `cargo deny check advisories bans licenses sources` passes. GitHub Security Audit Run 43150254805 / Job 130957480940 passes.
+- Full workspace test jobs passed on Ubuntu and macOS in CI Run 43354243228; coverage-pr, rustfmt, Clippy, docs, MSRV and benchmark build all passed.
+- `cargo audit --no-fetch --deny warnings`: 0 vulnerabilities, 0 unsound warnings and 0 yanked packages; `cargo deny check advisories bans licenses sources` passes. GitHub Security Audit Run 43354243171 / Job 131652325083 passes.
 - T2.4/T2.5/T2.6 are now covered: the generated one-mini-sector fixture is structurally validated by `cfb::CompoundFile` and its Workbook stream is exactly 64 bytes; Linux CI runs the `prlimit --as=536870912` child-process regression; full workspace, Java parity, Java Golden and round-trip suites pass. EasyExcel explicitly does not support XLSB/XLSM, so those formats are not claimed as compatibility targets.
 - No advisory ignore/allow and no framework features were removed.
 - The CFB security test source is `crates/easyexcel/tests/calamine_cfb_security.rs`; upstream fixtures are `crates/easyexcel/tests/fixtures/calamine/cfb_difat_oom.xls` (512 bytes) and `cfb_dir_short_chunk_panic.xls` (4153 bytes). The generated fixture's `Workbook` mini stream is independently opened through cfb 0.14.0 and asserted to contain exactly 64 bytes before Calamine is invoked.
-- Linux memory-bound test evidence: CI Run 43150254881 / Job 130957481545 logs `test_cfb_cyclic_difat_is_bounded_in_memory_limited_subprocess ... ok`; it invokes util-linux `prlimit --as=536870912` before starting the child test process.
+- Linux memory-bound test evidence: CI Run 43354243228 / Job 131652325519 logs `test_cfb_cyclic_difat_is_bounded_in_memory_limited_subprocess ... ok`; it invokes util-linux `prlimit --as=536870912` before starting the child test process.
 - Current workspace format scope: CHANGELOG.md states XLSX/XLS/CSV only; XLSM and XLSB are not supported. Repository-wide search found no Xlsb code path or `.xlsb` fixture. Calamine remains a dev-dependency/test oracle rather than the production reader.
 
 
@@ -345,9 +378,9 @@ The intentionally malformed OLE2 fixtures should only be parsed using patched ca
 审计结论：PR #5 已经解决 ZIP 8.6.0 yanked 的构建阻塞方向，但当前依赖锁文件仍有明确的安全问题。必须完成上述逐项修复并重新审计后才能合并。
 
 
-## 11. Current remediation verification snapshot — 2026-11-12
+## 11. Current remediation verification snapshot — 2026-11-13
 
-> This section records the PR #5 security remediation state through commit 9bc05f235c7ab872d1d90a4e3b3936e3a180b3a4 and subsequent follow-up work. Fresh local security gates pass. The CFB security integration binary passes 3/3 on Windows; the Linux RLIMIT_AS subprocess regression awaits GitHub CI execution.
+> This section records the PR #5 security remediation state through commit 67dab8005023b0befe5abe2b9684d5933600d75e. Fresh local security gates and all required GitHub CI jobs pass. Ubuntu and macOS workspace tests are green, including all four CFB security tests on Ubuntu.
 
 ### 11.1 Current dependency decisions
 
@@ -399,7 +432,7 @@ vendor/lru contains upstream lru 0.16.4 with the panic-safety fix from lru-rs PR
 | cargo clippy --locked -p easyexcel-actix -p easyexcel-demo-actix -p easyexcel-web-conformance --all-targets --all-features | passed |
 | cargo +1.88 check --locked -p easyexcel -p easyexcel-web --all-features | passed |
 | cargo +1.89 check --locked -p easyexcel-actix -p easyexcel-demo-actix -p easyexcel-web-conformance --all-features | passed |
-| cargo audit --deny warnings | exit 0; 0 vulnerabilities, 0 unsound warnings, 0 yanked packages; GitHub Security Audit passed on 9bc05f2 |
+| cargo audit --deny warnings | exit 0; 0 vulnerabilities, 0 unsound warnings, 0 yanked packages; GitHub Security Audit Run 43354243171 / Job 131652325083 passed on 67dab800 |
 | cargo deny check advisories bans licenses sources | passed after Salvo test feature scoping; no source allow or advisory ignore added |
 | git diff --check | passed |
 
@@ -417,7 +450,7 @@ GitHub Security Audit on commit 325ff561cb22c23272cbdca59c0ed7a651ceaed3 refresh
 - Advisory source: https://rustsec.org/advisories/RUSTSEC-2026-0486.html
 - Upstream fix reference: https://github.com/bytecodealliance/rustix/commit/8e6aaa6713d2bb64b1fdd8c472e3a32a10a76d70
 
-This advisory was issued on 2026-11-11 and therefore was not present in the original 2026-11-08 baseline. The CI run on 325ff56 completed Security Audit successfully but reported one allowed unsound warning; commit 9bc05f2 upgrades rustix to 1.1.6. Fresh local cargo audit --deny warnings and cargo deny checks pass with no remaining advisory. GitHub Security Audit Run 43122592406 / Job 130866514483 passed on 9bc05f2.
+This advisory was issued on 2026-11-11 and therefore was not present in the original 2026-11-08 baseline. The CI run on 325ff56 completed Security Audit successfully but reported one allowed unsound warning; commit 9bc05f2 upgrades rustix to 1.1.6. Fresh local cargo audit --deny warnings and cargo deny checks pass with no remaining advisory. GitHub Security Audit Run 43354243171 / Job 131652325083 passed on 67dab800.
 
 ### 11.5 Known validation blockers / not yet accepted
 
@@ -426,14 +459,14 @@ This advisory was issued on 2026-11-11 and therefore was not present in the orig
 2. Full workspace Clippy on Windows cannot compile examples/axum/src/main.rs because it unconditionally imports tokio::signal::unix. GitHub Linux CI Clippy passes for the workspace.
 3. cargo clippy --workspace --all-targets --all-features -- -D warnings additionally exposes pre-existing workspace warnings (unused imports, doc_markdown, assert_is_empty, etc.); no repository-wide warning cleanup was performed as part of this security patch.
 4. Running vendored Actix HTTP standalone Rustls integration tests on this Windows host fails before test execution because OpenSSL development libraries are not installed. The end-to-end Actix h2c bridge test passes; Linux CI must run the upstream Actix HTTP Rustls/HTTP2 test targets.
-5. CFB hostile-input acceptance is verified: Windows runs the three cross-platform tests 3/3; Ubuntu CI runs all four tests, including the Linux-only `prlimit --as=536870912` child-process regression. The generated mini-stream fixture is independently validated as a structurally valid CFB with a 64-byte Workbook stream. The final test uses no unsafe Rust and no libc dev-dependency.
-6. Latest pushed commit a82aabf passed CI Run 43150254881 and Security Audit Run 43150254805; all Ubuntu/macOS, MSRV, Clippy, rustfmt, docs, coverage-pr and benchmark jobs are green. The current local follow-up strengthens the generated 64-byte fixture by independently opening and reading the mini-stream through cfb 0.14.0; targeted Windows CFB tests 3/3, fmt, Clippy, Rust 1.88 check and strict audit/deny pass. This final assertion follow-up must be pushed and have CI rerun before PR #5 is marked ready.
+5. CFB hostile-input acceptance is verified: Windows runs the three cross-platform tests 3/3; Ubuntu CI Run 43354243228 / Job 131652325519 runs all four tests, including the Linux-only prlimit --as=536870912 child-process regression. The generated mini-stream fixture is independently validated as a structurally valid CFB with a 64-byte Workbook stream. The final test uses no unsafe Rust and no libc dev-dependency.
+6. Latest pushed commit 67dab8005023b0befe5abe2b9684d5933600d75e passed CI Run 43354243228 and Security Audit Run 43354243171; all Ubuntu/macOS, MSRV, Clippy, rustfmt, docs, coverage-pr and benchmark jobs are green. The Linux CI log confirms all four CFB tests, including the prlimit child. A further local-only change adds an explicit Linux compile guard for vendored Actix HTTP/2 + Rustls; its equivalent Windows cargo check --manifest-path vendor/actix-http/Cargo.toml --features http2 rustls-0_23 --lib passed, but this additional workflow step has not yet been committed/pushed or CI-verified.
 
 Current worktree:
 - Branch: fix/compatible-security-deps-20261031
-- Latest pushed commit: a82aabf76bfb5d7b347aaa2acf0f7b468be29db8
-- CI Run 43150254881: Ubuntu and macOS tests, coverage-pr, MSRV, Clippy, rustfmt, docs and benchmark build all passed. Security Audit Run 43150254805 / Job 130957480940 passed (`advisories ok, bans ok, licenses ok, sources ok`).
-- Linux CI Job 130957481545: all four `calamine_cfb_security` tests passed, including the `prlimit` child process. Ubuntu test evidence also includes EasyExcel 2331/2331, Java parity 95/95, Java Golden 88/88 and round-trip 17/17.
-- Current local follow-up: `crates/easyexcel/tests/calamine_cfb_security.rs` independently opens the generated CFB fixture with cfb 0.14.0 and reads exactly 64 bytes from `Workbook` before Calamine is invoked. Windows targeted CFB tests pass 3/3; fmt, targeted Clippy, Rust 1.88 check, `cargo audit --no-fetch --deny warnings`, cargo deny and `git diff --check` pass. This follow-up is not yet committed/pushed.
+- Latest pushed commit: 67dab8005023b0befe5abe2b9684d5933600d75e
+- CI Run 43354243228: Ubuntu and macOS tests, coverage-pr, MSRV, Clippy, rustfmt, docs and benchmark build all passed. Security Audit Run 43354243171 / Job 131652325083 passed (advisories ok, bans ok, licenses ok, sources ok).
+- Ubuntu test Job 131652325519: all four calamine_cfb_security tests passed, including the prlimit child process; Java parity 95/95, Java Golden 88/88 and round-trip 17/17 also passed.
+- Latest local follow-up (not yet pushed): .github/workflows/ci.yml adds a Linux compile guard for vendored Actix HTTP/2 + Rustls; the equivalent local Windows cargo check --manifest-path vendor/actix-http/Cargo.toml --features http2 rustls-0_23 --lib passed. The only source changes replace three actix_utils::future::ready imports with equivalent std::future::ready; targeted Actix adapter tests 10/10, h2 bridge test 1/1, targeted Clippy, fmt and diff-check pass. CI rerun is required for this extra guard.
 - Cargo.lock rustix: 1.1.6; 1.1.4 is absent. Cargo.lock SHA-256: 85F92A71932BEB7CA43236E3A8097D4EEAB27FB497F4097B9D8F9E30291E7777.
 - rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2; RustSec advisory-db commit fd6f39814c4d3c359fdbe223d0280dec4933f78f.

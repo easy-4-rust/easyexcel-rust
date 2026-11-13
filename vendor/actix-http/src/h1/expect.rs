@@ -1,5 +1,5 @@
 use actix_service::{Service, ServiceFactory};
-use actix_utils::future::{ready, Ready};
+use std::future::{ready, Ready};
 
 use crate::{Error, Request};
 

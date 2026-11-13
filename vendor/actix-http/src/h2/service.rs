@@ -1,5 +1,5 @@
 use std::{
-    future::Future,
+    future::{ready, Future},
     marker::PhantomData,
     mem, net,
     pin::Pin,
@@ -11,7 +11,6 @@ use actix_codec::{AsyncRead, AsyncWrite};
 use actix_service::{
     fn_factory, fn_service, IntoServiceFactory, Service, ServiceFactory, ServiceFactoryExt as _,
 };
-use actix_utils::future::ready;
 use futures_core::{future::LocalBoxFuture, ready};
 use tokio::net::TcpStream;
 use tracing::{error, trace};
