@@ -380,7 +380,7 @@ The intentionally malformed OLE2 fixtures should only be parsed using patched ca
 
 ## 11. Current remediation verification snapshot — 2026-11-13
 
-> This section records the PR #5 security remediation state through commit 67dab8005023b0befe5abe2b9684d5933600d75e. Fresh local security gates and all required GitHub CI jobs pass. Ubuntu and macOS workspace tests are green, including all four CFB security tests on Ubuntu.
+> This section records the PR #5 security remediation state through pushed commit 2a6c2d6159ad4a670eb9a1f38a307fbfa6f2c843 plus the local ref-swap 0.1.3 follow-up. The 2a6c2d Security Audit reported newly published RUSTSEC-2026-0528 on ref-swap 0.1.2; the local lock update removes it and strict audit/deny pass against the refreshed RustSec database. A new CI run is required after pushing the lock update.
 
 ### 11.1 Current dependency decisions
 
@@ -395,6 +395,7 @@ The intentionally malformed OLE2 fixtures should only be parsed using patched ca
 | zstd-safe | 7.4.0 and 8.2.0 (matching parent semver lines) | RUSTSEC-2026-0398/0403 and all 10 unsound warnings absent |
 | lru | 0.16.4, local path patch at vendor/lru | RUSTSEC-2026-0253 absent |
 | rustix | 1.1.6 | RUSTSEC-2026-0486 absent; fixes newly issued zero-length xattr buffer unsoundness |
+| ref-swap | 0.1.3 | RUSTSEC-2026-0528 absent; fixes unsafe variance and OptionRefSwap null handling |
 
 ### 11.2 Actix HTTP 3.21.0 / h2 0.4 bridge
 
@@ -452,6 +453,24 @@ GitHub Security Audit on commit 325ff561cb22c23272cbdca59c0ed7a651ceaed3 refresh
 
 This advisory was issued on 2026-11-11 and therefore was not present in the original 2026-11-08 baseline. The CI run on 325ff56 completed Security Audit successfully but reported one allowed unsound warning; commit 9bc05f2 upgrades rustix to 1.1.6. Fresh local cargo audit --deny warnings and cargo deny checks pass with no remaining advisory. GitHub Security Audit Run 43354243171 / Job 131652325083 passed on 67dab800.
 
+### 11.4.2 Fresh advisory delta: RUSTSEC-2026-0528
+
+GitHub Security Audit on commit 2a6c2d6159ad4a670eb9a1f38a307fbfa6f2c843 used a refreshed RustSec database and found a newly published unsoundness advisory:
+
+- Advisory: RUSTSEC-2026-0528
+- Date: 2026-11-12
+- Crate/version: ref-swap 0.1.2
+- Dependency path: Rocket 0.5.2 -> ref-swap 0.1.2 (also reached by easyexcel-rocket, easyexcel-demo-rocket and Web conformance dev-dependencies).
+- Issue: incorrect variance of RefSwap/OptionRefSwap could permit use-after-free; OptionRefSwap::into_inner did not check for null.
+- Fixed version: ref-swap 0.1.3.
+- Upstream release: https://github.com/Nitrokey/ref-swap/releases/tag/v0.1.3
+- Advisory: https://rustsec.org/advisories/RUSTSEC-2026-0528.html
+- Lock update: cargo update -p ref-swap --precise 0.1.3.
+- API compatibility: Rocket 0.5.2 and the EasyExcel Rocket adapter compile without source changes; Rocket adapter tests pass 8/8 and the Rocket example check passes.
+- Fresh local security verification: update RustSec advisory-db to commit 4ef2df8e806a65e2f1ecc14f56f51249062b23d6 (1509 advisories); cargo audit --no-fetch --deny warnings passes with zero vulnerabilities, unsound warnings and yanked packages; cargo deny advisories/bans/licenses/sources passes.
+
+The 2a6c2d Security Audit job completed successfully under the workflow's default warning policy but reported this one allowed unsound warning. The ref-swap 0.1.3 lock update is committed locally as 9f3988c2b1e76c8c04dabc69442fca9c893aae3b but is not yet pushed at this snapshot; push it and rerun CI before marking PR #5 ready.
+
 ### 11.5 Known validation blockers / not yet accepted
 
 
@@ -460,13 +479,14 @@ This advisory was issued on 2026-11-11 and therefore was not present in the orig
 3. cargo clippy --workspace --all-targets --all-features -- -D warnings additionally exposes pre-existing workspace warnings (unused imports, doc_markdown, assert_is_empty, etc.); no repository-wide warning cleanup was performed as part of this security patch.
 4. Running vendored Actix HTTP standalone Rustls integration tests on this Windows host fails before test execution because OpenSSL development libraries are not installed. The end-to-end Actix h2c bridge test passes; Linux CI must run the upstream Actix HTTP Rustls/HTTP2 test targets.
 5. CFB hostile-input acceptance is verified: Windows runs the three cross-platform tests 3/3; Ubuntu CI Run 43354243228 / Job 131652325519 runs all four tests, including the Linux-only prlimit --as=536870912 child-process regression. The generated mini-stream fixture is independently validated as a structurally valid CFB with a 64-byte Workbook stream. The final test uses no unsafe Rust and no libc dev-dependency.
-6. Latest pushed commit 67dab8005023b0befe5abe2b9684d5933600d75e passed CI Run 43354243228 and Security Audit Run 43354243171; all Ubuntu/macOS, MSRV, Clippy, rustfmt, docs, coverage-pr and benchmark jobs are green. The Linux CI log confirms all four CFB tests, including the prlimit child. A further local-only change adds an explicit Linux compile guard for vendored Actix HTTP/2 + Rustls; its equivalent Windows cargo check --manifest-path vendor/actix-http/Cargo.toml --features http2 rustls-0_23 --lib passed, but this additional workflow step has not yet been committed/pushed or CI-verified.
+6. Commit 2a6c2d6159ad4a670eb9a1f38a307fbfa6f2c843 is pushed to PR #5 and adds the Linux Actix HTTP/2 + Rustls compile guard. Its Security Audit Run 43460022248 completed but reported RUSTSEC-2026-0528 on ref-swap 0.1.2. Commit 9f3988c2b1e76c8c04dabc69442fca9c893aae3b upgrades ref-swap to 0.1.3; fresh strict audit/deny pass against RustSec DB 4ef2df8. The lock fix is committed locally but not yet pushed. Keep PR #5 Draft until the new lock commit passes Security Audit and all CI jobs.
 
 Current worktree:
 - Branch: fix/compatible-security-deps-20261031
-- Latest pushed commit: 67dab8005023b0befe5abe2b9684d5933600d75e
-- CI Run 43354243228: Ubuntu and macOS tests, coverage-pr, MSRV, Clippy, rustfmt, docs and benchmark build all passed. Security Audit Run 43354243171 / Job 131652325083 passed (advisories ok, bans ok, licenses ok, sources ok).
-- Ubuntu test Job 131652325519: all four calamine_cfb_security tests passed, including the prlimit child process; Java parity 95/95, Java Golden 88/88 and round-trip 17/17 also passed.
-- Latest local follow-up (not yet pushed): .github/workflows/ci.yml adds a Linux compile guard for vendored Actix HTTP/2 + Rustls; the equivalent local Windows cargo check --manifest-path vendor/actix-http/Cargo.toml --features http2 rustls-0_23 --lib passed. The only source changes replace three actix_utils::future::ready imports with equivalent std::future::ready; targeted Actix adapter tests 10/10, h2 bridge test 1/1, targeted Clippy, fmt and diff-check pass. CI rerun is required for this extra guard.
-- Cargo.lock rustix: 1.1.6; 1.1.4 is absent. Cargo.lock SHA-256: 85F92A71932BEB7CA43236E3A8097D4EEAB27FB497F4097B9D8F9E30291E7777.
-- rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2; RustSec advisory-db commit fd6f39814c4d3c359fdbe223d0280dec4933f78f.
+- Latest pushed commit: 2a6c2d6159ad4a670eb9a1f38a307fbfa6f2c843
+- Latest local lock-fix commit: 9f3988c2b1e76c8c04dabc69442fca9c893aae3b (not yet pushed).
+- CI Run 43460022228: rustfmt, MSRV, benchmark build, Clippy and docs passed; Ubuntu/macOS tests and coverage-pr were still running at the time of this snapshot. Security Audit Run 43460022248 / Job 132004123745 completed but reported RUSTSEC-2026-0528 on ref-swap 0.1.2.
+- Ubuntu test Job 131652325519 from the preceding fully green commit 67dab800: all four calamine_cfb_security tests passed, including the prlimit child process; Java parity 95/95, Java Golden 88/88 and round-trip 17/17 passed.
+- Local Rocket validation after ref-swap update: Rocket adapter tests 8/8; Rocket example check passes; strict cargo audit/deny pass against RustSec DB 4ef2df8e806a65e2f1ecc14f56f51249062b23d6 (1509 advisories).
+- Cargo.lock rustix: 1.1.6; ref-swap: 0.1.3. Current Cargo.lock SHA-256: 192556FB425768E93FB15020E6F8DB1FDBCF19804F7FA7A75229B7440F931822.
+- rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2; RustSec advisory-db commit 4ef2df8e806a65e2f1ecc14f56f51249062b23d6.
