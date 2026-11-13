@@ -328,13 +328,16 @@ The intentionally malformed OLE2 fixtures should only be parsed using patched ca
 
 ### 10.3 Verification
 
-- cargo test --locked -p easyexcel --test calamine_cfb_security -- --nocapture: 2 passed.
-- cargo +1.88 check --locked -p easyexcel --all-targets --all-features: passed.
-- cargo test --locked -p easyexcel --lib -- --skip choice_excel_executor_propagates_executor_creation_errors: 2330 passed; one existing Windows locale-dependent error-message assertion excluded.
-- cargo test --locked -p easyexcel-test --test round_trip: 17 passed.
-- Local cargo audit --json: RUSTSEC-2026-0436 removed. Remaining vulnerabilities: RUSTSEC-2026-0258 (h2), 2026-0391 (zstd), 2026-0398/0403 (zstd-safe). Unsound warnings remain 11.
-- T2.4/T2.5/T2.6 remain partially open: separate 64-byte mini-sector fixture, bounded-subprocess stress test, full workspace and Java Golden still pending.
+- `cargo test --locked -p easyexcel --test calamine_cfb_security`: Windows 3/3 cross-platform tests passed; Linux CI executes 4/4 including the memory-limited child-process regression.
+- `cargo +1.88 check --locked -p easyexcel --all-targets --all-features`: passed; latest GitHub MSRV job passes.
+- Latest Ubuntu workspace CI: EasyExcel facade library 2331/2331; `java_full_parity_tests` 95/95; `java_golden_tests` 88/88; `tests/easyexcel-test/tests/round_trip.rs` 17/17.
+- Full workspace test jobs passed on Ubuntu and macOS; coverage-pr, rustfmt, Clippy, docs, MSRV and benchmark build all passed.
+- `cargo audit --no-fetch --deny warnings`: 0 vulnerabilities, 0 unsound warnings and 0 yanked packages; `cargo deny check advisories bans licenses sources` passes. GitHub Security Audit Run 43150254805 / Job 130957480940 passes.
+- T2.4/T2.5/T2.6 are now covered: the generated one-mini-sector fixture is structurally validated by `cfb::CompoundFile` and its Workbook stream is exactly 64 bytes; Linux CI runs the `prlimit --as=536870912` child-process regression; full workspace, Java parity, Java Golden and round-trip suites pass. EasyExcel explicitly does not support XLSB/XLSM, so those formats are not claimed as compatibility targets.
 - No advisory ignore/allow and no framework features were removed.
+- The CFB security test source is `crates/easyexcel/tests/calamine_cfb_security.rs`; upstream fixtures are `crates/easyexcel/tests/fixtures/calamine/cfb_difat_oom.xls` (512 bytes) and `cfb_dir_short_chunk_panic.xls` (4153 bytes). The generated fixture's `Workbook` mini stream is independently opened through cfb 0.14.0 and asserted to contain exactly 64 bytes before Calamine is invoked.
+- Linux memory-bound test evidence: CI Run 43150254881 / Job 130957481545 logs `test_cfb_cyclic_difat_is_bounded_in_memory_limited_subprocess ... ok`; it invokes util-linux `prlimit --as=536870912` before starting the child test process.
+- Current workspace format scope: CHANGELOG.md states XLSX/XLS/CSV only; XLSM and XLSB are not supported. Repository-wide search found no Xlsb code path or `.xlsb` fixture. Calamine remains a dev-dependency/test oracle rather than the production reader.
 
 
 ---
@@ -419,18 +422,18 @@ This advisory was issued on 2026-11-11 and therefore was not present in the orig
 ### 11.5 Known validation blockers / not yet accepted
 
 
-1. The Windows local full-workspace test command exceeded the 60-minute runner limit while executing long large-workbook tests; no test failure was reported before timeout. GitHub CI workspace tests passed on both Ubuntu and macOS. The focused Windows missing-file test also passes after replacing an English OS-error substring assertion with a typed Io/Format error-category assertion.
+1. The Windows local full-workspace test command exceeded the 60-minute runner limit while executing long large-workbook tests; no test failure was reported before timeout. GitHub CI workspace tests pass on both Ubuntu and macOS. The focused Windows missing-file and CFB tests pass.
 2. Full workspace Clippy on Windows cannot compile examples/axum/src/main.rs because it unconditionally imports tokio::signal::unix. GitHub Linux CI Clippy passes for the workspace.
 3. cargo clippy --workspace --all-targets --all-features -- -D warnings additionally exposes pre-existing workspace warnings (unused imports, doc_markdown, assert_is_empty, etc.); no repository-wide warning cleanup was performed as part of this security patch.
 4. Running vendored Actix HTTP standalone Rustls integration tests on this Windows host fails before test execution because OpenSSL development libraries are not installed. The end-to-end Actix h2c bridge test passes; Linux CI must run the upstream Actix HTTP Rustls/HTTP2 test targets.
-5. The generated one-mini-sector CFB regression passes locally (1/1), and the full CFB security integration binary passes 3/3 on Windows. A Linux-only subprocess regression now invokes util-linux `prlimit --as=536870912` before parsing the 512-byte cyclic-DIFAT fixture; it uses no unsafe Rust. The Windows host cannot execute this Linux-only test; GitHub Ubuntu CI must validate its compile and execution.
-6. Commit 9bc05f2 passed full CI and Security Audit. Commit b1ae804's cross-platform missing-file assertion passed local validation; its CI is running. Commit b8be70c added the CFB mini-sector and initial RLIMIT test, but Clippy rejected its unsafe implementation. The current local follow-up replaces that implementation with `prlimit` and removes the libc dev-dependency; rerun CI after pushing this fix. Keep PR #5 Draft until Linux subprocess validation and all required checks pass.
+5. CFB hostile-input acceptance is verified: Windows runs the three cross-platform tests 3/3; Ubuntu CI runs all four tests, including the Linux-only `prlimit --as=536870912` child-process regression. The generated mini-stream fixture is independently validated as a structurally valid CFB with a 64-byte Workbook stream. The final test uses no unsafe Rust and no libc dev-dependency.
+6. Latest pushed commit a82aabf passed CI Run 43150254881 and Security Audit Run 43150254805; all Ubuntu/macOS, MSRV, Clippy, rustfmt, docs, coverage-pr and benchmark jobs are green. The current local follow-up strengthens the generated 64-byte fixture by independently opening and reading the mini-stream through cfb 0.14.0; targeted Windows CFB tests 3/3, fmt, Clippy, Rust 1.88 check and strict audit/deny pass. This final assertion follow-up must be pushed and have CI rerun before PR #5 is marked ready.
 
 Current worktree:
 - Branch: fix/compatible-security-deps-20261031
-- Latest pushed commit: b8be70c88b961ad3101f00eb75183b646b3d3448
-- Current local follow-up: `crates/easyexcel/tests/calamine_cfb_security.rs` adds a generated one-64-byte-mini-sector CFB regression and a Linux-only subprocess using util-linux `prlimit --as=536870912`; no libc dev-dependency or unsafe Rust is needed.
-- Cargo.lock rustix: 1.1.6; 1.1.4 is absent. Current Cargo.lock SHA-256: 85F92A71932BEB7CA43236E3A8097D4EEAB27FB497F4097B9D8F9E30291E7777.
+- Latest pushed commit: a82aabf76bfb5d7b347aaa2acf0f7b468be29db8
+- CI Run 43150254881: Ubuntu and macOS tests, coverage-pr, MSRV, Clippy, rustfmt, docs and benchmark build all passed. Security Audit Run 43150254805 / Job 130957480940 passed (`advisories ok, bans ok, licenses ok, sources ok`).
+- Linux CI Job 130957481545: all four `calamine_cfb_security` tests passed, including the `prlimit` child process. Ubuntu test evidence also includes EasyExcel 2331/2331, Java parity 95/95, Java Golden 88/88 and round-trip 17/17.
+- Current local follow-up: `crates/easyexcel/tests/calamine_cfb_security.rs` independently opens the generated CFB fixture with cfb 0.14.0 and reads exactly 64 bytes from `Workbook` before Calamine is invoked. Windows targeted CFB tests pass 3/3; fmt, targeted Clippy, Rust 1.88 check, `cargo audit --no-fetch --deny warnings`, cargo deny and `git diff --check` pass. This follow-up is not yet committed/pushed.
+- Cargo.lock rustix: 1.1.6; 1.1.4 is absent. Cargo.lock SHA-256: 85F92A71932BEB7CA43236E3A8097D4EEAB27FB497F4097B9D8F9E30291E7777.
 - rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2; RustSec advisory-db commit fd6f39814c4d3c359fdbe223d0280dec4933f78f.
-- GitHub Security Audit for b8be70c passed; its Clippy job failed on the initial unsafe implementation. The local prlimit replacement passes local Windows tests, targeted Clippy, strict audit/deny and fmt; the next commit's Linux CI is pending.
-- Local CFB security integration tests pass 3/3; Linux-only RLIMIT_AS subprocess test awaits CI.

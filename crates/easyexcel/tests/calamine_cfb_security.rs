@@ -4,7 +4,7 @@
 //! Both files are deliberately malformed OLE2/CFB inputs. They must only be
 //! parsed by patched calamine (>= 0.38.0).
 
-use std::io::Cursor;
+use std::io::{Cursor, Read};
 #[cfg(target_os = "linux")]
 use std::process::Command;
 
@@ -117,6 +117,20 @@ fn test_cfb_one_64_byte_mini_sector_is_read_without_panic() {
     use std::panic::{AssertUnwindSafe, catch_unwind};
 
     let bytes = minimal_cfb_with_one_64_byte_mini_stream();
+
+    // Validate the generated container independently and prove the Workbook
+    // stream is exactly one 64-byte mini-sector before exercising Calamine.
+    let mut compound = cfb::CompoundFile::open(Cursor::new(bytes.as_slice()))
+        .expect("generated CFB mini-sector fixture must be structurally valid");
+    let mut workbook_stream = Vec::new();
+    compound
+        .open_stream("Workbook")
+        .expect("generated CFB must contain a Workbook stream")
+        .read_to_end(&mut workbook_stream)
+        .expect("read the generated 64-byte Workbook mini stream");
+    assert_eq!(workbook_stream.len(), 64);
+    assert_eq!(workbook_stream, vec![0xFF; 64]);
+
     let result = catch_unwind(AssertUnwindSafe(|| Xls::new(Cursor::new(bytes))));
 
     assert!(
