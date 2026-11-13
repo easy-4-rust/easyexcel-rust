@@ -473,7 +473,7 @@ The 2a6c2d Security Audit job completed successfully under the workflow's defaul
 
 ### 11.4.3 ref-swap 0.1.3 Rust 1.88 MSRV backport
 
-The latest CI Run 43461405724 on commit 7423e1f passed Ubuntu tests, macOS tests, coverage-pr, Clippy, rustfmt, docs and benchmark build, but its MSRV job failed while compiling registry ref-swap 0.1.3:
+The CI Run 43461405724 on commit 7423e1f passed Ubuntu tests, macOS tests, coverage-pr, Clippy, rustfmt, docs and benchmark build, but its MSRV job failed while compiling registry ref-swap 0.1.3. The final commit 5b5715b041996aebd8bcb4d9a2705607a75e5a68 vendors the exact upstream 0.1.3 package with the narrow fetch_update backport described below. Final CI Run 43467307178 and Security Audit Run 43467306957 both pass on that commit.
 
 - Error: `E0658: use of unstable library feature atomic_try_update` at the two internal `AtomicPtr::try_update` calls in upstream `ref-swap-0.1.3/src/lib.rs`.
 - Root/core MSRV is Rust 1.88; Rocket adapter/demo MSRV is Rust 1.89. `AtomicPtr::try_update` only became stable in Rust 1.95. Official API: https://doc.rust-lang.org/std/sync/atomic/type.AtomicPtr.html.
@@ -483,24 +483,26 @@ The latest CI Run 43461405724 on commit 7423e1f passed Ubuntu tests, macOS tests
 - Local validation: `cargo +1.89 check --locked -p easyexcel-rocket -p easyexcel-demo-rocket --all-features` passed; `cargo +1.88 check --locked -p easyexcel -p easyexcel-web --all-features` passed; `cargo audit --no-fetch --deny warnings`, `cargo deny check advisories bans licenses sources`, `cargo fmt --all -- --check` and `git diff --check` passed.
 - `cargo tree --locked -i ref-swap` confirms Rocket, easyexcel-rocket, easyexcel-demo-rocket and Web conformance resolve to `vendor/ref-swap` version 0.1.3.
 
-This source-only backport is currently uncommitted. Push it and rerun Security Audit + the complete CI matrix; do not mark PR #5 ready until the MSRV job passes on the new commit.
+The source-only backport is committed in 5b5715b041996aebd8bcb4d9a2705607a75e5a68. Final CI Run 43467307178 passes MSRV, Ubuntu/macOS tests, coverage-pr, Clippy, rustfmt, docs and benchmark build. Final Security Audit Run 43467306957 passes.
 
-### 11.5 Known validation blockers / not yet accepted
+### 11.5 Host-specific validation limitations
 
 
 1. The Windows local full-workspace test command exceeded the 60-minute runner limit while executing long large-workbook tests; no test failure was reported before timeout. GitHub CI workspace tests pass on both Ubuntu and macOS. The focused Windows missing-file and CFB tests pass.
 2. Full workspace Clippy on Windows cannot compile examples/axum/src/main.rs because it unconditionally imports tokio::signal::unix. GitHub Linux CI Clippy passes for the workspace.
 3. cargo clippy --workspace --all-targets --all-features -- -D warnings additionally exposes pre-existing workspace warnings (unused imports, doc_markdown, assert_is_empty, etc.); no repository-wide warning cleanup was performed as part of this security patch.
 4. Running vendored Actix HTTP standalone Rustls integration tests on this Windows host fails before test execution because OpenSSL development libraries are not installed. The end-to-end Actix h2c bridge test passes; Linux CI must run the upstream Actix HTTP Rustls/HTTP2 test targets.
-5. CFB hostile-input acceptance is verified: Windows runs the three cross-platform tests 3/3; Ubuntu CI Run 43354243228 / Job 131652325519 runs all four tests, including the Linux-only prlimit --as=536870912 child-process regression. The generated mini-stream fixture is independently validated as a structurally valid CFB with a 64-byte Workbook stream. The final test uses no unsafe Rust and no libc dev-dependency.
-6. Commits 2a6c2d6, 9f3988c and 7423e1f are pushed to PR #5. Security Audit Run 43461405556 passes on 7423e1f. CI Run 43461405724 passes Ubuntu/macOS tests, coverage-pr, Clippy, rustfmt, docs and benchmark, but MSRV fails due upstream ref-swap 0.1.3's unstable `AtomicPtr::try_update`. The local vendor/ref-swap 0.1.3 `fetch_update` backport now passes Rust 1.88/1.89 checks and all local security gates; it is not yet pushed. Keep PR #5 Draft until the backport commit passes the full GitHub CI matrix.
+5. CFB hostile-input acceptance is verified on the final branch: Windows runs the three cross-platform tests 3/3; Ubuntu CI Run 43467307178 / Job 132029756102 runs all four tests, including the Linux-only prlimit --as=536870912 child-process regression. The generated mini-stream fixture is independently validated as a structurally valid CFB with a 64-byte Workbook stream. The final test uses no unsafe Rust and no libc dev-dependency.
+6. Commits 2a6c2d6, 9f3988c, 7423e1f and final MSRV backport 5b5715b are pushed to PR #5. Final Security Audit Run 43467306957 and full CI Run 43467307178 both pass on 5b5715b, including Rust 1.88/1.89 MSRV, Ubuntu/macOS tests, coverage-pr, Clippy, rustfmt, docs and benchmark build. The CFB hostile-input suite passes all four Linux tests including the prlimit memory-bounded child; Java parity, Java Golden, facade and round-trip tests pass. PR #5 is technically ready for review; merging remains a separate human review decision.
 
 Current worktree:
 - Branch: fix/compatible-security-deps-20261031
-- Latest pushed commit: 7423e1f0598d49f5fd26cd9aca00674cd3f977ae.
-- Current uncommitted source patch: Cargo.toml + Cargo.lock + vendor/ref-swap (upstream 0.1.3 with two AtomicPtr::fetch_update substitutions and three regression tests).
-- CI Run 43461405724: Ubuntu/macOS tests, coverage-pr, Clippy, rustfmt, docs and benchmark pass; MSRV fails on upstream ref-swap 0.1.3's unstable `AtomicPtr::try_update`. Security Audit Run 43461405556 / Job 132008973162 passes.
-- Ubuntu test Job 131652325519 from Run 43354243228: all four calamine_cfb_security tests passed, including the prlimit child process; Java parity 95/95, Java Golden 88/88 and round-trip 17/17 passed.
-- Local ref-swap backport validation: Rust 1.88 3 unit + 4 doctests pass; Rocket adapter/demo Rust 1.89 check passes; core Rust 1.88 check passes; strict cargo audit, cargo deny, fmt and diff-check pass.
-- Cargo.lock rustix: 1.1.6; ref-swap: 0.1.3. Current Cargo.lock SHA-256: B533215390888A69441E73497DF77CC9CE034AD6FFE7C16A8A62D629C5FA24F1.
+- Final pushed commit: 5b5715b041996aebd8bcb4d9a2705607a75e5a68 (`fix(msrv): backport ref-swap atomic update for Rust 1.88`).
+- Worktree: clean; no uncommitted changes.
+- CI Run 43467307178: Ubuntu/macOS tests, coverage-pr, MSRV, Clippy, rustfmt, docs and benchmark build all passed.
+- Security Audit Run 43467306957 / Job 132029755148: passed; cargo audit and cargo deny both green.
+- PR #5 was marked Ready for review (not merged); final review and merge remain separate decisions.
+- CFB security: Windows tests 3/3; Ubuntu CI tests 4/4 including `prlimit --as=536870912` child. Java parity 95/95, Java Golden 88/88, EasyExcel facade 2331/2331 and round-trip 17/17 passed.
+- Local security gates: `cargo audit --no-fetch --deny warnings` and `cargo deny check advisories bans licenses sources` passed; `cargo fmt --all -- --check` and `git diff --check` passed.
+- Cargo.lock rustix: 1.1.6; ref-swap: 0.1.3. Cargo.lock SHA-256: B533215390888A69441E73497DF77CC9CE034AD6FFE7C16A8A62D629C5FA24F1.
 - rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2; RustSec advisory-db commit 4ef2df8e806a65e2f1ecc14f56f51249062b23d6.
