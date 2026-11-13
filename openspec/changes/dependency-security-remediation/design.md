@@ -45,6 +45,11 @@ Use zstd 0.13.4 + zstd-safe 7.4.0 for Salvo 0.89.3's TestClient dev-only feature
 
 ssfmt 0.1.2 constrains lru to ^0.16, while the panic-safety fix is in lru >=0.18.2. The upstream fix is merged in lru-rs PR #238 (commit f9a7f00fcf2d33e00adb03758cb350aaaa52cddb). To avoid an incompatible ssfmt upgrade, vendor lru 0.16.4 and backport only the panic-safe node-detach ordering; patch crates.io to vendor/lru without changing its version/API. The patch and regression are documented in vendor/lru/EASYEXCEL_PATCH.md.
 
+### SEC-REF-SWAP
+
+Rocket 0.5.2 depends on ref-swap 0.1.2, affected by RUSTSEC-2026-0528. Upgrade to the fixed upstream 0.1.3 release to restore RefSwap/OptionRefSwap lifetime invariance and make OptionRefSwap::into_inner return Option with a null check. Upstream 0.1.3 uses AtomicPtr::try_update, which is only stable from Rust 1.95; this conflicts with the workspace core MSRV 1.88 and Rocket adapter MSRV 1.89. Vendor the exact 0.1.3 crate at vendor/ref-swap and replace only its two internal AtomicPtr::try_update calls with the semantically equivalent stable AtomicPtr::fetch_update (stable since 1.53). Keep the public RefSwap/OptionRefSwap APIs and memory orderings unchanged. Regression coverage must include both update methods and OptionRefSwap::into_inner(None), plus the upstream compile-fail doctests for invariance/null safety. Document upstream provenance and the narrow MSRV backport in vendor/ref-swap/EASYEXCEL_PATCH.md.
+
+
 ## 4. Validation Strategy
 
 Each remediation group must run:

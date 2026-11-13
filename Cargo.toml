@@ -148,3 +148,5 @@ pedantic = "warn"
 # Local Actix HTTP 3.21.0 bridge: Actix http 0.2 API over h2 0.4/http 1.x.
 actix-http = { path = "vendor/actix-http" }
 lru = { path = "vendor/lru" }
+# Local ref-swap 0.1.3: preserve soundness fixes with Rust 1.88-stable AtomicPtr::fetch_update.
+ref-swap = { path = "vendor/ref-swap" }

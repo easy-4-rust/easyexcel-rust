@@ -378,9 +378,9 @@ The intentionally malformed OLE2 fixtures should only be parsed using patched ca
 审计结论：PR #5 已经解决 ZIP 8.6.0 yanked 的构建阻塞方向，但当前依赖锁文件仍有明确的安全问题。必须完成上述逐项修复并重新审计后才能合并。
 
 
-## 11. Current remediation verification snapshot — 2026-11-13
+## 11. Current remediation verification snapshot — 2026-11-14
 
-> This section records the PR #5 security remediation state through pushed commit 2a6c2d6159ad4a670eb9a1f38a307fbfa6f2c843 plus the local ref-swap 0.1.3 follow-up. The 2a6c2d Security Audit reported newly published RUSTSEC-2026-0528 on ref-swap 0.1.2; the local lock update removes it and strict audit/deny pass against the refreshed RustSec database. A new CI run is required after pushing the lock update.
+> This section records the PR #5 security remediation state through pushed commit 7423e1f0598d49f5fd26cd9aca00674cd3f977ae and the current uncommitted ref-swap 0.1.3 MSRV backport. RUSTSEC-2026-0528 is fixed by ref-swap 0.1.3; the latest Security Audit passes. The latest CI exposed the upstream crate's unstable AtomicPtr API on the Rust 1.88 MSRV; the local vendor patch is now validated and must be pushed for a full CI rerun.
 
 ### 11.1 Current dependency decisions
 
@@ -395,7 +395,7 @@ The intentionally malformed OLE2 fixtures should only be parsed using patched ca
 | zstd-safe | 7.4.0 and 8.2.0 (matching parent semver lines) | RUSTSEC-2026-0398/0403 and all 10 unsound warnings absent |
 | lru | 0.16.4, local path patch at vendor/lru | RUSTSEC-2026-0253 absent |
 | rustix | 1.1.6 | RUSTSEC-2026-0486 absent; fixes newly issued zero-length xattr buffer unsoundness |
-| ref-swap | 0.1.3 | RUSTSEC-2026-0528 absent; fixes unsafe variance and OptionRefSwap null handling |
+| ref-swap | 0.1.3, local path patch at vendor/ref-swap | RUSTSEC-2026-0528 absent; retains upstream variance/null fixes and backports AtomicPtr::fetch_update for Rust 1.88 MSRV |
 
 ### 11.2 Actix HTTP 3.21.0 / h2 0.4 bridge
 
@@ -469,7 +469,21 @@ GitHub Security Audit on commit 2a6c2d6159ad4a670eb9a1f38a307fbfa6f2c843 used a 
 - API compatibility: Rocket 0.5.2 and the EasyExcel Rocket adapter compile without source changes; Rocket adapter tests pass 8/8 and the Rocket example check passes.
 - Fresh local security verification: update RustSec advisory-db to commit 4ef2df8e806a65e2f1ecc14f56f51249062b23d6 (1509 advisories); cargo audit --no-fetch --deny warnings passes with zero vulnerabilities, unsound warnings and yanked packages; cargo deny advisories/bans/licenses/sources passes.
 
-The 2a6c2d Security Audit job completed successfully under the workflow's default warning policy but reported this one allowed unsound warning. The ref-swap 0.1.3 lock update is committed locally as 9f3988c2b1e76c8c04dabc69442fca9c893aae3b but is not yet pushed at this snapshot; push it and rerun CI before marking PR #5 ready.
+The 2a6c2d Security Audit job completed successfully under the workflow's default warning policy but reported this one allowed unsound warning. Commit 9f3988c2b1e76c8c04dabc69442fca9c893aae3b upgrades the lock to ref-swap 0.1.3 and is included in the pushed branch. GitHub Security Audit Run 43461405556 passes on commit 7423e1f with zero vulnerabilities, unsound warnings and yanked packages. The separate MSRV issue in upstream 0.1.3 is handled by the current local source-only patch described below.
+
+### 11.4.3 ref-swap 0.1.3 Rust 1.88 MSRV backport
+
+The latest CI Run 43461405724 on commit 7423e1f passed Ubuntu tests, macOS tests, coverage-pr, Clippy, rustfmt, docs and benchmark build, but its MSRV job failed while compiling registry ref-swap 0.1.3:
+
+- Error: `E0658: use of unstable library feature atomic_try_update` at the two internal `AtomicPtr::try_update` calls in upstream `ref-swap-0.1.3/src/lib.rs`.
+- Root/core MSRV is Rust 1.88; Rocket adapter/demo MSRV is Rust 1.89. `AtomicPtr::try_update` only became stable in Rust 1.95. Official API: https://doc.rust-lang.org/std/sync/atomic/type.AtomicPtr.html.
+- The upstream 0.1.3 soundness fix must be retained: RefSwap/OptionRefSwap lifetime invariance and `OptionRefSwap::into_inner() -> Option<&T>` with null handling.
+- Local implementation: vendor the exact ref-swap 0.1.3 package and replace only the two internal `AtomicPtr::try_update` calls with stable `AtomicPtr::fetch_update` (stable since 1.53). The wrapper methods, signatures, CAS retry behavior, success/failure ordering arguments and upstream soundness changes are unchanged. Cargo.toml patches crates.io ref-swap to vendor/ref-swap; Cargo.lock records version 0.1.3 as a path package.
+- Regression tests: `RefSwap::try_update`, `OptionRefSwap::try_update`, and `OptionRefSwap::into_inner(None)`; Rust 1.88 full crate test run passed 3 unit tests + 4 compile-fail/ordinary doctests.
+- Local validation: `cargo +1.89 check --locked -p easyexcel-rocket -p easyexcel-demo-rocket --all-features` passed; `cargo +1.88 check --locked -p easyexcel -p easyexcel-web --all-features` passed; `cargo audit --no-fetch --deny warnings`, `cargo deny check advisories bans licenses sources`, `cargo fmt --all -- --check` and `git diff --check` passed.
+- `cargo tree --locked -i ref-swap` confirms Rocket, easyexcel-rocket, easyexcel-demo-rocket and Web conformance resolve to `vendor/ref-swap` version 0.1.3.
+
+This source-only backport is currently uncommitted. Push it and rerun Security Audit + the complete CI matrix; do not mark PR #5 ready until the MSRV job passes on the new commit.
 
 ### 11.5 Known validation blockers / not yet accepted
 
@@ -479,14 +493,14 @@ The 2a6c2d Security Audit job completed successfully under the workflow's defaul
 3. cargo clippy --workspace --all-targets --all-features -- -D warnings additionally exposes pre-existing workspace warnings (unused imports, doc_markdown, assert_is_empty, etc.); no repository-wide warning cleanup was performed as part of this security patch.
 4. Running vendored Actix HTTP standalone Rustls integration tests on this Windows host fails before test execution because OpenSSL development libraries are not installed. The end-to-end Actix h2c bridge test passes; Linux CI must run the upstream Actix HTTP Rustls/HTTP2 test targets.
 5. CFB hostile-input acceptance is verified: Windows runs the three cross-platform tests 3/3; Ubuntu CI Run 43354243228 / Job 131652325519 runs all four tests, including the Linux-only prlimit --as=536870912 child-process regression. The generated mini-stream fixture is independently validated as a structurally valid CFB with a 64-byte Workbook stream. The final test uses no unsafe Rust and no libc dev-dependency.
-6. Commit 2a6c2d6159ad4a670eb9a1f38a307fbfa6f2c843 is pushed to PR #5 and adds the Linux Actix HTTP/2 + Rustls compile guard. Its Security Audit Run 43460022248 completed but reported RUSTSEC-2026-0528 on ref-swap 0.1.2. Commit 9f3988c2b1e76c8c04dabc69442fca9c893aae3b upgrades ref-swap to 0.1.3; fresh strict audit/deny pass against RustSec DB 4ef2df8. The lock fix is committed locally but not yet pushed. Keep PR #5 Draft until the new lock commit passes Security Audit and all CI jobs.
+6. Commits 2a6c2d6, 9f3988c and 7423e1f are pushed to PR #5. Security Audit Run 43461405556 passes on 7423e1f. CI Run 43461405724 passes Ubuntu/macOS tests, coverage-pr, Clippy, rustfmt, docs and benchmark, but MSRV fails due upstream ref-swap 0.1.3's unstable `AtomicPtr::try_update`. The local vendor/ref-swap 0.1.3 `fetch_update` backport now passes Rust 1.88/1.89 checks and all local security gates; it is not yet pushed. Keep PR #5 Draft until the backport commit passes the full GitHub CI matrix.
 
 Current worktree:
 - Branch: fix/compatible-security-deps-20261031
-- Latest pushed commit: 2a6c2d6159ad4a670eb9a1f38a307fbfa6f2c843
-- Latest local lock-fix commit: 9f3988c2b1e76c8c04dabc69442fca9c893aae3b (not yet pushed).
-- CI Run 43460022228: rustfmt, MSRV, benchmark build, Clippy and docs passed; Ubuntu/macOS tests and coverage-pr were still running at the time of this snapshot. Security Audit Run 43460022248 / Job 132004123745 completed but reported RUSTSEC-2026-0528 on ref-swap 0.1.2.
-- Ubuntu test Job 131652325519 from the preceding fully green commit 67dab800: all four calamine_cfb_security tests passed, including the prlimit child process; Java parity 95/95, Java Golden 88/88 and round-trip 17/17 passed.
-- Local Rocket validation after ref-swap update: Rocket adapter tests 8/8; Rocket example check passes; strict cargo audit/deny pass against RustSec DB 4ef2df8e806a65e2f1ecc14f56f51249062b23d6 (1509 advisories).
-- Cargo.lock rustix: 1.1.6; ref-swap: 0.1.3. Current Cargo.lock SHA-256: 192556FB425768E93FB15020E6F8DB1FDBCF19804F7FA7A75229B7440F931822.
+- Latest pushed commit: 7423e1f0598d49f5fd26cd9aca00674cd3f977ae.
+- Current uncommitted source patch: Cargo.toml + Cargo.lock + vendor/ref-swap (upstream 0.1.3 with two AtomicPtr::fetch_update substitutions and three regression tests).
+- CI Run 43461405724: Ubuntu/macOS tests, coverage-pr, Clippy, rustfmt, docs and benchmark pass; MSRV fails on upstream ref-swap 0.1.3's unstable `AtomicPtr::try_update`. Security Audit Run 43461405556 / Job 132008973162 passes.
+- Ubuntu test Job 131652325519 from Run 43354243228: all four calamine_cfb_security tests passed, including the prlimit child process; Java parity 95/95, Java Golden 88/88 and round-trip 17/17 passed.
+- Local ref-swap backport validation: Rust 1.88 3 unit + 4 doctests pass; Rocket adapter/demo Rust 1.89 check passes; core Rust 1.88 check passes; strict cargo audit, cargo deny, fmt and diff-check pass.
+- Cargo.lock rustix: 1.1.6; ref-swap: 0.1.3. Current Cargo.lock SHA-256: B533215390888A69441E73497DF77CC9CE034AD6FFE7C16A8A62D629C5FA24F1.
 - rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2; RustSec advisory-db commit 4ef2df8e806a65e2f1ecc14f56f51249062b23d6.
