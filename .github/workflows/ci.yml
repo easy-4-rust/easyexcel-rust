@@ -40,7 +40,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           # 固定与本地验证一致的 1.97.1（消除最新 stable 的规则漂移；
-          # 1.97.1 满足 salvo 0.89.3 的 rustc 1.89 要求）。
+          # 1.97.1 高于 workspace MSRV 1.95）。
           toolchain: 1.97.1
           components: rustfmt, clippy
 
@@ -58,6 +58,12 @@ jobs:
 
       - name: Examples build
         run: cargo build --workspace --examples --all-features
+
+      - name: Check vendored Actix HTTP/2 + Rustls feature (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cargo tree --manifest-path vendor/actix-http/Cargo.toml -e normal -i h2
+          cargo check --manifest-path vendor/actix-http/Cargo.toml --features "http2 rustls-0_23" --lib
 
   clippy:
     name: Clippy
@@ -260,7 +266,7 @@ jobs:
             }
 
   msrv:
-    # 核心与 Salvo 适配器分别验证各自 MSRV；质量工具链仍固定为 1.97.1。
+    # Workspace MSRV 统一为 1.95；质量工具链固定为 1.97.1。
     name: MSRV check
     runs-on: ubuntu-latest
     steps:
@@ -272,22 +278,10 @@ jobs:
           sudo apt-get install -y locales zlib1g-dev
           sudo locale-gen zh_CN.UTF-8
 
-      - name: Install Rust 1.88
+      - name: Install Rust 1.95
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.88
+          toolchain: 1.95
 
-      - name: Check core workspace at Rust 1.88
-        run: >-
-          cargo check --workspace --all-features
-          --exclude easyexcel-salvo
-          --exclude easyexcel-demo-salvo
-          --exclude easyexcel-web-conformance
-
-      - name: Install Rust 1.89
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: 1.89
-
-      - name: Check Salvo adapter at Rust 1.89
-        run: cargo check -p easyexcel-salvo --all-features
+      - name: Check full workspace at Rust 1.95
+        run: cargo check --workspace --all-targets --all-features

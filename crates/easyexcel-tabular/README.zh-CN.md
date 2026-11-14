@@ -9,7 +9,7 @@
 
 安全的 HTML、JSON 表格转换，并通过通用分派调用专用 Markdown 编解码器。
 
-> 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
 
 ## 概述
 

@@ -9,7 +9,7 @@
 
 OOXML `.xlsx` 读取、写入、事件读取、模板包、加密与面向保留的往返引擎。
 
-> 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
 
 ## 概述
 

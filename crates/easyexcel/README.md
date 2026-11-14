@@ -4,7 +4,7 @@
 
 The public EasyExcel-Rust facade with Java EasyExcel-style builders, listeners, converters, handlers and annotation metadata.
 
-> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
 >
 > Last updated: 2026-08-11 · Status: active
 

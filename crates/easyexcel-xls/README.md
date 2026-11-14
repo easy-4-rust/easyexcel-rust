@@ -9,7 +9,7 @@
 
 BIFF8/OLE2 `.xls` workbook reader and writer.
 
-> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
 
 ## Overview
 
