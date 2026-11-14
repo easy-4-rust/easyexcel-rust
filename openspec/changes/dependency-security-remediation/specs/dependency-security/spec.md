@@ -37,14 +37,14 @@ The repository MUST preserve existing framework adapters, HTTP/2, supported comp
 
 ## Requirement: MSRV boundaries must be explicit per package
 
-The root/core MSRV MUST remain 1.88 unless a separately reviewed decision changes it. An adapter that requires a higher compiler MUST declare and validate its own MSRV.
+The first-party workspace/core/adapter/example/test packages MUST declare or inherit the current workspace MSRV of Rust 1.95, approved by decision D7. Vendored third-party packages may retain their upstream MSRV metadata. Any future MSRV change requires a reviewed decision and CI validation.
 
-### Scenario: Adapter requires Rust 1.89
+### Scenario: Workspace MSRV is Rust 1.95
 
-- GIVEN an upstream framework release requires Rust 1.89
-- WHEN the adapter adopts that release
-- THEN the adapter/example packages MUST accurately declare Rust 1.89
-- AND the core packages MUST still pass their Rust 1.88 checks
+- GIVEN decision D7 raises the workspace MSRV to Rust 1.95
+- WHEN a first-party workspace package is built
+- THEN the package MUST declare or inherit Rust 1.95
+- AND the complete workspace MUST pass `cargo check --workspace --all-targets --all-features` on Rust 1.95
 
 ## Requirement: Audit evidence must be reproducible
 

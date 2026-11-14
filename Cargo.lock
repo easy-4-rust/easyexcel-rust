@@ -1253,6 +1253,7 @@ dependencies = [
  "easyexcel-web",
  "futures-util",
  "http 1.5.0",
+ "ref-swap",
  "rocket",
  "serde_json",
  "tokio-util",
@@ -2927,6 +2928,8 @@ dependencies = [
 [[package]]
 name = "ref-swap"
 version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2bae17046b1c8a87f555f61804da1775a44b4449c7de6bca0e7485e68e5a145b"
 dependencies = [
  "loom 0.7.3",
 ]

@@ -12,7 +12,7 @@ Agent 可以提出方案，但不能在未更新本文件前改变版本策略�
 
 ## 2. Shared Architecture Constraints
 
-1. Workspace root MSRV remains 1.88 unless an explicit ADR/change is approved. Framework adapters may have a higher package-specific MSRV.
+1. Decision D7 raises the workspace MSRV to Rust 1.95. All first-party workspace crates, adapters, examples and test packages inherit this single minimum; vendored third-party crates retain their upstream package metadata.
 2. Keep all existing framework integrations and HTTP/2/compression features.
 3. Do not suppress advisories or unsound warnings.
 4. Preserve ZIP 9.1.3 code/API migration.
@@ -47,7 +47,9 @@ ssfmt 0.1.2 constrains lru to ^0.16, while the panic-safety fix is in lru >=0.18
 
 ### SEC-REF-SWAP
 
-Rocket 0.5.2 depends on ref-swap 0.1.2, affected by RUSTSEC-2026-0528. Upgrade to the fixed upstream 0.1.3 release to restore RefSwap/OptionRefSwap lifetime invariance and make OptionRefSwap::into_inner return Option with a null check. Upstream 0.1.3 uses AtomicPtr::try_update, which is only stable from Rust 1.95; this conflicts with the workspace core MSRV 1.88 and Rocket adapter MSRV 1.89. Vendor the exact 0.1.3 crate at vendor/ref-swap and replace only its two internal AtomicPtr::try_update calls with the semantically equivalent stable AtomicPtr::fetch_update (stable since 1.53). Keep the public RefSwap/OptionRefSwap APIs and memory orderings unchanged. Regression coverage must include both update methods and OptionRefSwap::into_inner(None), plus the upstream compile-fail doctests for invariance/null safety. Document upstream provenance and the narrow MSRV backport in vendor/ref-swap/EASYEXCEL_PATCH.md.
+Rocket 0.5.2 depends on ref-swap 0.1.2, affected by RUSTSEC-2026-0528. Upgrade to the fixed upstream 0.1.3 release to restore RefSwap/OptionRefSwap lifetime invariance and make OptionRefSwap::into_inner return Option with a null check. Upstream 0.1.3 uses AtomicPtr::try_update, stable since Rust 1.95. Decision D7 raises the first-party workspace MSRV to 1.95, so use the official crates.io ref-swap 0.1.3 package directly and remove the local vendor/ref-swap fetch_update backport. Keep the public RefSwap/OptionRefSwap APIs and memory orderings unchanged. Regression coverage must include both update methods and OptionRefSwap::into_inner(None), plus the upstream compile-fail doctests for invariance/null safety.
+
+Decision D7 (2026-11-14): raise the workspace/core MSRV from 1.88 to 1.95. This is an intentional compatibility-policy change, not merely a local build-tool upgrade. The concrete motivation is to consume upstream ref-swap 0.1.3 without a maintained source fork: its AtomicPtr::try_update API is stable in 1.95. All first-party workspace packages, framework adapters, examples and conformance/test packages now declare or inherit Rust 1.95. CI checks the complete workspace at 1.95; the quality toolchain remains pinned to 1.97.1. Remove vendor/ref-swap and its [patch.crates-io] entry; keep the upstream ref-swap 0.1.3 security fix. This supersedes the earlier 1.88/1.89 split and the T6.0.3 fetch_update backport.
 
 
 ## 4. Validation Strategy

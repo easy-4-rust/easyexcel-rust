@@ -3,7 +3,7 @@ name = "easyexcel-rocket"
 readme = "README.md"
 version.workspace = true
 edition.workspace = true
-rust-version = "1.89"
+rust-version.workspace = true
 license.workspace = true
 description = "Native Rocket data guard and responder adapter for easyexcel-web"
 repository.workspace = true
@@ -16,6 +16,9 @@ http = { workspace = true }
 rocket = { workspace = true }
 serde_json = { workspace = true }
 tokio-util = { workspace = true }
+
+[dev-dependencies]
+ref-swap = "0.1.3"
 
 [lints]
 workspace = true

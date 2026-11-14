@@ -11,7 +11,7 @@ PR #5 已将 ZIP 依赖从被 yanked 的 8.6.0 迁移到 ZIP 9.1.3，但 2026-11
 - 修复 docs/audit/2026-11-08-dependency-security-audit.md 列出的全部 9 项漏洞和 11 项 unsoundness。
 - 保留 ZIP 9.1.3 迁移和所有现有功能边界。
 - 保留 Actix、Salvo、Rocket 集成；保留 HTTP/2、Brotli/gzip/deflate/zstd 能力。
-- 保持核心库 Rust 1.88 的 MSRV 目标；允许单独 adapter crate 根据上游真实 MSRV 声明 1.89，但必须有包级验证。
+- 经后续决策 D7，将第一方 workspace/core/adapter/example/test 的 MSRV 统一提升到 Rust 1.95，以直接使用 ref-swap 0.1.3 上游安全修复而无需维护本地 fork。
 - 建立恶意输入、并发/资源耗尽和格式兼容回归测试。
 - 保持 cargo audit / cargo deny 无豁免策略。
 

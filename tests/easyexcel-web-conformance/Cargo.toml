@@ -3,7 +3,7 @@ name = "easyexcel-web-conformance"
 description = "Shared conformance suite for EasyExcel Web framework adapters"
 version.workspace = true
 edition.workspace = true
-rust-version = "1.89"
+rust-version.workspace = true
 license.workspace = true
 publish = false
 

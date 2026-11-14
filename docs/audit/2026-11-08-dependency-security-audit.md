@@ -380,7 +380,7 @@ The intentionally malformed OLE2 fixtures should only be parsed using patched ca
 
 ## 11. Current remediation verification snapshot — 2026-11-14
 
-> This section records the PR #5 security remediation state through pushed commit 7423e1f0598d49f5fd26cd9aca00674cd3f977ae and the current uncommitted ref-swap 0.1.3 MSRV backport. RUSTSEC-2026-0528 is fixed by ref-swap 0.1.3; the latest Security Audit passes. The latest CI exposed the upstream crate's unstable AtomicPtr API on the Rust 1.88 MSRV; the local vendor patch is now validated and must be pushed for a full CI rerun.
+> Historical snapshot: this section records the security remediation through commit 5b5715b and its Rust 1.88/1.89 MSRV workaround. Decision D7 (2026-11-14) subsequently raises the first-party workspace MSRV to Rust 1.95 and removes the local ref-swap source backport; see §11.6 for the current state.
 
 ### 11.1 Current dependency decisions
 
@@ -395,7 +395,7 @@ The intentionally malformed OLE2 fixtures should only be parsed using patched ca
 | zstd-safe | 7.4.0 and 8.2.0 (matching parent semver lines) | RUSTSEC-2026-0398/0403 and all 10 unsound warnings absent |
 | lru | 0.16.4, local path patch at vendor/lru | RUSTSEC-2026-0253 absent |
 | rustix | 1.1.6 | RUSTSEC-2026-0486 absent; fixes newly issued zero-length xattr buffer unsoundness |
-| ref-swap | 0.1.3, local path patch at vendor/ref-swap | RUSTSEC-2026-0528 absent; retains upstream variance/null fixes and backports AtomicPtr::fetch_update for Rust 1.88 MSRV |
+| ref-swap | 0.1.3, official crates.io registry package | RUSTSEC-2026-0528 absent; upstream variance/null fixes retained; AtomicPtr::try_update is stable under workspace MSRV Rust 1.95 |
 
 ### 11.2 Actix HTTP 3.21.0 / h2 0.4 bridge
 
@@ -471,7 +471,7 @@ GitHub Security Audit on commit 2a6c2d6159ad4a670eb9a1f38a307fbfa6f2c843 used a 
 
 The 2a6c2d Security Audit job completed successfully under the workflow's default warning policy but reported this one allowed unsound warning. Commit 9f3988c2b1e76c8c04dabc69442fca9c893aae3b upgrades the lock to ref-swap 0.1.3 and is included in the pushed branch. GitHub Security Audit Run 43461405556 passes on commit 7423e1f with zero vulnerabilities, unsound warnings and yanked packages. The separate MSRV issue in upstream 0.1.3 is handled by the current local source-only patch described below.
 
-### 11.4.3 ref-swap 0.1.3 Rust 1.88 MSRV backport
+### 11.4.3 Historical ref-swap 0.1.3 Rust 1.88 MSRV backport (superseded by §11.6)
 
 The CI Run 43461405724 on commit 7423e1f passed Ubuntu tests, macOS tests, coverage-pr, Clippy, rustfmt, docs and benchmark build, but its MSRV job failed while compiling registry ref-swap 0.1.3. The final commit 5b5715b041996aebd8bcb4d9a2705607a75e5a68 vendors the exact upstream 0.1.3 package with the narrow fetch_update backport described below. Final CI Run 43467307178 and Security Audit Run 43467306957 both pass on that commit.
 
@@ -484,6 +484,8 @@ The CI Run 43461405724 on commit 7423e1f passed Ubuntu tests, macOS tests, cover
 - `cargo tree --locked -i ref-swap` confirms Rocket, easyexcel-rocket, easyexcel-demo-rocket and Web conformance resolve to `vendor/ref-swap` version 0.1.3.
 
 The source-only backport is committed in 5b5715b041996aebd8bcb4d9a2705607a75e5a68. Final CI Run 43467307178 passes MSRV, Ubuntu/macOS tests, coverage-pr, Clippy, rustfmt, docs and benchmark build. Final Security Audit Run 43467306957 passes.
+
+The above is retained as historical evidence only. Decision D7 removes the source fork entirely because the workspace now requires Rust 1.95, where upstream `AtomicPtr::try_update` is stable.
 
 ### 11.5 Host-specific validation limitations
 
@@ -506,3 +508,28 @@ Current worktree:
 - Local security gates: `cargo audit --no-fetch --deny warnings` and `cargo deny check advisories bans licenses sources` passed; `cargo fmt --all -- --check` and `git diff --check` passed.
 - Cargo.lock rustix: 1.1.6; ref-swap: 0.1.3. Cargo.lock SHA-256: B533215390888A69441E73497DF77CC9CE034AD6FFE7C16A8A62D629C5FA24F1.
 - rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2; RustSec advisory-db commit 4ef2df8e806a65e2f1ecc14f56f51249062b23d6.
+
+## 11.6 Decision D7 — workspace MSRV upgraded to Rust 1.95 (2026-11-14)
+
+### Rationale and compatibility impact
+
+The Rust 1.88/1.89 split required maintaining a local fork of the fixed `ref-swap 0.1.3` package because upstream uses `AtomicPtr::try_update`, which became stable in Rust 1.95. The local `fetch_update` backport preserved the older MSRV but added a third-party source fork that must be tracked and rebased. The user explicitly approved upgrading Rust to 1.95. Decision D7 therefore raises the first-party workspace/core/adapter/example/test MSRV to Rust 1.95 and consumes the official crates.io package directly.
+
+This is a published compatibility-policy change: downstream users compiling any first-party crate now need rustc 1.95 or newer. It must be reflected in release notes and package documentation before the next release.
+
+### Implementation
+
+- Root `Cargo.toml`: `[workspace.package].rust-version = "1.95"`.
+- First-party adapters/examples/conformance packages previously declaring 1.89 now inherit `rust-version.workspace = true`; all other first-party packages already inherit the workspace value.
+- `Cargo.toml [patch.crates-io]`: remove the local `ref-swap` patch; retain the Actix HTTP and LRU patches.
+- Remove `vendor/ref-swap` and its local `fetch_update` modification. Cargo.lock resolves `ref-swap 0.1.3` from `registry+https://github.com/rust-lang/crates.io-index`, checksum `2bae17046b1c8a87f555f61804da1775a44b4449c7de6bca0e7485e68e5a145b`.
+- `.github/workflows/ci.yml`: MSRV job installs Rust 1.95 and runs `cargo check --workspace --all-targets --all-features`. The independent quality toolchain remains 1.97.1; this is intentionally newer than MSRV.
+- Root and crate README badges/MSRV tables and the Salvo example README now state Rust 1.95+.
+
+### Validation status
+
+- Rust 1.95.0 is installed on the Windows development Runner (`rustc 1.95.0 (59807616e 2026-04-14)`).
+- After removing the vendor patch and using registry ref-swap 0.1.3, Rust 1.95 targeted tests pass: official ref-swap compile-fail/ordinary doctests 4/4; consumer ref-swap regression 3/3; Rocket adapter 8/8; Actix adapter 10/10; Salvo adapter 6/6; Web conformance 39 passed/7 intentionally ignored; CFB security 3/3.
+- After switching to the official registry ref-swap 0.1.3, `cargo +1.95.0 check --locked --workspace --all-targets --all-features --exclude easyexcel-demo-axum` passes on Windows; the Axum demo is excluded locally because its entrypoint imports `tokio::signal::unix`. Cargo metadata reports all 35 first-party workspace packages with `rust_version = 1.95`; the CI MSRV job checks the full workspace on Ubuntu.
+- `cargo +1.95.0 clippy --locked --workspace --all-targets --all-features --exclude easyexcel-demo-axum` passes (existing warnings only); `cargo +1.95.0 fmt --all -- --check` passes; `cargo audit --deny warnings` exits 0; `cargo deny check advisories bans licenses sources` passes; `git diff --check` passes.
+- GitHub CI and Security Audit must rerun on the pushed D7 commit, including the new Rust 1.95 full-workspace MSRV job. The current local validation is complete; CI evidence remains pending. No PR merge is authorized by this change.
