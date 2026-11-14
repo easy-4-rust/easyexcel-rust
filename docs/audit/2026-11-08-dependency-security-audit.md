@@ -533,3 +533,18 @@ This is a published compatibility-policy change: downstream users compiling any 
 - After switching to the official registry ref-swap 0.1.3, `cargo +1.95.0 check --locked --workspace --all-targets --all-features --exclude easyexcel-demo-axum` passes on Windows; the Axum demo is excluded locally because its entrypoint imports `tokio::signal::unix`. Cargo metadata reports all 35 first-party workspace packages with `rust_version = 1.95`; the CI MSRV job checks the full workspace on Ubuntu.
 - `cargo +1.95.0 clippy --locked --workspace --all-targets --all-features --exclude easyexcel-demo-axum` passes (existing warnings only); `cargo +1.95.0 fmt --all -- --check` passes; `cargo audit --deny warnings` exits 0; `cargo deny check advisories bans licenses sources` passes; `git diff --check` passes.
 - GitHub CI and Security Audit must rerun on the pushed D7 commit, including the new Rust 1.95 full-workspace MSRV job. The current local validation is complete; CI evidence remains pending. No PR merge is authorized by this change.
+
+### D7 verification after push
+
+Commit `843443a923b17f86aa032d1b6cc5bc8bf34ec4d5` passed GitHub CI Run 43533981436 and Security Audit Run 43533981435 on 2026-11-14. The full Rust 1.95 workspace MSRV job, Ubuntu/macOS tests, coverage-pr, Clippy, rustfmt, docs, and benchmark build all completed successfully. This confirms the new toolchain requirement, not backward compatibility with Rust 1.88.
+
+## 11.7 Actix HTTP/2 security code review follow-up (2026-11-15)
+
+Code review identified an unresolved P2 response-header sensitivity issue in the locally vendored Actix HTTP/2 bridge:
+
+- **Location:** `vendor/actix-http/src/h2/dispatcher.rs`, function `to_h2_response`.
+- **Original behavior:** conversion from `http 0.2 HeaderValue` to `http 1.x HeaderValue` reconstructed only the bytes and dropped `is_sensitive()`. In HTTP/2, this can lose the intended HPACK never-index marking for secret headers.
+- **Fix:** call `converted_value.set_sensitive(value.is_sensitive())` before appending the converted response header; preserve the rest of the header map and existing public API.
+- **Regression:** `easyexcel_h2_header_sensitivity_tests::h2_bridge_preserves_sensitive_response_headers` checks both sensitive and ordinary headers. Added a Linux CI job step to invoke the vendored Actix crate's focused test and `cargo fmt`.
+- **Validation:** source edit and rustfmt checked. The focused vendor test cannot execute on this Windows runner because `openssl-sys` lacks an OpenSSL development installation. The new Ubuntu CI step is mandatory before declaring this finding closed.
+- **Merge gate:** do not merge PR #5 until that focused CI test and the full CI/Security Audit are green, followed by review of the MSRV 1.95 breaking change.

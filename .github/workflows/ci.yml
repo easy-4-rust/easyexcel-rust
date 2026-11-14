@@ -64,6 +64,11 @@ jobs:
         run: |
           cargo tree --manifest-path vendor/actix-http/Cargo.toml -e normal -i h2
           cargo check --manifest-path vendor/actix-http/Cargo.toml --features "http2 rustls-0_23" --lib
+      - name: Verify vendored Actix HTTP/2 sensitive-header bridge (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cargo fmt --manifest-path vendor/actix-http/Cargo.toml -- --check
+          cargo test --manifest-path vendor/actix-http/Cargo.toml --no-default-features --features http2 --lib h2_bridge_preserves_sensitive_response_headers
 
   clippy:
     name: Clippy

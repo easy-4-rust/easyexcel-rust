@@ -74,7 +74,9 @@ PR: #5
 - [x] T7.3 Replace split Rust 1.88/1.89 MSRV CI checks with full-workspace `cargo check --workspace --all-targets --all-features` on Rust 1.95; keep the independent quality toolchain at 1.97.1.
 - [x] T7.4 Update root/crate README MSRV badges, package tables, Salvo example docs, OpenSpec proposal/spec/design and the audit record.
 - [x] T7.5 Local Rust 1.95 validation: official ref-swap doctests 4/4; consumer regression 3/3; Rocket adapter 8/8; Actix adapter 10/10; Salvo adapter 6/6; Web conformance 39 passed/7 intentionally ignored; CFB security 3/3; workspace all-target/all-feature check passes with the Unix-only Axum demo excluded on Windows; workspace Clippy passes with the same host exclusion; fmt, strict cargo audit, cargo deny and diff-check pass. Full Linux CI remains in T7.6.
-- [ ] T7.6 Commit/push the MSRV 1.95 migration to PR #5; require the new Ubuntu full-workspace Rust 1.95 MSRV job, macOS/Ubuntu tests, Clippy, fmt, docs, benchmark, coverage and Security Audit to pass before merge review.
+- [x] T7.6 MSRV 1.95 migration committed/pushed as 843443a923b17f86aa032d1b6cc5bc8bf34ec4d5. GitHub CI Run 43533981436 and Security Audit Run 43533981435 passed: Ubuntu full-workspace Rust 1.95 MSRV, Ubuntu/macOS tests, Clippy, fmt, docs, benchmark, coverage and security audit.
+
+- [ ] T7.7 Address the Actix HTTP/2 code review: `to_h2_response` now copies HeaderValue::is_sensitive through the http 0.2 → http 1.x response-header conversion; a focused vendor unit test (sensitive and non-sensitive values) is added to Linux CI. Windows standalone vendor tests cannot build without OpenSSL development libraries; require focused Linux test and full CI before merging.
 
 ## Evidence Log
 

@@ -118,12 +118,10 @@ struct H2PingPong {
 impl<T, S, B, X, U> Future for Dispatcher<T, S, B, X, U>
 where
     T: AsyncRead + AsyncWrite + Unpin,
-
     S: Service<Request>,
     S::Error: Into<Response<BoxBody>>,
     S::Future: 'static,
     S::Response: Into<Response<B>>,
-
     B: MessageBody,
 {
     type Output = Result<(), crate::error::DispatchError>;
@@ -332,9 +330,11 @@ fn to_h2_response(response: http::Response<()>) -> http1::Response<()> {
     for (name, value) in parts.headers.iter() {
         let name = http1::header::HeaderName::from_bytes(name.as_str().as_bytes())
             .expect("Actix response header name is valid for h2");
-        let value = http1::header::HeaderValue::from_bytes(value.as_bytes())
+        let mut converted_value = http1::header::HeaderValue::from_bytes(value.as_bytes())
             .expect("Actix response header value is valid for h2");
-        converted.headers_mut().append(name, value);
+        // Preserve HPACK never-index intent across the http 0.2 -> http 1.x bridge.
+        converted_value.set_sensitive(value.is_sensitive());
+        converted.headers_mut().append(name, converted_value);
     }
 
     converted
@@ -397,7 +397,7 @@ fn prepare_response(
             hdr if hdr == HeaderName::from_static("keep-alive")
                 || hdr == HeaderName::from_static("proxy-connection") =>
             {
-                continue
+                continue;
             }
 
             _ => {}
@@ -418,4 +418,39 @@ fn prepare_response(
     }
 
     res
+}
+
+#[cfg(test)]
+mod easyexcel_h2_header_sensitivity_tests {
+    use super::to_h2_response;
+
+    #[test]
+    fn h2_bridge_preserves_sensitive_response_headers() {
+        let mut response = http::Response::new(());
+        let mut secret = http::header::HeaderValue::from_static("private-session-token");
+        secret.set_sensitive(true);
+        response.headers_mut().append("x-session-token", secret);
+        response.headers_mut().append(
+            "x-public-header",
+            http::header::HeaderValue::from_static("public"),
+        );
+
+        let bridged = to_h2_response(response);
+        assert!(
+            bridged
+                .headers()
+                .get("x-session-token")
+                .unwrap()
+                .is_sensitive(),
+            "sensitive headers must remain never-index after the HTTP/2 bridge"
+        );
+        assert!(
+            !bridged
+                .headers()
+                .get("x-public-header")
+                .unwrap()
+                .is_sensitive(),
+            "non-sensitive headers must keep their original semantics"
+        );
+    }
 }
