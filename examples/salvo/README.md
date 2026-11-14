@@ -5,7 +5,7 @@ framework using Salvo's handler macro and `Extractible` trait.
 
 ## Minimum supported Rust version (MSRV)
 
-This example requires **Rust 1.89** or later due to Salvo's MSRV.
+This example requires **Rust 1.95** or later, matching the EasyExcel workspace MSRV.
 
 ## Default port
 

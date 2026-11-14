@@ -9,7 +9,7 @@
 
 Shared format detection, streaming row contracts, modes, resource limits and typed I/O errors.
 
-> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
 
 ## Overview
 
@@ -82,7 +82,7 @@ easyexcel = "0.1.3"
 
 | Item | Value |
 |:---|:---|
-| MSRV | Rust 1.88 |
+| MSRV | Rust 1.95 |
 | Edition | 2024 |
 | Resolver | 3 |
 | License | Apache-2.0 |

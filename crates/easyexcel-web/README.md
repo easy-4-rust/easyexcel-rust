@@ -4,7 +4,7 @@
 
 Framework-neutral Web runtime for bounded spreadsheet uploads, backpressured row streams and streaming downloads.
 
-> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
 >
 > Last updated: 2026-08-11 · Status: active
 

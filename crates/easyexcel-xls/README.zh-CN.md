@@ -9,7 +9,7 @@
 
 BIFF8/OLE2 `.xls` 工作簿读取与写入引擎。
 
-> 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
 
 ## 概述
 

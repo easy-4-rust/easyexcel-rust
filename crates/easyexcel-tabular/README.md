@@ -9,7 +9,7 @@
 
 Safe HTML and JSON table conversion with generic dispatch to the dedicated Markdown codec.
 
-> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
 
 ## Overview
 

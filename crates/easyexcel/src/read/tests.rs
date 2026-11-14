@@ -401,7 +401,7 @@ fn rewrite_first_sheet(source: &Path, destination: &Path, replacement: &str) -> 
     let mut writer = ZipWriter::new(fs::File::create(destination)?);
     for index in 0..archive.len() {
         let mut entry = archive.by_index(index).map_err(test_error)?;
-        let name = entry.name().to_owned();
+        let name = entry.name().map_err(test_error)?.into_owned();
         let options = SimpleFileOptions::default().compression_method(entry.compression());
         if entry.is_dir() {
             writer.add_directory(name, options).map_err(test_error)?;
@@ -439,7 +439,7 @@ fn remove_first_sheet(source: &Path, destination: &Path) -> Result<()> {
     let mut writer = ZipWriter::new(fs::File::create(destination)?);
     for index in 0..archive.len() {
         let mut entry = archive.by_index(index).map_err(test_error)?;
-        let name = entry.name().to_owned();
+        let name = entry.name().map_err(test_error)?.into_owned();
         if name == "xl/worksheets/sheet1.xml" {
             continue;
         }

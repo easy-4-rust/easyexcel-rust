@@ -17,5 +17,8 @@ rocket = { workspace = true }
 serde_json = { workspace = true }
 tokio-util = { workspace = true }
 
+[dev-dependencies]
+ref-swap = "0.1.3"
+
 [lints]
 workspace = true

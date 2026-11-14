@@ -686,7 +686,7 @@ mod tests_extra2 {
         let Err(error) = ExcelAnalyserImpl::from_path(&missing, ReadOptions::default()) else {
             panic!("missing xlsx workbook must fail");
         };
-        assert!(error.to_string().contains("open") || error.to_string().contains("No such"));
+        assert!(matches!(error, ExcelError::Io(_) | ExcelError::Format(_)));
     }
 
     #[test]

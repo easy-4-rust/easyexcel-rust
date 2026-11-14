@@ -9,7 +9,7 @@
 
 XLS、XLSX、CSV、公式与投影引擎共享的格式中立工作簿和表格模型。
 
-> 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
 
 ## 概述
 
@@ -77,7 +77,7 @@ easyexcel = "0.1.3"
 
 | 项目 | 值 |
 |:---|:---|
-| MSRV | Rust 1.88 |
+| MSRV | Rust 1.95 |
 | Edition | 2024 |
 | Resolver | 3 |
 | License | Apache-2.0 |

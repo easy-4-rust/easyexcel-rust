@@ -9,7 +9,7 @@
 
 Procedural macro implementing typed EasyExcel row schemas, conversion and Java annotation metadata.
 
-> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
 
 ## Overview
 

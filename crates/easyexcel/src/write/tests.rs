@@ -262,7 +262,7 @@ fn zip_names(path: &Path) -> Result<Vec<String>> {
         .map(|index| {
             archive
                 .by_index(index)
-                .map(|entry| entry.name().to_owned())
+                .and_then(|entry| entry.name().map(|name| name.into_owned()))
                 .map_err(test_error)
         })
         .collect::<Result<Vec<_>>>()

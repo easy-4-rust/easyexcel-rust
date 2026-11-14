@@ -4,7 +4,7 @@
 
 EasyExcel-Rust 面向用户的统一门面，提供 Java EasyExcel 风格 builder、listener、converter、handler 与注解元数据。
 
-> 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
 >
 > 最后更新: 2026-08-11 · 状态: 活跃
 

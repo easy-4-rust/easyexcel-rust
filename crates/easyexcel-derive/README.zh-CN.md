@@ -9,7 +9,7 @@
 
 实现类型化 EasyExcel 行 schema、转换与 Java 注解元数据的过程宏。
 
-> 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
 
 ## 概述
 

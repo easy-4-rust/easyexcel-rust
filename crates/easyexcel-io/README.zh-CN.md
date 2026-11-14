@@ -9,7 +9,7 @@
 
 共享的格式识别、流式行契约、模式、资源限制与类型化 I/O 错误。
 
-> 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
 
 ## 概述
 
@@ -82,7 +82,7 @@ easyexcel = "0.1.3"
 
 | 项目 | 值 |
 |:---|:---|
-| MSRV | Rust 1.88 |
+| MSRV | Rust 1.95 |
 | Edition | 2024 |
 | Resolver | 3 |
 | License | Apache-2.0 |

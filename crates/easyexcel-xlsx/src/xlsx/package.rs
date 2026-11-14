@@ -20,12 +20,13 @@ include!("package/raw_relationships.rs");
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 建立大小写不敏感的 ZIP part 路径缓存。
 #[must_use]
-pub fn path_cache<R: Read + Seek>(archive: &ZipArchive<R>) -> HashMap<String, String> {
+pub fn path_cache<R: Read + Seek>(archive: &ZipArchive<R>) -> Result<HashMap<String, String>> {
     let mut paths = HashMap::with_capacity(archive.len());
     for name in archive.file_names() {
-        paths.insert(name.to_ascii_lowercase(), name.to_owned());
+        let name = name?;
+        paths.insert(name.to_ascii_lowercase(), name.into_owned());
     }
-    paths
+    Ok(paths)
 }
 
 /// 对应 Java：无直接对应对象；Rust 架构扩展。 按大小写不敏感缓存解析实际 ZIP part 名称。

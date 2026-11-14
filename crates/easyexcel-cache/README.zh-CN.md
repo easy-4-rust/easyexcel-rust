@@ -9,7 +9,7 @@
 
 流式电子表格读取器使用的共享字符串缓存后端。
 
-> 版本: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
 
 ## 概述
 
@@ -79,7 +79,7 @@ easyexcel = "0.1.3"
 
 | 项目 | 值 |
 |:---|:---|
-| MSRV | Rust 1.88 |
+| MSRV | Rust 1.95 |
 | Edition | 2024 |
 | Resolver | 3 |
 | License | Apache-2.0 |

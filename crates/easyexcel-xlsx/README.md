@@ -9,7 +9,7 @@
 
 OOXML `.xlsx` reader, writer, event reader, template package, encryption and preservation-oriented round trip.
 
-> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
 
 ## Overview
 

@@ -134,7 +134,7 @@ fn read_zip_with_limits<R: Read + Seek>(reader: R, limits: ResourceLimits) -> Re
         if f.is_dir() {
             continue;
         }
-        let name = f.name().to_string();
+        let name = f.name()?.into_owned();
 
         // 单个 entry 解压后大小检查（防止 ZIP bomb：高压缩比单文件）
         let entry_size = f.size();

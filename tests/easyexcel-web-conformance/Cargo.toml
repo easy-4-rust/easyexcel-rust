@@ -22,14 +22,17 @@ easyexcel-rocket.workspace = true
 easyexcel-salvo.workspace = true
 easyexcel-warp.workspace = true
 actix-web.workspace = true
+actix-http.workspace = true
+h2.workspace = true
+brotli.workspace = true
 axum.workspace = true
 http.workspace = true
 http-body-util.workspace = true
 hyper.workspace = true
 poem.workspace = true
 rocket.workspace = true
-salvo.workspace = true
-tokio.workspace = true
+salvo = { workspace = true, features = ["test"] }
+tokio = { workspace = true, features = ["net"] }
 tower.workspace = true
 warp.workspace = true
 

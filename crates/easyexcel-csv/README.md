@@ -9,7 +9,7 @@
 
 CSV/TSV codec with charset handling, delimiter detection, type inference and incremental row streaming.
 
-> Release: 0.1.3 · Rust 1.88+ · Edition 2024 · Apache-2.0
+> Release: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
 
 ## Overview
 

@@ -2,6 +2,18 @@
 
 本文件记录 easyexcel-rust 各版本变更。格式参照 [Keep a Changelog](https://keepachangelog.com/)。
 
+## [Unreleased]
+
+### Breaking Changes
+
+- 将第一方 workspace/core/adapter/example/test 的最低 Rust 版本统一提升至 **Rust 1.95**。低于 1.95 的 rustc 不再受支持；所有 crate manifest 通过 workspace `rust-version` 声明此要求。
+
+### Security / Dependencies
+
+- 使用 crates.io 官方 `ref-swap 0.1.3` 修复 RUSTSEC-2026-0528；移除本地 `vendor/ref-swap` 分叉。Rust 1.95 已稳定 `AtomicPtr::try_update`，不再需要 `fetch_update` 回移补丁。
+- CI MSRV job 改为在 Rust 1.95 上检查完整 workspace；质量工具链仍使用 Rust 1.97.1。
+
+
 ## [0.1.4] - 2026-09-03
 
 文档核对修正 + 首个 crates.io 全流程发布版本。
