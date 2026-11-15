@@ -5,7 +5,7 @@
 | 文档 | 基线 | 状态 |
 |---|---|---|
 | [2026-11-08-dependency-security-audit.md](2026-11-08-dependency-security-audit.md) | PR #5 原始审计基线 dd673ea6a15909cc137d87eba26b7bedd43d323a | 历史基线；PR #5 于 2026-11-14 合并 main，审核证据与 OpenSpec 已归档至此 |
-| [2026-11-15-postmerge-zip-upgrade.md](2026-11-15-postmerge-zip-upgrade.md) | main 3ad73e9aa0eb899f85474c9026a4c5f43e8f467e | ZIP 9.5.1 + strict Security/Release gates；PR #9 Security Audit 通过，macOS spill checksum 测试修复中，暂不合并 |
+| [2026-11-15-postmerge-zip-upgrade.md](2026-11-15-postmerge-zip-upgrade.md) | main 3ad73e9aa0eb899f85474c9026a4c5f43e8f467e | ZIP 9.5.1 + strict Security/Release gates；PR #9 代码提交 b3bcfa1 的 Ubuntu/macOS CI 与 Security Audit 全绿；审计文档提交待新一轮 CI，仍为 Draft、不合并 |
 
 ## 规则
 

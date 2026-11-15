@@ -9,8 +9,8 @@
 - OpenSpec: openspec/changes/zip-9-5-1-release-security-gates/.
 - Historical security work: docs/audit/2026-11-08-dependency-security-audit.md. Do not rewrite its original advisory baseline.
 - Baseline main GitHub Actions: CI run 43634850008 and Security Audit run 43634850025 both completed successfully.
-- Follow-up PR: [#9](https://github.com/easy-4-rust/easyexcel-rust/pull/9), draft/open at this snapshot, branch `chore/zip-9-5-1-postmerge-20261115`, current head `0b722ba0ff0b3dc120111b6db68d6ec05537b92d`; not merged.
-- Latest PR CI run [43707084646](https://github.com/easy-4-rust/easyexcel-rust/actions/runs/43707084646): Ubuntu passed; macOS failed one checksum test (`spill_matrix_true_true_explicit_gzip_spill`); coverage-pr passed; MSRV, Clippy, rustfmt, docs and Bench build passed. Security Audit run [43707084623](https://github.com/easy-4-rust/easyexcel-rust/actions/runs/43707084623) passed. The macOS test failure is under investigation and must be re-run after the test-harness correction.
+- Follow-up PR: [#9](https://github.com/easy-4-rust/easyexcel-rust/pull/9), draft/open at this snapshot, branch `chore/zip-9-5-1-postmerge-20261115`, code head `b3bcfa1233a73c363de822bd272239038e7e45f7`; not merged.
+- PR CI run [43728486355](https://github.com/easy-4-rust/easyexcel-rust/actions/runs/43728486355) completed successfully on `b3bcfa1`: Ubuntu/macOS workspace tests, MSRV, Clippy, rustfmt, Doc build, Bench build and coverage-pr all passed. The coverage bot reports 89.36% line coverage; branch coverage was not collected. Security Audit run [43728486380](https://github.com/easy-4-rust/easyexcel-rust/actions/runs/43728486380) passed `cargo audit --deny warnings` and `cargo deny check advisories bans licenses sources`. PR #9 remains Draft pending final audit/OpenSpec evidence synchronization and a fresh check run for that documentation commit.
 
 ## Source locations, change and risks
 
@@ -133,7 +133,7 @@ Targeted commands use F: as CARGO_TARGET_DIR because E: has limited available sp
 
 ### Remaining acceptance
 
-The correction is locally validated but not yet pushed at this snapshot. The broader all-target test run used `F:/cargo-target/easyexcel-zip951` because the worktree's E: volume had only 0.07 GiB free; the F: volume had ample space. Push the two test-only source changes and this evidence update, then require a fresh PR CI run with Ubuntu/macOS tests, coverage, MSRV, Clippy, formatting, docs, benchmark and Security Audit all green before marking PR #9 ready. Do not weaken or skip the failing test.
+The checksum-test correction is committed and pushed in `b3bcfa1`; the complete PR CI and Security Audit both passed on that code head. The broader package all-target test run used `F:/cargo-target/easyexcel-zip951` because the worktree's E: volume had only 0.07 GiB free; the F: volume had ample space. This audit/OpenSpec reconciliation is a documentation-only follow-up commit. Because every PR commit triggers CI, require a fresh complete Ubuntu/macOS, coverage, MSRV, Clippy, formatting, docs, benchmark and Security Audit run on the documentation commit before marking PR #9 ready. Do not weaken or skip the regression test.
 
 ## Release and acceptance boundary
 
