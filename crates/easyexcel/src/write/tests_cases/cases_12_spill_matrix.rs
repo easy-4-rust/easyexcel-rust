@@ -2,12 +2,13 @@
 ///
 /// `uses_constant_memory_spill()` = `constant_memory || compress_temp_files`;
 /// 3/4 states (all except `false x false` with explicit InMemory) exercise the
-/// spill path.  When the auto path selects streaming, ALL 4 states produce
-/// streaming-mode XLSX with identical checksums.
+/// spill path. When the auto path selects streaming, ALL 4 states produce
+/// streaming-mode XLSX with identical normalized package checksums (volatile
+/// core-property creation/modified timestamps are excluded).
 ///
 /// This file verifies:
 /// - All 4 combinations produce a valid, readable XLSX with correct data.
-/// - All 4 produce identical checksums (deterministic streaming output).
+/// - All 4 produce identical normalized XLSX package checksums (streaming output).
 /// - Capability conflicts are reported correctly.
 /// - Auto-promotion clears `compress_temp_files` after replay.
 
@@ -45,13 +46,13 @@ fn spill_matrix_false_false_auto_streaming_baseline() -> Result<()> {
             "row {i} mismatch"
         );
     }
-    // Record baseline checksum for comparison.
-    let _baseline_checksum = sha256_of_file(&path);
+    // Record baseline normalized package checksum for comparison.
+    let _baseline_checksum = normalized_xlsx_package_checksum(&path);
     Ok(())
 }
 
 /// `false x true`: compress_temp_files forces constant_memory. Gzip spill.
-/// Checksum must equal the baseline (same streaming XLSX output).
+/// Normalized package checksum must equal the baseline (same streaming XLSX output).
 #[test]
 fn spill_matrix_false_true_compress_spill() -> Result<()> {
     let dir = tempdir()?;
@@ -79,13 +80,13 @@ fn spill_matrix_false_true_compress_spill() -> Result<()> {
     assert_eq!(range.get_value((1, 0)), Some(&Data::Float(0.0)));
     assert_eq!(range.get_value((50, 0)), Some(&Data::Float(49.0)));
 
-    // Checksum must match baseline.
-    assert_same_checksum(&[&baseline_path, &spill_path]);
+    // Normalized package checksum must match the baseline.
+    assert_same_normalized_xlsx_checksum(&[&baseline_path, &spill_path]);
     Ok(())
 }
 
 /// `true x false`: explicit constant_memory, no compress. ExplicitStreaming.
-/// Checksum must equal the baseline (same streaming XLSX output).
+/// Normalized package checksum must equal the baseline (same streaming XLSX output).
 #[test]
 fn spill_matrix_true_false_explicit_streaming() -> Result<()> {
     let dir = tempdir()?;
@@ -115,13 +116,13 @@ fn spill_matrix_true_false_explicit_streaming() -> Result<()> {
     assert_eq!(range.get_value((1, 0)), Some(&Data::Float(0.0)));
     assert_eq!(range.get_value((50, 0)), Some(&Data::Float(49.0)));
 
-    // Checksum must match baseline.
-    assert_same_checksum(&[&baseline_path, &spill_path]);
+    // Normalized package checksum must match the baseline.
+    assert_same_normalized_xlsx_checksum(&[&baseline_path, &spill_path]);
     Ok(())
 }
 
 /// `true x true`: explicit constant_memory + compress. Gzip spill.
-/// Checksum must equal the baseline (same streaming XLSX output).
+/// Normalized package checksum must equal the baseline (same streaming XLSX output).
 #[test]
 fn spill_matrix_true_true_explicit_gzip_spill() -> Result<()> {
     let dir = tempdir()?;
@@ -153,8 +154,8 @@ fn spill_matrix_true_true_explicit_gzip_spill() -> Result<()> {
     assert_eq!(range.get_value((1, 0)), Some(&Data::Float(0.0)));
     assert_eq!(range.get_value((50, 0)), Some(&Data::Float(49.0)));
 
-    // Checksum must match baseline.
-    assert_same_checksum(&[&baseline_path, &spill_path]);
+    // Normalized package checksum must match the baseline.
+    assert_same_normalized_xlsx_checksum(&[&baseline_path, &spill_path]);
     Ok(())
 }
 
@@ -251,7 +252,7 @@ fn auto_promotion_clears_compress_flag_after_replay() -> Result<()> {
 
     // After promotion, the output must be a real file with valid checksum.
     assert!(
-        sha256_of_file(&path).len() == 64,
+        normalized_xlsx_package_checksum(&path).len() == 64,
         "output must be a real file with a valid SHA-256"
     );
     Ok(())

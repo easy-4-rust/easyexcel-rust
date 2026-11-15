@@ -29,8 +29,8 @@ jobs:
       - uses: taiki-e/install-action@cargo-audit
       - uses: taiki-e/install-action@cargo-deny
 
-      - name: cargo audit
-        run: cargo audit
+      - name: cargo audit (deny warnings)
+        run: cargo audit --deny warnings
 
       - name: cargo deny check
         run: cargo deny check advisories bans licenses sources

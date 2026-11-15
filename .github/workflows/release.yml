@@ -132,6 +132,16 @@ jobs:
       - name: cargo fmt
         run: cargo fmt --all -- --check
 
+      # Release must re-check the current RustSec database, not only a prior PR run.
+      - uses: taiki-e/install-action@cargo-audit
+      - uses: taiki-e/install-action@cargo-deny
+
+      - name: cargo audit (deny warnings)
+        run: cargo audit --deny warnings
+
+      - name: cargo deny check
+        run: cargo deny check advisories bans licenses sources
+
   dry-run-publish:
     name: Dry-run Publish
     needs: build-and-test

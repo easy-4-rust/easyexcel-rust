@@ -663,26 +663,80 @@ impl WriteHandler for ConvertedTypeProbe {
     }
 }
 
-/// Compute SHA-256 hex digest of a file on disk.
+/// Compute a deterministic SHA-256 over the uncompressed XLSX package entries.
+///
+/// `rust_xlsxwriter` defaults `docProps/core.xml` creation/modified timestamps to
+/// the current UTC time. Normalize only those volatile values so this helper
+/// compares workbook package content rather than wall-clock metadata or ZIP
+/// container compression details.
 #[allow(dead_code)]
-fn sha256_of_file(path: &Path) -> String {
+fn normalized_xlsx_package_checksum(path: &Path) -> String {
     use sha2::{Digest, Sha256};
-    let bytes = std::fs::read(path).expect("read file for sha256");
-    let hash = Sha256::digest(&bytes);
-    format!("{hash:x}")
+
+    let file = File::open(path).expect("open XLSX package for checksum");
+    let mut archive = ZipArchive::new(file).expect("read XLSX ZIP package");
+    let mut entries = Vec::with_capacity(archive.len());
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index).expect("read XLSX ZIP entry");
+        let name = entry
+            .name()
+            .expect("XLSX entry name is valid UTF-8")
+            .into_owned();
+        let mut contents = Vec::new();
+        entry
+            .read_to_end(&mut contents)
+            .expect("read uncompressed XLSX entry");
+        if name == "docProps/core.xml" {
+            let mut xml = String::from_utf8(contents).expect("XLSX core properties must be UTF-8");
+            normalize_core_property_timestamp(&mut xml, "dcterms:created");
+            normalize_core_property_timestamp(&mut xml, "dcterms:modified");
+            contents = xml.into_bytes();
+        }
+        entries.push((name, contents));
+    }
+    entries.sort_unstable_by(|left, right| left.0.cmp(&right.0));
+
+    let mut hasher = Sha256::new();
+    for (name, contents) in entries {
+        let name_len = u64::try_from(name.len()).expect("XLSX entry name length fits u64");
+        let contents_len =
+            u64::try_from(contents.len()).expect("XLSX entry content length fits u64");
+        hasher.update(name_len.to_le_bytes());
+        hasher.update(name.as_bytes());
+        hasher.update(contents_len.to_le_bytes());
+        hasher.update(&contents);
+    }
+    format!("{:x}", hasher.finalize())
 }
 
-/// Assert that all given file paths produce the same SHA-256 checksum.
+fn normalize_core_property_timestamp(xml: &mut String, tag: &str) {
+    let opening_tag = format!("<{tag}");
+    let closing_tag = format!("</{tag}>");
+    let Some(tag_start) = xml.find(&opening_tag) else {
+        return;
+    };
+    let Some(opening_end) = xml[tag_start..].find('>') else {
+        return;
+    };
+    let value_start = tag_start + opening_end + 1;
+    let Some(value_end_offset) = xml[value_start..].find(&closing_tag) else {
+        return;
+    };
+    let value_end = value_start + value_end_offset;
+    xml.replace_range(value_start..value_end, "NORMALIZED_TIMESTAMP");
+}
+
+/// Assert that all given XLSX files have identical normalized package content.
 #[allow(dead_code)]
-fn assert_same_checksum(paths: &[&Path]) {
+fn assert_same_normalized_xlsx_checksum(paths: &[&Path]) {
     assert!(paths.len() >= 2, "need at least 2 paths to compare");
-    let first = sha256_of_file(paths[0]);
+    let first = normalized_xlsx_package_checksum(paths[0]);
     for path in &paths[1..] {
-        let current = sha256_of_file(path);
+        let current = normalized_xlsx_package_checksum(path);
         assert_eq!(
             first,
             current,
-            "checksum mismatch: {} vs {}",
+            "normalized XLSX package checksum mismatch: {} vs {}",
             paths[0].display(),
             path.display()
         );
