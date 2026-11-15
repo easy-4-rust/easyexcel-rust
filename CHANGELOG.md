@@ -12,6 +12,8 @@
 
 - 使用 crates.io 官方 `ref-swap 0.1.3` 修复 RUSTSEC-2026-0528；移除本地 `vendor/ref-swap` 分叉。Rust 1.95 已稳定 `AtomicPtr::try_update`，不再需要 `fetch_update` 回移补丁。
 - CI MSRV job 改为在 Rust 1.95 上检查完整 workspace；质量工具链仍使用 Rust 1.97.1。
+- 将 `zip` 最低依赖从 9.0.0 提升至 **9.5.1**（合并后原锁定版本 9.1.3），继续使用 `default-features = false` 和 `deflate`，保留 XLSX/OOXML ZIP 9 适配与错误处理语义。
+- `Security Audit` 将 `cargo audit` 改为 `cargo audit --deny warnings`；crates.io Release 的 `build-and-test` 阶段增加严格的 `cargo audit` 和 `cargo deny` 验证，杜绝已知漏洞、不安全依赖告警或来源/许可证违规进入发布。
 
 
 ## [0.1.4] - 2026-09-03

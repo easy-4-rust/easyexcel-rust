@@ -4,7 +4,8 @@
 
 | 文档 | 基线 | 状态 |
 |---|---|---|
-| [2026-11-08-dependency-security-audit.md](2026-11-08-dependency-security-audit.md) | PR #5 head dd673ea6a15909cc137d87eba26b7bedd43d323a | 修复前基线；OpenSpec change 正在执行 |
+| [2026-11-08-dependency-security-audit.md](2026-11-08-dependency-security-audit.md) | PR #5 原始审计基线 dd673ea6a15909cc137d87eba26b7bedd43d323a | 历史基线；PR #5 于 2026-11-14 合并 main，审核证据与 OpenSpec 已归档至此 |
+| [2026-11-15-postmerge-zip-upgrade.md](2026-11-15-postmerge-zip-upgrade.md) | main 3ad73e9aa0eb899f85474c9026a4c5f43e8f467e | ZIP 9.5.1 + strict Security/Release gates，独立分支验证中 |
 
 ## 规则
 
