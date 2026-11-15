@@ -157,6 +157,9 @@ jobs:
           python3 -m py_compile benchmarks/scripts/*.py benchmarks/scripts/tests/*.py
           python3 -m unittest discover -s benchmarks/scripts/tests -v
 
+      - name: Validate published Actix adapter dependency features
+        run: python3 scripts/check_actix_consumer_features.py
+
       - name: Build benchmarks
         run: cargo build --workspace --benches --all-features
 

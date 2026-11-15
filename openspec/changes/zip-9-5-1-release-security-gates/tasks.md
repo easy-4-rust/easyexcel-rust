@@ -19,14 +19,15 @@ Audit source: docs/audit/2026-11-15-postmerge-zip-upgrade.md
 - [ ] Z4.9 Revisit Actix HTTP/2 after upstream [PR #4321](https://github.com/actix/actix-web/pull/4321) is merged and a release exposes `http2-native`; do not enable an unpublished feature or silently restore legacy `http2` before then.
 
 - [x] Z4.8 Audit and mitigate the published-consumer Actix dependency boundary. Reproduced the original normalized `easyexcel-actix` package graph resolving upstream `actix-http 3.21.0 -> h2 0.3.27`; confirmed the root workspace patch is not inherited by consumers. The published package now sets `actix-web default-features = false` and enables the current defaults except legacy `http2`. Re-packaged `easyexcel-actix 0.1.4` and tested an isolated external consumer: neither h2 0.3.27 nor h2 0.4.20 is introduced. Workspace conformance dev-dependencies explicitly enable `http2`, using the local vendor bridge to h2 0.4.20; `actix_h2` regression passes 1/1. Limitation, separately reproduced: adding `actix-web = "4.19.0"` with its default features to the external consumer reintroduces h2 0.3.27; another dependency may also enable it through Cargo feature unification. This is documented in both adapter READMEs.
+- [x] Z4.10 Add `scripts/check_actix_consumer_features.py` and run it in the Ubuntu CI bench-build job. The script packages the normalized `easyexcel-actix` crate, extracts it outside the workspace (so the root patch cannot apply), resolves a clean external consumer, and rejects any h2 0.3.x dependency.
 
 - [x] Z4.1 ZIP version resolved as 9.5.1; cargo audit --no-fetch --deny warnings passes.
 - [x] Z4.2 XLSX package unit tests 529/529 and Calamine CFB security tests 3/3 pass locally.
 - [x] Z4.3 cargo deny advisories bans licenses sources passes with no new exceptions.
 - [x] Z4.4 Rust 1.95 package checks for easyexcel-xlsx/easyexcel pass; public round-trip tests 17/17 pass; cargo fmt and git diff --check pass.
-- [x] Z4.5 actionlint 1.7.12 reports zero errors for release.yml and security.yml; release chain is build-and-test (strict audit/deny included) -> dry-run-publish -> publish-crates.
-- [ ] Z4.6 Push the isolated branch, open PR and obtain successful Linux/macOS CI, Security Audit and applicable coverage checks.
-- [ ] Z4.7 Record the new PR/CI run IDs, final commit SHA and status in the audit doc.
+- [x] Z4.5 actionlint 1.7.12 reports zero errors for ci.yml, release.yml and security.yml; release chain is build-and-test (strict audit/deny included) -> dry-run-publish -> publish-crates.
+- [ ] Z4.6 Branch is pushed and PR #9 is open; await successful Ubuntu/macOS CI and coverage-pr. Latest CI run 43676330308 has Ubuntu, macOS and coverage-pr still running; Security Audit run 43676330360 has passed. Do not merge while any required check is pending or failed.
+- [x] Z4.7 Record PR #9, head commit c5ed7f79274c9ebda5c764aef392f84b74a7d539, CI run 43676330308 and Security Audit run 43676330360 with their current statuses in docs/audit/2026-11-15-postmerge-zip-upgrade.md.
 
 ## Not part of this change
 
@@ -38,3 +39,4 @@ Audit source: docs/audit/2026-11-15-postmerge-zip-upgrade.md
 - rustc/cargo 1.99.0, cargo-audit 0.22.2, cargo-deny 0.20.2, RustSec db 4ef2df8e806a65e2f1ecc14f56f51249062b23d6.
 - XLSX 529 passed; Calamine CFB 3 passed; strict audit and deny passed.
 - Rust 1.95 package check succeeded; facade round-trip 17/17; fmt/diff-check succeeded; actionlint 1.7.12 passed against the two edited workflow files.
+- Published Actix adapter package no longer enables legacy h2 by default; external consumer and explicit legacy-feature opt-in graphs were both tested. Full web conformance: 39 passed; Actix example build passed.

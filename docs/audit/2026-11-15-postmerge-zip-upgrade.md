@@ -9,6 +9,8 @@
 - OpenSpec: openspec/changes/zip-9-5-1-release-security-gates/.
 - Historical security work: docs/audit/2026-11-08-dependency-security-audit.md. Do not rewrite its original advisory baseline.
 - Baseline main GitHub Actions: CI run 43634850008 and Security Audit run 43634850025 both completed successfully.
+- Follow-up PR: [#9](https://github.com/easy-4-rust/easyexcel-rust/pull/9), draft/open, branch `chore/zip-9-5-1-postmerge-20261115`, head `c5ed7f79274c9ebda5c764aef392f84b74a7d539`; not merged.
+- Latest PR GitHub Actions: CI run [43676330308](https://github.com/easy-4-rust/easyexcel-rust/actions/runs/43676330308) and Security Audit run [43676330360](https://github.com/easy-4-rust/easyexcel-rust/actions/runs/43676330360). At this snapshot, Security Audit passed; MSRV, Clippy, rustfmt, Doc build and Bench build passed; Ubuntu tests, macOS tests and coverage-pr were still running.
 
 ## Source locations, change and risks
 
@@ -79,11 +81,16 @@ Evidence is from the isolated branch, not a completed GitHub PR/CI on this new b
 | cargo test --locked -p easyexcel-test --test round_trip | 17 passed, 0 failed |
 | cargo test --locked -p easyexcel-actix --all-features | 10 passed, 0 failed |
 | cargo test --locked -p easyexcel-web-conformance --test actix_h2 | 1 passed, 0 failed using workspace vendor bridge / h2 0.4.20 |
+| cargo test --locked -p easyexcel-web-conformance --all-features | 39 passed, 0 failed (ignored cases remain intentional) |
+| cargo build --locked -p easyexcel-demo-actix --all-features | Passed |
+| cargo +1.95 check --locked -p easyexcel-actix -p easyexcel-web-conformance --all-features | Passed |
+| External consumer explicitly adds `actix-web = "4.19.0"` defaults | h2 0.3.27 appears; limitation verified and documented |
 | cargo package --allow-dirty --no-verify -p easyexcel-actix | Passed; normalized manifest disables default features and omits legacy `http2` |
 | Isolated consumer of generated `easyexcel-actix-0.1.4.crate`: `cargo tree -i h2@0.3.27` and `cargo tree -i h2@0.4.20` | Both packages absent; adapter alone introduces no HTTP/2 dependency |
+| `python scripts/check_actix_consumer_features.py` | Passed; the repeatable normalized-package external-consumer audit is now wired into CI |
 | cargo fmt --all -- --check | Passed, exit 0 |
 | git diff --check | Passed, exit 0 |
-| go run github.com/rhysd/actionlint/cmd/actionlint@latest .github/workflows/release.yml .github/workflows/security.yml | Passed, exit 0, actionlint 1.7.12 |
+| go run github.com/rhysd/actionlint/cmd/actionlint@latest .github/workflows/ci.yml .github/workflows/release.yml .github/workflows/security.yml | Passed, exit 0, actionlint 1.7.12 |
 | Cargo.lock SHA-256 | 575FADB3DBADE115C34F6AFF6DC88ABEB528BEA1B3BB22783F1CC9EDFC6248DA |
 | RustSec advisory-db SHA | 4ef2df8e806a65e2f1ecc14f56f51249062b23d6 |
 | Local toolchain | rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2 |
