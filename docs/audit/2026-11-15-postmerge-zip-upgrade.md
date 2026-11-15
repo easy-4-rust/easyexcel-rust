@@ -9,8 +9,8 @@
 - OpenSpec: openspec/changes/zip-9-5-1-release-security-gates/.
 - Historical security work: docs/audit/2026-11-08-dependency-security-audit.md. Do not rewrite its original advisory baseline.
 - Baseline main GitHub Actions: CI run 43634850008 and Security Audit run 43634850025 both completed successfully.
-- Follow-up PR: [#9](https://github.com/easy-4-rust/easyexcel-rust/pull/9), draft/open, branch `chore/zip-9-5-1-postmerge-20261115`, head `c5ed7f79274c9ebda5c764aef392f84b74a7d539`; not merged.
-- Latest PR GitHub Actions: CI run [43676330308](https://github.com/easy-4-rust/easyexcel-rust/actions/runs/43676330308) and Security Audit run [43676330360](https://github.com/easy-4-rust/easyexcel-rust/actions/runs/43676330360). At this snapshot, Security Audit passed; MSRV, Clippy, rustfmt, Doc build and Bench build passed; Ubuntu tests, macOS tests and coverage-pr were still running.
+- Follow-up PR: [#9](https://github.com/easy-4-rust/easyexcel-rust/pull/9), draft/open, branch `chore/zip-9-5-1-postmerge-20261115`, latest head `dbf59b95af1e9689583d8e7f589fe05d3681e884`; not merged.
+- Latest PR GitHub Actions: CI run [43677305073](https://github.com/easy-4-rust/easyexcel-rust/actions/runs/43677305073) and Security Audit run [43677305056](https://github.com/easy-4-rust/easyexcel-rust/actions/runs/43677305056). At this snapshot, Security Audit passed and rustfmt passed; Bench build (including the new packaged-consumer graph test), MSRV, Clippy, docs, Ubuntu/macOS tests and coverage-pr were still running.
 
 ## Source locations, change and risks
 

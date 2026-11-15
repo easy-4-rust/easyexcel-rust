@@ -26,8 +26,8 @@ Audit source: docs/audit/2026-11-15-postmerge-zip-upgrade.md
 - [x] Z4.3 cargo deny advisories bans licenses sources passes with no new exceptions.
 - [x] Z4.4 Rust 1.95 package checks for easyexcel-xlsx/easyexcel pass; public round-trip tests 17/17 pass; cargo fmt and git diff --check pass.
 - [x] Z4.5 actionlint 1.7.12 reports zero errors for ci.yml, release.yml and security.yml; release chain is build-and-test (strict audit/deny included) -> dry-run-publish -> publish-crates.
-- [ ] Z4.6 Branch is pushed and PR #9 is open; await successful Ubuntu/macOS CI and coverage-pr. Latest CI run 43676330308 has Ubuntu, macOS and coverage-pr still running; Security Audit run 43676330360 has passed. Do not merge while any required check is pending or failed.
-- [x] Z4.7 Record PR #9, head commit c5ed7f79274c9ebda5c764aef392f84b74a7d539, CI run 43676330308 and Security Audit run 43676330360 with their current statuses in docs/audit/2026-11-15-postmerge-zip-upgrade.md.
+- [ ] Z4.6 Branch is pushed and PR #9 is open; await successful Ubuntu/macOS CI and coverage-pr. Latest CI run 43677305073 has Bench build (including the new consumer-graph script), MSRV, Clippy, docs, Ubuntu/macOS tests and coverage-pr running; Security Audit run 43677305056 has passed. Do not merge while any required check is pending or failed.
+- [x] Z4.7 Record PR #9, head commit dbf59b95af1e9689583d8e7f589fe05d3681e884, CI run 43677305073 and Security Audit run 43677305056 with their current statuses in docs/audit/2026-11-15-postmerge-zip-upgrade.md.
 
 ## Not part of this change
 
