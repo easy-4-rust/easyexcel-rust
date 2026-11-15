@@ -21,7 +21,7 @@ easyexcel-poem.workspace = true
 easyexcel-rocket.workspace = true
 easyexcel-salvo.workspace = true
 easyexcel-warp.workspace = true
-actix-web.workspace = true
+actix-web = { workspace = true, features = ["http2"] }
 actix-http.workspace = true
 h2.workspace = true
 brotli.workspace = true

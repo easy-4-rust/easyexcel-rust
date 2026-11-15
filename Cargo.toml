@@ -75,7 +75,7 @@ easyexcel-derive = { path = "crates/easyexcel-derive", version = "0.1.4" }
 easyexcel-web = { path = "crates/easyexcel-web", version = "0.1.4" }
 anyhow = "1.0.102"
 actix-multipart = "0.8.0"
-actix-web = "4.19.0"
+actix-web = { version = "4.19.0", default-features = false, features = ["macros", "compress-brotli", "compress-gzip", "compress-zstd", "cookies", "unicode", "compat", "ws"] }
 actix-http = { version = "3.21.0", features = ["compress-brotli"] }
 brotli = "9.1.1"
 aes = "0.8.4"

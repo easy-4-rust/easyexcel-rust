@@ -16,6 +16,10 @@ Audit source: docs/audit/2026-11-15-postmerge-zip-upgrade.md
 
 ## Validate
 
+- [ ] Z4.9 Revisit Actix HTTP/2 after upstream [PR #4321](https://github.com/actix/actix-web/pull/4321) is merged and a release exposes `http2-native`; do not enable an unpublished feature or silently restore legacy `http2` before then.
+
+- [x] Z4.8 Audit and mitigate the published-consumer Actix dependency boundary. Reproduced the original normalized `easyexcel-actix` package graph resolving upstream `actix-http 3.21.0 -> h2 0.3.27`; confirmed the root workspace patch is not inherited by consumers. The published package now sets `actix-web default-features = false` and enables the current defaults except legacy `http2`. Re-packaged `easyexcel-actix 0.1.4` and tested an isolated external consumer: neither h2 0.3.27 nor h2 0.4.20 is introduced. Workspace conformance dev-dependencies explicitly enable `http2`, using the local vendor bridge to h2 0.4.20; `actix_h2` regression passes 1/1. Limitation, separately reproduced: adding `actix-web = "4.19.0"` with its default features to the external consumer reintroduces h2 0.3.27; another dependency may also enable it through Cargo feature unification. This is documented in both adapter READMEs.
+
 - [x] Z4.1 ZIP version resolved as 9.5.1; cargo audit --no-fetch --deny warnings passes.
 - [x] Z4.2 XLSX package unit tests 529/529 and Calamine CFB security tests 3/3 pass locally.
 - [x] Z4.3 cargo deny advisories bans licenses sources passes with no new exceptions.
