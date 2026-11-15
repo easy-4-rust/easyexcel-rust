@@ -16,6 +16,12 @@ All edits happen in an isolated worktree based on merged main 3ad73e9aa0eb899f85
 
 Follow-up GitHub PR CI must validate Linux/macOS tests, Rust 1.95 MSRV, Clippy, fmt, docs, coverage-pr, benchmark build and Security Audit. There is no automatic version bump or release.
 
+## Decision Z4: published Actix adapter must not introduce legacy h2 by default
+
+The workspace-local `[patch.crates-io] actix-http` override is not inherited by downstream crates.io consumers. The shared `actix-web` dependency therefore disables default features and explicitly enables the current compression, macros, cookies, Unicode, compatibility and WebSocket features, but not legacy `http2`. The published `easyexcel-actix` package consequently does not implicitly resolve upstream h2 0.3.27.
+
+The workspace HTTP/2 path is preserved: Web conformance explicitly enables `actix-web/http2` as a dev-dependency, and the local Actix HTTP bridge resolves h2 0.4.20. An external application that independently enables Actix's legacy `http2` (or enables it through Cargo feature unification) may still resolve h2 0.3.27. This limitation remains until Actix publishes `http2-native`; do not claim a global downstream HTTP/2 fix.
+
 ## Evidence authority
 
 The exact audited source locations, versions, risks, SHA and execution results are in docs/audit/2026-11-15-postmerge-zip-upgrade.md. This design sets the shared boundary; tasks MUST reference that evidence instead of inventing alternate architecture decisions.

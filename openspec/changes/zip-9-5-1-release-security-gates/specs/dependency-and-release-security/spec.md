@@ -11,6 +11,26 @@ The repository MUST declare ZIP >=9.5.1 on the compatible ZIP 9 line and MUST ke
 - THEN the normal and malformed-entry regression tests MUST pass
 - AND the resolved ZIP package MUST be 9.5.1 or a reviewed later patch within ZIP major 9.
 
+## Requirement: Published Actix adapter default dependency boundary
+
+The published `easyexcel-actix` package MUST NOT enable Actix Web's legacy `http2` feature by default: the workspace-local Actix HTTP patch does not propagate to downstream consumers, and upstream actix-http 3.21.0 resolves h2 0.3.27. The workspace MUST preserve the h2 0.4.20 bridge and its HTTP/2 conformance regression.
+
+### Scenario: External consumer uses the published adapter alone
+
+- GIVEN the normalized `easyexcel-actix` package is extracted outside the EasyExcel workspace
+- WHEN an external Cargo consumer resolves its normal dependencies
+- THEN Actix Web default features MUST be disabled by the adapter
+- AND the adapter alone MUST NOT introduce h2 0.3.x.
+
+### Scenario: Workspace HTTP/2 conformance remains enabled
+
+- GIVEN the EasyExcel Web conformance test target
+- WHEN it enables `actix-web/http2` as a dev-dependency
+- THEN the local Actix HTTP bridge MUST resolve h2 0.4.20
+- AND the h2c bridge regression MUST pass.
+
+- NOTE: A downstream application that independently enables legacy `actix-web/http2`, or has another dependency that enables it through Cargo feature unification, can still resolve h2 0.3.27 until upstream Actix ships `http2-native`. This requirement applies to the adapter's own default dependency graph, not arbitrary downstream feature selections.
+
 ## Requirement: Strict advisory gating
 
 The Security Audit and Release workflows MUST reject vulnerable, unsound or yanked dependencies without adding exception rules.
