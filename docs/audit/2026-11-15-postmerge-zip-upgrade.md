@@ -9,8 +9,8 @@
 - OpenSpec: openspec/changes/zip-9-5-1-release-security-gates/.
 - Historical security work: docs/audit/2026-11-08-dependency-security-audit.md. Do not rewrite its original advisory baseline.
 - Baseline main GitHub Actions: CI run 43634850008 and Security Audit run 43634850025 both completed successfully.
-- Follow-up PR: [#9](https://github.com/easy-4-rust/easyexcel-rust/pull/9), draft/open at this snapshot, branch `chore/zip-9-5-1-postmerge-20261115`, head `3aeded305f1433f5924ab89334c804290c33c20e`; not merged.
-- PR CI run [43700634997](https://github.com/easy-4-rust/easyexcel-rust/actions/runs/43700634997) and Security Audit run [43700634986](https://github.com/easy-4-rust/easyexcel-rust/actions/runs/43700634986) both completed successfully on `3aeded3`. Ubuntu/macOS tests, MSRV, Clippy, rustfmt, docs, benchmark build (including packaged-consumer graph test), PR coverage and strict Security Audit all passed. The informational PR coverage comment reports 89.37% line coverage; branch coverage was not collected. No required check remains pending or failed on this code head.
+- Follow-up PR: [#9](https://github.com/easy-4-rust/easyexcel-rust/pull/9), draft/open at this snapshot, branch `chore/zip-9-5-1-postmerge-20261115`, current head `0b722ba0ff0b3dc120111b6db68d6ec05537b92d`; not merged.
+- Latest PR CI run [43707084646](https://github.com/easy-4-rust/easyexcel-rust/actions/runs/43707084646): Ubuntu passed; macOS failed one checksum test (`spill_matrix_true_true_explicit_gzip_spill`); coverage-pr passed; MSRV, Clippy, rustfmt, docs and Bench build passed. Security Audit run [43707084623](https://github.com/easy-4-rust/easyexcel-rust/actions/runs/43707084623) passed. The macOS test failure is under investigation and must be re-run after the test-harness correction.
 
 ## Source locations, change and risks
 
@@ -100,6 +100,40 @@ Evidence is from the isolated branch, not a completed GitHub PR/CI on this new b
 | Local toolchain | rustc/cargo 1.99.0; cargo-audit 0.22.2; cargo-deny 0.20.2 |
 
 Targeted commands use F: as CARGO_TARGET_DIR because E: has limited available space. This does not change repository artifacts or CI.
+
+## Cross-platform checksum regression follow-up (2026-11-15)
+
+### Failure evidence
+
+- PR CI Run 43707084646: Ubuntu workspace test passed; macOS workspace test failed exactly one case, `write::excel_writer_core::tests::spill_matrix_true_true_explicit_gzip_spill`, at `crates/easyexcel/src/write/tests.rs` checksum assertion. The other 2,330 macOS tests passed. Security Audit Run 43707084623 passed.
+- The failure compared `baseline_tt.xlsx` and `matrix_tt.xlsx` using a raw SHA-256 of the whole ZIP file. It was not a cell-value, XLSX parse, or CFB/security failure.
+
+### Root cause (verified)
+
+- `rust_xlsxwriter 0.102.0` `DocProperties::new()` initializes `creation_time` using `ExcelDateTime::utc_now()`. Its `docProps/core.xml` writer emits that value as both `dcterms:created` and `dcterms:modified`.
+- The spill matrix creates two independent workbooks. If their creation crosses a one-second timestamp boundary, the two XLSX files legitimately differ in `docProps/core.xml` even when all workbook package content is equivalent.
+- Reproduced on Windows by inserting a temporary two-second delay between baseline and spill generation: the original raw-file checksum assertion failed with different SHA-256 values. The temporary delay was removed after diagnosis.
+
+### Test correction
+
+- `crates/easyexcel/src/write/tests.rs`: replace raw-file hashing with a deterministic checksum over sorted, uncompressed XLSX ZIP entries. Only the volatile `dcterms:created` and `dcterms:modified` text values in `docProps/core.xml` are normalized; all other entry names and payload bytes remain part of the checksum.
+- `crates/easyexcel/src/write/tests_cases/cases_12_spill_matrix.rs`: update the four-state spill matrix and auto-promotion checksum assertion to use the normalized package checksum. No production workbook-writing behavior or generated metadata is changed.
+
+### Local verification after correction
+
+| Command | Result |
+|---|---|
+| Forced two-second delay + `cargo test --locked -p easyexcel --lib spill_matrix_true_true_explicit_gzip_spill -- --nocapture` | 1 passed; confirms timestamp-boundary reproduction no longer fails |
+| `cargo test --locked -p easyexcel --lib spill_matrix_` | 4 passed, 0 failed |
+| `cargo test --locked -p easyexcel --lib` | 2,331 passed, 0 failed |
+| `CARGO_TARGET_DIR=F:/cargo-target/easyexcel-zip951 cargo test --locked -p easyexcel --all-targets --all-features` | 2,355 passed, 0 failed across 8 test binaries; 2 examples had zero tests |
+| `cargo clippy --locked -p easyexcel --all-targets --all-features` | Exit 0; existing lint warnings remain, no errors |
+| `cargo fmt --all -- --check` | Passed |
+| `git diff --check` | Passed |
+
+### Remaining acceptance
+
+The correction is locally validated but not yet pushed at this snapshot. The broader all-target test run used `F:/cargo-target/easyexcel-zip951` because the worktree's E: volume had only 0.07 GiB free; the F: volume had ample space. Push the two test-only source changes and this evidence update, then require a fresh PR CI run with Ubuntu/macOS tests, coverage, MSRV, Clippy, formatting, docs, benchmark and Security Audit all green before marking PR #9 ready. Do not weaken or skip the failing test.
 
 ## Release and acceptance boundary
 

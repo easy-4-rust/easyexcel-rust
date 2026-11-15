@@ -20,14 +20,16 @@ Audit source: docs/audit/2026-11-15-postmerge-zip-upgrade.md
 - [x] Z4.10 Add `scripts/check_actix_consumer_features.py` and run it in the Ubuntu CI bench-build job. The script packages the normalized `easyexcel-actix` crate, extracts it outside the workspace (so the root patch cannot apply), resolves a clean external consumer, and rejects any h2 0.3.x dependency.
 - [x] Z4.11 Align proposal/design/spec with the published Actix adapter dependency boundary: preserve the workspace h2 0.4.20 bridge and test while excluding legacy `http2` from the adapter's own published default dependency graph; explicitly scope the remaining application-level feature-unification limitation.
 - [x] Z4.12 Run `openspec validate zip-9-5-1-release-security-gates` with OpenSpec CLI 1.14.0; change validates with ADDED Requirements and scenario sections.
+- [x] Z4.13 Investigate and correct the macOS spill-matrix checksum failure. `rust_xlsxwriter 0.102.0` sets `docProps/core.xml` created/modified timestamps to `utc_now()`, so raw XLSX file hashes differ across separate workbook creation times. The test helper now hashes sorted uncompressed ZIP entries and normalizes only those two volatile timestamp values. A forced two-second-delay reproduction passes after the fix; spill matrix 4/4, full easyexcel lib 2,331/2,331, all-targets/all-features easyexcel package tests 2,355/2,355, Clippy, rustfmt, diff-check and OpenSpec validation pass locally. No production writer behavior changed.
+- [ ] Z4.14 Push the checksum-test correction and obtain a fresh complete GitHub CI + Security Audit run; Ubuntu/macOS tests, coverage, MSRV, Clippy, rustfmt, docs and Bench build must all pass before PR #9 is marked ready.
 
 - [x] Z4.1 ZIP version resolved as 9.5.1; cargo audit --no-fetch --deny warnings passes.
 - [x] Z4.2 XLSX package unit tests 529/529 and Calamine CFB security tests 3/3 pass locally.
 - [x] Z4.3 cargo deny advisories bans licenses sources passes with no new exceptions.
 - [x] Z4.4 Rust 1.95 package checks for easyexcel-xlsx/easyexcel pass; public round-trip tests 17/17 pass; cargo fmt and git diff --check pass.
 - [x] Z4.5 actionlint 1.7.12 reports zero errors for ci.yml, release.yml and security.yml; release chain is build-and-test (strict audit/deny included) -> dry-run-publish -> publish-crates.
-- [x] Z4.6 Branch is pushed and PR #9 is open. GitHub CI run 43700634997 and Security Audit run 43700634986 both passed on head 3aeded305f1433f5924ab89334c804290c33c20e: Ubuntu/macOS tests, MSRV, Clippy, rustfmt, docs, benchmark build (including external-consumer feature audit), coverage-pr and strict audit/deny. Coverage bot reports 89.37% line coverage; branch coverage was not collected. Keep merge as a separate review decision.
-- [x] Z4.7 Record PR #9, validated code head 3aeded305f1433f5924ab89334c804290c33c20e, CI run 43700634997 and Security Audit run 43700634986 with their successful statuses in docs/audit/2026-11-15-postmerge-zip-upgrade.md.
+- [ ] Z4.6 Latest PR head 0b722ba0ff0b3dc120111b6db68d6ec05537b92d has not yet passed the complete CI gate: Run 43707084646 passed Ubuntu, coverage-pr, MSRV, Clippy, rustfmt, docs and Bench build but failed one macOS checksum test (`spill_matrix_true_true_explicit_gzip_spill`). Security Audit Run 43707084623 passed. Re-run the full gate after Z4.13/Z4.14.
+- [x] Z4.7 Record current PR #9 head 0b722ba0ff0b3dc120111b6db68d6ec05537b92d, CI run 43707084646 (macOS one failure; Ubuntu passed) and Security Audit run 43707084623 (passed) in docs/audit/2026-11-15-postmerge-zip-upgrade.md.
 
 ## Not part of this change
 
