@@ -4,9 +4,9 @@
 
 Native EasyExcel request extraction and response adapter for Actix Web.
 
-> Release: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
+> Release: 0.1.4 · Rust 1.95+ · Edition 2024 · Apache-2.0
 >
-> Last updated: 2026-08-11 · Status: active
+> Last updated: 2026-11-15 · Status: active
 
 ## Overview
 
@@ -57,8 +57,9 @@ The adapter does not reimplement spreadsheet parsing, writing or resource policy
 
 ```toml
 [dependencies]
-easyexcel = "0.1.3"
-easyexcel-actix = "0.1.3"
+easyexcel = "0.1.4"
+easyexcel-actix = "0.1.4"
+actix-web = { version = "4.19", default-features = false, features = ["macros"] }
 ```
 
 All workbook APIs remain under `easyexcel::...`; only Actix Web-native extractor, responder and error types come from this adapter. The adapter depends on `easyexcel`, so facade-side re-export would create a cycle. Keep both crates on the same release line.
@@ -180,6 +181,12 @@ flowchart TB
 ```
 
 Reverse dependencies such as `easyexcel-web -> easyexcel-actix` or `easyexcel -> easyexcel-actix` are forbidden.
+
+## HTTP/2 feature boundary
+
+`easyexcel-actix` deliberately disables Actix Web default features and enables the current non-HTTP/2 defaults explicitly. This prevents the adapter from silently adding upstream `h2 0.3.27` to a downstream application. The workspace-only `[patch.crates-io]` override for `actix-http` does not propagate to crates.io consumers.
+
+The adapter therefore does **not** enable Actix's legacy `http2` feature by default. If the application independently enables `actix-web/http2` or another dependency enables it, Cargo feature unification can still add `h2 0.3.27`; inspect the application's own `cargo tree -i h2` before deployment. Actix's proposed `http2-native` feature is still in [draft upstream PR #4321](https://github.com/actix/actix-web/pull/4321) and is not yet a released dependency option. Do not treat the workspace's h2 0.4.20 bridge as a downstream patch.
 
 ## Evidence map
 

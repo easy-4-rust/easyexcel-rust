@@ -4,9 +4,9 @@
 
 面向 Actix Web 的 EasyExcel 原生请求提取与响应适配器。
 
-> 版本: 0.1.3 · Rust 1.95+ · Edition 2024 · Apache-2.0
+> 版本: 0.1.4 · Rust 1.95+ · Edition 2024 · Apache-2.0
 >
-> 最后更新: 2026-08-11 · 状态: 活跃
+> 最后更新: 2026-11-15 · 状态: 活跃
 
 ## 概述
 
@@ -57,8 +57,9 @@ flowchart LR
 
 ```toml
 [dependencies]
-easyexcel = "0.1.3"
-easyexcel-actix = "0.1.3"
+easyexcel = "0.1.4"
+easyexcel-actix = "0.1.4"
+actix-web = { version = "4.19", default-features = false, features = ["macros"] }
 ```
 
 所有工作簿 API 仍通过 `easyexcel::...` 使用；只有 Actix Web 原生 extractor、responder 与错误类型来自本适配器。适配器依赖 `easyexcel`，门面反向重导出会形成循环依赖。两个 crate 必须保持同一发布线。
@@ -180,6 +181,12 @@ flowchart TB
 ```
 
 禁止形成 `easyexcel-web -> easyexcel-actix` 或 `easyexcel -> easyexcel-actix` 的反向依赖。
+
+## HTTP/2 功能边界
+
+`easyexcel-actix` 有意关闭 Actix Web 的默认 feature，并显式启用当前默认集合中除 HTTP/2 外的功能，避免适配器在下游应用中隐式引入上游 `h2 0.3.27`。Workspace 根目录的 `[patch.crates-io]` 本地 `actix-http` 补丁不会随 crates.io crate 传递给使用者。
+
+因此适配器**默认不启用** Actix 的旧版 `http2` feature。如果应用自己启用了 `actix-web/http2`，或其他依赖启用了它，Cargo feature 合并仍可能引入 `h2 0.3.27`；部署前应检查应用自身的 `cargo tree -i h2`。Actix 提出的 `http2-native` 仍停留在[上游 Draft PR #4321](https://github.com/actix/actix-web/pull/4321)，尚未成为已发布依赖选项。不能把 Workspace 中的 h2 0.4.20 桥接实现视为下游补丁。
 
 ## 证据索引
 
